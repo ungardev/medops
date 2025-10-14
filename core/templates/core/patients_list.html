@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <h1>Pacientes</h1>
+    <ul class="list-group">
+        {% for p in patients %}
+            <li class="list-group-item">
+                {{ p.first_name }} {{ p.last_name }} – {{ p.contact_info }}
+            </li>
+        {% empty %}
+            <li class="list-group-item">No hay pacientes registrados</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

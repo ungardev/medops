@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <h1>Citas de hoy – {{ today }}</h1>
+    <ul class="list-group">
+        {% for a in appointments %}
+            <li class="list-group-item">
+                {{ a.patient.first_name }} {{ a.patient.last_name }} – {{ a.status }}
+            </li>
+        {% empty %}
+            <li class="list-group-item">No hay citas registradas hoy</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

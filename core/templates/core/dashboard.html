@@ -1,0 +1,188 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard – {{ today }}</h1>
+
+<!-- Nav Tabs -->
+<ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="operativo-tab" data-bs-toggle="tab" data-bs-target="#operativo" type="button" role="tab">
+      Operativo
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="auditoria-tab" data-bs-toggle="tab" data-bs-target="#auditoria" type="button" role="tab">
+      Auditoría
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content" id="dashboardTabsContent">
+  <!-- TAB OPERATIVO -->
+  <div class="tab-pane fade show active" id="operativo" role="tabpanel">
+    <!-- Tarjetas de métricas -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h5>Pacientes</h5>
+          <h2>{{ total_patients }}</h2>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h5>Citas de hoy</h5>
+          <h2>{{ todays_appointments }}</h2>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h5>Pagos pendientes</h5>
+          <h2>{{ pending_payments }}</h2>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center p-3">
+          <h5>Consultas exoneradas</h5>
+          <h2>{{ waived_consultations }}</h2>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <!-- Gráficas -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card p-3">
+          <h5>Distribución de estados de citas</h5>
+          <canvas id="appointmentsChart"
+                  data-appointments='{{ appointment_status|safe }}'></canvas>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card p-3">
+          <h5>Métodos de pago</h5>
+          <canvas id="paymentsChart"
+                  data-payments='{{ payment_methods|safe }}'></canvas>
+        </div>
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <h3>Detalle de estados de citas</h3>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Estado</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in appointment_status %}
+          <tr>
+            <td>{{ s.status }}</td>
+            <td>{{ s.total }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">No hay citas registradas hoy</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB AUDITORÍA -->
+  <div class="tab-pane fade" id="auditoria" role="tabpanel">
+    <h3>Auditoría</h3>
+
+    <!-- Filtros de rango de fechas -->
+    <form id="auditFilterForm" class="row g-3 mb-4">
+      <div class="col-md-3">
+        <input type="date" name="audit_start" class="form-control" value="{{ audit_start }}">
+      </div>
+      <div class="col-md-3">
+        <input type="date" name="audit_end" class="form-control" value="{{ audit_end }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+      </div>
+    </form>
+
+    <!-- Últimos eventos -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          {% for e in recent_events %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span>
+                <strong>{{ e.timestamp|date:"d/m/Y H:i" }}</strong> – 
+                {% if e.entity == "Appointment" %}🗓️
+                {% elif e.entity == "Payment" %}💳
+                {% elif e.entity == "Patient" %}👤
+                {% elif e.entity == "Diagnosis" %}🧾
+                {% elif e.entity == "Treatment" %}💊
+                {% elif e.entity == "Prescription" %}📄
+                {% else %}📌{% endif %}
+                {{ e.entity }} (ID {{ e.entity_id }})
+              </span>
+              <span>
+                {% if "Status changed" in e.action %}
+                  <span class="badge bg-warning text-dark">{{ e.action }}</span>
+                {% elif "Method changed" in e.action %}
+                  <span class="badge bg-info text-dark">{{ e.action }}</span>
+                {% elif "Created" in e.action %}
+                  <span class="badge bg-success">{{ e.action }}</span>
+                {% elif "Deleted" in e.action %}
+                  <span class="badge bg-danger">{{ e.action }}</span>
+                {% else %}
+                  <span class="badge bg-secondary">{{ e.action }}</span>
+                {% endif %}
+              </span>
+            </li>
+          {% empty %}
+            <li class="list-group-item">No hay eventos registrados</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="card-footer text-end">
+        <a href="{% url 'event_log' %}" class="btn btn-sm btn-outline-primary">Ver todo</a>
+      </div>
+    </div>
+
+    <!-- Gráficos de auditoría -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="card p-3 mb-4">
+          <h5>Eventos por Entidad</h5>
+          <canvas id="entityChart"
+                  data-entities='{{ entity_data|safe }}'></canvas>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card p-3 mb-4">
+          <h5>Eventos por Acción</h5>
+          <canvas id="actionChart"
+                  data-actions='{{ action_data|safe }}'></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card p-3">
+          <h5>Evolución de Eventos por Día</h5>
+          <canvas id="timelineChart"
+                  data-timeline='{{ timeline_data|safe }}'></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'core/js/dashboard.js' %}"></script>
+{% endblock %}

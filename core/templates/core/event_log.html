@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<h1>Historial de Auditoría</h1>
+
+<!-- Filtros -->
+<form method="get" class="row g-3 mb-4">
+    <div class="col-md-3">
+        <input type="text" name="entity" class="form-control" placeholder="Entidad"
+               value="{{ entity }}">
+    </div>
+    <div class="col-md-3">
+        <input type="text" name="action" class="form-control" placeholder="Acción"
+               value="{{ action }}">
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="start_date" class="form-control"
+               value="{{ start_date }}">
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="end_date" class="form-control"
+               value="{{ end_date }}">
+    </div>
+    <div class="col-md-2 d-flex">
+        <button type="submit" class="btn btn-primary me-2 flex-fill">Filtrar</button>
+        <a href="?entity={{ entity }}&action={{ action }}&start_date={{ start_date }}&end_date={{ end_date }}&export=csv"
+           class="btn btn-success me-2 flex-fill">Exportar CSV</a>
+        <a href="?entity={{ entity }}&action={{ action }}&start_date={{ start_date }}&end_date={{ end_date }}&export=xlsx"
+           class="btn btn-warning flex-fill">Exportar Excel</a>
+    </div>
+</form>
+
+<!-- Tabla de eventos -->
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Fecha/Hora</th>
+            <th>Entidad</th>
+            <th>ID</th>
+            <th>Acción</th>
+            <th>Metadata</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in events %}
+            <tr>
+                <td>{{ e.timestamp|date:"d/m/Y H:i" }}</td>
+                <td>{{ e.entity }}</td>
+                <td>{{ e.entity_id }}</td>
+                <td>
+                    {% if "Status changed" in e.action %}
+                        <span class="badge bg-warning text-dark">{{ e.action }}</span>
+                    {% elif "Method changed" in e.action %}
+                        <span class="badge bg-info text-dark">{{ e.action }}</span>
+                    {% elif "Created" in e.action %}
+                        <span class="badge bg-success">{{ e.action }}</span>
+                    {% elif "Deleted" in e.action %}
+                        <span class="badge bg-danger">{{ e.action }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ e.action }}</span>
+                    {% endif %}
+                </td>
+                <td><code>{{ e.metadata }}</code></td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5">No hay eventos registrados</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Paginación -->
+<nav>
+    <ul class="pagination">
+        {% if events.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ events.previous_page_number }}&entity={{ entity }}&action={{ action }}&start_date={{ start_date }}&end_date={{ end_date }}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Página {{ events.number }} de {{ events.paginator.num_pages }}</span></li>
+        {% if events.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ events.next_page_number }}&entity={{ entity }}&action={{ action }}&start_date={{ start_date }}&end_date={{ end_date }}">Siguiente</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endblock %}

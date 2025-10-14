@@ -1,0 +1,138 @@
+[
+  {
+    "model": "core.patient",
+    "pk": 1,
+    "fields": {
+      "first_name": "Ana",
+      "last_name": "Pérez",
+      "gender": "F",
+      "birthdate": "1990-01-01"
+    }
+  },
+  {
+    "model": "core.patient",
+    "pk": 2,
+    "fields": {
+      "first_name": "Carlos",
+      "last_name": "Gómez",
+      "gender": "M",
+      "birthdate": "1985-05-10"
+    }
+  },
+  {
+    "model": "core.patient",
+    "pk": 3,
+    "fields": {
+      "first_name": "María",
+      "last_name": "López",
+      "gender": "F",
+      "birthdate": "1995-03-20"
+    }
+  },
+  {
+    "model": "core.appointment",
+    "pk": 1,
+    "fields": {
+      "patient": 1,
+      "appointment_date": "2025-10-13",
+      "arrival_time": "09:30",
+      "status": "scheduled"
+    }
+  },
+  {
+    "model": "core.appointment",
+    "pk": 2,
+    "fields": {
+      "patient": 2,
+      "appointment_date": "2025-10-13",
+      "arrival_time": "10:00",
+      "status": "completed"
+    }
+  },
+  {
+    "model": "core.appointment",
+    "pk": 3,
+    "fields": {
+      "patient": 3,
+      "appointment_date": "2025-10-13",
+      "arrival_time": "11:00",
+      "status": "scheduled"
+    }
+  },
+  {
+    "model": "core.appointment",
+    "pk": 4,
+    "fields": {
+      "patient": 1,
+      "appointment_date": "2025-10-12",
+      "arrival_time": "14:00",
+      "status": "completed"
+    }
+  },
+  {
+    "model": "core.payment",
+    "pk": 1,
+    "fields": {
+      "appointment": 1,
+      "amount": 50,
+      "method": "cash",
+      "status": "pending"
+    }
+  },
+  {
+    "model": "core.payment",
+    "pk": 2,
+    "fields": {
+      "appointment": 2,
+      "amount": 100,
+      "method": "card",
+      "status": "completed"
+    }
+  },
+  {
+    "model": "core.payment",
+    "pk": 3,
+    "fields": {
+      "appointment": 3,
+      "amount": 0,
+      "method": "cash",
+      "status": "waived"
+    }
+  },
+  {
+    "model": "core.event",
+    "pk": 1,
+    "fields": {
+      "actor": null,
+      "entity": "Patient",
+      "entity_id": 1,
+      "action": "create",
+      "metadata": "{\"info\": \"Paciente creado\"}",
+      "timestamp": "2025-10-13T19:30:00Z"
+    }
+  },
+  {
+    "model": "core.event",
+    "pk": 2,
+    "fields": {
+      "actor": null,
+      "entity": "Appointment",
+      "entity_id": 1,
+      "action": "schedule",
+      "metadata": "{\"status\": \"scheduled\"}",
+      "timestamp": "2025-10-13T19:31:00Z"
+    }
+  },
+  {
+    "model": "core.event",
+    "pk": 3,
+    "fields": {
+      "actor": null,
+      "entity": "Payment",
+      "entity_id": 3,
+      "action": "waived",
+      "metadata": "{\"reason\": \"exoneración\"}",
+      "timestamp": "2025-10-13T19:32:00Z"
+    }
+  }
+]

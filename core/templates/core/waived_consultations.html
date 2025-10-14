@@ -1,0 +1,14 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <h1>Consultas Exoneradas</h1>
+    <ul class="list-group">
+        {% for w in waived %}
+            <li class="list-group-item">
+                {{ w.appointment.patient.first_name }} {{ w.appointment.patient.last_name }} – {{ w.amount }} {{ w.method }}
+            </li>
+        {% empty %}
+            <li class="list-group-item">No hay consultas exoneradas</li>
+        {% endfor %}
+    </ul>
+{% endblock %}
