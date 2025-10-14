@@ -56,6 +56,7 @@ class PaymentAdmin(admin.ModelAdmin):
     ordering = ('-appointment__appointment_date',)
     list_per_page = 25
 
+    @admin.display(description="Paciente")
     def patient_name(self, obj):
         return f"{obj.appointment.patient.first_name} {obj.appointment.patient.last_name}"
-    patient_name.short_description = "Paciente"
+
