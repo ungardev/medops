@@ -3,6 +3,38 @@ from django.utils.html import format_html
 from .models import Patient, Appointment, Diagnosis, Treatment, Prescription, Payment, MedicalDocument
 
 
+# Inline para documentos en Appointment
+class MedicalDocumentInlineForAppointment(admin.TabularInline):
+    model = MedicalDocument
+    extra = 1
+    fields = ("file", "description", "category", "preview_file")
+    readonly_fields = ("preview_file",)
+
+    @admin.display(description="Archivo")
+    def preview_file(self, obj):
+        if obj.file and obj.file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+        elif obj.file:
+            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+        return "-"
+
+
+# Inline para documentos en Diagnosis
+class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
+    model = MedicalDocument
+    extra = 1
+    fields = ("file", "description", "category", "preview_file")
+    readonly_fields = ("preview_file",)
+
+    @admin.display(description="Archivo")
+    def preview_file(self, obj):
+        if obj.file and obj.file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+        elif obj.file:
+            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+        return "-"
+
+
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
     list_display = ('id', 'first_name', 'last_name', 'birthdate', 'gender', 'contact_info')
@@ -20,6 +52,7 @@ class AppointmentAdmin(admin.ModelAdmin):
     search_fields = ('patient__first_name', 'patient__last_name')
     ordering = ('-appointment_date',)
     list_per_page = 25
+    inlines = [MedicalDocumentInlineForAppointment]
 
 
 @admin.register(Diagnosis)
@@ -29,6 +62,7 @@ class DiagnosisAdmin(admin.ModelAdmin):
     search_fields = ('code', 'description')
     ordering = ('code',)
     list_per_page = 25
+    inlines = [MedicalDocumentInlineForDiagnosis]
 
 
 @admin.register(Treatment)
@@ -62,7 +96,6 @@ class PaymentAdmin(admin.ModelAdmin):
         return f"{obj.appointment.patient.first_name} {obj.appointment.patient.last_name}"
 
 
-# Nuevo: MedicalDocument
 @admin.register(MedicalDocument)
 class MedicalDocumentAdmin(admin.ModelAdmin):
     list_display = ('id', 'patient', 'appointment', 'diagnosis', 'description', 'category', 'uploaded_at', 'preview_file')
