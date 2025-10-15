@@ -12,6 +12,11 @@ class Patient(models.Model):
         ('Unknown', 'Unknown'),
     ]
 
+    national_id = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Cédula de Identidad"
+    )
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)
@@ -23,10 +28,10 @@ class Patient(models.Model):
     class Meta:
         verbose_name = "Patient"
         verbose_name_plural = "Patients"
-    
+
     def __str__(self):
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
-        return " ".join([p for p in parts if p])
+        return f"{self.national_id} - " + " ".join([p for p in parts if p])
 
 
 class Appointment(models.Model):
