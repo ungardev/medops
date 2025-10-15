@@ -15,7 +15,9 @@ class Patient(models.Model):
     national_id = models.CharField(
         max_length=20,
         unique=True,
-        verbose_name="Cédula de Identidad"
+        verbose_name="Cédula de Identidad",
+        null=True,   # Temporalmente permitimos nulos
+        blank=True   # Para que no sea obligatorio en formularios
     )
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
@@ -28,10 +30,10 @@ class Patient(models.Model):
     class Meta:
         verbose_name = "Patient"
         verbose_name_plural = "Patients"
-
+    
     def __str__(self):
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
-        return f"{self.national_id} - " + " ".join([p for p in parts if p])
+        return f"{self.national_id or 'SIN-CI'} - " + " ".join([p for p in parts if p])
 
 
 class Appointment(models.Model):
