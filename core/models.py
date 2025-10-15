@@ -45,6 +45,11 @@ class Diagnosis(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='diagnoses')
     code = models.CharField(max_length=50)
     description = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Diagnosis"
+        verbose_name_plural = "Diagnoses"
+
 
     def __str__(self):
         return f"{self.code} ({self.appointment.pk if self.appointment else 'no-appointment'})"
