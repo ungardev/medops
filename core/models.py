@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
@@ -13,11 +14,19 @@ class Patient(models.Model):
     ]
 
     national_id = models.CharField(
-        max_length=20,
+        max_length=10,
         unique=True,
         verbose_name="Cédula de Identidad",
-        null=True,   # Temporalmente permitimos nulos
-        blank=True   # Para que no sea obligatorio en formularios
+        null=True,   # Temporalmente permitimos nulos para migrar sin bloqueos
+        blank=True,
+        validators=[
+            RegexValidator(
+                regex=r'^\d+$',
+                message="La cédula solo puede contener números."
+            ),
+            MinLengthValidator(6, message="La cédula debe tener al menos 6 dígitos."),
+            MaxLengthValidator(10, message="La cédula no puede tener más de 10 dígitos.")
+        ]
     )
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
