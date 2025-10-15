@@ -1,0 +1,113 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container" style="margin:20px;">
+    <h1>{{ title }}</h1>
+
+    <!-- 🔹 Filtros -->
+    <form method="get" class="form-inline" style="margin-bottom:20px;">
+        <label for="start_date">Desde:</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="vDateField" style="margin-right:10px;">
+
+        <label for="end_date">Hasta:</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="vDateField" style="margin-right:10px;">
+
+        <button type="submit" class="button">Filtrar</button>
+    </form>
+
+    <!-- 🔹 Botones de exportación -->
+    <div style="margin-bottom:20px;">
+        <a href="{% url 'admin:payment-export-csv' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="button" style="margin-right:10px;">
+            ⬇️ Exportar CSV
+        </a>
+        <a href="{% url 'admin:payment-export-xlsx' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="button" style="margin-right:10px;">
+            📑 Exportar Excel
+        </a>
+        <a href="{% url 'admin:payment-export-pdf' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="button">
+            🖨️ Exportar PDF
+        </a>
+    </div>
+
+    <!-- 🔹 Métricas globales -->
+    <div style="margin-bottom:20px;">
+        <h2>Totales Generales</h2>
+        <ul>
+            <li><strong>Total Recaudado:</strong> {{ total_revenue }}</li>
+            <li><strong>Número de Pagos:</strong> {{ total_payments }}</li>
+            <li><strong>Promedio por Pago:</strong> {{ avg_per_payment|floatformat:2 }}</li>
+        </ul>
+    </div>
+
+    <!-- 🔹 Totales por método -->
+    <div style="margin-bottom:20px;">
+        <h2>Totales por Método</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Método</th>
+                    <th>Cantidad</th>
+                    <th>Monto Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in totals_by_method %}
+                <tr>
+                    <td>{{ row.method }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.total_amount }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3">No hay datos</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <canvas id="chartMethod" height="100"></canvas>
+    </div>
+
+    <!-- 🔹 Totales por estado -->
+    <div style="margin-bottom:20px;">
+        <h2>Totales por Estado</h2>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Estado</th>
+                    <th>Cantidad</th>
+                    <th>Monto Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in totals_by_status %}
+                <tr>
+                    <td>{{ row.status }}</td>
+                    <td>{{ row.count }}</td>
+                    <td>{{ row.total_amount }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3">No hay datos</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <canvas id="chartStatus" height="100"></canvas>
+    </div>
+
+    <!-- 🔹 Botón volver -->
+    <p>
+        <a href="{% url 'admin:app_list' app_label='your_app_name' %}" class="button">⬅️ Volver al Admin</a>
+    </p>
+</div>
+
+<!-- 🔹 Datos JSON para JS -->
+<script id="method-data" type="application/json">
+    {{ totals_by_method|safe }}
+</script>
+<script id="status-data" type="application/json">
+    {{ totals_by_status|safe }}
+</script>
+
+<!-- Chart.js y script externo -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/payment_report.js' %}"></script>
+{% endblock %}
