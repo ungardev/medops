@@ -130,3 +130,22 @@ class Event(models.Model):
     def __str__(self):
         return f"{self.timestamp} - {self.entity}({self.entity_id}) - {self.action}"
 
+
+# Nuevo modelo para documentos clínicos
+class MedicalDocument(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="documents")
+    appointment = models.ForeignKey(Appointment, on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
+    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
+
+    file = models.FileField(upload_to="medical_documents/")
+    description = models.CharField(max_length=255, blank=True, null=True)
+    category = models.CharField(max_length=100, blank=True, null=True)  # Ej: "Laboratorio", "Imagenología"
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    uploaded_by = models.CharField(max_length=100, blank=True, null=True)  # luego enlazable a User
+
+    class Meta:
+        verbose_name = "Medical Document"
+        verbose_name_plural = "Medical Documents"
+
+    def __str__(self):
+        return f"{self.description or 'Documento'} - {self.patient}"
