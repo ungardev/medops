@@ -101,7 +101,7 @@ class PrescriptionAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'patient_name', 'appointment', 'amount', 'method', 'status')
+    list_display = ('id', 'patient_name', 'appointment', 'amount', 'method', 'status', 'reference_number', 'bank_name', 'received_by', 'received_at')
     list_display_links = ('id', 'appointment')
     list_filter = ('method', 'status', 'appointment__appointment_date')
     search_fields = ('appointment__patient__first_name', 'appointment__patient__last_name', 'appointment__patient__national_id')
@@ -111,6 +111,24 @@ class PaymentAdmin(admin.ModelAdmin):
     @admin.display(description="Paciente")
     def patient_name(self, obj):
         return f"{obj.appointment.patient.national_id} - {obj.appointment.patient.first_name} {obj.appointment.patient.last_name}"
+
+    # 🔹 Campos dinámicos según método de pago
+    def get_fields(self, request, obj=None):
+        base_fields = ['appointment', 'amount', 'method', 'status']
+        trace_fields = []
+
+        if obj and obj.method == 'transfer':
+            trace_fields = ['reference_number', 'bank_name', 'received_by']
+        elif obj and obj.method == 'card':
+            trace_fields = ['reference_number', 'received_by']
+        elif obj and obj.method == 'cash':
+            trace_fields = ['received_by']
+
+        return base_fields + trace_fields + ['received_at']
+
+    def get_readonly_fields(self, request, obj=None):
+        # Fecha de registro siempre solo lectura
+        return ['received_at']
 
 
 @admin.register(MedicalDocument)

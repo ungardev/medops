@@ -108,27 +108,59 @@ class Prescription(models.Model):
 
 class Payment(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('paid', 'Paid'),
-        ('canceled', 'Canceled'),
-        ('waived', 'Waived'),
+        ('pending', 'Pendiente'),
+        ('paid', 'Pagado'),
+        ('canceled', 'Cancelado'),
+        ('waived', 'Exonerado'),
     ]
     METHOD_CHOICES = [
-        ('cash', 'Cash'),
-        ('card', 'Card'),
-        ('transfer', 'Transfer'),
+        ('cash', 'Efectivo'),
+        ('card', 'Tarjeta'),
+        ('transfer', 'Transferencia'),
     ]
-    appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE)
+
+    appointment = models.OneToOneField(  # 👈 un pago único por cita
+        'Appointment',
+        on_delete=models.CASCADE,
+        related_name="payment"
+    )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    
+
+    # 🔹 Campos de trazabilidad
+    reference_number = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Número de referencia / comprobante"
+    )
+    bank_name = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Banco emisor (si aplica)"
+    )
+    received_by = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Recibido por"
+    )
+    received_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de registro",
+        null= True,
+        blank= True
+    )
+
     class Meta:
         verbose_name = "Payment"
         verbose_name_plural = "Payments"
 
     def __str__(self):
-        return f"{self.appointment} - {self.amount} - {self.status}"
+        return f"{self.appointment} - {self.amount} - {self.method} - {self.status}"
+
 
 
 class Event(models.Model):
