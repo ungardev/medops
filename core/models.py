@@ -3,6 +3,7 @@ from django.core.validators import RegexValidator, MinLengthValidator, MaxLength
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
+from django.core.exceptions import ValidationError
 
 
 # Create your models here.
@@ -119,7 +120,7 @@ class Payment(models.Model):
         ('transfer', 'Transferencia'),
     ]
 
-    appointment = models.OneToOneField(  # 👈 un pago único por cita
+    appointment = models.OneToOneField(  # un pago único por cita
         'Appointment',
         on_delete=models.CASCADE,
         related_name="payment"
@@ -128,31 +129,10 @@ class Payment(models.Model):
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    # 🔹 Campos de trazabilidad
-    reference_number = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="Número de referencia / comprobante"
-    )
-    bank_name = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="Banco emisor (si aplica)"
-    )
-    received_by = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="Recibido por"
-    )
-    received_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de registro",
-        null= True,
-        blank= True
-    )
+    reference_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="Número de referencia / comprobante")
+    bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Banco emisor (si aplica)")
+    received_by = models.CharField(max_length=100, blank=True, null=True, verbose_name="Recibido por")
+    received_at = models.DateTimeField(auto_now_add=True, null=True, blank=True, verbose_name="Fecha de registro")
 
     class Meta:
         verbose_name = "Payment"
@@ -161,6 +141,26 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.appointment} - {self.amount} - {self.method} - {self.status}"
 
+    # 🔹 Validaciones de negocio
+    def clean(self):
+        errors = {}
+
+        if self.method == 'transfer':
+            if not self.reference_number:
+                errors['reference_number'] = "Debe ingresar el número de transferencia."
+            if not self.bank_name:
+                errors['bank_name'] = "Debe especificar el banco emisor."
+
+        if self.method == 'card':
+            if not self.reference_number:
+                errors['reference_number'] = "Debe ingresar el número de comprobante de la tarjeta."
+
+        if self.method == 'cash':
+            # Para efectivo no se exige referencia ni banco
+            pass
+
+        if errors:
+            raise ValidationError(errors)
 
 
 class Event(models.Model):
