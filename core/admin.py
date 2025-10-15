@@ -60,3 +60,9 @@ class PaymentAdmin(admin.ModelAdmin):
     def patient_name(self, obj):
         return f"{obj.appointment.patient.first_name} {obj.appointment.patient.last_name}"
 
+# Personalización del panel de administración
+admin.site.site_header = "MedOps Clinical System"
+admin.site.site_title = "MedOps Admin"
+admin.site.index_title = "Panel de Control"
+
+
