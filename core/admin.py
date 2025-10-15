@@ -3,6 +3,22 @@ from django.utils.html import format_html
 from .models import Patient, Appointment, Diagnosis, Treatment, Prescription, Payment, MedicalDocument
 
 
+# Inline para documentos en Patient
+class MedicalDocumentInlineForPatient(admin.TabularInline):
+    model = MedicalDocument
+    extra = 1
+    fields = ("file", "description", "category", "preview_file")
+    readonly_fields = ("preview_file",)
+
+    @admin.display(description="Archivo")
+    def preview_file(self, obj):
+        if obj.file and obj.file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+        elif obj.file:
+            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+        return "-"
+
+
 # Inline para documentos en Appointment
 class MedicalDocumentInlineForAppointment(admin.TabularInline):
     model = MedicalDocument
@@ -42,6 +58,7 @@ class PatientAdmin(admin.ModelAdmin):
     search_fields = ('first_name', 'last_name', 'contact_info')
     ordering = ('last_name', 'first_name')
     list_per_page = 25
+    inlines = [MedicalDocumentInlineForPatient]   # 👈 Inline agregado aquí
 
 
 @admin.register(Appointment)
