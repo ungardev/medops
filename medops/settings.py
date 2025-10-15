@@ -114,6 +114,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "frontend" / "medops" / "dist" / "assets",
+    BASE_DIR / "core" / "static"
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
