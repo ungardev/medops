@@ -1,0 +1,202 @@
+/* === Paleta corporativa MedOps ===
+   Azul: #1E88E5
+   Verde: #43A047
+   Amarillo: #FBC02D
+   Rojo: #E53935
+   Gris neutro: #6D6D6D
+*/
+
+/* Transiciones suaves para modo claro/oscuro */
+body, #header, #nav-sidebar, #changelist table, #medops-footer {
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+/* Animación de fade-in para el logo */
+#site-name img {
+    transition: opacity 0.4s ease;
+}
+body.dark-mode #site-name img {
+    opacity: 0.9;
+}
+
+/* Encabezado del admin */
+#header {
+    background-color: #1E88E5 !important;
+    color: white !important;
+}
+
+#header h1, #header h1 a {
+    color: white !important;
+    font-weight: bold;
+}
+
+/* Barra lateral y menús */
+#nav-sidebar {
+    background-color: #f5f7fa;
+}
+
+#nav-sidebar .current-model {
+    background-color: #E3F2FD;
+    border-left: 4px solid #1E88E5;
+}
+
+/* Botones principales */
+.button, input[type=submit], .submit-row input {
+    background-color: #1E88E5 !important;
+    border: none !important;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 4px;
+    padding: 6px 12px;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover, input[type=submit]:hover, .submit-row input:hover {
+    background-color: #1565C0 !important;
+}
+
+/* Links */
+a {
+    color: #1E88E5;
+    transition: color 0.3s ease;
+}
+a:hover {
+    color: #1565C0;
+}
+
+/* Tablas */
+#changelist table thead th {
+    background-color: #E3F2FD;
+    color: #1E88E5;
+    font-weight: bold;
+}
+
+#changelist table tbody tr:hover {
+    background-color: #F1F8E9;
+}
+
+/* Mensajes de éxito, advertencia y error */
+.success {
+    background-color: #E8F5E9 !important;
+    border-left: 4px solid #43A047 !important;
+    color: #2E7D32 !important;
+}
+.warning {
+    background-color: #FFFDE7 !important;
+    border-left: 4px solid #FBC02D !important;
+    color: #F57F17 !important;
+}
+.errornote, .errorlist {
+    background-color: #FFEBEE !important;
+    border-left: 4px solid #E53935 !important;
+    color: #B71C1C !important;
+}
+
+/* Footer corporativo */
+#medops-footer {
+    background-color: #f9f9f9;
+    color: #6D6D6D;
+    font-size: 12px;
+    text-align: center;
+    padding: 12px;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 20px;
+    transition: background-color 0.4s ease, color 0.4s ease;
+}
+#medops-footer a {
+    color: #1E88E5;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+#medops-footer a:hover {
+    text-decoration: underline;
+}
+
+/* === Dark Mode corporativo MedOps === */
+body.dark-mode {
+    background-color: #121212;
+    color: #E0E0E0;
+}
+
+/* Encabezado */
+body.dark-mode #header {
+    background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
+}
+body.dark-mode #header h1, 
+body.dark-mode #header h1 a {
+    color: #E0E0E0 !important;
+}
+
+/* Barra lateral */
+body.dark-mode #nav-sidebar {
+    background-color: #1E1E1E;
+}
+body.dark-mode #nav-sidebar .current-model {
+    background-color: #263238;
+    border-left: 4px solid #1E88E5;
+}
+
+/* Botones */
+body.dark-mode .button, 
+body.dark-mode input[type=submit], 
+body.dark-mode .submit-row input {
+    background-color: #1E88E5 !important;
+    color: #fff !important;
+}
+body.dark-mode .button:hover, 
+body.dark-mode input[type=submit]:hover, 
+body.dark-mode .submit-row input:hover {
+    background-color: #1565C0 !important;
+}
+
+/* Links */
+body.dark-mode a {
+    color: #90CAF9;
+}
+body.dark-mode a:hover {
+    color: #BBDEFB;
+}
+
+/* Tablas */
+body.dark-mode #changelist table thead th {
+    background-color: #263238;
+    color: #90CAF9;
+}
+body.dark-mode #changelist table tbody tr {
+    background-color: #1E1E1E;
+}
+body.dark-mode #changelist table tbody tr:hover {
+    background-color: #2E2E2E;
+}
+
+/* Mensajes */
+body.dark-mode .success {
+    background-color: rgba(67, 160, 71, 0.15) !important;
+    border-left: 4px solid #43A047 !important;
+    color: #A5D6A7 !important;
+}
+body.dark-mode .warning {
+    background-color: rgba(251, 192, 45, 0.15) !important;
+    border-left: 4px solid #FBC02D !important;
+    color: #FFE082 !important;
+}
+body.dark-mode .errornote, 
+body.dark-mode .errorlist {
+    background-color: rgba(229, 57, 53, 0.15) !important;
+    border-left: 4px solid #E53935 !important;
+    color: #EF9A9A !important;
+}
+
+/* Footer */
+body.dark-mode #medops-footer {
+    background-color: #1E1E1E;
+    color: #9E9E9E;
+    border-top: 1px solid #333;
+}
+body.dark-mode #medops-footer a {
+    color: #90CAF9;
+}
+body.dark-mode #medops-footer a:hover {
+    color: #BBDEFB;
+}

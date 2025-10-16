@@ -1,0 +1,40 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% load json_script %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+<div style="display:flex; gap:40px; flex-wrap:wrap;">
+  <div>
+    <canvas id="methodChart" width="400" height="200"></canvas>
+    <button onclick="downloadChart('methodChart', 'metodos.png')">Descargar PNG</button>
+  </div>
+  <div>
+    <canvas id="statusChart" width="400" height="200"></canvas>
+    <button onclick="downloadChart('statusChart', 'estados.png')">Descargar PNG</button>
+  </div>
+</div>
+
+<div style="margin-top:40px;">
+  <canvas id="timelineChart" width="800" height="300"></canvas>
+  <button onclick="downloadChart('timelineChart', 'timeline.png')">Descargar PNG</button>
+</div>
+
+<!-- Botones globales -->
+<div style="margin-top:20px;">
+  <button onclick="downloadAllCharts()">Descargar todos los gráficos (ZIP)</button>
+  <button onclick="downloadDashboardPDF()">Descargar Dashboard (PDF)</button>
+</div>
+
+{{ method_data|json_script:"method-data" }}
+{{ status_data|json_script:"status-data" }}
+{{ timeline_data|json_script:"timeline-data" }}
+
+<!-- Librerías necesarias para generar y descargar ZIP y PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="{% static 'js/payments_dashboard.js' %}"></script>
+{% endblock %}

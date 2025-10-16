@@ -8,8 +8,10 @@ from django.http import HttpResponse
 from django.db.models import Sum, Count, Avg
 from datetime import datetime, date, timedelta
 import matplotlib.pyplot as plt
-from rangefilter.filters import DateRangeFilter, DateTimeRangeFilter, DateRangeFilterBuilder
-
+from rangefilter.filters import DateRangeFilter, DateTimeRangeFilter, DateRangeFilterBuilder, NumericRangeFilter
+from django.utils.timezone import now
+from django.db.models.functions import TruncDate
+import json
 
 # App models
 from .models import (
@@ -143,16 +145,120 @@ class PrescriptionAdmin(admin.ModelAdmin):
     list_per_page = 25
 
 
+class AmountRangeFilter(admin.SimpleListFilter):
+    title = "Rango de monto"
+    parameter_name = "amount_range"
+
+    def lookups(self, request, model_admin):
+        return [
+            ("low", "Menos de 100"),
+            ("mid", "Entre 100 y 500"),
+            ("high", "Más de 500"),
+        ]
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value == "low":
+            return queryset.filter(amount__lt=100)
+        if value == "mid":
+            return queryset.filter(amount__gte=100, amount__lte=500)
+        if value == "high":
+            return queryset.filter(amount__gt=500)
+        return queryset
+
+
+class MethodStatusFilter(admin.SimpleListFilter):
+    title = "Método + Estado"
+    parameter_name = "method_status"
+
+    def lookups(self, request, model_admin):
+        # Obtenemos los choices definidos en el modelo
+        method_choices = model_admin.model._meta.get_field("method").choices
+        status_choices = model_admin.model._meta.get_field("status").choices
+
+        lookups = []
+        for m_value, m_label in method_choices:
+            for s_value, s_label in status_choices:
+                key = f"{m_value}_{s_value}"
+                label = f"{m_label} {s_label}"
+                lookups.append((key, label))
+        return lookups
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if not value:
+            return queryset
+
+        try:
+            method, status = value.split("_", 1)
+            return queryset.filter(method=method, status=status)
+        except ValueError:
+            return queryset
+
+
+class DateStatusFilter(admin.SimpleListFilter):
+    title = "Fecha + Estado"
+    parameter_name = "date_status"
+
+    def lookups(self, request, model_admin):
+        status_choices = model_admin.model._meta.get_field("status").choices
+        lookups = []
+
+        for s_value, s_label in status_choices:
+            lookups.append((f"today_{s_value}", f"{s_label} hoy"))
+            lookups.append((f"last7_{s_value}", f"{s_label} últimos 7 días"))
+            lookups.append((f"this_month_{s_value}", f"{s_label} este mes"))
+            lookups.append((f"this_year_{s_value}", f"{s_label} este año"))
+
+        return lookups
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if not value:
+            return queryset
+
+        today = date.today()
+        try:
+            period, status = value.split("_", 1)
+        except ValueError:
+            return queryset
+
+        field = "appointment__appointment_date"
+
+        if period == "today":
+            start = datetime.combine(today, datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end), "status": status})
+
+        if period == "last7":
+            start = datetime.combine(today - timedelta(days=7), datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end), "status": status})
+
+        if period == "this_month":
+            start = datetime.combine(today.replace(day=1), datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end), "status": status})
+
+        if period == "this_year":
+            start = datetime.combine(date(today.year, 1, 1), datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end), "status": status})
+
+        return queryset
+
+
 class QuickDateRangeFilter(admin.SimpleListFilter):
     title = "Rango rápido"
     parameter_name = "quick_range"
 
     def lookups(self, request, model_admin):
-        # 👇 Debe devolver lista o tupla de tuplas
         return [
             ("today", "Hoy"),
             ("last_7_days", "Últimos 7 días"),
+            ("last_30_days", "Últimos 30 días"),
             ("this_month", "Este mes"),
+            ("this_quarter", "Trimestre actual"),
             ("this_year", "Este año"),
         ]
 
@@ -161,35 +267,45 @@ class QuickDateRangeFilter(admin.SimpleListFilter):
         if not value:
             return queryset
 
-        field = "appointment__appointment_date"
+        field = "appointment__appointment_date"  # tu campo DateTimeField
         today = date.today()
 
         if value == "today":
-            return queryset.filter(**{
-                f"{field}__gte": today,
-                f"{field}__lte": today,
-            })
+            start = datetime.combine(today, datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end)})
 
         if value == "last_7_days":
-            start = today - timedelta(days=7)
-            return queryset.filter(**{
-                f"{field}__gte": start,
-                f"{field}__lte": today,
-            })
+            start = datetime.combine(today - timedelta(days=7), datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end)})
+
+        if value == "last_30_days":
+            start = datetime.combine(today - timedelta(days=30), datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end)})
 
         if value == "this_month":
-            start = today.replace(day=1)
-            return queryset.filter(**{
-                f"{field}__gte": start,
-                f"{field}__lte": today,
-            })
+            start = datetime.combine(today.replace(day=1), datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end)})
+
+        if value == "this_quarter":
+            quarter = (today.month - 1) // 3 + 1
+            start_month = (quarter - 1) * 3 + 1
+            start = datetime.combine(date(today.year, start_month, 1), datetime.min.time())
+
+            if start_month + 2 == 12:
+                end = datetime.combine(date(today.year, 12, 31), datetime.max.time())
+            else:
+                end = datetime.combine(date(today.year, start_month + 3, 1), datetime.min.time()) - timedelta(seconds=1)
+
+            return queryset.filter(**{f"{field}__range": (start, end)})
 
         if value == "this_year":
-            start = date(today.year, 1, 1)
-            return queryset.filter(**{
-                f"{field}__gte": start,
-                f"{field}__lte": today,
-            })
+            start = datetime.combine(date(today.year, 1, 1), datetime.min.time())
+            end = datetime.combine(today, datetime.max.time())
+            return queryset.filter(**{f"{field}__range": (start, end)})
 
         return queryset
 
@@ -202,12 +318,15 @@ class PaymentAdmin(admin.ModelAdmin):
     )
     list_display_links = ('id', 'appointment')
 
-    # Calendario + atajos rápidos
     list_filter = (
         'method',
         'status',
-        ('appointment__appointment_date', DateRangeFilter),  # Si es DateField
+        ('appointment__appointment_date', DateTimeRangeFilter),
         QuickDateRangeFilter,
+        ('amount', NumericRangeFilter),
+        AmountRangeFilter,
+        MethodStatusFilter,
+        DateStatusFilter,  # 🔹 ahora con “últimos 7 días + estado”
     )
 
     search_fields = (
@@ -230,8 +349,36 @@ class PaymentAdmin(admin.ModelAdmin):
             path('export-csv/', self.admin_site.admin_view(self.export_csv), name="payment-export-csv"),
             path('export-xlsx/', self.admin_site.admin_view(self.export_xlsx), name="payment-export-xlsx"),
             path('export-pdf/', self.admin_site.admin_view(self.export_pdf), name="payment-export-pdf"),
+            path('dashboard/', self.admin_site.admin_view(self.dashboard_view), name="payment-dashboard"),  # 🔹 nuevo
         ]
         return custom_urls + urls
+    
+    def dashboard_view(self, request):
+        method_data = list(
+            Payment.objects.values("method")
+            .annotate(total=Count("id"), amount=Sum("amount"))
+            .order_by()
+        )
+        status_data = list(
+            Payment.objects.values("status")
+            .annotate(total=Count("id"), amount=Sum("amount"))
+            .order_by()
+        )
+        timeline_data = list(
+            Payment.objects.annotate(day=TruncDate("appointment__appointment_date"))
+            .values("day")
+            .annotate(total=Count("id"), amount=Sum("amount"))
+            .order_by("day")
+        )
+
+        context = {
+            **self.admin_site.each_context(request),
+            "title": "Dashboard de Pagos",
+            "method_data": method_data,
+            "status_data": status_data,
+            "timeline_data": timeline_data,
+        }
+        return TemplateResponse(request, "admin/payments_dashboard.html", context)
     
     # 🔹 Vista de reporte con filtros y resumen
     def report_view(self, request):
