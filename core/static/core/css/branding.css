@@ -78,20 +78,30 @@ html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: var(--selected-bg) !important;
 }
 
-/* Breadcrumbs (Ruta de navegación) - Solución Error 1 */
+/* Breadcrumbs (Ruta de navegación) */
 html body:not(.dark-mode) .breadcrumbs {
     background-color: var(--breadcrumbs-bg) !important;
     color: var(--breadcrumbs-fg) !important;
 }
 html body:not(.dark-mode) .breadcrumbs a {
-    /* Forzar color de texto oscuro en los enlaces */
     color: var(--breadcrumbs-fg) !important;
 }
 
-/* Caption/Resumen de Tabla - Solución Error 2 */
+/* Toolbars, Formularios y Filtros (Resuelve el problema de bordes cortados) */
+html body:not(.dark-mode) #changelist-form {
+    border-radius: 4px !important;
+    overflow: hidden !important; /* CLAVE para que los bordes redondeados se apliquen correctamente a los hijos */
+    border: 1px solid var(--border-color) !important;
+}
+
+/* Título principal de la tabla (ej. "Seleccione paciente para cambiar") - Corrección de visibilidad */
+html body:not(.dark-mode) .changelist-form h2 {
+    color: var(--body-fg) !important;
+}
+
+/* Caption/Resumen de Tabla */
 html body:not(.dark-mode) #changelist-form p,
 html body:not(.dark-mode) #changelist table caption {
-    /* Asegurar que el texto de resumen de lista y el caption de la tabla sean oscuros */
     color: var(--body-fg) !important;
 }
 
