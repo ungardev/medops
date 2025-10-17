@@ -2,7 +2,8 @@
 {% load static %}
 
 {% block extrastyle %}
-  <!-- CSS corporativo -->
+  {{ block.super }}
+  <!-- CSS corporativo: cargado al final para ganar la cascada -->
   <link rel="stylesheet" type="text/css" href="{% static 'core/css/branding.css' %}">
   <style>
     /* Botón de toggle modo claro/oscuro */
@@ -61,9 +62,10 @@
 {% block extrahead %}
   {{ block.super }}
   <script>
-    // Neutralizar el atributo data-theme de Django
     document.addEventListener("DOMContentLoaded", function () {
+      // Neutralizar completamente el atributo data-theme de Django
       document.documentElement.removeAttribute("data-theme");
+      document.documentElement.setAttribute("data-theme", "");
 
       const toggle = document.getElementById("theme-toggle");
       if (!toggle) return;

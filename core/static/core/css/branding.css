@@ -13,7 +13,8 @@ body, #header, #nav-sidebar, #changelist table, #medops-footer, #content {
 
 /* Logo */
 #site-name img { transition: opacity 0.4s ease; }
-html body.dark-mode #site-name img { opacity: 0.9; }
+html body.dark-mode #site-name img,
+html[data-theme] body.dark-mode #site-name img { opacity: 0.9; }
 
 /* Reset modo día */
 html body:not(.dark-mode) {
@@ -136,26 +137,32 @@ a:hover { color: #1565C0; }
 #medops-footer a:hover { text-decoration: underline; }
 
 /* === Dark Mode corporativo MedOps === */
-html body.dark-mode {
+html body.dark-mode,
+html[data-theme] body.dark-mode {
     background-color: #121212 !important;
     color: #E0E0E0 !important;
 }
 
 /* Encabezado */
-html body.dark-mode #header {
+html body.dark-mode #header,
+html[data-theme] body.dark-mode #header {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
 }
 html body.dark-mode #header h1, 
-html body.dark-mode #header h1 a {
+html body.dark-mode #header h1 a,
+html[data-theme] body.dark-mode #header h1,
+html[data-theme] body.dark-mode #header h1 a {
     color: #E0E0E0 !important;
 }
 
 /* Barra lateral */
-html body.dark-mode #nav-sidebar {
+html body.dark-mode #nav-sidebar,
+html[data-theme] body.dark-mode #nav-sidebar {
     background-color: #1E1E1E !important;
 }
-html body.dark-mode #nav-sidebar .current-model {
+html body.dark-mode #nav-sidebar .current-model,
+html[data-theme] body.dark-mode #nav-sidebar .current-model {
     background-color: #263238 !important;
     border-left: 4px solid #1E88E5 !important;
 }
@@ -164,7 +171,11 @@ html body.dark-mode #nav-sidebar .current-model {
 html body.dark-mode #content,
 html body.dark-mode #content-main,
 html body.dark-mode #content-related,
-html body.dark-mode .dashboard {
+html body.dark-mode .dashboard,
+html[data-theme] body.dark-mode #content,
+html[data-theme] body.dark-mode #content-main,
+html[data-theme] body.dark-mode #content-related,
+html[data-theme] body.dark-mode .dashboard {
     background-color: #121212 !important;
     color: #E0E0E0 !important;
 }
@@ -172,14 +183,20 @@ html body.dark-mode .dashboard {
 /* Módulos */
 html body.dark-mode #content-main .module,
 html body.dark-mode #content-related .module,
-html body.dark-mode .dashboard .module {
+html body.dark-mode .dashboard .module,
+html[data-theme] body.dark-mode #content-main .module,
+html[data-theme] body.dark-mode #content-related .module,
+html[data-theme] body.dark-mode .dashboard .module {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
     border: 1px solid #333 !important;
 }
 html body.dark-mode #content-main .module h2,
 html body.dark-mode #content-related .module h2,
-html body.dark-mode .dashboard .module h2 {
+html body.dark-mode .dashboard .module h2,
+html[data-theme] body.dark-mode #content-main .module h2,
+html[data-theme] body.dark-mode #content-related .module h2,
+html[data-theme] body.dark-mode .dashboard .module h2 {
     background-color: #263238 !important;
     color: #90CAF9 !important;
     border-bottom: 1px solid #333 !important;
@@ -188,26 +205,35 @@ html body.dark-mode .dashboard .module h2 {
 /* Tablas */
 html body.dark-mode #content-main #changelist,
 html body.dark-mode #content-main .results,
-html body.dark-mode #content-main table {
+html body.dark-mode #content-main table,
+html[data-theme] body.dark-mode #content-main #changelist,
+html[data-theme] body.dark-mode #content-main .results,
+html[data-theme] body.dark-mode #content-main table {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
     border-color: #333 !important;
 }
-html body.dark-mode #content-main table thead th {
+html body.dark-mode #content-main table thead th,
+html[data-theme] body.dark-mode #content-main table thead th {
     background-color: #263238 !important;
     color: #90CAF9 !important;
 }
-html body.dark-mode #content-main table tbody tr {
+html body.dark-mode #content-main table tbody tr,
+html[data-theme] body.dark-mode #content-main table tbody tr {
     background-color: #1E1E1E !important;
 }
-html body.dark-mode #content-main table tbody tr:hover {
+html body.dark-mode #content-main table tbody tr:hover,
+html[data-theme] body.dark-mode #content-main table tbody tr:hover {
     background-color: #2E2E2E !important;
 }
 
 /* Formularios y fieldsets */
 html body.dark-mode #content-main fieldset,
 html body.dark-mode #content-main .inline-group,
-html body.dark-mode #content-main .form-row {
+html body.dark-mode #content-main .form-row,
+html[data-theme] body.dark-mode #content-main fieldset,
+html[data-theme] body.dark-mode #content-main .inline-group,
+html[data-theme] body.dark-mode #content-main .form-row {
     background-color: #1E1E1E !important;
     border: 1px solid #333 !important;
     color: #E0E0E0 !important;
@@ -216,14 +242,20 @@ html body.dark-mode #content-main .form-row {
 /* Recent actions */
 html body.dark-mode #content-related .module,
 html body.dark-mode #content-related .module ul,
-html body.dark-mode #content-related .module li {
+html body.dark-mode #content-related .module li,
+html[data-theme] body.dark-mode #content-related .module,
+html[data-theme] body.dark-mode #content-related .module ul,
+html[data-theme] body.dark-mode #content-related .module li {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
     border-color: #333 !important;
 }
 html body.dark-mode #content-related .module::after,
 html body.dark-mode #content-related .module .footer,
-html body.dark-mode #content-related .module .module-footer {
+html body.dark-mode #content-related .module .module-footer,
+html[data-theme] body.dark-mode #content-related .module::after,
+html[data-theme] body.dark-mode #content-related .module .footer,
+html[data-theme] body.dark-mode #content-related .module .module-footer {
     background: transparent !important;
     border: none !important;
 }
