@@ -1,41 +1,9 @@
 {% extends "admin/base.html" %}
 {% load static %}
 
-{% block extrastyle %}
-  <style>
-    /* Botón de toggle modo claro/oscuro */
-    #theme-toggle {
-      margin-left: auto;
-      cursor: pointer;
-      font-size: 16px;
-      background-color: rgba(255,255,255,0.15);
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.3s, transform 0.3s;
-    }
-    #theme-toggle:hover {
-      background-color: rgba(255,255,255,0.3);
-      transform: rotate(20deg);
-    }
-    body.dark-mode #theme-toggle {
-      background-color: rgba(255,255,255,0.1);
-    }
-
-    /* Ocultar el toggle nativo de Django */
-    .theme-toggle {
-      display: none !important;
-    }
-  </style>
-{% endblock %}
-
 {% block branding %}
-  <div id="site-name" style="display:flex; align-items:center; gap:8px; width:100%; justify-content:space-between;">
-    <a href="{% url 'admin:index' %}" 
-       style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
+  <div id="site-name" style="display:flex; align-items:center; gap:8px;">
+    <a href="{% url 'admin:index' %}" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
       <img src="{% static 'core/img/medops-logo.png' %}" 
            alt="MedOps Logo" 
            style="max-height:32px; background:none; border:none;">
@@ -43,68 +11,15 @@
         MedOps Clinical System
       </span>
     </a>
-    <!-- Toggle de tema -->
-    <div id="theme-toggle" title="Cambiar tema">🌙</div>
   </div>
 {% endblock %}
 
 {% block nav-global %}
-  <!-- Puedes añadir aquí enlaces globales si lo deseas -->
+  <!-- Enlaces globales opcionales -->
 {% endblock %}
 
 {% block footer %}
   <div id="medops-footer" style="text-align:center; padding:12px; font-size:12px; color:#6D6D6D; border-top:1px solid #e0e0e0; margin-top:20px;">
     © {{ now|date:"Y" }} MedOps Clinical System — Todos los derechos reservados
   </div>
-{% endblock %}
-
-{% block extrahead %}
-  {{ block.super }}
-  <!-- Inyectamos el CSS corporativo al final para que pise al de Django -->
-  <link rel="stylesheet" type="text/css" href="{% static 'core/css/branding.css' %}">
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const toggle = document.getElementById("theme-toggle");
-      if (!toggle) return;
-
-      // 🔄 Migrar preferencia del dark mode nativo de Django si existe
-      const htmlTheme = document.documentElement.getAttribute("data-theme");
-      const bodyTheme = document.body.getAttribute("data-theme");
-      if (htmlTheme === "dark" || bodyTheme === "dark") {
-        localStorage.setItem("theme", "dark");
-      }
-      // Limpiar atributos nativos de Django
-      document.documentElement.removeAttribute("data-theme");
-      document.body.removeAttribute("data-theme");
-
-      // Aplicar preferencia guardada de nuestro toggle
-      if (localStorage.getItem("theme") === "dark") {
-        document.body.classList.add("dark-mode");
-        toggle.textContent = "☀️";
-      } else {
-        document.body.classList.remove("dark-mode");
-        toggle.textContent = "🌙";
-      }
-
-      // Listener de nuestro toggle
-      toggle.addEventListener("click", function () {
-        document.body.classList.toggle("dark-mode");
-        if (document.body.classList.contains("dark-mode")) {
-          localStorage.setItem("theme", "dark");
-          toggle.textContent = "☀️";
-        } else {
-          localStorage.setItem("theme", "light");
-          toggle.textContent = "🌙";
-        }
-      });
-    });
-  </script>
-{% endblock %}
-
-{% block usertools %}
-  {{ block.super }}
-  <style>
-    /* Refuerzo: ocultar el toggle nativo de Django */
-    .theme-toggle { display: none !important; }
-  </style>
 {% endblock %}
