@@ -520,3 +520,65 @@ html[data-theme] body.dark-mode {
     --selected-fg: #FFFFFF !important;
     --primary: #1E88E5 !important;
 }
+
+/* Bordes entre módulos del sidebar */
+html body.dark-mode #nav-sidebar .module,
+html[data-theme] body.dark-mode #nav-sidebar .module {
+    border-top: 1px solid #333 !important;
+    border-bottom: none !important;
+}
+html body.dark-mode #nav-sidebar .module + .module,
+html[data-theme] body.dark-mode #nav-sidebar .module + .module {
+    margin-top: 4px;
+}
+
+* Footer oscuro */
+html body.dark-mode #medops-footer,
+html[data-theme] body.dark-mode #medops-footer {
+    background-color: #1E1E1E !important;
+    color: #AAAAAA !important;
+    border-top: 1px solid #333 !important;
+}
+html body.dark-mode #medops-footer a,
+html[data-theme] body.dark-mode #medops-footer a {
+    color: #90CAF9 !important;
+}
+
+/* Items dentro de filtros */
+html body.dark-mode .changelist-filter li,
+html[data-theme] body.dark-mode .changelist-filter li {
+    border-bottom: 1px solid #333 !important;
+}
+html body.dark-mode .changelist-filter li:last-child,
+html[data-theme] body.dark-mode .changelist-filter li:last-child {
+    border-bottom: none !important;
+}
+
+/* Labels de filtros */
+html body.dark-mode .changelist-filter label,
+html[data-theme] body.dark-mode .changelist-filter label {
+    color: #E0E0E0 !important;
+}
+
+/* Barra de búsqueda */
+html body.dark-mode .searchbar,
+html[data-theme] body.dark-mode .searchbar,
+html body.dark-mode #changelist-search,
+html[data-theme] body.dark-mode #changelist-search {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+}
+html body.dark-mode .searchbar input,
+html[data-theme] body.dark-mode .searchbar input {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
+}
+
+/* Neutralizar bordes claros residuales */
+html body.dark-mode hr,
+html[data-theme] body.dark-mode hr,
+html body.dark-mode .module hr,
+html[data-theme] body.dark-mode .module hr {
+    border-color: #333 !important;
+}
