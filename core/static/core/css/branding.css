@@ -435,3 +435,71 @@ html body.dark-mode #nav-sidebar a:hover,
 html[data-theme] body.dark-mode #nav-sidebar a:hover {
     background-color: #2A2A2A !important;
 }
+
+/* Calendario y reloj */
+html body.dark-mode .calendarbox,
+html body.dark-mode .clockbox,
+html[data-theme] body.dark-mode .calendarbox,
+html[data-theme] body.dark-mode .clockbox {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+    color: #E0E0E0 !important;
+}
+html body.dark-mode .calendarbox caption,
+html[data-theme] body.dark-mode .calendarbox caption {
+    background-color: #263238 !important;
+    color: #90CAF9 !important;
+}
+
+/* Captions de tablas y módulos */
+html body.dark-mode .module caption,
+html[data-theme] body.dark-mode .module caption {
+    background-color: #263238 !important;
+    color: #90CAF9 !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+/* Refuerzo global para neutralizar estilos residuales de Django */
+html[data-theme="dark"] body.dark-mode,
+html[data-theme="dark"] body.dark-mode * {
+    background-color: inherit !important;
+    color: inherit !important;
+}
+
+/* Forzar inputs y selects en cualquier contexto */
+html[data-theme="dark"] body.dark-mode input,
+html[data-theme="dark"] body.dark-mode select,
+html[data-theme="dark"] body.dark-mode textarea {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
+}
+
+/* Hover en filas seleccionadas */
+html body.dark-mode tr.selected:hover,
+html[data-theme] body.dark-mode tr.selected:hover {
+    background-color: #2A2A2A !important;
+}
+
+/* Botones secundarios (ej. cancelar, reset) */
+html body.dark-mode .button.cancel,
+html[data-theme] body.dark-mode .button.cancel {
+    background-color: #6D6D6D !important;
+    color: #fff !important;
+}
+html body.dark-mode .button.cancel:hover,
+html[data-theme] body.dark-mode .button.cancel:hover {
+    background-color: #424242 !important;
+}
+
+/* Tooltips y popups */
+html body.dark-mode .help,
+html[data-theme] body.dark-mode .help {
+    color: #BBDEFB !important;
+}
+html body.dark-mode .popup,
+html[data-theme] body.dark-mode .popup {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+    color: #E0E0E0 !important;
+}
