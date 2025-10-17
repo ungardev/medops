@@ -722,3 +722,70 @@ html[data-theme] body.dark-mode .changelist-filter li.selected a {
     color: #FFFFFF !important; /* blanco pleno */
     font-weight: 600 !important;
 }
+
+/* === Paleta corporativa MedOps aplicada al Admin === */
+
+/* Light mode */
+html body:not(.dark-mode) {
+    --primary: #1E88E5;
+    --primary-fg: #FFFFFF;
+    --link-fg: #1E88E5;
+    --link-hover-color: #1565C0;
+
+    --body-bg: #FFFFFF;
+    --body-fg: #212121;
+
+    --header-bg: #1E88E5;
+    --header-color: #FFFFFF;
+
+    --breadcrumbs-bg: #F5F7FA;
+    --breadcrumbs-fg: #212121;
+
+    --border-color: #DDD;
+    --hairline-color: #DDD;
+
+    --success-bg: #E8F5E9;
+    --success-fg: #2E7D32;
+    --warning-bg: #FFFDE7;
+    --warning-fg: #F57F17;
+    --error-bg: #FFEBEE;
+    --error-fg: #B71C1C;
+}
+
+/* Dark mode */
+html body.dark-mode,
+html[data-theme="dark"] body.dark-mode {
+    --primary: #1E88E5;
+    --primary-fg: #FFFFFF;
+    --link-fg: #90CAF9;
+    --link-hover-color: #BBDEFB;
+
+    --body-bg: #121212;
+    --body-fg: #E0E0E0;
+
+    --header-bg: #1E1E1E;
+    --header-color: #E0E0E0;
+
+    --breadcrumbs-bg: #1E1E1E;
+    --breadcrumbs-fg: #E0E0E0;
+
+    --border-color: #333;
+    --hairline-color: #333;
+
+    --success-bg: #1B5E20;
+    --success-fg: #A5D6A7;
+    --warning-bg: #F57F17;
+    --warning-fg: #FFF59D;
+    --error-bg: #B71C1C;
+    --error-fg: #FFCDD2;
+}
+
+/* Botones */
+.button, input[type=submit], .submit-row input {
+    background-color: var(--primary) !important;
+    color: var(--primary-fg) !important;
+    border: none !important;
+}
+.button:hover, input[type=submit]:hover, .submit-row input:hover {
+    background-color: var(--link-hover-color) !important;
+}
