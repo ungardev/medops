@@ -252,3 +252,23 @@ body.dark-mode #medops-footer a {
 body.dark-mode #medops-footer a:hover {
     color: #BBDEFB !important;
 }
+
+/* === DEBUG VISUAL PARA DETECTAR CONFLICTOS === */
+body:not(.dark-mode) #nav-sidebar {
+    background-color: lime !important;
+    color: black !important;
+}
+body:not(.dark-mode) #content {
+    background-color: cyan !important;
+    color: black !important;
+}
+body:not(.dark-mode) #content .module,
+body:not(.dark-mode) #content-main .module {
+    background-color: magenta !important;
+    color: black !important;
+}
+body:not(.dark-mode) #content .module h2,
+body:not(.dark-mode) #content-main .module h2 {
+    background-color: orange !important;
+    color: black !important;
+}
