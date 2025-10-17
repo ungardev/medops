@@ -2,8 +2,6 @@
 {% load static %}
 
 {% block extrastyle %}
-  <!-- Inyectamos el CSS corporativo -->
-  <link rel="stylesheet" type="text/css" href="{% static 'core/css/branding.css' %}">
   <style>
     /* Botón de toggle modo claro/oscuro */
     #theme-toggle {
@@ -62,6 +60,8 @@
 
 {% block extrahead %}
   {{ block.super }}
+  <!-- Inyectamos el CSS corporativo al final para que pise al de Django -->
+  <link rel="stylesheet" type="text/css" href="{% static 'core/css/branding.css' %}">
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       const toggle = document.getElementById("theme-toggle");
