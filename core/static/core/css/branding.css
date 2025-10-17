@@ -19,12 +19,17 @@ body.dark-mode #site-name img {
     opacity: 0.9;
 }
 
+/* === Reset explícito para modo día === */
+body:not(.dark-mode) {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
 /* Encabezado del admin */
 #header {
     background-color: #1E88E5 !important;
     color: white !important;
 }
-
 #header h1, #header h1 a {
     color: white !important;
     font-weight: bold;
@@ -34,7 +39,6 @@ body.dark-mode #site-name img {
 #nav-sidebar {
     background-color: #f5f7fa;
 }
-
 #nav-sidebar .current-model {
     background-color: #E3F2FD;
     border-left: 4px solid #1E88E5;
@@ -50,7 +54,6 @@ body.dark-mode #site-name img {
     padding: 6px 12px;
     transition: background-color 0.3s ease;
 }
-
 .button:hover, input[type=submit]:hover, .submit-row input:hover {
     background-color: #1565C0 !important;
 }
@@ -70,7 +73,6 @@ a:hover {
     color: #1E88E5;
     font-weight: bold;
 }
-
 #changelist table tbody tr:hover {
     background-color: #F1F8E9;
 }
@@ -114,8 +116,8 @@ a:hover {
 
 /* === Dark Mode corporativo MedOps === */
 body.dark-mode {
-    background-color: #121212;
-    color: #E0E0E0;
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
 }
 
 /* Encabezado */
@@ -130,11 +132,11 @@ body.dark-mode #header h1 a {
 
 /* Barra lateral */
 body.dark-mode #nav-sidebar {
-    background-color: #1E1E1E;
+    background-color: #1E1E1E !important;
 }
 body.dark-mode #nav-sidebar .current-model {
-    background-color: #263238;
-    border-left: 4px solid #1E88E5;
+    background-color: #263238 !important;
+    border-left: 4px solid #1E88E5 !important;
 }
 
 /* Botones */
@@ -152,22 +154,22 @@ body.dark-mode .submit-row input:hover {
 
 /* Links */
 body.dark-mode a {
-    color: #90CAF9;
+    color: #90CAF9 !important;
 }
 body.dark-mode a:hover {
-    color: #BBDEFB;
+    color: #BBDEFB !important;
 }
 
 /* Tablas */
 body.dark-mode #changelist table thead th {
-    background-color: #263238;
-    color: #90CAF9;
+    background-color: #263238 !important;
+    color: #90CAF9 !important;
 }
 body.dark-mode #changelist table tbody tr {
-    background-color: #1E1E1E;
+    background-color: #1E1E1E !important;
 }
 body.dark-mode #changelist table tbody tr:hover {
-    background-color: #2E2E2E;
+    background-color: #2E2E2E !important;
 }
 
 /* Mensajes */
@@ -190,13 +192,13 @@ body.dark-mode .errorlist {
 
 /* Footer */
 body.dark-mode #medops-footer {
-    background-color: #1E1E1E;
-    color: #9E9E9E;
-    border-top: 1px solid #333;
+    background-color: #1E1E1E !important;
+    color: #9E9E9E !important;
+    border-top: 1px solid #333 !important;
 }
 body.dark-mode #medops-footer a {
-    color: #90CAF9;
+    color: #90CAF9 !important;
 }
 body.dark-mode #medops-footer a:hover {
-    color: #BBDEFB;
+    color: #BBDEFB !important;
 }
