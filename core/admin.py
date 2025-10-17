@@ -12,6 +12,7 @@ from rangefilter.filters import DateRangeFilter, DateTimeRangeFilter, DateRangeF
 from django.utils.timezone import now
 from django.db.models.functions import TruncDate
 import json
+from django.core.serializers.json import DjangoJSONEncoder
 
 # App models
 from .models import (
@@ -408,8 +409,8 @@ class PaymentAdmin(admin.ModelAdmin):
 
         context = dict(
             self.admin_site.each_context(request),
-            totals_by_method=list(totals_by_method),
-            totals_by_status=list(totals_by_status),
+            totals_by_method=json.dumps(list(totals_by_method), cls=DjangoJSONEncoder),
+            totals_by_status=json.dumps(list(totals_by_status), cls=DjangoJSONEncoder),
             title="Reporte Financiero de Pagos",
             start_date=start_date or "",
             end_date=end_date or "",
@@ -417,6 +418,7 @@ class PaymentAdmin(admin.ModelAdmin):
             total_payments=total_payments,
             avg_per_payment=avg_per_payment,
         )
+
         return TemplateResponse(request, "admin/payment_report.html", context)
 
     # 🔹 Exportador CSV
