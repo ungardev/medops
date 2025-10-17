@@ -22,26 +22,41 @@ body.dark-mode #site-name img {
 /* === Reset explícito para modo día === */
 body:not(.dark-mode) {
     background-color: #ffffff !important;
-    color: #000000 !important;
+    color: #212121 !important;
 }
 
-/* Panel lateral en modo claro */
+/* Sidebar claro */
 body:not(.dark-mode) #nav-sidebar {
     background-color: #f5f7fa !important;
-    color: #000000 !important;
+    color: #212121 !important;
+}
+body:not(.dark-mode) #nav-sidebar a {
+    color: #1E88E5 !important;
+}
+body:not(.dark-mode) #nav-sidebar a:hover {
+    background-color: #E3F2FD !important;
 }
 
-/* Contenido principal en modo claro */
+/* Contenido principal claro */
 body:not(.dark-mode) #content {
     background-color: #ffffff !important;
-    color: #000000 !important;
+    color: #212121 !important;
 }
 
-/* Módulos (ej. Recent actions) en modo claro */
+/* Módulos (ej. Recent actions) claros */
 body:not(.dark-mode) .module {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border: 1px solid #e0e0e0 !important;
+    background-color: #fafafa !important;
+    color: #212121 !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px;
+    padding: 8px;
+}
+body:not(.dark-mode) .module h2 {
+    background-color: #E3F2FD !important;
+    color: #1E88E5 !important;
+    padding: 6px 10px;
+    margin: -8px -8px 8px -8px;
+    border-bottom: 1px solid #ddd;
 }
 
 /* Encabezado del admin */
@@ -166,6 +181,11 @@ body.dark-mode .module {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
     border: 1px solid #333 !important;
+}
+body.dark-mode .module h2 {
+    background-color: #263238 !important;
+    color: #90CAF9 !important;
+    border-bottom: 1px solid #333;
 }
 
 /* Botones */
