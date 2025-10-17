@@ -622,3 +622,77 @@ html[data-theme="dark"] body.dark-mode {
     --footer-bg: #1E1E1E !important;
     --footer-fg: #AAAAAA !important;
 }
+
+/* Scrollbars en dark mode */
+html body.dark-mode ::-webkit-scrollbar,
+html[data-theme] body.dark-mode ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+html body.dark-mode ::-webkit-scrollbar-track,
+html[data-theme] body.dark-mode ::-webkit-scrollbar-track {
+    background: #1E1E1E;
+}
+html body.dark-mode ::-webkit-scrollbar-thumb,
+html[data-theme] body.dark-mode ::-webkit-scrollbar-thumb {
+    background-color: #444;
+    border-radius: 6px;
+    border: 2px solid #1E1E1E;
+}
+html body.dark-mode ::-webkit-scrollbar-thumb:hover,
+html[data-theme] body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background-color: #666;
+}
+
+/* Firefox */
+html body.dark-mode,
+html[data-theme] body.dark-mode {
+    scrollbar-color: #444 #1E1E1E;
+    scrollbar-width: thin;
+}
+
+/* Texto de filtros en dark mode */
+html body.dark-mode .changelist-filter li a,
+html[data-theme] body.dark-mode .changelist-filter li a {
+    color: #E0E0E0 !important;   /* gris claro legible */
+}
+html body.dark-mode .changelist-filter li a:hover,
+html[data-theme] body.dark-mode .changelist-filter li a:hover {
+    color: #BBDEFB !important;   /* azul claro al hover */
+}
+html body.dark-mode .changelist-filter li.selected a,
+html[data-theme] body.dark-mode .changelist-filter li.selected a {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+}
+
+/* Inputs de búsqueda y selects en filtros */
+html body.dark-mode #changelist-search input,
+html[data-theme] body.dark-mode #changelist-search input,
+html body.dark-mode .changelist-filter select,
+html[data-theme] body.dark-mode .changelist-filter select {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
+}
+
+/* Placeholder en inputs */
+html body.dark-mode input::placeholder,
+html[data-theme] body.dark-mode input::placeholder {
+    color: #888 !important;
+}
+
+/* Texto de filtros con mejor contraste */
+html body.dark-mode .changelist-filter li a,
+html[data-theme] body.dark-mode .changelist-filter li a {
+    color: #E0E0E0 !important;
+}
+html body.dark-mode .changelist-filter li a:hover,
+html[data-theme] body.dark-mode .changelist-filter li a:hover {
+    color: #BBDEFB !important;
+}
+html body.dark-mode .changelist-filter li.selected a,
+html[data-theme] body.dark-mode .changelist-filter li.selected a {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+}
