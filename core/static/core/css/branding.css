@@ -62,7 +62,7 @@ html body:not(.dark-mode) #nav-sidebar .module {
     color: var(--body-fg) !important;
 }
 
-/* Sidebar Módulos - Títulos de Sección */
+/* Sidebar Módulos - Títulos de Sección (Arregla lo que parecía <h2>) */
 html body:not(.dark-mode) #nav-sidebar .module h2 {
     background-color: var(--module-header-bg) !important;
     color: var(--body-fg) !important; 
@@ -80,6 +80,11 @@ html body:not(.dark-mode) #nav-sidebar a:hover {
 
 /* CORRECCIÓN: Enlaces de Aplicación (Authentication and Authorization) */
 html body:not(.dark-mode) #nav-sidebar a.section {
+    color: var(--link-fg) !important;
+}
+
+/* CORRECCIÓN FINAL: Aplicación de Módulos (caption, ej. "Core") */
+html body:not(.dark-mode) #nav-sidebar .module caption a {
     color: var(--link-fg) !important;
 }
 
