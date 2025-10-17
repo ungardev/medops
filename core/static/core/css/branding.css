@@ -542,3 +542,15 @@ html[data-theme] body.dark-mode {
     scrollbar-color: #444 #1E1E1E;
     scrollbar-width: thin;
 }
+
+/* Forzar visibilidad de captions de módulos en Light y Dark mode */
+html body:not(.dark-mode) caption a.section {
+    color: var(--body-fg) !important;   /* texto oscuro legible */
+    font-weight: 600;
+}
+
+html body.dark-mode caption a.section,
+html[data-theme="dark"] body.dark-mode caption a.section {
+    color: var(--link-fg) !important;   /* azul claro corporativo */
+    font-weight: 600;
+}
