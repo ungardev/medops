@@ -78,13 +78,10 @@ html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: var(--selected-bg) !important;
 }
 
-/* CORRECCIÓN FINALÍSIMA DE VISIBILIDAD: El nombre de la App (ej. "Core") en el Sidebar.
-   Aplicamos color al contenedor y al enlace para máxima cobertura. */
-html body:not(.dark-mode) #nav-sidebar .module caption {
-    color: var(--body-fg) !important; /* Forzamos el texto del contenedor a color oscuro */
-}
-html body:not(.dark-mode) #nav-sidebar .module caption a {
-    color: var(--link-fg) !important; /* Forzamos el enlace dentro a color azul */
+/* CORRECCIÓN FINAL ABSOLUTA DE VISIBILIDAD: El nombre de la App (ej. "Core") en el Sidebar.
+   Apunta directamente al enlace con clase .section dentro del sidebar para anular el color blanco aplicado por el Admin en modo día. */
+html body:not(.dark-mode) #nav-sidebar a.section {
+    color: var(--link-fg) !important;
 }
 
 
@@ -252,7 +249,7 @@ html[data-theme="dark"] body.dark-mode {
     --breadcrumbs-bg: #1E1E1E;
     --breadcrumbs-fg: #E0E0E0;
     --border-color: #333;
-    --hairline-color: #333;   /* líneas divisorias */
+    --hairline-color: #333;    /* líneas divisorias */
     --darkened-bg: #1E1E1E; /* fondos de módulos */
     --selected-bg: #263238;
     --selected-fg: #FFFFFF;
