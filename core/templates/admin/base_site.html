@@ -26,6 +26,11 @@
     body.dark-mode #theme-toggle {
       background-color: rgba(255,255,255,0.1);
     }
+
+    /* Ocultar el toggle nativo de Django */
+    .theme-toggle {
+      display: none !important;
+    }
   </style>
 {% endblock %}
 
@@ -80,4 +85,12 @@
       });
     });
   </script>
+{% endblock %}
+
+{% block usertools %}
+  {{ block.super }}
+  <style>
+    /* Refuerzo: ocultar el toggle nativo de Django */
+    .theme-toggle { display: none !important; }
+  </style>
 {% endblock %}
