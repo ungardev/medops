@@ -78,10 +78,13 @@ html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: var(--selected-bg) !important;
 }
 
-/* CORRECCIÓN FINAL DE VISIBILIDAD: El nombre de la App (ej. "Core") en el Sidebar.
-   Este selector de máxima especificidad debe arreglarlo en todas las vistas. */
-html body:not(.dark-mode) #nav-sidebar .module table caption a {
-    color: var(--link-fg) !important;
+/* CORRECCIÓN FINALÍSIMA DE VISIBILIDAD: El nombre de la App (ej. "Core") en el Sidebar.
+   Aplicamos color al contenedor y al enlace para máxima cobertura. */
+html body:not(.dark-mode) #nav-sidebar .module caption {
+    color: var(--body-fg) !important; /* Forzamos el texto del contenedor a color oscuro */
+}
+html body:not(.dark-mode) #nav-sidebar .module caption a {
+    color: var(--link-fg) !important; /* Forzamos el enlace dentro a color azul */
 }
 
 
