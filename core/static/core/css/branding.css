@@ -239,6 +239,50 @@ html[data-theme] body.dark-mode #content-main .form-row {
     color: #E0E0E0 !important;
 }
 
+/* Campos de formulario */
+html body.dark-mode input[type="text"],
+html body.dark-mode input[type="email"],
+html body.dark-mode input[type="number"],
+html body.dark-mode input[type="date"],
+html body.dark-mode input[type="time"],
+html body.dark-mode textarea,
+html body.dark-mode select,
+html[data-theme] body.dark-mode input[type="text"],
+html[data-theme] body.dark-mode input[type="email"],
+html[data-theme] body.dark-mode input[type="number"],
+html[data-theme] body.dark-mode input[type="date"],
+html[data-theme] body.dark-mode input[type="time"],
+html[data-theme] body.dark-mode textarea,
+html[data-theme] body.dark-mode select {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
+}
+
+/* Inline related blocks */
+html body.dark-mode .inline-related,
+html[data-theme] body.dark-mode .inline-related {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+}
+html body.dark-mode .inline-related h3,
+html[data-theme] body.dark-mode .inline-related h3 {
+    background-color: #263238 !important;
+    color: #90CAF9 !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+/* Related widget wrapper */
+html body.dark-mode .related-widget-wrapper,
+html[data-theme] body.dark-mode .related-widget-wrapper {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+}
+html body.dark-mode .related-widget-wrapper a,
+html[data-theme] body.dark-mode .related-widget-wrapper a {
+    color: #90CAF9 !important;
+}
+
 /* Recent actions */
 html body.dark-mode #content-related .module,
 html body.dark-mode #content-related .module ul,
@@ -258,4 +302,136 @@ html[data-theme] body.dark-mode #content-related .module .footer,
 html[data-theme] body.dark-mode #content-related .module .module-footer {
     background: transparent !important;
     border: none !important;
+}
+
+/* Breadcrumbs */
+html body.dark-mode .breadcrumbs,
+html[data-theme] body.dark-mode .breadcrumbs {
+    background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
+    border-bottom: 1px solid #333 !important;
+}
+html body.dark-mode .breadcrumbs a,
+html[data-theme] body.dark-mode .breadcrumbs a {
+    color: #90CAF9 !important;
+}
+
+/* Object tools */
+html body.dark-mode .object-tools,
+html[data-theme] body.dark-mode .object-tools {
+    background: transparent !important;
+    border: none !important;
+}
+html body.dark-mode .object-tools a,
+html[data-theme] body.dark-mode .object-tools a {
+    background-color: #1E88E5 !important;
+    color: #fff !important;
+    border: none !important;
+}
+html body.dark-mode .object-tools a:hover,
+html[data-theme] body.dark-mode .object-tools a:hover {
+    background-color: #1565C0 !important;
+}
+
+/* Paginador */
+html body.dark-mode .paginator,
+html[data-theme] body.dark-mode .paginator {
+    background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
+    border-top: 1px solid #333 !important;
+}
+html body.dark-mode .paginator a,
+html[data-theme] body.dark-mode .paginator a {
+    color: #90CAF9 !important;
+}
+
+/* Panel de filtros */
+html body.dark-mode .filters,
+html body.dark-mode .changelist-filter,
+html[data-theme] body.dark-mode .filters,
+html[data-theme] body.dark-mode .changelist-filter {
+    background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
+}
+
+/* Títulos de filtros */
+html body.dark-mode .filters h2,
+html body.dark-mode .changelist-filter h2,
+html[data-theme] body.dark-mode .filters h2,
+html[data-theme] body.dark-mode .changelist-filter h2 {
+    background-color: #263238 !important;
+    color: #90CAF9 !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+/* Inputs y selects en filtros */
+html body.dark-mode .filters input,
+html body.dark-mode .filters select,
+html[data-theme] body.dark-mode .filters input,
+html[data-theme] body.dark-mode .filters select {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
+}
+
+/* Links en filtros */
+html body.dark-mode .filters ul li a,
+html[data-theme] body.dark-mode .filters ul li a {
+    color: #BBDEFB !important;
+}
+html body.dark-mode .filters ul li.selected a,
+html[data-theme] body.dark-mode .filters ul li.selected a {
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/* Barra de acciones */
+html body.dark-mode .actions,
+html[data-theme] body.dark-mode .actions {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+}
+html body.dark-mode .actions select,
+html body.dark-mode .actions input,
+html[data-theme] body.dark-mode .actions select,
+html[data-theme] body.dark-mode .actions input {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
+}
+
+/* Zebra rows */
+html body.dark-mode .row1,
+html[data-theme] body.dark-mode .row1 {
+    background-color: #1A1A1A !important;
+}
+html body.dark-mode .row2,
+html[data-theme] body.dark-mode .row2 {
+    background-color: #1E1E1E !important;
+}
+html body.dark-mode .selected,
+html[data-theme] body.dark-mode .selected {
+    background-color: #263238 !important;
+}
+
+/* Sidebar módulos */
+html body.dark-mode #nav-sidebar .module,
+html[data-theme] body.dark-mode #nav-sidebar .module {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+}
+html body.dark-mode #nav-sidebar .module h2,
+html[data-theme] body.dark-mode #nav-sidebar .module h2 {
+    background-color: #263238 !important;
+    color: #90CAF9 !important;
+    border-bottom: 1px solid #333 !important;
+}
+html body.dark-mode #nav-sidebar a,
+html[data-theme] body.dark-mode #nav-sidebar a {
+    color: #BBDEFB !important;
+}
+html body.dark-mode #nav-sidebar a:hover,
+html[data-theme] body.dark-mode #nav-sidebar a:hover {
+    background-color: #2A2A2A !important;
 }
