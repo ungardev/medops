@@ -503,3 +503,20 @@ html[data-theme] body.dark-mode .popup {
     border: 1px solid #333 !important;
     color: #E0E0E0 !important;
 }
+
+/* Sobrescribir variables de Django en dark mode */
+html body.dark-mode,
+html[data-theme] body.dark-mode {
+    --body-bg: #121212 !important;
+    --body-fg: #E0E0E0 !important;
+    --header-bg: #1E1E1E !important;
+    --header-color: #E0E0E0 !important;
+    --breadcrumbs-bg: #1E1E1E !important;
+    --breadcrumbs-fg: #E0E0E0 !important;
+    --link-fg: #90CAF9 !important;
+    --link-hover-color: #BBDEFB !important;
+    --border-color: #333 !important;
+    --selected-bg: #263238 !important;
+    --selected-fg: #FFFFFF !important;
+    --primary: #1E88E5 !important;
+}
