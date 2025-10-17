@@ -78,11 +78,12 @@ html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: var(--selected-bg) !important;
 }
 
-/* CORRECCIÓN: Enlaces de Aplicación (Authentication and Authorization) y la que faltaba (Caption) */
-html body:not(.dark-mode) #nav-sidebar a.section,
-html body:not(.dark-mode) #nav-sidebar .module caption a {
+/* CORRECCIÓN FINAL DE VISIBILIDAD: El nombre de la App (ej. "Core") en el Sidebar.
+   Este selector de máxima especificidad debe arreglarlo en todas las vistas. */
+html body:not(.dark-mode) #nav-sidebar .module table caption a {
     color: var(--link-fg) !important;
 }
+
 
 /* Breadcrumbs (Ruta de navegación) */
 html body:not(.dark-mode) .breadcrumbs {
