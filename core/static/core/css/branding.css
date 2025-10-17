@@ -13,43 +13,43 @@ body, #header, #nav-sidebar, #changelist table, #medops-footer, #content {
 
 /* Logo */
 #site-name img { transition: opacity 0.4s ease; }
-body.dark-mode #site-name img { opacity: 0.9; }
+html body.dark-mode #site-name img { opacity: 0.9; }
 
 /* Reset modo día */
-body:not(.dark-mode) {
+html body:not(.dark-mode) {
     background-color: #ffffff !important;
     color: #212121 !important;
 }
 
 /* Sidebar claro */
-body:not(.dark-mode) #nav-sidebar,
-body:not(.dark-mode) #nav-sidebar .module {
+html body:not(.dark-mode) #nav-sidebar,
+html body:not(.dark-mode) #nav-sidebar .module {
     background-color: #f5f7fa !important;
     color: #212121 !important;
 }
-body:not(.dark-mode) #nav-sidebar a {
+html body:not(.dark-mode) #nav-sidebar a {
     color: #1E88E5 !important;
 }
-body:not(.dark-mode) #nav-sidebar a:hover {
+html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: #E3F2FD !important;
 }
 
 /* Contenido principal claro */
-body:not(.dark-mode) #content {
+html body:not(.dark-mode) #content {
     background-color: #ffffff !important;
     color: #212121 !important;
 }
 
 /* Módulos claros */
-body:not(.dark-mode) #content .module,
-body:not(.dark-mode) #content-main .module {
+html body:not(.dark-mode) #content .module,
+html body:not(.dark-mode) #content-main .module {
     background-color: #fafafa !important;
     color: #212121 !important;
     border: 1px solid #ddd !important;
     border-radius: 4px;
 }
-body:not(.dark-mode) #content .module h2,
-body:not(.dark-mode) #content-main .module h2 {
+html body:not(.dark-mode) #content .module h2,
+html body:not(.dark-mode) #content-main .module h2 {
     background-color: #E3F2FD !important;
     color: #1E88E5 !important;
     padding: 6px 10px;
@@ -136,103 +136,122 @@ a:hover { color: #1565C0; }
 #medops-footer a:hover { text-decoration: underline; }
 
 /* === Dark Mode corporativo MedOps === */
-body.dark-mode {
+html body.dark-mode {
     background-color: #121212 !important;
     color: #E0E0E0 !important;
 }
 
 /* Encabezado */
-body.dark-mode #header {
+html body.dark-mode #header {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
 }
-body.dark-mode #header h1, 
-body.dark-mode #header h1 a {
+html body.dark-mode #header h1, 
+html body.dark-mode #header h1 a {
     color: #E0E0E0 !important;
 }
 
 /* Barra lateral */
-body.dark-mode #nav-sidebar {
+html body.dark-mode #nav-sidebar {
     background-color: #1E1E1E !important;
 }
-body.dark-mode #nav-sidebar .current-model {
+html body.dark-mode #nav-sidebar .current-model {
     background-color: #263238 !important;
     border-left: 4px solid #1E88E5 !important;
 }
 
-/* Contenido principal */
-body.dark-mode #content {
+/* Contenido principal y dashboard */
+html body.dark-mode #content,
+html body.dark-mode #content-main,
+html body.dark-mode .dashboard,
+html body.dark-mode #content-related {
     background-color: #121212 !important;
     color: #E0E0E0 !important;
 }
 
 /* Módulos */
-body.dark-mode .module {
+html body.dark-mode .module,
+html body.dark-mode #content-main .module,
+html body.dark-mode #content-related .module {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
     border: 1px solid #333 !important;
 }
-body.dark-mode .module h2 {
+html body.dark-mode .module h2,
+html body.dark-mode #content-main .module h2,
+html body.dark-mode #content-related .module h2 {
     background-color: #263238 !important;
     color: #90CAF9 !important;
     border-bottom: 1px solid #333;
 }
 
 /* Botones */
-body.dark-mode .button, 
-body.dark-mode input[type=submit], 
-body.dark-mode .submit-row input {
+html body.dark-mode .button, 
+html body.dark-mode input[type=submit], 
+html body.dark-mode .submit-row input {
     background-color: #1E88E5 !important;
     color: #fff !important;
 }
-body.dark-mode .button:hover, 
-body.dark-mode input[type=submit]:hover, 
-body.dark-mode .submit-row input:hover {
+html body.dark-mode .button:hover, 
+html body.dark-mode input[type=submit]:hover, 
+html body.dark-mode .submit-row input:hover {
     background-color: #1565C0 !important;
 }
 
 /* Links */
-body.dark-mode a { color: #90CAF9 !important; }
-body.dark-mode a:hover { color: #BBDEFB !important; }
+html body.dark-mode a { color: #90CAF9 !important; }
+html body.dark-mode a:hover { color: #BBDEFB !important; }
 
 /* Tablas */
-body.dark-mode #changelist table thead th {
+html body.dark-mode #changelist table thead th {
     background-color: #263238 !important;
     color: #90CAF9 !important;
 }
-body.dark-mode #changelist table tbody tr {
+html body.dark-mode #changelist table tbody tr,
+html body.dark-mode #content-main table {
     background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
 }
-body.dark-mode #changelist table tbody tr:hover {
+html body.dark-mode #changelist table tbody tr:hover,
+html body.dark-mode #content-main table tbody tr:hover {
     background-color: #2E2E2E !important;
 }
 
+/* Formularios y fieldsets */
+html body.dark-mode #content-main fieldset,
+html body.dark-mode #content-main .inline-group,
+html body.dark-mode #content-main .form-row {
+    background-color: #1E1E1E !important;
+    border: 1px solid #333 !important;
+    color: #E0E0E0 !important;
+}
+
 /* Mensajes */
-body.dark-mode .success {
+html body.dark-mode .success {
     background-color: rgba(67, 160, 71, 0.15) !important;
     border-left: 4px solid #43A047 !important;
     color: #A5D6A7 !important;
 }
-body.dark-mode .warning {
+html body.dark-mode .warning {
     background-color: rgba(251, 192, 45, 0.15) !important;
     border-left: 4px solid #FBC02D !important;
     color: #FFE082 !important;
 }
-body.dark-mode .errornote, 
-body.dark-mode .errorlist {
+html body.dark-mode .errornote, 
+html body.dark-mode .errorlist {
     background-color: rgba(229, 57, 53, 0.15) !important;
     border-left: 4px solid #E53935 !important;
     color: #EF9A9A !important;
 }
 
 /* Footer */
-body.dark-mode #medops-footer {
+html body.dark-mode #medops-footer {
     background-color: #1E1E1E !important;
     color: #9E9E9E !important;
     border-top: 1px solid #333 !important;
 }
-body.dark-mode #medops-footer a { color: #90CAF9 !important; }
-body.dark-mode #medops-footer a:hover { color: #BBDEFB !important; }
+html body.dark-mode #medops-footer a { color: #90CAF9 !important; }
+html body.dark-mode #medops-footer a:hover { color: #BBDEFB !important; }
 
 /* === Refuerzo modo día para contenido generado por Django === */
 html body:not(.dark-mode) #content-main,
@@ -278,4 +297,18 @@ html body:not(.dark-mode) #content-related .module h2 {
     background-color: #E3F2FD !important;
     color: #1E88E5 !important;
     border-bottom: 1px solid #ddd;
+}
+
+/* === Refuerzo modo oscuro para Recent actions === */
+html body.dark-mode #content-related .module,
+html body.dark-mode #content-related .module ul,
+html body.dark-mode #content-related .module li {
+    background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
+    border-color: #333 !important;
+}
+html body.dark-mode #content-related .module::after,
+html body.dark-mode #content-related .module .footer {
+    background: transparent !important;
+    border: none !important;
 }
