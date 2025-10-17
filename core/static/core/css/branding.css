@@ -1,7 +1,54 @@
-/* === Paleta corporativa MedOps ===
-   Azul: #1E88E5 | Verde: #43A047 | Amarillo: #FBC02D
-   Rojo: #E53935 | Gris neutro: #6D6D6D
-*/
+/* === Paleta corporativa MedOps === */
+:root {
+    --primary: #1E88E5;
+    --primary-fg: #FFFFFF;
+    --link-fg: #1E88E5;
+    --link-hover-color: #1565C0;
+
+    --success-bg: #E8F5E9;
+    --success-fg: #2E7D32;
+    --warning-bg: #FFFDE7;
+    --warning-fg: #F57F17;
+    --error-bg: #FFEBEE;
+    --error-fg: #B71C1C;
+}
+
+/* Light mode */
+html body:not(.dark-mode) {
+    --body-bg: #FFFFFF;
+    --body-fg: #212121;
+    --header-bg: #1E88E5;
+    --header-color: #FFFFFF;
+    --breadcrumbs-bg: #F5F7FA;
+    --breadcrumbs-fg: #212121;
+    --border-color: #DDD;
+    --module-bg: #FAFAFA;
+    --module-fg: #212121;
+    --module-header-bg: #E3F2FD;
+    --module-header-fg: #1E88E5;
+    --footer-bg: #F9F9F9;
+    --footer-fg: #6D6D6D;
+}
+
+/* Dark mode */
+html body.dark-mode,
+html[data-theme="dark"] body.dark-mode {
+    --body-bg: #121212;
+    --body-fg: #E0E0E0;
+    --header-bg: #1E1E1E;
+    --header-color: #E0E0E0;
+    --breadcrumbs-bg: #1E1E1E;
+    --breadcrumbs-fg: #E0E0E0;
+    --border-color: #333;
+    --module-bg: #1E1E1E;
+    --module-fg: #E0E0E0;
+    --module-header-bg: #263238;
+    --module-header-fg: #90CAF9;
+    --footer-bg: #1E1E1E;
+    --footer-fg: #AAAAAA;
+    --link-fg: #90CAF9;
+    --link-hover-color: #BBDEFB;
+}
 
 /* Transiciones suaves */
 body, #header, #nav-sidebar, #changelist table, #medops-footer, #content {
@@ -9,50 +56,6 @@ body, #header, #nav-sidebar, #changelist table, #medops-footer, #content {
 }
 #site-name img { transition: opacity 0.4s ease; }
 html body.dark-mode #site-name img { opacity: 0.9; }
-
-/* ================== VARIABLES ================== */
-
-/* Light mode */
-html body:not(.dark-mode) {
-    --primary: #1E88E5; --primary-fg: #FFFFFF;
-    --link-fg: #1E88E5; --link-hover-color: #1565C0;
-
-    --body-bg: #FFFFFF; --body-fg: #212121;
-    --header-bg: #1E88E5; --header-color: #FFFFFF;
-    --breadcrumbs-bg: #F5F7FA; --breadcrumbs-fg: #212121;
-
-    --border-color: #DDD; --hairline-color: #DDD;
-
-    --success-bg: #E8F5E9; --success-fg: #2E7D32;
-    --warning-bg: #FFFDE7; --warning-fg: #F57F17;
-    --error-bg: #FFEBEE;   --error-fg: #B71C1C;
-
-    --footer-bg: #f9f9f9;  --footer-fg: #6D6D6D;
-
-    --module-header-bg: #E3F2FD;
-    --module-header-fg: var(--link-fg);
-}
-
-/* Dark mode */
-html body.dark-mode {
-    --primary: #1E88E5; --primary-fg: #FFFFFF;
-    --link-fg: #90CAF9; --link-hover-color: #BBDEFB;
-
-    --body-bg: #121212; --body-fg: #E0E0E0;
-    --header-bg: #1E1E1E; --header-color: #E0E0E0;
-    --breadcrumbs-bg: #1E1E1E; --breadcrumbs-fg: #E0E0E0;
-
-    --border-color: #333; --hairline-color: #333;
-
-    --success-bg: #1B5E20; --success-fg: #A5D6A7;
-    --warning-bg: #F57F17; --warning-fg: #FFF59D;
-    --error-bg: #B71C1C;   --error-fg: #FFCDD2;
-
-    --module-bg: #1E1E1E; --module-fg: #E0E0E0;
-    --module-header-bg: #263238; --module-header-fg: #90CAF9;
-
-    --footer-bg: #000000; --footer-fg: #FFFFFF;
-}
 
 /* General */
 body { background-color: var(--body-bg); color: var(--body-fg); }
@@ -65,8 +68,8 @@ a:hover { color: var(--link-hover-color); }
 
 /* Sidebar */
 #nav-sidebar, #nav-sidebar .module {
-    background-color: var(--module-bg);
-    color: var(--module-fg);
+    background-color: var(--breadcrumbs-bg);
+    color: var(--body-fg);
     border: 1px solid var(--border-color);
 }
 #nav-sidebar .current-model {
@@ -74,13 +77,9 @@ a:hover { color: var(--link-hover-color); }
     border-left: 4px solid var(--primary);
 }
 #nav-sidebar a { color: var(--link-fg); }
-#nav-sidebar a:hover { background-color: #2A2A2A; }
+#nav-sidebar a:hover { background-color: var(--module-header-bg); }
 
-/* Content & Modules */
-#content, #content-main, #content-related, .dashboard {
-    background-color: var(--body-bg);
-    color: var(--body-fg);
-}
+/* Modules */
 .module {
     background-color: var(--module-bg);
     color: var(--module-fg);
@@ -98,15 +97,135 @@ a:hover { color: var(--link-hover-color); }
     color: var(--module-header-fg);
     font-weight: bold;
 }
-#changelist table tbody tr:hover { background-color: #2E2E2E; }
+#changelist table tbody tr:hover { background-color: #F1F8E9; }
+
+/* Messages */
+.success { background-color: var(--success-bg); color: var(--success-fg); border-left: 4px solid var(--success-fg); }
+.warning { background-color: var(--warning-bg); color: var(--warning-fg); border-left: 4px solid var(--warning-fg); }
+.errornote, .errorlist { background-color: var(--error-bg); color: var(--error-fg); border-left: 4px solid var(--error-fg); }
+
+/* Footer */
+#medops-footer {
+    background-color: var(--footer-bg);
+    color: var(--footer-fg);
+    font-size: 12px;
+    text-align: center;
+    padding: 12px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 20px;
+}
+#medops-footer a { color: var(--link-fg); text-decoration: none; }
+#medops-footer a:hover { color: var(--link-hover-color); text-decoration: underline; }
+
+/* Header */
+html body.dark-mode #header {
+    background-color: var(--header-bg);
+    color: var(--header-color);
+}
+html body.dark-mode #header h1,
+html body.dark-mode #header h1 a {
+    color: var(--header-color);
+}
+
+/* Sidebar */
+html body.dark-mode #nav-sidebar,
+html body.dark-mode #nav-sidebar .module {
+    background-color: var(--module-bg);
+    border: 1px solid var(--border-color);
+}
+html body.dark-mode #nav-sidebar .current-model {
+    background-color: var(--module-header-bg);
+    border-left: 4px solid var(--primary);
+}
+html body.dark-mode #nav-sidebar a { color: var(--link-fg); }
+html body.dark-mode #nav-sidebar a:hover { background-color: #2A2A2A; }
+
+/* Content & Modules */
+html body.dark-mode #content,
+html body.dark-mode #content-main,
+html body.dark-mode #content-related,
+html body.dark-mode .dashboard {
+    background-color: var(--body-bg);
+    color: var(--body-fg);
+}
+html body.dark-mode .module {
+    background-color: var(--module-bg);
+    color: var(--module-fg);
+    border: 1px solid var(--border-color);
+}
+html body.dark-mode .module h2,
+html body.dark-mode .module caption {
+    background-color: var(--module-header-bg);
+    color: var(--module-header-fg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Tables */
+html body.dark-mode #changelist table thead th {
+    background-color: var(--module-header-bg);
+    color: var(--module-header-fg);
+}
+html body.dark-mode #changelist table tbody tr:hover {
+    background-color: #2E2E2E;
+}
 
 /* Forms */
-input, select, textarea {
-    background-color: var(--input-bg, #fff);
-    color: var(--input-fg, #000);
-    border: 1px solid var(--input-border-color, #ddd);
+html body.dark-mode input,
+html body.dark-mode select,
+html body.dark-mode textarea {
+    background-color: #121212;
+    color: var(--body-fg);
+    border: 1px solid var(--border-color);
 }
-input::placeholder { color: #888; }
+html body.dark-mode input::placeholder { color: #888; }
+
+/* Filters */
+html body.dark-mode .changelist-filter,
+html body.dark-mode .filters {
+    background-color: var(--module-bg);
+    color: var(--body-fg);
+    border: 1px solid var(--border-color);
+}
+html body.dark-mode .changelist-filter h2,
+html body.dark-mode .filters h2 {
+    background-color: var(--module-header-bg);
+    color: var(--module-header-fg);
+}
+html body.dark-mode .changelist-filter li a,
+html body.dark-mode .filters li a {
+    color: var(--body-fg);
+}
+html body.dark-mode .changelist-filter li a:hover,
+html body.dark-mode .filters li a:hover {
+    color: var(--link-hover-color);
+}
+html body.dark-mode .changelist-filter li.selected a,
+html body.dark-mode .filters li.selected a {
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Paginator & Actions */
+html body.dark-mode .paginator,
+html body.dark-mode .actions {
+    background-color: var(--module-bg);
+    color: var(--module-fg);
+    border: 1px solid var(--border-color);
+}
+html body.dark-mode .paginator a { color: var(--link-fg); }
+
+/* Footer */
+html body.dark-mode #medops-footer {
+    background-color: var(--footer-bg);
+    color: var(--footer-fg);
+    border-top: 1px solid var(--border-color);
+}
+html body.dark-mode #medops-footer a {
+    color: var(--link-fg);
+}
+html body.dark-mode #medops-footer a:hover {
+    color: var(--link-hover-color);
+}
 
 /* Botones */
 .button, input[type=submit], .submit-row input {
@@ -121,129 +240,13 @@ input::placeholder { color: #888; }
 .button:hover, input[type=submit]:hover, .submit-row input:hover {
     background-color: var(--link-hover-color) !important;
 }
-.button.cancel { background-color: #6D6D6D; color: #fff; }
+.button.cancel {
+    background-color: #6D6D6D;
+    color: #fff;
+}
 .button.cancel:hover { background-color: #424242; }
 
-/* Mensajes */
-.success {
-    background-color: var(--success-bg);
-    color: var(--success-fg);
-    border-left: 4px solid var(--success-fg);
-}
-.warning {
-    background-color: var(--warning-bg);
-    color: var(--warning-fg);
-    border-left: 4px solid var(--warning-fg);
-}
-.errornote, .errorlist {
-    background-color: var(--error-bg);
-    color: var(--error-fg);
-    border-left: 4px solid var(--error-fg);
-}
-
-/* Breadcrumbs */
-.breadcrumbs {
-    background-color: var(--breadcrumbs-bg);
-    color: var(--breadcrumbs-fg);
-    border-bottom: 1px solid var(--border-color);
-}
-.breadcrumbs a { color: var(--link-fg); }
-.breadcrumbs a:hover { color: var(--link-hover-color); }
-
-/* Filtros */
-.changelist-filter, .filters {
-    background-color: var(--module-bg);
-    color: var(--module-fg);
-    border: 1px solid var(--border-color);
-}
-.changelist-filter h2, .filters h2 {
-    background-color: var(--module-header-bg);
-    color: var(--module-header-fg);
-    border-bottom: 1px solid var(--border-color);
-}
-.changelist-filter li a {
-    color: var(--body-fg);
-    font-weight: 400;
-}
-.changelist-filter li a:hover { color: var(--link-hover-color); }
-.changelist-filter li.selected a {
-    color: #fff;
-    font-weight: 600;
-}
-
-/* Dark: panel y contenido de filtros con contraste */
-html body.dark-mode .changelist-filter,
-html body.dark-mode .filters {
-    background-color: var(--module-bg);
-    color: var(--body-fg);
-    border: 1px solid var(--border-color);
-}
-html body.dark-mode .changelist-filter h2,
-html body.dark-mode .filters h2 {
-    background-color: var(--module-header-bg);
-    color: var(--module-header-fg);
-    border-bottom: 1px solid var(--border-color);
-}
-html body.dark-mode .changelist-filter li,
-html body.dark-mode .filters li {
-    border-bottom: 1px solid var(--border-color);
-}
-html body.dark-mode .changelist-filter li:last-child,
-html body.dark-mode .filters li:last-child {
-    border-bottom: none;
-}
-html body.dark-mode .changelist-filter li a,
-html body.dark-mode .filters li a {
-    color: var(--body-fg);
-    font-weight: 400;
-}
-html body.dark-mode .changelist-filter li a:hover,
-html body.dark-mode .filters li a:hover {
-    color: var(--link-hover-color);
-}
-html body.dark-mode .changelist-filter li.selected a,
-html body.dark-mode .filters li.selected a {
-    color: #fff;
-    font-weight: 600;
-}
-html body.dark-mode .changelist-filter input,
-html body.dark-mode .changelist-filter select,
-html body.dark-mode .filters input,
-html body.dark-mode .filters select {
-    background-color: var(--input-bg, #121212);
-    color: var(--input-fg, #E0E0E0);
-    border: 1px solid var(--input-border-color, #333);
-}
-html body.dark-mode input::placeholder { color: #888; }
-
-/* Actions & Paginator */
-.actions, .paginator {
-    background-color: var(--module-bg);
-    color: var(--module-fg);
-    border: 1px solid var(--border-color);
-}
-.paginator a { color: var(--link-fg); }
-
-/* Footer */
-#medops-footer {
-    background-color: var(--footer-bg);
-    color: var(--footer-fg);
-    font-size: 12px;
-    text-align: center;
-    padding: 12px;
-    border-top: 1px solid var(--border-color);
-    margin-top: 20px;
-}
-#medops-footer a {
-    color: var(--link-fg);
-    text-decoration: none;
-}
-#medops-footer a:hover {
-    color: var(--link-hover-color);
-    text-decoration: underline;
-}
-
-/* Scrollbars */
+/* Scrollbars (dark mode) */
 html body.dark-mode ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -255,9 +258,4 @@ html body.dark-mode ::-webkit-scrollbar-thumb {
     border: 2px solid #1E1E1E;
 }
 html body.dark-mode ::-webkit-scrollbar-thumb:hover { background-color: #666; }
-
-/* Firefox */
-html body.dark-mode {
-    scrollbar-color: #444 #1E1E1E;
-    scrollbar-width: thin;
-}
+html body.dark-mode { scrollbar-color: #444 #1E1E1E; scrollbar-width: thin; }
