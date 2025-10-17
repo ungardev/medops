@@ -34,7 +34,7 @@ html body:not(.dark-mode) {
     --header-bg: #1E88E5;
     --header-color: #FFFFFF;
     --breadcrumbs-bg: #F5F7FA;
-    --breadcrumbs-fg: #212121;
+    --breadcrumbs-fg: #212121; /* Color de texto oscuro para breadcrumbs */
     --border-color: #DDD;
     --hairline-color: #DDD;
     --success-bg: #E8F5E9;
@@ -44,7 +44,7 @@ html body:not(.dark-mode) {
     --error-bg: #FFEBEE;
     --error-fg: #B71C1C;
     --selected-bg: #E3F2FD; /* Fondo de items seleccionados/hover en sidebar y tablas */
-    --module-header-bg: #F5F7FA; /* Cambiado a un tono más neutro */
+    --module-header-bg: #F5F7FA; 
     --module-header-fg: #1E88E5;
 }
 
@@ -62,25 +62,38 @@ html body:not(.dark-mode) #nav-sidebar .module {
     color: var(--body-fg) !important;
 }
 
-/* --- CORRECCIONES AQUI --- */
-
-/* Sidebar Módulos - Títulos de Sección (Resuelve error 2) */
+/* Sidebar Módulos - Títulos de Sección */
 html body:not(.dark-mode) #nav-sidebar .module h2 {
     background-color: var(--module-header-bg) !important;
-    color: var(--body-fg) !important; /* Usar color de cuerpo (negro/gris oscuro) */
+    color: var(--body-fg) !important; 
     border-bottom: 1px solid var(--border-color);
     padding: 6px 10px;
 }
 
-/* Contenido de la Navegación (Enlaces de Modelos) - (Resuelve error 1) */
+/* Contenido de la Navegación (Enlaces de Modelos) */
 html body:not(.dark-mode) #nav-sidebar a {
-    color: var(--link-fg) !important; /* Usar color de enlace primario (azul) */
+    color: var(--link-fg) !important; 
 }
 html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: var(--selected-bg) !important;
 }
 
-/* --- FIN CORRECCIONES --- */
+/* Breadcrumbs (Ruta de navegación) - Solución Error 1 */
+html body:not(.dark-mode) .breadcrumbs {
+    background-color: var(--breadcrumbs-bg) !important;
+    color: var(--breadcrumbs-fg) !important;
+}
+html body:not(.dark-mode) .breadcrumbs a {
+    /* Forzar color de texto oscuro en los enlaces */
+    color: var(--breadcrumbs-fg) !important;
+}
+
+/* Caption/Resumen de Tabla - Solución Error 2 */
+html body:not(.dark-mode) #changelist-form p,
+html body:not(.dark-mode) #changelist table caption {
+    /* Asegurar que el texto de resumen de lista y el caption de la tabla sean oscuros */
+    color: var(--body-fg) !important;
+}
 
 
 /* Contenido principal claro */
