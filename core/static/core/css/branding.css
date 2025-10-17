@@ -543,9 +543,11 @@ html[data-theme] body.dark-mode {
     scrollbar-width: thin;
 }
 
-/* Forzar visibilidad de captions en tablas del changelist (Light Mode) */
-html body:not(.dark-mode) #changelist caption,
-html body:not(.dark-mode) #changelist caption * {
-    color: var(--body-fg) !important;   /* gris oscuro legible */
+/* Fix captions en Light Mode dentro de módulos/changelist */
+html body:not(.dark-mode) .module caption,
+html body:not(.dark-mode) .module caption a,
+html body:not(.dark-mode) #changelist caption a.section {
+    background-color: var(--module-header-bg) !important; /* gris claro */
+    color: var(--body-fg) !important; /* texto gris oscuro legible */
     font-weight: 600 !important;
 }
