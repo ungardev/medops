@@ -78,6 +78,11 @@ html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: var(--selected-bg) !important;
 }
 
+/* CORRECCIÓN: Enlaces de Aplicación (Authentication and Authorization) */
+html body:not(.dark-mode) #nav-sidebar a.section {
+    color: var(--link-fg) !important;
+}
+
 /* Breadcrumbs (Ruta de navegación) */
 html body:not(.dark-mode) .breadcrumbs {
     background-color: var(--breadcrumbs-bg) !important;
