@@ -61,7 +61,10 @@
 {% block extrahead %}
   {{ block.super }}
   <script>
+    // Neutralizar el atributo data-theme de Django
     document.addEventListener("DOMContentLoaded", function () {
+      document.documentElement.removeAttribute("data-theme");
+
       const toggle = document.getElementById("theme-toggle");
       if (!toggle) return;
 
