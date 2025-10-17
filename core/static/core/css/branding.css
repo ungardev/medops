@@ -543,3 +543,9 @@ html[data-theme] body.dark-mode {
     scrollbar-width: thin;
 }
 
+/* Fix visibilidad de captions en Light Mode */
+html body:not(.dark-mode) #changelist caption a.section {
+    color: var(--body-fg) !important;   /* gris oscuro #212121 */
+    font-weight: 600;
+}
+
