@@ -26,7 +26,8 @@ body:not(.dark-mode) {
 }
 
 /* Sidebar claro */
-body:not(.dark-mode) #nav-sidebar {
+body:not(.dark-mode) #nav-sidebar,
+body:not(.dark-mode) #nav-sidebar .module {
     background-color: #f5f7fa !important;
     color: #212121 !important;
 }
@@ -44,18 +45,16 @@ body:not(.dark-mode) #content {
 }
 
 /* Módulos (ej. Recent actions) claros */
-body:not(.dark-mode) .module {
+body:not(.dark-mode) #content .module {
     background-color: #fafafa !important;
     color: #212121 !important;
     border: 1px solid #ddd !important;
     border-radius: 4px;
-    padding: 8px;
 }
-body:not(.dark-mode) .module h2 {
+body:not(.dark-mode) #content .module h2 {
     background-color: #E3F2FD !important;
     color: #1E88E5 !important;
     padding: 6px 10px;
-    margin: -8px -8px 8px -8px;
     border-bottom: 1px solid #ddd;
 }
 
