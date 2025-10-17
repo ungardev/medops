@@ -7,7 +7,7 @@
 */
 
 /* Transiciones suaves para modo claro/oscuro */
-body, #header, #nav-sidebar, #changelist table, #medops-footer {
+body, #header, #nav-sidebar, #changelist table, #medops-footer, #content {
     transition: background-color 0.4s ease, color 0.4s ease;
 }
 
@@ -25,6 +25,25 @@ body:not(.dark-mode) {
     color: #000000 !important;
 }
 
+/* Panel lateral en modo claro */
+body:not(.dark-mode) #nav-sidebar {
+    background-color: #f5f7fa !important;
+    color: #000000 !important;
+}
+
+/* Contenido principal en modo claro */
+body:not(.dark-mode) #content {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+/* Módulos (ej. Recent actions) en modo claro */
+body:not(.dark-mode) .module {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #e0e0e0 !important;
+}
+
 /* Encabezado del admin */
 #header {
     background-color: #1E88E5 !important;
@@ -36,9 +55,6 @@ body:not(.dark-mode) {
 }
 
 /* Barra lateral y menús */
-#nav-sidebar {
-    background-color: #f5f7fa;
-}
 #nav-sidebar .current-model {
     background-color: #E3F2FD;
     border-left: 4px solid #1E88E5;
@@ -137,6 +153,19 @@ body.dark-mode #nav-sidebar {
 body.dark-mode #nav-sidebar .current-model {
     background-color: #263238 !important;
     border-left: 4px solid #1E88E5 !important;
+}
+
+/* Contenido principal */
+body.dark-mode #content {
+    background-color: #121212 !important;
+    color: #E0E0E0 !important;
+}
+
+/* Módulos (ej. Recent actions) */
+body.dark-mode .module {
+    background-color: #1E1E1E !important;
+    color: #E0E0E0 !important;
+    border: 1px solid #333 !important;
 }
 
 /* Botones */
