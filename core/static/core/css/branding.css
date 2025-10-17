@@ -696,3 +696,29 @@ html[data-theme] body.dark-mode .changelist-filter li.selected a {
     color: #FFFFFF !important;
     font-weight: 600 !important;
 }
+
+/* Texto dentro de filtros en dark mode */
+html body.dark-mode .changelist-filter,
+html[data-theme] body.dark-mode .changelist-filter {
+    color: #E0E0E0 !important; /* gris claro base */
+}
+
+/* Links de filtros */
+html body.dark-mode .changelist-filter li a,
+html[data-theme] body.dark-mode .changelist-filter li a {
+    color: #E0E0E0 !important; /* legible en reposo */
+    font-weight: 400;
+}
+
+/* Hover en links de filtros */
+html body.dark-mode .changelist-filter li a:hover,
+html[data-theme] body.dark-mode .changelist-filter li a:hover {
+    color: #BBDEFB !important; /* azul claro al pasar el mouse */
+}
+
+/* Filtro seleccionado */
+html body.dark-mode .changelist-filter li.selected a,
+html[data-theme] body.dark-mode .changelist-filter li.selected a {
+    color: #FFFFFF !important; /* blanco pleno */
+    font-weight: 600 !important;
+}
