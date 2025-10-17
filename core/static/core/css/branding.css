@@ -789,3 +789,23 @@ html[data-theme="dark"] body.dark-mode {
 .button:hover, input[type=submit]:hover, .submit-row input:hover {
     background-color: var(--link-hover-color) !important;
 }
+
+/* Footer en Dark Mode */
+html body.dark-mode #medops-footer,
+html[data-theme] body.dark-mode #medops-footer {
+    background-color: #000000 !important;  /* negro pleno */
+    color: #FFFFFF !important;             /* texto blanco */
+    border-top: 1px solid #333 !important;
+}
+
+html body.dark-mode #medops-footer a,
+html[data-theme] body.dark-mode #medops-footer a {
+    color: #90CAF9 !important;             /* azul claro corporativo */
+    text-decoration: none;
+}
+
+html body.dark-mode #medops-footer a:hover,
+html[data-theme] body.dark-mode #medops-footer a:hover {
+    color: #BBDEFB !important;
+    text-decoration: underline;
+}
