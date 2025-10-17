@@ -6,20 +6,16 @@
    Gris neutro: #6D6D6D
 */
 
-/* Transiciones suaves para modo claro/oscuro */
+/* Transiciones suaves */
 body, #header, #nav-sidebar, #changelist table, #medops-footer, #content {
     transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* Animación de fade-in para el logo */
-#site-name img {
-    transition: opacity 0.4s ease;
-}
-body.dark-mode #site-name img {
-    opacity: 0.9;
-}
+/* Logo */
+#site-name img { transition: opacity 0.4s ease; }
+body.dark-mode #site-name img { opacity: 0.9; }
 
-/* === Reset explícito para modo día === */
+/* Reset modo día */
 body:not(.dark-mode) {
     background-color: #ffffff !important;
     color: #212121 !important;
@@ -44,7 +40,7 @@ body:not(.dark-mode) #content {
     color: #212121 !important;
 }
 
-/* Módulos (ej. Recent actions) claros */
+/* Módulos claros */
 body:not(.dark-mode) #content .module,
 body:not(.dark-mode) #content-main .module {
     background-color: #fafafa !important;
@@ -60,7 +56,7 @@ body:not(.dark-mode) #content-main .module h2 {
     border-bottom: 1px solid #ddd;
 }
 
-/* Encabezado del admin */
+/* Encabezado */
 #header {
     background-color: #1E88E5 !important;
     color: white !important;
@@ -70,13 +66,13 @@ body:not(.dark-mode) #content-main .module h2 {
     font-weight: bold;
 }
 
-/* Barra lateral y menús */
+/* Barra lateral activa */
 #nav-sidebar .current-model {
     background-color: #E3F2FD;
     border-left: 4px solid #1E88E5;
 }
 
-/* Botones principales */
+/* Botones */
 .button, input[type=submit], .submit-row input {
     background-color: #1E88E5 !important;
     border: none !important;
@@ -91,13 +87,8 @@ body:not(.dark-mode) #content-main .module h2 {
 }
 
 /* Links */
-a {
-    color: #1E88E5;
-    transition: color 0.3s ease;
-}
-a:hover {
-    color: #1565C0;
-}
+a { color: #1E88E5; transition: color 0.3s ease; }
+a:hover { color: #1565C0; }
 
 /* Tablas */
 #changelist table thead th {
@@ -109,7 +100,7 @@ a:hover {
     background-color: #F1F8E9;
 }
 
-/* Mensajes de éxito, advertencia y error */
+/* Mensajes */
 .success {
     background-color: #E8F5E9 !important;
     border-left: 4px solid #43A047 !important;
@@ -126,7 +117,7 @@ a:hover {
     color: #B71C1C !important;
 }
 
-/* Footer corporativo */
+/* Footer */
 #medops-footer {
     background-color: #f9f9f9;
     color: #6D6D6D;
@@ -142,9 +133,7 @@ a:hover {
     text-decoration: none;
     transition: color 0.3s ease;
 }
-#medops-footer a:hover {
-    text-decoration: underline;
-}
+#medops-footer a:hover { text-decoration: underline; }
 
 /* === Dark Mode corporativo MedOps === */
 body.dark-mode {
@@ -177,7 +166,7 @@ body.dark-mode #content {
     color: #E0E0E0 !important;
 }
 
-/* Módulos (ej. Recent actions) */
+/* Módulos */
 body.dark-mode .module {
     background-color: #1E1E1E !important;
     color: #E0E0E0 !important;
@@ -203,12 +192,8 @@ body.dark-mode .submit-row input:hover {
 }
 
 /* Links */
-body.dark-mode a {
-    color: #90CAF9 !important;
-}
-body.dark-mode a:hover {
-    color: #BBDEFB !important;
-}
+body.dark-mode a { color: #90CAF9 !important; }
+body.dark-mode a:hover { color: #BBDEFB !important; }
 
 /* Tablas */
 body.dark-mode #changelist table thead th {
@@ -246,29 +231,51 @@ body.dark-mode #medops-footer {
     color: #9E9E9E !important;
     border-top: 1px solid #333 !important;
 }
-body.dark-mode #medops-footer a {
-    color: #90CAF9 !important;
-}
-body.dark-mode #medops-footer a:hover {
-    color: #BBDEFB !important;
+body.dark-mode #medops-footer a { color: #90CAF9 !important; }
+body.dark-mode #medops-footer a:hover { color: #BBDEFB !important; }
+
+/* === Refuerzo modo día para contenido generado por Django === */
+html body:not(.dark-mode) #content-main,
+html body:not(.dark-mode) #content-main .module,
+html body:not(.dark-mode) #content-main .inline-group,
+html body:not(.dark-mode) #content-main .form-row,
+html body:not(.dark-mode) #content-main .results,
+html body:not(.dark-mode) #content-main #changelist {
+    background-color: #ffffff !important;
+    color: #212121 !important;
+    border: 1px solid #ddd !important;
 }
 
-/* === DEBUG VISUAL PARA DETECTAR CONFLICTOS === */
-body:not(.dark-mode) #nav-sidebar {
-    background-color: lime !important;
-    color: black !important;
+/* Tablas de listados */
+html body:not(.dark-mode) #content-main table,
+html body:not(.dark-mode) #content-main .results {
+    background-color: #fafafa !important;
+    color: #212121 !important;
+    border: 1px solid #ddd !important;
 }
-body:not(.dark-mode) #content {
-    background-color: cyan !important;
-    color: black !important;
+html body:not(.dark-mode) #content-main table th {
+    background-color: #E3F2FD !important;
+    color: #1E88E5 !important;
 }
-body:not(.dark-mode) #content .module,
-body:not(.dark-mode) #content-main .module {
-    background-color: magenta !important;
-    color: black !important;
+html body:not(.dark-mode) #content-main table tr:hover {
+    background-color: #F1F8E9 !important;
 }
-body:not(.dark-mode) #content .module h2,
-body:not(.dark-mode) #content-main .module h2 {
-    background-color: orange !important;
-    color: black !important;
+
+/* Formularios y fieldsets */
+html body:not(.dark-mode) #content-main fieldset,
+html body:not(.dark-mode) #content-main .inline-group {
+    background-color: #fafafa !important;
+    border: 1px solid #ddd !important;
+}
+
+/* Recent actions */
+html body:not(.dark-mode) #content-related .module {
+    background-color: #fafafa !important;
+    border: 1px solid #ddd !important;
+    color: #212121 !important;
+}
+html body:not(.dark-mode) #content-related .module h2 {
+    background-color: #E3F2FD !important;
+    color: #1E88E5 !important;
+    border-bottom: 1px solid #ddd;
 }
