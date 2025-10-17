@@ -551,3 +551,12 @@ html body:not(.dark-mode) #changelist caption a.section {
     color: var(--body-fg) !important; /* texto gris oscuro legible */
     font-weight: 600 !important;
 }
+
+/* Captions en Light Mode: fondo gris claro + texto azul corporativo */
+html body:not(.dark-mode) .module caption,
+html body:not(.dark-mode) #changelist caption,
+html body:not(.dark-mode) #changelist caption a.section {
+    background-color: var(--module-header-bg) !important; /* gris claro */
+    color: var(--module-header-fg) !important;            /* azul corporativo */
+    font-weight: 600 !important;
+}
