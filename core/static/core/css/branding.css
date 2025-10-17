@@ -28,6 +28,9 @@ html body:not(.dark-mode) {
     --error-bg: #FFEBEE;   --error-fg: #B71C1C;
 
     --footer-bg: #f9f9f9;  --footer-fg: #6D6D6D;
+
+    --module-header-bg: #E3F2FD;
+    --module-header-fg: var(--link-fg);
 }
 
 /* Dark mode */
@@ -145,6 +148,7 @@ input::placeholder { color: #888; }
     border-bottom: 1px solid var(--border-color);
 }
 .breadcrumbs a { color: var(--link-fg); }
+.breadcrumbs a:hover { color: var(--link-hover-color); }
 
 /* Filtros */
 .changelist-filter, .filters {
@@ -166,6 +170,51 @@ input::placeholder { color: #888; }
     color: #fff;
     font-weight: 600;
 }
+
+/* Dark: panel y contenido de filtros con contraste */
+html body.dark-mode .changelist-filter,
+html body.dark-mode .filters {
+    background-color: var(--module-bg);
+    color: var(--body-fg);
+    border: 1px solid var(--border-color);
+}
+html body.dark-mode .changelist-filter h2,
+html body.dark-mode .filters h2 {
+    background-color: var(--module-header-bg);
+    color: var(--module-header-fg);
+    border-bottom: 1px solid var(--border-color);
+}
+html body.dark-mode .changelist-filter li,
+html body.dark-mode .filters li {
+    border-bottom: 1px solid var(--border-color);
+}
+html body.dark-mode .changelist-filter li:last-child,
+html body.dark-mode .filters li:last-child {
+    border-bottom: none;
+}
+html body.dark-mode .changelist-filter li a,
+html body.dark-mode .filters li a {
+    color: var(--body-fg);
+    font-weight: 400;
+}
+html body.dark-mode .changelist-filter li a:hover,
+html body.dark-mode .filters li a:hover {
+    color: var(--link-hover-color);
+}
+html body.dark-mode .changelist-filter li.selected a,
+html body.dark-mode .filters li.selected a {
+    color: #fff;
+    font-weight: 600;
+}
+html body.dark-mode .changelist-filter input,
+html body.dark-mode .changelist-filter select,
+html body.dark-mode .filters input,
+html body.dark-mode .filters select {
+    background-color: var(--input-bg, #121212);
+    color: var(--input-fg, #E0E0E0);
+    border: 1px solid var(--input-border-color, #333);
+}
+html body.dark-mode input::placeholder { color: #888; }
 
 /* Actions & Paginator */
 .actions, .paginator {
