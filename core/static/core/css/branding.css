@@ -78,12 +78,8 @@ html body:not(.dark-mode) #nav-sidebar a:hover {
     background-color: var(--selected-bg) !important;
 }
 
-/* CORRECCIÓN: Enlaces de Aplicación (Authentication and Authorization) */
-html body:not(.dark-mode) #nav-sidebar a.section {
-    color: var(--link-fg) !important;
-}
-
-/* CORRECCIÓN FINAL: Aplicación de Módulos (caption, ej. "Core") */
+/* CORRECCIÓN: Enlaces de Aplicación (Authentication and Authorization) y la que faltaba (Caption) */
+html body:not(.dark-mode) #nav-sidebar a.section,
 html body:not(.dark-mode) #nav-sidebar .module caption a {
     color: var(--link-fg) !important;
 }
