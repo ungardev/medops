@@ -9,7 +9,7 @@ mkdir -p "$BACKUP_DIR"
 BACKUP_FILE="$BACKUP_DIR/medops_backup_$(date +%F_%H%M).sql"
 
 # Usuario y base de datos (ajusta si es necesario)
-DB_USER="medops"
+DB_USER="medops_user"
 DB_NAME="medops_db"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] 🚀 Iniciando backup de $DB_NAME..."
