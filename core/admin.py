@@ -14,6 +14,7 @@ from django.db.models.functions import TruncDate
 import json
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpRequest
+from django.contrib.staticfiles import finders
 
 # App models
 from .models import (
@@ -641,12 +642,12 @@ class PaymentAdmin(admin.ModelAdmin):
         styles = getSampleStyleSheet()
         elements = []
 
-        # Logo y título
-        logo_path = "static/img/logo.png"
-        try:
+        # 🔹 Logo y título
+        logo_path = finders.find("img/logo.png")
+        if logo_path:
             logo = Image(logo_path, width=80, height=40)
-        except Exception:
-            logo = Paragraph(" ", styles["Normal"])
+        else:
+            logo = Paragraph("MedOps Clinical System", styles["Title"])
 
         title = Paragraph("Reporte Financiero de Pagos", styles["Title"])
         header_table = Table([[title, logo]], colWidths=[400, 100])
@@ -657,18 +658,19 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(header_table)
 
-        # Fecha y usuario
+        # 🔹 Fecha y usuario
         fecha_str = datetime.now().strftime("%d/%m/%Y %H:%M")
         user_str = getattr(request.user, "username", "Sistema")
         elements.append(Paragraph(f"Generado el: {fecha_str} por {user_str}", styles["Normal"]))
         elements.append(Spacer(1, 20))
 
-        # Encabezados de tabla principal
+        # 🔹 Encabezados de tabla principal
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
         data = [headers]
 
         total_amount = 0.0
         method_totals = {}
+        status_totals = {}
 
         payments = queryset if queryset is not None else Payment.objects.all()
 
@@ -680,22 +682,25 @@ class PaymentAdmin(admin.ModelAdmin):
             total_amount += amount
 
             method = getattr(payment, "method", "Desconocido")
+            status = getattr(payment, "status", "Desconocido")
+
             method_totals[method] = method_totals.get(method, 0.0) + amount
+            status_totals[status] = status_totals.get(status, 0.0) + amount
 
             row = [
-                str(payment.pk),  # 👈 usamos pk para evitar warnings
+                str(payment.pk),
                 f"{payment.appointment.patient.first_name} {payment.appointment.patient.last_name}",
                 method,
-                payment.status,
+                status,
                 f"{amount:.2f}",
                 created_str,
             ]
             data.append(row)
 
-        # Totales generales
+        # 🔹 Totales generales
         data.append(["", "", "", "TOTAL", f"{total_amount:.2f}", ""])
 
-        # Tabla principal
+        # 🔹 Tabla principal
         table = Table(data, colWidths=[40, 120, 80, 80, 80, 100])
         table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
@@ -706,7 +711,7 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(table)
 
-        # Totales por método
+        # 🔹 Totales por método
         elements.append(Spacer(1, 20))
         elements.append(Paragraph("Totales por Método", styles["Heading2"]))
         method_data = [["Método", "Monto Total"]]
@@ -721,8 +726,30 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(method_table)
 
-        # Construir documento
-        doc.build(elements)
+        # 🔹 Totales por estado
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("Totales por Estado", styles["Heading2"]))
+        status_data = [["Estado", "Monto Total"]]
+        for s, amt in status_totals.items():
+            status_data.append([s, f"{amt:.2f}"])
+        status_table = Table(status_data, colWidths=[150, 100])
+        status_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(status_table)
+
+        # 🔹 Footer con número de página
+        def add_page_number(canvas, doc):
+            page_num = canvas.getPageNumber()
+            text = f"Página {page_num} | MedOps Clinical System"
+            canvas.setFont("Helvetica", 8)
+            canvas.drawRightString(570, 20, text)
+
+        # Construir documento con footer
+        doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
 
         pdf = buffer.getvalue()
         buffer.close()
@@ -731,6 +758,8 @@ class PaymentAdmin(admin.ModelAdmin):
         response["Content-Disposition"] = 'attachment; filename="payments_report.pdf"'
         response.write(pdf)
         return response
+
+
     
     # 🔹 Acción de exportación    
     @admin.action(description="Exportar pagos seleccionados a PDF")
