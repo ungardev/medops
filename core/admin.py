@@ -47,6 +47,7 @@ from reportlab.platypus import (
     Paragraph,
     Spacer,
     Image,
+    PageBreak
 )
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.utils import ImageReader
@@ -770,6 +771,40 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(status_table)
 
+        # 🔹 Visualizaciones Ejecutivas en una sola línea
+        elements.append(PageBreak())
+        elements.append(Paragraph("Visualizaciones Ejecutivas", styles["Heading2"]))
+
+        # Gráfico de barras
+        drawing_bar = Drawing(250, 150)
+        bar = HorizontalBarChart()
+        bar.x = 30
+        bar.y = 20
+        bar.height = 100
+        bar.width = 200
+        bar.data = [list(method_totals.values())]
+        bar.categoryAxis.categoryNames = list(method_totals.keys())
+        bar.bars[0].fillColor = colors.HexColor("#004080")
+        drawing_bar.add(bar)
+
+        # Gráfico circular
+        drawing_pie = Drawing(200, 150)
+        pie = Pie()
+        pie.x = 40
+        pie.y = 15
+        pie.width = 120
+        pie.height = 120
+        pie.data = list(status_totals.values())
+        pie.labels = list(status_totals.keys())
+        drawing_pie.add(pie)
+
+        charts_table = Table([[drawing_bar, drawing_pie]], colWidths=[280, 220])
+        charts_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ]))
+        elements.append(charts_table)
+
         # 🔹 Footer con número de página
         def add_page_number(canvas, doc):
             page_num = canvas.getPageNumber()
@@ -786,6 +821,7 @@ class PaymentAdmin(admin.ModelAdmin):
         response["Content-Disposition"] = 'attachment; filename="payments_report.pdf"'
         response.write(pdf)
         return response
+
     
     # 🔹 Acción de exportación    
     @admin.action(description="Exportar pagos seleccionados a PDF")
