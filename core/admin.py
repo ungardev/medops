@@ -672,7 +672,7 @@ class PaymentAdmin(admin.ModelAdmin):
             ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 10))
+        elements.append(Spacer(1, 14))  # 🔹 Espacio optimizado entre título y tabla
 
         # 🔹 Encabezados de tabla principal
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
