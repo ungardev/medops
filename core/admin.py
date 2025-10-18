@@ -643,18 +643,21 @@ class PaymentAdmin(admin.ModelAdmin):
         elements = []
 
         # 🔹 Logo y título
-        logo_path = finders.find("img/logo.png")
+        logo_path = finders.find("core/img/logo.png")  # ruta corregida
         if logo_path:
-            logo = Image(logo_path, width=80, height=40)
+            logo = Image(logo_path, width=100, height=50)
         else:
-            logo = Paragraph("MedOps Clinical System", styles["Title"])
+            logo = Paragraph(" ", styles["Normal"])  # vacío si no hay logo
 
         title = Paragraph("Reporte Financiero de Pagos", styles["Title"])
-        header_table = Table([[title, logo]], colWidths=[400, 100])
+
+        # 🔹 Encabezado: logo a la izquierda, título centrado
+        header_table = Table([[logo, title]], colWidths=[120, 380])
         header_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (0, 0), "CENTER"),
-            ("ALIGN", (1, 0), (1, 0), "RIGHT"),
+            ("ALIGN", (0, 0), (0, 0), "LEFT"),     # logo alineado a la izquierda
+            ("ALIGN", (1, 0), (1, 0), "CENTER"),   # título centrado
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
         ]))
         elements.append(header_table)
 
@@ -758,8 +761,6 @@ class PaymentAdmin(admin.ModelAdmin):
         response["Content-Disposition"] = 'attachment; filename="payments_report.pdf"'
         response.write(pdf)
         return response
-
-
     
     # 🔹 Acción de exportación    
     @admin.action(description="Exportar pagos seleccionados a PDF")
