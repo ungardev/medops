@@ -643,7 +643,7 @@ class PaymentAdmin(admin.ModelAdmin):
         elements = []
 
         # 🔹 Logo y título
-        logo_path = finders.find("core/img/logo.png")  # ruta corregida
+        logo_path = finders.find("core/img/medops-logo.png")  # ruta corregida
         if logo_path:
             logo = Image(logo_path, width=100, height=50)
         else:
@@ -660,11 +660,6 @@ class PaymentAdmin(admin.ModelAdmin):
             ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
         ]))
         elements.append(header_table)
-
-        # 🔹 Fecha y usuario
-        fecha_str = datetime.now().strftime("%d/%m/%Y %H:%M")
-        user_str = getattr(request.user, "username", "Sistema")
-        elements.append(Paragraph(f"Generado el: {fecha_str} por {user_str}", styles["Normal"]))
         elements.append(Spacer(1, 20))
 
         # 🔹 Encabezados de tabla principal
