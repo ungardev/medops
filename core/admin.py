@@ -754,34 +754,40 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(table)
 
-        # 🔹 Visualización: Totales por Método (Barras)
+        # 🔹 Visualizaciones compactas en la misma fila
         elements.append(Spacer(1, 20))
-        elements.append(Paragraph("Visualización: Totales por Método", styles["Heading2"]))
-        drawing = Drawing(400, 150)
+        elements.append(Paragraph("Visualizaciones Ejecutivas", styles["Heading2"]))
+
+        # Gráfico de barras
+        drawing_bar = Drawing(250, 150)
         bar = HorizontalBarChart()
-        bar.x = 50
+        bar.x = 30
         bar.y = 20
         bar.height = 100
-        bar.width = 300
+        bar.width = 200
         bar.data = [list(method_totals.values())]
         bar.categoryAxis.categoryNames = list(method_totals.keys())
         bar.bars[0].fillColor = colors.HexColor("#004080")
-        drawing.add(bar)
-        elements.append(drawing)
+        drawing_bar.add(bar)
 
-        # 🔹 Visualización: Totales por Estado (Pie)
-        elements.append(Spacer(1, 20))
-        elements.append(Paragraph("Visualización: Totales por Estado", styles["Heading2"]))
-        drawing2 = Drawing(200, 150)
+        # Gráfico circular
+        drawing_pie = Drawing(200, 150)
         pie = Pie()
-        pie.x = 65
+        pie.x = 40
         pie.y = 15
         pie.width = 120
         pie.height = 120
         pie.data = list(status_totals.values())
         pie.labels = list(status_totals.keys())
-        drawing2.add(pie)
-        elements.append(drawing2)
+        drawing_pie.add(pie)
+
+        # Tabla con ambos gráficos en la misma fila
+        charts_table = Table([[drawing_bar, drawing_pie]], colWidths=[280, 220])
+        charts_table.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ]))
+        elements.append(charts_table)
 
         # 🔹 Footer con número de página
         def add_page_number(canvas, doc):
