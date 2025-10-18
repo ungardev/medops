@@ -49,7 +49,7 @@ from reportlab.platypus import (
     Image,
 )
 from reportlab.lib.styles import getSampleStyleSheet
-
+from reportlab.lib.utils import ImageReader
 
 
 # Inline para documentos en Patient
@@ -645,14 +645,19 @@ class PaymentAdmin(admin.ModelAdmin):
         # 🔹 Logo y título
         logo_path = finders.find("core/img/medops-logo.png")  # ruta corregida
         if logo_path:
-            logo = Image(logo_path, width=100, height=50)
+            from reportlab.lib.utils import ImageReader
+            img = ImageReader(logo_path)
+            iw, ih = img.getSize()
+            aspect = ih / float(iw)
+            # Escalar proporcionalmente a un ancho de 80 px
+            logo = Image(logo_path, width=80, height=(80 * aspect))
         else:
             logo = Paragraph(" ", styles["Normal"])  # vacío si no hay logo
 
         title = Paragraph("Reporte Financiero de Pagos", styles["Title"])
 
         # 🔹 Encabezado: logo a la izquierda, título centrado
-        header_table = Table([[logo, title]], colWidths=[120, 380])
+        header_table = Table([[logo, title]], colWidths=[100, 400])
         header_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("ALIGN", (0, 0), (0, 0), "LEFT"),     # logo alineado a la izquierda
@@ -761,7 +766,6 @@ class PaymentAdmin(admin.ModelAdmin):
     @admin.action(description="Exportar pagos seleccionados a PDF")
     def export_selected_as_pdf(self, request, queryset):
         return self.export_as_pdf(request, queryset)
-
 
 
 @admin.register(MedicalDocument)
