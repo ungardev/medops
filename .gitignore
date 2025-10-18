@@ -1,0 +1,56 @@
+# --- Python/Django básicos ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# --- Entornos virtuales ---
+.env
+.env.*
+.venv/
+venv/
+env/
+
+# --- IDE y editor ---
+.vscode/
+.idea/
+*.swp
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Base de datos local (opcional) ---
+# db.sqlite3
+
+# --- Archivos temporales / cache ---
+.DS_Store
+Thumbs.db
+
+# --- Django: archivos generados en runtime ---
+staticfiles/
+media/
+
+# --- Reportes y exportaciones ---
+# exports/
+# reports/
+
+# --- Node/Frontend ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Cobertura y testing ---
+.coverage
+htmlcov/
+pytestcache/
+.tox/
+.pytest_cache/
+
+# --- Migrations ---
+**/migrations/__pycache__/
