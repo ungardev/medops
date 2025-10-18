@@ -40,15 +40,24 @@ document.addEventListener("DOMContentLoaded", function () {
                     labels: methodData.map(item => item.method),
                     datasets: [{
                         label: 'Total por Método',
-                        data: methodData.map(item => parseFloat(item.total_amount)), // 👈 conversión a número
+                        data: methodData.map(item => parseFloat(item.total_amount)),
                         backgroundColor: palette.slice(0, methodData.length)
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false, // 👈 permite controlar tamaño
                     plugins: {
                         legend: { position: 'bottom' },
-                        title: { display: true, text: 'Totales por Método' }
+                        title: { display: true, text: 'Totales por Método' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let value = context.raw || 0;
+                                    return `${context.label}: ${value.toLocaleString()}`;
+                                }
+                            }
+                        }
                     }
                 }
             });
@@ -65,15 +74,24 @@ document.addEventListener("DOMContentLoaded", function () {
                     labels: statusData.map(item => item.status),
                     datasets: [{
                         label: 'Total por Estado',
-                        data: statusData.map(item => parseFloat(item.total_amount)), // 👈 conversión a número
+                        data: statusData.map(item => parseFloat(item.total_amount)),
                         backgroundColor: statusData.map((_, i) => palette[i % palette.length])
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false, // 👈 evita que se estire raro
                     plugins: {
                         legend: { display: false },
-                        title: { display: true, text: 'Totales por Estado' }
+                        title: { display: true, text: 'Totales por Estado' },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    let value = context.raw || 0;
+                                    return `${context.label}: ${value.toLocaleString()}`;
+                                }
+                            }
+                        }
                     },
                     scales: {
                         y: { beginAtZero: true }
