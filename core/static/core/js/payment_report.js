@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     labels: methodData.map(item => item.method),
                     datasets: [{
                         label: 'Total por Método',
-                        data: methodData.map(item => item.total_amount),
+                        data: methodData.map(item => parseFloat(item.total_amount)), // 👈 conversión a número
                         backgroundColor: palette.slice(0, methodData.length)
                     }]
                 },
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     labels: statusData.map(item => item.status),
                     datasets: [{
                         label: 'Total por Estado',
-                        data: statusData.map(item => item.total_amount),
+                        data: statusData.map(item => parseFloat(item.total_amount)), // 👈 conversión a número
                         backgroundColor: statusData.map((_, i) => palette[i % palette.length])
                     }]
                 },
