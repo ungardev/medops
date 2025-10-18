@@ -673,8 +673,6 @@ class PaymentAdmin(admin.ModelAdmin):
         header_table.setStyle(TableStyle([
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, -1), 1),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
         ]))
         elements.append(header_table)
         elements.append(Spacer(1, 16))
@@ -713,7 +711,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
         data.append(["", "", "", "TOTAL", f"{total_amount:.2f}", ""])
 
-        # 🔹 Bloque Dashboard (KPIs + Gráficos)
+        # 🔹 Resumen Ejecutivo
         summary_data = [
             ["Total Procesado", "Pendiente", "Cancelado", "Pagado"],
             [
@@ -729,43 +727,10 @@ class PaymentAdmin(admin.ModelAdmin):
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 10),
-            ("FONTSIZE", (0, 1), (-1, 1), 9),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
-
-        # Gráfico de barras
-        drawing_bar = Drawing(250, 150)
-        bar = HorizontalBarChart()
-        bar.x = 30
-        bar.y = 20
-        bar.height = 100
-        bar.width = 200
-        bar.data = [list(method_totals.values())]
-        bar.categoryAxis.categoryNames = list(method_totals.keys())
-        bar.bars[0].fillColor = colors.HexColor("#004080")
-        drawing_bar.add(bar)
-
-        # Gráfico circular
-        drawing_pie = Drawing(200, 150)
-        pie = Pie()
-        pie.x = 40
-        pie.y = 15
-        pie.width = 120
-        pie.height = 120
-        pie.data = list(status_totals.values())
-        pie.labels = list(status_totals.keys())
-        drawing_pie.add(pie)
-
-        # Dashboard: KPIs + gráficos en una fila
-        dashboard_table = Table([[summary_table, drawing_bar, drawing_pie]],
-                                colWidths=[200, 200, 150])
-        dashboard_table.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-        ]))
-        elements.append(dashboard_table)
-        elements.append(Spacer(1, 20))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 16))
 
         # 🔹 Tabla principal
         table = Table(data, colWidths=[34, 130, 70, 70, 70, 100], repeatRows=1)
@@ -776,13 +741,34 @@ class PaymentAdmin(admin.ModelAdmin):
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("FONTSIZE", (0, 1), (-1, -1), 9),
-            ("FONTSIZE", (0, 0), (-1, 0), 10),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]))
         elements.append(table)
+
+        # 🔹 Totales por Método
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("Totales por Método", styles["Heading2"]))
+        method_data = [["Método", "Monto Total"]] + [[m, f"{amt:.2f}"] for m, amt in method_totals.items()]
+        method_table = Table(method_data, colWidths=[150, 100])
+        method_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(method_table)
+
+        # 🔹 Totales por Estado
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("Totales por Estado", styles["Heading2"]))
+        status_data = [["Estado", "Monto Total"]] + [[s, f"{amt:.2f}"] for s, amt in status_totals.items()]
+        status_table = Table(status_data, colWidths=[150, 100])
+        status_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(status_table)
 
         # 🔹 Footer con número de página
         def add_page_number(canvas, doc):
