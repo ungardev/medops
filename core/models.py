@@ -4,7 +4,7 @@ from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 from django.core.exceptions import ValidationError
-
+from simple_history.models import HistoricalRecords
 
 # Create your models here.
 class Patient(models.Model):
@@ -37,6 +37,9 @@ class Patient(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     contact_info = models.TextField(blank=True, null=True)
 
+    # Historial
+    history = HistoricalRecords()
+
     class Meta:
         verbose_name = "Patient"
         verbose_name_plural = "Patients"
@@ -57,6 +60,9 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     arrival_time = models.TimeField(blank=True, null=True)
+
+    # Historial
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Appointment"
@@ -133,6 +139,9 @@ class Payment(models.Model):
     bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Banco emisor (si aplica)")
     received_by = models.CharField(max_length=100, blank=True, null=True, verbose_name="Recibido por")
     received_at = models.DateTimeField(auto_now_add=True, null=True, blank=True, verbose_name="Fecha de registro")
+
+    # Historial
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Payment"
