@@ -679,7 +679,7 @@ class PaymentAdmin(admin.ModelAdmin):
         elements.append(header_table)
         elements.append(Spacer(1, 16))
 
-        # 🔹 Encabezados de tabla principal
+        # 🔹 Procesar datos
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
         data = [headers]
 
@@ -711,12 +711,11 @@ class PaymentAdmin(admin.ModelAdmin):
                 created_str,
             ])
 
-        # Totales generales
         data.append(["", "", "", "TOTAL", f"{total_amount:.2f}", ""])
 
-        # 🔹 Bloque de Resumen Ejecutivo
+        # 🔹 Bloque Dashboard (KPIs + Gráficos)
         summary_data = [
-            ["Total Procesado", "Total Pendiente", "Total Cancelado", "Total Pagado"],
+            ["Total Procesado", "Pendiente", "Cancelado", "Pagado"],
             [
                 f"{total_amount:.2f}",
                 f"{status_totals.get('pending', 0):.2f}",
@@ -734,29 +733,6 @@ class PaymentAdmin(admin.ModelAdmin):
             ("FONTSIZE", (0, 1), (-1, 1), 9),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
-        elements.append(summary_table)
-        elements.append(Spacer(1, 16))
-
-        # 🔹 Tabla principal
-        table = Table(data, colWidths=[34, 130, 70, 70, 70, 100], repeatRows=1)
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 1), (-1, -1), 9),
-            ("FONTSIZE", (0, 0), (-1, 0), 10),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-        ]))
-        elements.append(table)
-
-        # 🔹 Visualizaciones compactas en la misma fila
-        elements.append(Spacer(1, 20))
-        elements.append(Paragraph("Visualizaciones Ejecutivas", styles["Heading2"]))
 
         # Gráfico de barras
         drawing_bar = Drawing(250, 150)
@@ -781,13 +757,32 @@ class PaymentAdmin(admin.ModelAdmin):
         pie.labels = list(status_totals.keys())
         drawing_pie.add(pie)
 
-        # Tabla con ambos gráficos en la misma fila
-        charts_table = Table([[drawing_bar, drawing_pie]], colWidths=[280, 220])
-        charts_table.setStyle(TableStyle([
+        # Dashboard: KPIs + gráficos en una fila
+        dashboard_table = Table([[summary_table, drawing_bar, drawing_pie]],
+                                colWidths=[200, 200, 150])
+        dashboard_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
         ]))
-        elements.append(charts_table)
+        elements.append(dashboard_table)
+        elements.append(Spacer(1, 20))
+
+        # 🔹 Tabla principal
+        table = Table(data, colWidths=[34, 130, 70, 70, 70, 100], repeatRows=1)
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 1), (-1, -1), 9),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("LEFTPADDING", (0, 0), (-1, -1), 2),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        elements.append(table)
 
         # 🔹 Footer con número de página
         def add_page_number(canvas, doc):
@@ -796,7 +791,6 @@ class PaymentAdmin(admin.ModelAdmin):
             canvas.setFont("Helvetica", 8)
             canvas.drawRightString(570, 20, text)
 
-        # Construir documento
         doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
 
         pdf = buffer.getvalue()
