@@ -663,7 +663,7 @@ class PaymentAdmin(admin.ModelAdmin):
         else:
             logo = Paragraph(" ", styles["Normal"])
 
-        # 🔹 Estilo de título personalizado (16 pt)
+        # 🔹 Estilo de título personalizado
         title_style = styles["Title"].clone('CustomTitle')
         title_style.fontSize = 16
         title_style.leading = 18
@@ -711,7 +711,7 @@ class PaymentAdmin(admin.ModelAdmin):
             ])
 
         data.append(["", "", "", "TOTAL", f"{total_amount:.2f}", ""])
-
+        
         # 🔹 Resumen Ejecutivo
         summary_data = [
             ["Total Procesado", "Pendiente", "Cancelado", "Pagado"],
@@ -770,12 +770,12 @@ class PaymentAdmin(admin.ModelAdmin):
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
         elements.append(status_table)
-
-        # 🔹 Visualizaciones Ejecutivas en una sola línea
+        
+        # 🔹 Visualizaciones Ejecutivas
         elements.append(PageBreak())
         elements.append(Paragraph("Visualizaciones Ejecutivas", styles["Heading2"]))
 
-        # Gráfico de barras
+        # Gráfico de barras con colores diferenciados
         drawing_bar = Drawing(250, 150)
         bar = HorizontalBarChart()
         bar.x = 30
@@ -784,10 +784,19 @@ class PaymentAdmin(admin.ModelAdmin):
         bar.width = 200
         bar.data = [list(method_totals.values())]
         bar.categoryAxis.categoryNames = list(method_totals.keys())
-        bar.bars[0].fillColor = colors.HexColor("#004080")
+
+        metodo_colores = [
+            colors.HexColor("#004080"),  # card
+            colors.HexColor("#1f77b4"),  # transfer
+            colors.HexColor("#7f7f7f"),  # cash
+        ]
+        for i, color in enumerate(metodo_colores):
+            if i < len(bar.bars):
+                bar.bars[i].fillColor = color
+
         drawing_bar.add(bar)
 
-        # Gráfico circular
+        # Gráfico circular con colores diferenciados
         drawing_pie = Drawing(200, 150)
         pie = Pie()
         pie.x = 40
@@ -796,6 +805,16 @@ class PaymentAdmin(admin.ModelAdmin):
         pie.height = 120
         pie.data = list(status_totals.values())
         pie.labels = list(status_totals.keys())
+
+        estado_colores = {
+            "pending": colors.HexColor("#1f77b4"),
+            "canceled": colors.HexColor("#d62728"),
+            "waived": colors.HexColor("#7f7f7f"),
+            "paid": colors.HexColor("#2ca02c"),
+        }
+        for i, estado in enumerate(pie.labels):
+            pie.slices[i].fillColor = estado_colores.get(estado, colors.HexColor("#004080"))
+
         drawing_pie.add(pie)
 
         charts_table = Table([[drawing_bar, drawing_pie]], colWidths=[280, 220])
@@ -805,13 +824,25 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(charts_table)
 
-        # 🔹 Footer con número de página
+        # 🔹 Footer con número de página + watermark
         def add_page_number(canvas, doc):
             page_num = canvas.getPageNumber()
             text = f"Página {page_num} | MedOps Clinical System"
             canvas.setFont("Helvetica", 8)
             canvas.drawRightString(570, 20, text)
 
+            # Marca de agua con logo
+            logo_path = finders.find("core/img/medops-logo.png")
+            if logo_path:
+                img = ImageReader(logo_path)
+                iw, ih = img.getSize()
+                aspect = ih / float(iw)
+                canvas.saveState()
+                canvas.setFillAlpha(0.1)  # transparencia
+                canvas.drawImage(img, 200, 300, width=200, height=(200 * aspect), mask='auto')
+                canvas.restoreState()
+
+        # Construcción del documento
         doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
 
         pdf = buffer.getvalue()
@@ -821,7 +852,6 @@ class PaymentAdmin(admin.ModelAdmin):
         response["Content-Disposition"] = 'attachment; filename="payments_report.pdf"'
         response.write(pdf)
         return response
-
     
     # 🔹 Acción de exportación    
     @admin.action(description="Exportar pagos seleccionados a PDF")
