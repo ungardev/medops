@@ -569,68 +569,12 @@ class PaymentAdmin(admin.ModelAdmin):
     def export_pdf(self, request):
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
-        
-        payments = Payment.objects.all()
+
+        queryset = Payment.objects.all()
         if start_date:
-            payments = payments.filter(received_at__date__gte=parse_date(start_date))
+            queryset = queryset.filter(received_at__date__gte=parse_date(start_date))
         if end_date:
-            payments = payments.filter(received_at__date__lte=parse_date(end_date))
-
-        # 🔹 Creamos un buffer en memoria
-        buffer = BytesIO()
-        p = canvas.Canvas(buffer, pagesize=letter)
-        width, height = letter
-
-        # 🔹 Título
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(50, height - 50, "Reporte Financiero de Pagos")
-
-        # 🔹 Totales generales
-        total_revenue = payments.aggregate(total=Sum('amount'))['total'] or 0
-        total_payments = payments.count()
-        avg_per_payment = payments.aggregate(avg=Avg('amount'))['avg'] or 0
-
-        p.setFont("Helvetica", 10)
-        p.drawString(50, height - 80, f"Total Recaudado: {total_revenue}")
-        p.drawString(50, height - 95, f"Número de Pagos: {total_payments}")
-        p.drawString(50, height - 110, f"Promedio por Pago: {round(avg_per_payment, 2)}")
-
-        # 🔹 Encabezados de tabla
-        y = height - 150
-        p.setFont("Helvetica-Bold", 10)
-        p.drawString(50, y, "ID")
-        p.drawString(100, y, "Paciente")
-        p.drawString(250, y, "Monto")
-        p.drawString(320, y, "Método")
-        p.drawString(400, y, "Estado")
-
-        # 🔹 Filas de pagos
-        p.setFont("Helvetica", 9)
-        y -= 20
-        for pay in payments[:40]:  # límite de 40 filas por página
-            p.drawString(50, y, str(pay.pk))
-            p.drawString(100, y, f"{pay.appointment.patient.first_name} {pay.appointment.patient.last_name}")
-            p.drawString(250, y, str(pay.amount))
-            p.drawString(320, y, pay.method)
-            p.drawString(400, y, pay.status)
-            y -= 15
-            if y < 50:  # salto de página
-                p.showPage()
-                y = height - 50
-                p.setFont("Helvetica", 9)
-
-        p.showPage()
-        p.save()
-
-        # 🔹 Escribimos el buffer en la respuesta
-        pdf = buffer.getvalue()
-        buffer.close()
-
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="payments.pdf"'
-        response.write(pdf)
-        return response
-
+            queryset = queryset.filter(received_at__date__lte=parse_date(end_date))
 
     # 🔹 Botones extra en la lista de pagos
     def changelist_view(self, request, extra_context=None):
@@ -701,7 +645,7 @@ class PaymentAdmin(admin.ModelAdmin):
         except Exception:
             logo = Paragraph(" ", styles["Normal"])
 
-        title = Paragraph("Reporte de Pagos", styles["Title"])
+        title = Paragraph("Reporte Financiero de Pagos", styles["Title"])
         header_table = Table([[title, logo]], colWidths=[400, 100])
         header_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
@@ -722,11 +666,10 @@ class PaymentAdmin(admin.ModelAdmin):
         total_amount = 0.0
         method_totals = {}
 
-        # 🔹 Usar queryset filtrado si existe, sino todos
         payments = queryset if queryset is not None else Payment.objects.all()
 
         for payment in payments:
-            created_at = getattr(payment, "created_at", None)
+            created_at = getattr(payment, "received_at", None)
             created_str = created_at.strftime("%Y-%m-%d %H:%M") if created_at else ""
 
             amount = float(getattr(payment, "amount", 0))
@@ -736,10 +679,10 @@ class PaymentAdmin(admin.ModelAdmin):
             method_totals[method] = method_totals.get(method, 0.0) + amount
 
             row = [
-                str(getattr(payment, "id", "")),
-                str(getattr(payment, "patient", "")) if getattr(payment, "patient", None) else "",
+                str(payment.pk),
+                f"{payment.appointment.patient.first_name} {payment.appointment.patient.last_name}",
                 method,
-                getattr(payment, "status", ""),
+                payment.status,
                 f"{amount:.2f}",
                 created_str,
             ]
@@ -755,89 +698,35 @@ class PaymentAdmin(admin.ModelAdmin):
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("FONTSIZE", (0, 0), (-1, 0), 10),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#00A676")),
-            ("TEXTCOLOR", (0, -1), (-1, -1), colors.white),
-            ("FONTNAME", (0, -1), (-1, -1), "Helvetica-Bold"),
         ]))
         elements.append(table)
+
+        # Totales por método
         elements.append(Spacer(1, 20))
-
-        # Desglose por método
-        elements.append(Paragraph("Totales por método de pago", styles["Heading2"]))
-        breakdown_data = [["Método", "Total"]]
-        for method, subtotal in method_totals.items():
-            breakdown_data.append([method, f"{subtotal:.2f}"])
-
-        breakdown_table = Table(breakdown_data, colWidths=[200, 100])
-        breakdown_table.setStyle(TableStyle([
+        elements.append(Paragraph("Totales por Método", styles["Heading2"]))
+        method_data = [["Método", "Monto Total"]]
+        for m, amt in method_totals.items():
+            method_data.append([m, f"{amt:.2f}"])
+        method_table = Table(method_data, colWidths=[150, 100])
+        method_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
         ]))
-        elements.append(breakdown_table)
-        elements.append(Spacer(1, 20))
+        elements.append(method_table)
 
-        # 🔹 Gráficos en la misma fila
-        if method_totals:
-            methods = list(method_totals.keys())
-            subtotals = list(method_totals.values())
+        doc.build(elements)
 
-            # Gráfico de barras
-            fig, ax = plt.subplots(figsize=(4, 3))
-            ax.bar(methods, subtotals, color="#004080")
-            ax.set_title("Totales por método de pago", color="#004080")
-            ax.set_ylabel("Monto", color="#004080")
-            plt.xticks(rotation=30, ha="right")
-            img_buffer = BytesIO()
-            plt.savefig(img_buffer, format="PNG", bbox_inches="tight")
-            plt.close(fig)
-            img_buffer.seek(0)
-            bar_chart = Image(img_buffer, width=250, height=180)
+        pdf = buffer.getvalue()
+        buffer.close()
 
-            # Gráfico circular
-            fig, ax = plt.subplots(figsize=(4, 3))
-            corporate_palette = ["#004080", "#00A676", "#FF8C42", "#D72638", "#7ED321"]
-            ax.pie(
-                subtotals,
-                labels=methods,
-                autopct="%1.1f%%",
-                startangle=90,
-                colors=corporate_palette[:len(methods)]
-            )
-            ax.set_title("Proporción por método de pago", color="#004080")
-            img_buffer = BytesIO()
-            plt.savefig(img_buffer, format="PNG", bbox_inches="tight")
-            plt.close(fig)
-            img_buffer.seek(0)
-            pie_chart = Image(img_buffer, width=250, height=180)
-
-            # Colocar ambos en la misma fila
-            charts_table = Table([[bar_chart, pie_chart]], colWidths=[270, 270])
-            charts_table.setStyle(TableStyle([
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ]))
-            elements.append(charts_table)
-
-        # Pie de página
-        def add_footer(canvas, doc):
-            canvas.saveState()
-            footer_text = f"Clínica MedOps — Página {doc.page}"
-            canvas.setFont("Helvetica", 8)
-            canvas.drawCentredString(letter[0] / 2.0, 20, footer_text)
-            canvas.restoreState()
-
-        doc.build(elements, onFirstPage=add_footer, onLaterPages=add_footer)
-
-        buffer.seek(0)
-        response = HttpResponse(buffer, content_type="application/pdf")
-        response["Content-Disposition"] = 'attachment; filename="payments.pdf"'
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="payments_report.pdf"'
+        response.write(pdf)
         return response
+
     
     # 🔹 Acción de exportación
     
