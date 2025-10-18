@@ -637,35 +637,46 @@ class PaymentAdmin(admin.ModelAdmin):
 
     def export_as_pdf(self, request, queryset=None):
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        # Márgenes compactos: 0.5" arriba/abajo, 0.6" lados
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=letter,
+            topMargin=36,
+            bottomMargin=36,
+            leftMargin=44,
+            rightMargin=44,
+        )
 
         styles = getSampleStyleSheet()
         elements = []
 
-        # 🔹 Logo y título
-        logo_path = finders.find("core/img/medops-logo.png")  # ruta corregida
+        # 🔹 Logo proporcional y título
+        logo_path = finders.find("core/img/medops-logo.png")
         if logo_path:
             from reportlab.lib.utils import ImageReader
             img = ImageReader(logo_path)
             iw, ih = img.getSize()
             aspect = ih / float(iw)
-            # Escalar proporcionalmente a un ancho de 80 px
-            logo = Image(logo_path, width=80, height=(80 * aspect))
+            # Escalar a ancho 64 px (alto proporcional)
+            logo = Image(logo_path, width=64, height=(64 * aspect))
         else:
-            logo = Paragraph(" ", styles["Normal"])  # vacío si no hay logo
+            logo = Paragraph(" ", styles["Normal"])
 
         title = Paragraph("Reporte Financiero de Pagos", styles["Title"])
 
-        # 🔹 Encabezado: logo a la izquierda, título centrado
-        header_table = Table([[logo, title]], colWidths=[100, 400])
+        # 🔹 Encabezado compacto: paddings mínimos
+        header_table = Table([[logo, title]], colWidths=[90, 415])
         header_table.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (0, 0), "LEFT"),     # logo alineado a la izquierda
-            ("ALIGN", (1, 0), (1, 0), "CENTER"),   # título centrado
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ("ALIGN", (0, 0), (0, 0), "LEFT"),
+            ("ALIGN", (1, 0), (1, 0), "CENTER"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 0),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 8))  # Reducido (antes 20)
 
         # 🔹 Encabezados de tabla principal
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
@@ -690,57 +701,67 @@ class PaymentAdmin(admin.ModelAdmin):
             method_totals[method] = method_totals.get(method, 0.0) + amount
             status_totals[status] = status_totals.get(status, 0.0) + amount
 
-            row = [
+            data.append([
                 str(payment.pk),
                 f"{payment.appointment.patient.first_name} {payment.appointment.patient.last_name}",
                 method,
                 status,
                 f"{amount:.2f}",
                 created_str,
-            ]
-            data.append(row)
+            ])
 
-        # 🔹 Totales generales
+        # Totales generales
         data.append(["", "", "", "TOTAL", f"{total_amount:.2f}", ""])
 
-        # 🔹 Tabla principal
-        table = Table(data, colWidths=[40, 120, 80, 80, 80, 100])
-        table.setStyle(TableStyle([
+        # 🔹 Tabla principal compacta
+        table = Table(data, colWidths=[34, 130, 70, 70, 70, 100], repeatRows=1)
+        table_style = TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ]))
+            # Fuente más pequeña para filas → menos altura por fila
+            ("FONTSIZE", (0, 1), (-1, -1), 9),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            # Paddings mínimos
+            ("LEFTPADDING", (0, 0), (-1, -1), 2),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+        ])
+        table.setStyle(table_style)
         elements.append(table)
 
         # 🔹 Totales por método
-        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 10))
         elements.append(Paragraph("Totales por Método", styles["Heading2"]))
-        method_data = [["Método", "Monto Total"]]
-        for m, amt in method_totals.items():
-            method_data.append([m, f"{amt:.2f}"])
+        method_data = [["Método", "Monto Total"]] + [[m, f"{amt:.2f}"] for m, amt in method_totals.items()]
         method_table = Table(method_data, colWidths=[150, 100])
         method_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]))
         elements.append(method_table)
 
         # 🔹 Totales por estado
-        elements.append(Spacer(1, 20))
+        elements.append(Spacer(1, 10))
         elements.append(Paragraph("Totales por Estado", styles["Heading2"]))
-        status_data = [["Estado", "Monto Total"]]
-        for s, amt in status_totals.items():
-            status_data.append([s, f"{amt:.2f}"])
+        status_data = [["Estado", "Monto Total"]] + [[s, f"{amt:.2f}"] for s, amt in status_totals.items()]
         status_table = Table(status_data, colWidths=[150, 100])
         status_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTSIZE", (0, 0), (-1, -1), 9),
+            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]))
         elements.append(status_table)
 
@@ -751,7 +772,7 @@ class PaymentAdmin(admin.ModelAdmin):
             canvas.setFont("Helvetica", 8)
             canvas.drawRightString(570, 20, text)
 
-        # Construir documento con footer
+        # Construir documento
         doc.build(elements, onFirstPage=add_page_number, onLaterPages=add_page_number)
 
         pdf = buffer.getvalue()
