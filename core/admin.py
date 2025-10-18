@@ -576,6 +576,9 @@ class PaymentAdmin(admin.ModelAdmin):
         if end_date:
             queryset = queryset.filter(received_at__date__lte=parse_date(end_date))
 
+        # Reutilizamos la versión avanzada
+        return self.export_as_pdf(request, queryset)
+
     # 🔹 Botones extra en la lista de pagos
     def changelist_view(self, request, extra_context=None):
         if extra_context is None:
@@ -654,9 +657,10 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(header_table)
 
-        # Fecha de generación
+        # Fecha y usuario
         fecha_str = datetime.now().strftime("%d/%m/%Y %H:%M")
-        elements.append(Paragraph(f"Generado el: {fecha_str}", styles["Normal"]))
+        user_str = getattr(request.user, "username", "Sistema")
+        elements.append(Paragraph(f"Generado el: {fecha_str} por {user_str}", styles["Normal"]))
         elements.append(Spacer(1, 20))
 
         # Encabezados de tabla principal
@@ -679,7 +683,7 @@ class PaymentAdmin(admin.ModelAdmin):
             method_totals[method] = method_totals.get(method, 0.0) + amount
 
             row = [
-                str(payment.pk),
+                str(payment.pk),  # 👈 usamos pk para evitar warnings
                 f"{payment.appointment.patient.first_name} {payment.appointment.patient.last_name}",
                 method,
                 payment.status,
@@ -717,6 +721,7 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(method_table)
 
+        # Construir documento
         doc.build(elements)
 
         pdf = buffer.getvalue()
@@ -726,10 +731,8 @@ class PaymentAdmin(admin.ModelAdmin):
         response["Content-Disposition"] = 'attachment; filename="payments_report.pdf"'
         response.write(pdf)
         return response
-
     
-    # 🔹 Acción de exportación
-    
+    # 🔹 Acción de exportación    
     @admin.action(description="Exportar pagos seleccionados a PDF")
     def export_selected_as_pdf(self, request, queryset):
         return self.export_as_pdf(request, queryset)
