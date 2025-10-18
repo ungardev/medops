@@ -649,15 +649,15 @@ class PaymentAdmin(admin.ModelAdmin):
         styles = getSampleStyleSheet()
         elements = []
 
-        # 🔹 Logo arriba
+        # 🔹 Logo reducido y proporcional
         logo_path = finders.find("core/img/medops-logo.png")
         if logo_path:
             from reportlab.lib.utils import ImageReader
             img = ImageReader(logo_path)
             iw, ih = img.getSize()
             aspect = ih / float(iw)
-            # Escalar proporcionalmente a un ancho de 80 px
-            logo = Image(logo_path, width=80, height=(80 * aspect))
+            # Escalar a ancho 60 px (alto proporcional)
+            logo = Image(logo_path, width=60, height=(60 * aspect))
         else:
             logo = Paragraph(" ", styles["Normal"])
 
@@ -668,11 +668,11 @@ class PaymentAdmin(admin.ModelAdmin):
         header_table.setStyle(TableStyle([
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
+            ("TOPPADDING", (0, 0), (-1, -1), 1),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 12))
+        elements.append(Spacer(1, 10))
 
         # 🔹 Encabezados de tabla principal
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
