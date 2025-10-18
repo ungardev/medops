@@ -139,13 +139,35 @@ LOGGING = {
             "filename": os.environ.get("DJANGO_LOG_FILE", BASE_DIR / "django.log"),
             "level": "WARNING",
         },
+        # 👇 Nuevo handler para auditoría
+        "audit_file": {
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "logs" / "audit.log",  # o /srv/medops/logs/audit.log
+            "formatter": "audit",
+            "encoding": "utf-8",
+        },
     },
-    "root": {"handlers": ["console", "file"], "level": "INFO"},
+    "formatters": {
+        "audit": {
+            "format": "%(asctime)s [%(levelname)s] %(message)s",
+        },
+    },
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
+    },
     "loggers": {
         "django.request": {
             "handlers": ["file"],
             "level": "ERROR",
             "propagate": False,
         },
+        # 👇 Nuevo logger para auditoría
+        "audit": {
+            "handlers": ["audit_file"],
+            "level": "INFO",
+            "propagate": False,
+        },
     },
 }
+
