@@ -50,6 +50,9 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.utils import ImageReader
+from reportlab.graphics.shapes import Drawing
+from reportlab.graphics.charts.barcharts import HorizontalBarChart
+from reportlab.graphics.charts.piecharts import Pie
 
 
 # Inline para documentos en Patient
@@ -652,11 +655,9 @@ class PaymentAdmin(admin.ModelAdmin):
         # 🔹 Logo reducido y proporcional
         logo_path = finders.find("core/img/medops-logo.png")
         if logo_path:
-            from reportlab.lib.utils import ImageReader
             img = ImageReader(logo_path)
             iw, ih = img.getSize()
             aspect = ih / float(iw)
-            # Escalar a ancho 60 px (alto proporcional)
             logo = Image(logo_path, width=60, height=(60 * aspect))
         else:
             logo = Paragraph(" ", styles["Normal"])
@@ -667,7 +668,7 @@ class PaymentAdmin(admin.ModelAdmin):
         title_style.leading = 18
         title = Paragraph("Reporte Financiero de Pagos", title_style)
 
-        # 🔹 Encabezado: logo centrado arriba, título centrado debajo
+        # 🔹 Encabezado
         header_table = Table([[logo], [title]], colWidths=[500])
         header_table.setStyle(TableStyle([
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
@@ -676,7 +677,7 @@ class PaymentAdmin(admin.ModelAdmin):
             ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 16))  # Espacio entre título y tabla
+        elements.append(Spacer(1, 16))
 
         # 🔹 Encabezados de tabla principal
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
@@ -713,6 +714,29 @@ class PaymentAdmin(admin.ModelAdmin):
         # Totales generales
         data.append(["", "", "", "TOTAL", f"{total_amount:.2f}", ""])
 
+        # 🔹 Bloque de Resumen Ejecutivo
+        summary_data = [
+            ["Total Procesado", "Total Pendiente", "Total Cancelado", "Total Pagado"],
+            [
+                f"{total_amount:.2f}",
+                f"{status_totals.get('pending', 0):.2f}",
+                f"{status_totals.get('canceled', 0):.2f}",
+                f"{status_totals.get('paid', 0):.2f}",
+            ]
+        ]
+        summary_table = Table(summary_data, colWidths=[120, 120, 120, 120])
+        summary_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, 0), 10),
+            ("FONTSIZE", (0, 1), (-1, 1), 9),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 16))
+
         # 🔹 Tabla principal
         table = Table(data, colWidths=[34, 130, 70, 70, 70, 100], repeatRows=1)
         table.setStyle(TableStyle([
@@ -730,33 +754,34 @@ class PaymentAdmin(admin.ModelAdmin):
         ]))
         elements.append(table)
 
-        # 🔹 Totales por método
-        elements.append(Spacer(1, 10))
-        elements.append(Paragraph("Totales por Método", styles["Heading2"]))
-        method_data = [["Método", "Monto Total"]] + [[m, f"{amt:.2f}"] for m, amt in method_totals.items()]
-        method_table = Table(method_data, colWidths=[150, 100])
-        method_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ]))
-        elements.append(method_table)
+        # 🔹 Visualización: Totales por Método (Barras)
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("Visualización: Totales por Método", styles["Heading2"]))
+        drawing = Drawing(400, 150)
+        bar = HorizontalBarChart()
+        bar.x = 50
+        bar.y = 20
+        bar.height = 100
+        bar.width = 300
+        bar.data = [list(method_totals.values())]
+        bar.categoryAxis.categoryNames = list(method_totals.keys())
+        bar.bars[0].fillColor = colors.HexColor("#004080")
+        drawing.add(bar)
+        elements.append(drawing)
 
-        # 🔹 Totales por estado
-        elements.append(Spacer(1, 10))
-        elements.append(Paragraph("Totales por Estado", styles["Heading2"]))
-        status_data = [["Estado", "Monto Total"]] + [[s, f"{amt:.2f}"] for s, amt in status_totals.items()]
-        status_table = Table(status_data, colWidths=[150, 100])
-        status_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ]))
-        elements.append(status_table)
+        # 🔹 Visualización: Totales por Estado (Pie)
+        elements.append(Spacer(1, 20))
+        elements.append(Paragraph("Visualización: Totales por Estado", styles["Heading2"]))
+        drawing2 = Drawing(200, 150)
+        pie = Pie()
+        pie.x = 65
+        pie.y = 15
+        pie.width = 120
+        pie.height = 120
+        pie.data = list(status_totals.values())
+        pie.labels = list(status_totals.keys())
+        drawing2.add(pie)
+        elements.append(drawing2)
 
         # 🔹 Footer con número de página
         def add_page_number(canvas, doc):
