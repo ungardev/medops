@@ -102,7 +102,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'core/js/payment_report.js' %}"></script>
 
-<!-- 🔹 CSS embebido para mantenerlo simple -->
+<!-- 🔹 CSS adaptado a light/dark mode -->
 <style>
     .totals-grid {
         display: flex;
@@ -111,9 +111,11 @@
     }
     .card {
         flex: 1;
-        background: #f5f5f5;
+        background: var(--body-bg);
+        color: var(--body-fg);
         padding: 15px;
         border-radius: 6px;
+        border: 1px solid var(--border-color);
         text-align: center;
         font-size: 14px;
     }
@@ -125,9 +127,10 @@
     .chart-box {
         flex: 1;
         min-width: 350px;
-        background: #fff;
+        background: var(--body-bg);
+        color: var(--body-fg);
         padding: 15px;
-        border: 1px solid #ddd;
+        border: 1px solid var(--border-color);
         border-radius: 6px;
     }
     canvas {
@@ -136,9 +139,16 @@
         margin: 0 auto 15px auto;
         display: block;
     }
-    .admin-table.compact th, .admin-table.compact td {
+    .admin-table.compact th,
+    .admin-table.compact td {
         padding: 4px 8px;
         font-size: 13px;
+        border: 1px solid var(--border-color);
+        color: var(--body-fg);
+    }
+    .admin-table.compact th {
+        background: var(--header-bg);
+        color: var(--header-fg);
     }
 </style>
 {% endblock %}
