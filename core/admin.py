@@ -15,6 +15,7 @@ import json
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpRequest
 from django.contrib.staticfiles import finders
+from simple_history.admin import SimpleHistoryAdmin
 
 # App models
 from .models import (
@@ -105,7 +106,7 @@ class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
 
 
 @admin.register(Patient)
-class PatientAdmin(admin.ModelAdmin):
+class PatientAdmin(SimpleHistoryAdmin):
     list_display = ('id', 'national_id', 'first_name', 'last_name', 'birthdate', 'gender', 'contact_info')
     list_display_links = ('id', 'national_id', 'first_name', 'last_name')
     search_fields = ('national_id', 'first_name', 'last_name', 'contact_info')
@@ -115,7 +116,7 @@ class PatientAdmin(admin.ModelAdmin):
 
 
 @admin.register(Appointment)
-class AppointmentAdmin(admin.ModelAdmin):
+class AppointmentAdmin(SimpleHistoryAdmin):
     list_display = ('id', 'patient', 'appointment_date', 'status')
     list_display_links = ('id', 'patient')
     list_filter = ('status', 'appointment_date')
@@ -318,7 +319,7 @@ class QuickDateRangeFilter(admin.SimpleListFilter):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
     list_display = (
         'id', 'patient_name', 'appointment', 'amount', 'method',
         'status', 'reference_number', 'bank_name', 'received_by', 'received_at'
@@ -333,7 +334,7 @@ class PaymentAdmin(admin.ModelAdmin):
         ('amount', NumericRangeFilter),
         AmountRangeFilter,
         MethodStatusFilter,
-        DateStatusFilter,  # 🔹 ahora con “últimos 7 días + estado”
+        DateStatusFilter,
     )
 
     search_fields = (
