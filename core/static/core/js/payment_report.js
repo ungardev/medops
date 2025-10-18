@@ -6,12 +6,27 @@ document.addEventListener("DOMContentLoaded", function () {
         const statusDataEl = document.getElementById("status-data");
 
         if (!methodDataEl || !statusDataEl) {
-            console.warn("No se encontraron datos para los gráficos.");
+            console.warn("⚠️ No se encontraron datos para los gráficos.");
             return;
         }
 
-        const methodData = JSON.parse(methodDataEl.textContent);
-        const statusData = JSON.parse(statusDataEl.textContent);
+        let methodData = [];
+        let statusData = [];
+
+        // 🔹 Parseo seguro con logs
+        try {
+            methodData = JSON.parse(methodDataEl.textContent || "[]");
+            console.log("📊 Datos por método:", methodData);
+        } catch (e) {
+            console.error("❌ Error parseando methodData:", e, methodDataEl.textContent);
+        }
+
+        try {
+            statusData = JSON.parse(statusDataEl.textContent || "[]");
+            console.log("📊 Datos por estado:", statusData);
+        } catch (e) {
+            console.error("❌ Error parseando statusData:", e, statusDataEl.textContent);
+        }
 
         // 🔹 Paleta de colores reutilizable
         const palette = ['#4CAF50', '#2196F3', '#FFC107', '#FF5722', '#9C27B0', '#00BCD4', '#8BC34A'];
@@ -37,6 +52,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             });
+        } else {
+            console.warn("⚠️ No hay datos para el gráfico de métodos.");
         }
 
         // 🔹 Gráfico por Estado (Bar)
@@ -49,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     datasets: [{
                         label: 'Total por Estado',
                         data: statusData.map(item => item.total_amount),
-                        backgroundColor: palette[1]
+                        backgroundColor: statusData.map((_, i) => palette[i % palette.length])
                     }]
                 },
                 options: {
@@ -63,8 +80,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 }
             });
+        } else {
+            console.warn("⚠️ No hay datos para el gráfico de estados.");
         }
     } catch (err) {
-        console.error("Error al renderizar gráficos:", err);
+        console.error("❌ Error general al renderizar gráficos:", err);
     }
 });
