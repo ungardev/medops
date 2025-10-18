@@ -637,7 +637,6 @@ class PaymentAdmin(admin.ModelAdmin):
 
     def export_as_pdf(self, request, queryset=None):
         buffer = BytesIO()
-        # Márgenes compactos: 0.5" arriba/abajo, 0.6" lados
         doc = SimpleDocTemplate(
             buffer,
             pagesize=letter,
@@ -650,33 +649,30 @@ class PaymentAdmin(admin.ModelAdmin):
         styles = getSampleStyleSheet()
         elements = []
 
-        # 🔹 Logo proporcional y título
+        # 🔹 Logo arriba
         logo_path = finders.find("core/img/medops-logo.png")
         if logo_path:
             from reportlab.lib.utils import ImageReader
             img = ImageReader(logo_path)
             iw, ih = img.getSize()
             aspect = ih / float(iw)
-            # Escalar a ancho 64 px (alto proporcional)
-            logo = Image(logo_path, width=64, height=(64 * aspect))
+            # Escalar proporcionalmente a un ancho de 80 px
+            logo = Image(logo_path, width=80, height=(80 * aspect))
         else:
             logo = Paragraph(" ", styles["Normal"])
 
         title = Paragraph("Reporte Financiero de Pagos", styles["Title"])
 
-        # 🔹 Encabezado compacto: paddings mínimos
-        header_table = Table([[logo, title]], colWidths=[90, 415])
+        # 🔹 Encabezado: logo centrado arriba, título centrado debajo
+        header_table = Table([[logo], [title]], colWidths=[500])
         header_table.setStyle(TableStyle([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("ALIGN", (0, 0), (0, 0), "LEFT"),
-            ("ALIGN", (1, 0), (1, 0), "CENTER"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
             ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 8))  # Reducido (antes 20)
+        elements.append(Spacer(1, 12))
 
         # 🔹 Encabezados de tabla principal
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
@@ -713,24 +709,21 @@ class PaymentAdmin(admin.ModelAdmin):
         # Totales generales
         data.append(["", "", "", "TOTAL", f"{total_amount:.2f}", ""])
 
-        # 🔹 Tabla principal compacta
+        # 🔹 Tabla principal
         table = Table(data, colWidths=[34, 130, 70, 70, 70, 100], repeatRows=1)
-        table_style = TableStyle([
+        table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#004080")),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            # Fuente más pequeña para filas → menos altura por fila
             ("FONTSIZE", (0, 1), (-1, -1), 9),
             ("FONTSIZE", (0, 0), (-1, 0), 10),
-            # Paddings mínimos
             ("LEFTPADDING", (0, 0), (-1, -1), 2),
             ("RIGHTPADDING", (0, 0), (-1, -1), 2),
             ("TOPPADDING", (0, 0), (-1, -1), 2),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
-        ])
-        table.setStyle(table_style)
+        ]))
         elements.append(table)
 
         # 🔹 Totales por método
@@ -744,8 +737,6 @@ class PaymentAdmin(admin.ModelAdmin):
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
             ("FONTSIZE", (0, 0), (-1, -1), 9),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]))
         elements.append(method_table)
 
@@ -760,8 +751,6 @@ class PaymentAdmin(admin.ModelAdmin):
             ("ALIGN", (0, 0), (-1, -1), "CENTER"),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
             ("FONTSIZE", (0, 0), (-1, -1), 9),
-            ("TOPPADDING", (0, 0), (-1, -1), 2),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
         ]))
         elements.append(status_table)
 
