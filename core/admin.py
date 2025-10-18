@@ -13,6 +13,7 @@ from django.utils.timezone import now
 from django.db.models.functions import TruncDate
 import json
 from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpRequest
 
 # App models
 from .models import (
@@ -382,7 +383,7 @@ class PaymentAdmin(admin.ModelAdmin):
         return TemplateResponse(request, "admin/payments_dashboard.html", context)
     
     # 🔹 Vista de reporte con filtros y resumen
-    def report_view(self, request):
+    def report_view(self, request: HttpRequest):
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
 
@@ -392,25 +393,34 @@ class PaymentAdmin(admin.ModelAdmin):
         if end_date:
             payments = payments.filter(received_at__date__lte=parse_date(end_date))
 
-        totals_by_method = (
+        # 🔹 Querysets crudos para tablas
+        totals_by_method_qs = (
             payments.values('method')
             .annotate(total_amount=Sum('amount'), count=Count('id'))
             .order_by('method')
         )
-        totals_by_status = (
+
+        totals_by_status_qs = (
             payments.values('status')
             .annotate(total_amount=Sum('amount'), count=Count('id'))
             .order_by('status')
         )
 
+        # 🔹 Totales generales
         total_revenue = payments.aggregate(total=Sum('amount'))['total'] or 0
         total_payments = payments.count()
         avg_per_payment = payments.aggregate(avg=Avg('amount'))['avg'] or 0
 
+        # 🔹 Contexto con doble salida
         context = dict(
             self.admin_site.each_context(request),
-            totals_by_method=json.dumps(list(totals_by_method), cls=DjangoJSONEncoder),
-            totals_by_status=json.dumps(list(totals_by_status), cls=DjangoJSONEncoder),
+            # Para las tablas
+            totals_by_method=totals_by_method_qs,
+            totals_by_status=totals_by_status_qs,
+            # Para los gráficos
+            totals_by_method_json=json.dumps(list(totals_by_method_qs), cls=DjangoJSONEncoder),
+            totals_by_status_json=json.dumps(list(totals_by_status_qs), cls=DjangoJSONEncoder),
+            # Métricas globales
             title="Reporte Financiero de Pagos",
             start_date=start_date or "",
             end_date=end_date or "",
@@ -420,6 +430,7 @@ class PaymentAdmin(admin.ModelAdmin):
         )
 
         return TemplateResponse(request, "admin/payment_report.html", context)
+
 
     # 🔹 Exportador CSV
     def export_csv(self, request):
