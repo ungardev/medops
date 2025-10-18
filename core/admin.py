@@ -661,7 +661,11 @@ class PaymentAdmin(admin.ModelAdmin):
         else:
             logo = Paragraph(" ", styles["Normal"])
 
-        title = Paragraph("Reporte Financiero de Pagos", styles["Title"])
+        # 🔹 Estilo de título personalizado (16 pt)
+        title_style = styles["Title"].clone('CustomTitle')
+        title_style.fontSize = 16
+        title_style.leading = 18
+        title = Paragraph("Reporte Financiero de Pagos", title_style)
 
         # 🔹 Encabezado: logo centrado arriba, título centrado debajo
         header_table = Table([[logo], [title]], colWidths=[500])
@@ -672,7 +676,7 @@ class PaymentAdmin(admin.ModelAdmin):
             ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
         ]))
         elements.append(header_table)
-        elements.append(Spacer(1, 16))  # 🔹 Espacio aumentado a 16 pt
+        elements.append(Spacer(1, 16))  # Espacio entre título y tabla
 
         # 🔹 Encabezados de tabla principal
         headers = ["ID", "Paciente", "Método", "Estado", "Monto", "Fecha"]
