@@ -6,6 +6,7 @@ from django.utils.timezone import now
 from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 from django.db.models import Sum
+from decimal import Decimal
 
 # Create your models here.
 class Patient(models.Model):
@@ -74,12 +75,8 @@ class Appointment(models.Model):
 
     # Helpers financieros
     def total_paid(self):
-        qs = self.payments.all()
-        if not qs.exists():
-            return 0
-        agg = qs.aggregate(total=Sum('amount'))
-        return agg['total'] or 0
-
+        agg = self.payments.aggregate(total=Sum('amount'))
+        return agg.get('total') or 0
 
     def is_fully_paid(self, expected_amount):
         return self.total_paid() >= expected_amount
