@@ -1,6 +1,5 @@
-/* === Estilos personalizados para AppointmentAdmin === */
+/* === Estilos personalizados para el resumen financiero === */
 
-/* Bloque de resumen financiero */
 .financial-summary {
     margin: 10px 0;
     padding: 10px;
@@ -15,7 +14,6 @@
     margin-bottom: 6px;
 }
 
-/* Badges de métricas */
 .financial-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -48,10 +46,5 @@
     flex: 1;
     min-width: 280px;
     max-width: 500px;
-    height: 300px; /* Controla la altura de los gráficos */
-}
-
-.finance-charts canvas {
-    width: 100% !important;
-    height: 100% !important;
+    height: 300px;
 }

@@ -226,12 +226,6 @@ class AppointmentAdmin(SimpleHistoryAdmin):
             total_paid_str = f"{total_paid:.2f}"
             total_balance_str = f"{total_balance:.2f}"
 
-            # Datos para Chart.js (marcados como seguros para evitar escaping)
-            bar_labels = mark_safe(json.dumps(["Monto esperado", "Total pagado", "Saldo pendiente"]))
-            bar_values = mark_safe(json.dumps([float(total_expected), float(total_paid), float(total_balance)]))
-            pie_labels = mark_safe(json.dumps(["Pagado", "Pendiente"]))
-            pie_values = mark_safe(json.dumps([float(total_paid), float(total_balance)]))
-
             response.context_data["summary"] = format_html(
                 """
                 <div class="financial-summary">
@@ -240,51 +234,8 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                     <span class="financial-badge paid">Total pagado: {}</span>
                     <span class="financial-badge balance">Saldo pendiente: {}</span>
                 </div>
-                <div class="finance-charts">
-                    <div><canvas id="financeBarChart"></canvas></div>
-                    <div><canvas id="financePieChart"></canvas></div>
-                </div>
-                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-                <script>
-                document.addEventListener("DOMContentLoaded", function() {{
-                    new Chart(document.getElementById('financeBarChart').getContext('2d'), {{
-                        type: 'bar',
-                        data: {{
-                            labels: {bar_labels},
-                            datasets: [{{
-                                label: 'Valores',
-                                data: {bar_values},
-                                backgroundColor: ['#0d6efd','#198754','#dc3545'],
-                            }}]
-                        }},
-                        options: {{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {{ legend: {{ display: false }} }}
-                        }}
-                    }});
-
-                    new Chart(document.getElementById('financePieChart').getContext('2d'), {{
-                        type: 'pie',
-                        data: {{
-                            labels: {pie_labels},
-                            datasets: [{{
-                                data: {pie_values},
-                                backgroundColor: ['#198754','#dc3545'],
-                            }}]
-                        }},
-                        options: {{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {{ legend: {{ position: 'bottom' }} }}
-                        }}
-                    }});
-                }});
-                </script>
                 """,
                 total_expected_str, total_paid_str, total_balance_str,
-                bar_labels=bar_labels, bar_values=bar_values,
-                pie_labels=pie_labels, pie_values=pie_values,
             )
         except Exception as e:
             logger.exception("Error en changelist_view: %s", e)
