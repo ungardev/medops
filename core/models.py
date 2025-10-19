@@ -58,10 +58,19 @@ class Appointment(models.Model):
         ('in_consultation', 'In Consultation'),
         ('completed', 'Completed'),
     ]
+
     patient = models.ForeignKey('Patient', on_delete=models.CASCADE)
     appointment_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     arrival_time = models.TimeField(blank=True, null=True)
+
+    # 🔹 Nuevo campo: monto esperado de la cita
+    expected_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Monto esperado"
+    )
 
     # Historial
     history = HistoricalRecords()
@@ -69,7 +78,7 @@ class Appointment(models.Model):
     class Meta:
         verbose_name = "Appointment"
         verbose_name_plural = "Appointments"
-    
+
     def __str__(self):
         return f"{self.patient} - {self.appointment_date} - {self.status}"
 
@@ -77,17 +86,15 @@ class Appointment(models.Model):
     def total_paid(self):
         agg = self.payments.aggregate(total=Sum('amount'))
         return agg.get('total') or Decimal('0.00')
-    
-    def balance_due(self, expected_amount: Decimal):
+
+    def balance_due(self):
         """
         Devuelve cuánto falta por pagar en esta cita.
-        Si el total pagado >= esperado, devuelve 0.
         """
-        paid = self.total_paid()
-        return max(expected_amount - paid, Decimal('0.00'))
+        return max(self.expected_amount - self.total_paid(), Decimal('0.00'))
 
-    def is_fully_paid(self, expected_amount: Decimal):
-        return self.balance_due(expected_amount) == Decimal('0.00')
+    def is_fully_paid(self):
+        return self.balance_due() == Decimal('0.00')
 
 
 class Diagnosis(models.Model):
