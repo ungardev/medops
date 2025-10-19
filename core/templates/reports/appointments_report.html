@@ -1,0 +1,44 @@
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+    <!-- Encabezado -->
+    <header>
+        <img src="{{ logo_url }}" alt="MedOps Logo" style="height:60px;">
+        <h2>Reporte de Citas</h2>
+    </header>
+
+    <!-- Marca de agua -->
+    <div class="watermark">
+        <img src="{{ logo_url }}" alt="MedOps Watermark">
+    </div>
+
+    <h3>Resumen</h3>
+    <table>
+        <tr><th>Total citas</th><td>{{ total_appointments }}</td></tr>
+        <tr><th>Total esperado</th><td>{{ total_expected }}</td></tr>
+        <tr><th>Total pagado</th><td>{{ total_paid }}</td></tr>
+        <tr><th>Saldo pendiente</th><td>{{ total_balance }}</td></tr>
+    </table>
+
+    <h3>Detalle</h3>
+    <table>
+        <tr>
+            <th>ID</th><th>Paciente</th><th>Fecha</th>
+            <th>Tipo</th><th>Estado</th>
+            <th>Esperado</th><th>Pagado</th><th>Saldo</th>
+        </tr>
+        {% for appt in appointments %}
+        <tr>
+            <td>{{ appt.id }}</td>
+            <td>{{ appt.patient }}</td>
+            <td>{{ appt.appointment_date }}</td>
+            <td>{{ appt.get_appointment_type_display }}</td>
+            <td>{{ appt.status }}</td>
+            <td>{{ appt.expected_amount }}</td>
+            <td>{{ appt.total_paid }}</td>
+            <td>{{ appt.balance_due }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

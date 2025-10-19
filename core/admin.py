@@ -17,6 +17,7 @@ from django.http import HttpRequest
 from django.contrib.staticfiles import finders
 from simple_history.admin import SimpleHistoryAdmin
 from django.utils.translation import gettext_lazy as _
+from core.utils.pdf import render_pdf_appointments
 
 # App models
 from .models import (
@@ -153,23 +154,27 @@ class PaymentInline(admin.TabularInline):
 @admin.register(Appointment)
 class AppointmentAdmin(SimpleHistoryAdmin):
     list_display = (
-        'id',
-        'patient',
-        'appointment_date',
-        'appointment_type',
-        'status',
-        'expected_amount',
-        'total_paid_display',
-        'balance_due_display',
-        'is_fully_paid',
+        "id",
+        "patient",
+        "appointment_date",
+        "appointment_type",
+        "status",
+        "expected_amount",
+        "total_paid_display",
+        "balance_due_display",
+        "is_fully_paid",
     )
-    list_display_links = ('id', 'patient')
-    list_filter = ('status', 'appointment_date', 'appointment_type', BalanceDueFilter)
-    search_fields = ('patient__first_name', 'patient__last_name', 'patient__national_id')
-    ordering = ('-appointment_date',)
+    list_display_links = ("id", "patient")
+    list_filter = ("status", "appointment_date", "appointment_type", BalanceDueFilter)
+    search_fields = (
+        "patient__first_name",
+        "patient__last_name",
+        "patient__national_id",
+    )
+    ordering = ("-appointment_date",)
     list_per_page = 25
     inlines = [PaymentInline, MedicalDocumentInlineForAppointment]
-    readonly_fields = ('total_paid_display', 'balance_due_display')
+    readonly_fields = ("total_paid_display", "balance_due_display")
 
     # Helpers para mostrar valores calculados
     def total_paid_display(self, obj):
@@ -184,24 +189,76 @@ class AppointmentAdmin(SimpleHistoryAdmin):
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
         try:
-            qs = response.context_data['cl'].queryset
-            total_expected = qs.aggregate(total=Sum('expected_amount'))['total'] or 0
-            total_paid = sum([appt.total_paid() for appt in qs])
-            total_balance = sum([appt.balance_due() for appt in qs])
+            qs = response.context_data["cl"].queryset
 
-            response.context_data['summary'] = format_html(
-                "<div style='margin:10px 0; padding:10px; background:#f0f0f0; border:1px solid #ccc;'>"
-                "<strong>Resumen financiero:</strong> "
-                "Monto esperado: <b>{:.2f}</b> | "
-                "Total pagado: <b>{:.2f}</b> | "
-                "Saldo pendiente: <b>{:.2f}</b>"
-                "</div>",
-                total_expected, total_paid, total_balance
+            total_expected = qs.aggregate(total=Sum("expected_amount"))["total"] or 0
+            total_paid = sum(appt.total_paid() for appt in qs)
+            total_balance = sum(appt.balance_due() for appt in qs)
+
+            # Datos para Chart.js
+            bar_labels = json.dumps(["Monto esperado", "Total pagado", "Saldo pendiente"])
+            bar_values = json.dumps([float(total_expected), float(total_paid), float(total_balance)])
+            pie_labels = json.dumps(["Pagado", "Pendiente"])
+            pie_values = json.dumps([float(total_paid), float(total_balance)])
+
+            response.context_data["summary"] = format_html(
+                """
+                <div style='margin:10px 0; padding:10px; background:#f9f9f9; border:1px solid #ccc;'>
+                    <strong>Resumen financiero:</strong><br>
+                    Monto esperado: <b>{:.2f}</b> | 
+                    Total pagado: <b>{:.2f}</b> | 
+                    Saldo pendiente: <b>{:.2f}</b>
+                </div>
+                <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                    <canvas id="financeBarChart" width="400" height="150"></canvas>
+                    <canvas id="financePieChart" width="300" height="150"></canvas>
+                </div>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+                <script>
+                new Chart(document.getElementById('financeBarChart').getContext('2d'), {{
+                    type: 'bar',
+                    data: {{
+                        labels: {bar_labels},
+                        datasets: [{{
+                            label: 'Valores',
+                            data: {bar_values},
+                            backgroundColor: ['#007bff','#28a745','#dc3545'],
+                        }}]
+                    }},
+                    options: {{ responsive: true, plugins: {{ legend: {{ display: false }} }} }}
+                }});
+
+                new Chart(document.getElementById('financePieChart').getContext('2d'), {{
+                    type: 'pie',
+                    data: {{
+                        labels: {pie_labels},
+                        datasets: [{{
+                            data: {pie_values},
+                            backgroundColor: ['#28a745','#dc3545'],
+                        }}]
+                    }},
+                    options: {{ responsive: true, plugins: {{ legend: {{ position: 'bottom' }} }} }}
+                }});
+                </script>
+                """,
+                total_expected, total_paid, total_balance,
+                bar_labels=bar_labels, bar_values=bar_values,
+                pie_labels=pie_labels, pie_values=pie_values,
             )
         except (AttributeError, KeyError):
             pass
         return response
 
+    # 🔹 Acción de exportar a PDF
+    actions = ["export_as_pdf"]
+
+    def export_as_pdf(self, request, queryset):
+        logo_path = "static/img/medops-logo.png"  # ajusta según tu setup
+        pdf_content = render_pdf_appointments(queryset, logo_path)
+        response = HttpResponse(pdf_content, content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="appointments_report.pdf"'
+        return response
+    export_as_pdf.short_description = "Exportar reporte de citas en PDF"
 
 
 @admin.register(Diagnosis)
