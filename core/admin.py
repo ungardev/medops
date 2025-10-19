@@ -228,11 +228,18 @@ class AppointmentAdmin(SimpleHistoryAdmin):
 
             response.context_data["summary"] = format_html(
                 """
-                <div style='margin:10px 0; padding:10px; background:#f9f9f9; border:1px solid #ccc;'>
+                <div style="
+                    margin:10px 0;
+                    padding:10px;
+                    background: var(--body-bg);
+                    border: 1px solid var(--hairline-color);
+                    color: var(--body-fg);
+                    border-radius: 4px;
+                ">
                     <strong>Resumen financiero:</strong><br>
-                    Monto esperado: <b>{}</b> | 
-                    Total pagado: <b>{}</b> | 
-                    Saldo pendiente: <b>{}</b>
+                    Monto esperado: <span style="color: var(--link-fg);"><b>{}</b></span> |
+                    Total pagado: <span style="color: var(--link-fg);"><b>{}</b></span> |
+                    Saldo pendiente: <span style="color: var(--link-fg);"><b>{}</b></span>
                 </div>
                 <div style="display:flex; gap:20px; flex-wrap:wrap;">
                     <canvas id="financeBarChart" width="400" height="150"></canvas>
