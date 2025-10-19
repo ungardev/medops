@@ -5,7 +5,7 @@ from django.urls import path, reverse
 from django.template.response import TemplateResponse
 from django.utils.dateparse import parse_date
 from django.http import HttpResponse
-from django.db.models import Sum, Count, Avg
+from django.db.models import Sum, Count, Avg, F, DecimalField, Value
 from datetime import datetime, date, timedelta
 import matplotlib.pyplot as plt
 from rangefilter.filters import DateRangeFilter, DateTimeRangeFilter, DateRangeFilterBuilder, NumericRangeFilter
@@ -18,6 +18,7 @@ from django.contrib.staticfiles import finders
 from simple_history.admin import SimpleHistoryAdmin
 from django.utils.translation import gettext_lazy as _
 from core.utils.pdf import render_pdf_appointments
+from django.db.models.functions import Coalesce
 import logging
 
 # App models
@@ -132,11 +133,20 @@ class BalanceDueFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'with_balance':
-            return [appt for appt in queryset if appt.balance_due() > 0]
-        if self.value() == 'no_balance':
-            return [appt for appt in queryset if appt.balance_due() == 0]
-        return queryset
+        qs = queryset.annotate(
+            total_paid=Coalesce(
+                Sum("payments__amount"),
+                Value(0, output_field=DecimalField())
+            )
+        )
+
+        match self.value():
+            case "with_balance":
+                return qs.filter(expected_amount__gt=F("total_paid"))
+            case "no_balance":
+                return qs.filter(expected_amount__lte=F("total_paid"))
+            case _:
+                return qs
 
 
 class PaymentInline(admin.TabularInline):
