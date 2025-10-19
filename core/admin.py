@@ -169,7 +169,9 @@ class AppointmentAdmin(SimpleHistoryAdmin):
     ordering = ('-appointment_date',)
     list_per_page = 25
     inlines = [PaymentInline, MedicalDocumentInlineForAppointment]
+    readonly_fields = ('total_paid_display', 'balance_due_display')
 
+    # Helpers para mostrar valores calculados
     def total_paid_display(self, obj):
         return f"{obj.total_paid():.2f}"
     total_paid_display.short_description = "Total Pagado"
@@ -178,7 +180,28 @@ class AppointmentAdmin(SimpleHistoryAdmin):
         return f"{obj.balance_due():.2f}"
     balance_due_display.short_description = "Saldo Pendiente"
 
-    readonly_fields = ('total_paid_display', 'balance_due_display')
+    # 🔹 Resumen agregado en la parte superior de la lista
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context=extra_context)
+        try:
+            qs = response.context_data['cl'].queryset
+            total_expected = qs.aggregate(total=Sum('expected_amount'))['total'] or 0
+            total_paid = sum([appt.total_paid() for appt in qs])
+            total_balance = sum([appt.balance_due() for appt in qs])
+
+            response.context_data['summary'] = format_html(
+                "<div style='margin:10px 0; padding:10px; background:#f0f0f0; border:1px solid #ccc;'>"
+                "<strong>Resumen financiero:</strong> "
+                "Monto esperado: <b>{:.2f}</b> | "
+                "Total pagado: <b>{:.2f}</b> | "
+                "Saldo pendiente: <b>{:.2f}</b>"
+                "</div>",
+                total_expected, total_paid, total_balance
+            )
+        except (AttributeError, KeyError):
+            pass
+        return response
+
 
 
 @admin.register(Diagnosis)
