@@ -1,0 +1,9 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+    {# 🔹 Bloque de resumen financiero y gráficos inyectado desde AppointmentAdmin.changelist_view #}
+    {{ summary|safe }}
+
+    {# 🔹 Mantiene el contenido original de la lista (tabla, filtros, etc.) #}
+    {{ block.super }}
+{% endblock %}
