@@ -234,12 +234,38 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                     background: var(--body-bg);
                     border: 1px solid var(--hairline-color);
                     color: var(--body-fg);
-                    border-radius: 4px;
+                    border-radius: 6px;
                 ">
                     <strong>Resumen financiero:</strong><br>
-                    Monto esperado: <span style="color: var(--link-fg);"><b>{}</b></span> |
-                    Total pagado: <span style="color: var(--link-fg);"><b>{}</b></span> |
-                    Saldo pendiente: <span style="color: var(--link-fg);"><b>{}</b></span>
+                    <span style="
+                        display:inline-block;
+                        padding:2px 8px;
+                        margin:2px;
+                        border-radius:12px;
+                        background:#0d6efd;
+                        color:white;
+                        font-size:0.9em;
+                    ">Monto esperado: {}</span>
+
+                    <span style="
+                        display:inline-block;
+                        padding:2px 8px;
+                        margin:2px;
+                        border-radius:12px;
+                        background:#198754;
+                        color:white;
+                        font-size:0.9em;
+                    ">Total pagado: {}</span>
+
+                    <span style="
+                        display:inline-block;
+                        padding:2px 8px;
+                        margin:2px;
+                        border-radius:12px;
+                        background:#dc3545;
+                        color:white;
+                        font-size:0.9em;
+                    ">Saldo pendiente: {}</span>
                 </div>
                 <div style="display:flex; gap:20px; flex-wrap:wrap;">
                     <canvas id="financeBarChart" width="400" height="150"></canvas>
@@ -254,7 +280,7 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                         datasets: [{{
                             label: 'Valores',
                             data: {bar_values},
-                            backgroundColor: ['#007bff','#28a745','#dc3545'],
+                            backgroundColor: ['#0d6efd','#198754','#dc3545'],
                         }}]
                     }},
                     options: {{ responsive: true, plugins: {{ legend: {{ display: false }} }} }}
@@ -266,7 +292,7 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                         labels: {pie_labels},
                         datasets: [{{
                             data: {pie_values},
-                            backgroundColor: ['#28a745','#dc3545'],
+                            backgroundColor: ['#198754','#dc3545'],
                         }}]
                     }},
                     options: {{ responsive: true, plugins: {{ legend: {{ position: 'bottom' }} }} }}
