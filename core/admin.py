@@ -221,11 +221,6 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                 total_expected, total_paid, total_balance
             )
 
-            # 🔹 Convertimos a string formateado antes de pasarlo a format_html
-            total_expected_str = f"{total_expected:.2f}"
-            total_paid_str = f"{total_paid:.2f}"
-            total_balance_str = f"{total_balance:.2f}"
-
             response.context_data["summary"] = format_html(
                 """
                 <div class="financial-summary">
@@ -235,29 +230,13 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                     <span class="financial-badge balance">Saldo pendiente: {}</span>
                 </div>
                 """,
-                total_expected_str, total_paid_str, total_balance_str,
+                f"{total_expected:.2f}",
+                f"{total_paid:.2f}",
+                f"{total_balance:.2f}",
             )
         except Exception as e:
             logger.exception("Error en changelist_view: %s", e)
         return response
-
-    # 🔹 Acción de exportar a PDF
-    actions = ["export_as_pdf"]
-
-    def export_as_pdf(self, request, queryset):
-        logger.debug("Exportando %s citas a PDF", queryset.count())
-        logo_path = "static/img/medops-logo.png"  # ajusta según tu setup
-        try:
-            pdf_content = render_pdf_appointments(queryset, logo_path)
-            response = HttpResponse(pdf_content, content_type="application/pdf")
-            response["Content-Disposition"] = 'attachment; filename="appointments_report.pdf"'
-            logger.info("PDF de citas generado correctamente (%s registros)", queryset.count())
-            return response
-        except Exception as e:
-            logger.exception("Error generando PDF de citas: %s", e)
-            self.message_user(request, "Error generando PDF, revisa logs.", level="error")
-
-    export_as_pdf.short_description = "Exportar reporte de citas en PDF"
 
 
 @admin.register(Diagnosis)
