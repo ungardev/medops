@@ -16,6 +16,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.http import HttpRequest
 from django.contrib.staticfiles import finders
 from simple_history.admin import SimpleHistoryAdmin
+from django.utils.translation import gettext_lazy as _
 
 # App models
 from .models import (
@@ -115,6 +116,24 @@ class PatientAdmin(SimpleHistoryAdmin):
     inlines = [MedicalDocumentInlineForPatient]
 
 
+class BalanceDueFilter(admin.SimpleListFilter):
+    title = _('Saldo pendiente')
+    parameter_name = 'balance_due'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('with_balance', _('Con saldo pendiente')),
+            ('no_balance', _('Saldadas')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'with_balance':
+            return [appt for appt in queryset if appt.balance_due() > 0]
+        if self.value() == 'no_balance':
+            return [appt for appt in queryset if appt.balance_due() == 0]
+        return queryset
+
+
 class PaymentInline(admin.TabularInline):
     model = Payment
     extra = 0
@@ -145,15 +164,12 @@ class AppointmentAdmin(SimpleHistoryAdmin):
         'is_fully_paid',
     )
     list_display_links = ('id', 'patient')
-    list_filter = ('status', 'appointment_date', 'appointment_type')
+    list_filter = ('status', 'appointment_date', 'appointment_type', BalanceDueFilter)
     search_fields = ('patient__first_name', 'patient__last_name', 'patient__national_id')
     ordering = ('-appointment_date',)
     list_per_page = 25
-
-    # 🔹 Ahora verás documentos clínicos y pagos directamente en la cita
     inlines = [PaymentInline, MedicalDocumentInlineForAppointment]
 
-    # Helpers para mostrar valores calculados
     def total_paid_display(self, obj):
         return f"{obj.total_paid():.2f}"
     total_paid_display.short_description = "Total Pagado"
@@ -162,7 +178,6 @@ class AppointmentAdmin(SimpleHistoryAdmin):
         return f"{obj.balance_due():.2f}"
     balance_due_display.short_description = "Saldo Pendiente"
 
-    # Campos de solo lectura en el formulario
     readonly_fields = ('total_paid_display', 'balance_due_display')
 
 
