@@ -131,24 +131,32 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[{asctime}] {levelname} {name}: {message}",
+            "style": "{",
+        },
+        "audit": {
+            "format": "%(asctime)s [%(levelname)s] %(message)s",
+        },
+    },
     "handlers": {
-        "console": {"class": "logging.StreamHandler"},
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
         "file": {
             "class": "logging.FileHandler",
             "filename": os.environ.get("DJANGO_LOG_FILE", BASE_DIR / "django.log"),
             "level": "WARNING",
+            "formatter": "verbose",
         },
-        # 👇 Nuevo handler para auditoría
+        # 🔹 Handler para auditoría
         "audit_file": {
             "class": "logging.FileHandler",
             "filename": BASE_DIR / "logs" / "audit.log",  # o /srv/medops/logs/audit.log
             "formatter": "audit",
             "encoding": "utf-8",
-        },
-    },
-    "formatters": {
-        "audit": {
-            "format": "%(asctime)s [%(levelname)s] %(message)s",
         },
     },
     "root": {
@@ -161,12 +169,19 @@ LOGGING = {
             "level": "ERROR",
             "propagate": False,
         },
-        # 👇 Nuevo logger para auditoría
+        # 🔹 Logger para auditoría
         "audit": {
             "handlers": ["audit_file"],
             "level": "INFO",
             "propagate": False,
         },
+        # 🔹 Logger específico para tu app core
+        "core": {
+            "handlers": ["console", "file"],
+            "level": "DEBUG",   # así ves mensajes detallados de AppointmentAdmin
+            "propagate": False,
+        },
     },
 }
+
 

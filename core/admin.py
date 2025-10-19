@@ -18,6 +18,7 @@ from django.contrib.staticfiles import finders
 from simple_history.admin import SimpleHistoryAdmin
 from django.utils.translation import gettext_lazy as _
 from core.utils.pdf import render_pdf_appointments
+import logging
 
 # App models
 from .models import (
@@ -57,6 +58,9 @@ from reportlab.lib.utils import ImageReader
 from reportlab.graphics.shapes import Drawing
 from reportlab.graphics.charts.barcharts import HorizontalBarChart
 from reportlab.graphics.charts.piecharts import Pie
+
+
+logger = logging.getLogger("core")
 
 
 # Inline para documentos en Patient
@@ -187,13 +191,20 @@ class AppointmentAdmin(SimpleHistoryAdmin):
 
     # 🔹 Resumen agregado en la parte superior de la lista
     def changelist_view(self, request, extra_context=None):
+        logger.debug("Entré a changelist_view de AppointmentAdmin")
         response = super().changelist_view(request, extra_context=extra_context)
         try:
             qs = response.context_data["cl"].queryset
+            logger.debug("Queryset count: %s", qs.count())
 
             total_expected = qs.aggregate(total=Sum("expected_amount"))["total"] or 0
             total_paid = sum(appt.total_paid() for appt in qs)
             total_balance = sum(appt.balance_due() for appt in qs)
+
+            logger.debug(
+                "Totales calculados -> expected=%.2f, paid=%.2f, balance=%.2f",
+                total_expected, total_paid, total_balance
+            )
 
             # Datos para Chart.js
             bar_labels = json.dumps(["Monto esperado", "Total pagado", "Saldo pendiente"])
@@ -245,20 +256,28 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                 bar_labels=bar_labels, bar_values=bar_values,
                 pie_labels=pie_labels, pie_values=pie_values,
             )
-        except (AttributeError, KeyError):
-            pass
+        except Exception as e:
+            logger.exception("Error en changelist_view: %s", e)
         return response
 
     # 🔹 Acción de exportar a PDF
     actions = ["export_as_pdf"]
 
     def export_as_pdf(self, request, queryset):
+        logger.debug("Exportando %s citas a PDF", queryset.count())
         logo_path = "static/img/medops-logo.png"  # ajusta según tu setup
-        pdf_content = render_pdf_appointments(queryset, logo_path)
-        response = HttpResponse(pdf_content, content_type="application/pdf")
-        response["Content-Disposition"] = 'attachment; filename="appointments_report.pdf"'
-        return response
+        try:
+            pdf_content = render_pdf_appointments(queryset, logo_path)
+            response = HttpResponse(pdf_content, content_type="application/pdf")
+            response["Content-Disposition"] = 'attachment; filename="appointments_report.pdf"'
+            logger.info("PDF de citas generado correctamente (%s registros)", queryset.count())
+            return response
+        except Exception as e:
+            logger.exception("Error generando PDF de citas: %s", e)
+            self.message_user(request, "Error generando PDF, revisa logs.", level="error")
+
     export_as_pdf.short_description = "Exportar reporte de citas en PDF"
+
 
 
 @admin.register(Diagnosis)
