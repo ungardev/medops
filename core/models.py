@@ -76,10 +76,18 @@ class Appointment(models.Model):
     # Helpers financieros
     def total_paid(self):
         agg = self.payments.aggregate(total=Sum('amount'))
-        return agg.get('total') or 0
+        return agg.get('total') or Decimal('0.00')
+    
+    def balance_due(self, expected_amount: Decimal):
+        """
+        Devuelve cuánto falta por pagar en esta cita.
+        Si el total pagado >= esperado, devuelve 0.
+        """
+        paid = self.total_paid()
+        return max(expected_amount - paid, Decimal('0.00'))
 
-    def is_fully_paid(self, expected_amount):
-        return self.total_paid() >= expected_amount
+    def is_fully_paid(self, expected_amount: Decimal):
+        return self.balance_due(expected_amount) == Decimal('0.00')
 
 
 class Diagnosis(models.Model):
