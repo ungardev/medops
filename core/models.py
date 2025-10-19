@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.utils.timezone import now
 from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
+from django.db.models import Sum
 
 # Create your models here.
 class Patient(models.Model):
@@ -71,6 +72,13 @@ class Appointment(models.Model):
     def __str__(self):
         return f"{self.patient} - {self.appointment_date} - {self.status}"
 
+    # Helpers financieros
+    def total_paid(self):
+        return self.payments.aggregate(total=Sum('amount'))['total'] or 0
+
+    def is_fully_paid(self, expected_amount):
+        return self.total_paid() >= expected_amount
+
 
 class Diagnosis(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='diagnoses')
@@ -126,10 +134,10 @@ class Payment(models.Model):
         ('transfer', 'Transferencia'),
     ]
 
-    appointment = models.OneToOneField(  # un pago único por cita
+    appointment = models.ForeignKey(   # 🔹 ahora permite múltiples pagos por cita
         'Appointment',
         on_delete=models.CASCADE,
-        related_name="payment"
+        related_name="payments"
     )
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
@@ -163,10 +171,6 @@ class Payment(models.Model):
         if self.method == 'card':
             if not self.reference_number:
                 errors['reference_number'] = "Debe ingresar el número de comprobante de la tarjeta."
-
-        if self.method == 'cash':
-            # Para efectivo no se exige referencia ni banco
-            pass
 
         if errors:
             raise ValidationError(errors)
