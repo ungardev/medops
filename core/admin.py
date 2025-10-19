@@ -19,6 +19,7 @@ from simple_history.admin import SimpleHistoryAdmin
 from django.utils.translation import gettext_lazy as _
 from core.utils.pdf import render_pdf_appointments
 from django.db.models.functions import Coalesce
+from django.utils.safestring import mark_safe
 import logging
 
 # App models
@@ -220,11 +221,11 @@ class AppointmentAdmin(SimpleHistoryAdmin):
             total_paid_str = f"{total_paid:.2f}"
             total_balance_str = f"{total_balance:.2f}"
 
-            # Datos para Chart.js
-            bar_labels = json.dumps(["Monto esperado", "Total pagado", "Saldo pendiente"])
-            bar_values = json.dumps([float(total_expected), float(total_paid), float(total_balance)])
-            pie_labels = json.dumps(["Pagado", "Pendiente"])
-            pie_values = json.dumps([float(total_paid), float(total_balance)])
+            # Datos para Chart.js (marcados como seguros para evitar escaping)
+            bar_labels = mark_safe(json.dumps(["Monto esperado", "Total pagado", "Saldo pendiente"]))
+            bar_values = mark_safe(json.dumps([float(total_expected), float(total_paid), float(total_balance)]))
+            pie_labels = mark_safe(json.dumps(["Pagado", "Pendiente"]))
+            pie_values = mark_safe(json.dumps([float(total_paid), float(total_balance)]))
 
             response.context_data["summary"] = format_html(
                 """
@@ -273,29 +274,31 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                 </div>
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <script>
-                new Chart(document.getElementById('financeBarChart').getContext('2d'), {{
-                    type: 'bar',
-                    data: {{
-                        labels: {bar_labels},
-                        datasets: [{{
-                            label: 'Valores',
-                            data: {bar_values},
-                            backgroundColor: ['#0d6efd','#198754','#dc3545'],
-                        }}]
-                    }},
-                    options: {{ responsive: true, plugins: {{ legend: {{ display: false }} }} }}
-                }});
+                document.addEventListener("DOMContentLoaded", function() {{
+                    new Chart(document.getElementById('financeBarChart').getContext('2d'), {{
+                        type: 'bar',
+                        data: {{
+                            labels: {bar_labels},
+                            datasets: [{{
+                                label: 'Valores',
+                                data: {bar_values},
+                                backgroundColor: ['#0d6efd','#198754','#dc3545'],
+                            }}]
+                        }},
+                        options: {{ responsive: true, plugins: {{ legend: {{ display: false }} }} }}
+                    }});
 
-                new Chart(document.getElementById('financePieChart').getContext('2d'), {{
-                    type: 'pie',
-                    data: {{
-                        labels: {pie_labels},
-                        datasets: [{{
-                            data: {pie_values},
-                            backgroundColor: ['#198754','#dc3545'],
-                        }}]
-                    }},
-                    options: {{ responsive: true, plugins: {{ legend: {{ position: 'bottom' }} }} }}
+                    new Chart(document.getElementById('financePieChart').getContext('2d'), {{
+                        type: 'pie',
+                        data: {{
+                            labels: {pie_labels},
+                            datasets: [{{
+                                data: {pie_values},
+                                backgroundColor: ['#198754','#dc3545'],
+                            }}]
+                        }},
+                        options: {{ responsive: true, plugins: {{ legend: {{ position: 'bottom' }} }} }}
+                    }});
                 }});
                 </script>
                 """,
