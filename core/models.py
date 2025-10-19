@@ -59,12 +59,25 @@ class Appointment(models.Model):
         ('completed', 'Completed'),
     ]
 
+    TYPE_CHOICES = [
+        ('general', 'Consulta General'),
+        ('specialized', 'Consulta Especializada'),
+    ]
+
     patient = models.ForeignKey('Patient', on_delete=models.CASCADE)
     appointment_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     arrival_time = models.TimeField(blank=True, null=True)
 
-    # 🔹 Nuevo campo: monto esperado de la cita
+    # 🔹 Tipo de consulta (para futura lógica de precios)
+    appointment_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='general',
+        verbose_name="Tipo de consulta"
+    )
+
+    # 🔹 Monto esperado de la cita
     expected_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -95,6 +108,17 @@ class Appointment(models.Model):
 
     def is_fully_paid(self):
         return self.balance_due() == Decimal('0.00')
+
+    def set_expected_amount_by_type(self):
+        """
+        Método opcional para fijar el monto según el tipo de consulta.
+        Solo se usará cuando decidas aplicar la regla.
+        """
+        if self.appointment_type == 'general':
+            self.expected_amount = Decimal('50.00')
+        elif self.appointment_type == 'specialized':
+            self.expected_amount = Decimal('100.00')
+
 
 
 class Diagnosis(models.Model):
