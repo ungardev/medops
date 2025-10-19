@@ -115,6 +115,22 @@ class PatientAdmin(SimpleHistoryAdmin):
     inlines = [MedicalDocumentInlineForPatient]
 
 
+class PaymentInline(admin.TabularInline):
+    model = Payment
+    extra = 0
+    fields = (
+        'amount',
+        'method',
+        'status',
+        'reference_number',
+        'bank_name',
+        'received_by',
+        'received_at',
+    )
+    readonly_fields = ('received_at',)
+    show_change_link = True
+
+
 @admin.register(Appointment)
 class AppointmentAdmin(SimpleHistoryAdmin):
     list_display = (
@@ -133,7 +149,9 @@ class AppointmentAdmin(SimpleHistoryAdmin):
     search_fields = ('patient__first_name', 'patient__last_name', 'patient__national_id')
     ordering = ('-appointment_date',)
     list_per_page = 25
-    inlines = [MedicalDocumentInlineForAppointment]
+
+    # 🔹 Ahora verás documentos clínicos y pagos directamente en la cita
+    inlines = [PaymentInline, MedicalDocumentInlineForAppointment]
 
     # Helpers para mostrar valores calculados
     def total_paid_display(self, obj):
@@ -144,7 +162,7 @@ class AppointmentAdmin(SimpleHistoryAdmin):
         return f"{obj.balance_due():.2f}"
     balance_due_display.short_description = "Saldo Pendiente"
 
-    # Opcional: hacer que estos campos aparezcan en el formulario como solo lectura
+    # Campos de solo lectura en el formulario
     readonly_fields = ('total_paid_display', 'balance_due_display')
 
 
