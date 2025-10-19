@@ -133,20 +133,19 @@ class BalanceDueFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
+        # Anotamos el total pagado por cada cita con un nombre distinto
         qs = queryset.annotate(
-            total_paid=Coalesce(
+            total_paid_amount=Coalesce(
                 Sum("payments__amount"),
                 Value(0, output_field=DecimalField())
             )
         )
 
-        match self.value():
-            case "with_balance":
-                return qs.filter(expected_amount__gt=F("total_paid"))
-            case "no_balance":
-                return qs.filter(expected_amount__lte=F("total_paid"))
-            case _:
-                return qs
+        if self.value() == "with_balance":
+            return qs.filter(expected_amount__gt=F("total_paid_amount"))
+        if self.value() == "no_balance":
+            return qs.filter(expected_amount__lte=F("total_paid_amount"))
+        return qs
 
 
 class PaymentInline(admin.TabularInline):
