@@ -190,6 +190,11 @@ class AppointmentAdmin(SimpleHistoryAdmin):
     inlines = [PaymentInline, MedicalDocumentInlineForAppointment]
     readonly_fields = ("total_paid_display", "balance_due_display")
 
+    class Media:
+        css = {
+            "all": ("core/css/custom.css",)  # 👈 hoja de estilos externa
+        }
+
     # Helpers para mostrar valores calculados
     def total_paid_display(self, obj):
         return f"{obj.total_paid():.2f}"
@@ -229,48 +234,15 @@ class AppointmentAdmin(SimpleHistoryAdmin):
 
             response.context_data["summary"] = format_html(
                 """
-                <div style="
-                    margin:10px 0;
-                    padding:10px;
-                    background: var(--body-bg);
-                    border: 1px solid var(--hairline-color);
-                    color: var(--body-fg);
-                    border-radius: 6px;
-                ">
-                    <strong>Resumen financiero:</strong><br>
-                    <span style="
-                        display:inline-block;
-                        padding:2px 8px;
-                        margin:2px;
-                        border-radius:12px;
-                        background:#0d6efd;
-                        color:white;
-                        font-size:0.9em;
-                    ">Monto esperado: {}</span>
-
-                    <span style="
-                        display:inline-block;
-                        padding:2px 8px;
-                        margin:2px;
-                        border-radius:12px;
-                        background:#198754;
-                        color:white;
-                        font-size:0.9em;
-                    ">Total pagado: {}</span>
-
-                    <span style="
-                        display:inline-block;
-                        padding:2px 8px;
-                        margin:2px;
-                        border-radius:12px;
-                        background:#dc3545;
-                        color:white;
-                        font-size:0.9em;
-                    ">Saldo pendiente: {}</span>
+                <div class="financial-summary">
+                    <strong>Resumen financiero:</strong>
+                    <span class="financial-badge expected">Monto esperado: {}</span>
+                    <span class="financial-badge paid">Total pagado: {}</span>
+                    <span class="financial-badge balance">Saldo pendiente: {}</span>
                 </div>
-                <div style="display:flex; gap:20px; flex-wrap:wrap;">
-                    <canvas id="financeBarChart" width="400" height="150"></canvas>
-                    <canvas id="financePieChart" width="300" height="150"></canvas>
+                <div class="finance-charts">
+                    <div><canvas id="financeBarChart"></canvas></div>
+                    <div><canvas id="financePieChart"></canvas></div>
                 </div>
                 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
                 <script>
@@ -285,7 +257,11 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                                 backgroundColor: ['#0d6efd','#198754','#dc3545'],
                             }}]
                         }},
-                        options: {{ responsive: true, plugins: {{ legend: {{ display: false }} }} }}
+                        options: {{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {{ legend: {{ display: false }} }}
+                        }}
                     }});
 
                     new Chart(document.getElementById('financePieChart').getContext('2d'), {{
@@ -297,7 +273,11 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                                 backgroundColor: ['#198754','#dc3545'],
                             }}]
                         }},
-                        options: {{ responsive: true, plugins: {{ legend: {{ position: 'bottom' }} }} }}
+                        options: {{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {{ legend: {{ position: 'bottom' }} }}
+                        }}
                     }});
                 }});
                 </script>

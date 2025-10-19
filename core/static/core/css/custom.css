@@ -1,0 +1,57 @@
+/* === Estilos personalizados para AppointmentAdmin === */
+
+/* Bloque de resumen financiero */
+.financial-summary {
+    margin: 10px 0;
+    padding: 10px;
+    background: var(--body-bg);
+    border: 1px solid var(--hairline-color);
+    color: var(--body-fg);
+    border-radius: 6px;
+}
+
+.financial-summary strong {
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* Badges de métricas */
+.financial-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 2px;
+    border-radius: 12px;
+    font-size: 0.9em;
+    color: white;
+}
+
+.financial-badge.expected {
+    background: #0d6efd; /* Azul */
+}
+
+.financial-badge.paid {
+    background: #198754; /* Verde */
+}
+
+.financial-badge.balance {
+    background: #dc3545; /* Rojo */
+}
+
+/* Contenedor de gráficas */
+.finance-charts {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.finance-charts > div {
+    flex: 1;
+    min-width: 280px;
+    max-width: 500px;
+    height: 300px; /* Controla la altura de los gráficos */
+}
+
+.finance-charts canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
