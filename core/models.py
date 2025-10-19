@@ -74,7 +74,12 @@ class Appointment(models.Model):
 
     # Helpers financieros
     def total_paid(self):
-        return self.payments.aggregate(total=Sum('amount'))['total'] or 0
+        qs = self.payments.all()
+        if not qs.exists():
+            return 0
+        agg = qs.aggregate(total=Sum('amount'))
+        return agg['total'] or 0
+
 
     def is_fully_paid(self, expected_amount):
         return self.total_paid() >= expected_amount
