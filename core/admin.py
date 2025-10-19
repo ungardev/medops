@@ -206,6 +206,11 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                 total_expected, total_paid, total_balance
             )
 
+            # 🔹 Convertimos a string formateado antes de pasarlo a format_html
+            total_expected_str = f"{total_expected:.2f}"
+            total_paid_str = f"{total_paid:.2f}"
+            total_balance_str = f"{total_balance:.2f}"
+
             # Datos para Chart.js
             bar_labels = json.dumps(["Monto esperado", "Total pagado", "Saldo pendiente"])
             bar_values = json.dumps([float(total_expected), float(total_paid), float(total_balance)])
@@ -216,9 +221,9 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                 """
                 <div style='margin:10px 0; padding:10px; background:#f9f9f9; border:1px solid #ccc;'>
                     <strong>Resumen financiero:</strong><br>
-                    Monto esperado: <b>{:.2f}</b> | 
-                    Total pagado: <b>{:.2f}</b> | 
-                    Saldo pendiente: <b>{:.2f}</b>
+                    Monto esperado: <b>{}</b> | 
+                    Total pagado: <b>{}</b> | 
+                    Saldo pendiente: <b>{}</b>
                 </div>
                 <div style="display:flex; gap:20px; flex-wrap:wrap;">
                     <canvas id="financeBarChart" width="400" height="150"></canvas>
@@ -252,7 +257,7 @@ class AppointmentAdmin(SimpleHistoryAdmin):
                 }});
                 </script>
                 """,
-                total_expected, total_paid, total_balance,
+                total_expected_str, total_paid_str, total_balance_str,
                 bar_labels=bar_labels, bar_values=bar_values,
                 pie_labels=pie_labels, pie_values=pie_values,
             )
@@ -277,7 +282,6 @@ class AppointmentAdmin(SimpleHistoryAdmin):
             self.message_user(request, "Error generando PDF, revisa logs.", level="error")
 
     export_as_pdf.short_description = "Exportar reporte de citas en PDF"
-
 
 
 @admin.register(Diagnosis)
