@@ -117,13 +117,35 @@ class PatientAdmin(SimpleHistoryAdmin):
 
 @admin.register(Appointment)
 class AppointmentAdmin(SimpleHistoryAdmin):
-    list_display = ('id', 'patient', 'appointment_date', 'status')
+    list_display = (
+        'id',
+        'patient',
+        'appointment_date',
+        'appointment_type',
+        'status',
+        'expected_amount',
+        'total_paid_display',
+        'balance_due_display',
+        'is_fully_paid',
+    )
     list_display_links = ('id', 'patient')
-    list_filter = ('status', 'appointment_date')
+    list_filter = ('status', 'appointment_date', 'appointment_type')
     search_fields = ('patient__first_name', 'patient__last_name', 'patient__national_id')
     ordering = ('-appointment_date',)
     list_per_page = 25
     inlines = [MedicalDocumentInlineForAppointment]
+
+    # Helpers para mostrar valores calculados
+    def total_paid_display(self, obj):
+        return f"{obj.total_paid():.2f}"
+    total_paid_display.short_description = "Total Pagado"
+
+    def balance_due_display(self, obj):
+        return f"{obj.balance_due():.2f}"
+    balance_due_display.short_description = "Saldo Pendiente"
+
+    # Opcional: hacer que estos campos aparezcan en el formulario como solo lectura
+    readonly_fields = ('total_paid_display', 'balance_due_display')
 
 
 @admin.register(Diagnosis)
