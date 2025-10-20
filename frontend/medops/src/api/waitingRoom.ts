@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://127.0.0.1/api"; // ✅ ahora apunta al proxy de Nginx
+const API_BASE_URL = "http://localhost/api";
 
 export async function fetchWaitingRoom() {
   const res = await fetch(`${API_BASE_URL}/waiting-room/`);
