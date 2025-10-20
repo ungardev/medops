@@ -140,9 +140,10 @@ class WaitingRoomEntry(models.Model):
     ]
 
     STATUS_CHOICES = [
-        ("waiting", "Waiting"),
+        ("waiting", "Waiting"),              # llegó y está esperando
         ("in_consultation", "In Consultation"),
         ("completed", "Completed"),
+        ("canceled", "Canceled"),            # agregado: cita cancelada, se ubica al final
     ]
 
     patient = models.ForeignKey("Patient", on_delete=models.CASCADE)
@@ -155,7 +156,7 @@ class WaitingRoomEntry(models.Model):
     class Meta:
         ordering = ["order", "arrival_time"]
         verbose_name = "Waiting Room Entry"
-        verbose_name_plural = "Waiting Room Entrys"
+        verbose_name_plural = "Waiting Room Entries"
 
     def __str__(self):
         return f"{self.patient} - {self.get_status_display()}"

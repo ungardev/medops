@@ -5,7 +5,7 @@ import random
 from core.models import Patient, Appointment, WaitingRoomEntry, Payment, Diagnosis, Treatment, Prescription
 
 class Command(BaseCommand):
-    help = "Repuebla la base de datos con datos de prueba adaptados a las reglas de negocio"
+    help = "Repuebla la base de datos con dataset extendido y reglas de negocio aplicadas"
 
     def handle(self, *args, **options):
         # --- Limpieza previa ---
@@ -29,6 +29,11 @@ class Command(BaseCommand):
             ("Lucía", "Torres", "F"),
             ("Andrés", "Ramírez", "M"),
             ("Valentina", "Morales", "F"),
+            ("Miguel", "Suárez", "M"),
+            ("Camila", "Ortega", "F"),
+            ("Jorge", "Mendoza", "M"),
+            ("Elena", "Castro", "F"),
+            ("Raúl", "Vargas", "M"),
         ]
 
         pacientes = []
@@ -42,48 +47,77 @@ class Command(BaseCommand):
             pacientes.append(p)
 
         today = date.today()
-        statuses = ["pending", "arrived", "in_consultation", "completed", "canceled"]
-        types = ["general", "specialized"]
-
         appointments = []
+        order_counter = 1
+
         for i, p in enumerate(pacientes, start=1):
-            appt_date = today + timedelta(days=random.choice([-1, 0, 1]))
-            status = random.choice(statuses)
+            # Distribuir fechas: mayoría hoy, algunos futuros
+            appt_date = today + timedelta(days=random.choice([0, 0, 0, 1, 2]))
+            appt_type = random.choice(["general", "specialized"])
+            expected = Decimal("50.00") if appt_type == "general" else Decimal("100.00")
+
+            # Status inicial
+            if appt_date > today:
+                status = "pending"
+            else:
+                status = random.choice(["pending", "arrived", "in_consultation", "completed", "canceled"])
 
             appt = Appointment.objects.create(
                 patient=p,
                 appointment_date=appt_date,
                 status=status,
                 arrival_time=time(9 + (i % 5), (i * 7) % 60) if status in ["arrived", "in_consultation", "completed"] else None,
-                appointment_type=random.choice(types),
-                expected_amount=Decimal("50.00") if random.choice(types) == "general" else Decimal("100.00")
+                appointment_type=appt_type,
+                expected_amount=expected
             )
-
-            # 🔹 Regla de negocio: si la cita fue vista clínicamente → completed
-            if status in ["in_consultation", "arrived"]:
-                appt.status = "completed"
-                appt.save(update_fields=["status"])
 
             appointments.append(appt)
 
-        # --- Waiting Room: solo los de hoy que llegaron pero aún no entraron ---
-        order_counter = 1
-        for appt in appointments:
-            if appt.appointment_date == today and appt.status == "arrived":
-                WaitingRoomEntry.objects.create(
-                    patient=appt.patient,
-                    appointment=appt,
-                    status="waiting",
-                    priority=random.choice(["scheduled", "walkin", "emergency"]),
-                    order=order_counter
-                )
-                order_counter += 1
+            # --- Sala de espera (solo citas de hoy) ---
+            if appt_date == today:
+                if appt.status == "completed":
+                    # Ya atendido, no entra en la cola
+                    continue
+                elif appt.status == "arrived":
+                    WaitingRoomEntry.objects.create(
+                        patient=p,
+                        appointment=appt,
+                        status="waiting",
+                        priority="scheduled",
+                        order=order_counter
+                    )
+                    order_counter += 1
+                elif appt.status == "in_consultation":
+                    WaitingRoomEntry.objects.create(
+                        patient=p,
+                        appointment=appt,
+                        status="in_consultation",
+                        priority="scheduled",
+                        order=order_counter
+                    )
+                    order_counter += 1
+                elif appt.status == "pending":
+                    WaitingRoomEntry.objects.create(
+                        patient=p,
+                        appointment=appt,
+                        status="waiting",
+                        priority="scheduled",
+                        order=order_counter + 100  # debajo de los arrived/in_consultation
+                    )
+                elif appt.status == "canceled":
+                    WaitingRoomEntry.objects.create(
+                        patient=p,
+                        appointment=appt,
+                        status="canceled",
+                        priority="scheduled",
+                        order=9999  # siempre al final
+                    )
 
-        # --- Pagos ---
+        # --- Pagos (solo en citas completadas) ---
         for appt in appointments:
             if appt.status == "completed":
                 amount = appt.expected_amount
-                if random.random() < 0.3:  # 30% pagan parcial
+                if random.random() < 0.2:  # 20% pagan parcial
                     paid = amount / 2
                     Payment.objects.create(appointment=appt, amount=paid, method="cash", status="paid")
                 else:
@@ -94,7 +128,7 @@ class Command(BaseCommand):
         descriptions = ["Sinusitis aguda", "Diabetes tipo 2", "Hipertensión", "Reflujo gastroesofágico", "Dolor lumbar"]
 
         for appt in appointments:
-            if appt.status == "completed":
+            if appt.status in ["in_consultation", "completed"]:
                 code = random.choice(codes)
                 desc = descriptions[codes.index(code)]
                 diag = Diagnosis.objects.create(appointment=appt, code=code, description=desc)
