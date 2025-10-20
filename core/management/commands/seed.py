@@ -5,7 +5,7 @@ import random
 from core.models import Patient, Appointment, WaitingRoomEntry, Payment, Diagnosis, Treatment, Prescription
 
 class Command(BaseCommand):
-    help = "Repuebla la base de datos con datos de prueba extendidos"
+    help = "Repuebla la base de datos con datos de prueba adaptados a las reglas de negocio"
 
     def handle(self, *args, **options):
         # --- Limpieza previa ---
@@ -41,7 +41,6 @@ class Command(BaseCommand):
             )
             pacientes.append(p)
 
-        # --- Crear citas ---
         today = date.today()
         statuses = ["pending", "arrived", "in_consultation", "completed", "canceled"]
         types = ["general", "specialized"]
@@ -50,6 +49,7 @@ class Command(BaseCommand):
         for i, p in enumerate(pacientes, start=1):
             appt_date = today + timedelta(days=random.choice([-1, 0, 1]))
             status = random.choice(statuses)
+
             appt = Appointment.objects.create(
                 patient=p,
                 appointment_date=appt_date,
@@ -58,16 +58,22 @@ class Command(BaseCommand):
                 appointment_type=random.choice(types),
                 expected_amount=Decimal("50.00") if random.choice(types) == "general" else Decimal("100.00")
             )
+
+            # 🔹 Regla de negocio: si la cita fue vista clínicamente → completed
+            if status in ["in_consultation", "arrived"]:
+                appt.status = "completed"
+                appt.save(update_fields=["status"])
+
             appointments.append(appt)
 
-        # --- Waiting Room ---
+        # --- Waiting Room: solo los de hoy que llegaron pero aún no entraron ---
         order_counter = 1
         for appt in appointments:
-            if appt.appointment_date == today and appt.status in ["arrived", "in_consultation"]:
+            if appt.appointment_date == today and appt.status == "arrived":
                 WaitingRoomEntry.objects.create(
                     patient=appt.patient,
                     appointment=appt,
-                    status="waiting" if appt.status == "arrived" else "in_consultation",
+                    status="waiting",
                     priority=random.choice(["scheduled", "walkin", "emergency"]),
                     order=order_counter
                 )
@@ -75,7 +81,7 @@ class Command(BaseCommand):
 
         # --- Pagos ---
         for appt in appointments:
-            if appt.status in ["completed", "in_consultation", "arrived"]:
+            if appt.status == "completed":
                 amount = appt.expected_amount
                 if random.random() < 0.3:  # 30% pagan parcial
                     paid = amount / 2
@@ -88,11 +94,11 @@ class Command(BaseCommand):
         descriptions = ["Sinusitis aguda", "Diabetes tipo 2", "Hipertensión", "Reflujo gastroesofágico", "Dolor lumbar"]
 
         for appt in appointments:
-            if appt.status in ["in_consultation", "completed"]:
+            if appt.status == "completed":
                 code = random.choice(codes)
                 desc = descriptions[codes.index(code)]
                 diag = Diagnosis.objects.create(appointment=appt, code=code, description=desc)
                 Treatment.objects.create(diagnosis=diag, plan=f"Plan de tratamiento para {desc}")
                 Prescription.objects.create(diagnosis=diag, medication="Medicamento X", dosage="1 tableta cada 8h", duration="7 días")
 
-        self.stdout.write(self.style.SUCCESS("✅ Base de datos repoblada con dataset extendido."))
+        self.stdout.write(self.style.SUCCESS("✅ Base de datos repoblada con dataset extendido y reglas aplicadas."))
