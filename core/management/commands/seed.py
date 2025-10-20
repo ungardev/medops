@@ -5,7 +5,7 @@ import random
 from core.models import Patient, Appointment, WaitingRoomEntry, Payment, Diagnosis, Treatment, Prescription
 
 class Command(BaseCommand):
-    help = "Repuebla la base de datos con dataset extendido y reglas de negocio aplicadas"
+    help = "Repuebla la base de datos con dataset extendido simulando el flujo real del sistema"
 
     def handle(self, *args, **options):
         # --- Limpieza previa ---
@@ -135,4 +135,4 @@ class Command(BaseCommand):
                 Treatment.objects.create(diagnosis=diag, plan=f"Plan de tratamiento para {desc}")
                 Prescription.objects.create(diagnosis=diag, medication="Medicamento X", dosage="1 tableta cada 8h", duration="7 días")
 
-        self.stdout.write(self.style.SUCCESS("✅ Base de datos repoblada con dataset extendido y reglas aplicadas."))
+        self.stdout.write(self.style.SUCCESS("✅ Base de datos repoblada con dataset extendido y flujo real simulado."))
