@@ -20,6 +20,8 @@ from django.utils.translation import gettext_lazy as _
 from core.utils.pdf import render_pdf_appointments
 from django.db.models.functions import Coalesce
 from django.utils.safestring import mark_safe
+from django.db import models
+from django.utils import timezone
 import logging
 
 # App models
@@ -63,6 +65,33 @@ from reportlab.graphics.charts.piecharts import Pie
 
 
 logger = logging.getLogger("core")
+
+
+class WaitingRoomEntry(models.Model):
+    PRIORITY_CHOICES = [
+        ("scheduled", "Scheduled"),
+        ("walkin", "Walk-in"),
+        ("emergency", "Emergency"),
+    ]
+
+    STATUS_CHOICES = [
+        ("waiting", "Waiting"),
+        ("in_consultation", "In Consultation"),
+        ("completed", "Completed"),
+    ]
+
+    patient = models.ForeignKey("Patient", on_delete=models.CASCADE)
+    appointment = models.ForeignKey("Appointment", on_delete=models.SET_NULL, null=True, blank=True)
+    arrival_time = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="waiting")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="scheduled")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "arrival_time"]
+
+    def __str__(self):
+        return f"{self.patient} - {self.get_status_display()}"
 
 
 # Inline para documentos en Patient
