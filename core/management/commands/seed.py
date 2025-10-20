@@ -50,6 +50,9 @@ class Command(BaseCommand):
         appointments = []
         order_counter = 1
 
+        # --- Control: solo un paciente en consulta ---
+        in_consultation_assigned = False
+
         for i, p in enumerate(pacientes, start=1):
             # Distribuir fechas: mayoría hoy, algunos futuros
             appt_date = today + timedelta(days=random.choice([0, 0, 0, 1, 2]))
@@ -60,7 +63,11 @@ class Command(BaseCommand):
             if appt_date > today:
                 status = "pending"
             else:
-                status = random.choice(["pending", "arrived", "in_consultation", "completed", "canceled"])
+                if not in_consultation_assigned and random.random() < 0.2:
+                    status = "in_consultation"
+                    in_consultation_assigned = True
+                else:
+                    status = random.choice(["pending", "arrived", "completed", "canceled"])
 
             appt = Appointment.objects.create(
                 patient=p,
@@ -76,7 +83,6 @@ class Command(BaseCommand):
             # --- Sala de espera (solo citas de hoy) ---
             if appt_date == today:
                 if appt.status == "completed":
-                    # Ya atendido, no entra en la cola
                     continue
                 elif appt.status == "arrived":
                     WaitingRoomEntry.objects.create(
@@ -102,7 +108,7 @@ class Command(BaseCommand):
                         appointment=appt,
                         status="waiting",
                         priority="scheduled",
-                        order=order_counter + 100  # debajo de los arrived/in_consultation
+                        order=order_counter + 100
                     )
                 elif appt.status == "canceled":
                     WaitingRoomEntry.objects.create(
@@ -110,7 +116,7 @@ class Command(BaseCommand):
                         appointment=appt,
                         status="canceled",
                         priority="scheduled",
-                        order=9999  # siempre al final
+                        order=9999
                     )
 
         # --- Pagos (solo en citas completadas) ---
@@ -119,9 +125,19 @@ class Command(BaseCommand):
                 amount = appt.expected_amount
                 if random.random() < 0.2:  # 20% pagan parcial
                     paid = amount / 2
-                    Payment.objects.create(appointment=appt, amount=paid, method="cash", status="paid")
+                    Payment.objects.create(
+                        appointment=appt,
+                        amount=paid,
+                        method=random.choice(["cash", "card"]),
+                        status="paid"
+                    )
                 else:
-                    Payment.objects.create(appointment=appt, amount=amount, method="card", status="paid")
+                    Payment.objects.create(
+                        appointment=appt,
+                        amount=amount,
+                        method=random.choice(["cash", "card"]),
+                        status="paid"
+                    )
 
         # --- Diagnósticos, tratamientos y prescripciones ---
         codes = ["J01", "E11", "I10", "K21", "M54"]
@@ -135,4 +151,4 @@ class Command(BaseCommand):
                 Treatment.objects.create(diagnosis=diag, plan=f"Plan de tratamiento para {desc}")
                 Prescription.objects.create(diagnosis=diag, medication="Medicamento X", dosage="1 tableta cada 8h", duration="7 días")
 
-        self.stdout.write(self.style.SUCCESS("✅ Base de datos repoblada con dataset extendido y flujo real simulado."))
+        self.stdout.write(self.style.SUCCESS("✅ Base de datos repoblada con dataset extendido, pagos generados y reglas aplicadas."))
