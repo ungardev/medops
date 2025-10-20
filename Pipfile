@@ -9,6 +9,7 @@ psycopg2-binary = "*"
 python-dotenv = "*"
 djangorestframework = "*"
 openpyxl = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
