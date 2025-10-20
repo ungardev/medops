@@ -37,7 +37,7 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
-    # Ahora usamos el serializer de Patient, que ya expone "name"
+    # Usamos el PatientSerializer, que ya expone "name"
     patient = PatientSerializer(read_only=True)
 
     class Meta:
