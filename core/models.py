@@ -57,8 +57,8 @@ class Appointment(models.Model):
         ('pending', 'Pending'),              # Cita creada para una fecha futura
         ('arrived', 'Arrived'),              # Paciente llegó / confirmó asistencia
         ('in_consultation', 'In Consultation'),  # Paciente en consulta
-        ('completed', 'Completed'),          # Consulta finalizada
-        ('canceled', 'Canceled'),            # Nueva opción: cita cancelada / no-show
+        ('completed', 'Completed'),          # Consulta finalizada (toda cita vista debe terminar aquí)
+        ('canceled', 'Canceled'),            # Cita cancelada / no-show
     ]
 
     TYPE_CHOICES = [
@@ -68,7 +68,16 @@ class Appointment(models.Model):
 
     patient = models.ForeignKey('Patient', on_delete=models.CASCADE)
     appointment_date = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    # 🔹 Status nunca puede ser NULL ni quedar vacío
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        null=False,
+        blank=False
+    )
+
     arrival_time = models.TimeField(blank=True, null=True)
 
     # 🔹 Tipo de consulta (para futura lógica de precios)
@@ -103,23 +112,24 @@ class Appointment(models.Model):
         return agg.get('total') or Decimal('0.00')
 
     def balance_due(self):
-        """
-        Devuelve cuánto falta por pagar en esta cita.
-        """
+        """Devuelve cuánto falta por pagar en esta cita."""
         return max(self.expected_amount - self.total_paid(), Decimal('0.00'))
 
     def is_fully_paid(self):
         return self.balance_due() == Decimal('0.00')
 
     def set_expected_amount_by_type(self):
-        """
-        Método opcional para fijar el monto según el tipo de consulta.
-        Solo se usará cuando decidas aplicar la regla.
-        """
+        """Fija el monto según el tipo de consulta."""
         if self.appointment_type == 'general':
             self.expected_amount = Decimal('50.00')
         elif self.appointment_type == 'specialized':
             self.expected_amount = Decimal('100.00')
+
+    # 🔹 Helper para marcar como completada
+    def mark_completed(self):
+        """Marca la cita como completada (toda cita vista debe terminar aquí)."""
+        self.status = 'completed'
+        self.save(update_fields=['status'])
 
 
 class WaitingRoomEntry(models.Model):
