@@ -8,7 +8,7 @@ class PatientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = ['id', 'name', 'email', 'phone']
+        fields = ['id', 'name']  # solo los campos que existen en el modelo
 
     def get_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
