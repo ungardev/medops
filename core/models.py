@@ -143,6 +143,8 @@ class WaitingRoomEntry(models.Model):
 
     class Meta:
         ordering = ["order", "arrival_time"]
+        verbose_name = "Waiting Room Entry"
+        verbose_name_plural = "Waiting Room Entrys"
 
     def __str__(self):
         return f"{self.patient} - {self.get_status_display()}"
