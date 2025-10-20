@@ -3,9 +3,9 @@ import { fetchWaitingRoom } from "../api/waitingRoom";
 
 interface WaitingRoomEntry {
   id: number;
-  name: string;
-  created: string;
-  updated: string;
+  patient: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function WaitingRoom() {
@@ -14,9 +14,16 @@ export default function WaitingRoom() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log("🔎 Montando WaitingRoom, lanzando fetch...");
     fetchWaitingRoom()
-      .then(data => setEntries(data))
-      .catch(err => setError(err.message))
+      .then(data => {
+        console.log("✅ Datos recibidos:", data);
+        setEntries(data);
+      })
+      .catch(err => {
+        console.error("❌ Error en fetch:", err);
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -29,7 +36,8 @@ export default function WaitingRoom() {
       <ul>
         {entries.map(e => (
           <li key={e.id}>
-            {e.name} — creado: {new Date(e.created).toLocaleTimeString()}
+            Paciente #{e.patient} — creado:{" "}
+            {new Date(e.created_at).toLocaleTimeString()}
           </li>
         ))}
       </ul>
