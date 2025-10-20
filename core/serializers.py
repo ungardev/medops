@@ -3,9 +3,15 @@ from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 
 
 class PatientSerializer(serializers.ModelSerializer):
+    # Campo calculado que concatena first_name + last_name
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = Patient
         fields = ['id', 'name', 'email', 'phone']
+
+    def get_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
@@ -31,14 +37,14 @@ class EventSerializer(serializers.ModelSerializer):
 
 
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
-    patient_name = serializers.CharField(source="patient.name", read_only=True)
+    # Ahora usamos el serializer de Patient, que ya expone "name"
+    patient = PatientSerializer(read_only=True)
 
     class Meta:
         model = WaitingRoomEntry
         fields = [
             "id",
             "patient",
-            "patient_name",
             "appointment",
             "arrival_time",
             "status",
