@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords
 from django.db.models import Sum
 from decimal import Decimal
+from django.utils import timezone
 
 # Create your models here.
 class Patient(models.Model):
@@ -119,6 +120,32 @@ class Appointment(models.Model):
         elif self.appointment_type == 'specialized':
             self.expected_amount = Decimal('100.00')
 
+
+class WaitingRoomEntry(models.Model):
+    PRIORITY_CHOICES = [
+        ("scheduled", "Scheduled"),
+        ("walkin", "Walk-in"),
+        ("emergency", "Emergency"),
+    ]
+
+    STATUS_CHOICES = [
+        ("waiting", "Waiting"),
+        ("in_consultation", "In Consultation"),
+        ("completed", "Completed"),
+    ]
+
+    patient = models.ForeignKey("Patient", on_delete=models.CASCADE)
+    appointment = models.ForeignKey("Appointment", on_delete=models.SET_NULL, null=True, blank=True)
+    arrival_time = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="waiting")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="scheduled")
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "arrival_time"]
+
+    def __str__(self):
+        return f"{self.patient} - {self.get_status_display()}"
 
 
 class Diagnosis(models.Model):

@@ -14,6 +14,14 @@ from openpyxl.utils import get_column_letter
 from openpyxl.chart import BarChart, Reference, PieChart, LineChart
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.cell.cell import Cell
+from rest_framework import viewsets
+from .models import Patient, Appointment, Payment, WaitingRoomEntry
+from .serializers import (
+    PatientSerializer,
+    AppointmentSerializer,
+    PaymentSerializer,
+    WaitingRoomEntrySerializer,
+)
 
 # --- Dashboard / métricas ---
 def metrics_api(request):
@@ -330,3 +338,20 @@ def audit_dashboard_api(request):
             "timeline_data": timeline_data,
         }
     )
+
+# --- DRF ViewSets para CRUD estándar ---
+class PatientViewSet(viewsets.ModelViewSet):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+
+class AppointmentViewSet(viewsets.ModelViewSet):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+
+class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
+    queryset = WaitingRoomEntry.objects.all()
+    serializer_class = WaitingRoomEntrySerializer
