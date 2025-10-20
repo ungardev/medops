@@ -54,10 +54,11 @@ class Patient(models.Model):
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('arrived', 'Arrived'),
-        ('in_consultation', 'In Consultation'),
-        ('completed', 'Completed'),
+        ('pending', 'Pending'),              # Cita creada para una fecha futura
+        ('arrived', 'Arrived'),              # Paciente llegó / confirmó asistencia
+        ('in_consultation', 'In Consultation'),  # Paciente en consulta
+        ('completed', 'Completed'),          # Consulta finalizada
+        ('canceled', 'Canceled'),            # Nueva opción: cita cancelada / no-show
     ]
 
     TYPE_CHOICES = [
