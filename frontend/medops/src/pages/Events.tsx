@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from "react"
+import { getEvents, createEvent, updateEvent, deleteEvent } from "api/events";
+import { ClinicEvent, ClinicEventInput } from "types/events";
+import EventsList from "components/EventsList";
+import EventForm from "components/EventForm";
+import { useState, useEffect } from "react";
 
 export default function Events() {
     const [events, setEvents] = useState<any[]>([])

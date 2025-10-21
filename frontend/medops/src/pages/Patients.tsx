@@ -1,43 +1,29 @@
-import { useEffect, useState } from "react"
-import { apiFetch } from "../api/client"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPatients, createPatient, updatePatient, deletePatient } from "api/patients";
+import { Patient, PatientInput } from "types/patients";
+import PatientsList from "components/PatientsList";
+import PatientForm from "components/PatientForm";
 
-interface Patient {
-    id: number
-    name: string
-    age: number
-    diagnosis: string
-}
 
 export default function Patients() {
-    const [patients, setPatients] = useState<Patient[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+  const { data, isLoading, isError, error } = useQuery<Patient[]>({
+    queryKey: ["patients"],
+    queryFn: getPatients,
+  });
 
-    useEffect(() => {
-        apiFetch<Patient[]>("patients/")
-            .then(data => {
-                setPatients(data)
-                setLoading(false)
-            })
-            .catch(err => {
-                setError(err.message)
-                setLoading(false)
-            })
-    }, [])
+  console.log("React Query test:", { data, isLoading, isError, error });
 
-    if (loading) return <p>Cargando pacientes...</p>
-    if (error) return <p>Error: {error}</p>
+  if (isLoading) return <p>Cargando...</p>;
+  if (isError) return <p>Error: {(error as Error).message}</p>;
 
-    return (
-        <div>
-            <h1>Pacientes</h1>
-            <ul>
-                {patients.map(p => (
-                    <li key={p.id}>
-                        {p.name} — {p.age} años — {p.diagnosis}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    )
+  return (
+    <div>
+      <h1>Pacientes</h1>
+      <ul>
+        {data?.map((p) => (
+          <li key={p.id}>{p.name}</li>
+        ))}
+      </ul>
+    </div>
+  );
 }
