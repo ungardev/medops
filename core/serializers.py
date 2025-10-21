@@ -19,7 +19,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Appointment
-        fields = ['id', 'patient', 'appointment_date', 'status']
+        fields = [
+            'id',
+            'patient',
+            'appointment_date',
+            'appointment_type',   # 🔹 agregado
+            'expected_amount',    # 🔹 agregado
+            'status',
+        ]
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -51,3 +58,22 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "priority",
             "order",
         ]
+
+
+# 🔹 Serializer para el resumen ejecutivo del Dashboard
+class DashboardSummarySerializer(serializers.Serializer):
+    total_patients = serializers.IntegerField()
+    total_appointments = serializers.IntegerField()
+    completed_appointments = serializers.IntegerField()
+    pending_appointments = serializers.IntegerField()
+    total_payments = serializers.IntegerField()
+    total_events = serializers.IntegerField()
+    total_waived = serializers.IntegerField()
+    total_payments_amount = serializers.FloatField()
+    estimated_waived_amount = serializers.FloatField()
+    financial_balance = serializers.FloatField()
+
+    # 🔹 Nuevos campos para tendencias
+    appointments_trend = serializers.ListField()
+    payments_trend = serializers.ListField()
+    balance_trend = serializers.ListField()

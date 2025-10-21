@@ -18,6 +18,7 @@ router.register(r'waiting-room', WaitingRoomEntryViewSet)
 # --- Funciones personalizadas ---
 urlpatterns = [
     path("metrics/", api_views.metrics_api, name="metrics-api"),
+    path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),  # 🔹 nuevo endpoint
     path("patients-list/", api_views.patients_api, name="patients-api"),
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
