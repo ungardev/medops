@@ -86,7 +86,7 @@ def dashboard_summary_api(request):
 
     payments_by_week = (
         Payment.objects.filter(appointment__in=Appointment.objects.filter(filters))
-        .annotate(week=TruncWeek("date"))
+        .annotate(week=TruncWeek("received_at"))   # 👈 corregido
         .values("week")
         .annotate(total=Sum("amount"))
         .order_by("week")
@@ -98,7 +98,7 @@ def dashboard_summary_api(request):
 
     waived_by_week = (
         Payment.objects.filter(status="waived", appointment__in=Appointment.objects.filter(filters))
-        .annotate(week=TruncWeek("date"))
+        .annotate(week=TruncWeek("received_at"))   # 👈 corregido
         .values("week")
         .annotate(total=Count("id"))
         .order_by("week")
