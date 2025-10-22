@@ -201,7 +201,9 @@ def waived_consultations_api(request):
 
 # --- Auditoría: lista + filtros + paginación ---
 def event_log_api(request):
-    events = Event.objects.all().order_by("-timestamp").values("id", "entity", "action", "timestamp", "user_id")
+    events = Event.objects.all().order_by("-timestamp").values(
+        "id", "entity", "action", "timestamp", "actor"
+    )
     paginator = Paginator(events, 20)
     page_number = request.GET.get("page", 1)
     page_obj = paginator.get_page(page_number)
