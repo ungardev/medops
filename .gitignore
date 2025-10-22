@@ -54,3 +54,9 @@ pytestcache/
 
 # --- Migrations ---
 **/migrations/__pycache__/
+
+# Archivos de compilación de TypeScript
+*.tsbuildinfo
+
+# Build/transpilado de frontend
+frontend/medops/src/**/*.js
