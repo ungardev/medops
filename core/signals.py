@@ -25,16 +25,18 @@ def appointment_deleted(sender, instance, **kwargs):
 # --- Payment ---
 @receiver(post_save, sender=Payment)
 def payment_created_or_updated(sender, instance, created, **kwargs):
+    amount_value = float(instance.amount) if instance.amount is not None else None
     if created:
-        log_event("Payment", instance.id, "create", actor="system", metadata={"amount": instance.amount})
+        log_event("Payment", instance.id, "create", actor="system", metadata={"amount": amount_value})
         logger.info(f"Payment {instance.id} created")
     else:
-        log_event("Payment", instance.id, "update", actor="system", metadata={"amount": instance.amount})
+        log_event("Payment", instance.id, "update", actor="system", metadata={"amount": amount_value})
         logger.info(f"Payment {instance.id} updated")
 
 @receiver(post_delete, sender=Payment)
 def payment_deleted(sender, instance, **kwargs):
-    log_event("Payment", instance.id, "delete", actor="system", metadata={"amount": instance.amount})
+    amount_value = float(instance.amount) if instance.amount is not None else None
+    log_event("Payment", instance.id, "delete", actor="system", metadata={"amount": amount_value})
     logger.info(f"Payment {instance.id} deleted")
 
 
