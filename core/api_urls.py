@@ -11,12 +11,12 @@ from .api_views import (
     waitingroom_list_api,
 )
 
-# --- Router DRF ---
+# --- Router DRF (CRUD básicos) ---
 router = routers.DefaultRouter()
 router.register(r'patients', PatientViewSet)
 router.register(r'appointments', AppointmentViewSet)
 router.register(r'payments', PaymentViewSet)
-router.register(r'waiting-room', WaitingRoomEntryViewSet)
+router.register(r'waitingroom', WaitingRoomEntryViewSet)
 
 # --- Funciones personalizadas ---
 urlpatterns = [

@@ -15,10 +15,9 @@ from .serializers import (
     DashboardSummarySerializer,
 )
 
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
 
 
 def safe_json(value):
@@ -159,11 +158,7 @@ def patients_api(request):
 # --- Citas del día ---
 def daily_appointments_api(request):
     today = now().date()
-    appointments = (
-        Appointment.objects.filter(appointment_date=today)
-        .select_related("patient")
-        .order_by("arrival_time")
-    )
+    appointments = Appointment.objects.filter(appointment_date=today).select_related("patient").order_by("arrival_time")
     serializer = AppointmentSerializer(appointments, many=True)
     return JsonResponse(serializer.data, safe=False)
 
@@ -281,3 +276,23 @@ def update_waitingroom_status(request, pk):
             {"error": f"No se puede pasar de {entry.status} a {new_status}"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+# --- DRF ViewSets (CRUD básicos) ---
+class PatientViewSet(viewsets.ModelViewSet):
+    queryset = Patient.objects.all()
+    serializer_class = PatientSerializer
+
+
+class AppointmentViewSet(viewsets.ModelViewSet):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+
+
+class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
+    queryset = WaitingRoomEntry.objects.all()
+    serializer_class = WaitingRoomEntrySerializer
