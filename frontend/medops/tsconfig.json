@@ -10,7 +10,13 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "paths": {
+      "api/*": ["api/*"],
+      "components/*": ["components/*"],
+      "pages/*": ["pages/*"],
+      "types/*": ["types/*"]
+    }
   },
   "include": ["src"]
 }
