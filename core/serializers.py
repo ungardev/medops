@@ -16,16 +16,19 @@ class PatientSerializer(serializers.ModelSerializer):
 
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientSerializer(read_only=True)
+    patient_name = serializers.CharField(source="patient.__str__", read_only=True)
 
     class Meta:
         model = Appointment
         fields = [
             'id',
             'patient',
+            'patient_name',
             'appointment_date',
-            'appointment_type',   # 🔹 agregado
-            'expected_amount',    # 🔹 agregado
+            'appointment_type',
+            'expected_amount',
             'status',
+            'arrival_time',
         ]
 
 
@@ -46,13 +49,16 @@ class EventSerializer(serializers.ModelSerializer):
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     # Usamos el PatientSerializer, que ya expone "name"
     patient = PatientSerializer(read_only=True)
+    patient_name = serializers.CharField(source="patient.__str__", read_only=True)
+    appointment_id = serializers.IntegerField(source="appointment.id", read_only=True)
 
     class Meta:
         model = WaitingRoomEntry
         fields = [
             "id",
             "patient",
-            "appointment",
+            "patient_name",
+            "appointment_id",
             "arrival_time",
             "status",
             "priority",

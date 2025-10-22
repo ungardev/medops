@@ -6,6 +6,9 @@ from .api_views import (
     AppointmentViewSet,
     PaymentViewSet,
     WaitingRoomEntryViewSet,
+    update_appointment_status,
+    update_waitingroom_status,
+    waitingroom_list_api,
 )
 
 # --- Router DRF ---
@@ -23,8 +26,13 @@ urlpatterns = [
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
-    path("events/", api_views.event_log_api, name="event-log-api"),   # ✅ ahora existe en api_views.py
+    path("events/", api_views.event_log_api, name="event-log-api"),
     path("audit/aggregates/", api_views.audit_dashboard_api, name="audit-dashboard-api"),
+
+    # --- Sala de Espera ---
+    path("waitingroom/", waitingroom_list_api, name="waitingroom-list-api"),
+    path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
+    path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
 ]
 
 # --- Unir ambos ---

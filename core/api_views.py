@@ -1,5 +1,5 @@
 from decimal import Decimal
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.utils.timezone import now
 from django.utils.dateparse import parse_date
 from django.db.models import Count, Sum, Q
@@ -16,6 +16,9 @@ from .serializers import (
 )
 
 from rest_framework import viewsets
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 
 def safe_json(value):
@@ -86,7 +89,7 @@ def dashboard_summary_api(request):
 
     payments_by_week = (
         Payment.objects.filter(appointment__in=Appointment.objects.filter(filters))
-        .annotate(week=TruncWeek("received_at"))   # 👈 corregido
+        .annotate(week=TruncWeek("received_at"))
         .values("week")
         .annotate(total=Sum("amount"))
         .order_by("week")
@@ -98,7 +101,7 @@ def dashboard_summary_api(request):
 
     waived_by_week = (
         Payment.objects.filter(status="waived", appointment__in=Appointment.objects.filter(filters))
-        .annotate(week=TruncWeek("received_at"))   # 👈 corregido
+        .annotate(week=TruncWeek("received_at"))
         .values("week")
         .annotate(total=Count("id"))
         .order_by("week")
@@ -160,20 +163,9 @@ def daily_appointments_api(request):
         Appointment.objects.filter(appointment_date=today)
         .select_related("patient")
         .order_by("arrival_time")
-        .values("id", "patient_id", "patient__first_name", "patient__last_name", "appointment_date", "arrival_time", "status")
     )
-    results = []
-    for a in appointments:
-        full_name = " ".join(filter(None, [a["patient__first_name"], a["patient__last_name"]]))
-        results.append({
-            "id": a["id"],
-            "patient_id": a["patient_id"],
-            "patient_name": full_name,
-            "appointment_date": a["appointment_date"],
-            "arrival_time": a["arrival_time"],
-            "status": a["status"],
-        })
-    return JsonResponse(results, safe=False)
+    serializer = AppointmentSerializer(appointments, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 # --- Resumen de pagos ---
@@ -188,21 +180,16 @@ def payment_summary_api(request):
 
 # --- Consultas exoneradas ---
 def waived_consultations_api(request):
-    waived = (
-        Payment.objects.filter(status="waived")
-        .select_related("appointment__patient")
-        .values("id", "appointment_id", "appointment__patient__first_name", "appointment__patient__last_name", "amount", "method", "status")
-    )
+    waived = Payment.objects.filter(status="waived").select_related("appointment__patient")
     results = []
     for w in waived:
-        full_name = " ".join(filter(None, [w["appointment__patient__first_name"], w["appointment__patient__last_name"]]))
         results.append({
-            "id": w["id"],
-            "appointment_id": w["appointment_id"],
-            "patient_name": full_name,
-            "amount": w["amount"],
-            "method": w["method"],
-            "status": w["status"],
+            "id": w.id,
+            "appointment_id": w.appointment_id,
+            "patient_name": str(w.appointment.patient),
+            "amount": w.amount,
+            "method": w.method,
+            "status": w.status,
         })
     return JsonResponse(results, safe=False)
 
@@ -245,22 +232,52 @@ def audit_dashboard_api(request):
     })
 
 
-# --- DRF ViewSets ---
-class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all()
-    serializer_class = PatientSerializer
+# --- Sala de Espera: listar entradas ---
+def waitingroom_list_api(request):
+    entries = WaitingRoomEntry.objects.select_related("patient", "appointment").all()
+    serializer = WaitingRoomEntrySerializer(entries, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
-class AppointmentViewSet(viewsets.ModelViewSet):
-    queryset = Appointment.objects.all()
-    serializer_class = AppointmentSerializer
+# --- Sala de Espera: actualizar estado de una cita ---
+@api_view(["PATCH"])
+def update_appointment_status(request, pk):
+    try:
+        appointment = Appointment.objects.get(pk=pk)
+    except Appointment.DoesNotExist:
+        return Response({"error": "Appointment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    new_status = request.data.get("status")
+    if not new_status:
+        return Response({"error": "Missing status"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if appointment.can_transition(new_status):
+        appointment.update_status(new_status)
+        return Response(AppointmentSerializer(appointment).data)
+    else:
+        return Response(
+            {"error": f"No se puede pasar de {appointment.status} a {new_status}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
-class PaymentViewSet(viewsets.ModelViewSet):
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
+# --- Sala de Espera: actualizar estado de una entrada ---
+@api_view(["PATCH"])
+def update_waitingroom_status(request, pk):
+    try:
+        entry = WaitingRoomEntry.objects.get(pk=pk)
+    except WaitingRoomEntry.DoesNotExist:
+        return Response({"error": "WaitingRoomEntry not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    new_status = request.data.get("status")
+    if not new_status:
+        return Response({"error": "Missing status"}, status=status.HTTP_400_BAD_REQUEST)
 
-class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
-    queryset = WaitingRoomEntry.objects.all()
-    serializer_class = WaitingRoomEntrySerializer
+    if entry.can_transition(new_status):
+        entry.update_status(new_status)
+        return Response(WaitingRoomEntrySerializer(entry).data)
+    else:
+        return Response(
+            {"error": f"No se puede pasar de {entry.status} a {new_status}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )

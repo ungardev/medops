@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { fetchWaitingRoom, updateAppointmentStatus } from "../api/waitingRoom";
+import { fetchWaitingRoom, updateWaitingRoomStatus } from "../api/waitingRoom";
 
 interface PatientRef {
   id: number;
@@ -9,11 +9,12 @@ interface PatientRef {
 
 interface WaitingRoomEntry {
   id: number;
-  patient: PatientRef;     // 🔹 ahora es un objeto con id y name
-  appointment: number;     // id de la cita asociada
+  patient: PatientRef;
+  appointment_id: number | null;
   status: string;
-  created_at: string;
-  updated_at: string;
+  arrival_time: string;
+  priority: string;
+  order: number;
 }
 
 export default function WaitingRoom() {
@@ -30,7 +31,7 @@ export default function WaitingRoom() {
 
   const handleStatusChange = async (id: number, newStatus: string) => {
     try {
-      await updateAppointmentStatus(id, newStatus); // PATCH al backend
+      await updateWaitingRoomStatus(id, newStatus);
       setEntries(prev =>
         prev.map(e => (e.id === id ? { ...e, status: newStatus } : e))
       );
@@ -56,50 +57,43 @@ export default function WaitingRoom() {
         <tbody>
           {entries.map(e => (
             <tr key={e.id} style={{ borderBottom: "1px solid #cbd5e1" }}>
-              <td>{e.patient.name}</td> {/* 🔹 usamos directamente el nombre del backend */}
+              <td>{e.patient.name}</td>
               <td>{e.status}</td>
               <td>
-                {e.status === "pending" && (
-                  <button onClick={() => handleStatusChange(e.id, "arrived")}>
-                    Marcar llegada
+                {e.status === "waiting" && (
+                  <button onClick={() => handleStatusChange(e.id, "in_consultation")}>
+                    Pasar a consulta
                   </button>
-                )}
-                {e.status === "arrived" && (
-                  <>
-                    <button
-                      onClick={() => handleStatusChange(e.id, "in_consultation")}
-                    >
-                      Iniciar consulta
-                    </button>
-                    <button
-                      onClick={() => handleStatusChange(e.id, "canceled")}
-                      style={{ marginLeft: "6px", color: "red" }}
-                    >
-                      Cancelar
-                    </button>
-                  </>
                 )}
                 {e.status === "in_consultation" && (
                   <>
-                    <Link
-                      to={`/consulta/${e.appointment}`}
-                      style={{
-                        background: "#3b82f6",
-                        color: "#fff",
-                        padding: "6px 12px",
-                        borderRadius: "4px",
-                        textDecoration: "none",
-                        marginRight: "6px"
-                      }}
-                    >
-                      Ir a consulta
-                    </Link>
-                    <button
-                      onClick={() => handleStatusChange(e.id, "completed")}
-                    >
+                    {e.appointment_id && (
+                      <Link
+                        to={`/consulta/${e.appointment_id}`}
+                        style={{
+                          background: "#3b82f6",
+                          color: "#fff",
+                          padding: "6px 12px",
+                          borderRadius: "4px",
+                          textDecoration: "none",
+                          marginRight: "6px"
+                        }}
+                      >
+                        Ir a consulta
+                      </Link>
+                    )}
+                    <button onClick={() => handleStatusChange(e.id, "completed")}>
                       Finalizar
                     </button>
                   </>
+                )}
+                {e.status !== "completed" && e.status !== "canceled" && (
+                  <button
+                    onClick={() => handleStatusChange(e.id, "canceled")}
+                    style={{ marginLeft: "6px", color: "red" }}
+                  >
+                    Cancelar
+                  </button>
                 )}
                 {e.status === "completed" && <span>✔ Finalizada</span>}
                 {e.status === "canceled" && <span>✖ Cancelada</span>}

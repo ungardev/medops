@@ -15,12 +15,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8000', // asegúrate de usar el puerto real de tu backend Django
+        target: 'http://127.0.0.1', // 👈 backend real (Gunicorn/Nginx en puerto 80)
         changeOrigin: true,
         secure: false,
       },
       '/api/v1': {
-        target: 'http://localhost:8000',
+        target: 'http://127.0.0.1', // 👈 igual aquí
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/v1/, '/api'),

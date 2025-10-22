@@ -57,7 +57,7 @@ class Appointment(models.Model):
         ('pending', 'Pending'),              # Cita creada para una fecha futura
         ('arrived', 'Arrived'),              # Paciente llegó / confirmó asistencia
         ('in_consultation', 'In Consultation'),  # Paciente en consulta
-        ('completed', 'Completed'),          # Consulta finalizada (toda cita vista debe terminar aquí)
+        ('completed', 'Completed'),          # Consulta finalizada
         ('canceled', 'Canceled'),            # Cita cancelada / no-show
     ]
 
@@ -69,7 +69,6 @@ class Appointment(models.Model):
     patient = models.ForeignKey('Patient', on_delete=models.CASCADE)
     appointment_date = models.DateField()
 
-    # 🔹 Status nunca puede ser NULL ni quedar vacío
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -80,7 +79,6 @@ class Appointment(models.Model):
 
     arrival_time = models.TimeField(blank=True, null=True)
 
-    # 🔹 Tipo de consulta (para futura lógica de precios)
     appointment_type = models.CharField(
         max_length=20,
         choices=TYPE_CHOICES,
@@ -88,7 +86,6 @@ class Appointment(models.Model):
         verbose_name="Tipo de consulta"
     )
 
-    # 🔹 Monto esperado de la cita
     expected_amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -96,7 +93,6 @@ class Appointment(models.Model):
         verbose_name="Monto esperado"
     )
 
-    # Historial
     history = HistoricalRecords()
 
     class Meta:
@@ -106,28 +102,55 @@ class Appointment(models.Model):
     def __str__(self):
         return f"{self.patient} - {self.appointment_date} - {self.status}"
 
-    # Helpers financieros
+    # --- Finanzas ---
     def total_paid(self):
         agg = self.payments.aggregate(total=Sum('amount'))
         return agg.get('total') or Decimal('0.00')
 
     def balance_due(self):
-        """Devuelve cuánto falta por pagar en esta cita."""
         return max(self.expected_amount - self.total_paid(), Decimal('0.00'))
 
     def is_fully_paid(self):
         return self.balance_due() == Decimal('0.00')
 
     def set_expected_amount_by_type(self):
-        """Fija el monto según el tipo de consulta."""
         if self.appointment_type == 'general':
             self.expected_amount = Decimal('50.00')
         elif self.appointment_type == 'specialized':
             self.expected_amount = Decimal('100.00')
 
-    # 🔹 Helper para marcar como completada
+    # --- Flujo de estados ---
+    def can_transition(self, new_status: str) -> bool:
+        valid_transitions = {
+            "pending": ["arrived", "canceled"],
+            "arrived": ["in_consultation", "canceled"],
+            "in_consultation": ["completed", "canceled"],
+            "completed": [],
+            "canceled": [],
+        }
+        return new_status in valid_transitions[self.status]
+
+    def update_status(self, new_status: str):
+        if self.can_transition(new_status):
+            self.status = new_status
+            self.save(update_fields=["status"])
+        else:
+            raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
+
+    def mark_arrived(self):
+        """Marca la cita como 'arrived' y crea entrada en la sala de espera"""
+        if self.status == "pending":
+            self.status = "arrived"
+            self.arrival_time = timezone.now().time()
+            self.save(update_fields=["status", "arrival_time"])
+            WaitingRoomEntry.objects.create(
+                patient=self.patient,
+                appointment=self,
+                status="waiting",
+                priority="scheduled"
+            )
+
     def mark_completed(self):
-        """Marca la cita como completada (toda cita vista debe terminar aquí)."""
         self.status = 'completed'
         self.save(update_fields=['status'])
 
@@ -140,10 +163,10 @@ class WaitingRoomEntry(models.Model):
     ]
 
     STATUS_CHOICES = [
-        ("waiting", "Waiting"),              # llegó y está esperando
+        ("waiting", "Waiting"),
         ("in_consultation", "In Consultation"),
         ("completed", "Completed"),
-        ("canceled", "Canceled"),            # agregado: cita cancelada, se ubica al final
+        ("canceled", "Canceled"),
     ]
 
     patient = models.ForeignKey("Patient", on_delete=models.CASCADE)
@@ -160,6 +183,23 @@ class WaitingRoomEntry(models.Model):
 
     def __str__(self):
         return f"{self.patient} - {self.get_status_display()}"
+
+    # --- Flujo de estados ---
+    def can_transition(self, new_status: str) -> bool:
+        valid_transitions = {
+            "waiting": ["in_consultation", "canceled"],
+            "in_consultation": ["completed", "canceled"],
+            "completed": [],
+            "canceled": [],
+        }
+        return new_status in valid_transitions[self.status]
+
+    def update_status(self, new_status: str):
+        if self.can_transition(new_status):
+            self.status = new_status
+            self.save(update_fields=["status"])
+        else:
+            raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
 
 
 class Diagnosis(models.Model):
