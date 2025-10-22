@@ -124,7 +124,8 @@ def dashboard_summary_api(request):
         "balance_trend": balance_trend,
     }
 
-    serializer = DashboardSummarySerializer(data)
+    # ✅ CORREGIDO: instanciamos el serializer con `instance=data`
+    serializer = DashboardSummarySerializer(instance=data)
     return JsonResponse(serializer.data, safe=False)
 
 # --- Pacientes ---
