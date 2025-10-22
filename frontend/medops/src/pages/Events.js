@@ -1,5 +1,5 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 export default function Events() {
     const [events, setEvents] = useState([]);
     useEffect(() => {
