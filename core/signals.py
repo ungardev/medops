@@ -1,66 +1,54 @@
-from django.db.models.signals import pre_save
+from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
-from .models import Appointment, Payment, Event
+from .models import Appointment, Payment, Patient
+from core.utils.events import log_event
 import logging
 
-# Logger de auditoría
 logger = logging.getLogger("audit")
 
+# --- Appointment ---
+@receiver(post_save, sender=Appointment)
+def appointment_created_or_updated(sender, instance, created, **kwargs):
+    if created:
+        log_event("Appointment", instance.id, "create", actor="system")
+        logger.info(f"Appointment {instance.id} created")
+    else:
+        log_event("Appointment", instance.id, "update", actor="system")
+        logger.info(f"Appointment {instance.id} updated")
 
-@receiver(pre_save, sender=Appointment)
-def log_appointment_changes(sender, instance, **kwargs):
-    """
-    Registra en Event y en audit.log cualquier cambio de estado en Appointment.
-    """
-    if instance.pk:  # Solo si ya existe (update, no create)
-        try:
-            old = Appointment.objects.get(pk=instance.pk)
-        except Appointment.DoesNotExist:
-            return
-
-        if old.status != instance.status:
-            # Guardar en tabla Event
-            Event.objects.create(
-                entity="Appointment",
-                entity_id=instance.pk,
-                action=f"Status changed {old.status} → {instance.status}",
-                metadata={"old": old.status, "new": instance.status}
-            )
-            # Guardar en audit.log
-            logger.info(
-                f"Appointment {instance.pk} status changed: {old.status} → {instance.status}"
-            )
+@receiver(post_delete, sender=Appointment)
+def appointment_deleted(sender, instance, **kwargs):
+    log_event("Appointment", instance.id, "delete", actor="system")
+    logger.info(f"Appointment {instance.id} deleted")
 
 
-@receiver(pre_save, sender=Payment)
-def log_payment_changes(sender, instance, **kwargs):
-    """
-    Registra en Event y en audit.log cualquier cambio de estado o método en Payment.
-    """
-    if instance.pk:
-        try:
-            old = Payment.objects.get(pk=instance.pk)
-        except Payment.DoesNotExist:
-            return
+# --- Payment ---
+@receiver(post_save, sender=Payment)
+def payment_created_or_updated(sender, instance, created, **kwargs):
+    if created:
+        log_event("Payment", instance.id, "create", actor="system", metadata={"amount": instance.amount})
+        logger.info(f"Payment {instance.id} created")
+    else:
+        log_event("Payment", instance.id, "update", actor="system", metadata={"amount": instance.amount})
+        logger.info(f"Payment {instance.id} updated")
 
-        if old.status != instance.status:
-            Event.objects.create(
-                entity="Payment",
-                entity_id=instance.pk,
-                action=f"Status changed {old.status} → {instance.status}",
-                metadata={"old": old.status, "new": instance.status}
-            )
-            logger.info(
-                f"Payment {instance.pk} status changed: {old.status} → {instance.status}"
-            )
+@receiver(post_delete, sender=Payment)
+def payment_deleted(sender, instance, **kwargs):
+    log_event("Payment", instance.id, "delete", actor="system", metadata={"amount": instance.amount})
+    logger.info(f"Payment {instance.id} deleted")
 
-        if old.method != instance.method:
-            Event.objects.create(
-                entity="Payment",
-                entity_id=instance.pk,
-                action=f"Method changed {old.method} → {instance.method}",
-                metadata={"old": old.method, "new": instance.method}
-            )
-            logger.info(
-                f"Payment {instance.pk} method changed: {old.method} → {instance.method}"
-            )
+
+# --- Patient ---
+@receiver(post_save, sender=Patient)
+def patient_created_or_updated(sender, instance, created, **kwargs):
+    if created:
+        log_event("Patient", instance.id, "create", actor="system")
+        logger.info(f"Patient {instance.id} created")
+    else:
+        log_event("Patient", instance.id, "update", actor="system")
+        logger.info(f"Patient {instance.id} updated")
+
+@receiver(post_delete, sender=Patient)
+def patient_deleted(sender, instance, **kwargs):
+    log_event("Patient", instance.id, "delete", actor="system")
+    logger.info(f"Patient {instance.id} deleted")
