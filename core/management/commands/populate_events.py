@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
-from core.models import Patient, Appointment, Payment, Event
+from core.models import Patient, Appointment, Payment
 from core.utils.events import log_event
+
 
 class Command(BaseCommand):
     help = "Poblar la tabla Event con registros históricos de pacientes, citas y pagos"
@@ -20,7 +21,13 @@ class Command(BaseCommand):
 
         # Pagos
         for payment in Payment.objects.all():
-            log_event("Payment", payment.id, "historical_import", actor="system", metadata={"amount": payment.amount})
+            log_event(
+                "Payment",
+                payment.id,
+                "historical_import",
+                actor="system",
+                metadata={"amount": float(payment.amount) if payment.amount is not None else 0.0}
+            )
             created += 1
 
         self.stdout.write(self.style.SUCCESS(f"Se crearon {created} eventos históricos"))
