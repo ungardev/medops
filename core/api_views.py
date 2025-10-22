@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.http import JsonResponse, HttpResponse
 from django.utils.timezone import now
 from django.utils.dateparse import parse_date
@@ -17,6 +18,12 @@ from .serializers import (
 from rest_framework import viewsets
 
 
+def safe_json(value):
+    """Convierte valores a tipos JSON-serializables"""
+    if isinstance(value, Decimal):
+        return float(value)
+    return value
+
 # --- Dashboard / métricas ---
 def metrics_api(request):
     today = now().date()
@@ -35,6 +42,7 @@ def metrics_api(request):
         ),
     }
     return JsonResponse(data)
+
 
 # --- Dashboard resumen ejecutivo ---
 def dashboard_summary_api(request):
@@ -84,7 +92,7 @@ def dashboard_summary_api(request):
         .order_by("week")
     )
     payments_trend = [
-        {"week": p["week"].strftime("W%U %Y"), "pagos": p["total"] or 0}
+        {"week": p["week"].strftime("W%U %Y"), "pagos": safe_json(p["total"] or 0)}
         for p in payments_by_week if p["week"]
     ]
 
@@ -101,7 +109,7 @@ def dashboard_summary_api(request):
     for p in payments_by_week:
         week = p["week"]
         if week:
-            pagos = p["total"] or 0
+            pagos = safe_json(p["total"] or 0)
             exoneraciones = waived_dict.get(week, 0)
             balance_trend.append({
                 "week": week.strftime("W%U %Y"),
@@ -109,22 +117,21 @@ def dashboard_summary_api(request):
             })
 
     data = {
-        "total_patients": total_patients,
-        "total_appointments": total_appointments,
-        "completed_appointments": completed_appointments,
-        "pending_appointments": pending_appointments,
-        "total_payments": total_payments,
-        "total_events": total_events,
-        "total_waived": total_waived,
-        "total_payments_amount": total_payments_amount,
-        "estimated_waived_amount": estimated_waived_amount,
-        "financial_balance": financial_balance,
+        "total_patients": int(total_patients),
+        "total_appointments": int(total_appointments),
+        "completed_appointments": int(completed_appointments),
+        "pending_appointments": int(pending_appointments),
+        "total_payments": int(total_payments),
+        "total_events": int(total_events),
+        "total_waived": int(total_waived),
+        "total_payments_amount": safe_json(total_payments_amount),
+        "estimated_waived_amount": safe_json(estimated_waived_amount),
+        "financial_balance": safe_json(financial_balance),
         "appointments_trend": appointments_trend,
         "payments_trend": payments_trend,
         "balance_trend": balance_trend,
     }
 
-    # ✅ CORREGIDO: instanciamos el serializer con `instance=data`
     serializer = DashboardSummarySerializer(instance=data)
     return JsonResponse(serializer.data, safe=False)
 
@@ -199,7 +206,6 @@ def waived_consultations_api(request):
         })
     return JsonResponse(results, safe=False)
 
-
 # --- Auditoría: lista + filtros + paginación ---
 def event_log_api(request):
     events = Event.objects.all().order_by("-timestamp").values(
@@ -220,10 +226,17 @@ def event_log_api(request):
 
 # --- Auditoría: agregados para gráficos ---
 def audit_dashboard_api(request):
-    entity_data = list(Event.objects.values("entity").annotate(total=Count("id")).order_by("-total"))
-    action_data = list(Event.objects.values("action").annotate(total=Count("id")).order_by("-total"))
+    entity_data = list(
+        Event.objects.values("entity").annotate(total=Count("id")).order_by("-total")
+    )
+    action_data = list(
+        Event.objects.values("action").annotate(total=Count("id")).order_by("-total")
+    )
     timeline_data = list(
-        Event.objects.annotate(day=TruncDate("timestamp")).values("day").annotate(total=Count("id")).order_by("day")
+        Event.objects.annotate(day=TruncDate("timestamp"))
+        .values("day")
+        .annotate(total=Count("id"))
+        .order_by("day")
     )
     return JsonResponse({
         "entity_data": entity_data,
