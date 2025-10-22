@@ -14,7 +14,7 @@ import Select from "react-select";
 import { getDashboardSummary, DashboardSummary } from "../api/dashboard";
 import { mockDashboardSummary } from "../mocks/dashboardSummary"; // fallback
 
-export default function Dashboard() {
+export default function DashboardSuperUser() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [darkMode, setDarkMode] = useState(false);
 
@@ -23,7 +23,11 @@ export default function Dashboard() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [status, setStatus] = useState<string>("");
 
+  // Estado de carga
+  const [loading, setLoading] = useState(false);
+
   const fetchSummary = () => {
+    setLoading(true);
     getDashboardSummary(
       startDate ? startDate.toISOString().split("T")[0] : undefined,
       endDate ? endDate.toISOString().split("T")[0] : undefined,
@@ -33,7 +37,8 @@ export default function Dashboard() {
       .catch(() => {
         console.warn("⚠️ Usando datos mock porque el backend no respondió");
         setSummary(mockDashboardSummary);
-      });
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -157,14 +162,12 @@ export default function Dashboard() {
               { value: "pending", label: "Pendientes" },
               { value: "cancelled", label: "Canceladas" },
             ]}
-            value={
-              [
-                { value: "", label: "Todos" },
-                { value: "completed", label: "Completadas" },
-                { value: "pending", label: "Pendientes" },
-                { value: "cancelled", label: "Canceladas" },
-              ].find((opt) => opt.value === status)
-            }
+            value={[
+              { value: "", label: "Todos" },
+              { value: "completed", label: "Completadas" },
+              { value: "pending", label: "Pendientes" },
+              { value: "cancelled", label: "Canceladas" },
+            ].find((opt) => opt.value === status)}
             onChange={(opt) => setStatus(opt?.value || "")}
           />
         </div>
@@ -182,7 +185,34 @@ export default function Dashboard() {
         >
           Aplicar filtros
         </button>
+
+        <button
+          onClick={() => {
+            setStartDate(null);
+            setEndDate(null);
+            setStatus("");
+            fetchSummary();
+          }}
+          style={{
+            padding: "0.5rem 1rem",
+            background: "#FF8042",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer"
+          }}
+        >
+          Limpiar filtros
+        </button>
       </div>
+
+      {/* 🔹 Spinner */}
+      {loading && (
+        <div style={{ textAlign: "center", margin: "1rem 0" }}>
+          <div className="spinner"></div>
+          <p style={{ marginTop: "0.5rem" }}>Cargando datos...</p>
+        </div>
+      )}
 
       <div
         id="dashboard-content"
@@ -278,7 +308,7 @@ export default function Dashboard() {
             </LineChart>
           </ResponsiveContainer>
         </div>
-
+        
         {/* 🔹 Tendencia de pagos por semana */}
         <div style={{ marginBottom: "2rem" }}>
           <h3>Tendencia de pagos por semana</h3>

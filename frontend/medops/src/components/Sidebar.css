@@ -1,0 +1,42 @@
+.sidebar {
+  width: 220px;
+  background: rgb(30, 41, 59);
+  color: white;
+  height: 100vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar .brand {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex-grow: 1;
+}
+
+.sidebar li {
+  margin: 1rem 0;
+}
+
+.sidebar a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.sidebar a:hover {
+  color: #00C49F;
+}
+
+.sidebar a.active {
+  color: #00C49F;
+  font-weight: 600;
+}

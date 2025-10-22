@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import App from "./App";
-import Dashboard from "./pages/Dashboard";
+import DashboardSuperUser from "./pages/DashboardSuperUser";
 import Patients from "./pages/Patients";
 import Appointments from "./pages/Appointments";
 import Payments from "./pages/Payments";
@@ -23,8 +23,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
+          {/* Layout principal con Sidebar */}
           <Route path="/" element={<App />}>
-            <Route index element={<Dashboard />} />
+            {/* ✅ Dashboard SuperUser como página principal */}
+            <Route index element={<DashboardSuperUser />} />
+
+            {/* Módulos */}
             <Route path="patients" element={<Patients />} />
             <Route path="appointments/today" element={<Appointments />} />
             <Route path="payments/summary" element={<Payments />} />
@@ -34,6 +38,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           </Route>
         </Routes>
       </BrowserRouter>
+
       {/* 🔎 Devtools para depuración */}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
