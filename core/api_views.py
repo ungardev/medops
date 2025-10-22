@@ -1,28 +1,21 @@
 from django.http import JsonResponse, HttpResponse
 from django.utils.timezone import now
 from django.utils.dateparse import parse_date
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.core.paginator import Paginator
-from django.db.models import Q
 
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
-import csv
-from typing import cast
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
-from openpyxl.utils import get_column_letter
-from openpyxl.chart import BarChart, Reference, PieChart, LineChart
-from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.cell.cell import Cell
-from rest_framework import viewsets
 from .serializers import (
     PatientSerializer,
     AppointmentSerializer,
     PaymentSerializer,
     WaitingRoomEntrySerializer,
-    DashboardSummarySerializer,   # 🔹 agregado
+    DashboardSummarySerializer,
 )
+
+from rest_framework import viewsets
+
 
 # --- Dashboard / métricas ---
 def metrics_api(request):
@@ -43,15 +36,12 @@ def metrics_api(request):
     }
     return JsonResponse(data)
 
-
 # --- Dashboard resumen ejecutivo ---
 def dashboard_summary_api(request):
-    # 🔹 Leer filtros desde query params
     start_date = parse_date(request.GET.get("start_date")) if request.GET.get("start_date") else None
     end_date = parse_date(request.GET.get("end_date")) if request.GET.get("end_date") else None
-    status_filter = request.GET.get("status")  # "pending", "completed", etc.
+    status_filter = request.GET.get("status")
 
-    # 🔹 Construir filtro dinámico
     filters = Q()
     if start_date:
         filters &= Q(appointment_date__gte=start_date)
@@ -60,7 +50,6 @@ def dashboard_summary_api(request):
     if status_filter:
         filters &= Q(status=status_filter)
 
-    # --- Métricas globales ---
     total_patients = Patient.objects.count()
     total_appointments = Appointment.objects.filter(filters).count()
     completed_appointments = Appointment.objects.filter(filters & Q(status="completed")).count()
@@ -69,11 +58,12 @@ def dashboard_summary_api(request):
     total_events = Event.objects.count()
     total_waived = Payment.objects.filter(status="waived", appointment__in=Appointment.objects.filter(filters)).count()
 
-    total_payments_amount = Payment.objects.filter(appointment__in=Appointment.objects.filter(filters)).aggregate(total=Sum("amount"))["total"] or 0
+    total_payments_amount = Payment.objects.filter(
+        appointment__in=Appointment.objects.filter(filters)
+    ).aggregate(total=Sum("amount"))["total"] or 0
     estimated_waived_amount = total_waived * 50
     financial_balance = total_payments_amount - estimated_waived_amount
 
-    # --- Tendencias ---
     appointments_by_month = (
         Appointment.objects.filter(filters)
         .annotate(month=TruncMonth("appointment_date"))
@@ -137,25 +127,14 @@ def dashboard_summary_api(request):
     serializer = DashboardSummarySerializer(data)
     return JsonResponse(serializer.data, safe=False)
 
-
 # --- Pacientes ---
 def patients_api(request):
     patients = Patient.objects.all().values(
-        "id",
-        "first_name",
-        "middle_name",
-        "last_name",
-        "second_last_name",
-        "birthdate",
-        "gender",
-        "contact_info",
+        "id", "first_name", "middle_name", "last_name", "second_last_name", "birthdate", "gender", "contact_info"
     )
-
     results = []
     for p in patients:
-        full_name = " ".join(
-            filter(None, [p["first_name"], p["middle_name"], p["last_name"], p["second_last_name"]])
-        )
+        full_name = " ".join(filter(None, [p["first_name"], p["middle_name"], p["last_name"], p["second_last_name"]]))
         results.append({
             "id": p["id"],
             "full_name": full_name,
@@ -163,7 +142,6 @@ def patients_api(request):
             "gender": p["gender"],
             "contact_info": p["contact_info"],
         })
-
     return JsonResponse(results, safe=False)
 
 
@@ -174,15 +152,7 @@ def daily_appointments_api(request):
         Appointment.objects.filter(appointment_date=today)
         .select_related("patient")
         .order_by("arrival_time")
-        .values(
-            "id",
-            "patient_id",
-            "patient__first_name",
-            "patient__last_name",
-            "appointment_date",
-            "arrival_time",
-            "status",
-        )
+        .values("id", "patient_id", "patient__first_name", "patient__last_name", "appointment_date", "arrival_time", "status")
     )
     results = []
     for a in appointments:
@@ -213,15 +183,7 @@ def waived_consultations_api(request):
     waived = (
         Payment.objects.filter(status="waived")
         .select_related("appointment__patient")
-        .values(
-            "id",
-            "appointment_id",
-            "appointment__patient__first_name",
-            "appointment__patient__last_name",
-            "amount",
-            "method",
-            "status",
-        )
+        .values("id", "appointment_id", "appointment__patient__first_name", "appointment__patient__last_name", "amount", "method", "status")
     )
     results = []
     for w in waived:
@@ -237,49 +199,51 @@ def waived_consultations_api(request):
     return JsonResponse(results, safe=False)
 
 
-# --- Auditoría: lista + filtros + paginación (JSON) ---
-# (tu función event_log_api completa aquí, sin cambios)
+# --- Auditoría: lista + filtros + paginación ---
+def event_log_api(request):
+    events = Event.objects.all().order_by("-timestamp").values("id", "entity", "action", "timestamp", "user_id")
+    paginator = Paginator(events, 20)
+    page_number = request.GET.get("page", 1)
+    page_obj = paginator.get_page(page_number)
+
+    data = {
+        "results": list(page_obj),
+        "page": page_obj.number,
+        "num_pages": paginator.num_pages,
+        "total": paginator.count,
+    }
+    return JsonResponse(data, safe=False)
 
 
 # --- Auditoría: agregados para gráficos ---
 def audit_dashboard_api(request):
-    entity_data = list(
-        Event.objects.values("entity")
-        .annotate(total=Count("id"))
-        .order_by("-total")
-    )
-    action_data = list(
-        Event.objects.values("action")
-        .annotate(total=Count("id"))
-        .order_by("-total")
-    )
+    entity_data = list(Event.objects.values("entity").annotate(total=Count("id")).order_by("-total"))
+    action_data = list(Event.objects.values("action").annotate(total=Count("id")).order_by("-total"))
     timeline_data = list(
-        Event.objects.annotate(day=TruncDate("timestamp"))
-        .values("day")
-        .annotate(total=Count("id"))
-        .order_by("day")
+        Event.objects.annotate(day=TruncDate("timestamp")).values("day").annotate(total=Count("id")).order_by("day")
     )
-    return JsonResponse(
-        {
-            "entity_data": entity_data,
-            "action_data": action_data,
-            "timeline_data": timeline_data,
-        }
-    )
+    return JsonResponse({
+        "entity_data": entity_data,
+        "action_data": action_data,
+        "timeline_data": timeline_data,
+    })
 
 
-# --- DRF ViewSets para CRUD estándar ---
+# --- DRF ViewSets ---
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
+
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
 
+
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
 
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     queryset = WaitingRoomEntry.objects.all()
