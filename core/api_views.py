@@ -16,7 +16,7 @@ from .serializers import (
 )
 
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action   # 🔹 añadimos action
 from rest_framework.response import Response
 
 
@@ -155,7 +155,6 @@ def patients_api(request):
         })
     return JsonResponse(results, safe=False)
 
-
 # --- Pacientes: búsqueda (para autocomplete en Sala de Espera) ---
 @api_view(["GET"])
 def patient_search_api(request):
@@ -173,6 +172,7 @@ def patient_search_api(request):
 
     serializer = PatientSerializer(patients, many=True)
     return Response(serializer.data)
+
 
 # --- Citas del día ---
 def daily_appointments_api(request):
@@ -206,7 +206,6 @@ def waived_consultations_api(request):
             "status": w.status,
         })
     return JsonResponse(results, safe=False)
-
 
 # --- Auditoría: lista + filtros + paginación ---
 def event_log_api(request):
@@ -263,7 +262,6 @@ def audit_by_patient(request, patient_id):
         "id", "entity", "entity_id", "action", "timestamp", "actor"
     )
     return Response(list(events))
-
 
 # --- Sala de Espera: listar entradas ---
 def waitingroom_list_api(request):
@@ -342,7 +340,6 @@ def update_appointment_notes(request, pk):
 
     return Response(AppointmentSerializer(appointment).data)
 
-
 # --- DRF ViewSets (CRUD básicos) ---
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
@@ -362,3 +359,27 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     queryset = WaitingRoomEntry.objects.all()
     serializer_class = WaitingRoomEntrySerializer
+
+    @action(detail=True, methods=["patch"])
+    def promote_to_emergency(self, request, pk=None):
+        """
+        Promueve un paciente a emergencia (Grupo A primero).
+        """
+        entry = self.get_object()
+        entry.priority = "emergency"
+        entry.save(update_fields=["priority"])
+
+        # 🔹 Registrar evento de auditoría
+        Event.objects.create(
+            entity="WaitingRoomEntry",
+            entity_id=entry.id,
+            actor=str(request.user) if request.user.is_authenticated else "system",
+            action="promote_to_emergency",
+            timestamp=now(),
+            metadata={"patient": str(entry.patient)}
+        )
+
+        return Response(
+            WaitingRoomEntrySerializer(entry).data,
+            status=status.HTTP_200_OK
+        )

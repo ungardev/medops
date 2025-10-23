@@ -93,7 +93,7 @@ class Appointment(models.Model):
         verbose_name="Monto esperado"
     )
 
-    # 🔹 Nuevo campo para evolución clínica
+    # 🔹 Campo para evolución clínica
     notes = models.TextField(blank=True, null=True)
 
     history = HistoricalRecords()
@@ -140,17 +140,31 @@ class Appointment(models.Model):
         else:
             raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
 
-    def mark_arrived(self):
-        """Marca la cita como 'arrived' y crea entrada en la sala de espera"""
+    def mark_arrived(self, is_emergency: bool = False, is_walkin: bool = False):
+        """
+        Marca la cita como 'arrived' y crea entrada en la sala de espera.
+        - Grupo A = scheduled
+        - Grupo B = walkin
+        - Emergency = primero en Grupo A
+        """
         if self.status == "pending":
             self.status = "arrived"
             self.arrival_time = timezone.now().time()
             self.save(update_fields=["status", "arrival_time"])
+
+            # Determinar prioridad según regla de negocio
+            if is_walkin:
+                priority = "walkin"   # Grupo B
+            elif is_emergency:
+                priority = "emergency"  # Grupo A, pero primero
+            else:
+                priority = "scheduled"  # Grupo A normal
+
             WaitingRoomEntry.objects.create(
                 patient=self.patient,
                 appointment=self,
                 status="waiting",
-                priority="scheduled"
+                priority=priority
             )
 
     def mark_completed(self):
@@ -160,9 +174,9 @@ class Appointment(models.Model):
 
 class WaitingRoomEntry(models.Model):
     PRIORITY_CHOICES = [
-        ("scheduled", "Scheduled"),
-        ("walkin", "Walk-in"),
-        ("emergency", "Emergency"),
+        ("scheduled", "Scheduled"),   # Grupo A
+        ("walkin", "Walk-in"),        # Grupo B
+        ("emergency", "Emergency"),   # Grupo A, primero
     ]
 
     STATUS_CHOICES = [
@@ -180,7 +194,18 @@ class WaitingRoomEntry(models.Model):
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ["order", "arrival_time"]
+        # 🔹 Emergencias primero, luego scheduled (Grupo A), luego walkin (Grupo B)
+        ordering = [
+            models.Case(
+                models.When(priority="emergency", then=0),
+                models.When(priority="scheduled", then=1),
+                models.When(priority="walkin", then=2),
+                default=3,
+                output_field=models.IntegerField(),
+            ),
+            "order",
+            "arrival_time",
+        ]
         verbose_name = "Waiting Room Entry"
         verbose_name_plural = "Waiting Room Entries"
 

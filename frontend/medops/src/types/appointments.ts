@@ -16,6 +16,9 @@ export interface Appointment {
   appointment_type: "general" | "specialized";
   expected_amount: string;
   status: AppointmentStatus;
+
+  // 🔹 Nuevo campo para evolución clínica
+  notes?: string;
 }
 
 // --- Datos de entrada para crear/editar cita
@@ -25,4 +28,7 @@ export interface AppointmentInput {
   appointment_type: "general" | "specialized";
   expected_amount?: string;
   status?: AppointmentStatus;
+
+  // 🔹 Opcional al crear/editar
+  notes?: string;
 }
