@@ -2,8 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import "./Sidebar.css";
 
 const navItems = [
-  { path: "/", label: "Dashboard" }, // ✅ ahora apunta a la raíz
-  { path: "/appointments/today", label: "Sala de Espera" },
+  { path: "/", label: "Dashboard" },
+  { path: "/waitingroom", label: "Sala de Espera" }, // 🔥 corregido
   { path: "/consultation", label: "Consulta" },
   { path: "/patients", label: "Pacientes" },
   { path: "/appointments", label: "Citas" },

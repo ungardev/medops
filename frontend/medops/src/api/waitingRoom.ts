@@ -1,25 +1,41 @@
-const API_BASE_URL = "http://localhost/api";
+import { apiFetch } from "./client";
+import { WaitingRoomEntry, PatientStatus } from "../types/waitingRoom";
 
-// 🔹 Obtener la sala de espera
-export async function fetchWaitingRoom() {
-  const res = await fetch(`${API_BASE_URL}/waitingroom/`);
-  if (!res.ok) throw new Error("Error al cargar la sala de espera");
-  return res.json();
-}
+// 🔹 Obtener todas las entradas de la sala de espera
+export const getWaitingRoom = (): Promise<WaitingRoomEntry[]> =>
+  apiFetch<WaitingRoomEntry[]>("waiting-room/");
 
-// 🔹 Actualizar estado de una entrada en la sala de espera
-export async function updateWaitingRoomStatus(id: number, newStatus: string) {
-  const res = await fetch(`${API_BASE_URL}/waitingroom/${id}/status/`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ status: newStatus }),
+// 🔹 Crear una nueva entrada en la sala de espera
+export const createWaitingRoomEntry = (
+  data: Partial<WaitingRoomEntry>
+): Promise<WaitingRoomEntry> =>
+  apiFetch<WaitingRoomEntry>("waiting-room/", {
+    method: "POST",
+    body: JSON.stringify(data),
   });
 
-  if (!res.ok) {
-    throw new Error(`Error al actualizar entrada ${id}: ${res.statusText}`);
-  }
+// 🔹 Actualizar una entrada completa
+export const updateWaitingRoomEntry = (
+  id: number,
+  data: Partial<WaitingRoomEntry>
+): Promise<WaitingRoomEntry> =>
+  apiFetch<WaitingRoomEntry>(`waiting-room/${id}/`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
 
-  return res.json();
-}
+// 🔹 Eliminar una entrada
+export const deleteWaitingRoomEntry = (id: number): Promise<void> =>
+  apiFetch<void>(`waiting-room/${id}/`, {
+    method: "DELETE",
+  });
+
+// 🔹 Actualizar solo el estado de una entrada
+export const updateWaitingRoomStatus = (
+  id: number,
+  newStatus: PatientStatus
+): Promise<WaitingRoomEntry> =>
+  apiFetch<WaitingRoomEntry>(`waiting-room/${id}/status/`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: newStatus }),
+  });

@@ -1,32 +1,43 @@
 import { apiFetch } from "./client";
-import { Appointment, AppointmentInput } from "../types/appointments";
+import { Appointment, AppointmentInput, AppointmentStatus } from "../types/appointments";
 
-export const getAppointments = () => apiFetch<Appointment[]>("appointments/");
+// 🔹 Obtener todas las citas
+export const getAppointments = (): Promise<Appointment[]> =>
+  apiFetch<Appointment[]>("appointments/");
 
-export const createAppointment = (data: AppointmentInput) =>
-  apiFetch("appointments/", {
+// 🔹 Crear una nueva cita
+export const createAppointment = (data: AppointmentInput): Promise<Appointment> =>
+  apiFetch<Appointment>("appointments/", {
     method: "POST",
     body: JSON.stringify(data),
   });
 
-export const updateAppointment = (id: number, data: AppointmentInput) =>
-  apiFetch(`appointments/${id}/`, {
+// 🔹 Actualizar una cita completa
+export const updateAppointment = (
+  id: number,
+  data: Partial<AppointmentInput>
+): Promise<Appointment> =>
+  apiFetch<Appointment>(`appointments/${id}/`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 
-export const deleteAppointment = (id: number) =>
-  apiFetch(`appointments/${id}/`, {
+// 🔹 Eliminar una cita
+export const deleteAppointment = (id: number): Promise<void> =>
+  apiFetch<void>(`appointments/${id}/`, {
     method: "DELETE",
   });
 
-  // 🔹 Obtener detalle de una cita por ID
-export const fetchAppointmentDetail = (id: number) =>
+// 🔹 Obtener detalle de una cita por ID
+export const fetchAppointmentDetail = (id: number): Promise<Appointment> =>
   apiFetch<Appointment>(`appointments/${id}/`);
 
 // 🔹 Actualizar solo el estado de una cita
-export const updateAppointmentStatus = (id: number, newStatus: string) =>
-  apiFetch<Appointment>(`appointments/${id}/`, {
+export const updateAppointmentStatus = (
+  id: number,
+  newStatus: AppointmentStatus
+): Promise<Appointment> =>
+  apiFetch<Appointment>(`appointments/${id}/status/`, {
     method: "PATCH",
     body: JSON.stringify({ status: newStatus }),
   });
