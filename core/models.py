@@ -54,11 +54,11 @@ class Patient(models.Model):
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),              # Cita creada para una fecha futura
-        ('arrived', 'Arrived'),              # Paciente llegó / confirmó asistencia
-        ('in_consultation', 'In Consultation'),  # Paciente en consulta
-        ('completed', 'Completed'),          # Consulta finalizada
-        ('canceled', 'Canceled'),            # Cita cancelada / no-show
+        ('pending', 'Pending'),
+        ('arrived', 'Arrived'),
+        ('in_consultation', 'In Consultation'),
+        ('completed', 'Completed'),
+        ('canceled', 'Canceled'),
     ]
 
     TYPE_CHOICES = [
@@ -92,6 +92,9 @@ class Appointment(models.Model):
         default=Decimal('0.00'),
         verbose_name="Monto esperado"
     )
+
+    # 🔹 Nuevo campo para evolución clínica
+    notes = models.TextField(blank=True, null=True)
 
     history = HistoricalRecords()
 

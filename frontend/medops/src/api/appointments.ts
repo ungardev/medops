@@ -41,3 +41,13 @@ export const updateAppointmentStatus = (
     method: "PATCH",
     body: JSON.stringify({ status: newStatus }),
   });
+
+// 🔹 Actualizar notas de una cita
+export const updateAppointmentNotes = (
+  id: number,
+  notes: string
+): Promise<Appointment> =>
+  apiFetch<Appointment>(`appointments/${id}/notes/`, {
+    method: "PATCH",
+    body: JSON.stringify({ notes }),
+  });

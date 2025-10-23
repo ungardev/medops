@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { getWaitingRoom, updateWaitingRoomStatus } from "../api/waitingRoom";
+import { getWaitingRoom, updateWaitingRoomStatus, createWaitingRoomEntry } from "../api/waitingRoom";
+import { searchPatients } from "../api/patients";
 import { WaitingRoomEntry, PatientStatus } from "../types";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -16,7 +16,10 @@ export default function WaitingRoom() {
 
   // Modal de ingreso (walk-in o pre-registro)
   const [showIngreso, setShowIngreso] = useState(false);
-  const [newPatientName, setNewPatientName] = useState("");
+  const [query, setQuery] = useState(""); // búsqueda
+  const [results, setResults] = useState<any[]>([]);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [selectedPatientSearch, setSelectedPatientSearch] = useState<any | null>(null);
 
   useEffect(() => {
     getWaitingRoom()
@@ -33,6 +36,22 @@ export default function WaitingRoom() {
       setError(err.message);
     }
   };
+
+  // Buscar pacientes con debounce
+  useEffect(() => {
+    if (query.length < 2) {
+      setResults([]);
+      return;
+    }
+    setLoadingSearch(true);
+    const timeout = setTimeout(() => {
+      searchPatients(query)
+        .then(setResults)
+        .catch(() => setResults([]))
+        .finally(() => setLoadingSearch(false));
+    }, 300);
+    return () => clearTimeout(timeout);
+  }, [query]);
 
   // Separar grupos
   const confirmed = entries.filter(
@@ -110,93 +129,6 @@ export default function WaitingRoom() {
         </tbody>
       </table>
 
-      {/* Separador visual */}
-      <div
-        style={{
-          background: "#f1f5f9",
-          padding: "6px",
-          textAlign: "center",
-          margin: "12px 0",
-        }}
-      >
-        📅 Pacientes con cita pendiente de confirmar
-      </div>
-
-      {/* Grupo B: Scheduled */}
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ background: "#e2e8f0" }}>
-            <th>Paciente</th>
-            <th>Estado</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scheduled.map(e => (
-            <tr key={e.id} style={{ borderBottom: "1px solid #cbd5e1" }}>
-              <td>{e.patient.name}</td>
-              <td>{e.status}</td>
-              <td>
-                <button onClick={() => handleStatusChange(e.id, "waiting")}>
-                  Confirmar llegada
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Modal historial */}
-      {selectedPatient && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              padding: "20px",
-              borderRadius: "8px",
-              width: "400px",
-            }}
-          >
-            <h3>Historial de {selectedPatient.patient.name}</h3>
-            <p>
-              <b>Estado:</b> {selectedPatient.status}
-            </p>
-            <p>
-              <b>Llegada:</b> {selectedPatient.arrival_time || "—"}
-            </p>
-            <textarea
-              placeholder="Escribe una nota rápida..."
-              value={notes}
-              onChange={e => setNotes(e.target.value)}
-              style={{ width: "100%", minHeight: "80px", marginTop: "10px" }}
-            />
-            <div style={{ marginTop: "12px", textAlign: "right" }}>
-              <button
-                onClick={() => {
-                  alert("Nota guardada (simulado)");
-                  setSelectedPatient(null);
-                }}
-              >
-                Guardar nota
-              </button>
-              <button onClick={() => setSelectedPatient(null)}>Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Modal ingreso */}
       {showIngreso && (
         <div
@@ -221,30 +153,67 @@ export default function WaitingRoom() {
             }}
           >
             <h3>Registrar llegada</h3>
-            <p>🔍 Buscar paciente existente o registrar nuevo</p>
+            <p>🔍 Buscar paciente existente</p>
             <input
               type="text"
-              placeholder="Nombre del paciente"
-              value={newPatientName}
-              onChange={e => setNewPatientName(e.target.value)}
+              placeholder="Nombre o ID del paciente"
+              value={query}
+              onChange={e => {
+                setQuery(e.target.value);
+                setSelectedPatientSearch(null);
+              }}
               style={{ width: "100%", padding: "8px", marginBottom: "12px" }}
             />
+            {loadingSearch && <p>Buscando...</p>}
+            <ul style={{ maxHeight: "200px", overflowY: "auto", marginTop: "8px" }}>
+              {results.map(p => (
+                <li
+                  key={p.id}
+                  style={{
+                    padding: "8px",
+                    cursor: "pointer",
+                    borderBottom: "1px solid #e2e8f0",
+                    background: selectedPatientSearch?.id === p.id ? "#e2e8f0" : "transparent",
+                  }}
+                  onClick={() => setSelectedPatientSearch(p)}
+                >
+                  <div style={{ fontWeight: "bold" }}>
+                    {p.full_name || p.name}
+                  </div>
+                  <div style={{ fontSize: "0.9em", color: "#475569" }}>
+                    ID: {p.id} • {p.gender || "—"} •{" "}
+                    {p.birthdate ? new Date(p.birthdate).toLocaleDateString() : "Sin fecha"}
+                  </div>
+                  {p.contact_info && (
+                    <div style={{ fontSize: "0.85em", color: "#64748b" }}>
+                      📞 {p.contact_info}
+                    </div>
+                  )}
+                </li>
+              ))}
+              {results.length === 0 && !loadingSearch && query.length >= 2 && (
+                <li style={{ padding: "8px", color: "#64748b" }}>
+                  No se encontraron pacientes
+                </li>
+              )}
+            </ul>
+
             <div style={{ marginTop: "12px", textAlign: "right" }}>
               <button
                 onClick={() => {
-                  if (newPatientName.trim()) {
-                    const newEntry: WaitingRoomEntry = {
-                      id: Date.now(),
-                      patient: { id: Date.now(), name: newPatientName },
-                      appointment_id: null,
+                  if (selectedPatientSearch) {
+                    createWaitingRoomEntry({
+                      patient: selectedPatientSearch.id,
                       status: "waiting",
-                      arrival_time: new Date().toISOString(),
-                      priority: "normal",
-                      order: entries.length + 1,
-                    };
-                    setEntries(prev => [...prev, newEntry]);
-                    setNewPatientName("");
-                    setShowIngreso(false);
+                    })
+                      .then(newEntry => {
+                        setEntries(prev => [...prev, newEntry]);
+                        setShowIngreso(false);
+                        setQuery("");
+                        setResults([]);
+                        setSelectedPatientSearch(null);
+                      })
+                      .catch(err => setError(err.message));
                   }
                 }}
                 style={{

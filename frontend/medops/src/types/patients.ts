@@ -8,7 +8,12 @@ export interface PatientRef {
 export interface Patient extends PatientRef {
   age: number;
   diagnosis: string;
-  // Aquí puedes agregar más campos en el futuro: documento, contacto, seguro, etc.
+
+  // Campos adicionales que devuelve el backend
+  full_name?: string;       // Nombre completo calculado
+  birthdate?: string;       // Fecha de nacimiento (ISO string)
+  gender?: string;          // "M", "F", "O" u otro
+  contact_info?: string;    // Teléfono, email, etc.
 }
 
 // --- Datos de entrada para crear/editar paciente
@@ -17,4 +22,5 @@ export type PatientInput = {
   last_name: string;
   age: number;
   diagnosis: string;
+  // En el futuro puedes añadir: documento, contacto, seguro, etc.
 };

@@ -137,6 +137,7 @@ def dashboard_summary_api(request):
     serializer = DashboardSummarySerializer(instance=data)
     return JsonResponse(serializer.data, safe=False)
 
+
 # --- Pacientes ---
 def patients_api(request):
     patients = Patient.objects.all().values(
@@ -154,6 +155,24 @@ def patients_api(request):
         })
     return JsonResponse(results, safe=False)
 
+
+# --- Pacientes: búsqueda (para autocomplete en Sala de Espera) ---
+@api_view(["GET"])
+def patient_search_api(request):
+    query = request.GET.get("q", "")
+    if not query:
+        return Response([], status=200)
+
+    patients = Patient.objects.filter(
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(middle_name__icontains=query) |
+        Q(second_last_name__icontains=query) |
+        Q(id__icontains=query)
+    )[:10]
+
+    serializer = PatientSerializer(patients, many=True)
+    return Response(serializer.data)
 
 # --- Citas del día ---
 def daily_appointments_api(request):
@@ -187,6 +206,7 @@ def waived_consultations_api(request):
             "status": w.status,
         })
     return JsonResponse(results, safe=False)
+
 
 # --- Auditoría: lista + filtros + paginación ---
 def event_log_api(request):
@@ -225,6 +245,24 @@ def audit_dashboard_api(request):
         "action_data": action_data,
         "timeline_data": timeline_data,
     })
+
+
+# --- Auditoría: historial por cita ---
+@api_view(["GET"])
+def audit_by_appointment(request, appointment_id):
+    events = Event.objects.filter(entity="Appointment", entity_id=appointment_id).order_by("-timestamp").values(
+        "id", "entity", "entity_id", "action", "timestamp", "actor"
+    )
+    return Response(list(events))
+
+
+# --- Auditoría: historial por paciente ---
+@api_view(["GET"])
+def audit_by_patient(request, patient_id):
+    events = Event.objects.filter(entity="Patient", entity_id=patient_id).order_by("-timestamp").values(
+        "id", "entity", "entity_id", "action", "timestamp", "actor"
+    )
+    return Response(list(events))
 
 
 # --- Sala de Espera: listar entradas ---
@@ -276,6 +314,34 @@ def update_waitingroom_status(request, pk):
             {"error": f"No se puede pasar de {entry.status} a {new_status}"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+
+# --- Consulta: actualizar notas ---
+@api_view(["PATCH"])
+def update_appointment_notes(request, pk):
+    try:
+        appointment = Appointment.objects.get(pk=pk)
+    except Appointment.DoesNotExist:
+        return Response({"error": "Appointment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    notes = request.data.get("notes")
+    if notes is None:
+        return Response({"error": "Missing notes"}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Guardar notas
+    appointment.notes = notes
+    appointment.save(update_fields=["notes"])
+
+    # 🔹 Registrar en auditoría
+    Event.objects.create(
+        entity="Appointment",
+        action="update_notes",
+        actor=str(request.user) if request.user.is_authenticated else "system",
+        timestamp=now(),
+    )
+
+    return Response(AppointmentSerializer(appointment).data)
+
 
 # --- DRF ViewSets (CRUD básicos) ---
 class PatientViewSet(viewsets.ModelViewSet):

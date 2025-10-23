@@ -3,13 +3,13 @@ import { WaitingRoomEntry, PatientStatus } from "../types/waitingRoom";
 
 // 🔹 Obtener todas las entradas de la sala de espera
 export const getWaitingRoom = (): Promise<WaitingRoomEntry[]> =>
-  apiFetch<WaitingRoomEntry[]>("waiting-room/");
+  apiFetch<WaitingRoomEntry[]>("waitingroom/");
 
 // 🔹 Crear una nueva entrada en la sala de espera
 export const createWaitingRoomEntry = (
   data: Partial<WaitingRoomEntry>
 ): Promise<WaitingRoomEntry> =>
-  apiFetch<WaitingRoomEntry>("waiting-room/", {
+  apiFetch<WaitingRoomEntry>("waitingroom/", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -19,14 +19,14 @@ export const updateWaitingRoomEntry = (
   id: number,
   data: Partial<WaitingRoomEntry>
 ): Promise<WaitingRoomEntry> =>
-  apiFetch<WaitingRoomEntry>(`waiting-room/${id}/`, {
+  apiFetch<WaitingRoomEntry>(`waitingroom/${id}/`, {
     method: "PUT",
     body: JSON.stringify(data),
   });
 
 // 🔹 Eliminar una entrada
 export const deleteWaitingRoomEntry = (id: number): Promise<void> =>
-  apiFetch<void>(`waiting-room/${id}/`, {
+  apiFetch<void>(`waitingroom/${id}/`, {
     method: "DELETE",
   });
 
@@ -35,7 +35,7 @@ export const updateWaitingRoomStatus = (
   id: number,
   newStatus: PatientStatus
 ): Promise<WaitingRoomEntry> =>
-  apiFetch<WaitingRoomEntry>(`waiting-room/${id}/status/`, {
+  apiFetch<WaitingRoomEntry>(`waitingroom/${id}/status/`, {
     method: "PATCH",
     body: JSON.stringify({ status: newStatus }),
   });
