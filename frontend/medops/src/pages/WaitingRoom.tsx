@@ -33,18 +33,31 @@ const renderStatusBadge = (status: WaitingRoomStatus) => {
 };
 
 // 🔹 Badge visual para prioridad
-const renderPriorityBadge = (priority: WaitingRoomPriority) => {
-  const styles: Record<WaitingRoomPriority, { bg: string; text: string }> = {
+const renderPriorityBadge = (priority?: string) => {
+  const styles: Record<string, { bg: string; text: string }> = {
     normal: { bg: "#0ea5e9", text: "Normal" },
     emergency: { bg: "#dc2626", text: "Emergencia" },
+    walkin: { bg: "#a855f7", text: "Walk-in" },      // opcional si backend aún lo manda
+    scheduled: { bg: "#0ea5e9", text: "Programado" }, // opcional
   };
-  const { bg, text } = styles[priority];
+
+  const style = styles[priority ?? ""] || { bg: "#6b7280", text: priority || "—" };
+
   return (
-    <span style={{ background: bg, color: "#fff", padding: "2px 8px", borderRadius: "12px", marginLeft: "6px" }}>
-      {text}
+    <span
+      style={{
+        background: style.bg,
+        color: "#fff",
+        padding: "2px 8px",
+        borderRadius: "12px",
+        marginLeft: "6px",
+      }}
+    >
+      {style.text}
     </span>
   );
 };
+
 
 // 🔹 Renderizador de metadata
 const renderMetadata = (metadata: Record<string, any>) => {

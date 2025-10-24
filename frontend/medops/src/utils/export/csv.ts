@@ -20,7 +20,7 @@ export function exportPaymentsToCSV(payments: Payment[]) {
   const rows = payments.map((p) => [
     p.id,
     p.appointment ?? "",
-    p.patient_name ?? "",
+    p.patient?.name ?? "",   // ✅ corregido
     p.amount,
     p.method,
     p.status,
