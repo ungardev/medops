@@ -34,25 +34,20 @@ export default function PatientsList({ patients, onEdit, onDelete }: PatientsLis
           </tr>
         </thead>
         <tbody>
-          {patients.map((p) => {
-            const fullName = [p.first_name, p.middle_name, p.last_name, p.second_last_name]
-              .filter(Boolean)
-              .join(" ");
-            return (
-              <tr key={p.id}>
-                <td>{p.national_id || "—"}</td>
-                <td>{fullName}</td>
-                <td>{calculateAge(p.birthdate)}</td>
-                <td>{p.gender}</td>
-                <td>{p.contact_info || "—"}</td>
-                <td>
-                  <button onClick={() => onEdit(p)}>✏️ Editar</button>
-                  <button onClick={() => onDelete(p.id)}>🗑 Eliminar</button>
-                  <button onClick={() => navigate(`/patients/${p.id}`)}>📄 Ver ficha</button>
-                </td>
-              </tr>
-            );
-          })}
+          {patients.map((p) => (
+            <tr key={p.id}>
+              <td>{p.national_id || "—"}</td>
+              <td>{p.name}</td> {/* 🔹 usar name en lugar de concatenar */}
+              <td>{calculateAge(p.birthdate)}</td>
+              <td>{p.gender}</td>
+              <td>{p.contact_info || "—"}</td>
+              <td>
+                <button onClick={() => onEdit(p)}>✏️ Editar</button>
+                <button onClick={() => onDelete(p.id)}>🗑 Eliminar</button>
+                <button onClick={() => navigate(`/patients/${p.id}`)}>📄 Ver ficha</button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

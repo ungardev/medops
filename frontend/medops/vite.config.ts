@@ -10,17 +10,20 @@ export default defineConfig({
       components: path.resolve(__dirname, 'src/components'),
       pages: path.resolve(__dirname, 'src/pages'),
       types: path.resolve(__dirname, 'src/types'),
+      utils: path.resolve(__dirname, 'src/utils'),       // 👈 agregado
+      hooks: path.resolve(__dirname, 'src/hooks'),       // 👈 agregado
+      contexts: path.resolve(__dirname, 'src/contexts'), // 👈 agregado
     },
   },
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1', // 👈 backend real (Gunicorn/Nginx en puerto 80)
+        target: 'http://127.0.0.1', // backend real
         changeOrigin: true,
         secure: false,
       },
       '/api/v1': {
-        target: 'http://127.0.0.1', // 👈 igual aquí
+        target: 'http://127.0.0.1',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api\/v1/, '/api'),

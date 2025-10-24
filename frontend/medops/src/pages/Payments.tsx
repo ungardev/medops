@@ -1,9 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { getPayments } from "api/payments";
-import { Payment } from "types/payments";
+import { getPayments, createPayment } from "api/payments";
+import { Payment, PaymentInput } from "types/payments";
+import PaymentForm from "components/PaymentForm";
+import { exportPaymentsToCSV, exportPaymentsToXLSX, exportPaymentsToPDF } from "utils/export";
 
-export default function PaymentsPage() {
+export default function Payments() {
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [methodFilter, setMethodFilter] = useState<string>("");
 
@@ -12,11 +15,15 @@ export default function PaymentsPage() {
     queryFn: getPayments,
   });
 
+  const createMutation = useMutation({
+    mutationFn: (input: PaymentInput) => createPayment(input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments"] }),
+  });
+
   if (isLoading) return <p>Cargando pagos...</p>;
   if (isError) return <p>Error: {(error as Error).message}</p>;
   if (!payments) return <p>No se encontraron pagos</p>;
 
-  // 🔹 Filtrado en frontend (más adelante podemos moverlo al backend)
   const filtered = payments.filter((p) => {
     return (
       (statusFilter ? p.status === statusFilter : true) &&
@@ -28,34 +35,77 @@ export default function PaymentsPage() {
     <div>
       <h1>Gestión de Pagos</h1>
 
-      {/* Filtros */}
-      <div style={{ marginBottom: "1rem" }}>
-        <label>
-          Estado:
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="">Todos</option>
-            <option value="pending">Pendiente</option>
-            <option value="paid">Pagado</option>
-            <option value="canceled">Cancelado</option>
-            <option value="waived">Exonerado</option>
-          </select>
-        </label>
+      {/* Crear nuevo pago */}
+      <div style={{ marginBottom: "2rem" }}>
+        <h2>Registrar Pago</h2>
+        <PaymentForm onSubmit={(data) => createMutation.mutate(data)} />
+      </div>
 
-        <label style={{ marginLeft: "1rem" }}>
-          Método:
-          <select
-            value={methodFilter}
-            onChange={(e) => setMethodFilter(e.target.value)}
+      {/* Filtros + Exportación */}
+      <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+        <div>
+          <label>
+            Estado:
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="pending">Pendiente</option>
+              <option value="paid">Pagado</option>
+              <option value="canceled">Cancelado</option>
+              <option value="waived">Exonerado</option>
+            </select>
+          </label>
+
+          <label style={{ marginLeft: "1rem" }}>
+            Método:
+            <select
+              value={methodFilter}
+              onChange={(e) => setMethodFilter(e.target.value)}
+            >
+              <option value="">Todos</option>
+              <option value="cash">Efectivo</option>
+              <option value="card">Tarjeta</option>
+              <option value="transfer">Transferencia</option>
+            </select>
+          </label>
+        </div>
+
+        {/* 🔹 Menú de exportación */}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={(e) => {
+              const menu = document.getElementById("export-menu");
+              if (menu) menu.classList.toggle("show");
+            }}
           >
-            <option value="">Todos</option>
-            <option value="cash">Efectivo</option>
-            <option value="card">Tarjeta</option>
-            <option value="transfer">Transferencia</option>
-          </select>
-        </label>
+            📤 Exportar
+          </button>
+          <ul
+            id="export-menu"
+            style={{
+              display: "none",
+              position: "absolute",
+              background: "white",
+              border: "1px solid #ccc",
+              listStyle: "none",
+              margin: 0,
+              padding: "0.5rem",
+              zIndex: 10,
+            }}
+          >
+            <li style={{ cursor: "pointer" }} onClick={() => exportPaymentsToCSV(filtered)}>
+              Exportar CSV
+            </li>
+            <li style={{ cursor: "pointer" }} onClick={() => exportPaymentsToXLSX(filtered)}>
+              Exportar Excel
+            </li>
+            <li style={{ cursor: "pointer" }} onClick={() => exportPaymentsToPDF(filtered)}>
+              Exportar PDF
+            </li>
+          </ul>
+        </div>
       </div>
 
       {/* Tabla de pagos */}
@@ -88,7 +138,7 @@ export default function PaymentsPage() {
               <td>{p.received_by || "—"}</td>
               <td>
                 {p.received_at
-                  ? new Date(p.received_at).toLocaleString()
+                  ? new Date(p.received_at).toLocaleString("es-VE")
                   : "—"}
               </td>
             </tr>

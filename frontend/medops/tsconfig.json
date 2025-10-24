@@ -15,7 +15,10 @@
       "api/*": ["api/*"],
       "components/*": ["components/*"],
       "pages/*": ["pages/*"],
-      "types/*": ["types/*"]
+      "types/*": ["types/*"],
+      "utils/*": ["utils/*"],       // 👈 agregado
+      "hooks/*": ["hooks/*"],       // 👈 agregado
+      "contexts/*": ["contexts/*"]  // 👈 agregado
     }
   },
   "include": ["src"]

@@ -10,6 +10,18 @@ from decimal import Decimal
 from django.utils import timezone
 
 # Create your models here.
+class GeneticPredisposition(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Genetic Predisposition"
+        verbose_name_plural = "Genetic Predispositions"
+
+    def __str__(self):
+        return self.name
+
+
 class Patient(models.Model):
     GENDER_CHOICES = [
         ('M', 'Male'),
@@ -17,11 +29,18 @@ class Patient(models.Model):
         ('Unknown', 'Unknown'),
     ]
 
+    BLOOD_TYPES = [
+        ("A+", "A+"), ("A-", "A-"),
+        ("B+", "B+"), ("B-", "B-"),
+        ("AB+", "AB+"), ("AB-", "AB-"),
+        ("O+", "O+"), ("O-", "O-"),
+    ]
+
     national_id = models.CharField(
         max_length=10,
         unique=True,
         verbose_name="Cédula de Identidad",
-        null=True,   # Temporalmente permitimos nulos para migrar sin bloqueos
+        null=True,
         blank=True,
         validators=[
             RegexValidator(
@@ -40,13 +59,32 @@ class Patient(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     contact_info = models.TextField(blank=True, null=True)
 
+    # 🔹 Datos clínicos básicos
+    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # kg
+    height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # cm
+    blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True)
+    allergies = models.TextField(blank=True, null=True)
+    medical_history = models.TextField(blank=True, null=True)
+
+    # 🔹 Predisposiciones genéticas (relacional, escalable)
+    genetic_predispositions = models.ManyToManyField(
+        GeneticPredisposition,
+        blank=True,
+        related_name="patients"
+    )
+
     # Historial
     history = HistoricalRecords()
+
+    # Campos operativos
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = "Patient"
         verbose_name_plural = "Patients"
-    
+
     def __str__(self):
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
         return f"{self.national_id or 'SIN-CI'} - " + " ".join([p for p in parts if p])
