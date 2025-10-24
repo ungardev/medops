@@ -7,6 +7,7 @@ export interface AuditEvent {
   action: string;
   timestamp: string;
   actor: string;
+  metadata?: Record<string, any>; // 👈 agregado como opcional
 }
 
 export const getAuditByAppointment = (appointmentId: number) =>

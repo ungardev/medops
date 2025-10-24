@@ -16,7 +16,7 @@ from .serializers import (
 )
 
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, action   # 🔹 añadimos action
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 
 
@@ -44,7 +44,6 @@ def metrics_api(request):
         ),
     }
     return JsonResponse(data)
-
 
 # --- Dashboard resumen ejecutivo ---
 def dashboard_summary_api(request):
@@ -137,7 +136,6 @@ def dashboard_summary_api(request):
     serializer = DashboardSummarySerializer(instance=data)
     return JsonResponse(serializer.data, safe=False)
 
-
 # --- Pacientes ---
 def patients_api(request):
     patients = Patient.objects.all().values(
@@ -173,14 +171,12 @@ def patient_search_api(request):
     serializer = PatientSerializer(patients, many=True)
     return Response(serializer.data)
 
-
 # --- Citas del día ---
 def daily_appointments_api(request):
     today = now().date()
     appointments = Appointment.objects.filter(appointment_date=today).select_related("patient").order_by("arrival_time")
     serializer = AppointmentSerializer(appointments, many=True)
     return JsonResponse(serializer.data, safe=False)
-
 
 # --- Resumen de pagos ---
 def payment_summary_api(request):
@@ -190,7 +186,6 @@ def payment_summary_api(request):
         .order_by("method", "status")
     )
     return JsonResponse(list(summary), safe=False)
-
 
 # --- Consultas exoneradas ---
 def waived_consultations_api(request):
@@ -224,7 +219,6 @@ def event_log_api(request):
     }
     return JsonResponse(data, safe=False)
 
-
 # --- Auditoría: agregados para gráficos ---
 def audit_dashboard_api(request):
     entity_data = list(
@@ -245,7 +239,6 @@ def audit_dashboard_api(request):
         "timeline_data": timeline_data,
     })
 
-
 # --- Auditoría: historial por cita ---
 @api_view(["GET"])
 def audit_by_appointment(request, appointment_id):
@@ -253,7 +246,6 @@ def audit_by_appointment(request, appointment_id):
         "id", "entity", "entity_id", "action", "timestamp", "actor"
     )
     return Response(list(events))
-
 
 # --- Auditoría: historial por paciente ---
 @api_view(["GET"])
@@ -268,7 +260,6 @@ def waitingroom_list_api(request):
     entries = WaitingRoomEntry.objects.select_related("patient", "appointment").all()
     serializer = WaitingRoomEntrySerializer(entries, many=True)
     return JsonResponse(serializer.data, safe=False)
-
 
 # --- Sala de Espera: actualizar estado de una cita ---
 @api_view(["PATCH"])
@@ -291,7 +282,6 @@ def update_appointment_status(request, pk):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-
 # --- Sala de Espera: actualizar estado de una entrada ---
 @api_view(["PATCH"])
 def update_waitingroom_status(request, pk):
@@ -313,7 +303,6 @@ def update_waitingroom_status(request, pk):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-
 # --- Consulta: actualizar notas ---
 @api_view(["PATCH"])
 def update_appointment_notes(request, pk):
@@ -326,11 +315,9 @@ def update_appointment_notes(request, pk):
     if notes is None:
         return Response({"error": "Missing notes"}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Guardar notas
     appointment.notes = notes
     appointment.save(update_fields=["notes"])
 
-    # 🔹 Registrar en auditoría
     Event.objects.create(
         entity="Appointment",
         action="update_notes",
@@ -345,16 +332,13 @@ class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
 
-
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
 
-
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-
 
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     queryset = WaitingRoomEntry.objects.all()
@@ -369,7 +353,6 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
         entry.priority = "emergency"
         entry.save(update_fields=["priority"])
 
-        # 🔹 Registrar evento de auditoría
         Event.objects.create(
             entity="WaitingRoomEntry",
             entity_id=entry.id,
@@ -382,4 +365,26 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
         return Response(
             WaitingRoomEntrySerializer(entry).data,
             status=status.HTTP_200_OK
+        )
+
+    @action(detail=False, methods=["post"])
+    def close_day(self, request):
+        """
+        Marca como 'canceled' todos los pacientes que aún estén en 'waiting'.
+        """
+        updated_entries = WaitingRoomEntry.objects.filter(status="waiting")
+        count = updated_entries.count()
+        updated_entries.update(status="canceled")
+
+        Event.objects.create(
+            entity="WaitingRoomEntry",
+            action="close_day",
+            actor=str(request.user) if request.user.is_authenticated else "system",
+            timestamp=now(),
+            metadata={"canceled_count": count}
+        )
+
+        return Response(
+            {"message": f"{count} pacientes pendientes fueron cancelados al cierre de jornada."},
+            status=status.HTTP_200_OK,
         )

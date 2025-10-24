@@ -39,3 +39,23 @@ export const updateWaitingRoomStatus = (
     method: "PATCH",
     body: JSON.stringify({ status: newStatus }),
   });
+
+// 🔹 Promover una entrada a emergencia
+export const promoteToEmergency = (id: number): Promise<WaitingRoomEntry> =>
+  apiFetch<WaitingRoomEntry>(`waitingroom/${id}/promote_to_emergency/`, {
+    method: "PATCH",
+  });
+
+// 🔹 Confirmar paciente de Grupo B → subir a Grupo A
+export const confirmWaitingRoomEntry = (
+  id: number
+): Promise<WaitingRoomEntry> =>
+  apiFetch<WaitingRoomEntry>(`waitingroom/${id}/confirm/`, {
+    method: "PATCH",
+  });
+
+// 🔹 Cerrar jornada: cancelar todos los pacientes en "waiting"
+export const closeWaitingRoomDay = (): Promise<{ message: string }> =>
+  apiFetch<{ message: string }>("waitingroom/close_day/", {
+    method: "POST",
+  });

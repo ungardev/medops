@@ -15,20 +15,25 @@ from .api_views import (
     audit_by_patient,          # 👈 historial de auditoría por paciente
 )
 
-# --- Router DRF (CRUD básicos) ---
+# --- Router DRF (CRUD básicos + acciones personalizadas) ---
 router = routers.DefaultRouter()
 router.register(r'patients', PatientViewSet)
 router.register(r'appointments', AppointmentViewSet)
 router.register(r'payments', PaymentViewSet)
 router.register(r'waitingroom', WaitingRoomEntryViewSet)
+# Nota: esto expone automáticamente:
+#   - PATCH /waitingroom/{id}/promote_to_emergency/
+#   - POST  /waitingroom/close_day/
+#   - CRUD completo de WaitingRoomEntry
 
 # --- Funciones personalizadas ---
 urlpatterns = [
+    # --- Dashboard / métricas ---
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
-    path("patients-list/", api_views.patients_api, name="patients-api"),
 
-    # --- Nueva ruta de búsqueda de pacientes ---
+    # --- Pacientes ---
+    path("patients-list/", api_views.patients_api, name="patients-api"),
     path("patients/search/", patient_search_api, name="patient-search-api"),
 
     # --- Citas ---
@@ -49,6 +54,7 @@ urlpatterns = [
     # --- Sala de Espera ---
     path("waitingroom/", waitingroom_list_api, name="waitingroom-list-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
+    # Nota: /waitingroom/close_day/ se expone vía ViewSet
 ]
 
 # --- Unir ambos ---
