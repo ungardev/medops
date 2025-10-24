@@ -66,7 +66,7 @@ class Patient(models.Model):
     allergies = models.TextField(blank=True, null=True)
     medical_history = models.TextField(blank=True, null=True)
 
-    # 🔹 Predisposiciones genéticas (relacional, escalable)
+    # 🔹 Predisposiciones genéticas
     genetic_predispositions = models.ManyToManyField(
         GeneticPredisposition,
         blank=True,
@@ -76,9 +76,9 @@ class Patient(models.Model):
     # Historial
     history = HistoricalRecords()
 
-    # Campos operativos
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # Campos operativos (ahora con null=True para evitar bloqueo en históricos)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     active = models.BooleanField(default=True)
 
     class Meta:
