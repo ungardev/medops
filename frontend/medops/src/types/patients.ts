@@ -1,8 +1,8 @@
 // --- Referencia ligera de paciente (para listas, sala de espera, etc.)
 export interface PatientRef {
   id: number;
+  name: string;              // 👈 calculado en backend (PatientSerializer)
   national_id?: string | null;
-  name: string;   // calculado en backend (PatientSerializer)
 }
 
 // --- Modelo completo de paciente

@@ -1,26 +1,31 @@
-// src/types/waitingRoom.ts
 import { PatientRef } from "./patients";
 
-// --- Estados clínicos posibles en la sala de espera
-export type PatientStatus =
-  | "waiting"          // Confirmado o walk-in, esperando en la cola
+// --- Estados posibles de una entrada en la sala de espera
+export type WaitingRoomStatus =
+  | "waiting"          // Paciente en cola
   | "in_consultation"  // Actualmente en consulta
   | "completed"        // Consulta finalizada
   | "canceled";        // Cancelado
 
 // --- Prioridades posibles en la sala de espera
 export type WaitingRoomPriority =
-  | "scheduled"  // Paciente con cita programada
-  | "emergency"  // Paciente promovido a emergencia
-  | "walkin";    // Paciente sin cita (llegada espontánea)
+  | "normal"     // Paciente con cita programada o walk-in estándar
+  | "emergency"; // Paciente promovido a emergencia
 
 // --- Entrada de la sala de espera
 export interface WaitingRoomEntry {
   id: number;
-  patient: PatientRef;
+  patient: PatientRef;          // 👈 objeto { id, name }
   appointment_id: number | null;
-  status: PatientStatus;           // Estado clínico
-  arrival_time: string | null;
-  priority: WaitingRoomPriority;   // Tipo de prioridad
+  status: WaitingRoomStatus;    // 👈 estado de la entrada
+  arrival_time: string | null;  // ISO string
+  priority: WaitingRoomPriority;
   order: number;
+}
+
+// --- Datos de entrada para crear/editar entrada en sala de espera
+export interface WaitingRoomEntryInput {
+  patient: number;              // id del paciente
+  appointment_id: number | null;
+  priority?: WaitingRoomPriority;
 }

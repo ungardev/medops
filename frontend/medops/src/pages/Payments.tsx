@@ -3,14 +3,23 @@ import { useState } from "react";
 import { getPayments, createPayment } from "api/payments";
 import { Payment, PaymentInput } from "types/payments";
 import PaymentForm from "components/PaymentForm";
-import { exportPaymentsToCSV, exportPaymentsToXLSX, exportPaymentsToPDF } from "utils/export";
+import {
+  exportPaymentsToCSV,
+  exportPaymentsToXLSX,
+  exportPaymentsToPDF,
+} from "utils/export";
 
 export default function Payments() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [methodFilter, setMethodFilter] = useState<string>("");
 
-  const { data: payments, isLoading, isError, error } = useQuery<Payment[]>({
+  const {
+    data: payments,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Payment[]>({
     queryKey: ["payments"],
     queryFn: getPayments,
   });
@@ -42,7 +51,14 @@ export default function Payments() {
       </div>
 
       {/* Filtros + Exportación */}
-      <div style={{ marginBottom: "1rem", display: "flex", gap: "1rem", alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: "1rem",
+          display: "flex",
+          gap: "1rem",
+          alignItems: "center",
+        }}
+      >
         <div>
           <label>
             Estado:
@@ -95,13 +111,22 @@ export default function Payments() {
               zIndex: 10,
             }}
           >
-            <li style={{ cursor: "pointer" }} onClick={() => exportPaymentsToCSV(filtered)}>
+            <li
+              style={{ cursor: "pointer" }}
+              onClick={() => exportPaymentsToCSV(filtered)}
+            >
               Exportar CSV
             </li>
-            <li style={{ cursor: "pointer" }} onClick={() => exportPaymentsToXLSX(filtered)}>
+            <li
+              style={{ cursor: "pointer" }}
+              onClick={() => exportPaymentsToXLSX(filtered)}
+            >
               Exportar Excel
             </li>
-            <li style={{ cursor: "pointer" }} onClick={() => exportPaymentsToPDF(filtered)}>
+            <li
+              style={{ cursor: "pointer" }}
+              onClick={() => exportPaymentsToPDF(filtered)}
+            >
               Exportar PDF
             </li>
           </ul>
@@ -129,7 +154,7 @@ export default function Payments() {
             <tr key={p.id}>
               <td>{p.id}</td>
               <td>{p.appointment}</td>
-              <td>{p.patient_name || "—"}</td>
+              <td>{p.patient?.name || "—"}</td> {/* ✅ corregido */}
               <td>{p.amount}</td>
               <td>{p.method}</td>
               <td>{p.status}</td>

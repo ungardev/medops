@@ -9,15 +9,16 @@ import {
 } from "../api/waitingRoom";
 import { searchPatients } from "../api/patients";
 import { getPatientNotes, updatePatientNotes } from "../api/consultations";
-import { WaitingRoomEntry, PatientStatus } from "../types/waitingRoom";
+import { WaitingRoomEntry, WaitingRoomStatus, WaitingRoomPriority } from "../types/waitingRoom";
 import { ConsultationNote } from "../types/consultations";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { groupEntries } from "../utils/waitingroomUtils";
+import { getAuditByPatient, AuditEvent } from "../api/audit";
 
 // 🔹 Badge visual para estado
-const renderStatusBadge = (status: PatientStatus) => {
-  const styles: Record<PatientStatus, { bg: string; text: string }> = {
+const renderStatusBadge = (status: WaitingRoomStatus) => {
+  const styles: Record<WaitingRoomStatus, { bg: string; text: string }> = {
     waiting: { bg: "#facc15", text: "En espera" },
     in_consultation: { bg: "#3b82f6", text: "En consulta" },
     completed: { bg: "#22c55e", text: "Completado" },
@@ -32,17 +33,45 @@ const renderStatusBadge = (status: PatientStatus) => {
 };
 
 // 🔹 Badge visual para prioridad
-const renderPriorityBadge = (priority: string) => {
-  const styles: Record<string, { bg: string; text: string }> = {
-    walkin: { bg: "#a855f7", text: "Walk-in" },
-    scheduled: { bg: "#0ea5e9", text: "Scheduled" },
+const renderPriorityBadge = (priority: WaitingRoomPriority) => {
+  const styles: Record<WaitingRoomPriority, { bg: string; text: string }> = {
+    normal: { bg: "#0ea5e9", text: "Normal" },
     emergency: { bg: "#dc2626", text: "Emergencia" },
   };
-  const { bg, text } = styles[priority] || { bg: "#6b7280", text: priority };
+  const { bg, text } = styles[priority];
   return (
     <span style={{ background: bg, color: "#fff", padding: "2px 8px", borderRadius: "12px", marginLeft: "6px" }}>
       {text}
     </span>
+  );
+};
+
+// 🔹 Renderizador de metadata
+const renderMetadata = (metadata: Record<string, any>) => {
+  if (!metadata) return null;
+
+  if (metadata.old_status && metadata.new_status) {
+    return (
+      <div>
+        <strong>Cambio de estado:</strong>{" "}
+        <span style={{ color: "#ef4444" }}>{metadata.old_status}</span> →{" "}
+        <span style={{ color: "#22c55e" }}>{metadata.new_status}</span>
+      </div>
+    );
+  }
+
+  if (metadata.canceled_count !== undefined) {
+    return (
+      <div>
+        <strong>Pacientes cancelados:</strong> {metadata.canceled_count}
+      </div>
+    );
+  }
+
+  return (
+    <pre style={{ fontSize: "0.8em", color: "#64748b" }}>
+      {JSON.stringify(metadata, null, 2)}
+    </pre>
   );
 };
 
@@ -64,6 +93,11 @@ export default function WaitingRoom() {
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [selectedPatientSearch, setSelectedPatientSearch] = useState<any | null>(null);
 
+  // Modal de auditoría
+  const [showAudit, setShowAudit] = useState(false);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [loadingAudit, setLoadingAudit] = useState(false);
+
   useEffect(() => {
     getWaitingRoom()
       .then(data => setEntries(data))
@@ -71,7 +105,7 @@ export default function WaitingRoom() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleStatusChange = async (id: number, newStatus: PatientStatus) => {
+  const handleStatusChange = async (id: number, newStatus: WaitingRoomStatus) => {
     try {
       const updated = await updateWaitingRoomStatus(id, newStatus);
       setEntries(prev => prev.map(e => (e.id === id ? updated : e)));
@@ -147,8 +181,6 @@ export default function WaitingRoom() {
         </button>
       </div>
 
-      {loading && <p>Cargando...</p>}
-      {error && <p style={{ color: "red" }}>Error: {error}</p>}
       {Object.entries(grouped).map(([groupName, patients]) => (
         <div key={groupName} style={{ marginBottom: "2rem" }}>
           <h3>{groupName}</h3>
@@ -175,19 +207,6 @@ export default function WaitingRoom() {
                       : "—"}
                   </td>
                   <td>
-                    <button
-                      onClick={() => {
-                        setSelectedPatient(e);
-                        setLoadingNotes(true);
-                        getPatientNotes(e.patient.id)
-                          .then(setPatientNotes)
-                          .catch(() => setPatientNotes([]))
-                          .finally(() => setLoadingNotes(false));
-                      }}
-                    >
-                      Ver historial
-                    </button>
-
                     {e.status === "waiting" && (
                       <button onClick={() => handleStatusChange(e.id, "in_consultation")}>
                         Pasar a consulta
@@ -212,7 +231,7 @@ export default function WaitingRoom() {
                         🚨 Emergencia
                       </button>
                     )}
-                    {e.priority === "walkin" && (
+                    {e.priority === "normal" && (   // ✅ corregido
                       <button
                         onClick={() => handleConfirmWalkin(e.id)}
                         style={{
@@ -389,6 +408,55 @@ export default function WaitingRoom() {
                   setSelectedPatient(null);
                   setPatientNotes([]);
                   setNewNote("");
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal auditoría */}
+      {showAudit && selectedPatient && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff", padding: "20px",
+              borderRadius: "8px", width: "600px",
+              maxHeight: "80vh", overflowY: "auto",
+            }}
+          >
+            <h3>📜 Auditoría de {selectedPatient.patient.name}</h3>
+
+            {loadingAudit && <p>Cargando auditoría...</p>}
+            {!loadingAudit && auditEvents.length === 0 && (
+              <p style={{ color: "#64748b" }}>No hay eventos registrados</p>
+            )}
+
+            <ul style={{ marginTop: "12px" }}>
+              {auditEvents.map(ev => (
+                <li key={ev.id} style={{ borderBottom: "1px solid #e2e8f0", padding: "8px 0" }}>
+                  <div style={{ fontSize: "0.9em", color: "#475569" }}>
+                    {new Date(ev.timestamp).toLocaleString()} • {ev.action} • {ev.actor}
+                  </div>
+                  {ev.metadata && renderMetadata(ev.metadata)}
+                </li>
+              ))}
+            </ul>
+
+            <div style={{ textAlign: "right", marginTop: "12px" }}>
+              <button
+                onClick={() => {
+                  setShowAudit(false);
+                  setAuditEvents([]);
                 }}
               >
                 Cerrar

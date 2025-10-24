@@ -1,6 +1,7 @@
 import React from "react";
 import { Patient } from "types/patients";
 import { useNavigate } from "react-router-dom";
+import PatientsTable from "./PatientsTable";
 
 interface PatientsListProps {
   patients: Patient[];
@@ -22,34 +23,31 @@ export default function PatientsList({ patients, onEdit, onDelete }: PatientsLis
   return (
     <div>
       <h2>Lista de Pacientes</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Cédula</th>
-            <th>Nombre completo</th>
-            <th>Edad</th>
-            <th>Género</th>
-            <th>Contacto</th>
-            <th>Acciones</th>
+      <PatientsTable
+        headers={[
+          "Cédula",
+          "Nombre completo",
+          "Edad",
+          "Género",
+          "Contacto",
+          "Acciones",
+        ]}
+      >
+        {patients.map((p) => (
+          <tr key={p.id}>
+            <td>{p.national_id || "—"}</td>
+            <td>{p.name}</td>
+            <td>{calculateAge(p.birthdate)}</td>
+            <td>{p.gender}</td>
+            <td>{p.contact_info || "—"}</td>
+            <td>
+              <button onClick={() => onEdit(p)}>✏️ Editar</button>
+              <button onClick={() => onDelete(p.id)}>🗑 Eliminar</button>
+              <button onClick={() => navigate(`/patients/${p.id}`)}>📄 Ver ficha</button>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {patients.map((p) => (
-            <tr key={p.id}>
-              <td>{p.national_id || "—"}</td>
-              <td>{p.name}</td> {/* 🔹 usar name en lugar de concatenar */}
-              <td>{calculateAge(p.birthdate)}</td>
-              <td>{p.gender}</td>
-              <td>{p.contact_info || "—"}</td>
-              <td>
-                <button onClick={() => onEdit(p)}>✏️ Editar</button>
-                <button onClick={() => onDelete(p.id)}>🗑 Eliminar</button>
-                <button onClick={() => navigate(`/patients/${p.id}`)}>📄 Ver ficha</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        ))}
+      </PatientsTable>
     </div>
   );
 }

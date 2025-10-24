@@ -11,14 +11,13 @@ export type AppointmentStatus =
 // --- Modelo de cita
 export interface Appointment {
   id: number;
-  patient: PatientRef;          // referencia ligera al paciente
+  patient: PatientRef;          // 👈 siempre incluye id y name
   appointment_date: string;     // YYYY-MM-DD
   appointment_type: "general" | "specialized";
   expected_amount: string;
   status: AppointmentStatus;
-
-  // 🔹 Nuevo campo para evolución clínica
-  notes?: string;
+  arrival_time?: string | null; // opcional, si lo devuelves en el serializer
+  notes?: string;               // evolución clínica
 }
 
 // --- Datos de entrada para crear/editar cita
@@ -28,7 +27,5 @@ export interface AppointmentInput {
   appointment_type: "general" | "specialized";
   expected_amount?: string;
   status?: AppointmentStatus;
-
-  // 🔹 Opcional al crear/editar
   notes?: string;
 }

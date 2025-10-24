@@ -396,3 +396,18 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
             {"message": f"{count} pacientes pendientes fueron cancelados al cierre de jornada."},
             status=status.HTTP_200_OK,
         )
+
+# --- Consulta actual en curso ---
+@api_view(["GET"])
+def current_consultation_api(request):
+    appointment = (
+        Appointment.objects
+        .filter(status="in_consultation")
+        .select_related("patient")
+        .order_by("-appointment_date", "-id")
+        .first()
+    )
+    if appointment:
+        serializer = AppointmentSerializer(appointment)
+        return Response(serializer.data, status=200)
+    return Response({"detail": "No hay consulta corriendo actualmente."}, status=200)

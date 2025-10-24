@@ -1,10 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getAppointments, createAppointment, updateAppointment, deleteAppointment } from "api/appointments";
-import { Appointment, AppointmentInput } from "types/appointments";
+import {
+  getAppointments,
+  createAppointment,
+  updateAppointment,
+  deleteAppointment,
+  updateAppointmentStatus,   // 👈 importado
+} from "api/appointments";
+import { Appointment, AppointmentInput, AppointmentStatus } from "types/appointments";
 import AppointmentsList from "components/AppointmentsList";
 import AppointmentForm from "components/AppointmentForm";
 import { useState } from "react";
-
 
 export default function Appointments() {
   const queryClient = useQueryClient();
@@ -35,6 +40,13 @@ export default function Appointments() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["appointments"] }),
   });
 
+  // 🔄 Cambiar estado de cita
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: AppointmentStatus }) =>
+      updateAppointmentStatus(id, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["appointments"] }),
+  });
+
   const saveAppointment = (data: AppointmentInput, id?: number) => {
     if (id) {
       updateMutation.mutate({ id, data });
@@ -58,6 +70,7 @@ export default function Appointments() {
         appointments={appointments || []}
         onEdit={(a) => setEditingAppointment(a)}
         onDelete={(id) => deleteMutation.mutate(id)}
+        onStatusChange={(id, status) => statusMutation.mutate({ id, status })} // 👈 nuevo
       />
     </div>
   );

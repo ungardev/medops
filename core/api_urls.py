@@ -41,6 +41,9 @@ urlpatterns = [
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
 
+    # --- Consultas ---
+    path("consultation/current/", api_views.current_consultation_api, name="current-consultation-api"),
+
     # --- Pagos ---
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),

@@ -1,5 +1,10 @@
+// src/api/waitingRoom.ts
 import { apiFetch } from "./client";
-import { WaitingRoomEntry, PatientStatus } from "../types/waitingRoom";
+import {
+  WaitingRoomEntry,
+  WaitingRoomStatus,
+  WaitingRoomPriority,
+} from "../types/waitingRoom";
 
 // 🔹 Obtener todas las entradas de la sala de espera
 export const getWaitingRoom = (): Promise<WaitingRoomEntry[]> =>
@@ -33,7 +38,7 @@ export const deleteWaitingRoomEntry = (id: number): Promise<void> =>
 // 🔹 Actualizar solo el estado de una entrada
 export const updateWaitingRoomStatus = (
   id: number,
-  newStatus: PatientStatus
+  newStatus: WaitingRoomStatus   // ✅ tipo correcto
 ): Promise<WaitingRoomEntry> =>
   apiFetch<WaitingRoomEntry>(`waitingroom/${id}/status/`, {
     method: "PATCH",
@@ -46,7 +51,7 @@ export const promoteToEmergency = (id: number): Promise<WaitingRoomEntry> =>
     method: "PATCH",
   });
 
-// 🔹 Confirmar paciente de Grupo B → subir a Grupo A
+// 🔹 Confirmar paciente (ej. mover de grupo B a grupo A)
 export const confirmWaitingRoomEntry = (
   id: number
 ): Promise<WaitingRoomEntry> =>
