@@ -332,6 +332,14 @@ class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
 
+    # 🔹 Endpoint: GET /patients/<id>/payments/
+    @action(detail=True, methods=["get"])
+    def payments(self, request, pk=None):
+        patient = self.get_object()
+        payments = Payment.objects.filter(appointment__patient=patient)
+        serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data)
+
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer

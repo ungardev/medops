@@ -1,14 +1,25 @@
+// src/types/payments.ts
+
 export interface Payment {
   id: number;
-  patient: string;   // o Patient si quieres relacionar
-  amount: number;
-  method: string;    // "cash" | "card" | "transfer"
-  date: string;      // ISO string
+  appointment: number | null;        // id de la cita asociada
+  appointment_date?: string;         // fecha de la cita
+  patient_name?: string;             // nombre del paciente
+  amount: string;                    // decimal como string
+  method: "cash" | "card" | "transfer";
+  status: "pending" | "paid" | "canceled" | "waived";
+  reference_number?: string | null;
+  bank_name?: string | null;
+  received_by?: string | null;
+  received_at?: string;              // ISO datetime
 }
 
 export interface PaymentInput {
-  patient: string;
-  amount: number;
-  method: string;
-  date: string;
+  appointment: number;
+  amount: string;
+  method: "cash" | "card" | "transfer";
+  status?: "pending" | "paid" | "canceled" | "waived";
+  reference_number?: string;
+  bank_name?: string;
+  received_by?: string;
 }

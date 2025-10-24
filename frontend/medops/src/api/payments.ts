@@ -19,3 +19,10 @@ export const deletePayment = (id: number) =>
   apiFetch(`payments/${id}/`, {
     method: "DELETE",
   });
+
+// 🔹 Obtener todos los pagos de un paciente específico
+export const getPaymentsByPatient = (patientId: number) =>
+  apiFetch<Payment[]>(`patients/${patientId}/payments/`);
+
+// 🔹 Reexportar tipo
+export type { Payment };

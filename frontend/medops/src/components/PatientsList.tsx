@@ -1,11 +1,6 @@
 import React from "react";
-
-interface Patient {
-  id: number;
-  name: string;
-  age: number;
-  diagnosis: string;
-}
+import { Patient } from "types/patients";
+import { useNavigate } from "react-router-dom";
 
 interface PatientsListProps {
   patients: Patient[];
@@ -13,19 +8,53 @@ interface PatientsListProps {
   onDelete: (id: number) => void;
 }
 
+function calculateAge(birthdate?: string | null): number | string {
+  if (!birthdate) return "—";
+  const birth = new Date(birthdate);
+  const diff = Date.now() - birth.getTime();
+  const age = new Date(diff).getUTCFullYear() - 1970;
+  return age;
+}
+
 export default function PatientsList({ patients, onEdit, onDelete }: PatientsListProps) {
+  const navigate = useNavigate();
+
   return (
     <div>
       <h2>Lista de Pacientes</h2>
-      <ul>
-        {patients.map((p) => (
-          <li key={p.id}>
-            {p.name} — {p.age} años — {p.diagnosis}
-            <button onClick={() => onEdit(p)}>✏️ Editar</button>
-            <button onClick={() => onDelete(p.id)}>🗑 Eliminar</button>
-          </li>
-        ))}
-      </ul>
+      <table>
+        <thead>
+          <tr>
+            <th>Cédula</th>
+            <th>Nombre completo</th>
+            <th>Edad</th>
+            <th>Género</th>
+            <th>Contacto</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {patients.map((p) => {
+            const fullName = [p.first_name, p.middle_name, p.last_name, p.second_last_name]
+              .filter(Boolean)
+              .join(" ");
+            return (
+              <tr key={p.id}>
+                <td>{p.national_id || "—"}</td>
+                <td>{fullName}</td>
+                <td>{calculateAge(p.birthdate)}</td>
+                <td>{p.gender}</td>
+                <td>{p.contact_info || "—"}</td>
+                <td>
+                  <button onClick={() => onEdit(p)}>✏️ Editar</button>
+                  <button onClick={() => onDelete(p.id)}>🗑 Eliminar</button>
+                  <button onClick={() => navigate(`/patients/${p.id}`)}>📄 Ver ficha</button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

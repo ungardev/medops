@@ -14,7 +14,6 @@ import { ConsultationNote } from "../types/consultations";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { groupEntries } from "../utils/waitingroomUtils";
-import { getAuditByPatient, AuditEvent } from "../api/audit";
 
 // 🔹 Badge visual para estado
 const renderStatusBadge = (status: PatientStatus) => {
@@ -47,35 +46,6 @@ const renderPriorityBadge = (priority: string) => {
   );
 };
 
-// 🔹 Renderizador de metadata
-const renderMetadata = (metadata: Record<string, any>) => {
-  if (!metadata) return null;
-
-  if (metadata.old_status && metadata.new_status) {
-    return (
-      <div>
-        <strong>Cambio de estado:</strong>{" "}
-        <span style={{ color: "#ef4444" }}>{metadata.old_status}</span> →{" "}
-        <span style={{ color: "#22c55e" }}>{metadata.new_status}</span>
-      </div>
-    );
-  }
-
-  if (metadata.canceled_count !== undefined) {
-    return (
-      <div>
-        <strong>Pacientes cancelados:</strong> {metadata.canceled_count}
-      </div>
-    );
-  }
-
-  return (
-    <pre style={{ fontSize: "0.8em", color: "#64748b" }}>
-      {JSON.stringify(metadata, null, 2)}
-    </pre>
-  );
-};
-
 export default function WaitingRoom() {
   const [entries, setEntries] = useState<WaitingRoomEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,11 +63,6 @@ export default function WaitingRoom() {
   const [results, setResults] = useState<any[]>([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const [selectedPatientSearch, setSelectedPatientSearch] = useState<any | null>(null);
-
-  // Modal de auditoría
-  const [showAudit, setShowAudit] = useState(false);
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [loadingAudit, setLoadingAudit] = useState(false);
 
   useEffect(() => {
     getWaitingRoom()
@@ -222,20 +187,6 @@ export default function WaitingRoom() {
                     >
                       Ver historial
                     </button>
-                    <button
-                      onClick={() => {
-                        setLoadingAudit(true);
-                        getAuditByPatient(e.patient.id)
-                          .then(setAuditEvents)
-                          .catch(() => setAuditEvents([]))
-                          .finally(() => setLoadingAudit(false));
-                        setSelectedPatient(e);
-                        setShowAudit(true);
-                      }}
-                      style={{ marginLeft: "6px", background: "#64748b", color: "#fff", padding: "4px 8px", borderRadius: "4px" }}
-                    >
-                      📜 Auditoría
-                    </button>
 
                     {e.status === "waiting" && (
                       <button onClick={() => handleStatusChange(e.id, "in_consultation")}>
@@ -279,6 +230,7 @@ export default function WaitingRoom() {
           </table>
         </div>
       ))}
+
       {/* Modal ingreso */}
       {showIngreso && (
         <div
@@ -373,6 +325,7 @@ export default function WaitingRoom() {
           </div>
         </div>
       )}
+
       {/* Modal historial/notas */}
       {selectedPatient && (
         <div
@@ -436,54 +389,6 @@ export default function WaitingRoom() {
                   setSelectedPatient(null);
                   setPatientNotes([]);
                   setNewNote("");
-                }}
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Modal auditoría */}
-      {showAudit && selectedPatient && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: "rgba(0,0,0,0.5)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              background: "#fff", padding: "20px",
-              borderRadius: "8px", width: "600px",
-              maxHeight: "80vh", overflowY: "auto",
-            }}
-          >
-            <h3>📜 Auditoría de {selectedPatient.patient.name}</h3>
-
-            {loadingAudit && <p>Cargando auditoría...</p>}
-            {!loadingAudit && auditEvents.length === 0 && (
-              <p style={{ color: "#64748b" }}>No hay eventos registrados</p>
-            )}
-
-            <ul style={{ marginTop: "12px" }}>
-              {auditEvents.map(ev => (
-                <li key={ev.id} style={{ borderBottom: "1px solid #e2e8f0", padding: "8px 0" }}>
-                  <div style={{ fontSize: "0.9em", color: "#475569" }}>
-                    {new Date(ev.timestamp).toLocaleString()} • {ev.action} • {ev.actor}
-                  </div>
-                  {ev.metadata && renderMetadata(ev.metadata)}
-                </li>
-              ))}
-            </ul>
-
-            <div style={{ textAlign: "right", marginTop: "12px" }}>
-              <button
-                onClick={() => {
-                  setShowAudit(false);
-                  setAuditEvents([]);
                 }}
               >
                 Cerrar

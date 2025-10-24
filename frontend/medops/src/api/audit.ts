@@ -5,9 +5,9 @@ export interface AuditEvent {
   entity: string;
   entity_id: number;
   action: string;
-  timestamp: string;
-  actor: string;
-  metadata?: Record<string, any>; // 👈 agregado como opcional
+  timestamp: string; // ISO string
+  actor?: string | null; // puede venir vacío
+  metadata?: Record<string, any> | null;
 }
 
 export const getAuditByAppointment = (appointmentId: number) =>
@@ -15,3 +15,4 @@ export const getAuditByAppointment = (appointmentId: number) =>
 
 export const getAuditByPatient = (patientId: number) =>
   apiFetch<AuditEvent[]>(`audit/patient/${patientId}/`);
+

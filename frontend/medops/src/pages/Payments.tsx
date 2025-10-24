@@ -1,63 +1,100 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPayments, createPayment, updatePayment, deletePayment } from "api/payments";
-import { Payment, PaymentInput } from "types/payments";
-import PaymentsList from "components/PaymentsList";
-import PaymentForm from "components/PaymentForm";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { getPayments } from "api/payments";
+import { Payment } from "types/payments";
 
-export default function Payments() {
-  const queryClient = useQueryClient();
-  const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
+export default function PaymentsPage() {
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [methodFilter, setMethodFilter] = useState<string>("");
 
-  // 🔎 Cargar pagos
   const { data: payments, isLoading, isError, error } = useQuery<Payment[]>({
     queryKey: ["payments"],
     queryFn: getPayments,
   });
 
-  // ✍️ Crear pago
-  const createMutation = useMutation({
-    mutationFn: createPayment,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments"] }),
-  });
-
-  // ✍️ Actualizar pago
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: PaymentInput }) =>
-      updatePayment(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments"] }),
-  });
-
-  // 🗑 Eliminar pago
-  const deleteMutation = useMutation({
-    mutationFn: deletePayment,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments"] }),
-  });
-
-  const savePayment = (data: PaymentInput, id?: number) => {
-    if (id) {
-      updateMutation.mutate({ id, data });
-      setEditingPayment(null);
-    } else {
-      createMutation.mutate(data);
-    }
-  };
-
   if (isLoading) return <p>Cargando pagos...</p>;
   if (isError) return <p>Error: {(error as Error).message}</p>;
+  if (!payments) return <p>No se encontraron pagos</p>;
+
+  // 🔹 Filtrado en frontend (más adelante podemos moverlo al backend)
+  const filtered = payments.filter((p) => {
+    return (
+      (statusFilter ? p.status === statusFilter : true) &&
+      (methodFilter ? p.method === methodFilter : true)
+    );
+  });
 
   return (
     <div>
-      <h1>Pagos</h1>
-      <PaymentForm
-        onSubmit={(data) => savePayment(data, editingPayment?.id)}
-        payment={editingPayment}
-      />
-      <PaymentsList
-        payments={payments || []}
-        onEdit={(p) => setEditingPayment(p)}
-        onDelete={(id) => deleteMutation.mutate(id)}
-      />
+      <h1>Gestión de Pagos</h1>
+
+      {/* Filtros */}
+      <div style={{ marginBottom: "1rem" }}>
+        <label>
+          Estado:
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="">Todos</option>
+            <option value="pending">Pendiente</option>
+            <option value="paid">Pagado</option>
+            <option value="canceled">Cancelado</option>
+            <option value="waived">Exonerado</option>
+          </select>
+        </label>
+
+        <label style={{ marginLeft: "1rem" }}>
+          Método:
+          <select
+            value={methodFilter}
+            onChange={(e) => setMethodFilter(e.target.value)}
+          >
+            <option value="">Todos</option>
+            <option value="cash">Efectivo</option>
+            <option value="card">Tarjeta</option>
+            <option value="transfer">Transferencia</option>
+          </select>
+        </label>
+      </div>
+
+      {/* Tabla de pagos */}
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Cita</th>
+            <th>Paciente</th>
+            <th>Monto</th>
+            <th>Método</th>
+            <th>Estado</th>
+            <th>Referencia</th>
+            <th>Banco</th>
+            <th>Recibido por</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((p) => (
+            <tr key={p.id}>
+              <td>{p.id}</td>
+              <td>{p.appointment}</td>
+              <td>{p.patient_name || "—"}</td>
+              <td>{p.amount}</td>
+              <td>{p.method}</td>
+              <td>{p.status}</td>
+              <td>{p.reference_number || "—"}</td>
+              <td>{p.bank_name || "—"}</td>
+              <td>{p.received_by || "—"}</td>
+              <td>
+                {p.received_at
+                  ? new Date(p.received_at).toLocaleString()
+                  : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

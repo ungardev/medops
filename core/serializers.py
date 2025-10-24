@@ -33,11 +33,25 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    appointment = AppointmentSerializer(read_only=True)
+    # 🔹 Incluimos datos adicionales de la cita y paciente
+    appointment_date = serializers.DateField(source="appointment.appointment_date", read_only=True)
+    patient_name = serializers.CharField(source="appointment.patient.__str__", read_only=True)
 
     class Meta:
         model = Payment
-        fields = ['id', 'appointment', 'amount', 'method', 'status']
+        fields = [
+            'id',
+            'appointment',
+            'appointment_date',
+            'patient_name',
+            'amount',
+            'method',
+            'status',
+            'reference_number',
+            'bank_name',
+            'received_by',
+            'received_at',
+        ]
 
 
 class EventSerializer(serializers.ModelSerializer):
