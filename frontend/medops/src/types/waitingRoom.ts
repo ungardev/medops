@@ -5,7 +5,8 @@ export type WaitingRoomStatus =
   | "waiting"          // Paciente en cola
   | "in_consultation"  // Actualmente en consulta
   | "completed"        // Consulta finalizada
-  | "canceled";        // Cancelado
+  | "canceled"         // Cancelado
+  | "pending";         // 👈 Nuevo: cita del día aún no confirmada
 
 // --- Prioridades posibles en la sala de espera
 export type WaitingRoomPriority =

@@ -17,16 +17,25 @@ import { getAuditByPatient, AuditEvent } from "../api/audit";
 
 // 🔹 Badge visual para estado
 const renderStatusBadge = (status: WaitingRoomStatus) => {
-  const styles: Record<WaitingRoomStatus, { bg: string; text: string }> = {
+  const styles: Record<string, { bg: string; text: string }> = {
     waiting: { bg: "#facc15", text: "En espera" },
     in_consultation: { bg: "#3b82f6", text: "En consulta" },
     completed: { bg: "#22c55e", text: "Completado" },
     canceled: { bg: "#ef4444", text: "Cancelado" },
+    pending: { bg: "#6b7280", text: "Pendiente" }, // 👈 nuevo estado
   };
-  const { bg, text } = styles[status];
+
+  const style = styles[status] || { bg: "#9ca3af", text: status };
   return (
-    <span style={{ background: bg, color: "#fff", padding: "2px 8px", borderRadius: "12px" }}>
-      {text}
+    <span
+      style={{
+        background: style.bg,
+        color: "#fff",
+        padding: "2px 8px",
+        borderRadius: "12px",
+      }}
+    >
+      {style.text}
     </span>
   );
 };
@@ -41,10 +50,15 @@ const renderPriorityBadge = (priority?: string) => {
   };
   const style = styles[priority ?? ""] || { bg: "#6b7280", text: priority || "—" };
   return (
-    <span style={{
-      background: style.bg, color: "#fff",
-      padding: "2px 8px", borderRadius: "12px", marginLeft: "6px"
-    }}>
+    <span
+      style={{
+        background: style.bg,
+        color: "#fff",
+        padding: "2px 8px",
+        borderRadius: "12px",
+        marginLeft: "6px",
+      }}
+    >
       {style.text}
     </span>
   );
@@ -76,19 +90,19 @@ export default function WaitingRoom() {
 
   useEffect(() => {
     getWaitingRoomGroupsToday()
-      .then(data => {
+      .then((data) => {
         setGrupoA(data.grupo_a);
         setGrupoB(data.grupo_b);
       })
-      .catch(err => setError(err.message))
+      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
   const handleStatusChange = async (id: number, newStatus: WaitingRoomStatus) => {
     try {
       const updated = await updateWaitingRoomStatus(id, newStatus);
-      setGrupoA(prev => prev.map(e => (e.id === id ? updated : e)));
-      setGrupoB(prev => prev.map(e => (e.id === id ? updated : e)));
+      setGrupoA((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      setGrupoB((prev) => prev.map((e) => (e.id === id ? updated : e)));
     } catch (err: any) {
       setError(err.message);
     }
@@ -97,8 +111,8 @@ export default function WaitingRoom() {
   const handlePromoteToEmergency = async (id: number) => {
     try {
       const updated = await promoteToEmergency(id);
-      setGrupoA(prev => prev.map(e => (e.id === id ? updated : e)));
-      setGrupoB(prev => prev.map(e => (e.id === id ? updated : e)));
+      setGrupoA((prev) => prev.map((e) => (e.id === id ? updated : e)));
+      setGrupoB((prev) => prev.map((e) => (e.id === id ? updated : e)));
     } catch (err: any) {
       setError(err.message);
     }
@@ -107,7 +121,8 @@ export default function WaitingRoom() {
   const handleConfirmWalkin = async (id: number) => {
     try {
       const updated = await confirmWaitingRoomEntry(id);
-      setGrupoB(prev => prev.map(e => (e.id === id ? updated : e)));
+      setGrupoA((prev) => [...prev, updated]); // 👈 ahora sube a Grupo A
+      setGrupoB((prev) => prev.filter((e) => e.id !== id));
     } catch (err: any) {
       setError(err.message);
     }
@@ -116,8 +131,12 @@ export default function WaitingRoom() {
   const handleCloseDay = async () => {
     try {
       await closeWaitingRoomDay();
-      setGrupoA(prev => prev.map(e => e.status === "waiting" ? { ...e, status: "canceled" } : e));
-      setGrupoB(prev => prev.map(e => e.status === "waiting" ? { ...e, status: "canceled" } : e));
+      setGrupoA((prev) =>
+        prev.map((e) => (e.status === "waiting" ? { ...e, status: "canceled" } : e))
+      );
+      setGrupoB((prev) =>
+        prev.map((e) => (e.status === "waiting" ? { ...e, status: "canceled" } : e))
+      );
     } catch (err: any) {
       setError(err.message);
     }
@@ -129,13 +148,24 @@ export default function WaitingRoom() {
 
       <div style={{ marginBottom: "16px", textAlign: "right" }}>
         <button
-          style={{ background: "#22c55e", color: "#fff", padding: "8px 16px", borderRadius: "6px", marginRight: "8px" }}
+          style={{
+            background: "#22c55e",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: "6px",
+            marginRight: "8px",
+          }}
           onClick={() => setShowIngreso(true)}
         >
           ➕ Registrar llegada
         </button>
         <button
-          style={{ background: "#ef4444", color: "#fff", padding: "8px 16px", borderRadius: "6px" }}
+          style={{
+            background: "#ef4444",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: "6px",
+          }}
           onClick={handleCloseDay}
         >
           🛑 Cerrar jornada
@@ -146,19 +176,47 @@ export default function WaitingRoom() {
       <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "20px" }}>
         <thead>
           <tr style={{ background: "#e2e8f0" }}>
-            <th>Paciente</th><th>Estado</th><th>Tiempo de espera</th><th>Acción</th>
+            <th>Paciente</th>
+            <th>Estado</th>
+            <th>Tiempo de espera</th>
+            <th>Acción</th>
           </tr>
         </thead>
         <tbody>
-          {grupoA.map(e => (
+          {grupoA.map((e) => (
             <tr key={e.id}>
               <td>{e.patient.name}</td>
-              <td>{renderStatusBadge(e.status)} {renderPriorityBadge(e.priority)}</td>
-              <td>{e.arrival_time ? formatDistanceToNow(new Date(e.arrival_time), { locale: es }) : "—"}</td>
               <td>
-                {e.status === "waiting" && <button onClick={() => handleStatusChange(e.id, "in_consultation")}>Pasar a consulta</button>}
-                {e.status === "in_consultation" && <button onClick={() => handleStatusChange(e.id, "completed")}>Finalizar</button>}
-                <button onClick={() => handleStatusChange(e.id, "canceled")} style={{ color: "red" }}>Cancelar</button>
+                {renderStatusBadge(e.status)} {renderPriorityBadge(e.priority)}
+              </td>
+              <td>
+                {e.arrival_time
+                  ? formatDistanceToNow(new Date(e.arrival_time), { locale: es })
+                  : "—"}
+              </td>
+              <td>
+                {e.status === "waiting" && (
+                  <button
+                    onClick={() => handleStatusChange(e.id, "in_consultation")}
+                    style={{ marginRight: "6px" }}
+                  >
+                    Pasar a consulta
+                  </button>
+                )}
+                {e.status === "in_consultation" && (
+                  <button
+                    onClick={() => handleStatusChange(e.id, "completed")}
+                    style={{ background: "#22c55e", color: "#fff", marginRight: "6px" }}
+                  >
+                    ✅ Finalizar consulta
+                  </button>
+                )}
+                <button
+                  onClick={() => handleStatusChange(e.id, "canceled")}
+                  style={{ color: "red" }}
+                >
+                  Cancelar
+                </button>
               </td>
             </tr>
           ))}
@@ -176,7 +234,7 @@ export default function WaitingRoom() {
           </tr>
         </thead>
         <tbody>
-          {grupoB.map(e => (
+          {grupoB.map((e) => (
             <tr key={e.id} style={{ borderBottom: "1px solid #cbd5e1" }}>
               <td>{e.patient.name}</td>
               <td>
@@ -213,7 +271,7 @@ export default function WaitingRoom() {
                     🚨 Emergencia
                   </button>
                 )}
-                {e.priority === "walkin" && (
+                {(e.priority === "walkin" || e.status === "pending") && (
                   <button
                     onClick={() => handleConfirmWalkin(e.id)}
                     style={{
