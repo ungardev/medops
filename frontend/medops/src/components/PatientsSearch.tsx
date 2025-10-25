@@ -2,20 +2,20 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { searchPatients } from "../api/patients";
-import { Patient } from "../types/patients";
+import { PatientRef } from "../types/patients";
 
 interface PatientsSearchProps {
-  onSelect: (patient: Patient) => void;
+  onSelect: (patient: PatientRef) => void;
   placeholder?: string;
 }
 
 export default function PatientsSearch({ onSelect, placeholder }: PatientsSearchProps) {
   const [query, setQuery] = useState("");
 
-  const { data: results = [] } = useQuery<Patient[]>({
+  const { data: results = [] } = useQuery<PatientRef[]>({
     queryKey: ["searchPatients", query],
     queryFn: () => searchPatients(query),
-    enabled: query.length > 1, // 🔹 solo busca si hay al menos 2 letras
+    enabled: query.length > 1,
   });
 
   return (

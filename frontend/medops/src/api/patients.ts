@@ -1,12 +1,13 @@
+// src/api/patients.ts
 import { apiFetch } from "./client";
-import { Patient, PatientInput } from "../types/patients";
+import { Patient, PatientInput, PatientRef } from "../types/patients";
 
 // 🔹 Obtener todos los pacientes
-export const getPatients = () =>
+export const getPatients = (): Promise<Patient[]> =>
   apiFetch<Patient[]>("patients/");
 
 // 🔹 Crear un nuevo paciente
-export const createPatient = (data: PatientInput) =>
+export const createPatient = (data: PatientInput): Promise<Patient> =>
   apiFetch<Patient>("patients/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -14,7 +15,7 @@ export const createPatient = (data: PatientInput) =>
   });
 
 // 🔹 Actualizar un paciente existente
-export const updatePatient = (id: number, data: PatientInput) =>
+export const updatePatient = (id: number, data: PatientInput): Promise<Patient> =>
   apiFetch<Patient>(`patients/${id}/`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
@@ -22,15 +23,15 @@ export const updatePatient = (id: number, data: PatientInput) =>
   });
 
 // 🔹 Eliminar un paciente
-export const deletePatient = (id: number) =>
+export const deletePatient = (id: number): Promise<void> =>
   apiFetch<void>(`patients/${id}/`, {
     method: "DELETE",
   });
 
 // 🔹 Buscar pacientes (para autocomplete en Sala de Espera o buscador en portal)
-export const searchPatients = (q: string) =>
-  apiFetch<Patient[]>(`patients/search/?q=${encodeURIComponent(q)}`);
+export const searchPatients = (q: string): Promise<PatientRef[]> =>
+  apiFetch<PatientRef[]>(`patients/search/?q=${encodeURIComponent(q)}`);
 
 // 🔹 Obtener un paciente por ID
-export const getPatient = (id: number) =>
+export const getPatient = (id: number): Promise<Patient> =>
   apiFetch<Patient>(`patients/${id}/`);
