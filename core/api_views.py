@@ -512,17 +512,14 @@ def waitingroom_groups_today_api(request):
         priority__in=["scheduled", "emergency"]
     ).select_related("patient", "appointment")
 
-    # IDs ya en Grupo A para evitar duplicados
-    ids_en_grupo_a = grupo_a.values_list("id", flat=True)
-
     # Grupo B: pendientes de confirmar (citas del día) + walk-ins en espera
     grupo_b = WaitingRoomEntry.objects.filter(
         appointment__appointment_date=today
     ).filter(
-        Q(status="pending", priority="scheduled") |
-        Q(status="waiting", priority="walkin")
+        (Q(status="pending", priority="scheduled")) |
+        (Q(status="waiting", priority="walkin"))
     ).exclude(
-        id__in=ids_en_grupo_a  # 🔒 excluye confirmados
+        priority="scheduled"  # 🔒 excluye confirmados que ya pasaron a Grupo A
     ).select_related("patient", "appointment")
 
     return JsonResponse({
