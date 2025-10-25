@@ -5,6 +5,7 @@ from django.utils.dateparse import parse_date
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.core.paginator import Paginator
+from django.utils import timezone
 
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 from .serializers import (
@@ -28,7 +29,7 @@ def safe_json(value):
 
 # --- Dashboard / métricas ---
 def metrics_api(request):
-    today = now().date()
+    today = timezone.localdate()
     data = {
         "totalPatients": Patient.objects.count(),
         "todayAppointments": Appointment.objects.filter(appointment_date=today).count(),
@@ -173,8 +174,13 @@ def patient_search_api(request):
 
 # --- Citas del día ---
 def daily_appointments_api(request):
-    today = now().date()
-    appointments = Appointment.objects.filter(appointment_date=today).select_related("patient").order_by("arrival_time")
+    today = timezone.localdate()
+    appointments = (
+        Appointment.objects
+        .filter(appointment_date=today)
+        .select_related("patient")
+        .order_by("arrival_time")
+    )
     serializer = AppointmentSerializer(appointments, many=True)
     return JsonResponse(serializer.data, safe=False)
 
@@ -411,3 +417,24 @@ def current_consultation_api(request):
         serializer = AppointmentSerializer(appointment)
         return Response(serializer.data, status=200)
     return Response({"detail": "No hay consulta corriendo actualmente."}, status=200)
+
+def waitingroom_groups_today_api(request):
+    today = timezone.localdate()
+
+    grupo_a = WaitingRoomEntry.objects.filter(
+        appointment__appointment_date=today,
+        status="waiting",
+        priority__in=["scheduled", "emergency"]
+    ).select_related("patient", "appointment")
+
+    grupo_b = WaitingRoomEntry.objects.filter(
+        appointment__appointment_date=today,
+        status="waiting",
+        priority="walkin"
+    ).select_related("patient", "appointment")
+
+    return JsonResponse({
+        "grupo_a": WaitingRoomEntrySerializer(grupo_a, many=True).data,
+        "grupo_b": WaitingRoomEntrySerializer(grupo_b, many=True).data,
+    })
+

@@ -56,6 +56,7 @@ urlpatterns = [
 
     # --- Sala de Espera ---
     path("waitingroom/", waitingroom_list_api, name="waitingroom-list-api"),
+    path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     # Nota: /waitingroom/close_day/ se expone vía ViewSet
 ]
