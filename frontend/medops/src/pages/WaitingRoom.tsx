@@ -9,7 +9,7 @@ import {
 import { WaitingRoomEntry, WaitingRoomStatus } from "../types/waitingRoom";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import RegisterWalkinModal from "../components/RegisterWalkinModal"; // 👈 nuevo import
+import RegisterWalkinModal from "../components/RegisterWalkinModal"; // 👈 modal
 
 // 🔹 Badge visual para estado
 const renderStatusBadge = (status: WaitingRoomStatus) => {
@@ -49,12 +49,12 @@ export default function WaitingRoom() {
   const [grupoB, setGrupoB] = useState<WaitingRoomEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false); // 👈 nuevo estado
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     getWaitingRoomGroupsToday()
       .then((data) => {
-        console.log("Respuesta waiting room:", data); // debug
+        console.log("Respuesta waiting room:", data);
         setGrupoA(data.grupo_a || []);
         setGrupoB(data.grupo_b || []);
       })
@@ -112,7 +112,7 @@ export default function WaitingRoom() {
       <div style={{ marginBottom: "16px", textAlign: "right" }}>
         <button
           style={{ background: "#22c55e", color: "#fff", padding: "8px 16px", borderRadius: "6px", marginRight: "8px" }}
-          onClick={() => setShowModal(true)} // 👈 abre modal
+          onClick={() => setShowModal(true)}
         >
           ➕ Registrar llegada
         </button>
@@ -193,11 +193,7 @@ export default function WaitingRoom() {
                   : "—"}
               </td>
               <td>
-                {e.status === "waiting" && (
-                  <button onClick={() => handleStatusChange(e.id, "in_consultation")}>
-                    Pasar a consulta
-                  </button>
-                )}
+                {/* ❌ Eliminado "Pasar a consulta" en Grupo B */}
                 {e.status === "in_consultation" && (
                   <button onClick={() => handleStatusChange(e.id, "completed")}>
                     Finalizar

@@ -421,8 +421,8 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     def confirm(self, request, pk=None):
         """
         Confirma la llegada de un paciente:
-        - Si estaba en pending/scheduled → pasa a waiting/scheduled (Grupo A).
-        - Si estaba en waiting/walkin → pasa a waiting/scheduled (Grupo A).
+        - pending/scheduled → waiting/scheduled (Grupo A).
+        - waiting/walkin → waiting/scheduled (Grupo A).
         """
         try:
             entry = self.get_object()
@@ -431,10 +431,10 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
 
         if entry.status == "pending" and entry.priority == "scheduled":
             entry.status = "waiting"
-            # priority se mantiene como scheduled
+            entry.priority = "scheduled"
         elif entry.status == "waiting" and entry.priority == "walkin":
-            entry.priority = "scheduled"  # se normaliza como cita confirmada
-            # status ya es waiting
+            entry.status = "waiting"
+            entry.priority = "scheduled"
         else:
             return Response(
                 {"error": f"No se puede confirmar entrada con estado={entry.status}, prioridad={entry.priority}"},
@@ -457,9 +457,19 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["post"])
     def close_day(self, request):
         """
-        Marca como 'canceled' todos los pacientes que aún estén en 'waiting'.
+        Cierra la jornada laboral:
+        - Si existe algún paciente en 'in_consultation', se bloquea la acción.
+        - Todos los pacientes que no estén en 'completed' → 'canceled'.
         """
-        updated_entries = WaitingRoomEntry.objects.filter(status="waiting")
+        # 🔒 Validación: no permitir cierre si hay pacientes en consulta
+        if WaitingRoomEntry.objects.filter(status="in_consultation").exists():
+            return Response(
+                {"error": "No se puede cerrar la jornada mientras haya un paciente en consulta."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Cancelar todo lo que no esté completado
+        updated_entries = WaitingRoomEntry.objects.exclude(status="completed")
         count = updated_entries.count()
         updated_entries.update(status="canceled")
 
@@ -472,9 +482,10 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
         )
 
         return Response(
-            {"message": f"{count} pacientes pendientes fueron cancelados al cierre de jornada."},
+            {"message": f"{count} pacientes fueron cancelados al cierre de jornada."},
             status=status.HTTP_200_OK,
         )
+
 
 # --- Consulta actual en curso ---
 @api_view(["GET"])
@@ -497,9 +508,12 @@ def waitingroom_groups_today_api(request):
     # Grupo A: confirmados en espera, en consulta o completados (scheduled/emergency)
     grupo_a = WaitingRoomEntry.objects.filter(
         appointment__appointment_date=today,
-        status__in=["waiting", "in_consultation", "completed"],  # 👈 ahora incluye completados
+        status__in=["waiting", "in_consultation", "completed"],
         priority__in=["scheduled", "emergency"]
     ).select_related("patient", "appointment")
+
+    # IDs ya en Grupo A para evitar duplicados
+    ids_en_grupo_a = grupo_a.values_list("id", flat=True)
 
     # Grupo B: pendientes de confirmar (citas del día) + walk-ins en espera
     grupo_b = WaitingRoomEntry.objects.filter(
@@ -507,6 +521,8 @@ def waitingroom_groups_today_api(request):
     ).filter(
         Q(status="pending", priority="scheduled") |
         Q(status="waiting", priority="walkin")
+    ).exclude(
+        id__in=ids_en_grupo_a  # 🔒 excluye confirmados
     ).select_related("patient", "appointment")
 
     return JsonResponse({
