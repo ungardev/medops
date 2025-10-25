@@ -21,13 +21,13 @@ class PatientWriteSerializer(serializers.ModelSerializer):
 
 class PatientReadSerializer(serializers.ModelSerializer):
     """Serializer para leer pacientes (con nombre calculado)"""
-    name = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
-        fields = ["id", "name", "national_id"]
+        fields = ["id", "full_name", "national_id"]
 
-    def get_name(self, obj):
+    def get_full_name(self, obj):
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
         return " ".join(filter(None, parts))
 
@@ -40,7 +40,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = [
             "id",
-            "patient",           # incluye id y name
+            "patient",           # incluye id y full_name
             "appointment_date",
             "appointment_type",
             "expected_amount",
@@ -61,7 +61,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "appointment_date",
-            "patient",          # objeto con id y name
+            "patient",          # objeto con id y full_name
             "amount",
             "method",
             "status",
@@ -70,6 +70,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "received_by",
             "received_at",
         ]
+
 
 # --- Eventos (auditoría) ---
 class EventSerializer(serializers.ModelSerializer):
@@ -87,7 +88,7 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
         model = WaitingRoomEntry
         fields = [
             "id",
-            "patient",          # objeto con id y name
+            "patient",          # objeto con id y full_name
             "appointment_id",
             "arrival_time",
             "status",
