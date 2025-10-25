@@ -398,3 +398,4 @@ class MedicalDocument(models.Model):
 
     def __str__(self):
         return f"{self.description or 'Documento'} - {self.patient}"
+    
