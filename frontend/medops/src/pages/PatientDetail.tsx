@@ -34,7 +34,7 @@ export default function PatientDetail() {
   return (
     <div>
       <h2>Detalle del Paciente</h2>
-      <h3>{patient.name}</h3> {/* 🔹 ahora usamos name */}
+      <h3>{patient.full_name}</h3> {/* 🔹 ahora usamos name */}
 
       <div style={{ marginBottom: "1rem" }}>
         <button
@@ -55,7 +55,7 @@ export default function PatientDetail() {
         <div>
           <p><strong>ID:</strong> {patient.id}</p>
           <p><strong>Cédula:</strong> {patient.national_id || "—"}</p>
-          <p><strong>Nombre:</strong> {patient.name}</p> {/* 🔹 usamos name */}
+          <p><strong>Nombre:</strong> {patient.full_name}</p> {/* 🔹 usamos name */}
           <p><strong>Fecha de nacimiento:</strong> {patient.birthdate || "—"}</p>
           <p><strong>Género:</strong> {patient.gender}</p>
           <p><strong>Contacto:</strong> {patient.contact_info || "—"}</p>

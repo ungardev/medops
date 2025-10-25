@@ -47,10 +47,10 @@ export default function PatientsSearch({ onSelect, placeholder }: PatientsSearch
               style={{ padding: "0.5rem", cursor: "pointer" }}
               onClick={() => {
                 onSelect(p);
-                setQuery(p.name); // mostrar nombre en el input
+                setQuery(p.full_name); // mostrar nombre en el input
               }}
             >
-              {p.name} {p.national_id && `– ${p.national_id}`}
+              {p.full_name} {p.national_id && `– ${p.national_id}`}
             </li>
           ))}
         </ul>

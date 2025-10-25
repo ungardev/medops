@@ -8,7 +8,7 @@ export function exportPaymentsToXLSX(payments: Payment[]) {
   const data = payments.map((p) => ({
     ID: p.id,
     Cita: p.appointment ?? "",
-    Paciente: p.patient?.name ?? "",   // ✅ corregido
+    Paciente: p.patient?.full_name ?? "",   // ✅ corregido
     Monto: p.amount,
     Método: p.method,
     Estado: p.status,

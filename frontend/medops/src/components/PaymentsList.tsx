@@ -42,7 +42,7 @@ export default function PaymentsList({ payments, onEdit, onDelete }: PaymentsLis
             <tr key={p.id}>
               <td>{p.id}</td>
               <td>{p.appointment}</td>
-              <td>{p.patient?.name || "—"}</td> {/* ✅ corregido */}
+              <td>{p.patient?.full_name || "—"}</td> {/* ✅ corregido */}
               <td>{formatCurrency(p.amount, "USD")}</td>
               <td>{p.method}</td>
               <td>{p.status}</td>

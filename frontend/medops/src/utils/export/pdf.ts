@@ -13,7 +13,7 @@ export function exportPaymentsToPDF(payments: Payment[]) {
   const rows = payments.map((p) => [
     p.id,
     p.appointment ?? "",
-    p.patient?.name ?? "",   // ✅ corregido
+    p.patient?.full_name ?? "",   // ✅ corregido
     p.amount,
     p.method,
     p.status,

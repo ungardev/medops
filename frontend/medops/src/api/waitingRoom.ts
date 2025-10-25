@@ -38,7 +38,7 @@ export const deleteWaitingRoomEntry = (id: number): Promise<void> =>
 // 🔹 Actualizar solo el estado de una entrada
 export const updateWaitingRoomStatus = (
   id: number,
-  newStatus: WaitingRoomStatus   // ✅ tipo correcto
+  newStatus: WaitingRoomStatus
 ): Promise<WaitingRoomEntry> =>
   apiFetch<WaitingRoomEntry>(`waitingroom/${id}/status/`, {
     method: "PATCH",
@@ -75,7 +75,7 @@ export const getWaitingRoomGroupsToday = (): Promise<{
   );
 
 // 🔹 Registrar llegada de un paciente walk-in
-export const registerWalkinEntry = (
+export const registerWalkin = (
   patientId: number
 ): Promise<WaitingRoomEntry> =>
   apiFetch<WaitingRoomEntry>("waitingroom/register_walkin/", {

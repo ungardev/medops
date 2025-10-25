@@ -154,7 +154,7 @@ export default function Payments() {
             <tr key={p.id}>
               <td>{p.id}</td>
               <td>{p.appointment}</td>
-              <td>{p.patient?.name || "—"}</td> {/* ✅ corregido */}
+              <td>{p.patient?.full_name || "—"}</td> {/* ✅ corregido */}
               <td>{p.amount}</td>
               <td>{p.method}</td>
               <td>{p.status}</td>

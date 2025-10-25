@@ -29,8 +29,11 @@ export const deletePatient = (id: number): Promise<void> =>
   });
 
 // 🔹 Buscar pacientes (para autocomplete en Sala de Espera o buscador en portal)
-export const searchPatients = (q: string): Promise<PatientRef[]> =>
-  apiFetch<PatientRef[]>(`patients/search/?q=${encodeURIComponent(q)}`);
+//    Permite buscar por nombre o por ID, con debounce en el frontend
+export const searchPatients = (q: string): Promise<PatientRef[]> => {
+  if (!q.trim()) return Promise.resolve([]);
+  return apiFetch<PatientRef[]>(`patients/search/?q=${encodeURIComponent(q)}`);
+};
 
 // 🔹 Obtener un paciente por ID
 export const getPatient = (id: number): Promise<Patient> =>

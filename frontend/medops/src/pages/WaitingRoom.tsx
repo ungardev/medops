@@ -137,7 +137,7 @@ export default function WaitingRoom() {
         <tbody>
           {grupoA.map((e) => (
             <tr key={e.id}>
-              <td>{e.patient.name}</td>
+              <td>{e.patient.full_name}</td>
               <td>
                 {renderStatusBadge(e.status)} {renderPriorityBadge(e.priority)}
               </td>
@@ -182,7 +182,7 @@ export default function WaitingRoom() {
         <tbody>
           {grupoB.map((e) => (
             <tr key={e.id} style={{ borderBottom: "1px solid #cbd5e1" }}>
-              <td>{e.patient.name}</td>
+              <td>{e.patient.full_name}</td>
               <td>
                 {renderStatusBadge(e.status)}
                 {renderPriorityBadge(e.priority)}

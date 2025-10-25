@@ -36,7 +36,7 @@ export default function PatientsList({ patients, onEdit, onDelete }: PatientsLis
         {patients.map((p) => (
           <tr key={p.id}>
             <td>{p.national_id || "—"}</td>
-            <td>{p.name}</td>
+            <td>{p.full_name}</td>
             <td>{calculateAge(p.birthdate)}</td>
             <td>{p.gender}</td>
             <td>{p.contact_info || "—"}</td>

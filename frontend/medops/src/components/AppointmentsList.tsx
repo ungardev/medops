@@ -28,7 +28,7 @@ export default function AppointmentsList({
         {appointments.map((a) => (
           <tr key={a.id}>
             {/* 👇 Aquí usamos el campo correcto */}
-            <td>{a.patient?.name ?? `ID: ${a.patient?.id}`}</td>
+            <td>{a.patient?.full_name ?? `ID: ${a.patient?.id}`}</td>
             <td>{a.appointment_date}</td>
             <td>{a.status}</td>
             <td>
