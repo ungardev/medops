@@ -488,10 +488,10 @@ def current_consultation_api(request):
 def waitingroom_groups_today_api(request):
     today = timezone.localdate()
 
-    # Grupo A: confirmados en espera o en consulta (scheduled/emergency)
+    # Grupo A: confirmados en espera, en consulta o completados (scheduled/emergency)
     grupo_a = WaitingRoomEntry.objects.filter(
         appointment__appointment_date=today,
-        status__in=["waiting", "in_consultation"],   # 👈 ahora incluye en consulta
+        status__in=["waiting", "in_consultation", "completed"],  # 👈 ahora incluye completados
         priority__in=["scheduled", "emergency"]
     ).select_related("patient", "appointment")
 

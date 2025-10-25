@@ -22,7 +22,7 @@ const renderStatusBadge = (status: WaitingRoomStatus) => {
     in_consultation: { bg: "#3b82f6", text: "En consulta" },
     completed: { bg: "#22c55e", text: "Completado" },
     canceled: { bg: "#ef4444", text: "Cancelado" },
-    pending: { bg: "#6b7280", text: "Pendiente" }, // 👈 nuevo estado
+    pending: { bg: "#6b7280", text: "Pendiente" },
   };
 
   const style = styles[status] || { bg: "#9ca3af", text: status };
@@ -70,24 +70,6 @@ export default function WaitingRoom() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Modal de historial y notas
-  const [selectedPatient, setSelectedPatient] = useState<WaitingRoomEntry | null>(null);
-  const [patientNotes, setPatientNotes] = useState<ConsultationNote[]>([]);
-  const [loadingNotes, setLoadingNotes] = useState(false);
-  const [newNote, setNewNote] = useState<string>("");
-
-  // Modal de ingreso
-  const [showIngreso, setShowIngreso] = useState(false);
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-  const [selectedPatientSearch, setSelectedPatientSearch] = useState<any | null>(null);
-
-  // Modal de auditoría
-  const [showAudit, setShowAudit] = useState(false);
-  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
-  const [loadingAudit, setLoadingAudit] = useState(false);
-
   useEffect(() => {
     getWaitingRoomGroupsToday()
       .then((data) => {
@@ -121,7 +103,7 @@ export default function WaitingRoom() {
   const handleConfirmWalkin = async (id: number) => {
     try {
       const updated = await confirmWaitingRoomEntry(id);
-      setGrupoA((prev) => [...prev, updated]); // 👈 ahora sube a Grupo A
+      setGrupoA((prev) => [...prev, updated]);
       setGrupoB((prev) => prev.filter((e) => e.id !== id));
     } catch (err: any) {
       setError(err.message);
@@ -155,7 +137,6 @@ export default function WaitingRoom() {
             borderRadius: "6px",
             marginRight: "8px",
           }}
-          onClick={() => setShowIngreso(true)}
         >
           ➕ Registrar llegada
         </button>
@@ -211,6 +192,11 @@ export default function WaitingRoom() {
                     ✅ Finalizar consulta
                   </button>
                 )}
+                {e.status === "completed" && (
+                  <span style={{ color: "#22c55e", fontWeight: "bold" }}>
+                    ✅ Consulta finalizada
+                  </span>
+                )}
                 <button
                   onClick={() => handleStatusChange(e.id, "canceled")}
                   style={{ color: "red" }}
@@ -259,7 +245,7 @@ export default function WaitingRoom() {
                 )}
                 <button
                   onClick={() => handleStatusChange(e.id, "canceled")}
-                  style={{ color: "red" }}
+                  style={{ color: "red", marginLeft: "6px" }}
                 >
                   Cancelar
                 </button>
