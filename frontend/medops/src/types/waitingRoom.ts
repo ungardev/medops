@@ -9,7 +9,9 @@ export type WaitingRoomStatus =
 
 // --- Prioridades posibles en la sala de espera
 export type WaitingRoomPriority =
-  | "normal"     // Paciente con cita programada o walk-in estándar
+  | "normal"     // Paciente con cita programada estándar
+  | "scheduled"  // Paciente con cita programada explícita
+  | "walkin"     // Paciente sin cita, llega directo (Grupo B)
   | "emergency"; // Paciente promovido a emergencia
 
 // --- Entrada de la sala de espera

@@ -64,3 +64,11 @@ export const closeWaitingRoomDay = (): Promise<{ message: string }> =>
   apiFetch<{ message: string }>("waitingroom/close_day/", {
     method: "POST",
   });
+
+  // 🔹 Obtener grupos del día (A y B) desde el backend
+export const getWaitingRoomGroupsToday = (): Promise<{
+  grupo_a: WaitingRoomEntry[];
+  grupo_b: WaitingRoomEntry[];
+}> => apiFetch<{ grupo_a: WaitingRoomEntry[]; grupo_b: WaitingRoomEntry[] }>(
+  "waitingroom/groups-today/"
+);

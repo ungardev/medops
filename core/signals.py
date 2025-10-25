@@ -20,8 +20,8 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
                 appointment=instance,
                 patient=instance.patient,
                 defaults={
-                    "status": "waiting",
-                    "priority": "walkin",  # Grupo B
+                    "status": "pending",      # 👈 ahora pending
+                    "priority": "scheduled",  # 👈 ahora scheduled
                 }
             )
             logger.info(f"WaitingRoomEntry creado automáticamente para Appointment {instance.id}")

@@ -361,7 +361,7 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["patch"])
     def promote_to_emergency(self, request, pk=None):
         """
-        Promueve un paciente a emergencia (Grupo A primero).
+        Promueve un paciente a emergencia (Grupo A).
         """
         entry = self.get_object()
         entry.priority = "emergency"
@@ -380,6 +380,43 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
             WaitingRoomEntrySerializer(entry).data,
             status=status.HTTP_200_OK
         )
+
+    @action(detail=True, methods=["patch"])
+    def confirm(self, request, pk=None):
+        """
+        Confirma la llegada de un paciente:
+        - Si estaba en pending/scheduled → pasa a waiting/scheduled (Grupo A).
+        - Si estaba en waiting/walkin → pasa a waiting/scheduled (Grupo A).
+        """
+        try:
+            entry = self.get_object()
+        except WaitingRoomEntry.DoesNotExist:
+            return Response({"error": "WaitingRoomEntry not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if entry.status == "pending" and entry.priority == "scheduled":
+            entry.status = "waiting"
+            # priority se mantiene como scheduled
+        elif entry.status == "waiting" and entry.priority == "walkin":
+            entry.priority = "scheduled"  # se normaliza como cita confirmada
+            # status ya es waiting
+        else:
+            return Response(
+                {"error": f"No se puede confirmar entrada con estado={entry.status}, prioridad={entry.priority}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        entry.save(update_fields=["status", "priority"])
+
+        Event.objects.create(
+            entity="WaitingRoomEntry",
+            entity_id=entry.id,
+            actor=str(request.user) if request.user.is_authenticated else "system",
+            action="confirm",
+            timestamp=now(),
+            metadata={"patient": str(entry.patient)}
+        )
+
+        return Response(WaitingRoomEntrySerializer(entry).data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"])
     def close_day(self, request):
@@ -421,16 +458,19 @@ def current_consultation_api(request):
 def waitingroom_groups_today_api(request):
     today = timezone.localdate()
 
+    # Grupo A: confirmados en espera (scheduled/emergency)
     grupo_a = WaitingRoomEntry.objects.filter(
         appointment__appointment_date=today,
         status="waiting",
         priority__in=["scheduled", "emergency"]
     ).select_related("patient", "appointment")
 
+    # Grupo B: pendientes de confirmar (citas del día) + walk-ins en espera
     grupo_b = WaitingRoomEntry.objects.filter(
-        appointment__appointment_date=today,
-        status="waiting",
-        priority="walkin"
+        appointment__appointment_date=today
+    ).filter(
+        Q(status="pending", priority="scheduled") |
+        Q(status="waiting", priority="walkin")
     ).select_related("patient", "appointment")
 
     return JsonResponse({
