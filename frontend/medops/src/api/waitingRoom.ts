@@ -65,10 +65,20 @@ export const closeWaitingRoomDay = (): Promise<{ message: string }> =>
     method: "POST",
   });
 
-  // 🔹 Obtener grupos del día (A y B) desde el backend
+// 🔹 Obtener grupos del día (A y B) desde el backend
 export const getWaitingRoomGroupsToday = (): Promise<{
   grupo_a: WaitingRoomEntry[];
   grupo_b: WaitingRoomEntry[];
-}> => apiFetch<{ grupo_a: WaitingRoomEntry[]; grupo_b: WaitingRoomEntry[] }>(
-  "waitingroom/groups-today/"
-);
+}> =>
+  apiFetch<{ grupo_a: WaitingRoomEntry[]; grupo_b: WaitingRoomEntry[] }>(
+    "waitingroom/groups-today/"
+  );
+
+// 🔹 Registrar llegada de un paciente walk-in
+export const registerWalkinEntry = (
+  patientId: number
+): Promise<WaitingRoomEntry> =>
+  apiFetch<WaitingRoomEntry>("waitingroom/register_walkin/", {
+    method: "POST",
+    body: JSON.stringify({ patient_id: patientId }),
+  });

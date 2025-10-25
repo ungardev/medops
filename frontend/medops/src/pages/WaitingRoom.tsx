@@ -6,14 +6,12 @@ import {
   promoteToEmergency,
   confirmWaitingRoomEntry,
   closeWaitingRoomDay,
+  registerWalkinEntry,   // 👈 nuevo servicio para registrar walk-in
 } from "../api/waitingRoom";
 import { searchPatients } from "../api/patients";
-import { getPatientNotes, updatePatientNotes } from "../api/consultations";
 import { WaitingRoomEntry, WaitingRoomStatus } from "../types/waitingRoom";
-import { ConsultationNote } from "../types/consultations";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import { getAuditByPatient, AuditEvent } from "../api/audit";
 
 // 🔹 Badge visual para estado
 const renderStatusBadge = (status: WaitingRoomStatus) => {
@@ -24,7 +22,6 @@ const renderStatusBadge = (status: WaitingRoomStatus) => {
     canceled: { bg: "#ef4444", text: "Cancelado" },
     pending: { bg: "#6b7280", text: "Pendiente" },
   };
-
   const style = styles[status] || { bg: "#9ca3af", text: status };
   return (
     <span
@@ -110,6 +107,15 @@ export default function WaitingRoom() {
     }
   };
 
+  const handleRegisterWalkin = async (patientId: number) => {
+    try {
+      const newEntry = await registerWalkinEntry(patientId);
+      setGrupoB((prev) => [...prev, newEntry]);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
   const handleCloseDay = async () => {
     try {
       await closeWaitingRoomDay();
@@ -136,6 +142,11 @@ export default function WaitingRoom() {
             padding: "8px 16px",
             borderRadius: "6px",
             marginRight: "8px",
+          }}
+          onClick={() => {
+            // 👇 ejemplo: registrar walk-in con un paciente fijo (luego se conecta a un buscador)
+            const patientId = 1; 
+            handleRegisterWalkin(patientId);
           }}
         >
           ➕ Registrar llegada

@@ -508,3 +508,33 @@ def waitingroom_groups_today_api(request):
         "grupo_b": WaitingRoomEntrySerializer(grupo_b, many=True).data,
     })
 
+
+@api_view(["POST"])
+def register_walkin_api(request):
+    """
+    Registra la llegada de un paciente walk-in (sin cita previa).
+    Crea un Appointment para hoy y lo ubica en Grupo B.
+    """
+    patient_id = request.data.get("patient_id")
+    if not patient_id:
+        return Response({"error": "Missing patient_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+    today = timezone.localdate()
+
+    # Crear appointment para hoy
+    appointment = Appointment.objects.create(
+        patient_id=patient_id,
+        appointment_date=today,
+        status="pending"  # aún no confirmado
+    )
+
+    # Crear entrada en sala de espera
+    entry = WaitingRoomEntry.objects.create(
+        patient_id=patient_id,
+        appointment=appointment,
+        status="waiting",       # en espera
+        priority="walkin",      # walk-in
+        arrival_time=timezone.now()
+    )
+
+    return Response(WaitingRoomEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
