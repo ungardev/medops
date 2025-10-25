@@ -279,6 +279,20 @@ def update_appointment_status(request, pk):
     if not new_status:
         return Response({"error": "Missing status"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # 🔹 Validación: solo un paciente puede estar en consulta
+    if new_status == "in_consultation":
+        today = timezone.localdate()
+        already_in = Appointment.objects.filter(
+            appointment_date=today,
+            status="in_consultation"
+        ).exclude(id=appointment.id).exists()
+
+        if already_in:
+            return Response(
+                {"error": "Ya existe un paciente en consulta. Solo se permite uno a la vez."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     if appointment.can_transition(new_status):
         appointment.update_status(new_status)
         return Response(AppointmentSerializer(appointment).data)
@@ -287,6 +301,7 @@ def update_appointment_status(request, pk):
             {"error": f"No se puede pasar de {appointment.status} a {new_status}"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
 
 # --- Sala de Espera: actualizar estado de una entrada ---
 @api_view(["PATCH"])
@@ -300,6 +315,20 @@ def update_waitingroom_status(request, pk):
     if not new_status:
         return Response({"error": "Missing status"}, status=status.HTTP_400_BAD_REQUEST)
 
+    # 🔹 Validación: solo un paciente puede estar en consulta
+    if new_status == "in_consultation":
+        today = timezone.localdate()
+        already_in = WaitingRoomEntry.objects.filter(
+            appointment__appointment_date=today,
+            status="in_consultation"
+        ).exclude(id=entry.id).exists()
+
+        if already_in:
+            return Response(
+                {"error": "Ya existe un paciente en consulta. Solo se permite uno a la vez."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
     if entry.can_transition(new_status):
         entry.update_status(new_status)
         return Response(WaitingRoomEntrySerializer(entry).data)
@@ -308,6 +337,7 @@ def update_waitingroom_status(request, pk):
             {"error": f"No se puede pasar de {entry.status} a {new_status}"},
             status=status.HTTP_400_BAD_REQUEST,
         )
+
 
 # --- Consulta: actualizar notas ---
 @api_view(["PATCH"])
