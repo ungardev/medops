@@ -1,156 +1,72 @@
 from django.core.management.base import BaseCommand
-from django.utils import timezone
-from decimal import Decimal
+from django.contrib.auth.models import User
+from core.models import Patient, Appointment, WaitingRoomEntry, GeneticPredisposition
+from faker import Faker
 import random
 
-from core.models import (
-    Patient, Appointment, WaitingRoomEntry, Payment,
-    Diagnosis, Treatment, Prescription, MedicalDocument,
-    GeneticPredisposition
-)
+fake = Faker()
 
 class Command(BaseCommand):
-    help = "Seed database with varied test data"
+    help = "Depura todas las tablas y repuebla con datos de prueba"
 
     def handle(self, *args, **kwargs):
-        # Limpieza previa
-        Patient.objects.all().delete()
+        self.stdout.write("🧹 Limpiando base de datos...")
+
+        # Borrar en orden para respetar claves foráneas
         Appointment.objects.all().delete()
         WaitingRoomEntry.objects.all().delete()
-        Payment.objects.all().delete()
-        Diagnosis.objects.all().delete()
-        Treatment.objects.all().delete()
-        Prescription.objects.all().delete()
-        MedicalDocument.objects.all().delete()
         GeneticPredisposition.objects.all().delete()
+        Patient.objects.all().delete()
+        User.objects.exclude(is_superuser=True).delete()
 
-        # Predisposiciones genéticas
-        predisps = [
-            GeneticPredisposition.objects.create(name="Diabetes tipo 2"),
-            GeneticPredisposition.objects.create(name="Hipertensión"),
-            GeneticPredisposition.objects.create(name="Asma"),
+        self.stdout.write("✅ Tablas depuradas")
+
+        # Crear superusuario por defecto
+        if not User.objects.filter(username="admin").exists():
+            User.objects.create_superuser("admin", "admin@example.com", "admin123")
+            self.stdout.write("👑 Superusuario creado: admin / admin123")
+
+        # Crear pacientes
+        patients = []
+        for _ in range(50):
+            p = Patient.objects.create(
+                first_name=fake.first_name(),
+                last_name=fake.last_name(),
+                birthdate=fake.date_of_birth(minimum_age=1, maximum_age=90),
+                gender=random.choice(["M", "F"]),
+                national_id=fake.unique.random_number(digits=8),
+                weight=round(random.uniform(50, 100), 2),
+                height=round(random.uniform(150, 200), 2),
+                blood_type=random.choice(["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]),
+                allergies=fake.sentence(),
+                medical_history=fake.paragraph(),
+                active=True,
+            )
+            patients.append(p)
+
+        # Crear citas
+        for p in patients:
+            for _ in range(random.randint(1, 3)):
+                Appointment.objects.create(
+                    patient=p,
+                    date=fake.date_time_between(start_date="-1y", end_date="+1y"),
+                    notes=fake.sentence(),
+                )
+
+        # Crear sala de espera
+        for p in random.sample(patients, 10):
+            WaitingRoomEntry.objects.create(
+                patient=p,
+                created_at=fake.date_time_this_month(),
+            )
+
+        # Crear predisposiciones genéticas
+        predispositions = [
+            ("Diabetes", "Historial familiar de diabetes tipo 2"),
+            ("Hipertensión", "Tendencia a presión arterial alta"),
+            ("Asma", "Predisposición a problemas respiratorios"),
         ]
+        for name, desc in predispositions:
+            GeneticPredisposition.objects.create(name=name, description=desc)
 
-        # Pacientes
-        patients = [
-            Patient.objects.create(
-                national_id="12345678",
-                first_name="Juan", last_name="Pérez",
-                gender="M", birthdate="1990-01-01",
-                contact_info="0414-1234567",
-                blood_type="O+"
-            ),
-            Patient.objects.create(
-                national_id="87654321",
-                first_name="María", last_name="Gómez",
-                gender="F", birthdate="1985-05-10",
-                contact_info="0416-7654321",
-                blood_type="A+"
-            ),
-            Patient.objects.create(
-                national_id="11223344",
-                first_name="Carlos", last_name="Rodríguez",
-                gender="M", birthdate="1975-03-15",
-                contact_info="0424-9988776",
-                blood_type="B-"
-            ),
-        ]
-
-        # Asignar predisposiciones
-        patients[0].genetic_predispositions.add(predisps[0])
-        patients[1].genetic_predispositions.add(predisps[1], predisps[2])
-
-        # Citas
-        today = timezone.now().date()
-        appointments = [
-            Appointment.objects.create(
-                patient=patients[0],
-                appointment_date=today,
-                appointment_type="general",
-                expected_amount=Decimal("50.00"),
-                status="pending"
-            ),
-            Appointment.objects.create(
-                patient=patients[1],
-                appointment_date=today,
-                appointment_type="specialized",
-                expected_amount=Decimal("100.00"),
-                status="pending"
-            ),
-            Appointment.objects.create(
-                patient=patients[2],
-                appointment_date=today,
-                appointment_type="general",
-                expected_amount=Decimal("50.00"),
-                status="pending"
-            ),
-        ]
-
-        # Sala de espera
-        WaitingRoomEntry.objects.create(
-            patient=patients[0],
-            appointment=appointments[0],
-            status="waiting",
-            priority="scheduled"
-        )
-        WaitingRoomEntry.objects.create(
-            patient=patients[1],
-            appointment=appointments[1],
-            status="waiting",
-            priority="walkin"
-        )
-        WaitingRoomEntry.objects.create(
-            patient=patients[2],
-            appointment=appointments[2],
-            status="waiting",
-            priority="emergency"
-        )
-
-        # Pagos
-        Payment.objects.create(
-            appointment=appointments[0],
-            amount=Decimal("50.00"),
-            method="cash",
-            status="paid",
-            received_by="Admin"
-        )
-        Payment.objects.create(
-            appointment=appointments[1],
-            amount=Decimal("40.00"),
-            method="transfer",
-            status="pending",
-            reference_number="TRX12345",
-            bank_name="Banco de Venezuela",
-            received_by="Cajero"
-        )
-
-        # Diagnósticos y tratamientos
-        diag1 = Diagnosis.objects.create(
-            appointment=appointments[0],
-            code="J06.9",
-            description="Infección aguda de vías respiratorias"
-        )
-        Treatment.objects.create(
-            diagnosis=diag1,
-            plan="Reposo, hidratación y control de fiebre",
-            start_date=today
-        )
-        Prescription.objects.create(
-            diagnosis=diag1,
-            medication="Paracetamol 500mg",
-            dosage="1 tableta cada 8h",
-            duration="5 días"
-        )
-
-        # Documentos médicos
-        MedicalDocument.objects.create(
-            patient=patients[0],
-            appointment=appointments[0],
-            diagnosis=diag1,
-            description="Examen de laboratorio - Hemograma",
-            category="Laboratorio",
-            file="medical_documents/hemograma.pdf",
-            uploaded_by="Dr. House"
-        )
-
-        self.stdout.write(self.style.SUCCESS("✅ Base de datos poblada con datos variados"))
+        self.stdout.write(self.style.SUCCESS("✅ Base de datos repoblada con 50 pacientes, citas, sala de espera y predisposiciones"))
