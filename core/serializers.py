@@ -1,15 +1,31 @@
 from rest_framework import serializers
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 
-
 # --- Pacientes ---
-class PatientSerializer(serializers.ModelSerializer):
-    # Campo calculado que concatena nombres y apellidos
+class PatientWriteSerializer(serializers.ModelSerializer):
+    """Serializer para crear/actualizar pacientes"""
+    class Meta:
+        model = Patient
+        fields = [
+            "id",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "second_last_name",
+            "national_id",
+            "birthdate",
+            "gender",
+            "contact_info",
+        ]
+
+
+class PatientReadSerializer(serializers.ModelSerializer):
+    """Serializer para leer pacientes (con nombre calculado)"""
     name = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
-        fields = ["id", "name"]
+        fields = ["id", "name", "national_id"]
 
     def get_name(self, obj):
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
@@ -18,13 +34,13 @@ class PatientSerializer(serializers.ModelSerializer):
 
 # --- Citas ---
 class AppointmentSerializer(serializers.ModelSerializer):
-    patient = PatientSerializer(read_only=True)
+    patient = PatientReadSerializer(read_only=True)
 
     class Meta:
         model = Appointment
         fields = [
             "id",
-            "patient",           # 👈 incluye id y name
+            "patient",           # incluye id y name
             "appointment_date",
             "appointment_type",
             "expected_amount",
@@ -37,7 +53,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 # --- Pagos ---
 class PaymentSerializer(serializers.ModelSerializer):
     appointment_date = serializers.DateField(source="appointment.appointment_date", read_only=True)
-    patient = PatientSerializer(source="appointment.patient", read_only=True)
+    patient = PatientReadSerializer(source="appointment.patient", read_only=True)
 
     class Meta:
         model = Payment
@@ -45,7 +61,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "appointment_date",
-            "patient",          # 👈 objeto con id y name
+            "patient",          # objeto con id y name
             "amount",
             "method",
             "status",
@@ -54,7 +70,6 @@ class PaymentSerializer(serializers.ModelSerializer):
             "received_by",
             "received_at",
         ]
-
 
 # --- Eventos (auditoría) ---
 class EventSerializer(serializers.ModelSerializer):
@@ -65,14 +80,14 @@ class EventSerializer(serializers.ModelSerializer):
 
 # --- Sala de espera ---
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
-    patient = PatientSerializer(read_only=True)
+    patient = PatientReadSerializer(read_only=True)
     appointment_id = serializers.IntegerField(source="appointment.id", read_only=True)
 
     class Meta:
         model = WaitingRoomEntry
         fields = [
             "id",
-            "patient",          # 👈 objeto con id y name
+            "patient",          # objeto con id y name
             "appointment_id",
             "arrival_time",
             "status",

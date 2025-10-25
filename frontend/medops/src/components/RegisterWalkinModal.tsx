@@ -2,7 +2,7 @@ import { useState } from "react";
 import { searchPatients, createPatient } from "../api/patients";
 import { registerWalkinEntry } from "../api/waitingRoom";
 import { WaitingRoomEntry } from "../types/waitingRoom";
-import { PatientInput, PatientRef } from "../types/patients";
+import { PatientInput, PatientRef, Patient } from "../types/patients";
 
 interface RegisterWalkinModalProps {
   onClose: () => void;
@@ -27,9 +27,14 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: RegisterWalk
   };
 
   const handleCreatePatient = async () => {
-    const created = await createPatient(newPatient); // devuelve Patient
-    // ⚡️ Ojo: aquí sí es un Patient completo, pero podemos usarlo como Ref también
-    setSelectedPatient({ id: created.id, name: created.first_name + " " + created.last_name, national_id: created.national_id || null });
+    const created: Patient = await createPatient(newPatient); // devuelve Patient completo
+    // 👇 construimos un PatientRef válido
+    const ref: PatientRef = {
+      id: created.id,
+      name: `${created.first_name} ${created.last_name}`,
+      national_id: created.national_id || null,
+    };
+    setSelectedPatient(ref);
   };
 
   const handleConfirm = async () => {

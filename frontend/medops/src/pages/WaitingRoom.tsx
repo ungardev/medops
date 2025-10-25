@@ -2,16 +2,14 @@ import { useEffect, useState } from "react";
 import {
   getWaitingRoomGroupsToday,
   updateWaitingRoomStatus,
-  createWaitingRoomEntry,
   promoteToEmergency,
   confirmWaitingRoomEntry,
   closeWaitingRoomDay,
-  registerWalkinEntry,   // 👈 nuevo servicio para registrar walk-in
 } from "../api/waitingRoom";
-import { searchPatients } from "../api/patients";
 import { WaitingRoomEntry, WaitingRoomStatus } from "../types/waitingRoom";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import RegisterWalkinModal from "../components/RegisterWalkinModal"; // 👈 nuevo import
 
 // 🔹 Badge visual para estado
 const renderStatusBadge = (status: WaitingRoomStatus) => {
@@ -24,14 +22,7 @@ const renderStatusBadge = (status: WaitingRoomStatus) => {
   };
   const style = styles[status] || { bg: "#9ca3af", text: status };
   return (
-    <span
-      style={{
-        background: style.bg,
-        color: "#fff",
-        padding: "2px 8px",
-        borderRadius: "12px",
-      }}
-    >
+    <span style={{ background: style.bg, color: "#fff", padding: "2px 8px", borderRadius: "12px" }}>
       {style.text}
     </span>
   );
@@ -47,15 +38,7 @@ const renderPriorityBadge = (priority?: string) => {
   };
   const style = styles[priority ?? ""] || { bg: "#6b7280", text: priority || "—" };
   return (
-    <span
-      style={{
-        background: style.bg,
-        color: "#fff",
-        padding: "2px 8px",
-        borderRadius: "12px",
-        marginLeft: "6px",
-      }}
-    >
+    <span style={{ background: style.bg, color: "#fff", padding: "2px 8px", borderRadius: "12px", marginLeft: "6px" }}>
       {style.text}
     </span>
   );
@@ -66,12 +49,14 @@ export default function WaitingRoom() {
   const [grupoB, setGrupoB] = useState<WaitingRoomEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false); // 👈 nuevo estado
 
   useEffect(() => {
     getWaitingRoomGroupsToday()
       .then((data) => {
-        setGrupoA(data.grupo_a);
-        setGrupoB(data.grupo_b);
+        console.log("Respuesta waiting room:", data); // debug
+        setGrupoA(data.grupo_a || []);
+        setGrupoB(data.grupo_b || []);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -107,28 +92,18 @@ export default function WaitingRoom() {
     }
   };
 
-  const handleRegisterWalkin = async (patientId: number) => {
+  const handleCloseDay = async () => {
     try {
-      const newEntry = await registerWalkinEntry(patientId);
-      setGrupoB((prev) => [...prev, newEntry]);
+      await closeWaitingRoomDay();
+      setGrupoA((prev) => prev.map((e) => (e.status === "waiting" ? { ...e, status: "canceled" } : e)));
+      setGrupoB((prev) => prev.map((e) => (e.status === "waiting" ? { ...e, status: "canceled" } : e)));
     } catch (err: any) {
       setError(err.message);
     }
   };
 
-  const handleCloseDay = async () => {
-    try {
-      await closeWaitingRoomDay();
-      setGrupoA((prev) =>
-        prev.map((e) => (e.status === "waiting" ? { ...e, status: "canceled" } : e))
-      );
-      setGrupoB((prev) =>
-        prev.map((e) => (e.status === "waiting" ? { ...e, status: "canceled" } : e))
-      );
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+  if (loading) return <p>Cargando sala de espera...</p>;
+  if (error) return <p style={{ color: "red" }}>Error: {error}</p>;
 
   return (
     <div>
@@ -136,28 +111,13 @@ export default function WaitingRoom() {
 
       <div style={{ marginBottom: "16px", textAlign: "right" }}>
         <button
-          style={{
-            background: "#22c55e",
-            color: "#fff",
-            padding: "8px 16px",
-            borderRadius: "6px",
-            marginRight: "8px",
-          }}
-          onClick={() => {
-            // 👇 ejemplo: registrar walk-in con un paciente fijo (luego se conecta a un buscador)
-            const patientId = 1; 
-            handleRegisterWalkin(patientId);
-          }}
+          style={{ background: "#22c55e", color: "#fff", padding: "8px 16px", borderRadius: "6px", marginRight: "8px" }}
+          onClick={() => setShowModal(true)} // 👈 abre modal
         >
           ➕ Registrar llegada
         </button>
         <button
-          style={{
-            background: "#ef4444",
-            color: "#fff",
-            padding: "8px 16px",
-            borderRadius: "6px",
-          }}
+          style={{ background: "#ef4444", color: "#fff", padding: "8px 16px", borderRadius: "6px" }}
           onClick={handleCloseDay}
         >
           🛑 Cerrar jornada
@@ -188,30 +148,19 @@ export default function WaitingRoom() {
               </td>
               <td>
                 {e.status === "waiting" && (
-                  <button
-                    onClick={() => handleStatusChange(e.id, "in_consultation")}
-                    style={{ marginRight: "6px" }}
-                  >
+                  <button onClick={() => handleStatusChange(e.id, "in_consultation")} style={{ marginRight: "6px" }}>
                     Pasar a consulta
                   </button>
                 )}
                 {e.status === "in_consultation" && (
-                  <button
-                    onClick={() => handleStatusChange(e.id, "completed")}
-                    style={{ background: "#22c55e", color: "#fff", marginRight: "6px" }}
-                  >
+                  <button onClick={() => handleStatusChange(e.id, "completed")} style={{ background: "#22c55e", color: "#fff", marginRight: "6px" }}>
                     ✅ Finalizar consulta
                   </button>
                 )}
                 {e.status === "completed" && (
-                  <span style={{ color: "#22c55e", fontWeight: "bold" }}>
-                    ✅ Consulta finalizada
-                  </span>
+                  <span style={{ color: "#22c55e", fontWeight: "bold" }}>✅ Consulta finalizada</span>
                 )}
-                <button
-                  onClick={() => handleStatusChange(e.id, "canceled")}
-                  style={{ color: "red" }}
-                >
+                <button onClick={() => handleStatusChange(e.id, "canceled")} style={{ color: "red" }}>
                   Cancelar
                 </button>
               </td>
@@ -287,6 +236,15 @@ export default function WaitingRoom() {
           ))}
         </tbody>
       </table>
+
+      {showModal && (
+        <RegisterWalkinModal
+          onClose={() => setShowModal(false)}
+          onSuccess={(entry) => {
+            setGrupoB((prev) => [...prev, entry]);
+          }}
+        />
+      )}
     </div>
   );
 }

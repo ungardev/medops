@@ -9,7 +9,8 @@ from django.utils import timezone
 
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 from .serializers import (
-    PatientSerializer,
+    PatientReadSerializer,
+    PatientWriteSerializer,
     AppointmentSerializer,
     PaymentSerializer,
     WaitingRoomEntrySerializer,
@@ -169,8 +170,9 @@ def patient_search_api(request):
         Q(id__icontains=query)
     )[:10]
 
-    serializer = PatientSerializer(patients, many=True)
+    serializer = PatientReadSerializer(patients, many=True)
     return Response(serializer.data)
+
 
 # --- Citas del día ---
 def daily_appointments_api(request):
@@ -366,7 +368,11 @@ def update_appointment_notes(request, pk):
 # --- DRF ViewSets (CRUD básicos) ---
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
-    serializer_class = PatientSerializer
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return PatientWriteSerializer
+        return PatientReadSerializer
 
     # 🔹 Endpoint: GET /patients/<id>/payments/
     @action(detail=True, methods=["get"])
