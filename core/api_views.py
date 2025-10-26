@@ -8,6 +8,8 @@ from django.core.paginator import Paginator
 from django.utils import timezone
 from django.utils.timezone import make_aware, localdate, get_current_timezone
 from datetime import datetime, time
+from django.db import transaction
+from django.shortcuts import get_object_or_404
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 from .serializers import (
     PatientReadSerializer,
@@ -557,3 +559,40 @@ def register_walkin_api(request):
     )
 
     return Response(WaitingRoomEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
+
+@api_view(["POST"])
+@transaction.atomic
+def register_arrival(request):
+    """
+    Endpoint unificado para registrar llegada de pacientes.
+    - Si recibe appointment_id -> marca la cita como 'arrived' y crea/actualiza WaitingRoomEntry en 'waiting/scheduled'.
+    - Si NO recibe appointment_id -> crea un WaitingRoomEntry como walk-in.
+    """
+    patient_id = request.data.get("patient_id")
+    appointment_id = request.data.get("appointment_id")
+    is_emergency = request.data.get("is_emergency", False)
+
+    if not patient_id:
+        return Response({"error": "patient_id requerido"}, status=status.HTTP_400_BAD_REQUEST)
+
+    patient = get_object_or_404(Patient, id=patient_id)
+
+    if appointment_id:
+        # Caso: cita programada
+        appointment = get_object_or_404(Appointment, id=appointment_id, patient=patient)
+        appointment.mark_arrived(is_emergency=is_emergency, is_walkin=False)
+        entry = WaitingRoomEntry.objects.filter(appointment=appointment).first()
+    else:
+        # Caso: walk-in
+        priority = "emergency" if is_emergency else "walkin"
+        entry, _ = WaitingRoomEntry.objects.get_or_create(
+            patient=patient,
+            appointment=None,
+            defaults={
+                "status": "waiting",
+                "priority": priority,
+                "arrival_time": timezone.now(),
+            }
+        )
+
+    return Response(WaitingRoomEntryDetailSerializer(entry).data, status=status.HTTP_200_OK)

@@ -13,7 +13,7 @@ from .api_views import (
     update_appointment_notes,
     audit_by_appointment,
     audit_by_patient,
-    register_walkin_api,   # 👈 importar la nueva vista
+    register_arrival,   # 👈 nueva vista unificada
 )
 
 # --- Router DRF (CRUD básicos + acciones personalizadas) ---
@@ -59,7 +59,7 @@ urlpatterns = [
     path("waitingroom/", waitingroom_list_api, name="waitingroom-list-api"),
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
-    path("waitingroom/register_walkin/", register_walkin_api, name="waitingroom-register-walkin"),  # 👈 NUEVO ENDPOINT
+    path("waitingroom/register/", register_arrival, name="waitingroom-register"),  # 👈 endpoint unificado
     # Nota: /waitingroom/close_day/ se expone vía ViewSet
 ]
 
