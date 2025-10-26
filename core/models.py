@@ -4,7 +4,7 @@ from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.timezone import now
 from django.core.exceptions import ValidationError
-from simple_history.models import HistoricalRecords
+from simple_history.models import HistoricalRecords, HistoricalChanges
 from django.db.models import Sum
 from decimal import Decimal
 from django.utils import timezone
