@@ -21,7 +21,9 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
   const [isCreating, setIsCreating] = useState(false);
   const [newPatient, setNewPatient] = useState<PatientInput>({
     first_name: "",
+    middle_name: "",
     last_name: "",
+    second_last_name: "",
     gender: "Unknown",
     national_id: "",
     contact_info: "",
@@ -32,7 +34,7 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
   const debouncedQuery = useDebounce(query, 250);
 
   useEffect(() => {
-    if (isCreating) return; // no buscar si estamos creando
+    if (isCreating) return;
     let active = true;
     async function run() {
       if (!debouncedQuery.trim()) {
@@ -85,7 +87,20 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
   const handleCreateAndRegister = async () => {
     try {
       setLoading(true);
-      const created = await createPatient(newPatient);
+
+      // 🔹 Preparamos el payload limpio
+      const payload: PatientInput = {
+        first_name: newPatient.first_name.trim(),
+        middle_name: newPatient.middle_name?.trim() || undefined,
+        last_name: newPatient.last_name.trim(),
+        second_last_name: newPatient.second_last_name?.trim() || undefined,
+        national_id: newPatient.national_id?.trim() || undefined,
+        contact_info: newPatient.contact_info?.trim() || undefined,
+        email: newPatient.email?.trim() || undefined,
+        gender: newPatient.gender || "Unknown",
+      };
+
+      const created = await createPatient(payload);
       const entry = await registerWalkin(created.id);
       onSuccess(entry);
       onClose();
@@ -110,6 +125,7 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
 
       {!isCreating ? (
         <>
+          {/* 🔹 Buscador de pacientes */}
           <label style={{ display: "block", marginTop: 8, fontWeight: 600 }}>
             Buscar paciente por nombre o ID
           </label>
@@ -175,35 +191,20 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
             <button
               onClick={handleRegister}
-              style={{
-                background: "#22c55e",
-                color: "#fff",
-                padding: "8px 12px",
-                borderRadius: 6,
-              }}
+              style={{ background: "#22c55e", color: "#fff", padding: "8px 12px", borderRadius: 6 }}
               disabled={loading || !selectedPatientId}
             >
               Registrar llegada
             </button>
             <button
               onClick={() => setIsCreating(true)}
-              style={{
-                background: "#3b82f6",
-                color: "#fff",
-                padding: "8px 12px",
-                borderRadius: 6,
-              }}
+              style={{ background: "#3b82f6", color: "#fff", padding: "8px 12px", borderRadius: 6 }}
             >
               ➕ Nuevo paciente
             </button>
             <button
               onClick={onClose}
-              style={{
-                background: "#ef4444",
-                color: "#fff",
-                padding: "8px 12px",
-                borderRadius: 6,
-              }}
+              style={{ background: "#ef4444", color: "#fff", padding: "8px 12px", borderRadius: 6 }}
             >
               Cancelar
             </button>
@@ -211,39 +212,46 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
         </>
       ) : (
         <>
+          {/* 🔹 Formulario de creación */}
           <label>Nombre</label>
           <input
             value={newPatient.first_name}
-            onChange={(e) =>
-              setNewPatient({ ...newPatient, first_name: e.target.value })
-            }
+            onChange={(e) => setNewPatient({ ...newPatient, first_name: e.target.value })}
+            style={{ width: "100%", marginBottom: 8 }}
+          />
+
+          <label>Segundo nombre (opcional)</label>
+          <input
+            value={newPatient.middle_name || ""}
+            onChange={(e) => setNewPatient({ ...newPatient, middle_name: e.target.value })}
             style={{ width: "100%", marginBottom: 8 }}
           />
 
           <label>Apellido</label>
           <input
             value={newPatient.last_name}
-            onChange={(e) =>
-              setNewPatient({ ...newPatient, last_name: e.target.value })
-            }
+            onChange={(e) => setNewPatient({ ...newPatient, last_name: e.target.value })}
+            style={{ width: "100%", marginBottom: 8 }}
+          />
+
+          <label>Segundo apellido (opcional)</label>
+          <input
+            value={newPatient.second_last_name || ""}
+            onChange={(e) => setNewPatient({ ...newPatient, second_last_name: e.target.value })}
             style={{ width: "100%", marginBottom: 8 }}
           />
 
           <label>Documento (Cédula / ID)</label>
           <input
             value={newPatient.national_id || ""}
-            onChange={(e) =>
-              setNewPatient({ ...newPatient, national_id: e.target.value })
-            }
+            onChange={(e) => setNewPatient({ ...newPatient, national_id: e.target.value })}
             style={{ width: "100%", marginBottom: 8 }}
           />
 
           <label>Teléfono</label>
           <input
             value={newPatient.contact_info || ""}
-            onChange={(e) =>
-              setNewPatient({ ...newPatient, contact_info: e.target.value })
-            }
+            onChange={(e) => setNewPatient({ ...newPatient, contact_info: e.target.value })}
             style={{ width: "100%", marginBottom: 8 }}
           />
 
@@ -251,9 +259,7 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
           <input
             type="email"
             value={newPatient.email || ""}
-            onChange={(e) =>
-              setNewPatient({ ...newPatient, email: e.target.value })
-            }
+            onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
             style={{ width: "100%", marginBottom: 8 }}
           />
 
@@ -262,12 +268,7 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
             <button
               onClick={handleCreateAndRegister}
-              style={{
-                background: "#22c55e",
-                color: "#fff",
-                padding: "8px 12px",
-                borderRadius: 6,
-              }}
+              style={{ background: "#22c55e", color: "#fff", padding: "8px 12px", borderRadius: 6 }}
               disabled={
                 loading ||
                 !newPatient.first_name ||
@@ -281,12 +282,7 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
             </button>
             <button
               onClick={() => setIsCreating(false)}
-              style={{
-                background: "#ef4444",
-                color: "#fff",
-                padding: "8px 12px",
-                borderRadius: 6,
-              }}
+              style={{ background: "#ef4444", color: "#fff", padding: "8px 12px", borderRadius: 6 }}
             >
               Cancelar
             </button>

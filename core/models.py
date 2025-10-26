@@ -66,6 +66,13 @@ class Patient(models.Model):
         verbose_name="Correo electrónico"
     )
 
+    # 👇 Nuevo campo de dirección
+    address = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Dirección"
+    )
+
     # 🔹 Datos clínicos básicos
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # kg
     height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # cm
