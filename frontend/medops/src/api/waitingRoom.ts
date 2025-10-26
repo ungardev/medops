@@ -74,11 +74,17 @@ export const getWaitingRoomGroupsToday = (): Promise<{
     "waitingroom/groups-today/"
   );
 
-// 🔹 Registrar llegada de un paciente walk-in
-export const registerWalkin = (
-  patientId: number
+// 🔹 Registrar llegada unificado (cita o walk-in)
+export const registerArrival = (
+  patientId: number,
+  appointmentId?: number,
+  isEmergency: boolean = false
 ): Promise<WaitingRoomEntry> =>
-  apiFetch<WaitingRoomEntry>("waitingroom/register_walkin/", {
+  apiFetch<WaitingRoomEntry>("waitingroom/register/", {
     method: "POST",
-    body: JSON.stringify({ patient_id: patientId }),
+    body: JSON.stringify({
+      patient_id: patientId,
+      appointment_id: appointmentId,
+      is_emergency: isEmergency,
+    }),
   });

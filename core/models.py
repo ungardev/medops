@@ -59,14 +59,15 @@ class Patient(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     contact_info = models.TextField(blank=True, null=True)
 
-    # 👇 Nuevo campo de email
+    # 👇 Email ahora opcional
     email = models.EmailField(
         max_length=255,
-        default="example@example.com",
-        verbose_name="Correo electrónico"
+        verbose_name="Correo electrónico",
+        blank=True,
+        null=True
     )
 
-    # 👇 Nuevo campo de dirección
+    # 👇 Dirección opcional
     address = models.TextField(
         blank=True,
         null=True,

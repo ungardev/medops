@@ -13,7 +13,7 @@ export interface Patient extends PatientRef {
   last_name: string;
   second_last_name?: string | null;
   birthdate?: string | null;   // ISO string
-  gender: "M" | "F" | "Unknown";
+  gender: "M" | "F" | "Unknown" | null;  // 👈 ahora acepta null
   contact_info?: string | null;
 }
 
@@ -24,8 +24,8 @@ export type PatientInput = {
   middle_name?: string;
   last_name: string;
   second_last_name?: string;
-  birthdate?: string;
-  gender?: "M" | "F" | "Unknown";
+  birthdate?: string | null;   // 👈 ahora acepta null
+  gender?: "M" | "F" | "Unknown" | null; // 👈 ahora acepta null
   contact_info?: string;
   email?: string;              // 👈 nuevo campo
 };
