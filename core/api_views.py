@@ -428,10 +428,7 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
         - pending/scheduled → waiting/scheduled (Grupo A).
         - waiting/walkin → waiting/scheduled (Grupo A).
         """
-        try:
-            entry = self.get_object()
-        except WaitingRoomEntry.DoesNotExist:
-            return Response({"error": "WaitingRoomEntry not found"}, status=status.HTTP_404_NOT_FOUND)
+        entry = self.get_object()
 
         if entry.status == "pending" and entry.priority == "scheduled":
             entry.status = "waiting"
@@ -439,6 +436,11 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
         elif entry.status == "waiting" and entry.priority == "walkin":
             entry.status = "waiting"
             entry.priority = "scheduled"
+            # 🔹 limpiar duplicados antiguos de tipo walkin
+            WaitingRoomEntry.objects.filter(
+                patient=entry.patient,
+                priority="walkin"
+            ).exclude(id=entry.id).delete()
         else:
             return Response(
                 {"error": f"No se puede confirmar entrada con estado={entry.status}, prioridad={entry.priority}"},
