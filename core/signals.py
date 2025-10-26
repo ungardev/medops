@@ -33,13 +33,13 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         # --- Si pasa a arrived ---
         if instance.status == "arrived" and instance.appointment_date == timezone.localdate():
             try:
-                updated = WaitingRoomEntry.objects.filter(appointment=instance).update(
-                    status="arrived",
-                    priority=instance.appointment_type or "scheduled",
-                    arrival_time=timezone.now()
-                )
-                if updated:
-                    logger.info(f"WaitingRoomEntry sincronizado a 'arrived' para Appointment {instance.id}")
+                entry = WaitingRoomEntry.objects.filter(appointment=instance).first()
+                if entry:
+                    entry.status = "arrived"
+                    entry.priority = instance.appointment_type or "scheduled"
+                    entry.arrival_time = timezone.now()
+                    entry.save(update_fields=["status", "priority", "arrival_time"])
+                    logger.info(f"WaitingRoomEntry actualizado a 'arrived' para Appointment {instance.id}")
                 else:
                     WaitingRoomEntry.objects.create(
                         appointment=instance,
@@ -50,7 +50,7 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
                     )
                     logger.info(f"WaitingRoomEntry creado automáticamente (arrived) para Appointment {instance.id}")
             except Exception as e:
-                logger.error(f"Error actualizando/creando WaitingRoomEntry para Appointment {instance.id}: {e}")
+                logger.error(f"Error sincronizando WaitingRoomEntry para Appointment {instance.id}: {e}")
 
 
 @receiver(post_delete, sender=Appointment)
