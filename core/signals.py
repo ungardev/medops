@@ -30,6 +30,18 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         log_event("Appointment", instance.id, "update", actor="system")
         logger.info(f"Appointment {instance.id} updated")
 
+        # --- Nueva lógica: si pasa a arrived y no tiene entrada, crearla en Grupo A ---
+        if instance.status == "arrived" and instance.appointment_date == timezone.localdate():
+            if not WaitingRoomEntry.objects.filter(appointment=instance).exists():
+                WaitingRoomEntry.objects.create(
+                    appointment=instance,
+                    patient=instance.patient,
+                    status="arrived",
+                    priority=instance.appointment_type or "scheduled",
+                    arrival_time=timezone.now()
+                )
+                logger.info(f"WaitingRoomEntry creado automáticamente (arrived) para Appointment {instance.id}")
+
 
 @receiver(post_delete, sender=Appointment)
 def appointment_deleted(sender, instance, **kwargs):
