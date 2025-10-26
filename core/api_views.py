@@ -507,7 +507,7 @@ def current_consultation_api(request):
 def waitingroom_groups_today_api(request):
     today = localdate()
 
-    # Grupo A: citas de hoy que ya llegaron o están en consulta/completadas
+    # Grupo A: citas de hoy que ya llegaron o están en espera/consulta/completadas
     grupo_a = WaitingRoomEntry.objects.filter(
         appointment__appointment_date=today,
         status__in=["arrived", "waiting", "in_consultation", "completed"],
