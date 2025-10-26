@@ -565,11 +565,6 @@ def register_walkin_api(request):
 @api_view(["POST"])
 @transaction.atomic
 def register_arrival(request):
-    """
-    Endpoint unificado para registrar llegada de pacientes.
-    - Si recibe appointment_id -> marca la cita como 'arrived' y crea/actualiza WaitingRoomEntry en 'waiting/scheduled'.
-    - Si NO recibe appointment_id -> crea Appointment + WaitingRoomEntry como walk-in.
-    """
     patient_id = request.data.get("patient_id")
     appointment_id = request.data.get("appointment_id")
     is_emergency = request.data.get("is_emergency", False)
@@ -581,24 +576,34 @@ def register_arrival(request):
     today = timezone.localdate()
 
     if appointment_id:
-        # Caso: cita programada
+        # Caso: cita programada explícita
         appointment = get_object_or_404(Appointment, id=appointment_id, patient=patient)
         appointment.mark_arrived(is_emergency=is_emergency, is_walkin=False)
         entry = WaitingRoomEntry.objects.filter(appointment=appointment).first()
     else:
-        # Caso: walk-in → crear appointment para hoy
-        appointment = Appointment.objects.create(
+        # 👇 Nuevo: si ya tiene cita para hoy, usarla
+        existing_appt = Appointment.objects.filter(
             patient=patient,
-            appointment_date=today,
-            status="pending"
-        )
-        priority = "emergency" if is_emergency else "walkin"
-        entry = WaitingRoomEntry.objects.create(
-            patient=patient,
-            appointment=appointment,
-            status="waiting",
-            priority=priority,
-            arrival_time=timezone.now(),
-        )
+            appointment_date=today
+        ).exclude(status="completed").first()
+
+        if existing_appt:
+            existing_appt.mark_arrived(is_emergency=is_emergency, is_walkin=False)
+            entry = WaitingRoomEntry.objects.filter(appointment=existing_appt).first()
+        else:
+            # Caso: walk-in puro (sin cita previa)
+            appointment = Appointment.objects.create(
+                patient=patient,
+                appointment_date=today,
+                status="pending"
+            )
+            priority = "emergency" if is_emergency else "walkin"
+            entry = WaitingRoomEntry.objects.create(
+                patient=patient,
+                appointment=appointment,
+                status="waiting",
+                priority=priority,
+                arrival_time=timezone.now(),
+            )
 
     return Response(WaitingRoomEntryDetailSerializer(entry).data, status=status.HTTP_200_OK)
