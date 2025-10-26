@@ -59,6 +59,13 @@ class Patient(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     contact_info = models.TextField(blank=True, null=True)
 
+    # 👇 Nuevo campo de email
+    email = models.EmailField(
+        max_length=255,
+        default="example@example.com",
+        verbose_name="Correo electrónico"
+    )
+
     # 🔹 Datos clínicos básicos
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # kg
     height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # cm
@@ -68,7 +75,7 @@ class Patient(models.Model):
 
     # 🔹 Predisposiciones genéticas
     genetic_predispositions = models.ManyToManyField(
-        GeneticPredisposition,
+        "GeneticPredisposition",
         blank=True,
         related_name="patients"
     )
@@ -76,7 +83,7 @@ class Patient(models.Model):
     # Historial
     history = HistoricalRecords()
 
-    # Campos operativos (ahora con null=True para evitar bloqueo en históricos)
+    # Campos operativos
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     active = models.BooleanField(default=True)

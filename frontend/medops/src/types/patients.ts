@@ -3,6 +3,7 @@ export interface PatientRef {
   id: number;
   full_name: string;          // 👈 viene del backend (PatientReadSerializer)
   national_id?: string | null;
+  email?: string | null;      // 👈 nuevo campo
 }
 
 // --- Modelo completo de paciente
@@ -26,4 +27,5 @@ export type PatientInput = {
   birthdate?: string;
   gender?: "M" | "F" | "Unknown";
   contact_info?: string;
+  email?: string;              // 👈 nuevo campo
 };

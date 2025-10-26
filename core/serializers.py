@@ -16,6 +16,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "birthdate",
             "gender",
             "contact_info",
+            "email",   # 👈 nuevo campo
         ]
 
 
@@ -25,7 +26,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = ["id", "full_name", "national_id"]
+        fields = ["id", "full_name", "national_id", "email"]  # 👈 email incluido
 
     def get_full_name(self, obj):
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
@@ -40,7 +41,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         model = Appointment
         fields = [
             "id",
-            "patient",           # incluye id y full_name
+            "patient",           # incluye id, full_name y email
             "appointment_date",
             "appointment_type",
             "expected_amount",
@@ -61,7 +62,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "appointment_date",
-            "patient",          # objeto con id y full_name
+            "patient",          # objeto con id, full_name y email
             "amount",
             "method",
             "status",
@@ -88,7 +89,7 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
         model = WaitingRoomEntry
         fields = [
             "id",
-            "patient",          # objeto con id y full_name
+            "patient",          # objeto con id, full_name y email
             "appointment_id",
             "arrival_time",
             "status",
