@@ -6,21 +6,39 @@ import { Patient, PatientInput, PatientRef } from "../types/patients";
 export const getPatients = (): Promise<Patient[]> =>
   apiFetch<Patient[]>("patients/");
 
-// 🔹 Crear un nuevo paciente
-export const createPatient = (data: PatientInput): Promise<Patient> =>
-  apiFetch<Patient>("patients/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+// 🔹 Crear un nuevo paciente (con limpieza de payload)
+export const createPatient = (data: PatientInput): Promise<Patient> => {
+  // limpiar payload: quitar campos vacíos o nulos
+  const cleaned: any = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== "" && value !== null && value !== undefined) {
+      cleaned[key] = value;
+    }
   });
 
+  return apiFetch<Patient>("patients/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cleaned),
+  });
+};
+
 // 🔹 Actualizar un paciente existente
-export const updatePatient = (id: number, data: PatientInput): Promise<Patient> =>
-  apiFetch<Patient>(`patients/${id}/`, {
+export const updatePatient = (id: number, data: PatientInput): Promise<Patient> => {
+  // limpiar payload también en update
+  const cleaned: any = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== "" && value !== null && value !== undefined) {
+      cleaned[key] = value;
+    }
+  });
+
+  return apiFetch<Patient>(`patients/${id}/`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify(cleaned),
   });
+};
 
 // 🔹 Eliminar un paciente
 export const deletePatient = (id: number): Promise<void> =>
