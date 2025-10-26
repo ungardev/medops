@@ -22,7 +22,7 @@ from .serializers import (
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
-
+from django.utils.timezone import localtime, now
 
 def safe_json(value):
     """Convierte valores a tipos JSON-serializables"""
@@ -505,20 +505,21 @@ def current_consultation_api(request):
     return Response({"detail": "No hay consulta corriendo actualmente."}, status=200)
 
 def waitingroom_groups_today_api(request):
-    today = localdate()  # fecha local (Caracas)
-    start = make_aware(datetime.combine(today, time.min))
-    end = make_aware(datetime.combine(today, time.max))
+    # Fecha local (Caracas)
+    today = localtime(now()).date()
+    start = localtime(datetime.combine(today, time.min))
+    end = localtime(datetime.combine(today, time.max))
 
-    # Grupo A: confirmados en espera, en consulta o completados (scheduled/emergency)
     grupo_a = WaitingRoomEntry.objects.filter(
-        arrival_time__range=(start, end),
+        arrival_time__gte=start,
+        arrival_time__lte=end,
         status__in=["waiting", "in_consultation", "completed"],
         priority__in=["scheduled", "emergency"]
     ).select_related("patient", "appointment")
 
-    # Grupo B: pendientes de confirmar (citas del día) + walk-ins en espera
     grupo_b = WaitingRoomEntry.objects.filter(
-        arrival_time__range=(start, end)
+        arrival_time__gte=start,
+        arrival_time__lte=end
     ).filter(
         (Q(status="pending", priority="scheduled")) |
         (Q(status="waiting", priority="walkin"))
