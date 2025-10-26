@@ -1,4 +1,4 @@
-from django.db.models.signals import pre_save, post_save, post_delete
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
 from .models import Appointment, Payment, Patient, WaitingRoomEntry
@@ -14,7 +14,7 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         log_event("Appointment", instance.id, "create", actor="system")
         logger.info(f"Appointment {instance.id} created")
 
-        # --- Si es para hoy y está pendiente, crear entrada en Grupo B ---
+        # Si es para hoy y está pendiente, crear entrada en Grupo B
         if instance.status == "pending" and instance.appointment_date == timezone.localdate():
             WaitingRoomEntry.objects.get_or_create(
                 appointment=instance,
@@ -30,7 +30,7 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         log_event("Appointment", instance.id, "update", actor="system")
         logger.info(f"Appointment {instance.id} updated")
 
-        # --- Si pasa a arrived ---
+        # Si pasa a arrived
         if instance.status == "arrived" and instance.appointment_date == timezone.localdate():
             try:
                 entry = WaitingRoomEntry.objects.filter(appointment=instance).first()
@@ -58,7 +58,7 @@ def appointment_deleted(sender, instance, **kwargs):
     log_event("Appointment", instance.id, "delete", actor="system")
     logger.info(f"Appointment {instance.id} deleted")
 
-    # --- Borrar también la entrada en Sala de Espera asociada ---
+    # Borrar también la entrada en Sala de Espera asociada
     try:
         WaitingRoomEntry.objects.filter(appointment=instance).delete()
         logger.info(f"WaitingRoomEntry eliminado junto con Appointment {instance.id}")
