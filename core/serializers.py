@@ -16,8 +16,13 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "birthdate",
             "gender",
             "contact_info",
-            "email",   # 👈 nuevo campo
+            "email",   # 👈 campo opcional
         ]
+        extra_kwargs = {
+            "birthdate": {"required": False, "allow_null": True},
+            "gender": {"required": False, "allow_null": True},
+            "email": {"required": False, "allow_blank": True},
+        }
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
@@ -26,7 +31,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = ["id", "full_name", "national_id", "email"]  # 👈 email incluido
+        fields = ["id", "full_name", "national_id", "email"]
 
     def get_full_name(self, obj):
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
