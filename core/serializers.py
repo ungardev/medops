@@ -16,7 +16,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "birthdate",
             "gender",
             "contact_info",
-            "email",   # 👈 campo opcional
+            "email",   # 👈 ahora opcional
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
