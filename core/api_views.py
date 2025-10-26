@@ -436,11 +436,6 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
         elif entry.status == "waiting" and entry.priority == "walkin":
             entry.status = "waiting"
             entry.priority = "scheduled"
-            # 🔹 limpiar duplicados antiguos de tipo walkin
-            WaitingRoomEntry.objects.filter(
-                patient=entry.patient,
-                priority="walkin"
-            ).exclude(id=entry.id).delete()
         else:
             return Response(
                 {"error": f"No se puede confirmar entrada con estado={entry.status}, prioridad={entry.priority}"},
@@ -448,6 +443,11 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
             )
 
         entry.save(update_fields=["status", "priority"])
+
+        # 🔹 limpiar duplicados: conservar solo este entry
+        WaitingRoomEntry.objects.filter(
+            patient=entry.patient
+        ).exclude(id=entry.id).delete()
 
         Event.objects.create(
             entity="WaitingRoomEntry",
@@ -467,14 +467,12 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
         - Si existe algún paciente en 'in_consultation', se bloquea la acción.
         - Todos los pacientes que no estén en 'completed' → 'canceled'.
         """
-        # 🔒 Validación: no permitir cierre si hay pacientes en consulta
         if WaitingRoomEntry.objects.filter(status="in_consultation").exists():
             return Response(
                 {"error": "No se puede cerrar la jornada mientras haya un paciente en consulta."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Cancelar todo lo que no esté completado
         updated_entries = WaitingRoomEntry.objects.exclude(status="completed")
         count = updated_entries.count()
         updated_entries.update(status="canceled")
@@ -491,6 +489,7 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
             {"message": f"{count} pacientes fueron cancelados al cierre de jornada."},
             status=status.HTTP_200_OK,
         )
+
 
 
 # --- Consulta actual en curso ---
@@ -565,6 +564,11 @@ def register_walkin_api(request):
 @api_view(["POST"])
 @transaction.atomic
 def register_arrival(request):
+    """
+    Endpoint unificado para registrar llegada de pacientes.
+    - Si recibe appointment_id -> marca la cita como 'arrived' y crea/actualiza WaitingRoomEntry en 'waiting/scheduled'.
+    - Si NO recibe appointment_id -> si ya existe cita hoy, usarla; si no, crear Appointment + WaitingRoomEntry como walk-in.
+    """
     patient_id = request.data.get("patient_id")
     appointment_id = request.data.get("appointment_id")
     is_emergency = request.data.get("is_emergency", False)
@@ -581,7 +585,7 @@ def register_arrival(request):
         appointment.mark_arrived(is_emergency=is_emergency, is_walkin=False)
         entry = WaitingRoomEntry.objects.filter(appointment=appointment).first()
     else:
-        # 👇 Nuevo: si ya tiene cita para hoy, usarla
+        # 👇 Nuevo: si ya existe cita para hoy, usarla
         existing_appt = Appointment.objects.filter(
             patient=patient,
             appointment_date=today
