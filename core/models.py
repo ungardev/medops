@@ -212,16 +212,21 @@ class Appointment(models.Model):
             else:
                 priority = "scheduled"  # Grupo A normal
 
-            WaitingRoomEntry.objects.create(
-                patient=self.patient,
+            # 🔹 Usamos get_or_create para evitar duplicados
+            WaitingRoomEntry.objects.get_or_create(
                 appointment=self,
-                status="waiting",
-                priority=priority
+                patient=self.patient,
+                defaults={
+                    "arrival_time": timezone.now(),
+                    "status": "waiting",
+                    "priority": priority,
+                }
             )
 
     def mark_completed(self):
         self.status = 'completed'
         self.save(update_fields=['status'])
+
 
 
 class WaitingRoomEntry(models.Model):

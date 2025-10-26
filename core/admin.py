@@ -174,6 +174,28 @@ class PaymentInline(admin.TabularInline):
     show_change_link = True
 
 
+# 🔹 Acción para marcar como llegados
+@admin.action(description="Marcar como llegados")
+def mark_as_arrived(modeladmin, request, queryset):
+    from django.utils import timezone
+    from core.models import WaitingRoomEntry
+
+    for appointment in queryset:
+        if appointment.status == "pending":
+            appointment.status = "arrived"
+            appointment.arrival_time = timezone.now().time()
+            appointment.save(update_fields=["status", "arrival_time"])
+
+            WaitingRoomEntry.objects.get_or_create(
+                appointment=appointment,
+                patient=appointment.patient,
+                defaults={
+                    "arrival_time": timezone.now(),
+                    "status": "waiting",
+                    "priority": "scheduled",
+                }
+            )
+
 @admin.register(Appointment)
 class AppointmentAdmin(SimpleHistoryAdmin):
     list_display = (
@@ -199,9 +221,12 @@ class AppointmentAdmin(SimpleHistoryAdmin):
     inlines = [PaymentInline, MedicalDocumentInlineForAppointment]
     readonly_fields = ("total_paid_display", "balance_due_display")
 
+    # 🔹 Registramos la acción definida afuera
+    actions = [mark_as_arrived]
+
     class Media:
         css = {
-            "all": ("core/css/custom.css",)  # 👈 hoja de estilos externa
+            "all": ("core/css/custom.css",)
         }
 
     # Helpers para mostrar valores calculados
@@ -998,6 +1023,7 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
+
 
 # Personalización del panel de administración
 admin.site.site_header = "MedOps Clinical System"
