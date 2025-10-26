@@ -14,14 +14,14 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         log_event("Appointment", instance.id, "create", actor="system")
         logger.info(f"Appointment {instance.id} created")
 
-        # --- Nueva lógica: si es para hoy y está pendiente, crear entrada en Grupo B ---
+        # --- Si es para hoy y está pendiente, crear entrada en Grupo B ---
         if instance.status == "pending" and instance.appointment_date == timezone.localdate():
             WaitingRoomEntry.objects.get_or_create(
                 appointment=instance,
                 patient=instance.patient,
                 defaults={
-                    "status": "pending",      # 👈 ahora pending
-                    "priority": "scheduled",  # 👈 ahora scheduled
+                    "status": "pending",
+                    "priority": "scheduled",
                 }
             )
             logger.info(f"WaitingRoomEntry creado automáticamente para Appointment {instance.id}")
@@ -30,7 +30,7 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         log_event("Appointment", instance.id, "update", actor="system")
         logger.info(f"Appointment {instance.id} updated")
 
-        # --- Nueva lógica: si pasa a arrived ---
+        # --- Si pasa a arrived ---
         if instance.status == "arrived" and instance.appointment_date == timezone.localdate():
             entry, created = WaitingRoomEntry.objects.get_or_create(
                 appointment=instance,
@@ -58,7 +58,7 @@ def appointment_deleted(sender, instance, **kwargs):
     log_event("Appointment", instance.id, "delete", actor="system")
     logger.info(f"Appointment {instance.id} deleted")
 
-    # --- Nueva lógica: borrar también la entrada en Sala de Espera asociada ---
+    # --- Borrar también la entrada en Sala de Espera asociada ---
     try:
         WaitingRoomEntry.objects.filter(appointment=instance).delete()
         logger.info(f"WaitingRoomEntry eliminado junto con Appointment {instance.id}")
