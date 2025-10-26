@@ -32,25 +32,25 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
 
         # --- Si pasa a arrived ---
         if instance.status == "arrived" and instance.appointment_date == timezone.localdate():
-            entry, created = WaitingRoomEntry.objects.get_or_create(
-                appointment=instance,
-                defaults={
-                    "patient": instance.patient,
-                    "status": "arrived",
-                    "priority": instance.appointment_type or "scheduled",
-                    "arrival_time": timezone.now()
-                }
-            )
-            if not created:
-                # Ya existía → forzar actualización en DB
-                WaitingRoomEntry.objects.filter(pk=entry.pk).update(
+            try:
+                updated = WaitingRoomEntry.objects.filter(appointment=instance).update(
                     status="arrived",
                     priority=instance.appointment_type or "scheduled",
                     arrival_time=timezone.now()
                 )
-                logger.info(f"WaitingRoomEntry sincronizado a 'arrived' para Appointment {instance.id}")
-            else:
-                logger.info(f"WaitingRoomEntry creado automáticamente (arrived) para Appointment {instance.id}")
+                if updated:
+                    logger.info(f"WaitingRoomEntry sincronizado a 'arrived' para Appointment {instance.id}")
+                else:
+                    WaitingRoomEntry.objects.create(
+                        appointment=instance,
+                        patient=instance.patient,
+                        status="arrived",
+                        priority=instance.appointment_type or "scheduled",
+                        arrival_time=timezone.now()
+                    )
+                    logger.info(f"WaitingRoomEntry creado automáticamente (arrived) para Appointment {instance.id}")
+            except Exception as e:
+                logger.error(f"Error actualizando/creando WaitingRoomEntry para Appointment {instance.id}: {e}")
 
 
 @receiver(post_delete, sender=Appointment)
