@@ -30,25 +30,25 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         log_event("Appointment", instance.id, "update", actor="system")
         logger.info(f"Appointment {instance.id} updated")
 
-        # Si pasa a arrived
-        if instance.status == "arrived" and instance.appointment_date == timezone.localdate():
+        # Si pasa a arrived → normalizamos prioridad
+        if instance.status == "arrived":
             try:
                 entry = WaitingRoomEntry.objects.filter(appointment_id=instance.id).first()
                 if entry:
                     entry.status = "arrived"
-                    entry.priority = instance.appointment_type or "scheduled"
+                    entry.priority = "scheduled"  # 👈 normalizamos walk-in a scheduled
                     entry.arrival_time = timezone.now()
                     entry.save(update_fields=["status", "priority", "arrival_time"])
-                    logger.info(f"WaitingRoomEntry actualizado a 'arrived' para Appointment {instance.id}")
+                    logger.info(f"WaitingRoomEntry actualizado a 'arrived/scheduled' para Appointment {instance.id}")
                 else:
                     WaitingRoomEntry.objects.create(
                         appointment=instance,
                         patient=instance.patient,
                         status="arrived",
-                        priority=instance.appointment_type or "scheduled",
+                        priority="scheduled",  # 👈 siempre scheduled al llegar
                         arrival_time=timezone.now()
                     )
-                    logger.info(f"WaitingRoomEntry creado automáticamente (arrived) para Appointment {instance.id}")
+                    logger.info(f"WaitingRoomEntry creado automáticamente (arrived/scheduled) para Appointment {instance.id}")
             except Exception as e:
                 logger.error(f"Error sincronizando WaitingRoomEntry para Appointment {instance.id}: {e}")
 
