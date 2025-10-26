@@ -42,12 +42,12 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
                 }
             )
             if not created:
-                # Ya existía → actualizarlo
-                entry.status = "arrived"
-                entry.priority = instance.appointment_type or entry.priority
-                if not entry.arrival_time:
-                    entry.arrival_time = timezone.now()
-                entry.save()
+                # Ya existía → actualizarlo directamente en DB
+                WaitingRoomEntry.objects.filter(pk=entry.pk).update(
+                    status="arrived",
+                    priority=instance.appointment_type or entry.priority,
+                    arrival_time=entry.arrival_time or timezone.now()
+                )
                 logger.info(f"WaitingRoomEntry actualizado a 'arrived' para Appointment {instance.id}")
             else:
                 logger.info(f"WaitingRoomEntry creado automáticamente (arrived) para Appointment {instance.id}")
