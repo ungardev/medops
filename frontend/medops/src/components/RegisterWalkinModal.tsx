@@ -24,8 +24,8 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
     middle_name: "",
     last_name: "",
     second_last_name: "",
-    gender: null,       // 👈 null en vez de "Unknown"
-    birthdate: null,    // 👈 añadimos birthdate opcional
+    gender: "Unknown",   // 👈 default seguro
+    birthdate: null,
     national_id: "",
     contact_info: "",
     email: "",
@@ -92,9 +92,9 @@ export default function RegisterWalkinModal({ onClose, onSuccess }: Props) {
         second_last_name: newPatient.second_last_name?.trim() || undefined,
         national_id: newPatient.national_id?.trim() || undefined,
         contact_info: newPatient.contact_info?.trim() || undefined,
-        email: newPatient.email?.trim() || undefined,
-        gender: newPatient.gender || null,       // 👈 null si no hay género
-        birthdate: newPatient.birthdate || null, // 👈 null si no hay fecha
+        email: newPatient.email?.trim() || undefined,   // 👈 undefined si vacío
+        gender: newPatient.gender || "Unknown",         // 👈 nunca null
+        birthdate: newPatient.birthdate || null,
       };
       const created = await createPatient(payload);
       const entry = await registerArrival(created.id);

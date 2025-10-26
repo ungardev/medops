@@ -3,7 +3,7 @@ export interface PatientRef {
   id: number;
   full_name: string;          // 👈 viene del backend (PatientReadSerializer)
   national_id?: string | null;
-  email?: string | null;      // 👈 nuevo campo
+  email?: string | null;      // 👈 puede ser null
 }
 
 // --- Modelo completo de paciente
@@ -12,8 +12,8 @@ export interface Patient extends PatientRef {
   middle_name?: string | null;
   last_name: string;
   second_last_name?: string | null;
-  birthdate?: string | null;   // ISO string
-  gender: "M" | "F" | "Unknown" | null;  // 👈 ahora acepta null
+  birthdate?: string | null;   // ISO string, puede ser null
+  gender: "M" | "F" | "Unknown" | null;  // 👈 puede ser null
   contact_info?: string | null;
 }
 
@@ -24,8 +24,8 @@ export type PatientInput = {
   middle_name?: string;
   last_name: string;
   second_last_name?: string;
-  birthdate?: string | null;   // 👈 ahora acepta null
-  gender?: "M" | "F" | "Unknown" | null; // 👈 ahora acepta null
+  birthdate?: string | null;   // 👈 puede ser null
+  gender?: "M" | "F" | "Unknown" | null; // 👈 puede ser null
   contact_info?: string;
-  email?: string;              // 👈 nuevo campo
+  email?: string | null;       // 👈 ahora acepta null
 };

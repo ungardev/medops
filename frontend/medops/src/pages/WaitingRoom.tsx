@@ -9,7 +9,7 @@ import {
 import { WaitingRoomEntry, WaitingRoomStatus } from "../types/waitingRoom";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
-import RegisterWalkinModal from "../components/RegisterWalkinModal"; // 👈 modal
+import RegisterWalkinModal from "../components/RegisterWalkinModal"; // 👈 import default
 
 // 🔹 Badge visual para estado
 const renderStatusBadge = (status: WaitingRoomStatus) => {
@@ -193,7 +193,6 @@ export default function WaitingRoom() {
                   : "—"}
               </td>
               <td>
-                {/* ❌ Eliminado "Pasar a consulta" en Grupo B */}
                 {e.status === "in_consultation" && (
                   <button onClick={() => handleStatusChange(e.id, "completed")}>
                     Finalizar
@@ -236,7 +235,7 @@ export default function WaitingRoom() {
       {showModal && (
         <RegisterWalkinModal
           onClose={() => setShowModal(false)}
-          onSuccess={(entry) => {
+          onSuccess={(entry: WaitingRoomEntry) => {
             setGrupoB((prev) => [...prev, entry]);
           }}
         />
