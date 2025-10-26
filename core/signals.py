@@ -33,7 +33,7 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
         # Si pasa a arrived
         if instance.status == "arrived" and instance.appointment_date == timezone.localdate():
             try:
-                entry = WaitingRoomEntry.objects.filter(appointment=instance).first()
+                entry = WaitingRoomEntry.objects.filter(appointment_id=instance.id).first()
                 if entry:
                     entry.status = "arrived"
                     entry.priority = instance.appointment_type or "scheduled"
