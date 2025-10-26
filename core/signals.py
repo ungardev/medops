@@ -10,11 +10,16 @@ logger = logging.getLogger("audit")
 # --- Appointment ---
 @receiver(post_save, sender=Appointment)
 def appointment_created_or_updated(sender, instance, created, **kwargs):
+    """
+    Reglas de negocio:
+    - Cita creada para hoy en 'pending' -> crear WaitingRoomEntry en 'pending/scheduled' (Grupo B).
+    - Cita que pasa a 'arrived' -> WaitingRoomEntry siempre 'waiting/scheduled' (Grupo A).
+    """
     if created:
         log_event("Appointment", instance.id, "create", actor="system")
         logger.info(f"Appointment {instance.id} created")
 
-        # Si es para hoy y está pendiente, crear entrada en Grupo B
+        # Crear entrada en Grupo B cuando es para hoy y está pendiente
         if instance.status == "pending" and instance.appointment_date == timezone.localdate():
             WaitingRoomEntry.objects.get_or_create(
                 appointment=instance,
@@ -24,31 +29,31 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
                     "priority": "scheduled",
                 }
             )
-            logger.info(f"WaitingRoomEntry creado automáticamente para Appointment {instance.id}")
+            logger.info(f"WaitingRoomEntry creado automáticamente (pending/scheduled) para Appointment {instance.id}")
 
     else:
         log_event("Appointment", instance.id, "update", actor="system")
         logger.info(f"Appointment {instance.id} updated")
 
-        # Si pasa a arrived → normalizamos prioridad
+        # Unificación: 'arrived' en Appointment -> 'waiting' en WaitingRoomEntry
         if instance.status == "arrived":
             try:
                 entry = WaitingRoomEntry.objects.filter(appointment_id=instance.id).first()
                 if entry:
-                    entry.status = "arrived"
-                    entry.priority = "scheduled"  # 👈 normalizamos walk-in a scheduled
+                    entry.status = "waiting"  # arrived -> waiting
+                    entry.priority = "scheduled"
                     entry.arrival_time = timezone.now()
                     entry.save(update_fields=["status", "priority", "arrival_time"])
-                    logger.info(f"WaitingRoomEntry actualizado a 'arrived/scheduled' para Appointment {instance.id}")
+                    logger.info(f"WaitingRoomEntry actualizado a 'waiting/scheduled' para Appointment {instance.id}")
                 else:
                     WaitingRoomEntry.objects.create(
                         appointment=instance,
                         patient=instance.patient,
-                        status="arrived",
-                        priority="scheduled",  # 👈 siempre scheduled al llegar
+                        status="waiting",
+                        priority="scheduled",
                         arrival_time=timezone.now()
                     )
-                    logger.info(f"WaitingRoomEntry creado automáticamente (arrived/scheduled) para Appointment {instance.id}")
+                    logger.info(f"WaitingRoomEntry creado automáticamente (waiting/scheduled) para Appointment {instance.id}")
             except Exception as e:
                 logger.error(f"Error sincronizando WaitingRoomEntry para Appointment {instance.id}: {e}")
 
