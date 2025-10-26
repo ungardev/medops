@@ -1,10 +1,10 @@
 # core/management/commands/export_patient_history.py
 import csv
 from django.core.management.base import BaseCommand, CommandError
-from core.utils.history import get_patient_full_history
+from django.db import connection
 
 class Command(BaseCommand):
-    help = "Exporta el histórico de un paciente a CSV"
+    help = "Exporta el histórico de un paciente a CSV, incluyendo predisposiciones genéticas"
 
     def add_arguments(self, parser):
         parser.add_argument("patient_id", type=int, help="ID del paciente")
@@ -27,24 +27,31 @@ class Command(BaseCommand):
         output = options["output"]
 
         try:
-            history = get_patient_full_history(patient_id, limit=limit)
+            with connection.cursor() as cursor:
+                cursor.execute(f"""
+                    SELECT *
+                    FROM core_historicalpatient
+                    WHERE id = %s
+                    ORDER BY history_date DESC
+                    LIMIT %s
+                """, [patient_id, limit])
+                rows = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
         except Exception as e:
             raise CommandError(f"Error obteniendo histórico: {e}")
 
-        if not history:
+        if not rows:
             self.stdout.write(self.style.WARNING("No se encontraron registros históricos."))
             return
 
         # Escribir CSV
-        fieldnames = list(history[0].keys())
         with open(output, "w", newline="", encoding="utf-8") as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            for row in history:
-                writer.writerow(row)
+            writer = csv.writer(csvfile)
+            writer.writerow(colnames)
+            writer.writerows(rows)
 
         self.stdout.write(
             self.style.SUCCESS(
-                f"Histórico del paciente {patient_id} exportado a {output} ({len(history)} registros)."
+                f"Histórico del paciente {patient_id} exportado a {output} ({len(rows)} registros)."
             )
         )
