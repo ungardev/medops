@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.utils import timezone
-from simple_history.signals import pre_update_historical_record
+from simple_history.signals import pre_create_historical_record
 
 from .models import Appointment, Payment, Patient, WaitingRoomEntry
 from core.utils.events import log_event
@@ -110,7 +110,7 @@ def patient_deleted(sender, instance, **kwargs):
 
 
 # --- Patient: sincronizar predisposiciones genéticas en histórico ---
-@receiver(pre_update_historical_record, sender=Patient)
+@receiver(pre_create_historical_record, sender=Patient)
 def update_genetic_predispositions(sender, **kwargs):
     """
     Copia las predisposiciones genéticas (M2M) del paciente
