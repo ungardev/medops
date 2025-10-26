@@ -80,7 +80,7 @@ class EventSerializer(serializers.ModelSerializer):
         fields = ["id", "timestamp", "entity", "entity_id", "action", "metadata"]
 
 
-# --- Sala de espera ---
+# --- Sala de espera (básico) ---
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
     appointment_id = serializers.IntegerField(source="appointment.id", read_only=True)
@@ -91,6 +91,24 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "id",
             "patient",          # objeto con id, full_name y email
             "appointment_id",
+            "arrival_time",
+            "status",
+            "priority",
+            "order",
+        ]
+
+
+# --- Sala de espera (detallado con cita completa) ---
+class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
+    patient = PatientReadSerializer(read_only=True)
+    appointment = AppointmentSerializer(read_only=True)  # 👈 incluye toda la cita
+
+    class Meta:
+        model = WaitingRoomEntry
+        fields = [
+            "id",
+            "patient",       # objeto con id, full_name y email
+            "appointment",   # objeto con fecha, tipo, expected_amount, status, notes
             "arrival_time",
             "status",
             "priority",

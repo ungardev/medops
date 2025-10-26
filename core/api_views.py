@@ -6,7 +6,8 @@ from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.core.paginator import Paginator
 from django.utils import timezone
-
+from django.utils.timezone import make_aware, localdate
+from datetime import datetime, time
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 from .serializers import (
     PatientReadSerializer,
@@ -14,6 +15,7 @@ from .serializers import (
     AppointmentSerializer,
     PaymentSerializer,
     WaitingRoomEntrySerializer,
+    WaitingRoomEntryDetailSerializer,  # 👈 agrega esta línea
     DashboardSummarySerializer,
 )
 
@@ -503,30 +505,29 @@ def current_consultation_api(request):
     return Response({"detail": "No hay consulta corriendo actualmente."}, status=200)
 
 def waitingroom_groups_today_api(request):
-    today = timezone.localdate()
+    today = localdate()
+    start = make_aware(datetime.combine(today, time.min))
+    end = make_aware(datetime.combine(today, time.max))
 
-    # Grupo A: confirmados en espera, en consulta o completados (scheduled/emergency)
     grupo_a = WaitingRoomEntry.objects.filter(
-        appointment__appointment_date=today,
+        arrival_time__range=(start, end),
         status__in=["waiting", "in_consultation", "completed"],
         priority__in=["scheduled", "emergency"]
     ).select_related("patient", "appointment")
 
-    # Grupo B: pendientes de confirmar (citas del día) + walk-ins en espera
     grupo_b = WaitingRoomEntry.objects.filter(
-        appointment__appointment_date=today
+        arrival_time__range=(start, end)
     ).filter(
         (Q(status="pending", priority="scheduled")) |
         (Q(status="waiting", priority="walkin"))
     ).exclude(
-        priority="scheduled"  # 🔒 excluye confirmados que ya pasaron a Grupo A
+        priority="scheduled"
     ).select_related("patient", "appointment")
 
     return JsonResponse({
-        "grupo_a": WaitingRoomEntrySerializer(grupo_a, many=True).data,
-        "grupo_b": WaitingRoomEntrySerializer(grupo_b, many=True).data,
+        "grupo_a": WaitingRoomEntryDetailSerializer(grupo_a, many=True).data,
+        "grupo_b": WaitingRoomEntryDetailSerializer(grupo_b, many=True).data,
     })
-
 
 @api_view(["POST"])
 def register_walkin_api(request):
