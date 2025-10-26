@@ -505,25 +505,21 @@ def current_consultation_api(request):
     return Response({"detail": "No hay consulta corriendo actualmente."}, status=200)
 
 def waitingroom_groups_today_api(request):
-    # Fecha local (Caracas)
-    today = localtime(now()).date()
-    tz = get_current_timezone()
-    start = make_aware(datetime.combine(today, time.min), tz)
-    end = make_aware(datetime.combine(today, time.max), tz)
+    today = localdate()
 
+    # Grupo A: citas de hoy que ya llegaron o están en consulta/completadas
     grupo_a = WaitingRoomEntry.objects.filter(
-        arrival_time__range=(start, end),
-        status__in=["waiting", "in_consultation", "completed"],
+        appointment__appointment_date=today,
+        status__in=["arrived", "waiting", "in_consultation", "completed"],
         priority__in=["scheduled", "emergency"]
     ).select_related("patient", "appointment")
 
+    # Grupo B: citas de hoy pendientes de confirmar o walk-ins en espera
     grupo_b = WaitingRoomEntry.objects.filter(
-        arrival_time__range=(start, end)
+        appointment__appointment_date=today
     ).filter(
         (Q(status="pending", priority="scheduled")) |
         (Q(status="waiting", priority="walkin"))
-    ).exclude(
-        priority="scheduled"
     ).select_related("patient", "appointment")
 
     return JsonResponse({
