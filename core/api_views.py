@@ -200,9 +200,10 @@ def waitingroom_groups_today_api(request):
     today = localdate()
     groups = (
         WaitingRoomEntry.objects
-        .filter(created_at__date=today)
+        .filter(arrival_time__date=today)   # ✅ usamos arrival_time en lugar de created_at
         .values("status")
         .annotate(total=Count("id"))
+        .order_by("status")                 # opcional, para orden consistente
     )
     return Response(list(groups))
 
