@@ -10,23 +10,17 @@ export default defineConfig({
       components: path.resolve(__dirname, 'src/components'),
       pages: path.resolve(__dirname, 'src/pages'),
       types: path.resolve(__dirname, 'src/types'),
-      utils: path.resolve(__dirname, 'src/utils'),       // 👈 agregado
-      hooks: path.resolve(__dirname, 'src/hooks'),       // 👈 agregado
-      contexts: path.resolve(__dirname, 'src/contexts'), // 👈 agregado
+      utils: path.resolve(__dirname, 'src/utils'),
+      hooks: path.resolve(__dirname, 'src/hooks'),
+      contexts: path.resolve(__dirname, 'src/contexts'),
     },
   },
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1', // backend real
+        target: 'http://127.0.0.1:80', // 👈 apunta explícitamente al puerto donde Nginx escucha
         changeOrigin: true,
         secure: false,
-      },
-      '/api/v1': {
-        target: 'http://127.0.0.1',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api\/v1/, '/api'),
       },
     },
   },

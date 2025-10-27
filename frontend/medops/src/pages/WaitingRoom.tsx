@@ -65,6 +65,7 @@ const renderActionButton = (
 
 export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [now, setNow] = useState(new Date());
 
   // Hooks de React Query
@@ -90,6 +91,25 @@ export default function WaitingRoom() {
   const handleRegisterArrival = async (patientId: number) => {
     await registerArrival.mutateAsync({ patient_id: patientId });
     setShowModal(false);
+  };
+
+  const handleCloseDay = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const res = await fetch("http://127.0.0.1/api/waitingroom/close-day/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Token ${token}` } : {}),
+        },
+      });
+      if (!res.ok) throw new Error("Error al cerrar la jornada");
+      alert("✅ Jornada cerrada correctamente");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setShowConfirm(false);
+    }
   };
 
   if (isLoading) return <p>Cargando sala de espera...</p>;
@@ -119,6 +139,9 @@ export default function WaitingRoom() {
         <div className="actions">
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             Registrar llegada
+          </button>
+          <button className="btn btn-special" onClick={() => setShowConfirm(true)}>
+            Cerrar jornada
           </button>
         </div>
       </div>
@@ -172,6 +195,23 @@ export default function WaitingRoom() {
           onClose={() => setShowModal(false)}
           onSuccess={(entry) => handleRegisterArrival(entry.patient.id)}
         />
+      )}
+
+      {showConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Confirmar cierre de jornada</h3>
+            <p>¿Desea cerrar la jornada de hoy? Esta acción cancelará a todos los pacientes pendientes.</p>
+            <div className="modal-actions">
+              <button className="btn btn-primary" onClick={handleCloseDay}>
+                Sí, cerrar
+              </button>
+              <button className="btn btn-outline" onClick={() => setShowConfirm(false)}>
+                No
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

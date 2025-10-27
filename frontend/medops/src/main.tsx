@@ -11,14 +11,14 @@ import Payments from "./pages/Payments";
 import WaivedConsultations from "./pages/WaivedConsultations";
 import Events from "./pages/Events";
 import AuditDashboard from "./pages/AuditDashboard";
-import WaitingRoom from "./pages/WaitingRoom"; // 🔥 importamos Sala de Espera
-import Consultation from "./pages/Consulta";   // si ya tienes la página de consulta
+import WaitingRoom from "./pages/WaitingRoom";
+import Consultation from "./pages/Consulta";
+import Login from "./pages/Login";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
-// 🚀 React Query
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-// Crear cliente de React Query
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -26,25 +26,26 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <Routes>
-          {/* Layout principal con Sidebar */}
-          <Route path="/" element={<App />}>
-            {/* ✅ Dashboard SuperUser como página principal */}
-            <Route index element={<DashboardSuperUser />} />
+          {/* Ruta pública */}
+          <Route path="/login" element={<Login />} />
 
-            {/* Módulos */}
-            <Route path="patients" element={<Patients />} />
-            <Route path="waitingroom" element={<WaitingRoom />} /> {/* 🔥 Sala de Espera */}
-            <Route path="appointments" element={<Appointments />} />
-            <Route path="payments" element={<Payments />} />
-            <Route path="payments/waived" element={<WaivedConsultations />} />
-            <Route path="events" element={<Events />} />
-            <Route path="audit-dashboard" element={<AuditDashboard />} />
-            <Route path="consultation" element={<Consultation />} />
+          {/* Rutas protegidas */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<App />}>
+              <Route index element={<DashboardSuperUser />} />
+              <Route path="patients" element={<Patients />} />
+              <Route path="waitingroom" element={<WaitingRoom />} />
+              <Route path="appointments" element={<Appointments />} />
+              <Route path="payments" element={<Payments />} />
+              <Route path="payments/waived" element={<WaivedConsultations />} />
+              <Route path="events" element={<Events />} />
+              <Route path="audit-dashboard" element={<AuditDashboard />} />
+              <Route path="consultation" element={<Consultation />} />
+            </Route>
           </Route>
         </Routes>
       </BrowserRouter>
 
-      {/* 🔎 Devtools para depuración */}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   </React.StrictMode>

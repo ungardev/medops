@@ -13,7 +13,7 @@ from .api_views import (
     audit_by_appointment,
     audit_by_patient,
     register_arrival,
-    waitingroom_entries_today_api,   # 👈 nuevo import
+    waitingroom_entries_today_api,
 )
 
 # --- Swagger / OpenAPI ---
@@ -29,6 +29,9 @@ router.register(r'waitingroom', WaitingRoomEntryViewSet)
 
 # --- Funciones personalizadas ---
 urlpatterns = [
+    # --- Login ---
+    path("auth/token/", api_views.login_view, name="api-login"),
+
     # --- Dashboard / métricas ---
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
@@ -56,7 +59,7 @@ urlpatterns = [
 
     # --- Sala de Espera ---
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
-    path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),  # 👈 nuevo endpoint
+    path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
 ]

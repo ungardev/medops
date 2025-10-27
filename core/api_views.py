@@ -13,7 +13,7 @@ from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from rest_framework.authtoken.views import obtain_auth_token
 from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
@@ -25,6 +25,10 @@ from .serializers import (
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer
 )
+
+
+login_view = obtain_auth_token
+
 
 # --- Utilidades ---
 def safe_json(value):
@@ -171,16 +175,16 @@ def update_waitingroom_status(request, pk):
 
 @extend_schema(request=RegisterArrivalSerializer, responses={201: WaitingRoomEntrySerializer})
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def register_arrival(request):
     serializer = RegisterArrivalSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
-    from typing import cast, Dict, Any
+    from typing import Any, Dict, cast
     validated = cast(Dict[str, Any], serializer.validated_data)
 
     patient_id = validated["patient_id"]
     appointment_id = validated.get("appointment_id")
-    is_emergency = validated.get("is_emergency", False)
 
     patient = get_object_or_404(Patient, pk=patient_id)
     appointment = Appointment.objects.filter(pk=appointment_id).first() if appointment_id else None
@@ -188,7 +192,6 @@ def register_arrival(request):
     entry = WaitingRoomEntry.objects.create(
         patient=patient,
         appointment=appointment,
-        is_emergency=is_emergency,
         status="waiting"
     )
     return Response(WaitingRoomEntrySerializer(entry).data, status=201)

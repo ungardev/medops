@@ -1,4 +1,5 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuthToken } from "hooks/useAuthToken";
 
 const navItems = [
   { path: "/", label: "Dashboard" },
@@ -14,6 +15,13 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { clearToken } = useAuthToken();
+
+  const handleLogout = () => {
+    clearToken();       // 🔥 borra el token de localStorage
+    navigate("/login"); // 🔥 redirige al login
+  };
 
   return (
     <aside className="sidebar">
@@ -34,6 +42,24 @@ export default function Sidebar() {
           ))}
         </ul>
       </nav>
+
+      {/* Botón de logout */}
+      <div style={{ marginTop: "2rem", padding: "0 1rem" }}>
+        <button
+          onClick={handleLogout}
+          style={{
+            width: "100%",
+            padding: "8px 12px",
+            background: "#dc2626",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          Cerrar sesión
+        </button>
+      </div>
     </aside>
   );
 }

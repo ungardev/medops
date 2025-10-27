@@ -389,3 +389,13 @@ h3 { font-size: 1.2rem; }
   background: var(--bg-muted);
   color: var(--primary);
 }
+
+/* Utilidades adicionales */
+.flex-col { flex-direction: column; }
+.text-center { text-align: center; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+.rounded { border-radius: var(--radius-1); }
+.rounded-lg { border-radius: var(--radius-2); }
+.shadow { box-shadow: var(--shadow-1); }
+.shadow-lg { box-shadow: var(--shadow-2); }

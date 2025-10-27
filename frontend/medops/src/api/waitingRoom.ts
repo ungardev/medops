@@ -77,14 +77,13 @@ export const getWaitingRoomGroupsToday = (): Promise<{
 // 🔹 Registrar llegada unificado (cita o walk-in)
 export const registerArrival = (
   patientId: number,
-  appointmentId?: number,
-  isEmergency: boolean = false
+  appointmentId?: number
 ): Promise<WaitingRoomEntry> =>
   apiFetch<WaitingRoomEntry>("waitingroom/register/", {
     method: "POST",
     body: JSON.stringify({
       patient_id: patientId,
       appointment_id: appointmentId,
-      is_emergency: isEmergency,
+      // ❌ quitamos is_emergency porque el modelo no lo soporta
     }),
   });
