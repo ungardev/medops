@@ -1,58 +1,77 @@
 from decimal import Decimal
-from django.http import JsonResponse
-from django.utils.timezone import now
-from django.utils.dateparse import parse_date
-from django.db.models import Count, Sum, Q
-from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
-from django.core.paginator import Paginator
-from django.utils import timezone
-from django.utils.timezone import make_aware, localdate, get_current_timezone
 from datetime import datetime, time
 from django.db import transaction
+from django.db.models import Count, Sum, Q
+from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
-from .serializers import (
-    PatientReadSerializer,
-    PatientWriteSerializer,
-    PatientDetailSerializer,
-    AppointmentSerializer,
-    PaymentSerializer,
-    WaitingRoomEntrySerializer,
-    WaitingRoomEntryDetailSerializer,
-    DashboardSummarySerializer,
-)
+from django.utils.dateparse import parse_date
+from django.utils.timezone import now, localdate, make_aware, get_current_timezone
+from django.core.paginator import Paginator
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
-from django.utils.timezone import localtime, now
 
+from drf_spectacular.utils import (
+    extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
+)
+
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
+from .serializers import (
+    PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
+    AppointmentSerializer, PaymentSerializer,
+    WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
+    DashboardSummarySerializer
+)
+
+# --- Utilidades ---
 def safe_json(value):
-    """Convierte valores a tipos JSON-serializables"""
-    if isinstance(value, Decimal):
-        return float(value)
-    return value
+    return float(value) if isinstance(value, Decimal) else value
 
-# --- Dashboard / métricas ---
+# --- Serializers auxiliares para PATCH/POST ---
+class AppointmentStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.CharField()
+
+class AppointmentNotesUpdateSerializer(serializers.Serializer):
+    notes = serializers.CharField()
+
+class WaitingRoomStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.CharField()
+
+class RegisterArrivalSerializer(serializers.Serializer):
+    patient_id = serializers.IntegerField()
+    appointment_id = serializers.IntegerField(required=False)
+    is_emergency = serializers.BooleanField(required=False)
+
+class RegisterWalkinSerializer(serializers.Serializer):
+    patient_id = serializers.IntegerField()
+
+@extend_schema(responses={200: OpenApiResponse(description="Métricas del día")})
+@api_view(["GET"])
 def metrics_api(request):
-    today = timezone.localdate()
+    today = localdate()
     data = {
         "totalPatients": Patient.objects.count(),
         "todayAppointments": Appointment.objects.filter(appointment_date=today).count(),
         "pendingPayments": Payment.objects.filter(status="pending").count(),
         "waivedConsultations": Payment.objects.filter(status="waived").count(),
         "appointmentStatusToday": list(
-            Appointment.objects.filter(appointment_date=today)
-            .values("status")
-            .annotate(total=Count("id"))
+            Appointment.objects.filter(appointment_date=today).values("status").annotate(total=Count("id"))
         ),
-        "paymentMethodsTotals": list(
-            Payment.objects.values("method").annotate(total=Sum("amount"))
-        ),
+        "paymentMethodsTotals": list(Payment.objects.values("method").annotate(total=Sum("amount"))),
     }
     return JsonResponse(data)
 
-# --- Dashboard resumen ejecutivo ---
+@extend_schema(
+    parameters=[
+        OpenApiParameter("start_date", str, OpenApiParameter.QUERY),
+        OpenApiParameter("end_date", str, OpenApiParameter.QUERY),
+        OpenApiParameter("status", str, OpenApiParameter.QUERY),
+    ],
+    responses={200: DashboardSummarySerializer}
+)
+@api_view(["GET"])
 def dashboard_summary_api(request):
     start_date = parse_date(request.GET.get("start_date")) if request.GET.get("start_date") else None
     end_date = parse_date(request.GET.get("end_date")) if request.GET.get("end_date") else None
@@ -83,9 +102,7 @@ def dashboard_summary_api(request):
     appointments_by_month = (
         Appointment.objects.filter(filters)
         .annotate(month=TruncMonth("appointment_date"))
-        .values("month")
-        .annotate(total=Count("id"))
-        .order_by("month")
+        .values("month").annotate(total=Count("id")).order_by("month")
     )
     appointments_trend = [
         {"month": a["month"].strftime("%b %Y"), "citas": a["total"]}
@@ -95,9 +112,7 @@ def dashboard_summary_api(request):
     payments_by_week = (
         Payment.objects.filter(appointment__in=Appointment.objects.filter(filters))
         .annotate(week=TruncWeek("received_at"))
-        .values("week")
-        .annotate(total=Sum("amount"))
-        .order_by("week")
+        .values("week").annotate(total=Sum("amount")).order_by("week")
     )
     payments_trend = [
         {"week": p["week"].strftime("W%U %Y"), "pagos": safe_json(p["total"] or 0)}
@@ -107,9 +122,7 @@ def dashboard_summary_api(request):
     waived_by_week = (
         Payment.objects.filter(status="waived", appointment__in=Appointment.objects.filter(filters))
         .annotate(week=TruncWeek("received_at"))
-        .values("week")
-        .annotate(total=Count("id"))
-        .order_by("week")
+        .values("week").annotate(total=Count("id")).order_by("week")
     )
     waived_dict = {w["week"]: w["total"] * 50 for w in waived_by_week if w["week"]}
 
@@ -119,10 +132,7 @@ def dashboard_summary_api(request):
         if week:
             pagos = safe_json(p["total"] or 0)
             exoneraciones = waived_dict.get(week, 0)
-            balance_trend.append({
-                "week": week.strftime("W%U %Y"),
-                "balance": pagos - exoneraciones
-            })
+            balance_trend.append({"week": week.strftime("W%U %Y"), "balance": pagos - exoneraciones})
 
     data = {
         "total_patients": int(total_patients),
@@ -139,34 +149,15 @@ def dashboard_summary_api(request):
         "payments_trend": payments_trend,
         "balance_trend": balance_trend,
     }
-
     serializer = DashboardSummarySerializer(instance=data)
     return JsonResponse(serializer.data, safe=False)
 
-# --- Pacientes ---
-def patients_api(request):
-    patients = Patient.objects.all().values(
-        "id", "first_name", "middle_name", "last_name", "second_last_name", "birthdate", "gender", "contact_info"
-    )
-    results = []
-    for p in patients:
-        full_name = " ".join(filter(None, [p["first_name"], p["middle_name"], p["last_name"], p["second_last_name"]]))
-        results.append({
-            "id": p["id"],
-            "full_name": full_name,
-            "birthdate": p["birthdate"],
-            "gender": p["gender"],
-            "contact_info": p["contact_info"],
-        })
-    return JsonResponse(results, safe=False)
-
-# --- Pacientes: búsqueda (para autocomplete en Sala de Espera) ---
+@extend_schema(parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)], responses={200: PatientReadSerializer(many=True)})
 @api_view(["GET"])
 def patient_search_api(request):
     query = request.GET.get("q", "")
     if not query:
         return Response([], status=200)
-
     patients = Patient.objects.filter(
         Q(first_name__icontains=query) |
         Q(last_name__icontains=query) |
@@ -174,189 +165,46 @@ def patient_search_api(request):
         Q(second_last_name__icontains=query) |
         Q(id__icontains=query)
     )[:10]
-
     serializer = PatientReadSerializer(patients, many=True)
     return Response(serializer.data)
 
-
-# --- Citas del día ---
-def daily_appointments_api(request):
-    today = timezone.localdate()
-    appointments = (
-        Appointment.objects
-        .filter(appointment_date=today)
-        .select_related("patient")
-        .order_by("arrival_time")
-    )
-    serializer = AppointmentSerializer(appointments, many=True)
-    return JsonResponse(serializer.data, safe=False)
-
-# --- Resumen de pagos ---
-def payment_summary_api(request):
-    summary = (
-        Payment.objects.values("method", "status")
-        .annotate(total_transactions=Count("id"), total_amount=Sum("amount"))
-        .order_by("method", "status")
-    )
-    return JsonResponse(list(summary), safe=False)
-
-# --- Consultas exoneradas ---
-def waived_consultations_api(request):
-    waived = Payment.objects.filter(status="waived").select_related("appointment__patient")
-    results = []
-    for w in waived:
-        results.append({
-            "id": w.id,
-            "appointment_id": w.appointment_id,
-            "patient_name": str(w.appointment.patient),
-            "amount": w.amount,
-            "method": w.method,
-            "status": w.status,
-        })
-    return JsonResponse(results, safe=False)
-
-# --- Auditoría: lista + filtros + paginación ---
-def event_log_api(request):
-    events = Event.objects.all().order_by("-timestamp").values(
-        "id", "entity", "action", "timestamp", "actor"
-    )
-    paginator = Paginator(events, 20)
-    page_number = request.GET.get("page", 1)
-    page_obj = paginator.get_page(page_number)
-
-    data = {
-        "results": list(page_obj),
-        "page": page_obj.number,
-        "num_pages": paginator.num_pages,
-        "total": paginator.count,
-    }
-    return JsonResponse(data, safe=False)
-
-# --- Auditoría: agregados para gráficos ---
-def audit_dashboard_api(request):
-    entity_data = list(
-        Event.objects.values("entity").annotate(total=Count("id")).order_by("-total")
-    )
-    action_data = list(
-        Event.objects.values("action").annotate(total=Count("id")).order_by("-total")
-    )
-    timeline_data = list(
-        Event.objects.annotate(day=TruncDate("timestamp"))
-        .values("day")
-        .annotate(total=Count("id"))
-        .order_by("day")
-    )
-    return JsonResponse({
-        "entity_data": entity_data,
-        "action_data": action_data,
-        "timeline_data": timeline_data,
-    })
-
-# --- Auditoría: historial por cita ---
-@api_view(["GET"])
-def audit_by_appointment(request, appointment_id):
-    events = Event.objects.filter(entity="Appointment", entity_id=appointment_id).order_by("-timestamp").values(
-        "id", "entity", "entity_id", "action", "timestamp", "actor"
-    )
-    return Response(list(events))
-
-# --- Auditoría: historial por paciente ---
-@api_view(["GET"])
-def audit_by_patient(request, patient_id):
-    events = Event.objects.filter(entity="Patient", entity_id=patient_id).order_by("-timestamp").values(
-        "id", "entity", "entity_id", "action", "timestamp", "actor"
-    )
-    return Response(list(events))
-
-# --- Sala de Espera: listar entradas ---
-def waitingroom_list_api(request):
-    entries = WaitingRoomEntry.objects.select_related("patient", "appointment").all()
-    serializer = WaitingRoomEntrySerializer(entries, many=True)
-    return JsonResponse(serializer.data, safe=False)
-
-# --- Sala de Espera: actualizar estado de una cita ---
+@extend_schema(request=AppointmentStatusUpdateSerializer, responses={200: AppointmentSerializer})
 @api_view(["PATCH"])
 def update_appointment_status(request, pk):
     try:
         appointment = Appointment.objects.get(pk=pk)
     except Appointment.DoesNotExist:
-        return Response({"error": "Appointment not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Appointment not found"}, status=404)
 
     new_status = request.data.get("status")
     if not new_status:
-        return Response({"error": "Missing status"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Missing status"}, status=400)
 
-    # 🔹 Validación: solo un paciente puede estar en consulta
     if new_status == "in_consultation":
-        today = timezone.localdate()
+        today = localdate()
         already_in = Appointment.objects.filter(
-            appointment_date=today,
-            status="in_consultation"
+            appointment_date=today, status="in_consultation"
         ).exclude(id=appointment.id).exists()
-
         if already_in:
-            return Response(
-                {"error": "Ya existe un paciente en consulta. Solo se permite uno a la vez."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({"error": "Ya existe un paciente en consulta."}, status=400)
 
     if appointment.can_transition(new_status):
         appointment.update_status(new_status)
         return Response(AppointmentSerializer(appointment).data)
-    else:
-        return Response(
-            {"error": f"No se puede pasar de {appointment.status} a {new_status}"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    return Response({"error": f"No se puede pasar de {appointment.status} a {new_status}"}, status=400)
 
 
-# --- Sala de Espera: actualizar estado de una entrada ---
-@api_view(["PATCH"])
-def update_waitingroom_status(request, pk):
-    try:
-        entry = WaitingRoomEntry.objects.get(pk=pk)
-    except WaitingRoomEntry.DoesNotExist:
-        return Response({"error": "WaitingRoomEntry not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    new_status = request.data.get("status")
-    if not new_status:
-        return Response({"error": "Missing status"}, status=status.HTTP_400_BAD_REQUEST)
-
-    # 🔹 Validación: solo un paciente puede estar en consulta
-    if new_status == "in_consultation":
-        today = timezone.localdate()
-        already_in = WaitingRoomEntry.objects.filter(
-            appointment__appointment_date=today,
-            status="in_consultation"
-        ).exclude(id=entry.id).exists()
-
-        if already_in:
-            return Response(
-                {"error": "Ya existe un paciente en consulta. Solo se permite uno a la vez."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-    if entry.can_transition(new_status):
-        entry.update_status(new_status)
-        return Response(WaitingRoomEntrySerializer(entry).data)
-    else:
-        return Response(
-            {"error": f"No se puede pasar de {entry.status} a {new_status}"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-
-# --- Consulta: actualizar notas ---
+@extend_schema(request=AppointmentNotesUpdateSerializer, responses={200: AppointmentSerializer})
 @api_view(["PATCH"])
 def update_appointment_notes(request, pk):
     try:
         appointment = Appointment.objects.get(pk=pk)
     except Appointment.DoesNotExist:
-        return Response({"error": "Appointment not found"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": "Appointment not found"}, status=404)
 
     notes = request.data.get("notes")
     if notes is None:
-        return Response({"error": "Missing notes"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Missing notes"}, status=400)
 
     appointment.notes = notes
     appointment.save(update_fields=["notes"])
@@ -367,10 +215,116 @@ def update_appointment_notes(request, pk):
         actor=str(request.user) if request.user.is_authenticated else "system",
         timestamp=now(),
     )
-
     return Response(AppointmentSerializer(appointment).data)
 
-# --- DRF ViewSets (CRUD básicos) ---
+
+@extend_schema(request=WaitingRoomStatusUpdateSerializer, responses={200: WaitingRoomEntrySerializer})
+@api_view(["PATCH"])
+def update_waitingroom_status(request, pk):
+    try:
+        entry = WaitingRoomEntry.objects.get(pk=pk)
+    except WaitingRoomEntry.DoesNotExist:
+        return Response({"error": "WaitingRoomEntry not found"}, status=404)
+
+    new_status = request.data.get("status")
+    if not new_status:
+        return Response({"error": "Missing status"}, status=400)
+
+    if new_status == "in_consultation":
+        today = localdate()
+        already_in = WaitingRoomEntry.objects.filter(
+            appointment__appointment_date=today, status="in_consultation"
+        ).exclude(id=entry.id).exists()
+        if already_in:
+            return Response({"error": "Ya existe un paciente en consulta."}, status=400)
+
+    if entry.can_transition(new_status):
+        entry.update_status(new_status)
+        return Response(WaitingRoomEntrySerializer(entry).data)
+    return Response({"error": f"No se puede pasar de {entry.status} a {new_status}"}, status=400)
+
+
+@extend_schema(request=RegisterWalkinSerializer, responses={201: WaitingRoomEntrySerializer})
+@api_view(["POST"])
+def register_walkin_api(request):
+    patient_id = request.data.get("patient_id")
+    if not patient_id:
+        return Response({"error": "Missing patient_id"}, status=400)
+
+    today = localdate()
+    appointment = Appointment.objects.create(
+        patient_id=patient_id, appointment_date=today, status="pending"
+    )
+    entry = WaitingRoomEntry.objects.create(
+        patient_id=patient_id,
+        appointment=appointment,
+        status="waiting",
+        priority="walkin",
+        arrival_time=now()
+    )
+    return Response(WaitingRoomEntrySerializer(entry).data, status=201)
+
+
+@extend_schema(request=RegisterArrivalSerializer, responses={200: WaitingRoomEntryDetailSerializer})
+@api_view(["POST"])
+@transaction.atomic
+def register_arrival(request):
+    patient_id = request.data.get("patient_id")
+    appointment_id = request.data.get("appointment_id")
+    is_emergency = request.data.get("is_emergency", False)
+
+    if not patient_id:
+        return Response({"error": "patient_id requerido"}, status=400)
+
+    patient = get_object_or_404(Patient, id=patient_id)
+    today = localdate()
+
+    if appointment_id:
+        appointment = get_object_or_404(Appointment, id=appointment_id, patient=patient)
+        appointment.mark_arrived(is_emergency=is_emergency, is_walkin=False)
+        entry = WaitingRoomEntry.objects.filter(appointment=appointment).first()
+    else:
+        existing_appt = Appointment.objects.filter(
+            patient=patient, appointment_date=today
+        ).exclude(status="completed").first()
+
+        if existing_appt:
+            existing_appt.mark_arrived(is_emergency=is_emergency, is_walkin=False)
+            entry = WaitingRoomEntry.objects.filter(appointment=existing_appt).first()
+        else:
+            appointment = Appointment.objects.create(
+                patient=patient, appointment_date=today, status="pending"
+            )
+            priority = "emergency" if is_emergency else "walkin"
+            entry = WaitingRoomEntry.objects.create(
+                patient=patient,
+                appointment=appointment,
+                status="waiting",
+                priority=priority,
+                arrival_time=now(),
+            )
+    return Response(WaitingRoomEntryDetailSerializer(entry).data, status=200)
+
+
+@extend_schema(responses={200: OpenApiResponse(description="Eventos por cita")})
+@api_view(["GET"])
+def audit_by_appointment(request, appointment_id):
+    events = Event.objects.filter(entity="Appointment", entity_id=appointment_id).order_by("-timestamp").values(
+        "id", "entity", "entity_id", "action", "timestamp", "actor"
+    )
+    return Response(list(events))
+
+
+@extend_schema(responses={200: OpenApiResponse(description="Eventos por paciente")})
+@api_view(["GET"])
+def audit_by_patient(request, patient_id):
+    events = Event.objects.filter(entity="Patient", entity_id=patient_id).order_by("-timestamp").values(
+        "id", "entity", "entity_id", "action", "timestamp", "actor"
+    )
+    return Response(list(events))
+
+
+# --- ViewSets (Swagger los documenta automáticamente) ---
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all().order_by("-created_at")
 
@@ -383,7 +337,6 @@ class PatientViewSet(viewsets.ModelViewSet):
             return PatientWriteSerializer
         return PatientReadSerializer
 
-    # 🔹 Endpoint extra: GET /patients/<id>/payments/
     @action(detail=True, methods=["get"])
     def payments(self, request, pk=None):
         patient = self.get_object()
@@ -391,228 +344,17 @@ class PatientViewSet(viewsets.ModelViewSet):
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
 
+
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
 
+
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     queryset = WaitingRoomEntry.objects.all()
     serializer_class = WaitingRoomEntrySerializer
-
-    @action(detail=True, methods=["patch"])
-    def promote_to_emergency(self, request, pk=None):
-        """
-        Promueve un paciente a emergencia (Grupo A).
-        """
-        entry = self.get_object()
-        entry.priority = "emergency"
-        entry.save(update_fields=["priority"])
-
-        Event.objects.create(
-            entity="WaitingRoomEntry",
-            entity_id=entry.id,
-            actor=str(request.user) if request.user.is_authenticated else "system",
-            action="promote_to_emergency",
-            timestamp=now(),
-            metadata={"patient": str(entry.patient)}
-        )
-
-        return Response(
-            WaitingRoomEntrySerializer(entry).data,
-            status=status.HTTP_200_OK
-        )
-
-    @action(detail=True, methods=["patch"])
-    def confirm(self, request, pk=None):
-        """
-        Confirma la llegada de un paciente:
-        - pending/scheduled → waiting/scheduled (Grupo A).
-        - waiting/walkin → waiting/scheduled (Grupo A).
-        """
-        entry = self.get_object()
-
-        if entry.status == "pending" and entry.priority == "scheduled":
-            entry.status = "waiting"
-            entry.priority = "scheduled"
-        elif entry.status == "waiting" and entry.priority == "walkin":
-            entry.status = "waiting"
-            entry.priority = "scheduled"
-        else:
-            return Response(
-                {"error": f"No se puede confirmar entrada con estado={entry.status}, prioridad={entry.priority}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        entry.save(update_fields=["status", "priority"])
-
-        # 🔹 limpiar duplicados: conservar solo este entry
-        WaitingRoomEntry.objects.filter(
-            patient=entry.patient
-        ).exclude(id=entry.id).delete()
-
-        Event.objects.create(
-            entity="WaitingRoomEntry",
-            entity_id=entry.id,
-            actor=str(request.user) if request.user.is_authenticated else "system",
-            action="confirm",
-            timestamp=now(),
-            metadata={"patient": str(entry.patient)}
-        )
-
-        return Response(WaitingRoomEntrySerializer(entry).data, status=status.HTTP_200_OK)
-
-    @action(detail=False, methods=["post"])
-    def close_day(self, request):
-        """
-        Cierra la jornada laboral:
-        - Si existe algún paciente en 'in_consultation', se bloquea la acción.
-        - Todos los pacientes que no estén en 'completed' → 'canceled'.
-        """
-        if WaitingRoomEntry.objects.filter(status="in_consultation").exists():
-            return Response(
-                {"error": "No se puede cerrar la jornada mientras haya un paciente en consulta."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        updated_entries = WaitingRoomEntry.objects.exclude(status="completed")
-        count = updated_entries.count()
-        updated_entries.update(status="canceled")
-
-        Event.objects.create(
-            entity="WaitingRoomEntry",
-            action="close_day",
-            actor=str(request.user) if request.user.is_authenticated else "system",
-            timestamp=now(),
-            metadata={"canceled_count": count}
-        )
-
-        return Response(
-            {"message": f"{count} pacientes fueron cancelados al cierre de jornada."},
-            status=status.HTTP_200_OK,
-        )
-
-
-
-# --- Consulta actual en curso ---
-@api_view(["GET"])
-def current_consultation_api(request):
-    appointment = (
-        Appointment.objects
-        .filter(status="in_consultation")
-        .select_related("patient")
-        .order_by("-appointment_date", "-id")
-        .first()
-    )
-    if appointment:
-        serializer = AppointmentSerializer(appointment)
-        return Response(serializer.data, status=200)
-    return Response({"detail": "No hay consulta corriendo actualmente."}, status=200)
-
-def waitingroom_groups_today_api(request):
-    today = localdate()
-
-    # Grupo A: citas de hoy que ya llegaron o están en espera/consulta/completadas
-    grupo_a = WaitingRoomEntry.objects.filter(
-        appointment__appointment_date=today,
-        status__in=["waiting", "in_consultation", "completed"],  # 👈 sin "arrived"
-        priority__in=["scheduled", "emergency"]
-    ).select_related("patient", "appointment")
-
-    # Grupo B: citas de hoy pendientes de confirmar o walk-ins en espera
-    grupo_b = WaitingRoomEntry.objects.filter(
-        appointment__appointment_date=today
-    ).filter(
-        (Q(status="pending", priority="scheduled")) |
-        (Q(status="waiting", priority="walkin"))
-    ).select_related("patient", "appointment")
-
-    return JsonResponse({
-        "grupo_a": WaitingRoomEntryDetailSerializer(grupo_a, many=True).data,
-        "grupo_b": WaitingRoomEntryDetailSerializer(grupo_b, many=True).data,
-    })
-
-
-@api_view(["POST"])
-def register_walkin_api(request):
-    """
-    Registra la llegada de un paciente walk-in (sin cita previa).
-    Crea un Appointment para hoy y lo ubica en Grupo B.
-    """
-    patient_id = request.data.get("patient_id")
-    if not patient_id:
-        return Response({"error": "Missing patient_id"}, status=status.HTTP_400_BAD_REQUEST)
-
-    today = timezone.localdate()
-
-    # Crear appointment para hoy
-    appointment = Appointment.objects.create(
-        patient_id=patient_id,
-        appointment_date=today,
-        status="pending"  # aún no confirmado
-    )
-
-    # Crear entrada en sala de espera
-    entry = WaitingRoomEntry.objects.create(
-        patient_id=patient_id,
-        appointment=appointment,
-        status="waiting",       # en espera
-        priority="walkin",      # walk-in
-        arrival_time=timezone.now()
-    )
-
-    return Response(WaitingRoomEntrySerializer(entry).data, status=status.HTTP_201_CREATED)
-
-@api_view(["POST"])
-@transaction.atomic
-def register_arrival(request):
-    """
-    Endpoint unificado para registrar llegada de pacientes.
-    - Si recibe appointment_id -> marca la cita como 'arrived' y crea/actualiza WaitingRoomEntry en 'waiting/scheduled'.
-    - Si NO recibe appointment_id -> si ya existe cita hoy, usarla; si no, crear Appointment + WaitingRoomEntry como walk-in.
-    """
-    patient_id = request.data.get("patient_id")
-    appointment_id = request.data.get("appointment_id")
-    is_emergency = request.data.get("is_emergency", False)
-
-    if not patient_id:
-        return Response({"error": "patient_id requerido"}, status=status.HTTP_400_BAD_REQUEST)
-
-    patient = get_object_or_404(Patient, id=patient_id)
-    today = timezone.localdate()
-
-    if appointment_id:
-        # Caso: cita programada explícita
-        appointment = get_object_or_404(Appointment, id=appointment_id, patient=patient)
-        appointment.mark_arrived(is_emergency=is_emergency, is_walkin=False)
-        entry = WaitingRoomEntry.objects.filter(appointment=appointment).first()
-    else:
-        # 👇 Nuevo: si ya existe cita para hoy, usarla
-        existing_appt = Appointment.objects.filter(
-            patient=patient,
-            appointment_date=today
-        ).exclude(status="completed").first()
-
-        if existing_appt:
-            existing_appt.mark_arrived(is_emergency=is_emergency, is_walkin=False)
-            entry = WaitingRoomEntry.objects.filter(appointment=existing_appt).first()
-        else:
-            # Caso: walk-in puro (sin cita previa)
-            appointment = Appointment.objects.create(
-                patient=patient,
-                appointment_date=today,
-                status="pending"
-            )
-            priority = "emergency" if is_emergency else "walkin"
-            entry = WaitingRoomEntry.objects.create(
-                patient=patient,
-                appointment=appointment,
-                status="waiting",
-                priority=priority,
-                arrival_time=timezone.now(),
-            )
-
-    return Response(WaitingRoomEntryDetailSerializer(entry).data, status=status.HTTP_200_OK)

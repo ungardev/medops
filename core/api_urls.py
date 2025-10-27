@@ -61,12 +61,12 @@ urlpatterns = [
 
 # --- Documentación OpenAPI ---
 urlpatterns += [
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
 ]
 
 if settings.DEBUG:  # 👈 Swagger solo en desarrollo
     urlpatterns += [
-        path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+        path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     ]
 
 # --- Unir ambos ---
