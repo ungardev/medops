@@ -32,3 +32,9 @@ export interface WaitingRoomEntryInput {
   appointment_id: number | null;
   priority?: WaitingRoomPriority;
 }
+
+// --- Grupo de sala de espera (respuesta de /waitingroom/groups-today/)
+export interface WaitingroomGroup {
+  status: string; // estado (waiting, in_consultation, completed, canceled, pending, etc.)
+  total: number;  // cantidad de pacientes en ese estado
+}
