@@ -1,9 +1,8 @@
 import { Link, useLocation } from "react-router-dom";
-import "./Sidebar.css";
 
 const navItems = [
   { path: "/", label: "Dashboard" },
-  { path: "/waitingroom", label: "Sala de Espera" }, // 🔥 corregido
+  { path: "/waitingroom", label: "Sala de Espera" },
   { path: "/consultation", label: "Consulta" },
   { path: "/patients", label: "Pacientes" },
   { path: "/appointments", label: "Citas" },
@@ -17,23 +16,24 @@ export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <nav className="sidebar">
+    <aside className="sidebar">
       <div className="brand">
-        {/* ✅ Logo también apunta a la raíz */}
-        <Link to="/">⚕️ MedOps</Link>
+        <Link to="/">MedOps</Link>
       </div>
-      <ul>
-        {navItems.map((item) => (
-          <li key={item.path}>
-            <Link
-              to={item.path}
-              className={location.pathname === item.path ? "active" : ""}
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
+      <nav>
+        <ul>
+          {navItems.map((item) => (
+            <li key={item.path}>
+              <Link
+                to={item.path}
+                className={location.pathname === item.path ? "active" : ""}
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </aside>
   );
 }

@@ -3,7 +3,7 @@ export interface PatientRef {
   id: number;
   full_name: string;          // 👈 viene del backend (PatientReadSerializer)
   national_id?: string | null;
-  email?: string | null;      // 👈 puede ser null
+  email?: string | null;
 }
 
 // --- Modelo completo de paciente
@@ -12,9 +12,22 @@ export interface Patient extends PatientRef {
   middle_name?: string | null;
   last_name: string;
   second_last_name?: string | null;
-  birthdate?: string | null;   // ISO string, puede ser null
-  gender: "M" | "F" | "Unknown" | null;  // 👈 puede ser null
+  birthdate?: string | null;   // ISO string
+  gender: "M" | "F" | "Unknown" | null;
   contact_info?: string | null;
+
+  // 🔹 Campos adicionales del modelo
+  address?: string | null;
+  weight?: number | string | null;   // DRF puede serializar Decimal como string
+  height?: number | string | null;
+  blood_type?: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | null;
+  allergies?: string | null;
+  medical_history?: string | null;
+
+  // Operativos
+  active?: boolean;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 // --- Datos de entrada para crear/editar paciente
@@ -24,8 +37,16 @@ export type PatientInput = {
   middle_name?: string;
   last_name: string;
   second_last_name?: string;
-  birthdate?: string | null;   // 👈 puede ser null
-  gender?: "M" | "F" | "Unknown" | null; // 👈 puede ser null
+  birthdate?: string | null;
+  gender?: "M" | "F" | "Unknown" | null;
   contact_info?: string;
-  email?: string | null;       // 👈 ahora acepta null
+  email?: string | null;
+
+  // 🔹 Campos opcionales en creación/edición
+  address?: string;
+  weight?: number | string;
+  height?: number | string;
+  blood_type?: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
+  allergies?: string;
+  medical_history?: string;
 };

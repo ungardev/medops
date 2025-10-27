@@ -8,13 +8,16 @@ from .api_views import (
     WaitingRoomEntryViewSet,
     update_appointment_status,
     update_waitingroom_status,
-    waitingroom_list_api,
     patient_search_api,
     update_appointment_notes,
     audit_by_appointment,
     audit_by_patient,
-    register_arrival,   # 👈 nueva vista unificada
+    register_arrival,
 )
+
+# --- Swagger / OpenAPI ---
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from django.conf import settings
 
 # --- Router DRF (CRUD básicos + acciones personalizadas) ---
 router = routers.DefaultRouter()
@@ -22,10 +25,6 @@ router.register(r'patients', PatientViewSet)
 router.register(r'appointments', AppointmentViewSet)
 router.register(r'payments', PaymentViewSet)
 router.register(r'waitingroom', WaitingRoomEntryViewSet)
-# Nota: esto expone automáticamente:
-#   - PATCH /waitingroom/{id}/promote_to_emergency/
-#   - POST  /waitingroom/close_day/
-#   - CRUD completo de WaitingRoomEntry
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -34,7 +33,6 @@ urlpatterns = [
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
 
     # --- Pacientes ---
-    path("patients-list/", api_views.patients_api, name="patients-api"),
     path("patients/search/", patient_search_api, name="patient-search-api"),
 
     # --- Citas ---
@@ -56,12 +54,20 @@ urlpatterns = [
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),
 
     # --- Sala de Espera ---
-    path("waitingroom/", waitingroom_list_api, name="waitingroom-list-api"),
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
-    path("waitingroom/register/", register_arrival, name="waitingroom-register"),  # 👈 endpoint unificado
-    # Nota: /waitingroom/close_day/ se expone vía ViewSet
+    path("waitingroom/register/", register_arrival, name="waitingroom-register"),
 ]
+
+# --- Documentación OpenAPI ---
+urlpatterns += [
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+]
+
+if settings.DEBUG:  # 👈 Swagger solo en desarrollo
+    urlpatterns += [
+        path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    ]
 
 # --- Unir ambos ---
 urlpatterns += router.urls

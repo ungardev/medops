@@ -42,7 +42,9 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     "rangefilter",
     'simple_history',
-    "corsheaders"
+    "corsheaders",
+    "drf_spectacular",
+    "drf_spectacular_sidecar"
 ]
 
 # === Middleware ===
@@ -57,6 +59,33 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware'
 ]
+
+# === DRF / API ===
+REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",  # 👈 login normal de Django
+        "rest_framework.authentication.TokenAuthentication",    # 👈 si usas tokens DRF
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ],
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "MedOps API",
+    "DESCRIPTION": "Documentación de la API de MedOps",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,  # en prod puedes ocultar el schema si quieres
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": r"/api",  # opcional, si quieres que organice todo bajo /api
+    "SECURITY": [
+        {"basicAuth": []},           # 👈 login básico
+        {"cookieAuth": []},          # 👈 sesión Django
+        {"tokenAuth": []},           # 👈 token DRF
+    ],
+}
+
 
 # Seguridad extra (solo efectiva en producción con HTTPS)
 X_FRAME_OPTIONS = "DENY"

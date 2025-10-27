@@ -26,7 +26,6 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       setLastName(patient.last_name || "");
       setSecondLastName(patient.second_last_name || "");
       setBirthdate(patient.birthdate || "");
-      // Normaliza cualquier valor inesperado a "Unknown"
       const g = patient.gender as Gender | undefined;
       setGender(g === "M" || g === "F" || g === "Unknown" ? g : "Unknown");
       setContactInfo(patient.contact_info || "");
@@ -42,7 +41,7 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       last_name: lastName,
       second_last_name: secondLastName || undefined,
       birthdate: birthdate || undefined,
-      gender, // siempre "M" | "F" | "Unknown"
+      gender,
       contact_info: contactInfo || undefined,
     };
     onSubmit(payload);
@@ -60,10 +59,9 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>{patient ? "Editar Paciente" : "Nuevo Paciente"}</h2>
-
+    <form className="form" onSubmit={handleSubmit}>
       <input
+        className="input"
         type="text"
         placeholder="Cédula"
         value={nationalId}
@@ -71,6 +69,7 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       />
 
       <input
+        className="input"
         type="text"
         placeholder="Nombre"
         value={firstName}
@@ -79,6 +78,7 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       />
 
       <input
+        className="input"
         type="text"
         placeholder="Segundo nombre"
         value={middleName}
@@ -86,6 +86,7 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       />
 
       <input
+        className="input"
         type="text"
         placeholder="Apellido"
         value={lastName}
@@ -94,6 +95,7 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       />
 
       <input
+        className="input"
         type="text"
         placeholder="Segundo apellido"
         value={secondLastName}
@@ -101,12 +103,14 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       />
 
       <input
+        className="input"
         type="date"
         value={birthdate}
         onChange={(e) => setBirthdate(e.target.value)}
       />
 
       <select
+        className="select"
         value={gender}
         onChange={(e) => setGender(e.target.value as Gender)}
       >
@@ -116,12 +120,20 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       </select>
 
       <textarea
+        className="textarea"
         placeholder="Información de contacto"
         value={contactInfo}
         onChange={(e) => setContactInfo(e.target.value)}
       />
 
-      <button type="submit">{patient ? "Actualizar" : "Crear"}</button>
+      <div className="modal-actions">
+        <button className="btn btn-primary" type="submit">
+          {patient ? "Actualizar" : "Crear"}
+        </button>
+        <button className="btn btn-outline" type="button">
+          Cancelar
+        </button>
+      </div>
     </form>
   );
 }

@@ -21,33 +21,42 @@ export default function PatientsList({ patients, onEdit, onDelete }: PatientsLis
   const navigate = useNavigate();
 
   return (
-    <div>
-      <h2>Lista de Pacientes</h2>
-      <PatientsTable
-        headers={[
-          "Cédula",
-          "Nombre completo",
-          "Edad",
-          "Género",
-          "Contacto",
-          "Acciones",
-        ]}
-      >
-        {patients.map((p) => (
-          <tr key={p.id}>
-            <td>{p.national_id || "—"}</td>
-            <td>{p.full_name}</td>
-            <td>{calculateAge(p.birthdate)}</td>
-            <td>{p.gender}</td>
-            <td>{p.contact_info || "—"}</td>
-            <td>
-              <button onClick={() => onEdit(p)}>✏️ Editar</button>
-              <button onClick={() => onDelete(p.id)}>🗑 Eliminar</button>
-              <button onClick={() => navigate(`/patients/${p.id}`)}>📄 Ver ficha</button>
-            </td>
-          </tr>
-        ))}
-      </PatientsTable>
-    </div>
+    <PatientsTable
+      headers={[
+        "Cédula",
+        "Nombre completo",
+        "Edad",
+        "Género",
+        "Contacto",
+        "Acciones",
+      ]}
+    >
+      {patients.map((p) => (
+        <tr key={p.id}>
+          <td>{p.national_id || "—"}</td>
+          <td>{p.full_name}</td>
+          <td>{calculateAge(p.birthdate)}</td>
+          <td>{p.gender}</td>
+          <td>{p.contact_info || "—"}</td>
+          <td className="actions">
+            <button className="btn btn-outline" onClick={() => onEdit(p)}>
+              Editar
+            </button>
+            <button
+              className="btn btn-outline text-danger"
+              onClick={() => onDelete(p.id)}
+            >
+              Eliminar
+            </button>
+            <button
+              className="btn btn-primary-compact"
+              onClick={() => navigate(`/patients/${p.id}`)}
+            >
+              Ver ficha
+            </button>
+          </td>
+        </tr>
+      ))}
+    </PatientsTable>
   );
 }

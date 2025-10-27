@@ -1,23 +1,41 @@
-import { useState } from "react";
+// src/pages/Patients.tsx
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPatients, getPatient, createPatient, updatePatient, deletePatient } from "api/patients";
-import { Patient, PatientInput } from "types/patients";
+import {
+  getPatients,
+  getPatient,
+  createPatient,
+  updatePatient,
+  deletePatient,
+} from "api/patients";
+import { Patient, PatientInput, PatientRef } from "types/patients";
 import PatientsList from "components/PatientsList";
 import PatientForm from "components/PatientForm";
+import PatientsSearch from "components/PatientsSearch";
 
 export default function Patients() {
   const queryClient = useQueryClient();
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [now, setNow] = useState(new Date());
 
-  const { data, isLoading, isError, error } = useQuery<Patient[]>({
+  // Actualizar reloj cada minuto
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const { data: patients = [], isLoading, isError, error } = useQuery<Patient[]>({
     queryKey: ["patients"],
     queryFn: getPatients,
   });
 
   const createMutation = useMutation({
     mutationFn: (input: PatientInput) => createPatient(input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["patients"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["patients"] });
+      setShowModal(false);
+    },
   });
 
   const updateMutation = useMutation({
@@ -35,19 +53,44 @@ export default function Patients() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["patients"] }),
   });
 
-  if (isLoading) return <p>Cargando...</p>;
-  if (isError) return <p>Error: {(error as Error).message}</p>;
+  if (isLoading) return <p>Cargando pacientes...</p>;
+  if (isError) return <p className="text-danger">Error: {(error as Error).message}</p>;
+
+  const formattedNow = now.toLocaleString("es-VE", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 
   return (
-    <div>
-      <h1>Pacientes</h1>
+    <div className="page">
+      {/* Cabecera */}
+      <div className="page-header">
+        <div>
+          <h2>Pacientes</h2>
+          <p className="text-muted">{formattedNow}</p>
+        </div>
+        <div className="actions">
+          <PatientsSearch
+            placeholder="Buscar paciente..."
+            onSelect={async (ref: PatientRef) => {
+              const fullPatient = await getPatient(ref.id);
+              setEditingPatient(fullPatient);
+              setShowModal(true);
+            }}
+          />
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+            Nuevo paciente
+          </button>
+        </div>
+      </div>
 
-      {/* Crear */}
-      <PatientForm onSubmit={(data) => createMutation.mutate(data)} />
-
-      {/* Listado */}
+            {/* Listado */}
       <PatientsList
-        patients={data || []}
+        patients={patients}
         onEdit={async (patient) => {
           const fullPatient = await getPatient(patient.id);
           setEditingPatient(fullPatient);
@@ -56,17 +99,28 @@ export default function Patients() {
         onDelete={(id) => deleteMutation.mutate({ id })}
       />
 
-      {/* Modal de edición */}
-      {showModal && editingPatient && (
-        <div className="modal">
-          <div className="modal-content">
-            <button onClick={() => setShowModal(false)}>❌ Cerrar</button>
+      {/* Modal de creación/edición */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="mb-3">
+              {editingPatient ? "Editar paciente" : "Nuevo paciente"}
+            </h3>
             <PatientForm
               patient={editingPatient}
-              onSubmit={(formData) =>
-                updateMutation.mutate({ id: editingPatient.id, data: formData })
-              }
+              onSubmit={(formData) => {
+                if (editingPatient) {
+                  updateMutation.mutate({ id: editingPatient.id, data: formData });
+                } else {
+                  createMutation.mutate(formData);
+                }
+              }}
             />
+            <div className="modal-actions">
+              <button className="btn btn-outline" onClick={() => setShowModal(false)}>
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}

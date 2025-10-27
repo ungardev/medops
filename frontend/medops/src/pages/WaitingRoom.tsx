@@ -7,7 +7,7 @@ import {
   closeWaitingRoomDay,
 } from "../api/waitingRoom";
 import { WaitingRoomEntry, WaitingRoomStatus } from "../types/waitingRoom";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { es } from "date-fns/locale";
 import RegisterWalkinModal from "../components/RegisterWalkinModal";
 
@@ -29,6 +29,9 @@ export default function WaitingRoom() {
   const [error, setError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Estado para fecha/hora actual
+  const [now, setNow] = useState(new Date());
+
   useEffect(() => {
     getWaitingRoomGroupsToday()
       .then((data) => {
@@ -38,6 +41,14 @@ export default function WaitingRoom() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Actualizar reloj cada minuto
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formattedNow = format(now, "EEEE, d 'de' MMMM 'de' yyyy – HH:mm", { locale: es });
 
   const handleStatusChange = async (id: number, newStatus: WaitingRoomStatus) => {
     try {
@@ -87,20 +98,23 @@ export default function WaitingRoom() {
   if (error) return <p className="text-danger">Error: {error}</p>;
 
   return (
-    <div>
+    <div className="page">
       <div className="page-header">
-        <h2>Sala de Espera</h2>
+        <div>
+          <h2>Sala de Espera</h2>
+          <p className="text-muted">{formattedNow}</p>
+        </div>
         <div className="actions">
-          <button className="btn btn-success" onClick={() => setShowModal(true)}>
+          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             Registrar llegada
           </button>
-          <button className="btn btn-danger" onClick={handleCloseDay}>
+          <button className="btn btn-special" onClick={handleCloseDay}>
             Cerrar jornada
           </button>
         </div>
       </div>
 
-      <h3>Grupo A</h3>
+            <h3>Lista Orden</h3>
       <table className="table mb-4">
         <thead>
           <tr>
@@ -122,39 +136,49 @@ export default function WaitingRoom() {
                   ? formatDistanceToNow(new Date(e.arrival_time), { locale: es })
                   : "—"}
               </td>
-              <td>
+              <td className="actions">
                 {e.status === "waiting" && (
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => handleStatusChange(e.id, "in_consultation")}
-                  >
-                    Pasar a consulta
-                  </button>
+                  <>
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => handleStatusChange(e.id, "in_consultation")}
+                    >
+                      Pasar a consulta
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => handleStatusChange(e.id, "canceled")}
+                    >
+                      Cancelar
+                    </button>
+                  </>
                 )}
                 {e.status === "in_consultation" && (
-                  <button
-                    className="btn btn-success"
-                    onClick={() => handleStatusChange(e.id, "completed")}
-                  >
-                    Finalizar consulta
-                  </button>
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => handleStatusChange(e.id, "completed")}
+                    >
+                      Finalizar consulta
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => handleStatusChange(e.id, "canceled")}
+                    >
+                      Cancelar
+                    </button>
+                  </>
                 )}
                 {e.status === "completed" && (
-                  <span className="text-success font-bold">Consulta finalizada</span>
+                  <span className="badge completed">Consulta finalizada</span>
                 )}
-                <button
-                  className="btn btn-outline text-danger"
-                  onClick={() => handleStatusChange(e.id, "canceled")}
-                >
-                  Cancelar
-                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <h3>Grupo B</h3>
+      <h3>Por Confirmar</h3>
       <table className="table">
         <thead>
           <tr>
@@ -176,21 +200,31 @@ export default function WaitingRoom() {
                   ? formatDistanceToNow(new Date(e.arrival_time), { locale: es })
                   : "—"}
               </td>
-              <td>
+              <td className="actions">
                 {e.status === "in_consultation" && (
+                  <>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => handleStatusChange(e.id, "completed")}
+                    >
+                      Finalizar consulta
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => handleStatusChange(e.id, "canceled")}
+                    >
+                      Cancelar
+                    </button>
+                  </>
+                )}
+                {e.status !== "in_consultation" && e.status !== "completed" && (
                   <button
-                    className="btn btn-success"
-                    onClick={() => handleStatusChange(e.id, "completed")}
+                    className="btn btn-outline"
+                    onClick={() => handleStatusChange(e.id, "canceled")}
                   >
-                    Finalizar
+                    Cancelar
                   </button>
                 )}
-                <button
-                  className="btn btn-outline text-danger"
-                  onClick={() => handleStatusChange(e.id, "canceled")}
-                >
-                  Cancelar
-                </button>
                 {e.priority !== "emergency" && (
                   <button
                     className="btn btn-warning"
@@ -201,11 +235,14 @@ export default function WaitingRoom() {
                 )}
                 {(e.priority === "walkin" || e.status === "pending") && (
                   <button
-                    className="btn btn-success"
+                    className="btn btn-primary"
                     onClick={() => handleConfirmWalkin(e.id)}
                   >
                     Confirmar
                   </button>
+                )}
+                {e.status === "completed" && (
+                  <span className="badge completed">Consulta finalizada</span>
                 )}
               </td>
             </tr>

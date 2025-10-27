@@ -14,10 +14,11 @@ from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 from .serializers import (
     PatientReadSerializer,
     PatientWriteSerializer,
+    PatientDetailSerializer,
     AppointmentSerializer,
     PaymentSerializer,
     WaitingRoomEntrySerializer,
-    WaitingRoomEntryDetailSerializer,  # 👈 agrega esta línea
+    WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer,
 )
 
@@ -371,14 +372,18 @@ def update_appointment_notes(request, pk):
 
 # --- DRF ViewSets (CRUD básicos) ---
 class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all()
+    queryset = Patient.objects.all().order_by("-created_at")
 
     def get_serializer_class(self):
+        if self.action == "list":
+            return PatientReadSerializer
+        if self.action == "retrieve":
+            return PatientDetailSerializer
         if self.action in ["create", "update", "partial_update"]:
             return PatientWriteSerializer
         return PatientReadSerializer
 
-    # 🔹 Endpoint: GET /patients/<id>/payments/
+    # 🔹 Endpoint extra: GET /patients/<id>/payments/
     @action(detail=True, methods=["get"])
     def payments(self, request, pk=None):
         patient = self.get_object()

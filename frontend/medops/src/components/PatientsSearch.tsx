@@ -1,4 +1,3 @@
-// src/components/PatientsSearch.tsx
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { searchPatients } from "../api/patients";
@@ -19,35 +18,22 @@ export default function PatientsSearch({ onSelect, placeholder }: PatientsSearch
   });
 
   return (
-    <div style={{ position: "relative" }}>
+    <div className="search-container">
       <input
+        className="input"
         type="text"
         placeholder={placeholder || "Buscar paciente..."}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
       {results.length > 0 && (
-        <ul
-          style={{
-            position: "absolute",
-            background: "white",
-            border: "1px solid #ccc",
-            width: "100%",
-            maxHeight: "150px",
-            overflowY: "auto",
-            zIndex: 10,
-            listStyle: "none",
-            margin: 0,
-            padding: 0,
-          }}
-        >
+        <ul className="results-list card">
           {results.map((p) => (
             <li
               key={p.id}
-              style={{ padding: "0.5rem", cursor: "pointer" }}
               onClick={() => {
                 onSelect(p);
-                setQuery(p.full_name); // mostrar nombre en el input
+                setQuery(p.full_name);
               }}
             >
               {p.full_name} {p.national_id && `– ${p.national_id}`}

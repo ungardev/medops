@@ -1,79 +1,139 @@
-import { useState } from "react";
-import { Payment, PaymentInput } from "../types/payments";
+import React, { useState, useEffect } from "react";
+import { Patient, PatientInput } from "types/patients";
 
-interface Props {
-  onSubmit: (data: PaymentInput) => void;
-  payment?: Payment | null;
-  appointmentId?: number; // 👈 opcional: si ya sabes la cita
+interface PatientFormProps {
+  onSubmit: (data: PatientInput) => void;
+  patient?: Patient | null;
 }
 
-export default function PaymentForm({ onSubmit, payment, appointmentId }: Props) {
-  const [form, setForm] = useState<PaymentInput>({
-    appointment: payment?.appointment || appointmentId || 0, // 👈 referencia a la cita
-    amount: payment?.amount || "",
-    method: payment?.method || "cash",
-    status: payment?.status || "pending",
-    reference_number: payment?.reference_number || "",
-    bank_name: payment?.bank_name || "",
-  });
+type Gender = "M" | "F" | "Unknown";
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-  };
+export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
+  const [nationalId, setNationalId] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [secondLastName, setSecondLastName] = useState("");
+  const [birthdate, setBirthdate] = useState("");
+  const [gender, setGender] = useState<Gender>("Unknown");
+  const [contactInfo, setContactInfo] = useState("");
+
+  useEffect(() => {
+    if (patient) {
+      setNationalId(patient.national_id || "");
+      setFirstName(patient.first_name || "");
+      setMiddleName(patient.middle_name || "");
+      setLastName(patient.last_name || "");
+      setSecondLastName(patient.second_last_name || "");
+      setBirthdate(patient.birthdate || "");
+      const g = patient.gender as Gender | undefined;
+      setGender(g === "M" || g === "F" || g === "Unknown" ? g : "Unknown");
+      setContactInfo(patient.contact_info || "");
+    }
+  }, [patient]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    const payload: PatientInput = {
+      national_id: nationalId || undefined,
+      first_name: firstName,
+      middle_name: middleName || undefined,
+      last_name: lastName,
+      second_last_name: secondLastName || undefined,
+      birthdate: birthdate || undefined,
+      gender,
+      contact_info: contactInfo || undefined,
+    };
+    onSubmit(payload);
+
+    if (!patient) {
+      setNationalId("");
+      setFirstName("");
+      setMiddleName("");
+      setLastName("");
+      setSecondLastName("");
+      setBirthdate("");
+      setGender("Unknown");
+      setContactInfo("");
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {/* Monto */}
+    <form className="form" onSubmit={handleSubmit}>
       <input
-        type="number"
-        name="amount"
-        value={form.amount}
-        onChange={handleChange}
-        placeholder="Monto"
+        className="input"
+        type="text"
+        placeholder="Cédula"
+        value={nationalId}
+        onChange={(e) => setNationalId(e.target.value)}
+      />
+
+      <input
+        className="input"
+        type="text"
+        placeholder="Nombre"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
         required
       />
 
-      {/* Método */}
-      <select name="method" value={form.method} onChange={handleChange}>
-        <option value="cash">Efectivo</option>
-        <option value="card">Tarjeta</option>
-        <option value="transfer">Transferencia</option>
-      </select>
-
-      {/* Estado */}
-      <select name="status" value={form.status} onChange={handleChange}>
-        <option value="pending">Pendiente</option>
-        <option value="paid">Pagado</option>
-        <option value="waived">Exonerado</option>
-      </select>
-
-      {/* Referencia */}
       <input
+        className="input"
         type="text"
-        name="reference_number"
-        value={form.reference_number}
-        onChange={handleChange}
-        placeholder="Número de referencia"
+        placeholder="Segundo nombre"
+        value={middleName}
+        onChange={(e) => setMiddleName(e.target.value)}
       />
 
-      {/* Banco */}
       <input
+        className="input"
         type="text"
-        name="bank_name"
-        value={form.bank_name}
-        onChange={handleChange}
-        placeholder="Banco"
+        placeholder="Apellido"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        required
       />
 
-      <button type="submit">Guardar</button>
+      <input
+        className="input"
+        type="text"
+        placeholder="Segundo apellido"
+        value={secondLastName}
+        onChange={(e) => setSecondLastName(e.target.value)}
+      />
+
+      <input
+        className="input"
+        type="date"
+        value={birthdate}
+        onChange={(e) => setBirthdate(e.target.value)}
+      />
+
+      <select
+        className="select"
+        value={gender}
+        onChange={(e) => setGender(e.target.value as Gender)}
+      >
+        <option value="Unknown">Desconocido</option>
+        <option value="M">Masculino</option>
+        <option value="F">Femenino</option>
+      </select>
+
+      <textarea
+        className="textarea"
+        placeholder="Información de contacto"
+        value={contactInfo}
+        onChange={(e) => setContactInfo(e.target.value)}
+      />
+
+      <div className="modal-actions">
+        <button className="btn btn-primary" type="submit">
+          {patient ? "Actualizar" : "Crear"}
+        </button>
+        <button className="btn btn-outline" type="button">
+          Cancelar
+        </button>
+      </div>
     </form>
   );
 }

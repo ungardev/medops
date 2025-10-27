@@ -34,16 +34,21 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
   const [results, setResults] = useState<PatientRef[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientRef | null>(null);
 
+  // índice resaltado con teclado
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+
   // Buscar pacientes existentes mientras se escribe
   useEffect(() => {
     const fetchResults = async () => {
       if (query.length < 2) {
         setResults([]);
+        setHighlightedIndex(-1);
         return;
       }
       try {
         const found: PatientRef[] = await searchPatients(query);
         setResults(found);
+        setHighlightedIndex(found.length > 0 ? 0 : -1);
       } catch (e) {
         console.error("Error buscando pacientes:", e);
       }
@@ -51,19 +56,38 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
     fetchResults();
   }, [query]);
 
-  // Cerrar con tecla Esc
+  // Cerrar con tecla Esc + navegación con teclado
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+      if (mode === "search" && results.length > 0 && !selectedPatient) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          setHighlightedIndex((prev) =>
+            prev < results.length - 1 ? prev + 1 : 0
+          );
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          setHighlightedIndex((prev) =>
+            prev > 0 ? prev - 1 : results.length - 1
+          );
+        } else if (e.key === "Enter" && highlightedIndex >= 0) {
+          e.preventDefault();
+          setSelectedPatient(results[highlightedIndex]);
+          setQuery("");
+          setResults([]);
+        }
+      }
     };
-    document.addEventListener("keydown", handleEsc);
-    return () => document.removeEventListener("keydown", handleEsc);
-  }, [onClose]);
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [mode, results, highlightedIndex, selectedPatient, onClose]);
 
   const onSubmit = async (values: FormValues) => {
     try {
       let patientId: number;
-
       if (selectedPatient) {
         patientId = selectedPatient.id;
       } else {
@@ -76,7 +100,6 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
         const patient: Patient = await createPatient(payload);
         patientId = patient.id;
       }
-
       const entry = await registerArrival(patientId);
       onSuccess(entry);
       reset();
@@ -90,18 +113,9 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
     }
   };
 
-  return ReactDOM.createPortal(
+    return ReactDOM.createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        {/* Botón de cierre (X) */}
-        <button
-          className="btn-ghost"
-          style={{ position: "absolute", top: "12px", right: "12px" }}
-          onClick={onClose}
-        >
-          ✖
-        </button>
-
         <h2>Registrar llegada</h2>
 
         {/* === MODO BÚSQUEDA === */}
@@ -118,21 +132,18 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
             />
 
             {results.length > 0 && !selectedPatient && (
-              <ul className="card" style={{ maxHeight: "200px", overflowY: "auto" }}>
-                {results.map((p) => (
+              <ul className="card results-list">
+                {results.map((p, index) => (
                   <li
                     key={p.id}
-                    className="flex justify-between items-center"
-                    style={{ padding: "6px", cursor: "pointer" }}
+                    className={index === highlightedIndex ? "highlighted" : ""}
                     onClick={() => {
                       setSelectedPatient(p);
                       setQuery("");
                       setResults([]);
                     }}
                   >
-                    <span>
-                      {p.full_name} {p.national_id ? `— ${p.national_id}` : ""}
-                    </span>
+                    {p.full_name} {p.national_id ? `— ${p.national_id}` : ""}
                   </li>
                 ))}
               </ul>
@@ -145,17 +156,26 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
                   {selectedPatient.national_id ? ` (${selectedPatient.national_id})` : ""}
                 </h3>
                 <div className="modal-actions">
-                  <button className="btn btn-success" onClick={() => onSubmit({} as FormValues)}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => onSubmit({} as FormValues)}
+                  >
                     Registrar llegada
                   </button>
-                  <button className="btn btn-outline" onClick={() => setSelectedPatient(null)}>
+                  <button
+                    className="btn btn-outline"
+                    onClick={() => setSelectedPatient(null)}
+                  >
                     Cambiar
                   </button>
                 </div>
               </div>
             )}
 
-            <button className="btn btn-primary mt-3" onClick={() => setMode("create")}>
+            <button
+              className="btn btn-primary mt-3"
+              onClick={() => setMode("create")}
+            >
               Crear nuevo paciente
             </button>
           </div>
@@ -196,7 +216,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
               placeholder="Email"
               {...register("email", {
                 pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  value: /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/,
                   message: "Email inválido",
                 },
               })}
@@ -204,7 +224,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
             {errors.email && <span className="text-danger">{errors.email.message}</span>}
 
             <div className="modal-actions">
-              <button className="btn btn-success" type="submit" disabled={isSubmitting}>
+              <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Creando..." : "Crear y registrar llegada"}
               </button>
               <button className="btn btn-outline" type="button" onClick={() => setMode("search")}>

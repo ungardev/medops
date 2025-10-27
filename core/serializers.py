@@ -16,22 +16,69 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "birthdate",
             "gender",
             "contact_info",
-            "email",   # 👈 ahora opcional
+            "email",
+            "address",
+            "weight",
+            "height",
+            "blood_type",
+            "allergies",
+            "medical_history",
+            "active",
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
             "gender": {"required": False, "allow_null": True},
             "email": {"required": False, "allow_blank": True},
+            "address": {"required": False, "allow_blank": True},
+            "weight": {"required": False, "allow_null": True},
+            "height": {"required": False, "allow_null": True},
+            "blood_type": {"required": False, "allow_null": True},
+            "allergies": {"required": False, "allow_blank": True},
+            "medical_history": {"required": False, "allow_blank": True},
         }
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
-    """Serializer para leer pacientes (con nombre calculado)"""
+    """Serializer ligero para listas"""
     full_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
         fields = ["id", "full_name", "national_id", "email"]
+
+    def get_full_name(self, obj):
+        parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
+        return " ".join(filter(None, parts))
+
+
+class PatientDetailSerializer(serializers.ModelSerializer):
+    """Serializer completo para la vista detallada"""
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Patient
+        fields = [
+            "id",
+            "full_name",
+            "national_id",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "second_last_name",
+            "birthdate",
+            "gender",
+            "contact_info",
+            "email",
+            "address",
+            "weight",
+            "height",
+            "blood_type",
+            "allergies",
+            "medical_history",
+            "active",
+            "created_at",
+            "updated_at",
+        ]
 
     def get_full_name(self, obj):
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
