@@ -8,12 +8,15 @@ export type WaitingRoomStatus =
   | "canceled"         // Cancelado
   | "pending";         // Cita del día aún no confirmada
 
-// --- Prioridades posibles en la sala de espera
+// --- Urgencia (priority) en la sala de espera
 export type WaitingRoomPriority =
-  | "normal"     // Paciente con cita programada estándar
-  | "scheduled"  // Paciente con cita programada explícita
-  | "walkin"     // Paciente sin cita, llega directo (Grupo B)
+  | "normal"     // Paciente estándar
   | "emergency"; // Paciente promovido a emergencia
+
+// --- Origen de la llegada (source_type)
+export type WaitingRoomSourceType =
+  | "scheduled"  // Paciente con cita programada
+  | "walkin";    // Paciente sin cita, llega directo
 
 // --- Entrada de la sala de espera
 export interface WaitingRoomEntry {
@@ -23,6 +26,7 @@ export interface WaitingRoomEntry {
   status: WaitingRoomStatus;
   arrival_time: string | null;  // ISO string
   priority: WaitingRoomPriority;
+  source_type: WaitingRoomSourceType;
   order: number;
 }
 
@@ -31,6 +35,7 @@ export interface WaitingRoomEntryInput {
   patient: number;              // id del paciente
   appointment_id: number | null;
   priority?: WaitingRoomPriority;
+  source_type?: WaitingRoomSourceType;
 }
 
 // --- Grupo de sala de espera por estado
@@ -39,9 +44,10 @@ export interface WaitingroomGroupByStatus {
   total: number;
 }
 
-// --- Grupo de sala de espera por prioridad
+// --- Grupo de sala de espera por prioridad + origen
 export interface WaitingroomGroupByPriority {
-  priority: string; // scheduled, walkin, emergency
+  priority: WaitingRoomPriority;       // normal | emergency
+  source_type: WaitingRoomSourceType;  // scheduled | walkin
   total: number;
 }
 

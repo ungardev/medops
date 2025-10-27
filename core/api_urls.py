@@ -13,6 +13,7 @@ from .api_views import (
     audit_by_appointment,
     audit_by_patient,
     register_arrival,
+    waitingroom_entries_today_api,   # 👈 nuevo import
 )
 
 # --- Swagger / OpenAPI ---
@@ -55,6 +56,7 @@ urlpatterns = [
 
     # --- Sala de Espera ---
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
+    path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),  # 👈 nuevo endpoint
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
 ]

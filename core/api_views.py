@@ -10,7 +10,8 @@ from django.utils.timezone import now, localdate, make_aware, get_current_timezo
 from django.core.paginator import Paginator
 
 from rest_framework import viewsets, status, serializers
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view, action, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from drf_spectacular.utils import (
@@ -294,6 +295,24 @@ class PatientViewSet(viewsets.ModelViewSet):
         payments = Payment.objects.filter(appointment__patient=patient)
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
+
+
+@extend_schema(
+    responses={200: WaitingRoomEntrySerializer(many=True)},
+    description="Devuelve todas las entradas de la sala de espera del día actual."
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def waitingroom_entries_today_api(request):
+    today = localdate()
+    qs = (
+        WaitingRoomEntry.objects
+        .filter(arrival_time__date=today)
+        .select_related("patient", "appointment")
+        .order_by("order", "arrival_time")
+    )
+    serializer = WaitingRoomEntrySerializer(qs, many=True)
+    return Response(serializer.data, status=200)
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):

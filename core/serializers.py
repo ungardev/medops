@@ -149,6 +149,7 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "arrival_time",
             "status",
             "priority",
+            "source_type",      # 👈 agregado
             "order",
         ]
 
@@ -167,6 +168,7 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
             "arrival_time",
             "status",
             "priority",
+            "source_type",   # 👈 agregado
             "order",
         ]
 

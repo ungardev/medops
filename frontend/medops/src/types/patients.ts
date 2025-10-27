@@ -1,7 +1,7 @@
 // --- Referencia ligera de paciente (para listas, sala de espera, etc.)
 export interface PatientRef {
   id: number;
-  full_name: string;          // 👈 viene del backend (PatientReadSerializer)
+  full_name: string;          // 👈 usar SIEMPRE este campo en UI (viene del backend)
   national_id?: string | null;
   email?: string | null;
 }
