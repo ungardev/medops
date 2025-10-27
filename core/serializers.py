@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
 
 # --- Pacientes ---
@@ -46,7 +47,8 @@ class PatientReadSerializer(serializers.ModelSerializer):
         model = Patient
         fields = ["id", "full_name", "national_id", "email"]
 
-    def get_full_name(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_full_name(self, obj) -> str:
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
         return " ".join(filter(None, parts))
 
@@ -80,7 +82,8 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    def get_full_name(self, obj):
+    @extend_schema_field(serializers.CharField())
+    def get_full_name(self, obj) -> str:
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
         return " ".join(filter(None, parts))
 
