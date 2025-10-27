@@ -1,6 +1,5 @@
-// src/pages/WaitingRoom.tsx
 import { useState } from "react";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import RegisterWalkinModal from "../components/RegisterWalkinModal";
 import { useWaitingroomGroupsToday } from "../hooks/useWaitingroomGroupsToday";
@@ -27,7 +26,6 @@ export default function WaitingRoom() {
   const registerArrival = useRegisterArrival();
 
   // Actualizar reloj cada minuto
-  // (opcional: puedes moverlo a un custom hook useClock si quieres)
   useState(() => {
     const interval = setInterval(() => setNow(new Date()), 60000);
     return () => clearInterval(interval);
@@ -48,9 +46,18 @@ export default function WaitingRoom() {
   if (isLoading) return <p>Cargando sala de espera...</p>;
   if (error) return <p className="text-danger">Error cargando datos</p>;
 
-  // Derivar grupos desde la API
-  const grupoA = groups?.filter((g) => g.status === "waiting" || g.status === "in_consultation") ?? [];
-  const grupoB = groups?.filter((g) => g.status === "pending" || g.status === "walkin") ?? [];
+  // Derivar grupos desde la API (con protección contra undefined)
+  const grupoA =
+    groups?.by_status?.filter(
+      (g) => g.status === "waiting" || g.status === "in_consultation"
+    ) ?? [];
+
+  const grupoB =
+    groups?.by_status?.filter(
+      (g) => g.status === "pending" || g.status === "canceled"
+    ) ?? [];
+
+  const grupoPrioridades = groups?.by_priority ?? [];
 
   return (
     <div className="page">
@@ -66,7 +73,7 @@ export default function WaitingRoom() {
         </div>
       </div>
 
-      <h3>Lista Orden</h3>
+      <h3>Lista Orden (por estado)</h3>
       <table className="table mb-4">
         <thead>
           <tr>
@@ -84,7 +91,7 @@ export default function WaitingRoom() {
         </tbody>
       </table>
 
-      <h3>Por Confirmar</h3>
+      <h3>Por Confirmar (por estado)</h3>
       <table className="table">
         <thead>
           <tr>
@@ -96,6 +103,24 @@ export default function WaitingRoom() {
           {grupoB.map((g) => (
             <tr key={g.status}>
               <td>{renderStatusBadge(g.status as WaitingRoomStatus)}</td>
+              <td>{g.total}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h3>Por Prioridad</h3>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Prioridad</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {grupoPrioridades.map((g) => (
+            <tr key={g.priority}>
+              <td>{renderPriorityBadge(g.priority)}</td>
               <td>{g.total}</td>
             </tr>
           ))}

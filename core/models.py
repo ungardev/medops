@@ -193,27 +193,17 @@ class Appointment(models.Model):
         else:
             raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
 
-    def mark_arrived(self, is_emergency: bool = False, is_walkin: bool = False):
+    def mark_arrived(self, priority: str = "normal", source_type: str = "scheduled"):
         """
         Marca la cita como 'arrived' y crea entrada en la sala de espera.
-        - Grupo A = scheduled
-        - Grupo B = walkin
-        - Emergency = primero en Grupo A
+        - priority: "normal" o "emergency"
+        - source_type: "scheduled" (default) o "walkin"
         """
         if self.status == "pending":
             self.status = "arrived"
             self.arrival_time = timezone.now().time()
             self.save(update_fields=["status", "arrival_time"])
 
-            # Determinar prioridad según regla de negocio
-            if is_walkin:
-                priority = "walkin"   # Grupo B
-            elif is_emergency:
-                priority = "emergency"  # Grupo A, pero primero
-            else:
-                priority = "scheduled"  # Grupo A normal
-
-            # 🔹 Usamos get_or_create para evitar duplicados
             WaitingRoomEntry.objects.get_or_create(
                 appointment=self,
                 patient=self.patient,
@@ -221,6 +211,7 @@ class Appointment(models.Model):
                     "arrival_time": timezone.now(),
                     "status": "waiting",
                     "priority": priority,
+                    "source_type": source_type,
                 }
             )
 
@@ -229,12 +220,15 @@ class Appointment(models.Model):
         self.save(update_fields=['status'])
 
 
-
 class WaitingRoomEntry(models.Model):
     PRIORITY_CHOICES = [
-        ("scheduled", "Scheduled"),   # Grupo A
-        ("walkin", "Walk-in"),        # Grupo B
-        ("emergency", "Emergency"),   # Grupo A, primero
+        ("normal", "Normal"),
+        ("emergency", "Emergency"),
+    ]
+
+    SOURCE_CHOICES = [
+        ("scheduled", "Scheduled"),
+        ("walkin", "Walk-in"),
     ]
 
     STATUS_CHOICES = [
@@ -248,21 +242,24 @@ class WaitingRoomEntry(models.Model):
     appointment = models.ForeignKey("Appointment", on_delete=models.SET_NULL, null=True, blank=True)
     arrival_time = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="waiting")
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="scheduled")
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="normal")
+    source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES, default="scheduled")
     order = models.PositiveIntegerField(default=0)
 
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
     class Meta:
-        # 🔹 Emergencias primero, luego scheduled (Grupo A), luego walkin (Grupo B)
+        # 🔹 Emergencias primero, luego todos los demás por llegada
         ordering = [
             models.Case(
                 models.When(priority="emergency", then=0),
-                models.When(priority="scheduled", then=1),
-                models.When(priority="walkin", then=2),
-                default=3,
+                default=1,
                 output_field=models.IntegerField(),
             ),
-            "order",
             "arrival_time",
+            "order",
         ]
         verbose_name = "Waiting Room Entry"
         verbose_name_plural = "Waiting Room Entries"
@@ -286,6 +283,21 @@ class WaitingRoomEntry(models.Model):
             self.save(update_fields=["status"])
         else:
             raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
+
+    # --- Ubicación en la cola ---
+    def place_in_queue(self):
+        """
+        Coloca la entrada en la cola según prioridad y llegada.
+        - Emergencias se agrupan arriba.
+        - Normales se ordenan por arrival_time.
+        """
+        if self.priority == "emergency":
+            last = WaitingRoomEntry.objects.filter(priority="emergency").order_by("-order").first()
+        else:
+            last = WaitingRoomEntry.objects.filter(priority="normal").order_by("-order").first()
+
+        self.order = (last.order + 1) if last else 1
+        self.save(update_fields=["order"])
 
 
 class Diagnosis(models.Model):
