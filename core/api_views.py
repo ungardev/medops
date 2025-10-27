@@ -193,19 +193,34 @@ def register_arrival(request):
     return Response(WaitingRoomEntrySerializer(entry).data, status=201)
 
 @extend_schema(
-    responses={200: OpenApiResponse(description="Grupos de sala de espera para hoy")}
+    responses={200: OpenApiResponse(description="Grupos de sala de espera para hoy (por estado y prioridad)")}
 )
 @api_view(["GET"])
 def waitingroom_groups_today_api(request):
     today = localdate()
-    groups = (
+
+    # 🔹 Agrupación por estado
+    groups_by_status = (
         WaitingRoomEntry.objects
-        .filter(arrival_time__date=today)   # ✅ usamos arrival_time en lugar de created_at
+        .filter(arrival_time__date=today)
         .values("status")
         .annotate(total=Count("id"))
-        .order_by("status")                 # opcional, para orden consistente
+        .order_by("status")
     )
-    return Response(list(groups))
+
+    # 🔹 Agrupación por prioridad
+    groups_by_priority = (
+        WaitingRoomEntry.objects
+        .filter(arrival_time__date=today)
+        .values("priority")
+        .annotate(total=Count("id"))
+        .order_by("priority")
+    )
+
+    return Response({
+        "by_status": list(groups_by_status),
+        "by_priority": list(groups_by_priority),
+    })
 
 @extend_schema(responses={200: PaymentSerializer(many=True)})
 @api_view(["GET"])
