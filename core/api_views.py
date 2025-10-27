@@ -105,6 +105,23 @@ def daily_appointments_api(request):
     serializer = AppointmentSerializer(appointments, many=True)
     return Response(serializer.data, status=200)
 
+@extend_schema(
+    responses={200: AppointmentSerializer},
+    description="Devuelve la cita que actualmente está en estado 'in_consultation'."
+)
+@api_view(["GET"])
+def current_consultation_api(request):
+    today = localdate()
+    appointment = (
+        Appointment.objects
+        .filter(appointment_date=today, status="in_consultation")
+        .select_related("patient")
+        .first()
+    )
+    if not appointment:
+        return Response({"detail": "No hay paciente en consulta actualmente."}, status=404)
+    return Response(AppointmentSerializer(appointment).data, status=200)
+
 @extend_schema(request=AppointmentStatusUpdateSerializer, responses={200: AppointmentSerializer})
 @api_view(["PATCH"])
 def update_appointment_status(request, pk):
@@ -151,7 +168,6 @@ def update_waitingroom_status(request, pk):
     entry.save(update_fields=["status"])
     return Response(WaitingRoomEntrySerializer(entry).data)
 
-
 @extend_schema(request=RegisterArrivalSerializer, responses={201: WaitingRoomEntrySerializer})
 @api_view(["POST"])
 def register_arrival(request):
@@ -176,13 +192,25 @@ def register_arrival(request):
     )
     return Response(WaitingRoomEntrySerializer(entry).data, status=201)
 
+@extend_schema(
+    responses={200: OpenApiResponse(description="Grupos de sala de espera para hoy")}
+)
+@api_view(["GET"])
+def waitingroom_groups_today_api(request):
+    today = localdate()
+    groups = (
+        WaitingRoomEntry.objects
+        .filter(created_at__date=today)
+        .values("status")
+        .annotate(total=Count("id"))
+    )
+    return Response(list(groups))
 
 @extend_schema(responses={200: PaymentSerializer(many=True)})
 @api_view(["GET"])
 def payment_summary_api(request):
     payments = Payment.objects.values("method").annotate(total=Sum("amount"))
     return Response(list(payments))
-
 
 @extend_schema(responses={200: PaymentSerializer(many=True)})
 @api_view(["GET"])
@@ -191,12 +219,27 @@ def waived_consultations_api(request):
     serializer = PaymentSerializer(waived, many=True)
     return Response(serializer.data)
 
+@extend_schema(
+    responses={200: OpenApiResponse(description="Resumen agregado de auditoría")}
+)
+@api_view(["GET"])
+def audit_dashboard_api(request):
+    data = {
+        "total_events": Event.objects.count(),
+        "by_entity": list(Event.objects.values("entity").annotate(total=Count("id"))),
+        "by_action": list(Event.objects.values("action").annotate(total=Count("id"))),
+    }
+    return Response(data)
+
 
 @extend_schema(responses={200: OpenApiResponse(description="Eventos de auditoría")})
 @api_view(["GET"])
 def event_log_api(request):
     events = Event.objects.all().order_by("-timestamp")[:100]
-    data = [{"entity": e.entity, "action": e.action, "actor": e.actor, "timestamp": e.timestamp} for e in events]
+    data = [
+        {"entity": e.entity, "action": e.action, "actor": e.actor, "timestamp": e.timestamp}
+        for e in events
+    ]
     return Response(data)
 
 
