@@ -289,12 +289,13 @@ def audit_by_appointment(request, appointment_id):
     return Response(data)
 
 
-@extend_schema(responses={200: OpenApiResponse(description="Auditoría por paciente")})
+@extend_schema(responses={200: "Eventos de auditoría por paciente"})
 @api_view(["GET"])
 def audit_by_patient(request, patient_id):
+    from .serializers import EventSerializer
     events = Event.objects.filter(entity="Patient", entity_id=patient_id).order_by("-timestamp")
-    data = [{"action": e.action, "actor": e.actor, "timestamp": e.timestamp} for e in events]
-    return Response(data)
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data)
 
 
 # --- ViewSets ---
@@ -302,9 +303,13 @@ class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all().order_by("-created_at")
 
     def get_serializer_class(self):
+        from .serializers import (
+            PatientListSerializer,
+            PatientDetailSerializer,
+            PatientWriteSerializer,
+            PatientReadSerializer,
+        )
         if self.action == "list":
-            # 🔹 Ahora usamos el serializer diseñado para la tabla de Pacientes
-            from .serializers import PatientListSerializer
             return PatientListSerializer
         if self.action == "retrieve":
             return PatientDetailSerializer
@@ -315,8 +320,17 @@ class PatientViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def payments(self, request, pk=None):
         patient = self.get_object()
+        from .serializers import PaymentSerializer
         payments = Payment.objects.filter(appointment__patient=patient)
         serializer = PaymentSerializer(payments, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def documents(self, request, pk=None):
+        patient = self.get_object()
+        from .serializers import MedicalDocumentSerializer
+        docs = patient.documents.all().order_by("-uploaded_at")
+        serializer = MedicalDocumentSerializer(docs, many=True)
         return Response(serializer.data)
 
 
@@ -340,7 +354,12 @@ def waitingroom_entries_today_api(request):
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
-    serializer_class = AppointmentSerializer
+
+    def get_serializer_class(self):
+        from .serializers import AppointmentSerializer, AppointmentDetailSerializer
+        if self.action in ["list", "retrieve"]:
+            return AppointmentDetailSerializer
+        return AppointmentSerializer
 
 
 class PaymentViewSet(viewsets.ModelViewSet):

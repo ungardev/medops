@@ -38,6 +38,7 @@ urlpatterns = [
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
+    # 👉 Nota: /patients/{id}/payments/ y /patients/{id}/documents/ se exponen automáticamente por PatientViewSet
 
     # --- Citas ---
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),

@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
+from .models import (
+    Patient, Appointment, Payment, Event, WaitingRoomEntry,
+    Diagnosis, Treatment, Prescription, MedicalDocument
+)
 from datetime import date
 from typing import Optional
 
@@ -120,6 +123,28 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         return " ".join(filter(None, parts))
 
 
+# --- Diagnósticos, Tratamientos y Prescripciones ---
+class PrescriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prescription
+        fields = ["id", "medication", "dosage", "duration"]
+
+
+class TreatmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Treatment
+        fields = ["id", "plan", "start_date", "end_date"]
+
+
+class DiagnosisSerializer(serializers.ModelSerializer):
+    treatments = TreatmentSerializer(many=True, read_only=True)
+    prescriptions = PrescriptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Diagnosis
+        fields = ["id", "code", "description", "treatments", "prescriptions"]
+
+
 # --- Citas ---
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
@@ -136,6 +161,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "arrival_time",
             "notes",
         ]
+
+
+class AppointmentDetailSerializer(AppointmentSerializer):
+    diagnoses = DiagnosisSerializer(many=True, read_only=True)
+
+    class Meta(AppointmentSerializer.Meta):
+        fields = AppointmentSerializer.Meta.fields + ["diagnoses"]
 
 
 # --- Pagos ---
@@ -160,11 +192,18 @@ class PaymentSerializer(serializers.ModelSerializer):
         ]
 
 
+# --- Documentos clínicos ---
+class MedicalDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalDocument
+        fields = ["id", "description", "category", "uploaded_at", "uploaded_by", "file"]
+
+
 # --- Eventos (auditoría) ---
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = ["id", "timestamp", "entity", "entity_id", "action", "metadata"]
+        fields = ["id", "timestamp", "actor", "entity", "entity_id", "action", "metadata"]
 
 
 # --- Sala de espera (básico) ---
