@@ -2,16 +2,15 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { FaUser, FaEdit, FaTimes } from "react-icons/fa"; // 🔹 iconos
+import { FaUser, FaEdit, FaTimes } from "react-icons/fa";
+import { usePatients } from "../hooks/usePatients"; // 🔹 Hook que consulta /api/patients/
 
 interface Patient {
   id: number;
-  folio: string;
   full_name: string;
-  age: number;
-  gender: string;
-  phone: string;
-  national_id?: string;
+  age: number | null;
+  gender: string | null;
+  contact_info: string | null;
 }
 
 export default function Patients() {
@@ -22,15 +21,8 @@ export default function Patients() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 
-  // Simulación de pacientes (ejemplo)
-  const [patients] = useState<Patient[]>([
-    { id: 3, folio: "234243", full_name: "Verónica Alejandra Gómez Sánchez", age: 29, gender: "F", phone: "555-8785" },
-    { id: 2, folio: "123456", full_name: "Luis Alejandro Castillo Michal", age: 45, gender: "M", phone: "555-9876" },
-    { id: 1, folio: "897654", full_name: "Bobby Clark Terex", age: 32, gender: "M", phone: "555-1234" },
-  ]);
-
-  // 🔹 Orden descendente por id
-  const sortedPatients = [...patients].sort((a, b) => b.id - a.id);
+  // 🔹 Hook que trae TODOS los pacientes desde la API
+  const { data: patients, isLoading, error } = usePatients();
 
   // Actualizar reloj cada minuto
   useEffect(() => {
@@ -42,22 +34,22 @@ export default function Patients() {
     locale: es,
   });
 
-  // Buscar pacientes
+  // 🔹 Buscar pacientes en la lista cargada
   useEffect(() => {
+    if (!patients) return;
     if (query.length < 2) {
       setResults([]);
       setHighlightedIndex(-1);
       return;
     }
-    const filtered = sortedPatients.filter(
+    const filtered = patients.filter(
       (p) =>
         p.full_name.toLowerCase().includes(query.toLowerCase()) ||
-        p.folio.includes(query) ||
-        (p.national_id && p.national_id.includes(query))
+        String(p.id).includes(query)
     );
     setResults(filtered);
     setHighlightedIndex(filtered.length > 0 ? 0 : -1);
-  }, [query, sortedPatients]);
+  }, [query, patients]);
 
   const handleKeyNavigation = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (results.length === 0) return;
@@ -97,6 +89,11 @@ export default function Patients() {
     setPatientToDelete(null);
   };
 
+  if (isLoading) return <p>Cargando pacientes...</p>;
+  if (error) return <p className="text-danger">Error cargando pacientes</p>;
+
+  const list = patients ?? [];
+
   return (
     <div className="page">
       <div className="page-header flex-col items-start">
@@ -113,7 +110,7 @@ export default function Patients() {
           <input
             type="text"
             className="input"
-            placeholder="Buscar por nombre, cédula o folio..."
+            placeholder="Buscar por nombre o folio..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyNavigation}
@@ -126,7 +123,7 @@ export default function Patients() {
                   className={index === highlightedIndex ? "highlighted" : ""}
                   onClick={() => handleSelect(p)}
                 >
-                  {p.full_name} {p.national_id ? `— ${p.national_id}` : ""}
+                  {p.full_name} — {p.id}
                 </li>
               ))}
             </ul>
@@ -147,13 +144,13 @@ export default function Patients() {
           </tr>
         </thead>
         <tbody>
-          {sortedPatients.map((p) => (
+          {list.map((p) => (
             <tr key={p.id}>
-              <td>{p.folio}</td>
+              <td>{p.id}</td>
               <td>{p.full_name}</td>
-              <td>{p.age}</td>
-              <td>{p.gender}</td>
-              <td>{p.phone}</td>
+              <td>{p.age ?? "-"}</td>
+              <td>{p.gender ?? "-"}</td>
+              <td>{p.contact_info ?? "-"}</td>
               <td className="flex gap-2">
                 <button className="btn-ghost" onClick={() => viewPatient(p.id)}>
                   <FaUser />
