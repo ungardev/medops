@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
+from datetime import date
+from typing import Optional
 
 # --- Pacientes ---
 class PatientWriteSerializer(serializers.ModelSerializer):
@@ -40,7 +42,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
-    """Serializer ligero para listas"""
+    """Serializer ligero para búsquedas y referencias"""
     full_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -51,6 +53,36 @@ class PatientReadSerializer(serializers.ModelSerializer):
     def get_full_name(self, obj) -> str:
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
         return " ".join(filter(None, parts))
+
+
+class PatientListSerializer(serializers.ModelSerializer):
+    """Serializer para listar pacientes en tabla (Pacientes.tsx)"""
+    full_name = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Patient
+        fields = [
+            "id",           # usado como folio en la tabla
+            "full_name",
+            "age",
+            "gender",
+            "contact_info",
+        ]
+
+    @extend_schema_field(serializers.CharField())
+    def get_full_name(self, obj) -> str:
+        parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
+        return " ".join(filter(None, parts))
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_age(self, obj) -> Optional[int]:
+        if not obj.birthdate:
+            return None
+        today = date.today()
+        return today.year - obj.birthdate.year - (
+            (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
+        )
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
@@ -149,7 +181,7 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "arrival_time",
             "status",
             "priority",
-            "source_type",      # 👈 agregado
+            "source_type",
             "order",
         ]
 
@@ -157,18 +189,18 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
 # --- Sala de espera (detallado con cita completa) ---
 class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
-    appointment = AppointmentSerializer(read_only=True)  # 👈 incluye toda la cita
+    appointment = AppointmentSerializer(read_only=True)
 
     class Meta:
         model = WaitingRoomEntry
         fields = [
             "id",
-            "patient",       # objeto con id, full_name y email
-            "appointment",   # objeto con fecha, tipo, expected_amount, status, notes
+            "patient",
+            "appointment",
             "arrival_time",
             "status",
             "priority",
-            "source_type",   # 👈 agregado
+            "source_type",
             "order",
         ]
 
@@ -186,7 +218,6 @@ class DashboardSummarySerializer(serializers.Serializer):
     estimated_waived_amount = serializers.FloatField()
     financial_balance = serializers.FloatField()
 
-    # 🔹 Nuevos campos para tendencias
     appointments_trend = serializers.ListField()
     payments_trend = serializers.ListField()
     balance_trend = serializers.ListField()

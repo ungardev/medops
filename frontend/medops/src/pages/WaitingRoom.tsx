@@ -26,35 +26,65 @@ const renderWaitTime = (arrival_time: string | null) => {
 // Botón de acción según estado
 const renderActionButton = (
   entry: WaitingRoomEntry,
-  onChange: (id: number, newStatus: WaitingRoomStatus) => void
+  onChange: (id: number, newStatus: WaitingRoomStatus) => void,
+  entries: WaitingRoomEntry[]
 ) => {
+  const hasActiveConsultation = entries.some(
+    (e) => e.status === "in_consultation"
+  );
+
   switch (entry.status) {
     case "waiting":
       return (
-        <button
-          className="btn-primary-compact"
-          onClick={() => onChange(entry.id, "in_consultation")}
-        >
-          Iniciar consulta
-        </button>
+        <div className="actions-inline">
+          <button
+            className="btn-primary-compact"
+            disabled={hasActiveConsultation}
+            onClick={() => onChange(entry.id, "in_consultation")}
+          >
+            Iniciar consulta
+          </button>
+          <button
+            className="btn-secondary-compact"
+            onClick={() => onChange(entry.id, "canceled")}
+          >
+            Cancelar
+          </button>
+        </div>
       );
     case "in_consultation":
       return (
-        <button
-          className="btn-primary-compact"
-          onClick={() => onChange(entry.id, "completed")}
-        >
-          Finalizar consulta
-        </button>
+        <div className="actions-inline">
+          <button
+            className="btn-primary-compact"
+            onClick={() => onChange(entry.id, "completed")}
+          >
+            Finalizar consulta
+          </button>
+          <button
+            className="btn-secondary-compact"
+            onClick={() => onChange(entry.id, "canceled")}
+          >
+            Cancelar
+          </button>
+        </div>
       );
     case "pending":
       return (
-        <button
-          className="btn-primary-compact"
-          onClick={() => onChange(entry.id, "waiting")}
-        >
-          Confirmar
-        </button>
+        <div className="actions-inline">
+          <button
+            className="btn-primary-compact"
+            onClick={() => onChange(entry.id, "waiting")}
+          >
+            Confirmar
+          </button>
+          <button
+            className="btn-secondary-compact"
+            onClick={() => onChange(entry.id, "canceled")}
+          >
+            Cancelar
+          </button>
+        </div>
       );
     case "completed":
       return <span className="text-success">Consulta finalizada</span>;
@@ -167,7 +197,7 @@ export default function WaitingRoom() {
               <td>{entry.patient.full_name}</td>
               <td>{renderStatusBadge(entry.status)}</td>
               <td>{renderWaitTime(entry.arrival_time)}</td>
-              <td>{renderActionButton(entry, handleStatusChange)}</td>
+              <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
             </tr>
           ))}
         </tbody>
@@ -189,7 +219,7 @@ export default function WaitingRoom() {
               <td>{entry.patient.full_name}</td>
               <td>{renderStatusBadge(entry.status)}</td>
               <td>{renderWaitTime(entry.arrival_time)}</td>
-              <td>{renderActionButton(entry, handleStatusChange)}</td>
+              <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
             </tr>
           ))}
         </tbody>
@@ -199,7 +229,7 @@ export default function WaitingRoom() {
         <RegisterWalkinModal
           onClose={() => setShowModal(false)}
           onSuccess={(patientId) => handleRegisterArrival(patientId)}
-          existingEntries={entries ?? []} // 🔹 ahora se pasa correctamente
+          existingEntries={entries ?? []}
         />
       )}
 

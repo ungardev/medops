@@ -399,3 +399,20 @@ h3 { font-size: 1.2rem; }
 .rounded-lg { border-radius: var(--radius-2); }
 .shadow { box-shadow: var(--shadow-1); }
 .shadow-lg { box-shadow: var(--shadow-2); }
+
+/* Botón secundario compacto (para Cancelar en tabla) */
+.btn-secondary-compact {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-weight: 500;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  border-radius: var(--radius-1);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.02s ease;
+}
+.btn-secondary-compact:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+}

@@ -303,7 +303,9 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action == "list":
-            return PatientReadSerializer
+            # 🔹 Ahora usamos el serializer diseñado para la tabla de Pacientes
+            from .serializers import PatientListSerializer
+            return PatientListSerializer
         if self.action == "retrieve":
             return PatientDetailSerializer
         if self.action in ["create", "update", "partial_update"]:
