@@ -1,3 +1,4 @@
+// src/pages/WaitingRoom.tsx
 import { useState, useEffect } from "react";
 import { format, differenceInMinutes } from "date-fns";
 import { es } from "date-fns/locale";
@@ -6,6 +7,7 @@ import { useWaitingRoomEntriesToday } from "../hooks/useWaitingRoomEntriesToday"
 import { useUpdateWaitingRoomStatus } from "../hooks/useUpdateWaitingRoomStatus";
 import { useRegisterArrival } from "../hooks/useRegisterArrival";
 import type { WaitingRoomStatus, WaitingRoomEntry } from "../types/waitingRoom";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Badge visual para estado
 const renderStatusBadge = (status: WaitingRoomStatus) => (
@@ -72,6 +74,7 @@ export default function WaitingRoom() {
   const { data: entries, isLoading, error } = useWaitingRoomEntriesToday();
   const updateStatus = useUpdateWaitingRoomStatus();
   const registerArrival = useRegisterArrival();
+  const queryClient = useQueryClient();
 
   // Actualizar reloj cada minuto
   useEffect(() => {
@@ -88,8 +91,10 @@ export default function WaitingRoom() {
     updateStatus.mutate({ id, status: newStatus });
   };
 
+  // 🔹 Ahora invalida la query después de registrar llegada
   const handleRegisterArrival = async (patientId: number) => {
     await registerArrival.mutateAsync({ patient_id: patientId });
+    queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
     setShowModal(false);
   };
 
@@ -193,7 +198,8 @@ export default function WaitingRoom() {
       {showModal && (
         <RegisterWalkinModal
           onClose={() => setShowModal(false)}
-          onSuccess={(entry) => handleRegisterArrival(entry.patient.id)}
+          onSuccess={(patientId) => handleRegisterArrival(patientId)}
+          existingEntries={entries ?? []} // 🔹 ahora se pasa correctamente
         />
       )}
 
@@ -201,12 +207,18 @@ export default function WaitingRoom() {
         <div className="modal-overlay">
           <div className="modal-content">
             <h3>Confirmar cierre de jornada</h3>
-            <p>¿Desea cerrar la jornada de hoy? Esta acción cancelará a todos los pacientes pendientes.</p>
+            <p>
+              ¿Desea cerrar la jornada de hoy? Esta acción cancelará a todos los
+              pacientes pendientes.
+            </p>
             <div className="modal-actions">
               <button className="btn btn-primary" onClick={handleCloseDay}>
                 Sí, cerrar
               </button>
-              <button className="btn btn-outline" onClick={() => setShowConfirm(false)}>
+              <button
+                className="btn btn-outline"
+                onClick={() => setShowConfirm(false)}
+              >
                 No
               </button>
             </div>

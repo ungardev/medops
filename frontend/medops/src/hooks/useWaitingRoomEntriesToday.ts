@@ -1,24 +1,16 @@
+// src/hooks/useWaitingRoomEntriesToday.ts
 import { useQuery } from "@tanstack/react-query";
 import type { WaitingRoomEntry } from "../types/waitingRoom";
+import { apiFetch } from "../api/client";
 
 async function fetchEntriesToday(): Promise<WaitingRoomEntry[]> {
-  const token = localStorage.getItem("authToken");
-
-  const res = await fetch("http://127.0.0.1/api/waitingroom/today/entries/", {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Token ${token}` } : {}),
-    },
-  });
-
-  if (!res.ok) throw new Error("Error fetching waiting room entries");
-  return res.json();
+  return apiFetch("waitingroom/today/entries/");
 }
 
 export function useWaitingRoomEntriesToday() {
   return useQuery<WaitingRoomEntry[]>({
-    queryKey: ["waitingroom-entries-today"],
+    queryKey: ["waitingRoomEntriesToday"], // 🔹 clave consistente con invalidateQueries
     queryFn: fetchEntriesToday,
-    staleTime: 30_000,
+    staleTime: 30_000, // 30s de cache
   });
 }

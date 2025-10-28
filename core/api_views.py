@@ -173,7 +173,10 @@ def update_waitingroom_status(request, pk):
     entry.save(update_fields=["status"])
     return Response(WaitingRoomEntrySerializer(entry).data)
 
-@extend_schema(request=RegisterArrivalSerializer, responses={201: WaitingRoomEntrySerializer})
+@extend_schema(
+    request=RegisterArrivalSerializer,
+    responses={201: WaitingRoomEntrySerializer}
+)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def register_arrival(request):
@@ -189,11 +192,26 @@ def register_arrival(request):
     patient = get_object_or_404(Patient, pk=patient_id)
     appointment = Appointment.objects.filter(pk=appointment_id).first() if appointment_id else None
 
+    # 🔹 Validación: evitar duplicados en la Sala de Espera
+    from django.utils.timezone import localdate
+    existing = WaitingRoomEntry.objects.filter(
+        patient=patient,
+        created_at__date=localdate()
+    ).exclude(status__in=["completed", "canceled"])
+
+    if existing.exists():
+        return Response(
+            {"detail": "El paciente ya está en la sala de espera"},
+            status=400
+        )
+
+    # Crear nueva entrada
     entry = WaitingRoomEntry.objects.create(
         patient=patient,
         appointment=appointment,
         status="waiting"
     )
+
     return Response(WaitingRoomEntrySerializer(entry).data, status=201)
 
 @extend_schema(

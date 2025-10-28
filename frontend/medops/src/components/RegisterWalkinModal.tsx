@@ -3,12 +3,13 @@ import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useForm } from "react-hook-form";
 import { createPatient, searchPatients } from "../api/patients";
-import { registerArrival } from "../api/waitingRoom";
 import { Patient, PatientRef } from "../types/patients";
+import type { WaitingRoomEntry } from "../types/waitingRoom";
 
 interface Props {
   onClose: () => void;
-  onSuccess: (entry: any) => void;
+  onSuccess: (patientId: number) => void;
+  existingEntries: WaitingRoomEntry[]; // 🔹 nueva prop
 }
 
 interface FormValues {
@@ -21,7 +22,7 @@ interface FormValues {
   email?: string;
 }
 
-const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
+const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntries }) => {
   const {
     register,
     handleSubmit,
@@ -100,8 +101,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
         const patient: Patient = await createPatient(payload);
         patientId = patient.id;
       }
-      const entry = await registerArrival(patientId);
-      onSuccess(entry);
+      onSuccess(patientId);
       reset();
       setSelectedPatient(null);
       setQuery("");
@@ -113,7 +113,17 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
     }
   };
 
-    return ReactDOM.createPortal(
+  // 🔹 Validación: evitar duplicados en frontend
+  const alreadyInWaitingRoom = selectedPatient
+    ? existingEntries.some(
+        (e) =>
+          e.patient.id === selectedPatient.id &&
+          e.status !== "completed" &&
+          e.status !== "canceled"
+      )
+    : false;
+
+  return ReactDOM.createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <h2>Registrar llegada</h2>
@@ -153,22 +163,30 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
               <div className="card mt-3 text-center">
                 <h3 className="mb-2">
                   {selectedPatient.full_name}
-                  {selectedPatient.national_id ? ` (${selectedPatient.national_id})` : ""}
+                  {selectedPatient.national_id
+                    ? ` (${selectedPatient.national_id})`
+                    : ""}
                 </h3>
-                <div className="modal-actions">
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => onSubmit({} as FormValues)}
-                  >
-                    Registrar llegada
-                  </button>
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => setSelectedPatient(null)}
-                  >
-                    Cambiar
-                  </button>
-                </div>
+                {alreadyInWaitingRoom ? (
+                  <p className="text-danger">
+                    ⚠️ Este paciente ya está en la sala de espera
+                  </p>
+                ) : (
+                  <div className="modal-actions">
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => onSubmit({} as FormValues)}
+                    >
+                      Registrar llegada
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => setSelectedPatient(null)}
+                    >
+                      Cambiar
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -189,25 +207,39 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
               placeholder="Nombre"
               {...register("first_name", { required: "El nombre es obligatorio" })}
             />
-            {errors.first_name && <span className="text-danger">{errors.first_name.message}</span>}
+            {errors.first_name && (
+              <span className="text-danger">{errors.first_name.message}</span>
+            )}
 
-            <input className="input" placeholder="Segundo nombre (opcional)" {...register("second_name")} />
+            <input
+              className="input"
+              placeholder="Segundo nombre (opcional)"
+              {...register("second_name")}
+            />
 
             <input
               className="input"
               placeholder="Apellido"
               {...register("last_name", { required: "El apellido es obligatorio" })}
             />
-            {errors.last_name && <span className="text-danger">{errors.last_name.message}</span>}
+            {errors.last_name && (
+              <span className="text-danger">{errors.last_name.message}</span>
+            )}
 
-            <input className="input" placeholder="Segundo apellido (opcional)" {...register("second_last_name")} />
+            <input
+              className="input"
+              placeholder="Segundo apellido (opcional)"
+              {...register("second_last_name")}
+            />
 
             <input
               className="input"
               placeholder="Documento (Cédula)"
               {...register("national_id", { required: "El documento es obligatorio" })}
             />
-            {errors.national_id && <span className="text-danger">{errors.national_id.message}</span>}
+            {errors.national_id && (
+              <span className="text-danger">{errors.national_id.message}</span>
+            )}
 
             <input className="input" placeholder="Teléfono" {...register("phone")} />
 
@@ -216,18 +248,24 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess }) => {
               placeholder="Email"
               {...register("email", {
                 pattern: {
-                  value: /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/,
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                   message: "Email inválido",
                 },
               })}
             />
-            {errors.email && <span className="text-danger">{errors.email.message}</span>}
+            {errors.email && (
+              <span className="text-danger">{errors.email.message}</span>
+            )}
 
             <div className="modal-actions">
               <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Creando..." : "Crear y registrar llegada"}
               </button>
-              <button className="btn btn-outline" type="button" onClick={() => setMode("search")}>
+              <button
+                className="btn btn-outline"
+                type="button"
+                onClick={() => setMode("search")}
+              >
                 Volver
               </button>
             </div>
