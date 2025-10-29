@@ -1,21 +1,21 @@
+// src/main.tsx
 import "./index.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import App from "./App";
-import DashboardSuperUser from "./pages/DashboardSuperUser";
-import Patients from "./pages/Patients";
-import PatientDetail from "./pages/PatientDetail";   // 🔹 Importamos la ficha individual
-import Appointments from "./pages/Appointments";
-import Payments from "./pages/Payments";
-import WaivedConsultations from "./pages/WaivedConsultations";
-import Events from "./pages/Events";
-import AuditDashboard from "./pages/AuditDashboard";
-import WaitingRoom from "./pages/WaitingRoom";
-import Consultation from "./pages/Consulta";
-import Login from "./pages/Login";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import DashboardSuperUser from "./pages/Dashboard/DashboardSuperUser";
+import Patients from "./pages/Patients/Patients";
+import PatientDetail from "./pages/Patients/PatientDetail";   // 🔹 Ficha individual
+import Appointments from "./pages/Appointments/Appointments";
+import Payments from "./pages/Payments/Payments";
+import Events from "./pages/Events/Events";
+import AuditDashboard from "./pages/Dashboard/AuditDashboard";
+import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
+import Consultation from "./pages/Consulta/Consulta";
+import Login from "./pages/Auth/Login";
+import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -39,7 +39,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="waitingroom" element={<WaitingRoom />} />
               <Route path="appointments" element={<Appointments />} />
               <Route path="payments" element={<Payments />} />
-              <Route path="payments/waived" element={<WaivedConsultations />} />
               <Route path="events" element={<Events />} />
               <Route path="audit-dashboard" element={<AuditDashboard />} />
               <Route path="consultation" element={<Consultation />} />
