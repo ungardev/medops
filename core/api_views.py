@@ -333,6 +333,28 @@ class PatientViewSet(viewsets.ModelViewSet):
         serializer = MedicalDocumentSerializer(docs, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["get"])
+    def completed_appointments(self, request, pk=None):
+        patient = self.get_object()
+        from .serializers import AppointmentSerializer
+        appointments = Appointment.objects.filter(
+            patient=patient,
+            status="completed"
+        ).order_by("-appointment_date")
+        serializer = AppointmentSerializer(appointments, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def pending_appointments(self, request, pk=None):
+        patient = self.get_object()
+        from .serializers import AppointmentSerializer
+        appointments = Appointment.objects.filter(
+            patient=patient,
+            status__in=["pending", "arrived", "in_consultation"]
+        ).order_by("appointment_date")
+        serializer = AppointmentSerializer(appointments, many=True)
+        return Response(serializer.data)
+
 
 @extend_schema(
     responses={200: WaitingRoomEntrySerializer(many=True)},

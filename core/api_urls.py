@@ -22,10 +22,10 @@ from django.conf import settings
 
 # --- Router DRF (CRUD básicos + acciones personalizadas) ---
 router = routers.DefaultRouter()
-router.register(r'patients', PatientViewSet)
-router.register(r'appointments', AppointmentViewSet)
-router.register(r'payments', PaymentViewSet)
-router.register(r'waitingroom', WaitingRoomEntryViewSet)
+router.register(r"patients", PatientViewSet)
+router.register(r"appointments", AppointmentViewSet)
+router.register(r"payments", PaymentViewSet)
+router.register(r"waitingroom", WaitingRoomEntryViewSet)
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -38,7 +38,9 @@ urlpatterns = [
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
-    # 👉 Nota: /patients/{id}/payments/ y /patients/{id}/documents/ se exponen automáticamente por PatientViewSet
+    # 👉 Nota: /patients/{id}/payments/, /patients/{id}/documents/,
+    #          /patients/{id}/completed_appointments/ y /patients/{id}/pending_appointments/
+    #          se exponen automáticamente por PatientViewSet
 
     # --- Citas ---
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),

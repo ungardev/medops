@@ -113,67 +113,23 @@ h3 { font-size: 1.2rem; }
 
 .page-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   margin-bottom: var(--space-4);
-}
-
-.actions {
-  display: flex;
-  gap: var(--space-3);
 }
 
 /* ============ Botones ============ */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  @apply inline-flex items-center justify-center font-medium cursor-pointer transition;
   padding: 10px 18px;
   border-radius: var(--radius-1);
   border: 1px solid transparent;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.02s ease;
 }
-.btn:hover { filter: brightness(0.98); }
-.btn:active { transform: translateY(1px); }
-.btn:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
-
 .btn-primary { background: var(--primary); color: var(--primary-contrast); }
 .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
 .btn-outline:hover { background: var(--bg-muted); color: var(--text); }
-.btn-ghost   { background: transparent; color: var(--text-muted); }
+.btn-ghost { background: transparent; color: var(--text-muted); }
 .btn-ghost:hover { color: var(--text); }
-.btn-warning { background: var(--warning); color: #111; }
-
-/* Botón especial (Cerrar jornada) */
-.btn-special {
-  background: #ffffff;
-  border: 1px solid var(--border);
-  color: #000000; /* texto negro puro en reposo */
-  font-weight: 600;
-}
-.btn-special:hover {
-  background: var(--bg-muted);
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-/* Botón primario compacto (solo para Finalizar consulta en tabla) */
-.btn-primary-compact {
-  background: var(--primary);
-  color: var(--primary-contrast);
-  border: 1px solid var(--primary);
-  font-weight: 500;
-  padding: 8px 14px; /* igual que btn-outline */
-  font-size: 0.9rem;
-  border-radius: var(--radius-1);
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.02s ease;
-}
-.btn-primary-compact:hover {
-  background: #1d4ed8;
-}
 
 /* ============ Tablas ============ */
 .table {
@@ -185,52 +141,16 @@ h3 { font-size: 1.2rem; }
   box-shadow: var(--shadow-1);
   overflow: hidden;
 }
-
-.table thead tr { background: var(--row-alt); }
 .table th, .table td {
   text-align: left;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
-  vertical-align: middle;
   font-size: 0.95rem;
 }
+.table thead tr { background: var(--row-alt); }
 .table tbody tr:nth-child(even) { background: var(--row-alt); }
-.table tbody tr:last-child td { border-bottom: none; }
-
-/* ============ Badges ============ */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 12px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  line-height: 1;
-  min-height: 22px;
-}
-
-.badge.waiting       { background: var(--badge-waiting); color: #111; }
-.badge.in_consult,
-.badge.in_consultation {
-  background: var(--badge-consult);
-  color: #fff;
-  box-shadow: 0 0 0 2px var(--bg);
-}
-.badge.completed     { background: var(--badge-completed); color: #fff; }
-.badge.canceled      { background: var(--badge-canceled); color: #fff; }
-.badge.pending       { background: var(--badge-pending); color: #fff; }
-
-.badge.priority-normal     { background: var(--primary); color: #fff; }
-.badge.priority-emergency  { background: var(--danger); color: #fff; }
-.badge.priority-walkin     { background: #6d28d9; color: #fff; }
-.badge.priority-scheduled  { background: var(--primary); color: #fff; }
 
 /* ============ Formularios ============ */
-.form { display: grid; gap: var(--space-3); }
-
-.label { font-size: 0.9rem; color: var(--text-muted); }
-
 .input, .select, .textarea {
   width: 100%;
   padding: 12px 14px;
@@ -238,7 +158,6 @@ h3 { font-size: 1.2rem; }
   border-radius: var(--radius-1);
   background: var(--bg);
   color: var(--text);
-  outline: none;
   font-size: 0.95rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -247,32 +166,41 @@ h3 { font-size: 1.2rem; }
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-.help { font-size: 0.85rem; color: var(--text-muted); }
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
+/* ============ Search (Pacientes) ============ */
+.search-bar { position: relative; }
+.results-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  background: var(--bg);
+  box-shadow: var(--shadow-2);
+  z-index: 2000;
 }
-@media (max-width: 720px) {
-  .form-row { grid-template-columns: 1fr; }
+.results-list li {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.results-list li:hover,
+.results-list li.highlighted {
+  background: var(--bg-muted);
+  color: var(--primary);
 }
 
 /* ============ Modales ============ */
-#modal-root { position: relative; z-index: 2000; }
-
 .modal-overlay {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
   background: rgba(0,0,0,0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 3000;
 }
-
 .modal-content {
   background: var(--bg);
   color: var(--text);
@@ -281,51 +209,12 @@ h3 { font-size: 1.2rem; }
   width: 480px;
   max-width: calc(100% - var(--space-6));
   box-shadow: var(--shadow-2);
-  position: relative;
-  animation: fadeInUp 0.25s ease;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-}
-
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Lista de resultados en modal */
-.results-list li {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.results-list li:hover {
-  background: var(--bg-muted);
 }
 
 /* ============ Utilidades ============ */
-.mt-2 { margin-top: var(--space-2); }
-.mt-3 { margin-top: var(--space-3); }
-.mt-4 { margin-top: var(--space-4); }
-.mb-2 { margin-bottom: var(--space-2); }
-.mb-3 { margin-bottom: var(--space-3); }
-.mb-4 { margin-bottom: var(--space-4); }
-
-.flex { display: flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.justify-end { justify-content: flex-end; }
-.gap-2 { gap: var(--space-2); }
-.gap-3 { gap: var(--space-3); }
-
 .text-muted { color: var(--text-muted); }
 .text-danger { color: var(--danger); }
 .text-success { color: var(--success); }
-
 .card {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -382,37 +271,5 @@ h3 { font-size: 1.2rem; }
   background: var(--bg-muted);
   color: var(--primary);
   border-left: 3px solid var(--primary);
-  padding-left: calc(14px - 3px);
-}
-
-.results-list li.highlighted {
-  background: var(--bg-muted);
-  color: var(--primary);
-}
-
-/* Utilidades adicionales */
-.flex-col { flex-direction: column; }
-.text-center { text-align: center; }
-.w-full { width: 100%; }
-.h-full { height: 100%; }
-.rounded { border-radius: var(--radius-1); }
-.rounded-lg { border-radius: var(--radius-2); }
-.shadow { box-shadow: var(--shadow-1); }
-.shadow-lg { box-shadow: var(--shadow-2); }
-
-/* Botón secundario compacto (para Cancelar en tabla) */
-.btn-secondary-compact {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  font-weight: 500;
-  padding: 8px 14px;
-  font-size: 0.9rem;
-  border-radius: var(--radius-1);
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.02s ease;
-}
-.btn-secondary-compact:hover {
-  background: var(--bg-muted);
-  color: var(--text);
+  padding-left: calc(14px - 3px); /* compensar borde */
 }

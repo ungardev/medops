@@ -1,3 +1,4 @@
+// src/api/appointments.ts
 import { apiFetch } from "./client";
 import { Appointment, AppointmentInput, AppointmentStatus } from "../types/appointments";
 
@@ -51,3 +52,20 @@ export const updateAppointmentNotes = (
     method: "PATCH",
     body: JSON.stringify({ notes }),
   });
+
+/**
+ * Extensiones enfocadas en paciente
+ * Nota: estos endpoints requieren soporte en el backend (PatientViewSet).
+ */
+
+// 🔹 Obtener todas las citas de un paciente (sin filtrar por estado)
+export const getAppointmentsByPatient = (patientId: number): Promise<Appointment[]> =>
+  apiFetch<Appointment[]>(`appointments/?patient=${patientId}`);
+
+// 🔹 Obtener citas COMPLETADAS de un paciente
+export const getCompletedAppointmentsByPatient = (patientId: number): Promise<Appointment[]> =>
+  apiFetch<Appointment[]>(`patients/${patientId}/completed_appointments/`);
+
+// 🔹 Obtener citas PENDIENTES/EN CURSO de un paciente
+export const getPendingAppointmentsByPatient = (patientId: number): Promise<Appointment[]> =>
+  apiFetch<Appointment[]>(`patients/${patientId}/pending_appointments/`);

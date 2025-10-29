@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App";
 import DashboardSuperUser from "./pages/DashboardSuperUser";
 import Patients from "./pages/Patients";
+import PatientDetail from "./pages/PatientDetail";   // 🔹 Importamos la ficha individual
 import Appointments from "./pages/Appointments";
 import Payments from "./pages/Payments";
 import WaivedConsultations from "./pages/WaivedConsultations";
@@ -34,6 +35,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route element={<App />}>
               <Route index element={<DashboardSuperUser />} />
               <Route path="patients" element={<Patients />} />
+              <Route path="patients/:id" element={<PatientDetail />} /> {/* 🔹 Nueva ruta */}
               <Route path="waitingroom" element={<WaitingRoom />} />
               <Route path="appointments" element={<Appointments />} />
               <Route path="payments" element={<Payments />} />

@@ -1,139 +1,69 @@
-import React, { useState, useEffect } from "react";
-import { Patient, PatientInput } from "types/patients";
+// src/components/PaymentForm.tsx
+import { useState } from "react";
+import { PaymentInput } from "../types/payments";
 
-interface PatientFormProps {
-  onSubmit: (data: PatientInput) => void;
-  patient?: Patient | null;
+interface PaymentFormProps {
+  onSubmit: (data: PaymentInput) => void;
 }
 
-type Gender = "M" | "F" | "Unknown";
+export default function PaymentForm({ onSubmit }: PaymentFormProps) {
+  const [form, setForm] = useState<PaymentInput>({
+    appointment: 0, // 👈 placeholder, luego se seleccionará la cita real
+    amount: "",
+    method: "cash",
+    status: "pending",
+  });
 
-export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
-  const [nationalId, setNationalId] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [middleName, setMiddleName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [secondLastName, setSecondLastName] = useState("");
-  const [birthdate, setBirthdate] = useState("");
-  const [gender, setGender] = useState<Gender>("Unknown");
-  const [contactInfo, setContactInfo] = useState("");
-
-  useEffect(() => {
-    if (patient) {
-      setNationalId(patient.national_id || "");
-      setFirstName(patient.first_name || "");
-      setMiddleName(patient.middle_name || "");
-      setLastName(patient.last_name || "");
-      setSecondLastName(patient.second_last_name || "");
-      setBirthdate(patient.birthdate || "");
-      const g = patient.gender as Gender | undefined;
-      setGender(g === "M" || g === "F" || g === "Unknown" ? g : "Unknown");
-      setContactInfo(patient.contact_info || "");
-    }
-  }, [patient]);
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload: PatientInput = {
-      national_id: nationalId || undefined,
-      first_name: firstName,
-      middle_name: middleName || undefined,
-      last_name: lastName,
-      second_last_name: secondLastName || undefined,
-      birthdate: birthdate || undefined,
-      gender,
-      contact_info: contactInfo || undefined,
-    };
-    onSubmit(payload);
-
-    if (!patient) {
-      setNationalId("");
-      setFirstName("");
-      setMiddleName("");
-      setLastName("");
-      setSecondLastName("");
-      setBirthdate("");
-      setGender("Unknown");
-      setContactInfo("");
-    }
+    onSubmit(form);
   };
 
   return (
     <form className="form" onSubmit={handleSubmit}>
       <input
         className="input"
-        type="text"
-        placeholder="Cédula"
-        value={nationalId}
-        onChange={(e) => setNationalId(e.target.value)}
-      />
-
-      <input
-        className="input"
-        type="text"
-        placeholder="Nombre"
-        value={firstName}
-        onChange={(e) => setFirstName(e.target.value)}
+        type="number"
+        name="amount"
+        placeholder="Monto"
+        value={form.amount}
+        onChange={handleChange}
         required
-      />
-
-      <input
-        className="input"
-        type="text"
-        placeholder="Segundo nombre"
-        value={middleName}
-        onChange={(e) => setMiddleName(e.target.value)}
-      />
-
-      <input
-        className="input"
-        type="text"
-        placeholder="Apellido"
-        value={lastName}
-        onChange={(e) => setLastName(e.target.value)}
-        required
-      />
-
-      <input
-        className="input"
-        type="text"
-        placeholder="Segundo apellido"
-        value={secondLastName}
-        onChange={(e) => setSecondLastName(e.target.value)}
-      />
-
-      <input
-        className="input"
-        type="date"
-        value={birthdate}
-        onChange={(e) => setBirthdate(e.target.value)}
       />
 
       <select
         className="select"
-        value={gender}
-        onChange={(e) => setGender(e.target.value as Gender)}
+        name="method"
+        value={form.method}
+        onChange={handleChange}
       >
-        <option value="Unknown">Desconocido</option>
-        <option value="M">Masculino</option>
-        <option value="F">Femenino</option>
+        <option value="cash">Efectivo</option>
+        <option value="card">Tarjeta</option>
+        <option value="transfer">Transferencia</option>
       </select>
 
-      <textarea
-        className="textarea"
-        placeholder="Información de contacto"
-        value={contactInfo}
-        onChange={(e) => setContactInfo(e.target.value)}
-      />
+      <select
+        className="select"
+        name="status"
+        value={form.status}
+        onChange={handleChange}
+      >
+        <option value="pending">Pendiente</option>
+        <option value="paid">Pagado</option>
+        <option value="canceled">Cancelado</option>
+        <option value="waived">Exonerado</option>
+      </select>
 
-      <div className="modal-actions">
-        <button className="btn btn-primary" type="submit">
-          {patient ? "Actualizar" : "Crear"}
-        </button>
-        <button className="btn btn-outline" type="button">
-          Cancelar
-        </button>
-      </div>
+      <button className="btn btn-primary mt-3" type="submit">
+        Guardar Pago
+      </button>
     </form>
   );
 }

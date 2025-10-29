@@ -2,25 +2,33 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../api/client";
 
-export interface Event {
+export interface PatientEvent {
   id: number;
   timestamp: string;
   actor?: string;
   entity: string;
-  entity_id: number;
+  entity_id: number | string;
   action: string;
   metadata?: Record<string, any>;
 }
 
-async function fetchEventsByPatient(patientId: number): Promise<Event[]> {
-  // Endpoint esperado: GET /api/audit/patient/{id}/
-  return apiFetch(`audit/patient/${patientId}/`);
+interface EventsResult {
+  list: PatientEvent[];
+  totalCount: number;
+}
+
+async function fetchEventsByPatient(patientId: number): Promise<PatientEvent[]> {
+  return apiFetch<PatientEvent[]>(`audit/patient/${patientId}/`);
 }
 
 export function useEventsByPatient(patientId: number) {
-  return useQuery<Event[]>({
+  return useQuery<PatientEvent[], Error, EventsResult>({
     queryKey: ["events", patientId],
     queryFn: () => fetchEventsByPatient(patientId),
     enabled: !!patientId,
+    select: (data) => ({
+      list: data,
+      totalCount: data.length,
+    }),
   });
 }

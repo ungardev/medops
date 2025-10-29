@@ -169,7 +169,6 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     class Meta(AppointmentSerializer.Meta):
         fields = AppointmentSerializer.Meta.fields + ["diagnoses"]
 
-
 # --- Pagos ---
 class PaymentSerializer(serializers.ModelSerializer):
     appointment_date = serializers.DateField(source="appointment.appointment_date", read_only=True)

@@ -1,24 +1,25 @@
 // src/hooks/useDocumentsByPatient.ts
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../api/client";
+import { MedicalDocument } from "../types/documents";
 
-export interface MedicalDocument {
-  id: number;
-  description?: string;
-  category?: string;
-  uploaded_at: string;
-  uploaded_by?: string;
-  file: string; // URL del archivo
+interface DocumentsResult {
+  list: MedicalDocument[];
+  totalCount: number;
 }
 
 async function fetchDocumentsByPatient(patientId: number): Promise<MedicalDocument[]> {
-  return apiFetch(`patients/${patientId}/documents/`);
+  return apiFetch<MedicalDocument[]>(`patients/${patientId}/documents/`);
 }
 
 export function useDocumentsByPatient(patientId: number) {
-  return useQuery<MedicalDocument[]>({
+  return useQuery<MedicalDocument[], Error, DocumentsResult>({
     queryKey: ["documents", patientId],
     queryFn: () => fetchDocumentsByPatient(patientId),
     enabled: !!patientId,
+    select: (data) => ({
+      list: data,
+      totalCount: data.length,
+    }),
   });
 }
