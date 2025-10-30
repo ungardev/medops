@@ -33,7 +33,8 @@ from .models import (
     Prescription,
     Payment,
     MedicalDocument,
-    WaitingRoomEntry
+    WaitingRoomEntry,
+    GeneticPredisposition
 )
 
 # Librerías estándar
@@ -1023,6 +1024,13 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
+
+
+@admin.register(GeneticPredisposition)
+class GeneticPredispositionAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "description")
+    search_fields = ("name",)
+    ordering = ("name",)
 
 
 # Personalización del panel de administración
