@@ -4,6 +4,8 @@ import { PatientTabProps } from "./types";
 import { useUpdatePatient } from "../../hooks/patients/useUpdatePatient";
 import { PatientInput } from "types/patients";
 import { useGeneticPredispositions } from "../../hooks/patients/useGeneticPredispositions";
+import CreatableSelect from "react-select/creatable";
+import { apiFetch } from "../../api/client";
 
 // Helpers
 const normStr = (v: string | null | undefined): string => v ?? "";
@@ -16,6 +18,12 @@ const safeNumber = (v: string | number | null | undefined): number | undefined =
 
 type GenderUnion = "M" | "F" | "Unknown" | null | undefined;
 type BloodUnion = "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | undefined;
+
+interface GeneticPredisposition {
+  id: number;
+  name: string;
+  description?: string | null;
+}
 
 export default function PatientInfoTab({ patient }: PatientTabProps) {
   const [editing, setEditing] = useState(false);
@@ -39,7 +47,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
     genetic_predispositions: patient.genetic_predispositions?.map((p: any) => p.id) ?? [],
   });
 
-  const { data: predisposiciones, isLoading } = useGeneticPredispositions();
+    const { data: predisposiciones, isLoading, refetch } = useGeneticPredispositions();
   const updatePatient = useUpdatePatient(patient.id);
 
   useEffect(() => {
@@ -66,6 +74,19 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
       onSuccess: () => setEditing(false),
       onError: (err) => console.error("Error al actualizar:", err),
     });
+  };
+
+  // Crear predisposición nueva en backend
+  const handleCreatePredisposition = async (inputValue: string) => {
+    const newPred = await apiFetch<GeneticPredisposition>("genetic-predispositions/", {
+      method: "POST",
+      body: JSON.stringify({ name: inputValue }),
+    });
+    await refetch();
+    setField("genetic_predispositions", [
+      ...(form.genetic_predispositions ?? []),
+      newPred.id,
+    ]);
   };
 
     return (
@@ -140,23 +161,22 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
               {isLoading ? (
                 <p>Cargando opciones...</p>
               ) : (
-                <select
-                  multiple
-                  className="select"
-                  value={form.genetic_predispositions?.map(String) ?? []}
-                  onChange={(e) => {
-                    const selected = Array.from(e.target.selectedOptions).map(
-                      (opt) => Number(opt.value)
-                    );
-                    setField("genetic_predispositions", selected);
+                <CreatableSelect
+                  isMulti
+                  options={predisposiciones?.map(p => ({ value: p.id, label: p.name })) ?? []}
+                  value={form.genetic_predispositions?.map(id => {
+                    const found = predisposiciones?.find(p => p.id === id);
+                    return found ? { value: found.id, label: found.name } : null;
+                  }).filter(Boolean)}
+                  onChange={(selected) => {
+                    const ids = (selected ?? [])
+                      .filter((opt): opt is { value: number; label: string } => opt !== null)
+                      .map(opt => opt.value);
+                    setField("genetic_predispositions", ids);
                   }}
-                >
-                  {predisposiciones?.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
+                  onCreateOption={handleCreatePredisposition}
+                  placeholder="Escribe o selecciona predisposiciones..."
+                />
               )}
             </div>
           </>

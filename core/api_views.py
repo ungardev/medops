@@ -18,12 +18,13 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
     AppointmentSerializer, PaymentSerializer,
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
-    DashboardSummarySerializer
+    DashboardSummarySerializer,
+    GeneticPredispositionSerializer
 )
 
 
@@ -31,6 +32,10 @@ login_view = obtain_auth_token
 
 
 # --- Utilidades ---
+class GeneticPredispositionViewSet(viewsets.ModelViewSet):
+    queryset = GeneticPredisposition.objects.all().order_by("name")
+    serializer_class = GeneticPredispositionSerializer
+
 def safe_json(value):
     return float(value) if isinstance(value, Decimal) else value
 
