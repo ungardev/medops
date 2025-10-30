@@ -1,8 +1,8 @@
+// src/components/Patients/NewPatientModal.tsx
 import React from "react";
 import ReactDOM from "react-dom";
 import { useForm } from "react-hook-form";
-import { createPatient } from "../../api/patients";
-import { Patient } from "../../types/patients";
+import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
 
 interface Props {
   open: boolean;
@@ -24,29 +24,34 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
   } = useForm<FormValues>();
 
+  const createPatient = useCreatePatient();
+
   if (!open) return null;
 
-  const onSubmit = async (values: FormValues) => {
-    try {
-      const payload: any = {};
-      Object.entries(values).forEach(([key, value]) => {
-        if (value && value.trim() !== "") {
-          payload[key] = value.trim();
-        }
-      });
-      const patient: Patient = await createPatient(payload);
-      console.log("Paciente creado:", patient);
-      onCreated();
-      reset();
-      onClose();
-    } catch (e: any) {
-      console.error("Error creando paciente:", e);
-      alert(e.message || "Error creando paciente");
-    }
+  const onSubmit = (values: FormValues) => {
+    const payload: any = {};
+    Object.entries(values).forEach(([key, value]) => {
+      if (value && value.trim() !== "") {
+        payload[key] = value.trim();
+      }
+    });
+
+    createPatient.mutate(payload, {
+      onSuccess: () => {
+        console.log("Paciente creado");
+        onCreated();
+        reset();
+        onClose();
+      },
+      onError: (e: any) => {
+        console.error("Error creando paciente:", e);
+        alert(e.message || "Error creando paciente");
+      },
+    });
   };
 
   return ReactDOM.createPortal(
@@ -92,13 +97,23 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
           {errors.email && <span className="text-danger">{errors.email.message}</span>}
 
           <div className="modal-actions mt-3">
-            <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creando..." : "Crear"}
+            <button
+              className="btn btn-primary"
+              type="submit"
+              disabled={createPatient.isPending}
+            >
+              {createPatient.isPending ? "Creando..." : "Crear"}
             </button>
             <button className="btn btn-outline" type="button" onClick={onClose}>
               Cancelar
             </button>
           </div>
+
+          {createPatient.isError && (
+            <p className="text-danger mt-2">
+              Error: {(createPatient.error as Error)?.message}
+            </p>
+          )}
         </form>
       </div>
     </div>,

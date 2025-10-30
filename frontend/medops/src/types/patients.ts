@@ -24,6 +24,9 @@ export interface Patient extends PatientRef {
   allergies?: string | null;
   medical_history?: string | null;
 
+  // 🔹 Nuevo campo: predisposiciones genéticas
+  genetic_predispositions?: string[];   // 👈 array de strings
+
   // Operativos
   active?: boolean;
   created_at?: string | null;
@@ -49,4 +52,7 @@ export type PatientInput = {
   blood_type?: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-";
   allergies?: string;
   medical_history?: string;
+
+  // 🔹 Nuevo campo en input
+  genetic_predispositions?: string[];
 };

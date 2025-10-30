@@ -23,7 +23,7 @@ export const createPatient = (data: PatientInput): Promise<Patient> => {
   });
 };
 
-// 🔹 Actualizar un paciente existente
+// 🔹 Actualizar un paciente existente (usar PATCH en lugar de PUT)
 export const updatePatient = (id: number, data: PatientInput): Promise<Patient> => {
   // limpiar payload también en update
   const cleaned: any = {};
@@ -34,7 +34,7 @@ export const updatePatient = (id: number, data: PatientInput): Promise<Patient> 
   });
 
   return apiFetch<Patient>(`patients/${id}/`, {
-    method: "PUT",
+    method: "PATCH", // ✅ cambio clave
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cleaned),
   });

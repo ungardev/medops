@@ -1,12 +1,13 @@
+// src/components/Patients/PatientsList.tsx
 import React from "react";
 import { Patient } from "types/patients";
 import { useNavigate } from "react-router-dom";
 import PatientsTable from "./PatientsTable";
+import { useDeletePatient } from "../../hooks/patients/useDeletePatient";
 
 interface PatientsListProps {
   patients: Patient[];
   onEdit: (patient: Patient) => void;
-  onDelete: (id: number) => void;
 }
 
 function calculateAge(birthdate?: string | null): number | string {
@@ -17,8 +18,23 @@ function calculateAge(birthdate?: string | null): number | string {
   return age;
 }
 
-export default function PatientsList({ patients, onEdit, onDelete }: PatientsListProps) {
+export default function PatientsList({ patients, onEdit }: PatientsListProps) {
   const navigate = useNavigate();
+  const deletePatient = useDeletePatient();
+
+  const handleDelete = (id: number) => {
+    if (confirm("¿Seguro que deseas eliminar este paciente?")) {
+      deletePatient.mutate(id, {
+        onSuccess: () => {
+          console.log("Paciente eliminado");
+        },
+        onError: (e: any) => {
+          console.error("Error eliminando paciente:", e);
+          alert(e.message || "Error eliminando paciente");
+        },
+      });
+    }
+  };
 
   return (
     <PatientsTable
@@ -44,9 +60,10 @@ export default function PatientsList({ patients, onEdit, onDelete }: PatientsLis
             </button>
             <button
               className="btn btn-outline text-danger"
-              onClick={() => onDelete(p.id)}
+              onClick={() => handleDelete(p.id)}
+              disabled={deletePatient.isPending}
             >
-              Eliminar
+              {deletePatient.isPending ? "Eliminando..." : "Eliminar"}
             </button>
             <button
               className="btn btn-primary-compact"

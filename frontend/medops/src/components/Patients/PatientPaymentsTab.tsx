@@ -1,20 +1,18 @@
-// src/components/PatientPaymentsTab.tsx
+// src/components/Patients/PatientPaymentsTab.tsx
+import React from "react";
+import { PatientTabProps } from "./types";
 import { usePaymentsByPatient } from "../../hooks/patients/usePaymentsByPatient";
 import { Payment } from "../../types/payments";
 
-interface Props {
-  patientId: number;
-}
-
-export default function PatientPaymentsTab({ patientId }: Props) {
-  const { data, isLoading, error } = usePaymentsByPatient(patientId);
+export default function PatientPaymentsTab({ patient }: PatientTabProps) {
+  const { data, isLoading, error } = usePaymentsByPatient(patient.id);
 
   const payments = data?.list ?? [];
   const totalAmount = data?.totalAmount ?? 0;
   const isEmpty = !isLoading && !error && payments.length === 0;
 
   if (isLoading) return <p>Cargando pagos...</p>;
-  if (error) return <p className="text-danger">Error: {error.message}</p>;
+  if (error) return <p className="text-danger">Error: {(error as Error).message}</p>;
   if (isEmpty) return <p>No tiene pagos registrados</p>;
 
   return (
@@ -36,7 +34,7 @@ export default function PatientPaymentsTab({ patientId }: Props) {
             <tr key={p.id}>
               <td>
                 {p.received_at
-                  ? new Date(p.received_at).toLocaleDateString()
+                  ? new Date(p.received_at).toLocaleDateString("es-VE")
                   : "—"}
               </td>
               <td>{p.amount}</td>

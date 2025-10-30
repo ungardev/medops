@@ -1,8 +1,6 @@
 // src/pages/PatientDetail.tsx
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { getPatient } from "api/patients";
-import { Patient } from "types/patients";
+import { usePatient } from "../../hooks/patients/usePatient"; // ✅ usamos el hook con React Query
 
 import { Tabs, Tab } from "../../components/ui/Tabs";
 
@@ -15,25 +13,16 @@ import PatientEventsTab from "../../components/Patients/PatientEventsTab";
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
-  const [patient, setPatient] = useState<Patient | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-    getPatient(Number(id))
-      .then(setPatient)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, [id]);
-
-  if (loading) return <p>Cargando paciente...</p>;
-  if (error) return <p className="text-danger">Error: {error}</p>;
-  if (!patient) return <p>No se encontró el paciente</p>;
-
   const patientId = Number(id);
 
-  return (
+  // ✅ Hook React Query
+  const { data: patient, isLoading, error } = usePatient(patientId);
+
+  if (isLoading) return <p>Cargando paciente...</p>;
+  if (error) return <p className="text-danger">Error al cargar paciente</p>;
+  if (!patient) return <p>No se encontró el paciente</p>;
+
+    return (
     <div className="page">
       <div className="page-header">
         <div>
@@ -45,22 +34,22 @@ export default function PatientDetail() {
       {/* Tabs con botones estilizados */}
       <Tabs defaultTab="info" className="tabs">
         <Tab id="info" label="Información">
-          <PatientInfoTab patientId={patientId} />
+          <PatientInfoTab patient={patient} />
         </Tab>
         <Tab id="consultas" label="Consultas">
-          <PatientConsultationsTab patientId={patientId} />
+          <PatientConsultationsTab patient={patient} />
         </Tab>
         <Tab id="documentos" label="Documentos">
-          <PatientDocumentsTab patientId={patientId} />
+          <PatientDocumentsTab patient={patient} />
         </Tab>
         <Tab id="pagos" label="Pagos">
-          <PatientPaymentsTab patientId={patientId} />
+          <PatientPaymentsTab patient={patient} />
         </Tab>
         <Tab id="citas" label="Citas pendientes">
-          <PatientPendingAppointmentsTab patientId={patientId} />
+          <PatientPendingAppointmentsTab patient={patient} />
         </Tab>
         <Tab id="eventos" label="Eventos">
-          <PatientEventsTab patientId={patientId} />
+          <PatientEventsTab patient={patient} />
         </Tab>
       </Tabs>
     </div>

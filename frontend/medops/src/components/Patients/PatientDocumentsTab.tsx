@@ -1,19 +1,17 @@
-// src/components/PatientDocumentsTab.tsx
+// src/components/Patients/PatientDocumentsTab.tsx
+import React from "react";
+import { PatientTabProps } from "./types";
 import { useDocumentsByPatient } from "../../hooks/patients/useDocumentsByPatient";
 import { MedicalDocument } from "../../types/documents";
 
-interface Props {
-  patientId: number;
-}
-
-export default function PatientDocumentsTab({ patientId }: Props) {
-  const { data, isLoading, error } = useDocumentsByPatient(patientId);
+export default function PatientDocumentsTab({ patient }: PatientTabProps) {
+  const { data, isLoading, error } = useDocumentsByPatient(patient.id);
 
   const documents = data?.list ?? [];
   const isEmpty = !isLoading && !error && documents.length === 0;
 
   if (isLoading) return <p>Cargando documentos...</p>;
-  if (error) return <p className="text-danger">Error: {error.message}</p>;
+  if (error) return <p className="text-danger">Error: {(error as Error).message}</p>;
   if (isEmpty) return <p>No tiene documentos registrados</p>;
 
   return (
@@ -38,7 +36,7 @@ export default function PatientDocumentsTab({ patientId }: Props) {
             </td>
             <td>
               {d.uploaded_at
-                ? new Date(d.uploaded_at).toLocaleDateString()
+                ? new Date(d.uploaded_at).toLocaleDateString("es-VE")
                 : "—"}
             </td>
           </tr>

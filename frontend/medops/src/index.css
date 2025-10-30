@@ -44,13 +44,6 @@ html, body, #root {
   --danger: #dc2626;
   --success: #16a34a;
   --warning: #f59e0b;
-
-  /* Estados (badges) */
-  --badge-waiting: #facc15;
-  --badge-consult: #2563eb;
-  --badge-completed: #16a34a;
-  --badge-canceled: #ef4444;
-  --badge-pending: #6b7280;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -118,111 +111,6 @@ h3 { font-size: 1.2rem; }
   margin-bottom: var(--space-4);
 }
 
-/* ============ Botones ============ */
-.btn {
-  @apply inline-flex items-center justify-center font-medium cursor-pointer transition;
-  padding: 10px 18px;
-  border-radius: var(--radius-1);
-  border: 1px solid transparent;
-}
-.btn-primary { background: var(--primary); color: var(--primary-contrast); }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
-.btn-outline:hover { background: var(--bg-muted); color: var(--text); }
-.btn-ghost { background: transparent; color: var(--text-muted); }
-.btn-ghost:hover { color: var(--text); }
-
-/* ============ Tablas ============ */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  box-shadow: var(--shadow-1);
-  overflow: hidden;
-}
-.table th, .table td {
-  text-align: left;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.95rem;
-}
-.table thead tr { background: var(--row-alt); }
-.table tbody tr:nth-child(even) { background: var(--row-alt); }
-
-/* ============ Formularios ============ */
-.input, .select, .textarea {
-  width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.input:focus, .select:focus, .textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-/* ============ Search (Pacientes) ============ */
-.search-bar { position: relative; }
-.results-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  max-height: 240px;
-  overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  background: var(--bg);
-  box-shadow: var(--shadow-2);
-  z-index: 2000;
-}
-.results-list li {
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-.results-list li:hover,
-.results-list li.highlighted {
-  background: var(--bg-muted);
-  color: var(--primary);
-}
-
-/* ============ Modales ============ */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.modal-content {
-  background: var(--bg);
-  color: var(--text);
-  padding: var(--space-5);
-  border-radius: var(--radius-2);
-  width: 480px;
-  max-width: calc(100% - var(--space-6));
-  box-shadow: var(--shadow-2);
-}
-
-/* ============ Utilidades ============ */
-.text-muted { color: var(--text-muted); }
-.text-danger { color: var(--danger); }
-.text-success { color: var(--success); }
-.card {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  box-shadow: var(--shadow-1);
-  padding: var(--space-4);
-}
-
 /* ============ Sidebar ============ */
 .sidebar {
   position: fixed;
@@ -271,5 +159,177 @@ h3 { font-size: 1.2rem; }
   background: var(--bg-muted);
   color: var(--primary);
   border-left: 3px solid var(--primary);
-  padding-left: calc(14px - 3px); /* compensar borde */
+  padding-left: calc(14px - 3px);
+}
+
+/* ============ Tablas ============ */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+}
+.table th, .table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+.table thead tr { background: var(--row-alt); }
+.table tbody tr:nth-child(even) { background: var(--row-alt); }
+
+/* ============ Modales ============ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background: var(--bg);
+  color: var(--text);
+  padding: var(--space-5);
+  border-radius: var(--radius-2);
+  width: 480px;
+  max-width: calc(100% - var(--space-6));
+  box-shadow: var(--shadow-2);
+}
+
+/* ============ Utilidades ============ */
+.text-muted { color: var(--text-muted); }
+.text-danger { color: var(--danger); }
+.text-success { color: var(--success); }
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.mb-16 { margin-bottom: var(--space-4); }
+.mt-16 { margin-top: var(--space-4); }
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+.gap-16 { gap: var(--space-4); }
+
+/* ============ Formularios ============ */
+.label {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  color: var(--text);
+}
+
+.value {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.input--sm { max-width: 220px; }
+.textarea--md { min-height: 96px; }
+
+/* ============ Botones ============ */
+.btn-row {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.btn {
+  padding: 8px 12px;
+  border-radius: var(--radius-1);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s, border-color 0.2s;
+  border: 1px solid transparent;
+}
+
+.btn-outline {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+.btn-outline:hover {
+  background: var(--bg-muted);
+  color: var(--text);
+}
+
+.btn-primary {
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-contrast);
+}
+.btn-primary:hover {
+  background: #1559c9;
+  border-color: #1559c9;
+}
+
+/* ============ Inline Editable Fields ============ */
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.inline-field strong {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.inline-field span {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.inline-field span:hover {
+  background-color: var(--bg-muted);
+}
+
+.inline-field input,
+.inline-field select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  flex: 1;
+  font-size: 0.95rem;
+  background: var(--bg);
+  color: var(--text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inline-field input:focus,
+.inline-field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }

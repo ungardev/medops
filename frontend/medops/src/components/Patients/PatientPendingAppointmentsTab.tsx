@@ -1,18 +1,16 @@
-// src/components/PatientPendingAppointmentsTab.tsx
+// src/components/Patients/PatientPendingAppointmentsTab.tsx
+import React from "react";
+import { PatientTabProps } from "./types";
 import { usePendingAppointments } from "../../hooks/patients/usePendingAppointments";
 import { Appointment } from "../../types/appointments";
 
-interface Props {
-  patientId: number;
-}
-
-export default function PatientPendingAppointmentsTab({ patientId }: Props) {
-  const { data: appointments, isLoading, error } = usePendingAppointments(patientId);
+export default function PatientPendingAppointmentsTab({ patient }: PatientTabProps) {
+  const { data: appointments, isLoading, error } = usePendingAppointments(patient.id);
 
   const isEmpty = !isLoading && !error && (appointments?.length ?? 0) === 0;
 
   if (isLoading) return <p>Cargando próximas citas...</p>;
-  if (error) return <p className="text-danger">Error: {error.message}</p>;
+  if (error) return <p className="text-danger">Error: {(error as Error).message}</p>;
   if (isEmpty) return <p>No tiene citas pendientes</p>;
 
   return (

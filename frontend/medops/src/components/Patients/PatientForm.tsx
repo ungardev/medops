@@ -1,14 +1,18 @@
+// src/components/Patients/PatientForm.tsx
 import React, { useState, useEffect } from "react";
 import { Patient, PatientInput } from "types/patients";
+import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
+import { useUpdatePatient } from "../../hooks/patients/useUpdatePatient";
 
 interface PatientFormProps {
-  onSubmit: (data: PatientInput) => void;
   patient?: Patient | null;
+  onClose?: () => void;
+  onSaved?: () => void; // callback para refrescar lista o cerrar modal
 }
 
 type Gender = "M" | "F" | "Unknown";
 
-export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
+export default function PatientForm({ patient, onClose, onSaved }: PatientFormProps) {
   const [nationalId, setNationalId] = useState("");
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
@@ -17,6 +21,9 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
   const [birthdate, setBirthdate] = useState("");
   const [gender, setGender] = useState<Gender>("Unknown");
   const [contactInfo, setContactInfo] = useState("");
+
+  const createPatient = useCreatePatient();
+  const updatePatient = patient ? useUpdatePatient(patient.id) : null;
 
   useEffect(() => {
     if (patient) {
@@ -44,17 +51,39 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       gender,
       contact_info: contactInfo || undefined,
     };
-    onSubmit(payload);
 
-    if (!patient) {
-      setNationalId("");
-      setFirstName("");
-      setMiddleName("");
-      setLastName("");
-      setSecondLastName("");
-      setBirthdate("");
-      setGender("Unknown");
-      setContactInfo("");
+    if (patient && updatePatient) {
+      updatePatient.mutate(payload, {
+        onSuccess: () => {
+          console.log("Paciente actualizado");
+          onSaved?.();
+          onClose?.();
+        },
+        onError: (e: any) => {
+          console.error("Error actualizando paciente:", e);
+          alert(e.message || "Error actualizando paciente");
+        },
+      });
+    } else {
+      createPatient.mutate(payload, {
+        onSuccess: () => {
+          console.log("Paciente creado");
+          onSaved?.();
+          setNationalId("");
+          setFirstName("");
+          setMiddleName("");
+          setLastName("");
+          setSecondLastName("");
+          setBirthdate("");
+          setGender("Unknown");
+          setContactInfo("");
+          onClose?.();
+        },
+        onError: (e: any) => {
+          console.error("Error creando paciente:", e);
+          alert(e.message || "Error creando paciente");
+        },
+      });
     }
   };
 
@@ -127,13 +156,31 @@ export default function PatientForm({ onSubmit, patient }: PatientFormProps) {
       />
 
       <div className="modal-actions">
-        <button className="btn btn-primary" type="submit">
-          {patient ? "Actualizar" : "Crear"}
+        <button
+          className="btn btn-primary"
+          type="submit"
+          disabled={patient ? updatePatient?.isPending : createPatient.isPending}
+        >
+          {patient
+            ? updatePatient?.isPending
+              ? "Actualizando..."
+              : "Actualizar"
+            : createPatient.isPending
+            ? "Creando..."
+            : "Crear"}
         </button>
-        <button className="btn btn-outline" type="button">
+        <button className="btn btn-outline" type="button" onClick={onClose}>
           Cancelar
         </button>
       </div>
+
+      {(createPatient.isError || updatePatient?.isError) && (
+        <p className="text-danger mt-2">
+          Error:{" "}
+          {(createPatient.error as Error)?.message ||
+            (updatePatient?.error as Error)?.message}
+        </p>
+      )}
     </form>
   );
 }

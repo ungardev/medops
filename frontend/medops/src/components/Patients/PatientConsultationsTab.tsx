@@ -1,18 +1,16 @@
-// src/components/PatientConsultationsTab.tsx
+// src/components/Patients/PatientConsultationsTab.tsx
+import React from "react";
+import { PatientTabProps } from "./types";
 import { useCompletedAppointments } from "../../hooks/patients/useCompletedAppointments";
 import { Appointment } from "../../types/appointments";
 
-interface Props {
-  patientId: number;
-}
-
-export default function PatientConsultationsTab({ patientId }: Props) {
-  const { data: consultations, isLoading, error } = useCompletedAppointments(patientId);
+export default function PatientConsultationsTab({ patient }: PatientTabProps) {
+  const { data: consultations, isLoading, error } = useCompletedAppointments(patient.id);
 
   const isEmpty = !isLoading && !error && (consultations?.length ?? 0) === 0;
 
   if (isLoading) return <p>Cargando consultas...</p>;
-  if (error) return <p className="text-danger">Error: {error.message}</p>;
+  if (error) return <p className="text-danger">Error: {(error as Error).message}</p>;
   if (isEmpty) return <p>No tiene consultas registradas</p>;
 
   return (
