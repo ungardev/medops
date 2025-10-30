@@ -6,6 +6,7 @@ from .api_views import (
     AppointmentViewSet,
     PaymentViewSet,
     WaitingRoomEntryViewSet,
+    GeneticPredispositionViewSet,   # 👈 añadido
     update_appointment_status,
     update_waitingroom_status,
     patient_search_api,
@@ -26,6 +27,7 @@ router.register(r"patients", PatientViewSet)
 router.register(r"appointments", AppointmentViewSet)
 router.register(r"payments", PaymentViewSet)
 router.register(r"waitingroom", WaitingRoomEntryViewSet)
+router.register(r"genetic-predispositions", GeneticPredispositionViewSet)  # 👈 nuevo endpoint
 
 # --- Funciones personalizadas ---
 urlpatterns = [

@@ -2,14 +2,26 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
-    Diagnosis, Treatment, Prescription, MedicalDocument
+    Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition
 )
 from datetime import date
 from typing import Optional
 
 # --- Pacientes ---
+class GeneticPredispositionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GeneticPredisposition
+        fields = ["id", "name", "description"]
+
+
 class PatientWriteSerializer(serializers.ModelSerializer):
     """Serializer para crear/actualizar pacientes"""
+    genetic_predispositions = serializers.PrimaryKeyRelatedField(
+        queryset=GeneticPredisposition.objects.all(),
+        many=True,
+        required=False
+    )
+
     class Meta:
         model = Patient
         fields = [
@@ -30,6 +42,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "allergies",
             "medical_history",
             "active",
+            "genetic_predispositions",  # 👈 añadido
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
@@ -41,6 +54,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "blood_type": {"required": False, "allow_null": True},
             "allergies": {"required": False, "allow_blank": True},
             "medical_history": {"required": False, "allow_blank": True},
+            "genetic_predispositions": {"required": False},  # 👈 añadido
         }
 
 
@@ -91,6 +105,7 @@ class PatientListSerializer(serializers.ModelSerializer):
 class PatientDetailSerializer(serializers.ModelSerializer):
     """Serializer completo para la vista detallada"""
     full_name = serializers.SerializerMethodField()
+    genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Patient
@@ -112,6 +127,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "blood_type",
             "allergies",
             "medical_history",
+            "genetic_predispositions",  # 👈 añadido
             "active",
             "created_at",
             "updated_at",

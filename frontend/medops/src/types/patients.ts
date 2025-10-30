@@ -6,6 +6,13 @@ export interface PatientRef {
   email?: string | null;
 }
 
+// --- Modelo de predisposición genética
+export interface GeneticPredisposition {
+  id: number;
+  name: string;
+  description?: string | null;
+}
+
 // --- Modelo completo de paciente
 export interface Patient extends PatientRef {
   first_name: string;
@@ -24,8 +31,8 @@ export interface Patient extends PatientRef {
   allergies?: string | null;
   medical_history?: string | null;
 
-  // 🔹 Nuevo campo: predisposiciones genéticas
-  genetic_predispositions?: string[];   // 👈 array de strings
+  // 🔹 Predisposiciones genéticas (objetos completos en lectura)
+  genetic_predispositions?: GeneticPredisposition[];
 
   // Operativos
   active?: boolean;
@@ -53,6 +60,6 @@ export type PatientInput = {
   allergies?: string;
   medical_history?: string;
 
-  // 🔹 Nuevo campo en input
-  genetic_predispositions?: string[];
+  // 🔹 Predisposiciones genéticas en input (IDs numéricos)
+  genetic_predispositions?: number[];
 };

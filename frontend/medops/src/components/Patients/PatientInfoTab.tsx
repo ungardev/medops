@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { PatientTabProps } from "./types";
 import { useUpdatePatient } from "../../hooks/patients/useUpdatePatient";
 import { PatientInput } from "types/patients";
+import { useGeneticPredispositions } from "../../hooks/patients/useGeneticPredispositions";
 
 // Helpers
 const normStr = (v: string | null | undefined): string => v ?? "";
@@ -35,19 +36,18 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
     blood_type: patient.blood_type ?? undefined,
     allergies: patient.allergies ?? "",
     medical_history: patient.medical_history ?? "",
+    genetic_predispositions: patient.genetic_predispositions?.map((p: any) => p.id) ?? [],
   });
 
-  // 🔹 Estado separado para predisposiciones (string editable)
-  const [predisposicionesText, setPredisposicionesText] = useState(
-    (patient.genetic_predispositions ?? []).join(", ")
-  );
-
-  // 🔹 Sincronizar cuando React Query traiga un paciente nuevo
-  useEffect(() => {
-    setPredisposicionesText((patient.genetic_predispositions ?? []).join(", "));
-  }, [patient.genetic_predispositions]);
-
+  const { data: predisposiciones, isLoading } = useGeneticPredispositions();
   const updatePatient = useUpdatePatient(patient.id);
+
+  useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      genetic_predispositions: patient.genetic_predispositions?.map((p: any) => p.id) ?? [],
+    }));
+  }, [patient.genetic_predispositions]);
 
   const setField = <K extends keyof PatientInput>(field: K, value: PatientInput[K]) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -58,10 +58,6 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
       ...form,
       gender: form.gender ?? undefined,
       blood_type: form.blood_type ?? undefined,
-      genetic_predispositions: predisposicionesText
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0),
     } as PatientInput;
 
     console.log("Payload enviado:", payload);
@@ -140,8 +136,28 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
             <div className="field field--full"><label>Historial médico</label>
               <textarea className="textarea" rows={4} value={normStr(form.medical_history as string)} onChange={(e) => setField("medical_history", e.target.value)} />
             </div>
-            <div className="field field--full"><label>Predisposiciones genéticas (separadas por coma)</label>
-              <textarea className="textarea" rows={3} value={predisposicionesText} onChange={(e) => setPredisposicionesText(e.target.value)} />
+            <div className="field field--full"><label>Predisposiciones genéticas</label>
+              {isLoading ? (
+                <p>Cargando opciones...</p>
+              ) : (
+                <select
+                  multiple
+                  className="select"
+                  value={form.genetic_predispositions?.map(String) ?? []}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions).map(
+                      (opt) => Number(opt.value)
+                    );
+                    setField("genetic_predispositions", selected);
+                  }}
+                >
+                  {predisposiciones?.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </>
                 ) : (
@@ -212,9 +228,8 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
             <div className="field field--full">
               <label>Predisposiciones genéticas</label>
               <p>
-                {patient.genetic_predispositions &&
-                patient.genetic_predispositions.length > 0
-                  ? patient.genetic_predispositions.join(", ")
+                {patient.genetic_predispositions?.length
+                  ? patient.genetic_predispositions.map((p: any) => p.name).join(", ")
                   : "—"}
               </p>
             </div>
