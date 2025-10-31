@@ -349,9 +349,16 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
         if size > max_size:
             raise ValidationError({"file": "El archivo excede el tamaño máximo de 10 MB."})
 
+        # 👇 Aquí está la clave: asignamos patient y uploaded_by
+        patient_id = self.request.data.get("patient")
+        if not patient_id:
+            raise ValidationError({"patient": "Debe especificar el paciente."})
+
         serializer.save(
+            patient_id=patient_id,
             uploaded_by=str(self.request.user),
         )
+
 
 
 class PatientViewSet(viewsets.ModelViewSet):

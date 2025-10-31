@@ -9,20 +9,26 @@ export async function apiFetch<T>(
   const url = `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
   const token = localStorage.getItem("authToken");
 
+  // Construimos headers como objeto plano para evitar errores de TS
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    ...(token ? { Authorization: `Token ${token}` } : {}),
+    ...(options.headers as Record<string, string>),
+  };
+
+  // ⚠️ Solo añadimos Content-Type JSON si el body no es FormData
+  if (options.body && !(options.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json";
+  }
+
   const response = await fetch(url, {
     ...options,
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Token ${token}` } : {}),
-      ...(options.headers || {}),
-    },
+    headers,
   });
 
   // 🚨 Interceptor de errores de autenticación
   if (response.status === 401 || response.status === 403) {
     localStorage.removeItem("authToken");
-    // Redirige al login
     window.location.href = "/login";
     throw new Error("Sesión expirada o sin permisos. Redirigiendo al login...");
   }

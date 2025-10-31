@@ -209,9 +209,24 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 # --- Documentos clínicos ---
 class MedicalDocumentSerializer(serializers.ModelSerializer):
+    # write_only: se envía en POST pero no se devuelve en GET
+    patient = serializers.PrimaryKeyRelatedField(
+        queryset=Patient.objects.all(),
+        write_only=True
+    )
+
     class Meta:
         model = MedicalDocument
-        fields = ["id", "description", "category", "uploaded_at", "uploaded_by", "file"]
+        fields = [
+            "id",
+            "patient",        # write-only
+            "description",
+            "category",
+            "uploaded_at",
+            "uploaded_by",
+            "file",
+        ]
+        read_only_fields = ["id", "uploaded_at", "uploaded_by"]
 
 
 # --- Eventos (auditoría) ---
