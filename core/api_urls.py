@@ -15,6 +15,7 @@ from .api_views import (
     audit_by_patient,
     register_arrival,
     waitingroom_entries_today_api,
+    MedicalDocumentViewSet,         # 👈 nuevo import
 )
 
 # --- Swagger / OpenAPI ---
@@ -27,7 +28,8 @@ router.register(r"patients", PatientViewSet)
 router.register(r"appointments", AppointmentViewSet)
 router.register(r"payments", PaymentViewSet)
 router.register(r"waitingroom", WaitingRoomEntryViewSet)
-router.register(r"genetic-predispositions", GeneticPredispositionViewSet)  # 👈 nuevo endpoint
+router.register(r"genetic-predispositions", GeneticPredispositionViewSet)  # 👈 endpoint predisposiciones
+router.register(r"documents", MedicalDocumentViewSet)                      # 👈 nuevo endpoint documentos
 
 # --- Funciones personalizadas ---
 urlpatterns = [

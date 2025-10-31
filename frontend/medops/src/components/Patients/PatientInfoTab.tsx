@@ -162,6 +162,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
                 <p>Cargando opciones...</p>
               ) : (
                 <CreatableSelect
+                  classNamePrefix="react-select"   // 👈 añadido
                   isMulti
                   options={predisposiciones?.map(p => ({ value: p.id, label: p.name })) ?? []}
                   value={form.genetic_predispositions?.map(id => {

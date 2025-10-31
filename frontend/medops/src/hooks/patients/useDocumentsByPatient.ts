@@ -8,8 +8,9 @@ interface DocumentsResult {
   totalCount: number;
 }
 
+// 🔹 Ahora usamos el endpoint /documents/?patient={id}
 async function fetchDocumentsByPatient(patientId: number): Promise<MedicalDocument[]> {
-  return apiFetch<MedicalDocument[]>(`patients/${patientId}/documents/`);
+  return apiFetch<MedicalDocument[]>(`documents/?patient=${patientId}`);
 }
 
 export function useDocumentsByPatient(patientId: number) {

@@ -8,9 +8,11 @@ from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from django.utils.timezone import now, localdate, make_aware, get_current_timezone
 from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
 
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, action, permission_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.views import obtain_auth_token
@@ -18,13 +20,13 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
     AppointmentSerializer, PaymentSerializer,
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer,
-    GeneticPredispositionSerializer
+    GeneticPredispositionSerializer, MedicalDocumentSerializer
 )
 
 
@@ -304,6 +306,54 @@ def audit_by_patient(request, patient_id):
 
 
 # --- ViewSets ---
+class MedicalDocumentViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de documentos clínicos.
+    - GET /documents/?patient={id} → lista documentos de un paciente
+    - POST /documents/ (multipart) → subir documento
+    - DELETE /documents/{id}/ → eliminar documento
+    """
+    queryset = MedicalDocument.objects.all().order_by("-uploaded_at")
+    serializer_class = MedicalDocumentSerializer
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            qs = qs.filter(patient_id=patient_id)
+        return qs
+
+    def perform_create(self, serializer):
+        file = self.request.FILES.get("file")
+        if not file:
+            raise ValidationError({"file": "Debe adjuntar un archivo."})
+
+        # Validación de extensión
+        allowed_extensions = ["pdf", "jpg", "jpeg", "png"]
+        filename = getattr(file, "name", None)
+        if not filename:
+            raise ValidationError({"file": "El archivo no tiene nombre válido."})
+
+        ext = filename.rsplit(".", 1)[-1].lower()
+        if ext not in allowed_extensions:
+            raise ValidationError({"file": f"Formato no permitido: .{ext}"})
+
+        # Validación de tamaño (ej. 10 MB)
+        size = getattr(file, "size", None)
+        if size is None:
+            raise ValidationError({"file": "No se pudo determinar el tamaño del archivo."})
+
+        max_size = 10 * 1024 * 1024
+        if size > max_size:
+            raise ValidationError({"file": "El archivo excede el tamaño máximo de 10 MB."})
+
+        serializer.save(
+            uploaded_by=str(self.request.user),
+        )
+
+
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all().order_by("-created_at")
 
@@ -330,13 +380,22 @@ class PatientViewSet(viewsets.ModelViewSet):
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["get", "post"])
     def documents(self, request, pk=None):
         patient = self.get_object()
         from .serializers import MedicalDocumentSerializer
-        docs = patient.documents.all().order_by("-uploaded_at")
-        serializer = MedicalDocumentSerializer(docs, many=True)
-        return Response(serializer.data)
+
+        if request.method == "GET":
+            docs = patient.documents.all().order_by("-uploaded_at")
+            serializer = MedicalDocumentSerializer(docs, many=True)
+            return Response(serializer.data)
+
+        if request.method == "POST":
+            serializer = MedicalDocumentSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save(patient=patient, uploaded_by=str(request.user))
+                return Response(serializer.data, status=201)
+            return Response(serializer.errors, status=400)
 
     @action(detail=True, methods=["get"])
     def completed_appointments(self, request, pk=None):
