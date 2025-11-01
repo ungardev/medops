@@ -20,14 +20,15 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription
+
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
     AppointmentSerializer, PaymentSerializer,
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer,
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
-    AppointmentPendingSerializer
+    AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer
 )
 
 
@@ -523,3 +524,44 @@ class PaymentViewSet(viewsets.ModelViewSet):
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
     queryset = WaitingRoomEntry.objects.all()
     serializer_class = WaitingRoomEntrySerializer
+
+
+class DiagnosisViewSet(viewsets.ModelViewSet):
+    queryset = Diagnosis.objects.all().select_related("appointment")
+    serializer_class = DiagnosisSerializer
+
+    def perform_create(self, serializer):
+        diagnosis = serializer.save()
+        # Audit trail
+        Event.objects.create(
+            entity="Diagnosis",
+            entity_id=diagnosis.id,
+            action="create",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+        )
+
+class TreatmentViewSet(viewsets.ModelViewSet):
+    queryset = Treatment.objects.all().select_related("diagnosis")
+    serializer_class = TreatmentSerializer
+
+    def perform_create(self, serializer):
+        treatment = serializer.save()
+        Event.objects.create(
+            entity="Treatment",
+            entity_id=treatment.id,
+            action="create",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+        )
+
+class PrescriptionViewSet(viewsets.ModelViewSet):
+    queryset = Prescription.objects.all().select_related("diagnosis")
+    serializer_class = PrescriptionSerializer
+
+    def perform_create(self, serializer):
+        prescription = serializer.save()
+        Event.objects.create(
+            entity="Prescription",
+            entity_id=prescription.id,
+            action="create",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+        )

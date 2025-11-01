@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Payment, PaymentStatus } from "../../types/payments";
-import { FaPen, FaTrash, FaCheckCircle, FaEllipsisV } from "react-icons/fa";
+import { FaPen, FaTrash } from "react-icons/fa";
 
 interface Props {
   payments: Payment[];
@@ -33,7 +33,6 @@ export default function PaymentList({
 }: Props) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draft, setDraft] = useState<Partial<Payment>>({});
-  const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
 
   if (!payments || payments.length === 0) {
     return <p className="text-muted">No hay pagos registrados.</p>;
@@ -125,7 +124,7 @@ export default function PaymentList({
               )}
             </td>
             <td>{p.received_by || "-"}</td>
-            <td className="relative">
+            <td className="flex gap-2">
               {editingId === p.id ? (
                 <>
                   <button
@@ -133,75 +132,35 @@ export default function PaymentList({
                     onClick={() => saveEdit(p.id)}
                     title="Guardar"
                   >
-                    ✅
+                    <span className="font-bold">✓</span>
                   </button>
                   <button
                     className="btn btn-secondary btn-icon"
                     onClick={() => setEditingId(null)}
                     title="Cancelar"
                   >
-                    ✖
+                    <span className="font-bold">✕</span>
                   </button>
                 </>
               ) : (
                 <>
-                  <button
-                    className="btn-ghost"
-                    onClick={() =>
-                      setMenuOpenId(menuOpenId === p.id ? null : p.id)
-                    }
-                    title="Más acciones"
-                  >
-                    <FaEllipsisV />
-                  </button>
-
-                  {menuOpenId === p.id && (
-                    <div className="absolute right-0 mt-1 w-40 bg-white border rounded shadow z-10">
-                      {onEditInline && (
-                        <button
-                          className="menu-item w-full text-left px-3 py-1 hover:bg-gray-100"
-                          onClick={() => {
-                            startEdit(p);
-                            setMenuOpenId(null);
-                          }}
-                        >
-                          <FaPen /> Editar inline
-                        </button>
-                      )}
-                      {onChangeStatus && p.status !== "paid" && (
-                        <button
-                          className="menu-item w-full text-left px-3 py-1 hover:bg-gray-100"
-                          onClick={() => {
-                            onChangeStatus(p.id, "paid");
-                            setMenuOpenId(null);
-                          }}
-                        >
-                          <FaCheckCircle /> Marcar pagado
-                        </button>
-                      )}
-                      {onRequestWaive && p.status !== "waived" && (
-                        <button
-                          className="menu-item w-full text-left px-3 py-1 text-yellow-600 hover:bg-gray-100"
-                          onClick={() => {
-                            onRequestWaive(p.id);
-                            setMenuOpenId(null);
-                          }}
-                        >
-                          ⚠ Exonerar
-                        </button>
-                      )}
-                      {onDelete && (
-                        <button
-                          className="menu-item w-full text-left px-3 py-1 text-red-600 hover:bg-gray-100"
-                          onClick={() => {
-                            onDelete(p.id);
-                            setMenuOpenId(null);
-                          }}
-                        >
-                          <FaTrash /> Eliminar
-                        </button>
-                      )}
-                    </div>
+                  {onEditInline && (
+                    <button
+                      className="btn btn-light btn-icon"
+                      onClick={() => startEdit(p)}
+                      title="Editar"
+                    >
+                      <FaPen />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="btn btn-danger btn-icon"
+                      onClick={() => onDelete(p.id)}
+                      title="Eliminar"
+                    >
+                      <FaTrash />
+                    </button>
                   )}
                 </>
               )}

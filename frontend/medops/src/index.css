@@ -189,50 +189,31 @@ h3 { font-size: 1.2rem; }
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000; /* aseguramos que esté por encima del calendario */
+  z-index: 2000;
 }
+
 .modal-content {
   background: var(--bg);
   color: var(--text);
   padding: var(--space-5);
   border-radius: var(--radius-2);
-  width: 480px;
-  max-width: calc(100% - var(--space-6));
+  width: 640px; /* 🔹 más ancho para tablas */
+  max-width: 90%;
   box-shadow: var(--shadow-2);
   position: relative;
-  z-index: 2100; /* aún más alto */
+  z-index: 2100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
-/* Ajuste para react-big-calendar popups */
-.rbc-overlay {
-  z-index: 1500 !important;
-}
-
-/* ============ Utilidades ============ */
-.text-muted { color: var(--text-muted); }
-.text-danger { color: var(--danger); }
-.text-success { color: var(--success); }
-.card {
-  background: var(--bg);
-  border: 1px solid var(--border);
+.modal-content .table {
+  margin-top: var(--space-3);
   border-radius: var(--radius-1);
-  box-shadow: var(--shadow-1);
-  padding: var(--space-4);
+  overflow: hidden;
 }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.mb-16 { margin-bottom: var(--space-4); }
-.mt-16 { margin-top: var(--space-4); }
-.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
-.gap-16 { gap: var(--space-4); }
 
 /* ============ Formularios ============ */
-.label {
-  font-weight: 600;
-  margin-bottom: var(--space-2);
-  color: var(--text);
-}
-.value { margin: 0; color: var(--text-muted); }
-
 .input,
 .select,
 .textarea {
@@ -253,11 +234,8 @@ h3 { font-size: 1.2rem; }
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
-.input--sm { max-width: 220px; }
-.textarea--md { min-height: 96px; }
 
 /* ============ Botones ============ */
-.btn-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .btn {
   padding: 8px 12px;
   border-radius: var(--radius-1);
@@ -271,7 +249,6 @@ h3 { font-size: 1.2rem; }
   justify-content: center;
 }
 
-/* Variantes */
 .btn-outline {
   border: 1px solid var(--border);
   background: transparent;
@@ -320,6 +297,64 @@ h3 { font-size: 1.2rem; }
 .btn-warning:hover {
   background: #d97706;
   border-color: #d97706;
+}
+
+/* ============ Utilidades ============ */
+.text-muted { color: var(--text-muted); }
+.text-danger { color: var(--danger); }
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-sm { font-size: 0.875rem; }
+.font-semibold { font-weight: 600; }
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-5); }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mt-4 { margin-top: var(--space-4); }
+
+/* ============ Badges ejecutivos ============ */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-1);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.badge-muted {
+  background: var(--bg-muted);
+  color: var(--text-muted);
+}
+
+.badge-success {
+  background: var(--success);
+  color: var(--primary-contrast);
+}
+
+.badge-warning {
+  background: var(--warning);
+  color: #fff;
+}
+
+.badge-danger {
+  background: var(--danger);
+  color: var(--primary-contrast);
 }
 
 /* ============ Citas ============ */
@@ -378,59 +413,4 @@ h3 { font-size: 1.2rem; }
   flex-wrap: wrap;
   gap: var(--space-2);
   margin-bottom: var(--space-3);
-}
-
-/* ============ Calendario (react-big-calendar) ============ */
-/* Ocultar filas de horas, dejando solo cabecera y celdas de día */
-.rbc-time-view .rbc-time-gutter,
-.rbc-time-view .rbc-time-content > * + * > * {
-  display: none !important;
-}
-
-.rbc-time-view .rbc-allday-cell {
-  display: none !important;
-}
-
-/* Forzar que las celdas de día ocupen todo el alto */
-.rbc-time-view .rbc-day-slot {
-  min-height: auto !important;
-}
-
-/* Ajustar cabecera de días */
-.rbc-header {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: var(--text);
-  background: var(--bg-muted);
-  padding: 6px;
-  border-bottom: 1px solid var(--border);
-}
-
-/* ============ React-Select (Predisposiciones genéticas) ============ */
-.react-select__option {
-  color: var(--text) !important;
-  font-weight: 500;
-}
-
-.react-select__option--is-selected {
-  background-color: var(--primary) !important;
-  color: var(--primary-contrast) !important;
-}
-
-.react-select__option--is-focused {
-  background-color: var(--bg-muted) !important;
-  color: var(--text) !important;
-}
-
-.react-select__multi-value__label {
-  color: var(--text) !important;
-  font-weight: 500;
-}
-
-.react-select__placeholder {
-  color: var(--text-muted) !important;
-}
-
-.react-select__input input {
-  color: var(--text) !important;
 }

@@ -83,28 +83,21 @@ export default function Payments() {
       {/* Encabezado */}
       <PageHeader title="Pagos" />
 
-      {/* Resumen */}
-      <div className="flex gap-6 mb-4 text-sm">
-        <div>
-          <span className="text-gray-500">Esperado:</span>{" "}
-          <span className="font-semibold">{expectedTotal.toFixed(2)}</span>
-        </div>
-        <div>
-          <span className="text-gray-500">Recibido:</span>{" "}
-          <span className="font-semibold text-green-600">
-            {totalPaid.toFixed(2)}
-          </span>
-        </div>
-        <div>
-          <span className="text-gray-500">Pendiente:</span>{" "}
-          <span
-            className={`font-semibold ${
-              balance > 0 ? "text-yellow-600" : "text-green-600"
-            }`}
-          >
-            {balance > 0 ? balance.toFixed(2) : "0.00"}
-          </span>
-        </div>
+      {/* Resumen con badges ejecutivos */}
+      <div className="flex gap-4 mb-4">
+        <span className="badge badge-muted">
+          Esperado: {expectedTotal.toFixed(2)}
+        </span>
+        <span className="badge badge-success">
+          Recibido: {totalPaid.toFixed(2)}
+        </span>
+        <span
+          className={`badge ${
+            balance > 0 ? "badge-warning" : "badge-success"
+          }`}
+        >
+          Pendiente: {balance > 0 ? balance.toFixed(2) : "0.00"}
+        </span>
       </div>
 
       {/* Filtros */}

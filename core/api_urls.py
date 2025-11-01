@@ -7,6 +7,10 @@ from .api_views import (
     PaymentViewSet,
     WaitingRoomEntryViewSet,
     GeneticPredispositionViewSet,   # 👈 añadido
+    MedicalDocumentViewSet,         # 👈 endpoint documentos
+    DiagnosisViewSet,               # 👈 nuevo import
+    TreatmentViewSet,               # 👈 nuevo import
+    PrescriptionViewSet,            # 👈 nuevo import
     update_appointment_status,
     update_waitingroom_status,
     patient_search_api,
@@ -15,8 +19,7 @@ from .api_views import (
     audit_by_patient,
     register_arrival,
     waitingroom_entries_today_api,
-    MedicalDocumentViewSet,         # 👈 nuevo import
-    appointments_pending_api,       # 👈 nuevo import para citas pendientes
+    appointments_pending_api,       # 👈 endpoint citas pendientes
 )
 
 # --- Swagger / OpenAPI ---
@@ -29,8 +32,11 @@ router.register(r"patients", PatientViewSet)
 router.register(r"appointments", AppointmentViewSet)
 router.register(r"payments", PaymentViewSet)
 router.register(r"waitingroom", WaitingRoomEntryViewSet)
-router.register(r"genetic-predispositions", GeneticPredispositionViewSet)  # 👈 endpoint predisposiciones
-router.register(r"documents", MedicalDocumentViewSet)                      # 👈 nuevo endpoint documentos
+router.register(r"genetic-predispositions", GeneticPredispositionViewSet)
+router.register(r"documents", MedicalDocumentViewSet)
+router.register(r"diagnoses", DiagnosisViewSet)          # 👈 nuevo endpoint
+router.register(r"treatments", TreatmentViewSet)        # 👈 nuevo endpoint
+router.register(r"prescriptions", PrescriptionViewSet)  # 👈 nuevo endpoint
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -51,7 +57,7 @@ urlpatterns = [
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
-    path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),  # 👈 NUEVO ENDPOINT
+    path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),
 
     # --- Consultas ---
     path("consultation/current/", api_views.current_consultation_api, name="current-consultation-api"),

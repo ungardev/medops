@@ -13,7 +13,7 @@ import Payments from "./pages/Payments/Payments";
 import Events from "./pages/Events/Events";
 import AuditDashboard from "./pages/Dashboard/AuditDashboard";
 import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
-import Consultation from "./pages/Consulta/Consulta";
+import Consultation from "./pages/Consultation/Consultation";
 import Login from "./pages/Auth/Login";
 import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
 
