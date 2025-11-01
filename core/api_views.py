@@ -132,9 +132,13 @@ def current_consultation_api(request):
         .select_related("patient")
         .first()
     )
+
     if not appointment:
-        return Response({"detail": "No hay paciente en consulta actualmente."}, status=404)
-    return Response(AppointmentSerializer(appointment).data, status=200)
+        # 🔹 Devolver 204 en lugar de 404 → no es error, solo ausencia de datos
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    return Response(AppointmentSerializer(appointment).data, status=status.HTTP_200_OK)
+
 
 @extend_schema(request=AppointmentStatusUpdateSerializer, responses={200: AppointmentSerializer})
 @api_view(["PATCH"])
