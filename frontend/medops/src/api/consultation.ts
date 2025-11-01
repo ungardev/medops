@@ -1,11 +1,12 @@
-import { apiFetch } from "./client";
+// src/api/consultation.ts
+import { apiFetch, apiFetchOptional } from "./client";
 import { Appointment } from "../types";
 
-// 🔹 Traer la cita en curso
-export const getCurrentConsultation = (): Promise<Appointment> =>
-  apiFetch<Appointment>("consultation/current/");
+// 🔹 GET opcional: puede devolver null
+export const getCurrentConsultation = (): Promise<Appointment | null> =>
+  apiFetchOptional<Appointment>("consultation/current/");
 
-// 🔹 Actualizar notas de la cita
+// 🔹 PATCH estrictos: siempre devuelven Appointment
 export const updateAppointmentNotes = (
   id: number,
   notes: string
@@ -15,7 +16,6 @@ export const updateAppointmentNotes = (
     body: JSON.stringify({ notes }),
   });
 
-// 🔹 Actualizar estado de la cita
 export const updateAppointmentStatus = (
   id: number,
   status: string

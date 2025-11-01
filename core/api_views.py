@@ -201,15 +201,16 @@ def register_arrival(request):
 
     patient_id = validated["patient_id"]
     appointment_id = validated.get("appointment_id")
+    is_emergency = validated.get("is_emergency", False)
 
     patient = get_object_or_404(Patient, pk=patient_id)
     appointment = Appointment.objects.filter(pk=appointment_id).first() if appointment_id else None
 
     # 🔹 Validación: evitar duplicados en la Sala de Espera
-    from django.utils.timezone import localdate
+    today = localdate()
     existing = WaitingRoomEntry.objects.filter(
         patient=patient,
-        created_at__date=localdate()
+        created_at__date=today
     ).exclude(status__in=["completed", "canceled"])
 
     if existing.exists():
@@ -218,14 +219,26 @@ def register_arrival(request):
             status=400
         )
 
-    # Crear nueva entrada
+    # 🔹 Si no hay Appointment → crear uno para hoy
+    if not appointment:
+        appointment = Appointment.objects.create(
+            patient=patient,
+            appointment_date=today,
+            status="arrived",  # 👈 directo en arrived
+            appointment_type="general",  # o según lógica
+        )
+
+    # 🔹 Crear entrada en sala de espera
     entry = WaitingRoomEntry.objects.create(
         patient=patient,
         appointment=appointment,
-        status="waiting"
+        status="waiting",
+        priority="emergency" if is_emergency else "normal",
+        source_type="walkin" if not appointment_id else "scheduled",
     )
 
     return Response(WaitingRoomEntrySerializer(entry).data, status=201)
+
 
 @extend_schema(
     responses={200: OpenApiResponse(description="Grupos de sala de espera para hoy (por estado y prioridad)")}

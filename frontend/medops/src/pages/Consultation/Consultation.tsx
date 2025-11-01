@@ -4,21 +4,25 @@ import {
   getCurrentConsultation,
   updateAppointmentNotes,
   updateAppointmentStatus,
-} from "../../api/consultation"; // 👈 helpers en singular
-import { Appointment, Diagnosis, Treatment, Prescription } from "../../types"; // ajusta según tus types
+} from "../../api/consultation";
+import { Appointment, Diagnosis, Treatment, Prescription } from "../../types";
 
 import PageHeader from "../../components/Layout/PageHeader";
 
 export default function Consultation() {
   const queryClient = useQueryClient();
+  const [notes, setNotes] = useState("");
 
-  // 🔹 Traer la cita en curso
-  const { data: consultation, isLoading, isError } = useQuery<Appointment>({
+  // 🔹 Traer la cita en curso (gracias a apiFetchOptional ya devuelve null en 404/204)
+  const {
+    data: consultation,
+    isLoading,
+    isError,
+  } = useQuery<Appointment | null>({
     queryKey: ["consultation", "current"],
     queryFn: getCurrentConsultation,
+    retry: false,
   });
-
-  const [notes, setNotes] = useState("");
 
   const updateNotesMutation = useMutation({
     mutationFn: (data: { id: number; notes: string }) =>
@@ -34,8 +38,10 @@ export default function Consultation() {
       queryClient.invalidateQueries({ queryKey: ["consultation", "current"] }),
   });
 
+  // --- Renderizado según estado ---
   if (isLoading) return <p>Cargando consulta...</p>;
-  if (isError || !consultation) return <p>No hay consulta activa.</p>;
+  if (isError) return <p>Error al cargar la consulta.</p>;
+  if (!consultation) return <p>No hay consulta activa en este momento.</p>;
 
   return (
     <div>
