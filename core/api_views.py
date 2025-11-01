@@ -448,22 +448,22 @@ def waitingroom_entries_today_api(request):
 
 @extend_schema(
     responses={200: AppointmentPendingSerializer(many=True)},
-    description="Devuelve citas con saldo pendiente, incluyendo estado financiero."
+    description="Devuelve citas con saldo pendiente (expected_amount > suma de pagos pagados), incluyendo estado financiero."
 )
 @api_view(["GET"])
 def appointments_pending_api(request):
-    appointments = Appointment.objects.select_related("patient").prefetch_related("payment_set")
+    # Traemos pacientes y pagos relacionados en una sola consulta
+    appointments = Appointment.objects.select_related("patient").prefetch_related("payments")
 
     pending = []
     for appt in appointments:
-        expected = appt.expected_amount or 0
         try:
-            expected_val = float(expected)
+            expected_val = float(appt.expected_amount or 0)
         except (TypeError, ValueError):
             expected_val = 0.0
 
         total_paid = 0.0
-        for p in appt.payment_set.all():
+        for p in appt.payments.all():
             if p.status == "paid":
                 try:
                     total_paid += float(p.amount or 0)
@@ -475,6 +475,7 @@ def appointments_pending_api(request):
 
     serializer = AppointmentPendingSerializer(pending, many=True)
     return Response(serializer.data, status=200)
+
 
 
 def recalc_appointment_status(appointment: Appointment):
