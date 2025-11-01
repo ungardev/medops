@@ -6,6 +6,7 @@ from .models import (
 )
 from datetime import date
 from typing import Optional
+from decimal import Decimal
 
 # --- Pacientes ---
 class GeneticPredispositionSerializer(serializers.ModelSerializer):
@@ -272,6 +273,33 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
             "source_type",
             "order",
         ]
+
+
+# --- Citas pendientes con pagos ---
+class AppointmentPendingSerializer(serializers.ModelSerializer):
+    patient = PatientReadSerializer(read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True, source="payment_set")
+    financial_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "appointment_date",
+            "expected_amount",
+            "patient",
+            "payments",
+            "financial_status",  # 👈 añadido
+        ]
+
+    def get_financial_status(self, obj):
+        expected = Decimal(obj.expected_amount or 0)
+        total_paid = sum(
+            [Decimal(p.amount) for p in obj.payment_set.all() if p.status == "paid"]
+        )
+        if total_paid >= expected and expected > 0:
+            return "paid"
+        return "pending"
 
 
 # --- Resumen ejecutivo del Dashboard ---

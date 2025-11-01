@@ -16,6 +16,7 @@ from .api_views import (
     register_arrival,
     waitingroom_entries_today_api,
     MedicalDocumentViewSet,         # 👈 nuevo import
+    appointments_pending_api,       # 👈 nuevo import para citas pendientes
 )
 
 # --- Swagger / OpenAPI ---
@@ -50,6 +51,7 @@ urlpatterns = [
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
+    path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),  # 👈 NUEVO ENDPOINT
 
     # --- Consultas ---
     path("consultation/current/", api_views.current_consultation_api, name="current-consultation-api"),

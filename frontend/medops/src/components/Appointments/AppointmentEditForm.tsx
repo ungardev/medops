@@ -1,21 +1,22 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AppointmentInput } from "../../types/appointments";
+import { Appointment, AppointmentInput } from "../../types/appointments";
 import { getPatients } from "../../api/patients"; // 👈 asegúrate de tener este endpoint
 
 interface Props {
-  date?: Date;
+  appointment: Appointment;
   onClose: () => void;
-  onSubmit?: (data: AppointmentInput) => void;
+  onSubmit?: (id: number, data: AppointmentInput) => void;
 }
 
-export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
+export default function AppointmentEditForm({ appointment, onClose, onSubmit }: Props) {
   const [form, setForm] = useState<AppointmentInput>({
-    patient: 0,
-    appointment_date: date ? date.toISOString().slice(0, 10) : "",
-    appointment_type: "general",
-    expected_amount: "",
-    notes: "",
+    patient: appointment.patient.id,
+    appointment_date: appointment.appointment_date,
+    appointment_type: appointment.appointment_type,
+    expected_amount: appointment.expected_amount,
+    status: appointment.status,
+    notes: appointment.notes || "",
   });
 
   // 🔎 Cargar pacientes
@@ -33,7 +34,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) onSubmit(form);
+    if (onSubmit) onSubmit(appointment.id, form);
     onClose();
   };
 
@@ -42,7 +43,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       <div className="modal-content">
         {/* Header */}
         <div className="flex-between mb-16">
-          <h2>Nueva Cita</h2>
+          <h2>Editar Cita</h2>
           <button type="button" className="btn btn-outline" onClick={onClose}>
             ✖
           </button>
@@ -100,6 +101,23 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             </select>
           </div>
 
+          {/* Estado */}
+          <div>
+            <label className="label">Estado:</label>
+            <select
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+              className="select"
+            >
+              <option value="pending">Pendiente</option>
+              <option value="arrived">Llegó</option>
+              <option value="in_consultation">En consulta</option>
+              <option value="completed">Completada</option>
+              <option value="canceled">Cancelada</option>
+            </select>
+          </div>
+
           {/* Monto esperado */}
           <div>
             <label className="label">Monto esperado:</label>
@@ -130,7 +148,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              Guardar
+              Guardar cambios
             </button>
           </div>
         </form>

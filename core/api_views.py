@@ -26,7 +26,8 @@ from .serializers import (
     AppointmentSerializer, PaymentSerializer,
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer,
-    GeneticPredispositionSerializer, MedicalDocumentSerializer
+    GeneticPredispositionSerializer, MedicalDocumentSerializer,
+    AppointmentPendingSerializer
 )
 
 
@@ -445,6 +446,41 @@ def waitingroom_entries_today_api(request):
     return Response(serializer.data, status=200)
 
 
+@extend_schema(
+    responses={200: AppointmentPendingSerializer(many=True)},
+    description="Devuelve citas con saldo pendiente (expected_amount > suma de pagos pagados), incluyendo estado financiero."
+)
+@api_view(["GET"])
+def appointments_pending_api(request):
+    appointments = Appointment.objects.select_related("patient").prefetch_related("payment_set")
+
+    pending = []
+    for appt in appointments:
+        expected = appt.expected_amount or 0
+        total_paid = sum(
+            [float(p.amount) for p in appt.payment_set.all() if p.status == "paid"]
+        )
+        if float(expected) > total_paid:
+            pending.append(appt)
+
+    serializer = AppointmentPendingSerializer(pending, many=True)
+    return Response(serializer.data, status=200)
+
+
+def recalc_appointment_status(appointment: Appointment):
+    expected = Decimal(appointment.expected_amount or 0)
+    total_paid = Payment.objects.filter(
+        appointment=appointment, status="paid"
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+    if total_paid >= expected and expected > 0:
+        appointment.status = "paid"
+    else:
+        appointment.status = "pending"
+    appointment.save(update_fields=["status"])
+    
+
+
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
 
@@ -458,6 +494,19 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
+    def perform_create(self, serializer):
+        payment = serializer.save()
+        recalc_appointment_status(payment.appointment)
+
+    def perform_update(self, serializer):
+        payment = serializer.save()
+        recalc_appointment_status(payment.appointment)
+
+    def perform_destroy(self, instance):
+        appointment = instance.appointment
+        super().perform_destroy(instance)
+        recalc_appointment_status(appointment)
 
 
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet):

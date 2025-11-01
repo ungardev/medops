@@ -1,21 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getPayments, deletePayment, updatePayment } from "../../api/payments";
+import { Payment, PaymentStatus, PaymentInput } from "../../types/payments";
+import { toPaymentInputPartial } from "../../utils/payments";
+
+import PageHeader from "../../components/Layout/PageHeader";
+import PaymentList from "../../components/Payments/PaymentList";
+import PendingPaymentsModal from "../../components/Payments/PendingPaymentsModal";
+import { useAppointmentsPending, AppointmentPending } from "../../hooks/appointments/useAppointmentsPending";
 import { useState } from "react";
-import { getPayments, createPayment } from "api/payments";
-import { Payment, PaymentInput } from "types/payments";
-import PaymentForm from "components/Payments/PaymentForm";
-import {
-  exportPaymentsToCSV,
-  exportPaymentsToXLSX,
-  exportPaymentsToPDF,
-} from "utils/export";
 
 export default function Payments() {
   const queryClient = useQueryClient();
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [methodFilter, setMethodFilter] = useState<string>("");
 
+  const [showPendingModal, setShowPendingModal] = useState(false);
+
+  const [statusFilter, setStatusFilter] = useState<PaymentStatus | "all">("all");
+  const [methodFilter, setMethodFilter] = useState<
+    "all" | "cash" | "card" | "transfer"
+  >("all");
+
+  // 🔹 Pagos globales (auditoría)
   const {
-    data: payments,
+    data: payments = [],
     isLoading,
     isError,
     error,
@@ -24,152 +30,150 @@ export default function Payments() {
     queryFn: getPayments,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (input: PaymentInput) => createPayment(input),
+  // 🔹 Citas pendientes (hook nuevo con financial_status)
+  const {
+    data: appointmentsPending = [],
+    isLoading: loadingAppointments,
+    isError: errorAppointments,
+  } = useAppointmentsPending();
+
+  const deleteMutation = useMutation({
+    mutationFn: deletePayment,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["payments"] }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Partial<PaymentInput> }) =>
+      updatePayment(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["payments"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments", "pending"] }); // 👈 refrescar citas pendientes
+    },
   });
 
   if (isLoading) return <p>Cargando pagos...</p>;
   if (isError) return <p>Error: {(error as Error).message}</p>;
-  if (!payments) return <p>No se encontraron pagos</p>;
 
-  const filtered = payments.filter((p) => {
-    return (
-      (statusFilter ? p.status === statusFilter : true) &&
-      (methodFilter ? p.method === methodFilter : true)
-    );
+  // 🔹 Filtrado
+  const filteredPayments = payments
+    .filter((p) => (statusFilter === "all" ? true : p.status === statusFilter))
+    .filter((p) => (methodFilter === "all" ? true : p.method === methodFilter));
+
+  // 🔹 Resumen financiero global (solo para auditoría)
+  const expectedTotal = filteredPayments.reduce(
+    (sum, p) => sum + parseFloat(p.amount),
+    0
+  );
+  const totalPaid = filteredPayments
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + parseFloat(p.amount), 0);
+  const balance = expectedTotal - totalPaid;
+
+  // 🔹 Agrupar pagos por cita (para el modal)
+  const paymentsByAppointment: Record<number, Payment[]> = {};
+  payments.forEach((p) => {
+    if (!paymentsByAppointment[p.appointment]) {
+      paymentsByAppointment[p.appointment] = [];
+    }
+    paymentsByAppointment[p.appointment].push(p);
   });
 
   return (
     <div>
-      <h1>Gestión de Pagos</h1>
+      {/* Encabezado */}
+      <PageHeader title="Pagos" />
 
-      {/* Crear nuevo pago */}
-      <div style={{ marginBottom: "2rem" }}>
-        <h2>Registrar Pago</h2>
-        <PaymentForm onSubmit={(data) => createMutation.mutate(data)} />
-      </div>
-
-      {/* Filtros + Exportación */}
-      <div
-        style={{
-          marginBottom: "1rem",
-          display: "flex",
-          gap: "1rem",
-          alignItems: "center",
-        }}
-      >
+      {/* Resumen */}
+      <div className="flex gap-6 mb-4 text-sm">
         <div>
-          <label>
-            Estado:
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="pending">Pendiente</option>
-              <option value="paid">Pagado</option>
-              <option value="canceled">Cancelado</option>
-              <option value="waived">Exonerado</option>
-            </select>
-          </label>
-
-          <label style={{ marginLeft: "1rem" }}>
-            Método:
-            <select
-              value={methodFilter}
-              onChange={(e) => setMethodFilter(e.target.value)}
-            >
-              <option value="">Todos</option>
-              <option value="cash">Efectivo</option>
-              <option value="card">Tarjeta</option>
-              <option value="transfer">Transferencia</option>
-            </select>
-          </label>
+          <span className="text-gray-500">Esperado:</span>{" "}
+          <span className="font-semibold">{expectedTotal.toFixed(2)}</span>
         </div>
-
-        {/* 🔹 Menú de exportación */}
-        <div style={{ position: "relative" }}>
-          <button
-            onClick={(e) => {
-              const menu = document.getElementById("export-menu");
-              if (menu) menu.classList.toggle("show");
-            }}
+        <div>
+          <span className="text-gray-500">Recibido:</span>{" "}
+          <span className="font-semibold text-green-600">
+            {totalPaid.toFixed(2)}
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-500">Pendiente:</span>{" "}
+          <span
+            className={`font-semibold ${
+              balance > 0 ? "text-yellow-600" : "text-green-600"
+            }`}
           >
-            📤 Exportar
-          </button>
-          <ul
-            id="export-menu"
-            style={{
-              display: "none",
-              position: "absolute",
-              background: "white",
-              border: "1px solid #ccc",
-              listStyle: "none",
-              margin: 0,
-              padding: "0.5rem",
-              zIndex: 10,
-            }}
-          >
-            <li
-              style={{ cursor: "pointer" }}
-              onClick={() => exportPaymentsToCSV(filtered)}
-            >
-              Exportar CSV
-            </li>
-            <li
-              style={{ cursor: "pointer" }}
-              onClick={() => exportPaymentsToXLSX(filtered)}
-            >
-              Exportar Excel
-            </li>
-            <li
-              style={{ cursor: "pointer" }}
-              onClick={() => exportPaymentsToPDF(filtered)}
-            >
-              Exportar PDF
-            </li>
-          </ul>
+            {balance > 0 ? balance.toFixed(2) : "0.00"}
+          </span>
         </div>
       </div>
 
-      {/* Tabla de pagos */}
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Cita</th>
-            <th>Paciente</th>
-            <th>Monto</th>
-            <th>Método</th>
-            <th>Estado</th>
-            <th>Referencia</th>
-            <th>Banco</th>
-            <th>Recibido por</th>
-            <th>Fecha</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((p) => (
-            <tr key={p.id}>
-              <td>{p.id}</td>
-              <td>{p.appointment}</td>
-              <td>{p.patient?.full_name || "—"}</td> {/* ✅ corregido */}
-              <td>{p.amount}</td>
-              <td>{p.method}</td>
-              <td>{p.status}</td>
-              <td>{p.reference_number || "—"}</td>
-              <td>{p.bank_name || "—"}</td>
-              <td>{p.received_by || "—"}</td>
-              <td>
-                {p.received_at
-                  ? new Date(p.received_at).toLocaleString("es-VE")
-                  : "—"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {["all", "pending", "paid", "canceled", "waived"].map((status) => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status as PaymentStatus | "all")}
+            className={`btn ${
+              statusFilter === status ? "btn-primary" : "btn-outline"
+            }`}
+          >
+            {status === "all" && "Todos"}
+            {status === "pending" && "Pendientes"}
+            {status === "paid" && "Pagados"}
+            {status === "canceled" && "Cancelados"}
+            {status === "waived" && "Exonerados"}
+          </button>
+        ))}
+
+        {["all", "cash", "card", "transfer"].map((method) => (
+          <button
+            key={method}
+            onClick={() => setMethodFilter(method as any)}
+            className={`btn ${
+              methodFilter === method ? "btn-primary" : "btn-outline"
+            }`}
+          >
+            {method === "all" && "Todos los métodos"}
+            {method === "cash" && "Efectivo"}
+            {method === "card" && "Tarjeta"}
+            {method === "transfer" && "Transferencia"}
+          </button>
+        ))}
+
+        <button
+          onClick={() => setShowPendingModal(true)}
+          className="btn btn-warning"
+        >
+          Citas con pagos pendientes
+        </button>
+      </div>
+
+      {/* Tabla de pagos (auditoría global) */}
+      <PaymentList
+        payments={filteredPayments}
+        onDelete={(id) => {
+          if (window.confirm("¿Seguro que desea eliminar este pago?")) {
+            deleteMutation.mutate(id);
+          }
+        }}
+        onEditInline={(id, data) => {
+          const payload = toPaymentInputPartial(data);
+          updateMutation.mutate({ id, data: payload });
+        }}
+      />
+
+      {/* Modal de pagos pendientes */}
+      {showPendingModal && (
+        <PendingPaymentsModal
+          open={showPendingModal}
+          onClose={() => setShowPendingModal(false)}
+          appointments={appointmentsPending as AppointmentPending[]} // 👈 incluye financial_status
+          paymentsByAppointment={paymentsByAppointment}
+          onAddPayment={(appointmentId, data) => {
+            updateMutation.mutate({ id: appointmentId, data });
+          }}
+        />
+      )}
     </div>
   );
 }

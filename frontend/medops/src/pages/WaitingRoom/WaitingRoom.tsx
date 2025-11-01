@@ -1,13 +1,12 @@
-// src/pages/WaitingRoom.tsx
-import { useState, useEffect } from "react";
-import { format, differenceInMinutes } from "date-fns";
-import { es } from "date-fns/locale";
+// src/pages/WaitingRoom/WaitingRoom.tsx
+import { useState } from "react";
 import RegisterWalkinModal from "../../components/WaitingRoom/RegisterWalkinModal";
 import { useWaitingRoomEntriesToday } from "../../hooks/waitingroom/useWaitingRoomEntriesToday";
 import { useUpdateWaitingRoomStatus } from "../../hooks/waitingroom/useUpdateWaitingRoomStatus";
 import { useRegisterArrival } from "../../hooks/waitingroom/useRegisterArrival";
 import type { WaitingRoomStatus, WaitingRoomEntry } from "../../types/waitingRoom";
 import { useQueryClient } from "@tanstack/react-query";
+import PageHeader from "../../components/Layout/PageHeader";
 
 // Badge visual para estado
 const renderStatusBadge = (status: WaitingRoomStatus) => (
@@ -17,7 +16,9 @@ const renderStatusBadge = (status: WaitingRoomStatus) => (
 // Calcular tiempo de espera
 const renderWaitTime = (arrival_time: string | null) => {
   if (!arrival_time) return "-";
-  const minutes = differenceInMinutes(new Date(), new Date(arrival_time));
+  const minutes = Math.floor(
+    (new Date().getTime() - new Date(arrival_time).getTime()) / 60000
+  );
   if (minutes < 60) return `${minutes} min`;
   const hours = Math.floor(minutes / 60);
   return `~${hours} h`;
@@ -98,7 +99,6 @@ const renderActionButton = (
 export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [now, setNow] = useState(new Date());
 
   // Hooks de React Query
   const { data: entries, isLoading, error } = useWaitingRoomEntriesToday();
@@ -106,22 +106,12 @@ export default function WaitingRoom() {
   const registerArrival = useRegisterArrival();
   const queryClient = useQueryClient();
 
-  // Actualizar reloj cada minuto
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const formattedNow = format(now, "EEEE, d 'de' MMMM 'de' yyyy – HH:mm", {
-    locale: es,
-  });
-
   // Handler para cambiar estado
   const handleStatusChange = (id: number, newStatus: WaitingRoomStatus) => {
     updateStatus.mutate({ id, status: newStatus });
   };
 
-  // 🔹 Ahora invalida la query después de registrar llegada
+  // 🔹 Invalida la query después de registrar llegada
   const handleRegisterArrival = async (patientId: number) => {
     await registerArrival.mutateAsync({ patient_id: patientId });
     queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
@@ -166,12 +156,10 @@ export default function WaitingRoom() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h2>Sala de Espera</h2>
-          <p className="text-muted">{formattedNow}</p>
-        </div>
-        <div className="actions">
+      {/* Encabezado unificado */}
+      <div className="page-header flex items-center justify-between">
+        <PageHeader title="Sala de Espera" />
+        <div className="actions flex gap-2">
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             Registrar llegada
           </button>

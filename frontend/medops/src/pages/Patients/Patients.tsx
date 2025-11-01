@@ -1,15 +1,15 @@
-// src/pages/Patients.tsx
+// src/pages/Patients/Patients.tsx
 import { useState, useEffect, useRef } from "react";
-import { format, differenceInYears, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
 import { FaUser, FaTimes } from "react-icons/fa";
 import { usePatients } from "../../hooks/patients/usePatients";
 import { useNavigate } from "react-router-dom";
 
+import PageHeader from "../../components/Layout/PageHeader";
 import NewPatientModal from "../../components/Patients/NewPatientModal";
 import DeletePatientModal from "../../components/Patients/DeletePatientModal";
 
 import { Patient } from "../../types/patients"; // 👈 usamos el tipo global
+import { differenceInYears, parseISO } from "date-fns";
 
 // 🔹 Función auxiliar para calcular edad
 function getAge(birthdate?: string | null): number | null {
@@ -22,7 +22,6 @@ function getAge(birthdate?: string | null): number | null {
 }
 
 export default function Patients() {
-  const [now, setNow] = useState(new Date());
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Patient[]>([]);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -36,13 +35,6 @@ export default function Patients() {
   const { data: patients, isLoading, error, refetch } = usePatients();
 
   const searchRef = useRef<HTMLDivElement>(null);
-
-  // Reloj
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 60000);
-    return () => clearInterval(interval);
-  }, []);
-  const formattedNow = format(now, "EEEE, d 'de' MMMM 'de' yyyy – HH:mm", { locale: es });
 
   // Búsqueda
   useEffect(() => {
@@ -117,46 +109,41 @@ export default function Patients() {
 
   return (
     <div className="page">
-      <div className="page-header flex-col items-start w-full">
-        {/* Título + fecha */}
-        <div className="w-full mb-3">
-          <h2>Pacientes</h2>
-          <p className="text-muted">{formattedNow}</p>
+      {/* Encabezado unificado */}
+      <PageHeader title="Pacientes" />
+
+      {/* Buscador + Botón */}
+      <div className="w-full flex items-start gap-3 mb-4">
+        <div ref={searchRef} className="search-bar relative flex-1">
+          <input
+            type="text"
+            className={`input w-full ${results.length > 0 ? "shadow-lg border-primary" : ""}`}
+            placeholder="Buscar por nombre o folio..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyNavigation}
+          />
+          {results.length > 0 && (
+            <ul className="card results-list absolute top-full left-0 w-full mt-1 z-20">
+              {results.map((p, index) => (
+                <li
+                  key={p.id}
+                  className={index === highlightedIndex ? "highlighted" : ""}
+                  onClick={() => handleSelect(p)}
+                >
+                  {p.full_name} — {p.id}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* Buscador + Botón */}
-        <div className="w-full flex items-start gap-3">
-          <div ref={searchRef} className="search-bar relative flex-1">
-            <input
-              type="text"
-              className={`input w-full ${results.length > 0 ? "shadow-lg border-primary" : ""}`}
-              placeholder="Buscar por nombre o folio..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyNavigation}
-            />
-            {results.length > 0 && (
-              <ul className="card results-list absolute top-full left-0 w-full mt-1 z-20">
-                {results.map((p, index) => (
-                  <li
-                    key={p.id}
-                    className={index === highlightedIndex ? "highlighted" : ""}
-                    onClick={() => handleSelect(p)}
-                  >
-                    {p.full_name} — {p.id}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowCreateModal(true)}
-          >
-            + Nuevo paciente
-          </button>
-        </div>
+        <button
+          className="btn btn-primary"
+          onClick={() => setShowCreateModal(true)}
+        >
+          + Nuevo paciente
+        </button>
       </div>
 
       {/* Tabla */}

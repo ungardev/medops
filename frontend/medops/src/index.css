@@ -189,6 +189,7 @@ h3 { font-size: 1.2rem; }
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 2000; /* aseguramos que esté por encima del calendario */
 }
 .modal-content {
   background: var(--bg);
@@ -198,6 +199,13 @@ h3 { font-size: 1.2rem; }
   width: 480px;
   max-width: calc(100% - var(--space-6));
   box-shadow: var(--shadow-2);
+  position: relative;
+  z-index: 2100; /* aún más alto */
+}
+
+/* Ajuste para react-big-calendar popups */
+.rbc-overlay {
+  z-index: 1500 !important;
 }
 
 /* ============ Utilidades ============ */
@@ -211,7 +219,6 @@ h3 { font-size: 1.2rem; }
   box-shadow: var(--shadow-1);
   padding: var(--space-4);
 }
-
 .flex-between { display: flex; justify-content: space-between; align-items: center; }
 .mb-16 { margin-bottom: var(--space-4); }
 .mt-16 { margin-top: var(--space-4); }
@@ -224,11 +231,7 @@ h3 { font-size: 1.2rem; }
   margin-bottom: var(--space-2);
   color: var(--text);
 }
-
-.value {
-  margin: 0;
-  color: var(--text-muted);
-}
+.value { margin: 0; color: var(--text-muted); }
 
 .input,
 .select,
@@ -243,7 +246,6 @@ h3 { font-size: 1.2rem; }
   color: var(--text);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-
 .input:focus,
 .select:focus,
 .textarea:focus {
@@ -251,26 +253,25 @@ h3 { font-size: 1.2rem; }
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
-
 .input--sm { max-width: 220px; }
 .textarea--md { min-height: 96px; }
 
 /* ============ Botones ============ */
-.btn-row {
-  display: flex;
-  gap: var(--space-2);
-}
-
+.btn-row { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .btn {
   padding: 8px 12px;
   border-radius: var(--radius-1);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: background 0.2s, border-color 0.2s;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/* Variantes */
 .btn-outline {
   border: 1px solid var(--border);
   background: transparent;
@@ -291,79 +292,145 @@ h3 { font-size: 1.2rem; }
   border-color: #1559c9;
 }
 
-/* ============ Inline Editable Fields ============ */
-.inline-field {
+.btn-danger {
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  color: var(--primary-contrast);
+}
+.btn-danger:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.btn-success {
+  border: 1px solid var(--success);
+  background: var(--success);
+  color: var(--primary-contrast);
+}
+.btn-success:hover {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.btn-warning {
+  border: 1px solid var(--warning);
+  background: var(--warning);
+  color: #fff;
+}
+.btn-warning:hover {
+  background: #d97706;
+  border-color: #d97706;
+}
+
+/* ============ Citas ============ */
+.citas-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.citas-calendar {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+
+.citas-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.citas-legend-item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-2);
+  font-size: 0.85rem;
+  color: var(--text-muted);
 }
 
-.inline-field strong {
-  width: 160px;
-  flex-shrink: 0;
+.citas-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
 }
 
-.inline-field span {
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.inline-field span:hover {
-  background-color: var(--bg-muted);
-}
-
-.inline-field input,
-.inline-field select {
-  padding: 6px 8px;
+.citas-list {
+  background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-1);
-  flex: 1;
-  font-size: 0.95rem;
-  background: var(--bg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-4);
+}
+
+.citas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.citas-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+/* ============ Calendario (react-big-calendar) ============ */
+/* Ocultar filas de horas, dejando solo cabecera y celdas de día */
+.rbc-time-view .rbc-time-gutter,
+.rbc-time-view .rbc-time-content > * + * > * {
+  display: none !important;
+}
+
+.rbc-time-view .rbc-allday-cell {
+  display: none !important;
+}
+
+/* Forzar que las celdas de día ocupen todo el alto */
+.rbc-time-view .rbc-day-slot {
+  min-height: auto !important;
+}
+
+/* Ajustar cabecera de días */
+.rbc-header {
+  font-weight: 600;
+  font-size: 0.9rem;
   color: var(--text);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: var(--bg-muted);
+  padding: 6px;
+  border-bottom: 1px solid var(--border);
 }
 
-.inline-field input:focus,
-.inline-field select:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-}
-
-/* Texto de las opciones en el menú */
+/* ============ React-Select (Predisposiciones genéticas) ============ */
 .react-select__option {
-  color: #222 !important;
+  color: var(--text) !important;
   font-weight: 500;
 }
 
-/* Opción seleccionada */
 .react-select__option--is-selected {
-  background-color: #007bff !important;
-  color: #fff !important;
+  background-color: var(--primary) !important;
+  color: var(--primary-contrast) !important;
 }
 
-/* Opción en hover */
 .react-select__option--is-focused {
-  background-color: #e6f0ff !important;
-  color: #222 !important;
+  background-color: var(--bg-muted) !important;
+  color: var(--text) !important;
 }
 
-/* Chips de valores seleccionados */
 .react-select__multi-value__label {
-  color: #222 !important;
+  color: var(--text) !important;
   font-weight: 500;
 }
 
-/* Placeholder */
 .react-select__placeholder {
-  color: #666 !important;
+  color: var(--text-muted) !important;
 }
 
-/* Texto que escribes */
 .react-select__input input {
-  color: #222 !important;
+  color: var(--text) !important;
 }
