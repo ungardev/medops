@@ -206,8 +206,9 @@ def register_arrival(request):
     patient = get_object_or_404(Patient, pk=patient_id)
     appointment = Appointment.objects.filter(pk=appointment_id).first() if appointment_id else None
 
-    # 🔹 Validación: evitar duplicados en la Sala de Espera
     today = localdate()
+
+    # 🔹 Validación: evitar duplicados en la Sala de Espera
     existing = WaitingRoomEntry.objects.filter(
         patient=patient,
         created_at__date=today
@@ -219,13 +220,22 @@ def register_arrival(request):
             status=400
         )
 
-    # 🔹 Si no hay Appointment → crear uno para hoy
-    if not appointment:
+    # 🔹 Caso 1: cita programada → usar mark_arrived
+    if appointment:
+        appointment.mark_arrived(
+            priority="emergency" if is_emergency else "normal",
+            source_type="scheduled"
+        )
+
+    # 🔹 Caso 2: walk‑in → crear Appointment en arrived con hora de llegada
+    else:
+        from django.utils import timezone
         appointment = Appointment.objects.create(
             patient=patient,
             appointment_date=today,
-            status="arrived",  # 👈 directo en arrived
-            appointment_type="general",  # o según lógica
+            status="arrived",
+            arrival_time=timezone.now().time(),  # 👈 importante
+            appointment_type="general",
         )
 
     # 🔹 Crear entrada en sala de espera
