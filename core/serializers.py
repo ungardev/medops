@@ -289,13 +289,16 @@ class AppointmentPendingSerializer(serializers.ModelSerializer):
             "expected_amount",
             "patient",
             "payments",
-            "financial_status",  # 👈 añadido
+            "financial_status",
         ]
 
     def get_financial_status(self, obj):
-        expected = Decimal(obj.expected_amount or 0)
+        try:
+            expected = Decimal(obj.expected_amount or 0)
+        except Exception:
+            expected = Decimal(0)
         total_paid = sum(
-            [Decimal(p.amount) for p in obj.payment_set.all() if p.status == "paid"]
+            [Decimal(p.amount or 0) for p in obj.payment_set.all() if p.status == "paid"]
         )
         if total_paid >= expected and expected > 0:
             return "paid"

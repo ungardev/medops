@@ -1,11 +1,6 @@
 import React, { useState } from "react";
 import { Payment, PaymentStatus } from "../../types/payments";
-import {
-  FaPen,
-  FaTrash,
-  FaCheckCircle,
-  FaEllipsisV,
-} from "react-icons/fa";
+import { FaPen, FaTrash, FaCheckCircle, FaEllipsisV } from "react-icons/fa";
 
 interface Props {
   payments: Payment[];
@@ -63,7 +58,7 @@ export default function PaymentList({
     <table className="table">
       <thead>
         <tr>
-          <th>Cita</th> {/* 👈 Nueva columna */}
+          <th>Cita</th>
           <th>Fecha registro</th>
           <th>Monto</th>
           <th>Método</th>
@@ -77,10 +72,7 @@ export default function PaymentList({
       <tbody>
         {payments.map((p) => (
           <tr key={p.id}>
-            {/* 👇 Contexto de la cita */}
-            <td>
-              {p.patient?.full_name ?? "Paciente"} — {p.appointment_date}
-            </td>
+            <td>{p.patient?.full_name ?? "Paciente"} — {p.appointment_date}</td>
             <td>{formatReceivedAt(p.received_at)}</td>
             <td>{formatAmount(p.amount)}</td>
             <td>
@@ -103,18 +95,10 @@ export default function PaymentList({
                 </select>
               ) : (
                 <>
-                  {p.status === "pending" && (
-                    <span className="text-warning">Pendiente</span>
-                  )}
-                  {p.status === "paid" && (
-                    <span className="text-success">Pagado</span>
-                  )}
-                  {p.status === "canceled" && (
-                    <span className="text-danger">Cancelado</span>
-                  )}
-                  {p.status === "waived" && (
-                    <span className="text-muted">Exonerado</span>
-                  )}
+                  {p.status === "pending" && <span className="text-warning">Pendiente</span>}
+                  {p.status === "paid" && <span className="text-success">Pagado</span>}
+                  {p.status === "canceled" && <span className="text-danger">Cancelado</span>}
+                  {p.status === "waived" && <span className="text-muted">Exonerado</span>}
                 </>
               )}
             </td>
