@@ -448,7 +448,7 @@ def waitingroom_entries_today_api(request):
 
 @extend_schema(
     responses={200: AppointmentPendingSerializer(many=True)},
-    description="Devuelve citas con saldo pendiente (expected_amount > suma de pagos pagados), incluyendo estado financiero."
+    description="Devuelve citas con saldo pendiente, incluyendo estado financiero."
 )
 @api_view(["GET"])
 def appointments_pending_api(request):
@@ -457,10 +457,20 @@ def appointments_pending_api(request):
     pending = []
     for appt in appointments:
         expected = appt.expected_amount or 0
-        total_paid = sum(
-            [float(p.amount) for p in appt.payment_set.all() if p.status == "paid"]
-        )
-        if float(expected) > total_paid:
+        try:
+            expected_val = float(expected)
+        except (TypeError, ValueError):
+            expected_val = 0.0
+
+        total_paid = 0.0
+        for p in appt.payment_set.all():
+            if p.status == "paid":
+                try:
+                    total_paid += float(p.amount or 0)
+                except (TypeError, ValueError):
+                    continue
+
+        if expected_val > total_paid:
             pending.append(appt)
 
     serializer = AppointmentPendingSerializer(pending, many=True)

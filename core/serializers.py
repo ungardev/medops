@@ -6,7 +6,7 @@ from .models import (
 )
 from datetime import date
 from typing import Optional
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 # --- Pacientes ---
 class GeneticPredispositionSerializer(serializers.ModelSerializer):
@@ -293,13 +293,17 @@ class AppointmentPendingSerializer(serializers.ModelSerializer):
         ]
 
     def get_financial_status(self, obj):
-        try:
-            expected = Decimal(obj.expected_amount or 0)
-        except Exception:
-            expected = Decimal(0)
+        def safe_decimal(value):
+            try:
+                return Decimal(str(value or "0"))
+            except (InvalidOperation, TypeError, ValueError):
+                return Decimal("0")
+
+        expected = safe_decimal(obj.expected_amount)
         total_paid = sum(
-            [Decimal(p.amount or 0) for p in obj.payment_set.all() if p.status == "paid"]
+            safe_decimal(p.amount) for p in obj.payment_set.all() if p.status == "paid"
         )
+
         if total_paid >= expected and expected > 0:
             return "paid"
         return "pending"
