@@ -278,7 +278,7 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
 # --- Citas pendientes con pagos ---
 class AppointmentPendingSerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
-    payments = PaymentSerializer(many=True, read_only=True, source="payments")  # 👈 corregido
+    payments = PaymentSerializer(many=True, read_only=True)  # 👈 sin source
     financial_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -301,7 +301,7 @@ class AppointmentPendingSerializer(serializers.ModelSerializer):
 
         expected = safe_decimal(obj.expected_amount)
         total_paid = sum(
-            safe_decimal(p.amount) for p in obj.payments.all() if p.status == "paid"  # 👈 corregido
+            safe_decimal(p.amount) for p in obj.payments.all() if p.status == "paid"
         )
 
         if total_paid >= expected and expected > 0:
