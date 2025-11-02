@@ -483,9 +483,14 @@ def waitingroom_entries_today_api(request):
     tz = timezone.get_current_timezone()
     today = timezone.localdate()
 
-    # Crear inicio y fin del día local de forma segura
-    start = timezone.make_aware(datetime.combine(today, time.min), tz)
-    end = timezone.make_aware(datetime.combine(today, time.max), tz)
+    start = datetime.combine(today, time.min)
+    end = datetime.combine(today, time.max)
+
+    # Asegurar que sean aware
+    if timezone.is_naive(start):
+        start = timezone.make_aware(start, tz)
+    if timezone.is_naive(end):
+        end = timezone.make_aware(end, tz)
 
     qs = (
         WaitingRoomEntry.objects
