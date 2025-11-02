@@ -258,9 +258,12 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
         ]
 
     def get_appointment_status(self, obj):
+        """
+        Devuelve el estado del Appointment si existe,
+        normalizando 'arrived' como 'waiting' para la UI.
+        """
         if obj.appointment:
             status = obj.appointment.status
-            # 🔹 Normalizar: arrived → waiting
             if status == "arrived":
                 return "waiting"
             return status
@@ -271,6 +274,7 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
 class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
     appointment = AppointmentSerializer(read_only=True)
+    effective_status = serializers.SerializerMethodField()
 
     class Meta:
         model = WaitingRoomEntry
@@ -283,7 +287,19 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
             "priority",
             "source_type",
             "order",
+            "effective_status",  # 👈 añadido para consistencia
         ]
+
+    def get_effective_status(self, obj):
+        """
+        Igual que en el serializer básico: arrived → waiting.
+        """
+        if obj.appointment:
+            status = obj.appointment.status
+            if status == "arrived":
+                return "waiting"
+            return status
+        return obj.status
 
 
 # --- Citas pendientes con pagos ---
