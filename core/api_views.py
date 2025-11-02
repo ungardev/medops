@@ -204,6 +204,7 @@ def update_waitingroom_status(request, pk):
     entry.save(update_fields=["status"])
     return Response(WaitingRoomEntrySerializer(entry).data)
 
+
 @extend_schema(
     request=RegisterArrivalSerializer,
     responses={201: WaitingRoomEntrySerializer}
@@ -247,22 +248,22 @@ def register_arrival(request):
 
     # 🔹 Caso 2: walk‑in → crear Appointment en arrived con hora de llegada
     else:
-        from django.utils import timezone
         appointment = Appointment.objects.create(
             patient=patient,
             appointment_date=today,
             status="arrived",
-            arrival_time=timezone.now().time(),  # 👈 importante
+            arrival_time=timezone.now().time(),
             appointment_type="general",
         )
 
-    # 🔹 Crear entrada en sala de espera
+    # 🔹 Crear entrada en sala de espera con arrival_time explícito
     entry = WaitingRoomEntry.objects.create(
         patient=patient,
         appointment=appointment,
         status="waiting",
         priority="emergency" if is_emergency else "normal",
         source_type="walkin" if not appointment_id else "scheduled",
+        arrival_time=timezone.now(),   # 👈 explícito
     )
 
     return Response(WaitingRoomEntrySerializer(entry).data, status=201)
@@ -483,7 +484,6 @@ def waitingroom_entries_today_api(request):
     start = datetime.combine(today, time.min)
     end = datetime.combine(today, time.max)
 
-    # Asegurar que sean aware
     if timezone.is_naive(start):
         start = timezone.make_aware(start, tz)
     if timezone.is_naive(end):
@@ -493,7 +493,8 @@ def waitingroom_entries_today_api(request):
         WaitingRoomEntry.objects
         .filter(
             Q(appointment__appointment_date=today) |
-            Q(arrival_time__range=(start, end))
+            Q(arrival_time__range=(start, end)) |
+            Q(created_at__date=today)   # 👈 clave para no perder walk‑ins
         )
         .select_related("patient", "appointment")
         .order_by("order", "arrival_time")
