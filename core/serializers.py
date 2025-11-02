@@ -241,7 +241,7 @@ class EventSerializer(serializers.ModelSerializer):
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
     appointment_id = serializers.IntegerField(source="appointment.id", read_only=True)
-    appointment_status = serializers.SerializerMethodField()  # 👈 cambiado a method field
+    appointment_status = serializers.SerializerMethodField()
 
     class Meta:
         model = WaitingRoomEntry
@@ -249,7 +249,7 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "id",
             "patient",
             "appointment_id",
-            "appointment_status",  # 👈 ahora siempre tiene valor
+            "appointment_status",
             "arrival_time",
             "status",
             "priority",
@@ -258,12 +258,12 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
         ]
 
     def get_appointment_status(self, obj):
-        """
-        Devuelve el estado del Appointment si existe,
-        de lo contrario usa el status del WaitingRoomEntry.
-        """
         if obj.appointment:
-            return obj.appointment.status
+            status = obj.appointment.status
+            # 🔹 Normalizar: arrived → waiting
+            if status == "arrived":
+                return "waiting"
+            return status
         return obj.status
 
 
