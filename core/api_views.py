@@ -6,7 +6,7 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from django.utils.timezone import now, localdate, make_aware, get_current_timezone
+from django.utils.timezone import now, localdate, make_aware, get_current_timezone, timezone
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 
@@ -480,12 +480,17 @@ class PatientViewSet(viewsets.ModelViewSet):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def waitingroom_entries_today_api(request):
-    today = localdate()
+    tz = timezone.get_current_timezone()
+    today = timezone.localdate()
+
+    start = datetime.combine(today, time.min).replace(tzinfo=tz)
+    end = datetime.combine(today, time.max).replace(tzinfo=tz)
 
     qs = (
         WaitingRoomEntry.objects
         .filter(
-            Q(arrival_time__date=today) | Q(appointment__appointment_date=today)
+            Q(appointment__appointment_date=today) |
+            Q(arrival_time__range=(start, end))
         )
         .select_related("patient", "appointment")
         .order_by("order", "arrival_time")
