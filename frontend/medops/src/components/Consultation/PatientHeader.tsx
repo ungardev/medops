@@ -1,11 +1,10 @@
 // src/components/Consultation/PatientHeader.tsx
-import type { Patient } from "../../types/patients";  // 👈 corregido
+import type { Patient } from "../../types/patients";
 
 interface PatientHeaderProps {
   patient: Patient & {
-    age?: number;
-    allergies?: string | null;
-    balance_due?: number;
+    balance_due?: number; // inyectado desde mapAppointment
+    age?: number | null;  // ahora lo recibimos directo del backend
   };
 }
 
@@ -41,7 +40,7 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
       {/* Datos clínicos clave */}
       <div className="mt-2 flex gap-4 text-sm">
         <span>
-          <strong>Sexo:</strong> {patient.gender}
+          <strong>Sexo:</strong> {patient.gender ?? "Unknown"}
         </span>
         {patient.allergies && (
           <span className="text-warning">

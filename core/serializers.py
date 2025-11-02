@@ -66,7 +66,15 @@ class PatientReadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Patient
-        fields = ["id", "full_name", "national_id", "email", "age", "allergies"]
+        fields = [
+            "id",
+            "full_name",
+            "national_id",
+            "email",
+            "age",
+            "allergies",
+            "gender",   # 👈 añadido
+        ]
 
     @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
@@ -195,7 +203,10 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     balance_due = serializers.SerializerMethodField()
 
     class Meta(AppointmentSerializer.Meta):
-        fields = AppointmentSerializer.Meta.fields + ["diagnoses", "balance_due"]
+        fields = AppointmentSerializer.Meta.fields + [
+            "diagnoses",
+            "balance_due",
+        ]
 
     def get_balance_due(self, obj):
         try:

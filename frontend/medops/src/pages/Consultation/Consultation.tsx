@@ -1,70 +1,88 @@
+// src/pages/Consultation/Consultation.tsx
+
+import {
+  PatientHeader,
+  DiagnosisPanel,
+  TreatmentPanel,
+  PrescriptionPanel,
+  NotesPanel,
+  DocumentsPanel,
+  PaymentsPanel,
+  ConsultationActions,
+} from "../../components/Consultation";
+
+import {
+  useCurrentConsultation,
+  useCreateDiagnosis,
+  useCreateTreatment,
+  useCreatePrescription,
+} from "../../hooks/consultations";
+
+import { Tabs, Tab } from "../../components/ui/Tabs";
+
 export default function Consultation() {
-  const { data: currentConsultation, isLoading } = useCurrentConsultation();
-  const { mutate: updateAppointmentStatus } = useUpdateAppointmentStatus();
-  const { mutate: updateAppointmentNotes } = useUpdateAppointmentNotes();
-  const { mutate: createDiagnosis } = useCreateDiagnosis();
-  const { mutate: createTreatment } = useCreateTreatment();
-  const { mutate: createPrescription } = useCreatePrescription();
+  const { data: appointment, isLoading } = useCurrentConsultation();
+
+  const createDiagnosis = useCreateDiagnosis();
+  const createTreatment = useCreateTreatment();
+  const createPrescription = useCreatePrescription();
 
   if (isLoading) return <p>Cargando consulta...</p>;
-  if (!currentConsultation) return <p>No hay paciente en consulta</p>;
-
-  const { patient, notes, diagnoses } = currentConsultation;
+  if (!appointment) return <p>No hay paciente en consulta</p>;
 
   return (
     <div className="consultation-page">
-      {/* Panel superior: Identidad del paciente */}
-      <PatientHeader patient={patient} />
+      {/* 🔹 Panel superior: Identidad del paciente */}
+      <PatientHeader patient={appointment.patient} />
 
-      {/* Tabs clínicos */}
-      <Tabs>
-        <Tab title="Diagnóstico">
-          <DiagnosisPanel
-            diagnoses={diagnoses}
-            onAdd={(data) => createDiagnosis({ ...data, appointment: currentConsultation.id })}
-          />
-        </Tab>
-        <Tab title="Tratamiento">
-          <TreatmentPanel
-            diagnoses={diagnoses}
-            onAdd={(data) => createTreatment({ ...data })}
-          />
-        </Tab>
-        <Tab title="Prescripción">
-          <PrescriptionPanel
-            diagnoses={diagnoses}
-            onAdd={(data) => createPrescription({ ...data })}
-          />
-        </Tab>
-        <Tab title="Notas">
-          <NotesPanel
-            notes={notes}
-            onSave={(newNotes) => updateAppointmentNotes({ id: currentConsultation.id, notes: newNotes })}
-          />
-        </Tab>
-      </Tabs>
+      <div className="consultation-body flex">
+        {/* 🔹 Tabs clínicos */}
+        <div className="consultation-main flex-1">
+          <Tabs defaultTab="diagnosis">
+            <Tab id="diagnosis" label="Diagnóstico">
+              <DiagnosisPanel
+                diagnoses={appointment.diagnoses}
+                onAdd={(data) =>
+                  createDiagnosis.mutate({
+                    ...data,
+                    appointment: appointment.id,
+                  })
+                }
+              />
+            </Tab>
 
-      {/* Documentos clínicos y pagos */}
-      <div className="side-panels">
-        <DocumentsPanel appointmentId={currentConsultation.id} />
-        <PaymentsPanel appointmentId={currentConsultation.id} />
+            <Tab id="treatment" label="Tratamiento">
+              <TreatmentPanel
+                diagnoses={appointment.diagnoses}
+                onAdd={(data) => createTreatment.mutate({ ...data })}
+              />
+            </Tab>
+
+            <Tab id="prescription" label="Prescripción">
+              <PrescriptionPanel
+                diagnoses={appointment.diagnoses}
+                onAdd={(data) => createPrescription.mutate({ ...data })}
+              />
+            </Tab>
+
+            <Tab id="notes" label="Notas">
+              <NotesPanel
+                consultationId={appointment.id}
+                notes={appointment.notes}
+              />
+            </Tab>
+          </Tabs>
+        </div>
+
+        {/* 🔹 Side-panels */}
+        <aside className="consultation-side w-1/3">
+          <DocumentsPanel patientId={appointment.patient.id} />
+          <PaymentsPanel appointmentId={appointment.id} />
+        </aside>
       </div>
 
-      {/* Footer: acciones de cierre */}
-      <div className="consultation-actions">
-        <button
-          className="btn-primary"
-          onClick={() => updateAppointmentStatus({ id: currentConsultation.id, status: "completed" })}
-        >
-          Finalizar consulta
-        </button>
-        <button
-          className="btn-secondary"
-          onClick={() => updateAppointmentStatus({ id: currentConsultation.id, status: "canceled" })}
-        >
-          Cancelar
-        </button>
-      </div>
+      {/* 🔹 Footer: acciones de cierre */}
+      <ConsultationActions consultationId={appointment.id} />
     </div>
   );
 }
