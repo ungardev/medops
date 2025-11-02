@@ -60,17 +60,27 @@ class PatientWriteSerializer(serializers.ModelSerializer):
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
-    """Serializer ligero para búsquedas y referencias"""
     full_name = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
+    allergies = serializers.CharField(read_only=True)
 
     class Meta:
         model = Patient
-        fields = ["id", "full_name", "national_id", "email"]
+        fields = ["id", "full_name", "national_id", "email", "age", "allergies"]
 
     @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
         return " ".join(filter(None, parts))
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_age(self, obj) -> Optional[int]:
+        if not obj.birthdate:
+            return None
+        today = date.today()
+        return today.year - obj.birthdate.year - (
+            (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
+        )
 
 
 class PatientListSerializer(serializers.ModelSerializer):
@@ -182,9 +192,17 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 class AppointmentDetailSerializer(AppointmentSerializer):
     diagnoses = DiagnosisSerializer(many=True, read_only=True)
+    balance_due = serializers.SerializerMethodField()
 
     class Meta(AppointmentSerializer.Meta):
-        fields = AppointmentSerializer.Meta.fields + ["diagnoses"]
+        fields = AppointmentSerializer.Meta.fields + ["diagnoses", "balance_due"]
+
+    def get_balance_due(self, obj):
+        try:
+            return float(obj.balance_due())
+        except Exception:
+            return 0.0
+
 
 # --- Pagos ---
 class PaymentSerializer(serializers.ModelSerializer):

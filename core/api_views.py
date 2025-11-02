@@ -29,7 +29,8 @@ from .serializers import (
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer,
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
-    AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer
+    AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
+    AppointmentDetailSerializer
 )
 
 
@@ -121,7 +122,7 @@ def daily_appointments_api(request):
     return Response(serializer.data, status=200)
 
 @extend_schema(
-    responses={200: AppointmentSerializer},
+    responses={200: AppointmentDetailSerializer},
     description="Devuelve la cita que actualmente está en estado 'in_consultation'."
 )
 @api_view(["GET"])
@@ -131,14 +132,14 @@ def current_consultation_api(request):
         Appointment.objects
         .filter(appointment_date=today, status="in_consultation")
         .select_related("patient")
+        .prefetch_related("diagnoses__treatments", "diagnoses__prescriptions")
         .first()
     )
 
     if not appointment:
-        # 🔹 Devolver 204 en lugar de 404 → no es error, solo ausencia de datos
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    return Response(AppointmentSerializer(appointment).data, status=status.HTTP_200_OK)
+    return Response(AppointmentDetailSerializer(appointment).data, status=status.HTTP_200_OK)
 
 
 @extend_schema(request=AppointmentStatusUpdateSerializer, responses={200: AppointmentSerializer})
