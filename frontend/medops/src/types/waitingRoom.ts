@@ -23,6 +23,7 @@ export interface WaitingRoomEntry {
   id: number;
   patient: PatientRef;          // objeto { id, name }
   appointment_id: number | null;
+  appointment_status?: WaitingRoomStatus; // 👈 añadido como opcional
   status: WaitingRoomStatus;
   arrival_time: string | null;  // ISO string
   priority: WaitingRoomPriority;

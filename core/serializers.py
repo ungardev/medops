@@ -241,13 +241,15 @@ class EventSerializer(serializers.ModelSerializer):
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
     appointment_id = serializers.IntegerField(source="appointment.id", read_only=True)
+    appointment_status = serializers.CharField(source="appointment.status", read_only=True)  # 👈 añadido
 
     class Meta:
         model = WaitingRoomEntry
         fields = [
             "id",
-            "patient",          # objeto con id, full_name y email
+            "patient",
             "appointment_id",
+            "appointment_status",  # 👈 nuevo campo
             "arrival_time",
             "status",
             "priority",

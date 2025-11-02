@@ -1,15 +1,15 @@
-// src/pages/WaitingRoom/WaitingRoom.tsx
 import { useState } from "react";
 import RegisterWalkinModal from "../../components/WaitingRoom/RegisterWalkinModal";
 import { useWaitingRoomEntriesToday } from "../../hooks/waitingroom/useWaitingRoomEntriesToday";
 import { useUpdateWaitingRoomStatus } from "../../hooks/waitingroom/useUpdateWaitingRoomStatus";
 import { useRegisterArrival } from "../../hooks/waitingroom/useRegisterArrival";
+import { useUpdateAppointmentStatus } from "../../hooks/appointments/useUpdateAppointmentStatus";
 import type { WaitingRoomStatus, WaitingRoomEntry } from "../../types/waitingRoom";
 import { useQueryClient } from "@tanstack/react-query";
 import PageHeader from "../../components/Layout/PageHeader";
 
 // Badge visual para estado
-const renderStatusBadge = (status: WaitingRoomStatus) => (
+const renderStatusBadge = (status: WaitingRoomStatus | string) => (
   <span className={`badge ${status}`}>{status}</span>
 );
 
@@ -27,27 +27,29 @@ const renderWaitTime = (arrival_time: string | null) => {
 // Botón de acción según estado
 const renderActionButton = (
   entry: WaitingRoomEntry,
-  onChange: (id: number, newStatus: WaitingRoomStatus) => void,
+  onChange: (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => void,
   entries: WaitingRoomEntry[]
 ) => {
   const hasActiveConsultation = entries.some(
-    (e) => e.status === "in_consultation"
+    (e) => e.appointment_status === "in_consultation"
   );
 
-  switch (entry.status) {
+  const effectiveStatus = entry.appointment_status || entry.status;
+
+  switch (effectiveStatus) {
     case "waiting":
       return (
         <div className="actions-inline">
           <button
             className="btn-primary-compact"
             disabled={hasActiveConsultation}
-            onClick={() => onChange(entry.id, "in_consultation")}
+            onClick={() => onChange(entry, "in_consultation")}
           >
             Iniciar consulta
           </button>
           <button
             className="btn-secondary-compact"
-            onClick={() => onChange(entry.id, "canceled")}
+            onClick={() => onChange(entry, "canceled")}
           >
             Cancelar
           </button>
@@ -58,13 +60,13 @@ const renderActionButton = (
         <div className="actions-inline">
           <button
             className="btn-primary-compact"
-            onClick={() => onChange(entry.id, "completed")}
+            onClick={() => onChange(entry, "completed")}
           >
             Finalizar consulta
           </button>
           <button
             className="btn-secondary-compact"
-            onClick={() => onChange(entry.id, "canceled")}
+            onClick={() => onChange(entry, "canceled")}
           >
             Cancelar
           </button>
@@ -75,13 +77,13 @@ const renderActionButton = (
         <div className="actions-inline">
           <button
             className="btn-primary-compact"
-            onClick={() => onChange(entry.id, "waiting")}
+            onClick={() => onChange(entry, "waiting")}
           >
             Confirmar
           </button>
           <button
             className="btn-secondary-compact"
-            onClick={() => onChange(entry.id, "canceled")}
+            onClick={() => onChange(entry, "canceled")}
           >
             Cancelar
           </button>
@@ -102,16 +104,22 @@ export default function WaitingRoom() {
 
   // Hooks de React Query
   const { data: entries, isLoading, error } = useWaitingRoomEntriesToday();
-  const updateStatus = useUpdateWaitingRoomStatus();
+  const updateWaitingRoomStatus = useUpdateWaitingRoomStatus();
+  const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const queryClient = useQueryClient();
 
   // Handler para cambiar estado
-  const handleStatusChange = (id: number, newStatus: WaitingRoomStatus) => {
-    updateStatus.mutate({ id, status: newStatus });
+  const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
+    if (["in_consultation", "completed", "canceled"].includes(newStatus)) {
+      if (entry.appointment_id) {
+        updateAppointmentStatus.mutate({ id: entry.appointment_id, status: newStatus });
+      }
+    } else {
+      updateWaitingRoomStatus.mutate({ id: entry.id, status: newStatus });
+    }
   };
 
-  // 🔹 Invalida la query después de registrar llegada
   const handleRegisterArrival = async (patientId: number) => {
     await registerArrival.mutateAsync({ patient_id: patientId });
     queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
@@ -141,22 +149,23 @@ export default function WaitingRoom() {
   if (error) return <p className="text-danger">Error cargando datos</p>;
 
   // Dividir entradas en dos grupos
-  const grupoOrden: WaitingRoomEntry[] =
+  const orderedGroup: WaitingRoomEntry[] =
     entries?.filter(
       (e: WaitingRoomEntry) =>
-        e.status === "waiting" ||
-        e.status === "in_consultation" ||
-        e.status === "completed"
+        (e.appointment_status || e.status) === "waiting" ||
+        (e.appointment_status || e.status) === "in_consultation" ||
+        (e.appointment_status || e.status) === "completed"
     ) ?? [];
 
-  const grupoPorConfirmar: WaitingRoomEntry[] =
+  const pendingGroup: WaitingRoomEntry[] =
     entries?.filter(
-      (e: WaitingRoomEntry) => e.status === "pending" || e.status === "canceled"
+      (e: WaitingRoomEntry) =>
+        (e.appointment_status || e.status) === "pending" ||
+        (e.appointment_status || e.status) === "canceled"
     ) ?? [];
 
   return (
     <div className="page">
-      {/* Encabezado unificado */}
       <div className="page-header flex items-center justify-between">
         <PageHeader title="Sala de Espera" />
         <div className="actions flex gap-2">
@@ -180,10 +189,10 @@ export default function WaitingRoom() {
           </tr>
         </thead>
         <tbody>
-          {grupoOrden.map((entry: WaitingRoomEntry) => (
+          {orderedGroup.map((entry: WaitingRoomEntry) => (
             <tr key={entry.id}>
               <td>{entry.patient.full_name}</td>
-              <td>{renderStatusBadge(entry.status)}</td>
+              <td>{renderStatusBadge(entry.appointment_status || entry.status)}</td>
               <td>{renderWaitTime(entry.arrival_time)}</td>
               <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
             </tr>
@@ -202,10 +211,10 @@ export default function WaitingRoom() {
           </tr>
         </thead>
         <tbody>
-          {grupoPorConfirmar.map((entry: WaitingRoomEntry) => (
+          {pendingGroup.map((entry: WaitingRoomEntry) => (
             <tr key={entry.id}>
               <td>{entry.patient.full_name}</td>
-              <td>{renderStatusBadge(entry.status)}</td>
+              <td>{renderStatusBadge(entry.appointment_status || entry.status)}</td>
               <td>{renderWaitTime(entry.arrival_time)}</td>
               <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
             </tr>

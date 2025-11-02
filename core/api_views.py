@@ -147,18 +147,35 @@ def update_appointment_status(request, pk):
         appointment = Appointment.objects.get(pk=pk)
     except Appointment.DoesNotExist:
         return Response({"error": "Appointment not found"}, status=404)
+
     new_status = request.data.get("status")
     if not new_status:
         return Response({"error": "Missing status"}, status=400)
+
+    # 🔹 Validación: solo un paciente en consulta a la vez
     if new_status == "in_consultation":
         today = localdate()
-        already_in = Appointment.objects.filter(appointment_date=today, status="in_consultation").exclude(id=appointment.id).exists()
+        already_in = Appointment.objects.filter(
+            appointment_date=today,
+            status="in_consultation"
+        ).exclude(id=appointment.id).exists()
         if already_in:
             return Response({"error": "Ya existe un paciente en consulta."}, status=400)
+
+    # 🔹 Transición de estado
     if appointment.can_transition(new_status):
         appointment.update_status(new_status)
+
+        # 🔹 Sincronizar WaitingRoomEntry asociado
+        WaitingRoomEntry.objects.filter(appointment=appointment).update(status=new_status)
+
         return Response(AppointmentSerializer(appointment).data)
-    return Response({"error": f"No se puede pasar de {appointment.status} a {new_status}"}, status=400)
+
+    return Response(
+        {"error": f"No se puede pasar de {appointment.status} a {new_status}"},
+        status=400
+    )
+    
 
 @extend_schema(request=AppointmentNotesUpdateSerializer, responses={200: AppointmentSerializer})
 @api_view(["PATCH"])
