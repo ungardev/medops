@@ -6,7 +6,7 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from django.utils.timezone import now, localdate, make_aware, get_current_timezone, timezone
+from django.utils.timezone import now, localdate, make_aware, timezone
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 
@@ -473,10 +473,6 @@ class PatientViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@extend_schema(
-    responses={200: WaitingRoomEntrySerializer(many=True)},
-    description="Devuelve todas las entradas de la sala de espera del día actual."
-)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def waitingroom_entries_today_api(request):
