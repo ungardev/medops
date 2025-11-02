@@ -562,8 +562,14 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
-    queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
+
+    def get_queryset(self):
+        qs = Payment.objects.all().order_by("-received_at")
+        appointment_id = self.request.query_params.get("appointment")
+        if appointment_id:
+            qs = qs.filter(appointment_id=appointment_id)
+        return qs
 
     def perform_create(self, serializer):
         payment = serializer.save()

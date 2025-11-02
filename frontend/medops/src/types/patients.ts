@@ -38,6 +38,9 @@ export interface Patient extends PatientRef {
   active?: boolean;
   created_at?: string | null;
   updated_at?: string | null;
+
+  // 🔹 Campos calculados/extendidos desde el backend
+  age?: number | null;   // 👈 añadido para que se muestre en PatientHeader
 }
 
 // --- Datos de entrada para crear/editar paciente

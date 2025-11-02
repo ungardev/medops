@@ -10,11 +10,11 @@ export interface ClinicalPatient {
   full_name?: string;
   national_id?: string | null;
   allergies?: string | null;
+  age?: number | null;   // 👈 ahora lo aceptamos porque el backend lo manda
 }
 
 /**
  * Mapea un Patient clínico (Appointment) al Patient administrativo esperado en UI.
- * Nota: NO añadimos 'age' aquí porque no existe en PatientAdmin.
  */
 export function mapPatient(clinical: ClinicalPatient): PatientAdmin {
   // Normalizamos gender a los literales permitidos
@@ -32,6 +32,9 @@ export function mapPatient(clinical: ClinicalPatient): PatientAdmin {
     last_name: clinical.last_name,
     birthdate: clinical.birth_date ?? null,
     gender,
+
+    // 🔹 ahora sí pasamos la edad
+    age: clinical.age ?? null,
 
     // Campos del modelo administrativo
     middle_name: null,
