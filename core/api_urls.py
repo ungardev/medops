@@ -6,11 +6,11 @@ from .api_views import (
     AppointmentViewSet,
     PaymentViewSet,
     WaitingRoomEntryViewSet,
-    GeneticPredispositionViewSet,   # 👈 añadido
-    MedicalDocumentViewSet,         # 👈 endpoint documentos
-    DiagnosisViewSet,               # 👈 nuevo import
-    TreatmentViewSet,               # 👈 nuevo import
-    PrescriptionViewSet,            # 👈 nuevo import
+    GeneticPredispositionViewSet,
+    MedicalDocumentViewSet,
+    DiagnosisViewSet,
+    TreatmentViewSet,
+    PrescriptionViewSet,
     update_appointment_status,
     update_waitingroom_status,
     patient_search_api,
@@ -19,7 +19,7 @@ from .api_views import (
     audit_by_patient,
     register_arrival,
     waitingroom_entries_today_api,
-    appointments_pending_api,       # 👈 endpoint citas pendientes
+    appointments_pending_api,
 )
 
 # --- Swagger / OpenAPI ---
@@ -28,15 +28,15 @@ from django.conf import settings
 
 # --- Router DRF (CRUD básicos + acciones personalizadas) ---
 router = routers.DefaultRouter()
-router.register(r"patients", PatientViewSet)
-router.register(r"appointments", AppointmentViewSet)
-router.register(r"payments", PaymentViewSet)
-router.register(r"waitingroom", WaitingRoomEntryViewSet)
-router.register(r"genetic-predispositions", GeneticPredispositionViewSet)
-router.register(r"documents", MedicalDocumentViewSet)
-router.register(r"diagnoses", DiagnosisViewSet)          # 👈 nuevo endpoint
-router.register(r"treatments", TreatmentViewSet)        # 👈 nuevo endpoint
-router.register(r"prescriptions", PrescriptionViewSet)  # 👈 nuevo endpoint
+router.register(r"patients", PatientViewSet, basename="patient")
+router.register(r"appointments", AppointmentViewSet, basename="appointment")
+router.register(r"payments", PaymentViewSet, basename="payment")
+router.register(r"waitingroom", WaitingRoomEntryViewSet, basename="waitingroom")
+router.register(r"genetic-predispositions", GeneticPredispositionViewSet, basename="genetic-predisposition")
+router.register(r"documents", MedicalDocumentViewSet, basename="document")
+router.register(r"diagnoses", DiagnosisViewSet, basename="diagnosis")
+router.register(r"treatments", TreatmentViewSet, basename="treatment")
+router.register(r"prescriptions", PrescriptionViewSet, basename="prescription")
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -49,9 +49,6 @@ urlpatterns = [
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
-    # 👉 Nota: /patients/{id}/payments/, /patients/{id}/documents/,
-    #          /patients/{id}/completed_appointments/ y /patients/{id}/pending_appointments/
-    #          se exponen automáticamente por PatientViewSet
 
     # --- Citas ---
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
