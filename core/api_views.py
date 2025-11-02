@@ -6,7 +6,8 @@ from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
-from django.utils.timezone import now, localdate, make_aware, timezone
+from django.utils import timezone
+from django.utils.timezone import now, localdate, make_aware
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 
