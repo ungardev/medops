@@ -30,11 +30,10 @@ const renderActionButton = (
   onChange: (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => void,
   entries: WaitingRoomEntry[]
 ) => {
+  const effectiveStatus = entry.appointment_status ?? entry.status;
   const hasActiveConsultation = entries.some(
-    (e) => e.appointment_status === "in_consultation"
+    (e) => (e.appointment_status ?? e.status) === "in_consultation"
   );
-
-  const effectiveStatus = entry.appointment_status || entry.status;
 
   switch (effectiveStatus) {
     case "waiting":
@@ -102,14 +101,12 @@ export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Hooks de React Query
   const { data: entries, isLoading, error } = useWaitingRoomEntriesToday();
   const updateWaitingRoomStatus = useUpdateWaitingRoomStatus();
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const queryClient = useQueryClient();
 
-  // Handler para cambiar estado
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (["in_consultation", "completed", "canceled"].includes(newStatus)) {
       if (entry.appointment_id) {
@@ -148,21 +145,17 @@ export default function WaitingRoom() {
   if (isLoading) return <p>Cargando sala de espera...</p>;
   if (error) return <p className="text-danger">Error cargando datos</p>;
 
-  // Dividir entradas en dos grupos
   const orderedGroup: WaitingRoomEntry[] =
-    entries?.filter(
-      (e: WaitingRoomEntry) =>
-        (e.appointment_status || e.status) === "waiting" ||
-        (e.appointment_status || e.status) === "in_consultation" ||
-        (e.appointment_status || e.status) === "completed"
-    ) ?? [];
+    entries?.filter((e) => {
+      const effectiveStatus = e.appointment_status ?? e.status;
+      return ["waiting", "in_consultation", "completed"].includes(effectiveStatus);
+    }) ?? [];
 
   const pendingGroup: WaitingRoomEntry[] =
-    entries?.filter(
-      (e: WaitingRoomEntry) =>
-        (e.appointment_status || e.status) === "pending" ||
-        (e.appointment_status || e.status) === "canceled"
-    ) ?? [];
+    entries?.filter((e) => {
+      const effectiveStatus = e.appointment_status ?? e.status;
+      return ["pending", "canceled"].includes(effectiveStatus);
+    }) ?? [];
 
   return (
     <div className="page">
@@ -189,14 +182,17 @@ export default function WaitingRoom() {
           </tr>
         </thead>
         <tbody>
-          {orderedGroup.map((entry: WaitingRoomEntry) => (
-            <tr key={entry.id}>
-              <td>{entry.patient.full_name}</td>
-              <td>{renderStatusBadge(entry.appointment_status || entry.status)}</td>
-              <td>{renderWaitTime(entry.arrival_time)}</td>
-              <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
-            </tr>
-          ))}
+          {orderedGroup.map((entry) => {
+            const effectiveStatus = entry.appointment_status ?? entry.status;
+            return (
+              <tr key={entry.id}>
+                <td>{entry.patient.full_name}</td>
+                <td>{renderStatusBadge(effectiveStatus)}</td>
+                <td>{renderWaitTime(entry.arrival_time)}</td>
+                <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -211,14 +207,17 @@ export default function WaitingRoom() {
           </tr>
         </thead>
         <tbody>
-          {pendingGroup.map((entry: WaitingRoomEntry) => (
-            <tr key={entry.id}>
-              <td>{entry.patient.full_name}</td>
-              <td>{renderStatusBadge(entry.appointment_status || entry.status)}</td>
-              <td>{renderWaitTime(entry.arrival_time)}</td>
-              <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
-            </tr>
-          ))}
+          {pendingGroup.map((entry) => {
+            const effectiveStatus = entry.appointment_status ?? entry.status;
+            return (
+              <tr key={entry.id}>
+                <td>{entry.patient.full_name}</td>
+                <td>{renderStatusBadge(effectiveStatus)}</td>
+                <td>{renderWaitTime(entry.arrival_time)}</td>
+                <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 

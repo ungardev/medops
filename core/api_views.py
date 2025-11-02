@@ -481,12 +481,16 @@ class PatientViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def waitingroom_entries_today_api(request):
     today = localdate()
+
     qs = (
         WaitingRoomEntry.objects
-        .filter(arrival_time__date=today)
+        .filter(
+            Q(arrival_time__date=today) | Q(appointment__appointment_date=today)
+        )
         .select_related("patient", "appointment")
         .order_by("order", "arrival_time")
     )
+
     serializer = WaitingRoomEntrySerializer(qs, many=True)
     return Response(serializer.data, status=200)
 
