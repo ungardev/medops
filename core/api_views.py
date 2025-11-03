@@ -555,7 +555,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
 
     def get_serializer_class(self):
-        from .serializers import AppointmentSerializer, AppointmentDetailSerializer
         if self.action in ["list", "retrieve"]:
             return AppointmentDetailSerializer
         return AppointmentSerializer
@@ -567,38 +566,37 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated],
     )
     def charge_order(self, request, pk=None):
+        """
+        GET  → devuelve la orden vigente asociada a la cita (404 si no existe).
+        POST → crea una nueva orden solo si no hay una vigente (open/partially_paid).
+        """
         appointment = self.get_object()
 
+        # --- GET: devolver la última orden activa ---
         if request.method == "GET":
-            try:
-                order = appointment.charge_order
-            except ObjectDoesNotExist:
+            order = appointment.charge_orders.exclude(status="void").order_by("-issued_at").first()
+            if not order:
                 return Response({"detail": "No charge order"}, status=status.HTTP_404_NOT_FOUND)
             serializer = ChargeOrderSerializer(order)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
+        # --- POST: crear orden si no existe una vigente ---
         if request.method == "POST":
-            try:
-                _ = appointment.charge_order
+            existing = appointment.charge_orders.filter(status__in=["open", "partially_paid"]).first()
+            if existing:
                 return Response(
                     {"detail": "Charge order already exists"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            except ObjectDoesNotExist:
-                try:
-                    order = ChargeOrder.objects.create(
-                        appointment=appointment,
-                        patient=appointment.patient,
-                        currency="USD",
-                        status="open",
-                    )
-                except Exception as e:
-                    return Response(
-                        {"detail": f"Error creando orden: {str(e)}"},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    )
-                serializer = ChargeOrderSerializer(order)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+            order = ChargeOrder.objects.create(
+                appointment=appointment,
+                patient=appointment.patient,
+                currency="USD",   # ajusta según tu lógica
+                status="open",
+            )
+            serializer = ChargeOrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
@@ -623,6 +621,35 @@ class PaymentViewSet(viewsets.ModelViewSet):
             qs = qs.filter(appointment__patient_id=patient)
         return qs
 
+    def perform_create(self, serializer):
+        """
+        Al crear un pago, recalcula totales de la orden asociada.
+        """
+        payment = serializer.save()
+        order = payment.charge_order
+        order.recalc_totals()
+        order.save(update_fields=["total", "balance_due", "status"])
+        return payment
+
+    def perform_update(self, serializer):
+        """
+        Al actualizar un pago, recalcula totales de la orden asociada.
+        """
+        payment = serializer.save()
+        order = payment.charge_order
+        order.recalc_totals()
+        order.save(update_fields=["total", "balance_due", "status"])
+        return payment
+
+    def perform_destroy(self, instance):
+        """
+        Al eliminar un pago, recalcula totales de la orden asociada.
+        """
+        order = instance.charge_order
+        instance.delete()
+        order.recalc_totals()
+        order.save(update_fields=["total", "balance_due", "status"])
+
     @action(detail=True, methods=["post"])
     def confirm(self, request, pk=None):
         """
@@ -637,7 +664,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
         """
-        Rechaza un pago pendiente.
+        Rechaza un pago pendiente y actualiza la orden asociada.
         """
         payment = self.get_object()
         actor = getattr(request.user, "username", "")
@@ -729,22 +756,42 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
 class ChargeItemViewSet(viewsets.ModelViewSet):
     """
     CRUD de ítems de una orden de cobro.
+    - GET /charge-items/ → lista todos los ítems
+    - POST /charge-items/ → crea un ítem
+    - GET /charge-items/{id}/ → detalle de un ítem
+    - PUT/PATCH /charge-items/{id}/ → actualizar ítem
+    - DELETE /charge-items/{id}/ → eliminar ítem
     """
-    queryset = ChargeItem.objects.select_related("charge_order")
+    queryset = ChargeItem.objects.all().select_related("order")
     serializer_class = ChargeItemSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        order = self.request.query_params.get("charge_order")
-        if order:
-            qs = qs.filter(charge_order_id=order)
-        return qs
-
     def perform_create(self, serializer):
+        """
+        Al crear un ítem, recalcula automáticamente los totales de la orden.
+        """
         item = serializer.save()
-        # recalcular totales de la orden
-        order = item.charge_order
+        order = item.order
         order.recalc_totals()
-        order.save(update_fields=["total", "balance_due", "status"])
+        order.save(update_fields=["total", "balance_due"])
+        return item
+
+    def perform_update(self, serializer):
+        """
+        Al actualizar un ítem, recalcula totales.
+        """
+        item = serializer.save()
+        order = item.order
+        order.recalc_totals()
+        order.save(update_fields=["total", "balance_due"])
+        return item
+
+    def perform_destroy(self, instance):
+        """
+        Al eliminar un ítem, recalcula totales.
+        """
+        order = instance.order
+        instance.delete()
+        order.recalc_totals()
+        order.save(update_fields=["total", "balance_due"])
 

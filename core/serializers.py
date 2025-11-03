@@ -387,7 +387,7 @@ class ChargeItemSerializer(serializers.ModelSerializer):
         model = ChargeItem
         fields = [
             "id",
-            "charge_order",
+            "order",          # 👈 corregido: el campo real en el modelo
             "code",
             "description",
             "qty",
@@ -407,7 +407,7 @@ class ChargeItemSerializer(serializers.ModelSerializer):
 
 
 class ChargeOrderSerializer(serializers.ModelSerializer):
-    items = ChargeItemSerializer(many=True)
+    items = ChargeItemSerializer(many=True, read_only=True)  # 👈 importante: solo lectura
 
     class Meta:
         model = ChargeOrder
@@ -419,10 +419,8 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         read_only_fields = ("total", "balance_due", "status", "issued_at")
 
     def create(self, validated_data):
-        items_data = validated_data.pop("items", [])
+        # Normalmente no se crean ítems aquí, se agregan después
         order = ChargeOrder.objects.create(**validated_data)
-        for item in items_data:
-            ChargeItem.objects.create(order=order, **item)
         order.recalc_totals()
         order.save(update_fields=["total", "balance_due"])
         return order
