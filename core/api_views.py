@@ -564,16 +564,11 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=["get", "post"],
         url_path="charge-order",
-        permission_classes=[IsAuthenticated],  # 👈 explícito
+        permission_classes=[IsAuthenticated],
     )
     def charge_order(self, request, pk=None):
-        """
-        GET  → devuelve la orden asociada a la cita (404 si no existe).
-        POST → crea la orden si aún no existe.
-        """
         appointment = self.get_object()
 
-        # GET: devolver orden si existe
         if request.method == "GET":
             try:
                 order = appointment.charge_order
@@ -582,7 +577,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             serializer = ChargeOrderSerializer(order)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        # POST: crear orden si no existe
         if request.method == "POST":
             try:
                 _ = appointment.charge_order
@@ -591,12 +585,18 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             except ObjectDoesNotExist:
-                order = ChargeOrder.objects.create(
-                    appointment=appointment,
-                    patient=appointment.patient,
-                    currency="USD",  # 👈 ajusta según tu lógica
-                    status="open",
-                )
+                try:
+                    order = ChargeOrder.objects.create(
+                        appointment=appointment,
+                        patient=appointment.patient,
+                        currency="USD",
+                        status="open",
+                    )
+                except Exception as e:
+                    return Response(
+                        {"detail": f"Error creando orden: {str(e)}"},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    )
                 serializer = ChargeOrderSerializer(order)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
