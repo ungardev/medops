@@ -30,3 +30,14 @@ export interface PaymentInput {
   reference_number?: string;
   bank_name?: string;
 }
+
+// --- Nueva entidad: Orden de Cobro ---
+export interface ChargeOrder {
+  id: number;
+  appointment: Appointment["id"];
+  appointment_date: string;
+  patient: PatientRef;
+  total_amount: string;             // suma de los pagos asociados
+  status: PaymentStatus;            // estado global de la orden
+  payments: Payment[];              // pagos asociados
+}

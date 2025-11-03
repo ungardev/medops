@@ -207,13 +207,6 @@ h3 { font-size: 1.2rem; }
   gap: var(--space-4);
 }
 
-.modal-content .table {
-  margin-top: var(--space-3);
-  border-radius: var(--radius-1);
-  overflow: hidden;
-}
-
-/* ...continúan Formularios, Botones, Utilidades, Badges, Citas, y Consultation Layout */
 /* ============ Formularios ============ */
 .input,
 .select,
@@ -250,55 +243,20 @@ h3 { font-size: 1.2rem; }
   justify-content: center;
 }
 
-.btn-outline {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-muted);
-}
-.btn-outline:hover {
-  background: var(--bg-muted);
-  color: var(--text);
-}
+.btn-outline { border: 1px solid var(--border); background: transparent; color: var(--text-muted); }
+.btn-outline:hover { background: var(--bg-muted); color: var(--text); }
 
-.btn-primary {
-  border: 1px solid var(--primary);
-  background: var(--primary);
-  color: var(--primary-contrast);
-}
-.btn-primary:hover {
-  background: #1559c9;
-  border-color: #1559c9;
-}
+.btn-primary { border: 1px solid var(--primary); background: var(--primary); color: var(--primary-contrast); }
+.btn-primary:hover { background: #1559c9; border-color: #1559c9; }
 
-.btn-danger {
-  border: 1px solid var(--danger);
-  background: var(--danger);
-  color: var(--primary-contrast);
-}
-.btn-danger:hover {
-  background: #b91c1c;
-  border-color: #b91c1c;
-}
+.btn-danger { border: 1px solid var(--danger); background: var(--danger); color: var(--primary-contrast); }
+.btn-danger:hover { background: #b91c1c; border-color: #b91c1c; }
 
-.btn-success {
-  border: 1px solid var(--success);
-  background: var(--success);
-  color: var(--primary-contrast);
-}
-.btn-success:hover {
-  background: #15803d;
-  border-color: #15803d;
-}
+.btn-success { border: 1px solid var(--success); background: var(--success); color: var(--primary-contrast); }
+.btn-success:hover { background: #15803d; border-color: #15803d; }
 
-.btn-warning {
-  border: 1px solid var(--warning);
-  background: var(--warning);
-  color: #fff;
-}
-.btn-warning:hover {
-  background: #d97706;
-  border-color: #d97706;
-}
+.btn-warning { border: 1px solid var(--warning); background: var(--warning); color: #fff; }
+.btn-warning:hover { background: #d97706; border-color: #d97706; }
 
 /* ============ Utilidades ============ */
 .text-muted { color: var(--text-muted); }
@@ -338,25 +296,10 @@ h3 { font-size: 1.2rem; }
   line-height: 1.2;
 }
 
-.badge-muted {
-  background: var(--bg-muted);
-  color: var(--text-muted);
-}
-
-.badge-success {
-  background: var(--success);
-  color: var(--primary-contrast);
-}
-
-.badge-warning {
-  background: var(--warning);
-  color: #fff;
-}
-
-.badge-danger {
-  background: var(--danger);
-  color: var(--primary-contrast);
-}
+.badge-muted { background: var(--bg-muted); color: var(--text-muted); }
+.badge-success { background: var(--success); color: var(--primary-contrast); }
+.badge-warning { background: var(--warning); color: #fff; }
+.badge-danger { background: var(--danger); color: var(--primary-contrast); }
 
 /* ============ Citas ============ */
 .citas-container {
@@ -365,7 +308,8 @@ h3 { font-size: 1.2rem; }
   gap: var(--space-5);
 }
 
-.citas-calendar {
+.citas-calendar,
+.citas-list {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-1);
@@ -394,14 +338,6 @@ h3 { font-size: 1.2rem; }
   border-radius: 50%;
 }
 
-.citas-list {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-1);
-  box-shadow: var(--shadow-1);
-  padding: var(--space-4);
-}
-
 .citas-header {
   display: flex;
   justify-content: space-between;
@@ -425,12 +361,7 @@ h3 { font-size: 1.2rem; }
   align-items: flex-start;
 }
 
-.consultation-column {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
-
+.consultation-column,
 .consultation-main {
   display: flex;
   flex-direction: column;
@@ -460,15 +391,9 @@ h3 { font-size: 1.2rem; }
   border-bottom: 2px solid transparent;
   transition: color 0.2s, border-color 0.2s;
 }
+.consultation-tab.active { color: var(--primary); border-color: var(--primary); }
 
-.consultation-tab.active {
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-.consultation-panel {
-  min-height: 200px;
-}
+.consultation-panel { min-height: 200px; }
 
 .consultation-card {
   background: var(--bg);
@@ -481,12 +406,34 @@ h3 { font-size: 1.2rem; }
 }
 
 @media (max-width: 1024px) {
-  .consultation-container {
-    grid-template-columns: 1fr; /* se apilan en una sola columna */
-  }
-
-  .consultation-column,
-  .consultation-main {
-    flex-direction: column;
-  }
+  .consultation-container { grid-template-columns: 1fr; }
+  .consultation-column, .consultation-main { flex-direction: column; }
 }
+
+/* ============ Payments ============ */
+.payments-panel { composes: card; }
+
+.payments-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  background: var(--bg-muted);
+  padding: var(--space-3);
+  border-radius: var(--radius-1);
+  font-size: 0.875rem;
+  margin-bottom: var(--space-4);
+}
+
+.payments-summary strong {
+  display: block;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.payments-panel .filters {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.payments-panel table { composes: table; }

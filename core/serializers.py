@@ -434,6 +434,25 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         return order
 
 
+class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
+    # Aliases para Pagos
+    appointment_date = serializers.DateTimeField(source="issued_at", read_only=True)
+    total_amount = serializers.DecimalField(source="total", max_digits=10, decimal_places=2, read_only=True)
+    patient_detail = PatientReadSerializer(source="patient", read_only=True)
+    items = ChargeItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ChargeOrder
+        fields = (
+            # Campos originales (compatibilidad)
+            "id", "appointment", "patient", "currency",
+            "total", "balance_due", "status",
+            "issued_at", "issued_by", "items",
+            # Aliases nuevos para Pagos
+            "appointment_date", "total_amount", "patient_detail",
+        )
+
+
 # --- Resumen ejecutivo del Dashboard ---
 class DashboardSummarySerializer(serializers.Serializer):
     total_patients = serializers.IntegerField()

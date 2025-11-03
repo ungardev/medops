@@ -30,7 +30,7 @@ from .serializers import (
     DashboardSummarySerializer,
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
-    AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer
+    AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer
 )
 
 
@@ -725,21 +725,14 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     Permite crear, listar, actualizar y anular (void).
     """
     queryset = ChargeOrder.objects.select_related("appointment", "patient").prefetch_related("items")
-    serializer_class = ChargeOrderSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        appt = self.request.query_params.get("appointment")
-        patient = self.request.query_params.get("patient")
-        status_ = self.request.query_params.get("status")
-        if appt:
-            qs = qs.filter(appointment_id=appt)
-        if patient:
-            qs = qs.filter(patient_id=patient)
-        if status_:
-            qs = qs.filter(status=status_)
-        return qs
+    def get_serializer_class(self):
+        # Para listados y detalle usamos el serializer extendido de Pagos
+        if self.action in ["list", "retrieve"]:
+            return ChargeOrderPaymentSerializer
+        # Para crear/actualizar mantenemos el serializer base
+        return ChargeOrderSerializer
 
     @action(detail=True, methods=["post"])
     def void(self, request, pk=None):
