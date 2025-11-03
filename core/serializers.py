@@ -385,8 +385,25 @@ class AppointmentPendingSerializer(serializers.ModelSerializer):
 class ChargeItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChargeItem
-        fields = ("id", "code", "description", "qty", "unit_price", "subtotal")
-        read_only_fields = ("subtotal",)
+        fields = [
+            "id",
+            "charge_order",
+            "code",
+            "description",
+            "qty",
+            "unit_price",
+            "subtotal",
+        ]
+        read_only_fields = ["id", "subtotal"]
+
+    def validate(self, data):
+        qty = data.get("qty", 1)
+        unit_price = data.get("unit_price", 0)
+        if qty <= 0:
+            raise serializers.ValidationError({"qty": "La cantidad debe ser mayor a 0"})
+        if unit_price < 0:
+            raise serializers.ValidationError({"unit_price": "El precio no puede ser negativo"})
+        return data
 
 
 class ChargeOrderSerializer(serializers.ModelSerializer):

@@ -30,7 +30,7 @@ from .serializers import (
     DashboardSummarySerializer,
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
-    AppointmentDetailSerializer, ChargeOrderSerializer
+    AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer
 )
 
 
@@ -716,4 +716,26 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         order.mark_void(reason=reason, actor=actor)
         return Response({"status": "void"}, status=status.HTTP_200_OK)
 
+
+class ChargeItemViewSet(viewsets.ModelViewSet):
+    """
+    CRUD de ítems de una orden de cobro.
+    """
+    queryset = ChargeItem.objects.select_related("charge_order")
+    serializer_class = ChargeItemSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        order = self.request.query_params.get("charge_order")
+        if order:
+            qs = qs.filter(charge_order_id=order)
+        return qs
+
+    def perform_create(self, serializer):
+        item = serializer.save()
+        # recalcular totales de la orden
+        order = item.charge_order
+        order.recalc_totals()
+        order.save(update_fields=["total", "balance_due", "status"])
 
