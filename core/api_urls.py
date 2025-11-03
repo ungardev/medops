@@ -11,6 +11,7 @@ from .api_views import (
     DiagnosisViewSet,
     TreatmentViewSet,
     PrescriptionViewSet,
+    ChargeOrderViewSet,   # 👈 añadido
     update_appointment_status,
     update_waitingroom_status,
     patient_search_api,
@@ -37,6 +38,7 @@ router.register(r"documents", MedicalDocumentViewSet, basename="document")
 router.register(r"diagnoses", DiagnosisViewSet, basename="diagnosis")
 router.register(r"treatments", TreatmentViewSet, basename="treatment")
 router.register(r"prescriptions", PrescriptionViewSet, basename="prescription")
+router.register(r"charge-orders", ChargeOrderViewSet, basename="chargeorder")  # 👈 nuevo
 
 # --- Funciones personalizadas ---
 urlpatterns = [
