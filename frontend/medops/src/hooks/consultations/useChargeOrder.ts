@@ -45,7 +45,8 @@ export interface ChargeOrder {
 // -----------------------------
 async function fetchChargeOrder(appointmentId: number): Promise<ChargeOrder | null> {
   try {
-    const res = await axios.get(`/api/appointments/${appointmentId}/charge-order/`);
+    // 👇 quitamos el /api, axios ya lo añade desde baseURL
+    const res = await axios.get(`/appointments/${appointmentId}/charge-order/`);
     return res.data as ChargeOrder;
   } catch (err: any) {
     if (err.response && err.response.status === 404) {
@@ -56,7 +57,8 @@ async function fetchChargeOrder(appointmentId: number): Promise<ChargeOrder | nu
 }
 
 async function createPayment(orderId: number, payload: PaymentPayload): Promise<Payment> {
-  const res = await axios.post(`/api/charge-orders/${orderId}/payments/`, payload);
+  // 👇 igual aquí, sin /api
+  const res = await axios.post(`/charge-orders/${orderId}/payments/`, payload);
   return res.data as Payment;
 }
 

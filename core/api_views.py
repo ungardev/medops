@@ -560,7 +560,12 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             return AppointmentDetailSerializer
         return AppointmentSerializer
 
-    @action(detail=True, methods=["get", "post"], url_path="charge-order")
+    @action(
+        detail=True,
+        methods=["get", "post"],
+        url_path="charge-order",
+        permission_classes=[IsAuthenticated],  # 👈 explícito
+    )
     def charge_order(self, request, pk=None):
         """
         GET  → devuelve la orden asociada a la cita (404 si no existe).
@@ -570,26 +575,30 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         # GET: devolver orden si existe
         if request.method == "GET":
-            if hasattr(appointment, "charge_order"):
-                serializer = ChargeOrderSerializer(appointment.charge_order)
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response({"detail": "No charge order"}, status=status.HTTP_404_NOT_FOUND)
+            try:
+                order = appointment.charge_order
+            except ObjectDoesNotExist:
+                return Response({"detail": "No charge order"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = ChargeOrderSerializer(order)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
         # POST: crear orden si no existe
         if request.method == "POST":
-            if hasattr(appointment, "charge_order"):
+            try:
+                _ = appointment.charge_order
                 return Response(
                     {"detail": "Charge order already exists"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-            order = ChargeOrder.objects.create(
-                appointment=appointment,
-                patient=appointment.patient,
-                currency="USD",  # 👈 ajusta según tu lógica
-                status="open",
-            )
-            serializer = ChargeOrderSerializer(order)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except ObjectDoesNotExist:
+                order = ChargeOrder.objects.create(
+                    appointment=appointment,
+                    patient=appointment.patient,
+                    currency="USD",  # 👈 ajusta según tu lógica
+                    status="open",
+                )
+                serializer = ChargeOrderSerializer(order)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class PaymentViewSet(viewsets.ModelViewSet):

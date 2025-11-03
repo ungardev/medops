@@ -23,6 +23,16 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 // Importa el NotifyProvider
 import { NotifyProvider } from "./context/NotifyContext";
 
+// 🔹 Importa axios y configura headers globales
+import axios from "axios";
+
+// Configuración global de axios
+axios.defaults.baseURL = "/api"; // o la URL completa de tu backend
+const token = localStorage.getItem("authToken"); // ajusta según cómo guardes el token
+if (token) {
+  axios.defaults.headers.common["Authorization"] = `Token ${token}`;
+}
+
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

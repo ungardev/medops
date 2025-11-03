@@ -7,8 +7,8 @@ import {
   PrescriptionPanel,
   NotesPanel,
   DocumentsPanel,
-  PaymentsPanel,
   ConsultationActions,
+  ChargeOrderPanel,   // 👈 nuevo import
 } from "../../components/Consultation";
 
 import {
@@ -83,10 +83,10 @@ export default function Consultation() {
           </div>
         </div>
 
-        {/* 🔹 Columna derecha: Pagos */}
+        {/* 🔹 Columna derecha: Orden de Cobro + Pagos */}
         <div className="consultation-column">
           <div className="consultation-card">
-            <PaymentsPanel appointmentId={appointment.id} />
+            <ChargeOrderPanel appointmentId={appointment.id} />
           </div>
         </div>
       </div>

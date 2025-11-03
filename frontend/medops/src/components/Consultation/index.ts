@@ -6,6 +6,6 @@ export { default as TreatmentPanel } from "./TreatmentPanel";
 export { default as PrescriptionPanel } from "./PrescriptionPanel";
 export { default as NotesPanel } from "./NotesPanel";
 export { default as DocumentsPanel } from "./DocumentsPanel";
-export { default as PaymentsPanel } from "./PaymentsPanel";
 export { default as AuditLogPanel } from "./AuditLogPanel";
 export { default as ConsultationActions } from "./ConsultationActions";
+export { default as ChargeOrderPanel } from "./ChargeOrderPanel"; // 👈 nuevo
