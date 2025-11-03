@@ -24,13 +24,14 @@ def migrate_payments_to_orders(apps, schema_editor):
                     },
                 )
                 if created:
-                    # Crear ítem base
+                    # Crear ítem base con subtotal calculado manualmente
                     ChargeItem.objects.create(
                         order=order,
                         code="CONSULTA",
                         description=f"Consulta {appt.appointment_type}",
                         qty=Decimal("1.00"),
                         unit_price=appt.expected_amount,
+                        subtotal=(Decimal("1.00") * appt.expected_amount),  # 👈 FIX
                     )
                     order.recalc_totals()
                     order.save(update_fields=["total", "balance_due"])
