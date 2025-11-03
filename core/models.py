@@ -332,7 +332,7 @@ class Payment(models.Model):
     ]
 
     appointment = models.ForeignKey('Appointment', on_delete=models.CASCADE, related_name="payments")
-    charge_order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
+    charge_order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='USD')
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
