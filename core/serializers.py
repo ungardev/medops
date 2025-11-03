@@ -383,11 +383,16 @@ class AppointmentPendingSerializer(serializers.ModelSerializer):
 
 
 class ChargeItemSerializer(serializers.ModelSerializer):
+    # 👇 Forzamos a que se serialicen como float
+    qty = serializers.FloatField()
+    unit_price = serializers.FloatField()
+    subtotal = serializers.FloatField(read_only=True)
+
     class Meta:
         model = ChargeItem
         fields = [
             "id",
-            "order",          # 👈 corregido: el campo real en el modelo
+            "order",          # campo real en el modelo
             "code",
             "description",
             "qty",
@@ -407,7 +412,10 @@ class ChargeItemSerializer(serializers.ModelSerializer):
 
 
 class ChargeOrderSerializer(serializers.ModelSerializer):
-    items = ChargeItemSerializer(many=True, read_only=True)  # 👈 importante: solo lectura
+    # 👇 Forzamos a que se serialicen como float en vez de string
+    total = serializers.FloatField(read_only=True)
+    balance_due = serializers.FloatField(read_only=True)
+    items = ChargeItemSerializer(many=True, read_only=True)  # solo lectura
 
     class Meta:
         model = ChargeOrder

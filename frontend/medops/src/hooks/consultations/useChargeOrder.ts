@@ -10,13 +10,17 @@ export interface Payment {
   method: string;
   status: string;
   reference_number?: string | null;
+  bank?: string | null;     // 👈 agregado
+  detail?: string | null;   // 👈 agregado
 }
 
 export interface PaymentPayload {
   charge_order: number;
   amount: number;
-  method: string;
+  method: "cash" | "card" | "transfer" | "other"; // 👈 más estricto
   reference_number?: string | null;
+  bank?: string | null;     // 👈 agregado
+  detail?: string | null;   // 👈 agregado
 }
 
 export interface ChargeItem {
