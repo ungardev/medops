@@ -2,7 +2,8 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
-    Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition
+    Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
+    ChargeOrder, ChargeItem
 )
 from datetime import date
 from typing import Optional
@@ -226,15 +227,31 @@ class PaymentSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "appointment_date",
-            "patient",          # objeto con id, full_name y email
+            "patient",
+            "charge_order",       # 👈 NUEVO: vínculo obligatorio
             "amount",
+            "currency",           # 👈 NUEVO
             "method",
             "status",
             "reference_number",
             "bank_name",
             "received_by",
             "received_at",
+            "idempotency_key",    # 👈 NUEVO
         ]
+        read_only_fields = ("status", "received_at")
+
+    def validate(self, attrs):
+        amount = attrs.get("amount")
+        order = attrs.get("charge_order")
+        if amount is None or amount <= Decimal("0.00"):
+            raise serializers.ValidationError("El monto debe ser mayor a 0.")
+        if order and order.status == "void":
+            raise serializers.ValidationError("No se puede pagar una orden anulada.")
+        order.recalc_totals()
+        if amount > order.balance_due:
+            raise serializers.ValidationError("El monto excede el saldo pendiente de la orden.")
+        return attrs
 
 
 # --- Documentos clínicos ---
@@ -334,7 +351,7 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
 # --- Citas pendientes con pagos ---
 class AppointmentPendingSerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
-    payments = PaymentSerializer(many=True, read_only=True)  # 👈 sin source
+    payments = PaymentSerializer(many=True, read_only=True)
     financial_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -357,12 +374,41 @@ class AppointmentPendingSerializer(serializers.ModelSerializer):
 
         expected = safe_decimal(obj.expected_amount)
         total_paid = sum(
-            safe_decimal(p.amount) for p in obj.payments.all() if p.status == "paid"
+            safe_decimal(p.amount) for p in obj.payments.all() if p.status == "confirmed"
         )
 
         if total_paid >= expected and expected > 0:
             return "paid"
         return "pending"
+
+
+class ChargeItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChargeItem
+        fields = ("id", "code", "description", "qty", "unit_price", "subtotal")
+        read_only_fields = ("subtotal",)
+
+
+class ChargeOrderSerializer(serializers.ModelSerializer):
+    items = ChargeItemSerializer(many=True)
+
+    class Meta:
+        model = ChargeOrder
+        fields = (
+            "id", "appointment", "patient", "currency",
+            "total", "balance_due", "status",
+            "issued_at", "issued_by", "items"
+        )
+        read_only_fields = ("total", "balance_due", "status", "issued_at")
+
+    def create(self, validated_data):
+        items_data = validated_data.pop("items", [])
+        order = ChargeOrder.objects.create(**validated_data)
+        for item in items_data:
+            ChargeItem.objects.create(order=order, **item)
+        order.recalc_totals()
+        order.save(update_fields=["total", "balance_due"])
+        return order
 
 
 # --- Resumen ejecutivo del Dashboard ---

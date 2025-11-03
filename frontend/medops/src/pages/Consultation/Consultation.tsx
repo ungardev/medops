@@ -31,54 +31,64 @@ export default function Consultation() {
   if (!appointment) return <p>No hay paciente en consulta</p>;
 
   return (
-    <div className="consultation-page">
+    <div className="consultation-page page">
       {/* 🔹 Panel superior: Identidad del paciente */}
       <PatientHeader patient={appointment.patient} />
 
-      <div className="consultation-body flex">
-        {/* 🔹 Tabs clínicos */}
-        <div className="consultation-main flex-1">
-          <Tabs defaultTab="diagnosis">
-            <Tab id="diagnosis" label="Diagnóstico">
-              <DiagnosisPanel
-                diagnoses={appointment.diagnoses}
-                onAdd={(data) =>
-                  createDiagnosis.mutate({
-                    ...data,
-                    appointment: appointment.id,
-                  })
-                }
-              />
-            </Tab>
-
-            <Tab id="treatment" label="Tratamiento">
-              <TreatmentPanel
-                diagnoses={appointment.diagnoses}
-                onAdd={(data) => createTreatment.mutate({ ...data })}
-              />
-            </Tab>
-
-            <Tab id="prescription" label="Prescripción">
-              <PrescriptionPanel
-                diagnoses={appointment.diagnoses}
-                onAdd={(data) => createPrescription.mutate({ ...data })}
-              />
-            </Tab>
-
-            <Tab id="notes" label="Notas">
-              <NotesPanel
-                consultationId={appointment.id}
-                notes={appointment.notes}
-              />
-            </Tab>
-          </Tabs>
+      <div className="consultation-container">
+        {/* 🔹 Columna izquierda: Documentos */}
+        <div className="consultation-column">
+          <div className="consultation-card">
+            <DocumentsPanel patientId={appointment.patient.id} />
+          </div>
         </div>
 
-        {/* 🔹 Side-panels */}
-        <aside className="consultation-side w-1/3">
-          <DocumentsPanel patientId={appointment.patient.id} />
-          <PaymentsPanel appointmentId={appointment.id} />
-        </aside>
+        {/* 🔹 Columna central: Tabs clínicos */}
+        <div className="consultation-main">
+          <div className="consultation-tabs">
+            <Tabs defaultTab="diagnosis">
+              <Tab id="diagnosis" label="Diagnóstico">
+                <DiagnosisPanel
+                  diagnoses={appointment.diagnoses}
+                  onAdd={(data) =>
+                    createDiagnosis.mutate({
+                      ...data,
+                      appointment: appointment.id,
+                    })
+                  }
+                />
+              </Tab>
+
+              <Tab id="treatment" label="Tratamiento">
+                <TreatmentPanel
+                  diagnoses={appointment.diagnoses}
+                  onAdd={(data) => createTreatment.mutate({ ...data })}
+                />
+              </Tab>
+
+              <Tab id="prescription" label="Prescripción">
+                <PrescriptionPanel
+                  diagnoses={appointment.diagnoses}
+                  onAdd={(data) => createPrescription.mutate({ ...data })}
+                />
+              </Tab>
+
+              <Tab id="notes" label="Notas">
+                <NotesPanel
+                  consultationId={appointment.id}
+                  notes={appointment.notes}
+                />
+              </Tab>
+            </Tabs>
+          </div>
+        </div>
+
+        {/* 🔹 Columna derecha: Pagos */}
+        <div className="consultation-column">
+          <div className="consultation-card">
+            <PaymentsPanel appointmentId={appointment.id} />
+          </div>
+        </div>
       </div>
 
       {/* 🔹 Footer: acciones de cierre */}

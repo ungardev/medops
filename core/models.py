@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.core.validators import RegexValidator, MinLengthValidator, MaxLengthValidator
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
@@ -121,32 +121,10 @@ class Appointment(models.Model):
 
     patient = models.ForeignKey('Patient', on_delete=models.CASCADE)
     appointment_date = models.DateField()
-
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
-        null=False,
-        blank=False
-    )
-
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     arrival_time = models.TimeField(blank=True, null=True)
-
-    appointment_type = models.CharField(
-        max_length=20,
-        choices=TYPE_CHOICES,
-        default='general',
-        verbose_name="Tipo de consulta"
-    )
-
-    expected_amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal('0.00'),
-        verbose_name="Monto esperado"
-    )
-
-    # 🔹 Campo para evolución clínica
+    appointment_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='general', verbose_name="Tipo de consulta")
+    expected_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto esperado")
     notes = models.TextField(blank=True, null=True)
 
     history = HistoricalRecords()
@@ -160,10 +138,14 @@ class Appointment(models.Model):
 
     # --- Finanzas ---
     def total_paid(self):
-        agg = self.payments.aggregate(total=Sum('amount'))
+        agg = self.payments.filter(status='confirmed').aggregate(total=Sum('amount'))
         return agg.get('total') or Decimal('0.00')
 
     def balance_due(self):
+        orders = self.charge_orders.exclude(status='void')
+        if orders.exists():
+            agg = orders.aggregate(b=Sum('balance_due'))
+            return agg.get('b') or Decimal('0.00')
         return max(self.expected_amount - self.total_paid(), Decimal('0.00'))
 
     def is_fully_paid(self):
@@ -194,16 +176,10 @@ class Appointment(models.Model):
             raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
 
     def mark_arrived(self, priority: str = "normal", source_type: str = "scheduled"):
-        """
-        Marca la cita como 'arrived' y crea entrada en la sala de espera.
-        - priority: "normal" o "emergency"
-        - source_type: "scheduled" (default) o "walkin"
-        """
         if self.status == "pending":
             self.status = "arrived"
             self.arrival_time = timezone.now().time()
             self.save(update_fields=["status", "arrival_time"])
-
             WaitingRoomEntry.objects.get_or_create(
                 appointment=self,
                 patient=self.patient,
@@ -344,56 +320,107 @@ class Prescription(models.Model):
 class Payment(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pendiente'),
-        ('paid', 'Pagado'),
-        ('canceled', 'Cancelado'),
-        ('waived', 'Exonerado'),
+        ('confirmed', 'Confirmado'),
+        ('rejected', 'Rechazado'),
+        ('void', 'Anulado'),
     ]
     METHOD_CHOICES = [
         ('cash', 'Efectivo'),
         ('card', 'Tarjeta'),
         ('transfer', 'Transferencia'),
+        ('other', 'Otro'),
     ]
 
-    appointment = models.ForeignKey(   # 🔹 ahora permite múltiples pagos por cita
-        'Appointment',
-        on_delete=models.CASCADE,
-        related_name="payments"
-    )
+    appointment = models.ForeignKey('Appointment', on_delete=models.CASCADE, related_name="payments")
+    charge_order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='payments', null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=10, default='USD')
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    reference_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="Número de referencia / comprobante")
-    bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Banco emisor (si aplica)")
-    received_by = models.CharField(max_length=100, blank=True, null=True, verbose_name="Recibido por")
-    received_at = models.DateTimeField(auto_now_add=True, null=True, blank=True, verbose_name="Fecha de registro")
+    reference_number = models.CharField(
+        max_length=100, blank=True, null=True,
+        verbose_name="Número de referencia / comprobante"
+    )
+    bank_name = models.CharField(
+        max_length=100, blank=True, null=True,
+        verbose_name="Banco emisor (si aplica)"
+    )
+    received_by = models.CharField(
+        max_length=100, blank=True, null=True,
+        verbose_name="Recibido por"
+    )
+    received_at = models.DateTimeField(
+        auto_now_add=True, null=True, blank=True,
+        verbose_name="Fecha de registro"
+    )
+    idempotency_key = models.CharField(
+        max_length=200, blank=True, null=True, unique=True
+    )
 
-    # Historial
     history = HistoricalRecords()
 
     class Meta:
+        indexes = [
+            models.Index(fields=['appointment', 'charge_order', 'status']),
+            models.Index(fields=['reference_number', 'method']),
+        ]
         verbose_name = "Payment"
         verbose_name_plural = "Payments"
 
     def __str__(self):
-        return f"{self.appointment} - {self.amount} - {self.method} - {self.status}"
+        return f"Appt {self.appointment_id} Order {self.charge_order_id} ${self.amount} {self.method} {self.status}"
 
-    # 🔹 Validaciones de negocio
+    # --- Validaciones de negocio ---
     def clean(self):
         errors = {}
+        if self.amount is None or self.amount <= Decimal('0.00'):
+            errors['amount'] = "El monto debe ser mayor a 0."
+        if self.charge_order and self.charge_order.status == 'void':
+            errors['charge_order'] = "No se puede pagar una orden anulada."
 
         if self.method == 'transfer':
             if not self.reference_number:
                 errors['reference_number'] = "Debe ingresar el número de transferencia."
             if not self.bank_name:
                 errors['bank_name'] = "Debe especificar el banco emisor."
-
-        if self.method == 'card':
-            if not self.reference_number:
-                errors['reference_number'] = "Debe ingresar el número de comprobante de la tarjeta."
+        if self.method == 'card' and not self.reference_number:
+            errors['reference_number'] = "Debe ingresar el número de comprobante de la tarjeta."
 
         if errors:
             raise ValidationError(errors)
+
+    # --- Confirmación blindada ---
+    def confirm(self, actor: str = '', note: str = ''):
+        with transaction.atomic():
+            self.charge_order.recalc_totals()
+            if self.amount > self.charge_order.balance_due:
+                raise ValidationError("El monto excede el saldo pendiente de la orden.")
+
+            self.status = 'confirmed'
+            self.save(update_fields=['status'])
+
+            self.charge_order.recalc_totals()
+            if self.charge_order.balance_due == Decimal('0.00'):
+                self.charge_order.status = 'paid'
+            else:
+                self.charge_order.status = 'partially_paid'
+            self.charge_order.save(update_fields=['total', 'balance_due', 'status'])
+
+            Event.objects.create(
+                entity='Payment', entity_id=self.pk, action='confirm',
+                metadata={'actor': actor, 'note': note}
+            )
+
+    # --- Rechazo blindado ---
+    def reject(self, actor: str = '', reason: str = ''):
+        with transaction.atomic():
+            self.status = 'rejected'
+            self.save(update_fields=['status'])
+            Event.objects.create(
+                entity='Payment', entity_id=self.pk, action='reject',
+                metadata={'actor': actor, 'reason': reason}
+            )
 
 
 class Event(models.Model):
@@ -430,4 +457,77 @@ class MedicalDocument(models.Model):
 
     def __str__(self):
         return f"{self.description or 'Documento'} - {self.patient}"
-    
+
+
+class ChargeOrder(models.Model):
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('partially_paid', 'Partially Paid'),
+        ('paid', 'Paid'),
+        ('void', 'Void'),
+    ]
+
+    appointment = models.ForeignKey('Appointment', on_delete=models.CASCADE, related_name='charge_orders')
+    patient = models.ForeignKey('Patient', on_delete=models.CASCADE, related_name='charge_orders')
+    currency = models.CharField(max_length=10, default='USD')
+    total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    balance_due = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+
+    issued_at = models.DateTimeField(auto_now_add=True)
+    issued_by = models.CharField(max_length=100, blank=True, null=True)
+
+    history = HistoricalRecords()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['appointment', 'status']),
+            models.Index(fields=['patient', 'status']),
+        ]
+        verbose_name = "Charge Order"
+        verbose_name_plural = "Charge Orders"
+
+    def __str__(self):
+        return f"Order #{self.pk} for Appt {self.appointment_id} — {self.status}"
+
+    def recalc_totals(self):
+        items_sum = self.items.aggregate(s=Sum('subtotal')).get('s') or Decimal('0.00')
+        self.total = items_sum
+        confirmed = self.payments.filter(status='confirmed').aggregate(s=Sum('amount')).get('s') or Decimal('0.00')
+        self.balance_due = max(self.total - confirmed, Decimal('0.00'))
+
+    def clean(self):
+        if self.status == 'paid' and self.balance_due != Decimal('0.00'):
+            raise ValidationError("Una orden 'paid' debe tener balance_due = 0.")
+
+    def mark_void(self, reason: str = '', actor: str = ''):
+        if self.status == 'paid':
+            raise ValidationError("No se puede anular una orden ya pagada.")
+        self.status = 'void'
+        self.save(update_fields=['status'])
+        Event.objects.create(
+            entity='ChargeOrder', entity_id=self.pk, action='void',
+            metadata={'actor': actor, 'reason': reason}
+        )
+
+
+class ChargeItem(models.Model):
+    order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='items')
+    code = models.CharField(max_length=50)
+    description = models.CharField(max_length=255)
+    qty = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+
+    class Meta:
+        verbose_name = "Charge Item"
+        verbose_name_plural = "Charge Items"
+
+    def __str__(self):
+        return f"{self.code} x{self.qty} — {self.subtotal}"
+
+    def save(self, *args, **kwargs):
+        self.subtotal = (self.qty or Decimal('0')) * (self.unit_price or Decimal('0'))
+        super().save(*args, **kwargs)
+        self.order.recalc_totals()
+        self.order.save(update_fields=['total', 'balance_due'])

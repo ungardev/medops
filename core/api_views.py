@@ -21,7 +21,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem
 
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
@@ -30,7 +30,7 @@ from .serializers import (
     DashboardSummarySerializer,
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
-    AppointmentDetailSerializer
+    AppointmentDetailSerializer, ChargeOrderSerializer
 )
 
 
@@ -562,27 +562,48 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar pagos.
+    Permite crear, listar, confirmar y rechazar pagos.
+    """
+    queryset = Payment.objects.select_related("appointment", "charge_order")
     serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        qs = Payment.objects.all().order_by("-received_at")
-        appointment_id = self.request.query_params.get("appointment")
-        if appointment_id:
-            qs = qs.filter(appointment_id=appointment_id)
+        qs = super().get_queryset().order_by("-received_at")
+        appt = self.request.query_params.get("appointment")
+        order = self.request.query_params.get("charge_order")
+        patient = self.request.query_params.get("patient")
+        if appt:
+            qs = qs.filter(appointment_id=appt)
+        if order:
+            qs = qs.filter(charge_order_id=order)
+        if patient:
+            qs = qs.filter(appointment__patient_id=patient)
         return qs
 
-    def perform_create(self, serializer):
-        payment = serializer.save()
-        recalc_appointment_status(payment.appointment)
+    @action(detail=True, methods=["post"])
+    def confirm(self, request, pk=None):
+        """
+        Confirma un pago pendiente y actualiza la orden asociada.
+        """
+        payment = self.get_object()
+        actor = getattr(request.user, "username", "")
+        note = request.data.get("note", "")
+        payment.confirm(actor=actor, note=note)
+        return Response({"status": "confirmed"}, status=status.HTTP_200_OK)
 
-    def perform_update(self, serializer):
-        payment = serializer.save()
-        recalc_appointment_status(payment.appointment)
-
-    def perform_destroy(self, instance):
-        appointment = instance.appointment
-        super().perform_destroy(instance)
-        recalc_appointment_status(appointment)
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        """
+        Rechaza un pago pendiente.
+        """
+        payment = self.get_object()
+        actor = getattr(request.user, "username", "")
+        reason = request.data.get("reason", "")
+        payment.reject(actor=actor, reason=reason)
+        return Response({"status": "rejected"}, status=status.HTTP_200_OK)
 
 
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
@@ -629,3 +650,39 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
             action="create",
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
         )
+
+
+class ChargeOrderViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar órdenes de cobro.
+    Permite crear, listar, actualizar y anular (void).
+    """
+    queryset = ChargeOrder.objects.select_related("appointment", "patient").prefetch_related("items")
+    serializer_class = ChargeOrderSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        appt = self.request.query_params.get("appointment")
+        patient = self.request.query_params.get("patient")
+        status_ = self.request.query_params.get("status")
+        if appt:
+            qs = qs.filter(appointment_id=appt)
+        if patient:
+            qs = qs.filter(patient_id=patient)
+        if status_:
+            qs = qs.filter(status=status_)
+        return qs
+
+    @action(detail=True, methods=["post"])
+    def void(self, request, pk=None):
+        """
+        Anula una orden de cobro (si no está pagada).
+        """
+        order = self.get_object()
+        reason = request.data.get("reason", "")
+        actor = getattr(request.user, "username", "")
+        order.mark_void(reason=reason, actor=actor)
+        return Response({"status": "void"}, status=status.HTTP_200_OK)
+
+

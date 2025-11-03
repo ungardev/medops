@@ -36,13 +36,12 @@ export default function PaymentsPanel({ appointmentId }: PaymentsPanelProps) {
       <ul className="mb-4">
         {payments?.length === 0 && <li className="text-muted">Sin pagos registrados</li>}
         {payments?.map((p) => {
-          // 🔹 Conversión segura
           const amountNum = Number(p.amount) || 0;
-
           return (
             <li key={p.id} className="border-b py-1">
-              <strong>${amountNum.toFixed(2)}</strong> — {p.method}{" "}
+              <strong>${amountNum.toFixed(2)}</strong> — {p.method}
               <span className="text-sm text-muted">
+                {" "}
                 {p.status} {p.reference_number && `| Ref: ${p.reference_number}`}
               </span>
             </li>
@@ -50,7 +49,7 @@ export default function PaymentsPanel({ appointmentId }: PaymentsPanelProps) {
         })}
       </ul>
 
-      <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
+      <form onSubmit={handleAddPayment} className="flex flex-col gap-3">
         <input
           type="number"
           step="0.01"
@@ -60,12 +59,19 @@ export default function PaymentsPanel({ appointmentId }: PaymentsPanelProps) {
           className="input"
         />
 
-        <select value={method} onChange={(e) => setMethod(e.target.value)} className="select">
-          <option value="cash">Efectivo</option>
-          <option value="card">Tarjeta</option>
-          <option value="transfer">Transferencia</option>
-          <option value="other">Otro</option>
-        </select>
+        {/* Select estilizado */}
+        <div className="select-wrapper">
+          <select
+            value={method}
+            onChange={(e) => setMethod(e.target.value)}
+            className="select"
+          >
+            <option value="cash">Efectivo</option>
+            <option value="card">Tarjeta</option>
+            <option value="transfer">Transferencia</option>
+            <option value="other">Otro</option>
+          </select>
+        </div>
 
         <input
           type="text"

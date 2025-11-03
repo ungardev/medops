@@ -1,4 +1,3 @@
-// src/components/Consultation/DocumentsPanel.tsx
 import { useState } from "react";
 import { useDocuments, useUploadDocument } from "../../hooks/consultations/useDocuments";
 
@@ -33,7 +32,12 @@ export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
         {documents?.length === 0 && <li className="text-muted">Sin documentos</li>}
         {documents?.map((doc) => (
           <li key={doc.id} className="border-b py-1">
-            <a href={doc.file} target="_blank" rel="noopener noreferrer" className="text-primary underline">
+            <a
+              href={doc.file}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
               {doc.description || "Documento"}
             </a>{" "}
             <span className="text-sm text-muted">
@@ -44,7 +48,22 @@ export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
       </ul>
 
       <form onSubmit={handleUpload} className="flex flex-col gap-2">
-        <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="input" />
+        {/* Input oculto */}
+        <input
+          id="file-upload"
+          type="file"
+          className="input-file-hidden"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+        />
+
+        {/* Botón estilizado + nombre de archivo */}
+        <label htmlFor="file-upload" className="input-file-trigger btn-outline">
+          Elegir archivo
+        </label>
+        <span className="input-file-name text-sm text-muted">
+          {file ? file.name : "Ningún archivo seleccionado"}
+        </span>
+
         <input
           type="text"
           placeholder="Descripción"
