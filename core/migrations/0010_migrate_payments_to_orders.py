@@ -31,10 +31,8 @@ def migrate_payments_to_orders(apps, schema_editor):
                         description=f"Consulta {appt.appointment_type}",
                         qty=Decimal("1.00"),
                         unit_price=appt.expected_amount,
-                        subtotal=(Decimal("1.00") * appt.expected_amount),  # 👈 FIX
+                        subtotal=(Decimal("1.00") * appt.expected_amount),
                     )
-                    order.recalc_totals()
-                    order.save(update_fields=["total", "balance_due"])
 
                 # Reasignar pagos existentes
                 for pay in Payment.objects.filter(
@@ -45,8 +43,21 @@ def migrate_payments_to_orders(apps, schema_editor):
                     if pay.status == "paid":
                         pay.status = "confirmed"
                     pay.save(update_fields=["charge_order", "status"])
-                    order.recalc_totals()
-                    order.save(update_fields=["balance_due"])
+
+                # Calcular totales manualmente
+                items = order.items.all()
+                total = sum([(i.qty or Decimal("0")) * (i.unit_price or Decimal("0")) for i in items])
+                paid = sum([p.amount for p in order.payments.filter(status="confirmed")])
+                order.total = total
+                order.balance_due = total - paid
+                # Ajustar estado de la orden
+                if order.balance_due <= Decimal("0.00"):
+                    order.status = "paid"
+                elif paid > 0:
+                    order.status = "partially_paid"
+                else:
+                    order.status = "open"
+                order.save(update_fields=["total", "balance_due", "status"])
 
 
 class Migration(migrations.Migration):
