@@ -22,7 +22,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.authtoken.views import obtain_auth_token
 from drf_spectacular.utils import (
@@ -744,7 +744,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         order.mark_void(reason=reason, actor=actor)
         return Response({"status": "void"}, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["get"])
+    @action(detail=True, methods=["get"], permission_classes=[AllowAny])
     def export(self, request, pk=None):
         order = self.get_object()
 
@@ -753,7 +753,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         elements = []
         styles = getSampleStyleSheet()
 
-        # 🔹 Logo de la clínica
+        # 🔹 Logo institucional
         logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
         if os.path.exists(logo_path):
             elements.append(Image(logo_path, width=140, height=60))
