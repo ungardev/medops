@@ -477,6 +477,12 @@ class ChargeOrder(models.Model):
     issued_at = models.DateTimeField(auto_now_add=True)
     issued_by = models.CharField(max_length=100, blank=True, null=True)
 
+    # 🔹 Campos de auditoría
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    created_by = models.CharField(max_length=100, blank=True, null=True)
+    updated_by = models.CharField(max_length=100, blank=True, null=True)
+
     history = HistoricalRecords()
 
     class Meta:

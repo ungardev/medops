@@ -720,30 +720,27 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 
 
 class ChargeOrderViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar órdenes de cobro.
-    Permite crear, listar, actualizar y anular (void).
-    """
     queryset = ChargeOrder.objects.select_related("appointment", "patient").prefetch_related("items")
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
-        # Para listados y detalle usamos el serializer extendido de Pagos
         if self.action in ["list", "retrieve"]:
             return ChargeOrderPaymentSerializer
-        # Para crear/actualizar mantenemos el serializer base
         return ChargeOrderSerializer
 
     @action(detail=True, methods=["post"])
     def void(self, request, pk=None):
-        """
-        Anula una orden de cobro (si no está pagada).
-        """
         order = self.get_object()
         reason = request.data.get("reason", "")
         actor = getattr(request.user, "username", "")
         order.mark_void(reason=reason, actor=actor)
         return Response({"status": "void"}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"])
+    def export(self, request, pk=None):
+        order = self.get_object()
+        serializer = ChargeOrderPaymentSerializer(order)
+        return Response(serializer.data)
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet):

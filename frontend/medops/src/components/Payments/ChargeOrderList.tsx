@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import { useState, useMemo, useCallback } from "react";
 import ChargeOrderRow from "./ChargeOrderRow";
 import { ChargeOrder } from "../../types/payments";
 
@@ -12,17 +13,63 @@ export default function ChargeOrderList() {
     },
   });
 
+  const [query, setQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  const filteredOrders = useMemo(() => {
+    if (!orders) return [];
+    const q = query.toLowerCase().trim();
+    let result = orders.filter((o) => {
+      const patientName = o.patient_detail?.full_name?.toLowerCase() ?? "";
+      const orderId = String(o.id);
+      return patientName.includes(q) || orderId.includes(q);
+    });
+    result.sort((a, b) => {
+      const dateA = new Date(a.appointment_date || a.issued_at || "").getTime();
+      const dateB = new Date(b.appointment_date || b.issued_at || "").getTime();
+      return dateB - dateA;
+    });
+    return result;
+  }, [orders, query]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (filteredOrders.length === 0) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < filteredOrders.length - 1 ? prev + 1 : prev
+        );
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
+      }
+      if (e.key === "Enter" && selectedIndex >= 0) {
+        e.preventDefault();
+        const selected = filteredOrders[selectedIndex];
+        console.log("Seleccionado con Enter:", selected.id);
+        // Aquí puedes expandir la fila o navegar al detalle
+      }
+    },
+    [filteredOrders, selectedIndex]
+  );
+
   if (isLoading) return <p className="text-muted">Cargando órdenes de cobro...</p>;
   if (error) return <p className="text-danger">Error cargando órdenes</p>;
 
-  // --- Calcular totales ---
   const totals = orders?.reduce(
     (acc, order) => {
-      const amount = parseFloat(order.total_amount || "0");
-      acc.total += amount;
-      if (order.status === "paid") acc.confirmed += amount;
-      if (order.status === "pending") acc.pending += amount;
-      if (order.status === "canceled") acc.failed += amount;
+      const raw = order.total_amount ?? order.total ?? 0;
+      const amt =
+        typeof raw === "string" ? parseFloat(raw || "0") : Number(raw || 0);
+
+      acc.total += amt;
+      if (order.status === "paid") acc.confirmed += amt;
+      if (order.status === "open" || order.status === "partially_paid") acc.pending += amt;
+      if (order.status === "void") acc.failed += amt;
+
       return acc;
     },
     { total: 0, confirmed: 0, pending: 0, failed: 0 }
@@ -30,7 +77,29 @@ export default function ChargeOrderList() {
 
   return (
     <div className="charge-orders">
-      {/* Resumen de Totales compacto */}
+      {/* Buscador SIEMPRE visible */}
+      <div className="mb-4">
+        <label
+          htmlFor="orderSearch"
+          className="block text-sm font-medium mb-1 text-gray-200"
+        >
+          Buscar órdenes
+        </label>
+        <input
+          id="orderSearch"
+          type="text"
+          placeholder="Buscar por paciente o ID..."
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSelectedIndex(-1);
+          }}
+          onKeyDown={handleKeyDown}
+          className="w-full px-3 py-2 border border-gray-400 rounded bg-white text-black"
+        />
+      </div>
+
+      {/* Resumen de Totales */}
       {totals && orders && orders.length > 0 && (
         <div className="summary flex gap-6 mb-4 text-sm">
           <span>
@@ -48,12 +117,18 @@ export default function ChargeOrderList() {
         </div>
       )}
 
-      {/* Lista de órdenes o estado vacío */}
-      {orders && orders.length > 0 ? (
-        orders.map((order) => <ChargeOrderRow key={order.id} order={order} />)
+      {/* Lista filtrada */}
+      {filteredOrders.length > 0 ? (
+        filteredOrders.map((order, idx) => (
+          <ChargeOrderRow
+            key={order.id}
+            order={order}
+            isSelected={idx === selectedIndex}
+          />
+        ))
       ) : (
         <div className="text-center text-muted py-6 border rounded">
-          No hay órdenes de cobro registradas
+          No se encontraron órdenes
         </div>
       )}
     </div>

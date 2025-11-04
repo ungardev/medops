@@ -2,23 +2,23 @@ import { PatientRef } from "./patients";
 import { Appointment } from "./appointments";
 
 // --- Estados de pago según el modelo Django ---
-export type PaymentStatus = "pending" | "paid" | "canceled" | "waived";
+export type PaymentStatus = "pending" | "confirmed" | "rejected" | "void";
 
 // --- Métodos de pago según el modelo Django ---
-export type PaymentMethod = "cash" | "card" | "transfer";
+export type PaymentMethod = "cash" | "card" | "transfer" | "other";
 
 export interface Payment {
   id: number;
-  appointment: Appointment["id"];   // referencia a la cita
-  appointment_date: string;         // YYYY-MM-DD
-  patient: PatientRef;              // objeto con id y nombre
-  amount: string;                   // DRF devuelve Decimal como string
+  appointment: Appointment["id"];
+  appointment_date: string; // YYYY-MM-DD
+  patient: PatientRef;
+  amount: string; // DRF devuelve Decimal como string
   method: PaymentMethod;
   status: PaymentStatus;
   reference_number?: string | null;
   bank_name?: string | null;
   received_by?: string | null;
-  received_at?: string | null;      // ISO string
+  received_at?: string | null; // ISO string
 }
 
 // --- Datos de entrada para crear/editar pago ---
@@ -31,13 +31,40 @@ export interface PaymentInput {
   bank_name?: string;
 }
 
+// --- Estados de ChargeOrder según el modelo Django ---
+export type ChargeOrderStatus = "open" | "partially_paid" | "paid" | "void";
+
+export interface ChargeItem {
+  id: number;
+  order: number;
+  code: string;
+  description: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+}
+
 // --- Nueva entidad: Orden de Cobro ---
 export interface ChargeOrder {
   id: number;
   appointment: Appointment["id"];
-  appointment_date: string;
-  patient: PatientRef;
-  total_amount: string;             // suma de los pagos asociados
-  status: PaymentStatus;            // estado global de la orden
-  payments: Payment[];              // pagos asociados
+  patient: number; // en el payload base es ID
+  currency: string;
+  total: number;
+  balance_due: number;
+  status: ChargeOrderStatus;
+  issued_at: string; // ISO datetime
+  issued_by?: string | null;
+  items: ChargeItem[];
+
+  // --- Aliases del serializer extendido para Pagos ---
+  appointment_date?: string; // alias de issued_at
+  total_amount?: string | number; // alias de total
+  patient_detail?: PatientRef; // objeto expandido con full_name
+  payments?: Payment[];
+
+  // --- Campos de auditoría ---
+  created_by?: string | null;
+  updated_by?: string | null;
+  updated_at?: string | null;
 }
