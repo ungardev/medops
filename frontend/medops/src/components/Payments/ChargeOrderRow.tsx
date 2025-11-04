@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PaymentList from "./PaymentList";
 import RegisterPaymentModal from "./RegisterPaymentModal";
@@ -12,6 +13,7 @@ interface Props {
 export default function ChargeOrderRow({ order, isSelected }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -20,7 +22,6 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
         responseType: "blob",
       });
 
-      // Detecta si el backend devolvió PDF o JSON
       const contentType = res.headers["content-type"];
       const isPdf = contentType?.includes("pdf");
 
@@ -45,7 +46,7 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
 
   const handleViewDetail = (e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log("Ver detalle de orden", order.id);
+    navigate(`/charge-orders/${order.id}`);
   };
 
   const handleRegisterPayment = (e: React.MouseEvent) => {
@@ -120,7 +121,8 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
 
       {showModal && (
         <RegisterPaymentModal
-          orderId={order.appointment}
+          appointmentId={order.appointment}   // 👈 ID de la cita
+          chargeOrderId={order.id}           // 👈 ID de la orden
           onClose={() => setShowModal(false)}
         />
       )}

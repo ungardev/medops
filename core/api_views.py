@@ -11,6 +11,14 @@ from django.utils.timezone import now, localdate, make_aware
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 
+# PDF
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+)
+from reportlab.lib.styles import getSampleStyleSheet
+
 from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -739,8 +747,77 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def export(self, request, pk=None):
         order = self.get_object()
-        serializer = ChargeOrderPaymentSerializer(order)
-        return Response(serializer.data)
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # 🔹 Logo de la clínica
+        logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
+        if os.path.exists(logo_path):
+            elements.append(Image(logo_path, width=140, height=60))
+        elements.append(Spacer(1, 12))
+
+        # 🔹 Encabezado
+        elements.append(Paragraph(f"<b>Orden de Pago #{order.id}</b>", styles["Title"]))
+        elements.append(Paragraph(f"Paciente: {order.patient.full_name if order.patient else order.patient_id}", styles["Normal"]))
+        elements.append(Paragraph(f"Fecha: {order.created_at.strftime('%d/%m/%Y %H:%M')}", styles["Normal"]))
+        elements.append(Spacer(1, 12))
+
+        # 🔹 Tabla de cargos
+        data = [["Código", "Descripción", "Cant.", "Precio", "Subtotal"]]
+        for item in order.items.all():
+            data.append([
+                item.code,
+                item.description,
+                str(item.qty),
+                f"${item.unit_price:.2f}",
+                f"${item.subtotal:.2f}",
+            ])
+
+        table = Table(data, colWidths=[70, 200, 50, 80, 80])
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+            ("ALIGN", (2, 1), (-1, -1), "CENTER"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 12))
+
+        # 🔹 Totales
+        total = order.total_amount
+        paid = sum([p.amount for p in order.payments.all()])
+        pending = total - paid
+
+        elements.append(Paragraph(f"<b>Total:</b> ${total:.2f}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Pagado:</b> ${paid:.2f}", styles["Normal"]))
+        elements.append(Paragraph(f"<b>Pendiente:</b> ${pending:.2f}", styles["Normal"]))
+        elements.append(Spacer(1, 24))
+
+        # 🔹 Estado y firma digital
+        estado = "ANULADA" if order.is_void else "ACTIVA"
+        elements.append(Paragraph(f"Estado de la orden: <b>{estado}</b>", styles["Normal"]))
+        elements.append(Spacer(1, 36))
+
+        # Firma digital (imagen o texto)
+        firma_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "firma.png")
+        if os.path.exists(firma_path):
+            elements.append(Image(firma_path, width=120, height=50))
+        else:
+            elements.append(Paragraph("__________________________", styles["Normal"]))
+            elements.append(Paragraph("Firma Digital", styles["Italic"]))
+
+        elements.append(Spacer(1, 12))
+        elements.append(Paragraph("Documento generado automáticamente por MedOps", styles["Italic"]))
+
+        # Construir PDF
+        doc.build(elements)
+        buffer.seek(0)
+
+        return FileResponse(buffer, as_attachment=True, filename=f"orden-{order.id}.pdf")
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet):

@@ -10,6 +10,7 @@ import Patients from "./pages/Patients/Patients";
 import PatientDetail from "./pages/Patients/PatientDetail";
 import Appointments from "./pages/Appointments/Appointments";
 import Payments from "./pages/Payments/Payments";
+import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail"; // 👈 importado
 import Events from "./pages/Events/Events";
 import AuditDashboard from "./pages/Dashboard/AuditDashboard";
 import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
@@ -53,6 +54,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
+                <Route path="charge-orders/:id" element={<ChargeOrderDetail />} /> {/* 👈 nueva ruta */}
                 <Route path="events" element={<Events />} />
                 <Route path="audit-dashboard" element={<AuditDashboard />} />
                 <Route path="consultation" element={<Consultation />} />

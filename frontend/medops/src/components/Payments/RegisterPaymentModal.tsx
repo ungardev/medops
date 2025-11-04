@@ -4,15 +4,17 @@ import axios from "axios";
 import { PaymentInput, Payment } from "../../types/payments";
 
 interface Props {
-  orderId: number;
+  appointmentId: number;
+  chargeOrderId: number;
   onClose: () => void;
 }
 
-export default function RegisterPaymentModal({ orderId, onClose }: Props) {
+export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onClose }: Props) {
   const queryClient = useQueryClient();
 
-  const [form, setForm] = useState<PaymentInput>({
-    appointment: orderId,
+  const [form, setForm] = useState<PaymentInput & { charge_order: number }>({
+    appointment: appointmentId,
+    charge_order: chargeOrderId,
     amount: "",
     method: "cash",
     status: "pending",
@@ -20,13 +22,15 @@ export default function RegisterPaymentModal({ orderId, onClose }: Props) {
     bank_name: "",
   });
 
-  const mutation = useMutation<Payment, Error, PaymentInput>({
-    mutationFn: async (data: PaymentInput) => {
+  const mutation = useMutation<Payment, Error, typeof form>({
+    mutationFn: async (data) => {
       const res = await axios.post("/payments/", data);
       return res.data as Payment;
     },
     onSuccess: () => {
+      // Refresca lista y detalle
       queryClient.invalidateQueries({ queryKey: ["charge-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["charge-order", String(chargeOrderId)] });
       onClose();
     },
   });
@@ -69,6 +73,7 @@ export default function RegisterPaymentModal({ orderId, onClose }: Props) {
               <option value="cash">Efectivo</option>
               <option value="card">Tarjeta</option>
               <option value="transfer">Transferencia</option>
+              <option value="other">Otro</option>
             </select>
           </div>
 
@@ -81,9 +86,9 @@ export default function RegisterPaymentModal({ orderId, onClose }: Props) {
               className="select"
             >
               <option value="pending">Pendiente</option>
-              <option value="paid">Pagado</option>
-              <option value="canceled">Cancelado</option>
-              <option value="waived">Condonado</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="rejected">Rechazado</option>
+              <option value="void">Anulado</option>
             </select>
           </div>
 
