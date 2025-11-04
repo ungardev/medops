@@ -744,6 +744,28 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         order.mark_void(reason=reason, actor=actor)
         return Response({"status": "void"}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=["get"])
+    def events(self, request, pk=None):
+        """
+        Devuelve los eventos de auditoría asociados a la orden.
+        Si no tienes un modelo de eventos, puedes devolver una lista vacía.
+        """
+        order = self.get_object()
+        if hasattr(order, "events"):
+            data = [
+                {
+                    "id": e.id,
+                    "action": e.action,
+                    "actor": e.actor,
+                    "timestamp": e.timestamp,
+                    "notes": e.notes,
+                }
+                for e in order.events.all().order_by("-timestamp")
+            ]
+        else:
+            data = []
+        return Response(data)
+
     @action(detail=True, methods=["get"], permission_classes=[AllowAny])
     def export(self, request, pk=None):
         order = self.get_object()
@@ -753,28 +775,40 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         elements = []
         styles = getSampleStyleSheet()
 
-        # 🔹 Logo institucional
+        # 🔹 Logo institucional con fallback
         logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
         if os.path.exists(logo_path):
-            elements.append(Image(logo_path, width=140, height=60))
+            try:
+                elements.append(Image(logo_path, width=140, height=60))
+            except Exception:
+                elements.append(Paragraph("MedOps", styles["Title"]))
+        else:
+            elements.append(Paragraph("MedOps", styles["Title"]))
         elements.append(Spacer(1, 12))
 
-        # 🔹 Encabezado
+        # 🔹 Encabezado con defensas
+        paciente = getattr(order.patient, "full_name", None) or f"Paciente #{order.patient_id}"
+        fecha = order.created_at.strftime("%d/%m/%Y %H:%M") if getattr(order, "created_at", None) else "—"
+
         elements.append(Paragraph(f"<b>Orden de Pago #{order.id}</b>", styles["Title"]))
-        elements.append(Paragraph(f"Paciente: {order.patient.full_name if order.patient else order.patient_id}", styles["Normal"]))
-        elements.append(Paragraph(f"Fecha: {order.created_at.strftime('%d/%m/%Y %H:%M')}", styles["Normal"]))
+        elements.append(Paragraph(f"Paciente: {paciente}", styles["Normal"]))
+        elements.append(Paragraph(f"Fecha: {fecha}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
         # 🔹 Tabla de cargos
         data = [["Código", "Descripción", "Cant.", "Precio", "Subtotal"]]
-        for item in order.items.all():
-            data.append([
-                item.code,
-                item.description,
-                str(item.qty),
-                f"${item.unit_price:.2f}",
-                f"${item.subtotal:.2f}",
-            ])
+        items = getattr(order, "items", None)
+        if items:
+            for item in items.all():
+                data.append([
+                    getattr(item, "code", "—"),
+                    getattr(item, "description", "—"),
+                    str(getattr(item, "qty", 0)),
+                    f"${getattr(item, 'unit_price', 0):.2f}",
+                    f"${getattr(item, 'subtotal', 0):.2f}",
+                ])
+        else:
+            data.append(["—", "Sin cargos", "—", "—", "—"])
 
         table = Table(data, colWidths=[70, 200, 50, 80, 80])
         table.setStyle(TableStyle([
@@ -787,9 +821,10 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         elements.append(table)
         elements.append(Spacer(1, 12))
 
-        # 🔹 Totales
-        total = order.total_amount
-        paid = sum([p.amount for p in order.payments.all()])
+        # 🔹 Totales con fallback
+        total = getattr(order, "total_amount", 0) or 0
+        pagos = getattr(order, "payments", None)
+        paid = sum([getattr(p, "amount", 0) for p in pagos.all()]) if pagos else 0
         pending = total - paid
 
         elements.append(Paragraph(f"<b>Total:</b> ${total:.2f}", styles["Normal"]))
@@ -798,14 +833,17 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         elements.append(Spacer(1, 24))
 
         # 🔹 Estado y firma digital
-        estado = "ANULADA" if order.is_void else "ACTIVA"
+        estado = "ANULADA" if getattr(order, "is_void", False) else "ACTIVA"
         elements.append(Paragraph(f"Estado de la orden: <b>{estado}</b>", styles["Normal"]))
         elements.append(Spacer(1, 36))
 
-        # Firma digital (imagen o texto)
         firma_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "firma.png")
         if os.path.exists(firma_path):
-            elements.append(Image(firma_path, width=120, height=50))
+            try:
+                elements.append(Image(firma_path, width=120, height=50))
+            except Exception:
+                elements.append(Paragraph("__________________________", styles["Normal"]))
+                elements.append(Paragraph("Firma Digital", styles["Italic"]))
         else:
             elements.append(Paragraph("__________________________", styles["Normal"]))
             elements.append(Paragraph("Firma Digital", styles["Italic"]))
@@ -813,10 +851,13 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         elements.append(Spacer(1, 12))
         elements.append(Paragraph("Documento generado automáticamente por MedOps", styles["Italic"]))
 
-        # Construir PDF
-        doc.build(elements)
-        buffer.seek(0)
+        # Construir PDF con try/except
+        try:
+            doc.build(elements)
+        except Exception as e:
+            return Response({"error": f"Error generando PDF: {str(e)}"}, status=500)
 
+        buffer.seek(0)
         return FileResponse(buffer, as_attachment=True, filename=f"orden-{order.id}.pdf")
 
 

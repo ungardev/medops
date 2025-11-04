@@ -56,11 +56,16 @@ export default function ChargeOrderDetail() {
     },
   });
 
-  // 🔹 Handler para exportar (forzado a PDF)
+  // 🔹 Handler para exportar (forzado a PDF) usando order.id real
   const handleExport = async () => {
+    if (!order?.id) {
+      alert("No se encontró el ID de la orden.");
+      return;
+    }
+
     try {
       const res = await axios.get<Blob>(
-        `http://127.0.0.1/api/charge-orders/${id}/export/`,
+        `http://127.0.0.1/api/charge-orders/${order.id}/export/`,
         { responseType: "blob" }
       );
 
@@ -69,7 +74,7 @@ export default function ChargeOrderDetail() {
 
       const link = document.createElement("a");
       link.href = url;
-      link.download = `orden-${id}.pdf`;
+      link.download = `orden-${order.id}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();

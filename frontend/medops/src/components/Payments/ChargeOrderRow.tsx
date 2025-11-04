@@ -15,32 +15,30 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
+  // 🔹 Exportar usando siempre order.id real y tipando correctamente el Blob
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const res = await axios.get(`/charge-orders/${order.id}/export/`, {
-        responseType: "blob",
-      });
+      const res = await axios.get(
+        `http://127.0.0.1/api/charge-orders/${order.id}/export/`,
+        { responseType: "blob" }
+      );
 
-      const contentType = res.headers["content-type"];
-      const isPdf = contentType?.includes("pdf");
-
-      const blob = new Blob([res.data as BlobPart], {
-        type: isPdf ? "application/pdf" : "application/json",
-      });
-
+      // Forzamos a Blob válido
+      const blob = res.data as Blob;
       const url = window.URL.createObjectURL(blob);
+
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute(
-        "download",
-        `orden-${order.id}.${isPdf ? "pdf" : "json"}`
-      );
+      link.download = `orden-${order.id}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
+
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error exportando orden", err);
+      alert("No se pudo exportar la orden. Verifica el endpoint en el backend.");
     }
   };
 
