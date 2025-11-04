@@ -80,7 +80,7 @@ export default function ChargeOrderDetail() {
         <ul className="text-sm text-muted">
           <li>
             Creada por: {order.created_by ?? "—"} el{" "}
-            {order.issued_at ? new Date(order.issued_at).toLocaleString() : "—"}
+            {order.created_at ? new Date(order.created_at).toLocaleString() : "—"}
           </li>
           {order.updated_by && order.updated_at && (
             <li>
