@@ -417,14 +417,25 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
     balance_due = serializers.FloatField(read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)  # solo lectura
 
+    # 🔹 Campos de auditoría
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+    created_by = serializers.CharField(read_only=True)
+    updated_by = serializers.CharField(read_only=True)
+
     class Meta:
         model = ChargeOrder
         fields = (
             "id", "appointment", "patient", "currency",
             "total", "balance_due", "status",
-            "issued_at", "issued_by", "items"
+            "issued_at", "issued_by", "items",
+            # Auditoría
+            "created_at", "updated_at", "created_by", "updated_by",
         )
-        read_only_fields = ("total", "balance_due", "status", "issued_at")
+        read_only_fields = (
+            "total", "balance_due", "status", "issued_at",
+            "created_at", "updated_at", "created_by", "updated_by",
+        )
 
     def create(self, validated_data):
         # Normalmente no se crean ítems aquí, se agregan después
@@ -441,6 +452,12 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
     patient_detail = PatientReadSerializer(source="patient", read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)
 
+    # 🔹 Campos de auditoría
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+    created_by = serializers.CharField(read_only=True)
+    updated_by = serializers.CharField(read_only=True)
+
     class Meta:
         model = ChargeOrder
         fields = (
@@ -450,6 +467,12 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
             "issued_at", "issued_by", "items",
             # Aliases nuevos para Pagos
             "appointment_date", "total_amount", "patient_detail",
+            # Auditoría
+            "created_at", "updated_at", "created_by", "updated_by",
+        )
+        read_only_fields = (
+            "total", "balance_due", "status", "issued_at",
+            "created_at", "updated_at", "created_by", "updated_by",
         )
 
 
