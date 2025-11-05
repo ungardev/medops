@@ -752,16 +752,27 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def events(self, request, pk=None):
         order = self.get_object()
-        data = [
-            {
+        data = []
+        for e in Event.objects.filter(entity="ChargeOrder", entity_id=order.id).order_by("-timestamp"):
+            notes = e.metadata or {}
+            # 🔹 Formateo elegante de notas
+            if isinstance(notes, dict):
+                if e.action == "payment_registered":
+                    notes_str = f"Pago #{notes.get('payment_id')} registrado por ${notes.get('amount')}"
+                elif e.action == "voided":
+                    notes_str = f"Orden anulada. Motivo: {notes.get('reason', '—')}"
+                else:
+                    notes_str = ", ".join(f"{k}: {v}" for k, v in notes.items())
+            else:
+                notes_str = str(notes) if notes else None
+
+            data.append({
                 "id": e.id,
                 "action": e.action,
                 "actor": e.actor,
                 "timestamp": e.timestamp,
-                "notes": e.metadata or {},
-            }
-            for e in Event.objects.filter(entity="ChargeOrder", entity_id=order.id).order_by("-timestamp")
-        ]
+                "notes": notes_str,
+            })
         return Response(data)
 
     @action(detail=True, methods=["post"])

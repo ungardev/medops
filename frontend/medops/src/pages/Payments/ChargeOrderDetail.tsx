@@ -12,7 +12,7 @@ interface Event {
   action: string;
   actor: string | null;
   timestamp: string;
-  notes?: string | null;
+  notes?: string | null | Record<string, any>;
 }
 
 export default function ChargeOrderDetail() {
@@ -177,7 +177,9 @@ export default function ChargeOrderDetail() {
                     </div>
                     {ev.notes && (
                       <div className="text-xs text-gray-500 italic mt-1">
-                        {ev.notes}
+                        {typeof ev.notes === "object"
+                          ? JSON.stringify(ev.notes)
+                          : ev.notes}
                       </div>
                     )}
                   </div>
