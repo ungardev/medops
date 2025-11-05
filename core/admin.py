@@ -209,7 +209,8 @@ class ChargeOrderAdmin(admin.ModelAdmin):
                 """,
                 f"{total_amount:.2f}", f"{balance:.2f}",
             )
-        except Exception: pass
+        except Exception: 
+            pass
         return response
 
 
@@ -224,6 +225,29 @@ class PaymentAdmin(admin.ModelAdmin):
     ordering = ("-received_at",)
     list_per_page = 25
     readonly_fields = ("received_at",)
+
+
+# -------------------------
+# Genetic Predisposition
+# -------------------------
+@admin.register(GeneticPredisposition)
+class GeneticPredispositionAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "description")
+    search_fields = ("name", "description")
+    ordering = ("name",)
+    list_per_page = 25
+
+
+# -------------------------
+# Medical Document (visor global)
+# -------------------------
+@admin.register(MedicalDocument)
+class MedicalDocumentAdmin(admin.ModelAdmin):
+    list_display = ("id", "patient", "appointment", "diagnosis", "category", "description", "uploaded_at", "uploaded_by")
+    list_filter = ("category", "uploaded_at")
+    search_fields = ("description", "patient__first_name", "patient__last_name", "appointment__id")
+    ordering = ("-uploaded_at",)
+    list_per_page = 25
 
 
 # Personalización del panel de administración
