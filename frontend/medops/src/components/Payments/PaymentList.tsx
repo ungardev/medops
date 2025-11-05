@@ -14,7 +14,7 @@ export default function PaymentList({ payments }: Props) {
     );
   }
 
-  // Totales por estado (usando estados reales del modelo)
+  // Totales por estado
   const totals = payments.reduce(
     (acc, p) => {
       const amt = parseFloat(p.amount || "0");
@@ -39,20 +39,21 @@ export default function PaymentList({ payments }: Props) {
         <span className="text-danger"><strong>Rechazados/Anulados:</strong> ${totals.failed.toFixed(2)}</span>
       </div>
 
-      {/* Tabla simple */}
-      <div className="table w-full text-sm">
-        <div className="table-header grid grid-cols-5 gap-2 py-2 border-b">
-          <div><strong>Monto</strong></div>
-          <div><strong>Método</strong></div>
-          <div><strong>Estatus</strong></div>
-          <div><strong>Referencia</strong></div>
-          <div><strong>Fecha</strong></div>
-        </div>
-
-        <div className="table-body">
+      {/* Tabla real */}
+      <table className="table-auto w-full text-sm border">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="px-2 py-1 text-left">Monto</th>
+            <th className="px-2 py-1 text-left">Método</th>
+            <th className="px-2 py-1 text-left">Estatus</th>
+            <th className="px-2 py-1 text-left">Referencia</th>
+            <th className="px-2 py-1 text-left">Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
           {payments.map((p) => {
             const amount = parseFloat(p.amount || "0");
-            const dateStr = p.received_at ?? p.appointment_date; // fallback por si no llega received_at
+            const dateStr = p.received_at ?? p.appointment_date;
             const date = dateStr ? new Date(dateStr).toLocaleDateString() : "—";
 
             const statusLabel =
@@ -78,17 +79,19 @@ export default function PaymentList({ payments }: Props) {
                 : "badge-muted";
 
             return (
-              <div key={p.id} className="grid grid-cols-5 gap-2 py-2 border-b items-center">
-                <div>${isNaN(amount) ? "0.00" : amount.toFixed(2)}</div>
-                <div>{p.method}</div>
-                <div><span className={`badge ${statusClass}`}>{statusLabel}</span></div>
-                <div>{p.reference_number || "—"}</div>
-                <div>{date}</div>
-              </div>
+              <tr key={p.id} className="border-t">
+                <td className="px-2 py-1">${isNaN(amount) ? "0.00" : amount.toFixed(2)}</td>
+                <td className="px-2 py-1">{p.method}</td>
+                <td className="px-2 py-1">
+                  <span className={`badge ${statusClass}`}>{statusLabel}</span>
+                </td>
+                <td className="px-2 py-1">{p.reference_number || "—"}</td>
+                <td className="px-2 py-1">{date}</td>
+              </tr>
             );
           })}
-        </div>
-      </div>
+        </tbody>
+      </table>
     </div>
   );
 }
