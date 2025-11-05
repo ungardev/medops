@@ -858,8 +858,10 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             return FileResponse(buffer, as_attachment=True, filename=f"orden-{order.id}.pdf")
 
         except Exception as e:
-            logging.error("Error exportando orden %s: %s\n%s", order.id, str(e), traceback.format_exc())
-            return Response({"error": "Error generando PDF"}, status=500)
+            # 🔹 Mostrar error real en consola
+            print("ERROR EXPORT:", e)
+            traceback.print_exc()
+            return Response({"error": str(e)}, status=500)
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet):
