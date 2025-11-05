@@ -218,7 +218,9 @@ class AppointmentDetailSerializer(AppointmentSerializer):
 
 # --- Pagos ---
 class PaymentSerializer(serializers.ModelSerializer):
-    appointment_date = serializers.DateField(source="appointment.appointment_date", read_only=True)
+    appointment_date = serializers.DateField(
+        source="appointment.appointment_date", read_only=True
+    )
     patient = PatientReadSerializer(source="appointment.patient", read_only=True)
 
     class Meta:
@@ -228,29 +230,47 @@ class PaymentSerializer(serializers.ModelSerializer):
             "appointment",
             "appointment_date",
             "patient",
-            "charge_order",       # 👈 NUEVO: vínculo obligatorio
+            "charge_order",
             "amount",
-            "currency",           # 👈 NUEVO
+            "currency",
             "method",
             "status",
             "reference_number",
             "bank_name",
             "received_by",
             "received_at",
-            "idempotency_key",    # 👈 NUEVO
+            "idempotency_key",
         ]
-        read_only_fields = ("status", "received_at")
+        read_only_fields = (
+            "id",
+            "appointment",      # 👈 ahora solo lectura
+            "charge_order",     # 👈 ahora solo lectura
+            "appointment_date",
+            "patient",
+            "status",
+            "received_at",
+        )
 
     def validate(self, attrs):
         amount = attrs.get("amount")
-        order = attrs.get("charge_order")
+        # obtenemos la orden desde attrs o desde la instancia
+        order = attrs.get("charge_order") or (
+            self.instance.charge_order if self.instance else None
+        )
+
         if amount is None or amount <= Decimal("0.00"):
             raise serializers.ValidationError("El monto debe ser mayor a 0.")
+
         if order and order.status == "void":
             raise serializers.ValidationError("No se puede pagar una orden anulada.")
-        order.recalc_totals()
-        if amount > order.balance_due:
-            raise serializers.ValidationError("El monto excede el saldo pendiente de la orden.")
+
+        if order:
+            order.recalc_totals()
+            if amount > order.balance_due:
+                raise serializers.ValidationError(
+                    "El monto excede el saldo pendiente de la orden."
+                )
+
         return attrs
 
 
