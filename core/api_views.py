@@ -775,14 +775,16 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             # 🔹 Logo institucional
             logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
             if os.path.exists(logo_path):
-                elements.append(Image(logo_path, width=140, height=60))
+                try:
+                    elements.append(Image(logo_path, width=140, height=60))
+                except Exception:
+                    elements.append(Paragraph("MedOps", styles["Title"]))
             else:
                 elements.append(Paragraph("MedOps", styles["Title"]))
             elements.append(Spacer(1, 12))
 
             # 🔹 Encabezado
-            paciente = getattr(order.patient, "first_name", None)
-            paciente = f"{order.patient}" if order.patient else f"Paciente #{order.patient_id}"
+            paciente = str(order.patient) if order.patient else f"Paciente #{order.patient_id or '—'}"
             fecha = order.created_at.strftime("%d/%m/%Y %H:%M") if order.created_at else "—"
 
             elements.append(Paragraph(f"<b>Orden de Pago #{order.id}</b>", styles["Title"]))
@@ -795,9 +797,9 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             for item in order.items.all():
                 code = item.code or "—"
                 desc = item.description or "—"
-                qty = item.qty or Decimal("0")
-                unit_price = item.unit_price or Decimal("0")
-                subtotal = item.subtotal or Decimal("0")
+                qty = item.qty if item.qty is not None else Decimal("0")
+                unit_price = item.unit_price if item.unit_price is not None else Decimal("0")
+                subtotal = item.subtotal if item.subtotal is not None else Decimal("0")
                 data.append([
                     code,
                     desc,
@@ -818,7 +820,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             elements.append(Spacer(1, 12))
 
             # 🔹 Totales
-            total = order.total or Decimal("0")
+            total = order.total if order.total is not None else Decimal("0")
             paid = order.payments.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
             pending = total - paid
 
@@ -828,13 +830,17 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             elements.append(Spacer(1, 24))
 
             # 🔹 Estado y firma
-            estado = order.status.upper()
+            estado = order.status.upper() if order.status else "—"
             elements.append(Paragraph(f"Estado de la orden: <b>{estado}</b>", styles["Normal"]))
             elements.append(Spacer(1, 36))
 
             firma_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "firma.png")
             if os.path.exists(firma_path):
-                elements.append(Image(firma_path, width=120, height=50))
+                try:
+                    elements.append(Image(firma_path, width=120, height=50))
+                except Exception:
+                    elements.append(Paragraph("__________________________", styles["Normal"]))
+                    elements.append(Paragraph("Firma Digital", styles["Italic"]))
             else:
                 elements.append(Paragraph("__________________________", styles["Normal"]))
                 elements.append(Paragraph("Firma Digital", styles["Italic"]))
@@ -848,7 +854,8 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             return FileResponse(buffer, as_attachment=True, filename=f"orden-{order.id}.pdf")
 
         except Exception as e:
-            return Response({"error": str(e)}, status=500)
+            logging.error("Error exportando orden %s: %s\n%s", order.id, str(e), traceback.format_exc())
+            return Response({"error": "Error generando PDF"}, status=500)
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet):
