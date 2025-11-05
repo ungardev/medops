@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from django.utils import timezone
