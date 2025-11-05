@@ -1,5 +1,6 @@
 from decimal import Decimal
 from datetime import datetime, time
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
