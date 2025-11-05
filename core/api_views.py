@@ -764,6 +764,27 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         ]
         return Response(data)
 
+    @action(detail=True, methods=["post"])
+    def payments(self, request, pk=None):
+        """
+        Registrar un pago asociado a esta orden de cobro.
+        """
+        order = self.get_object()
+        serializer = PaymentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        payment = serializer.save(charge_order=order, appointment=order.appointment)
+
+        # 🔹 Registrar evento de auditoría
+        Event.objects.create(
+            entity="ChargeOrder",
+            entity_id=order.id,
+            action="payment_registered",
+            actor=getattr(request.user, "username", None),
+            metadata={"payment_id": payment.id, "amount": str(payment.amount)},
+        )
+
+        return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
+
     @action(detail=True, methods=["get"], permission_classes=[AllowAny])
     def export(self, request, pk=None):
         order = self.get_object()

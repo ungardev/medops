@@ -12,9 +12,7 @@ interface Props {
 export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onClose }: Props) {
   const queryClient = useQueryClient();
 
-  const [form, setForm] = useState<PaymentInput & { charge_order: number }>({
-    appointment: appointmentId,
-    charge_order: chargeOrderId,
+  const [form, setForm] = useState<PaymentInput>({
     amount: "",
     method: "cash",
     status: "pending",
@@ -22,15 +20,19 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
     bank_name: "",
   });
 
-  const mutation = useMutation<Payment, Error, typeof form>({
+  const mutation = useMutation<Payment, Error, PaymentInput>({
     mutationFn: async (data) => {
-      const res = await axios.post("/payments/", data);
+      const res = await axios.post(
+        `http://127.0.0.1/api/charge-orders/${chargeOrderId}/payments/`,
+        data
+      );
       return res.data as Payment;
     },
     onSuccess: () => {
-      // Refresca lista y detalle
+      // Refresca lista, detalle y eventos
       queryClient.invalidateQueries({ queryKey: ["charge-orders"] });
       queryClient.invalidateQueries({ queryKey: ["charge-order", String(chargeOrderId)] });
+      queryClient.invalidateQueries({ queryKey: ["charge-order-events", String(chargeOrderId)] });
       onClose();
     },
   });

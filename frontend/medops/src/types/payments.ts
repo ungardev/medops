@@ -23,12 +23,12 @@ export interface Payment {
 
 // --- Datos de entrada para crear/editar pago ---
 export interface PaymentInput {
-  appointment: number;
   amount: string;
   method: PaymentMethod;
   status?: PaymentStatus;
   reference_number?: string;
   bank_name?: string;
+  appointment?: number;   // ← ahora opcional
 }
 
 // --- Estados de ChargeOrder según el modelo Django ---
