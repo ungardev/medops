@@ -773,12 +773,12 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         styles = getSampleStyleSheet()
 
         try:
-            # 🔹 Logo institucional con proporción
+            # 🔹 Logo institucional con proporción sobria
             logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
             if os.path.exists(logo_path):
                 try:
                     img = Image(logo_path)
-                    img._restrictSize(160, 160)  # escala proporcional dentro de 160x160
+                    img._restrictSize(100, 100)  # escala proporcional dentro de 100x100
                     elements.append(img)
                 except Exception:
                     elements.append(Paragraph("MedOps", styles["Title"]))
@@ -835,7 +835,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             if os.path.exists(firma_path):
                 try:
                     img = Image(firma_path)
-                    img._restrictSize(120, 60)
+                    img._restrictSize(100, 50)  # firma más discreta
                     elements.append(img)
                 except Exception:
                     elements.append(Paragraph("__________________________", styles["Normal"]))
