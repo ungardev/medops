@@ -43,7 +43,8 @@ from .serializers import (
     DashboardSummarySerializer,
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
-    AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer
+    AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
+    EventSerializer
 )
 
 
@@ -92,6 +93,7 @@ def metrics_api(request):
     }
     return JsonResponse(data)
 
+
 @extend_schema(
     parameters=[
         OpenApiParameter("start_date", str, OpenApiParameter.QUERY),
@@ -102,8 +104,92 @@ def metrics_api(request):
 )
 @api_view(["GET"])
 def dashboard_summary_api(request):
-    # ... lógica de filtros, totales y tendencias ...
-    return Response({})  # placeholder
+    # Rango de fechas
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    today = localdate()
+
+    # Defaults: últimos 7 días
+    if not start_date or not end_date:
+        end_date = today
+        start_date = today - timezone.timedelta(days=6)
+
+    # Parse seguro
+    def parse_d(d):
+        try:
+            return parse_date(str(d))
+        except Exception:
+            return None
+
+    start = parse_d(start_date) or (today - timezone.timedelta(days=6))
+    end = parse_d(end_date) or today
+
+    # Finanzas
+    orders_qs = ChargeOrder.objects.exclude(status="void")
+    total_amount = orders_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
+    confirmed_amount = Payment.objects.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
+    balance_due = orders_qs.aggregate(s=Sum("balance_due")).get("s") or Decimal("0")
+    # Fallidos: si luego implementamos pagos fallidos; por ahora 0
+    failed_amount = Decimal("0")
+
+    # 🔹 Exoneradas (waived)
+    waived_qs = ChargeOrder.objects.filter(status="waived")
+    total_waived = waived_qs.count()
+    estimated_waived_amount = waived_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
+
+    # Clínico-operativo (día)
+    appts_today = Appointment.objects.filter(appointment_date=today)
+    total_appointments = appts_today.count()
+    completed_appointments = appts_today.filter(status="completed").count()
+    pending_appointments = appts_today.exclude(status__in=["completed", "canceled"]).count()
+
+    # Tendencias (últimos 7 días)
+    def date_range(d1, d2):
+        delta = (d2 - d1).days
+        return [d1 + timezone.timedelta(days=i) for i in range(delta + 1)]
+
+    days = date_range(start, end)
+    # Citas completadas por día
+    appt_trend = []
+    for d in days:
+        cnt = Appointment.objects.filter(appointment_date=d, status="completed").count()
+        appt_trend.append({"date": d.isoformat(), "value": cnt})
+
+    # Pagos confirmados por día
+    pay_trend = []
+    for d in days:
+        amt = Payment.objects.filter(status="confirmed", received_at__date=d).aggregate(s=Sum("amount")).get("s") or Decimal("0")
+        pay_trend.append({"date": d.isoformat(), "value": float(amt)})
+
+    # Balance acumulado (total - balance_due) como indicador
+    balance_trend = []
+    for d in days:
+        total_d = ChargeOrder.objects.filter(issued_at__date=d).aggregate(s=Sum("total")).get("s") or Decimal("0")
+        balance_d = ChargeOrder.objects.filter(issued_at__date=d).aggregate(s=Sum("balance_due")).get("s") or Decimal("0")
+        balance_trend.append({"date": d.isoformat(), "value": float(max(total_d - balance_d, Decimal("0")))})
+
+    # Totales de apoyo
+    total_patients = Patient.objects.count()
+    total_payments = Payment.objects.count()
+    total_events = Event.objects.count()
+
+    data = {
+        "total_patients": total_patients,
+        "total_appointments": total_appointments,
+        "completed_appointments": completed_appointments,
+        "pending_appointments": pending_appointments,
+        "total_payments": total_payments,
+        "total_events": total_events,
+        "total_waived": total_waived,  # 👈 ahora real
+        "total_payments_amount": float(confirmed_amount),
+        "estimated_waived_amount": float(estimated_waived_amount),  # 👈 ahora real
+        "financial_balance": float(max(total_amount - balance_due, Decimal("0"))),
+        "appointments_trend": appt_trend,
+        "payments_trend": pay_trend,
+        "balance_trend": balance_trend,
+    }
+    return Response(data, status=200)
+
 
 @extend_schema(parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)], responses={200: PatientReadSerializer(many=True)})
 @api_view(["GET"])
@@ -280,6 +366,21 @@ def register_arrival(request):
         arrival_time=timezone.now(),   # 👈 explícito
     )
 
+    # 🔹 Registrar evento de auditoría con severidad y notificación
+    Event.objects.create(
+        entity="WaitingRoomEntry",
+        entity_id=entry.id,
+        action="patient_arrived",
+        actor=str(request.user) if request.user.is_authenticated else "system",
+        metadata={
+            "patient_id": patient.id,
+            "appointment_id": appointment.id if appointment else None,
+            "priority": "emergency" if is_emergency else "normal"
+        },
+        severity="info",   # evento informativo
+        notify=True        # visible en notificaciones del Dashboard
+    )
+
     return Response(WaitingRoomEntrySerializer(entry).data, status=201)
 
 
@@ -339,15 +440,20 @@ def audit_dashboard_api(request):
     return Response(data)
 
 
-@extend_schema(responses={200: OpenApiResponse(description="Eventos de auditoría")})
+@extend_schema(responses={200: EventSerializer(many=True)})
 @api_view(["GET"])
 def event_log_api(request):
     events = Event.objects.all().order_by("-timestamp")[:100]
-    data = [
-        {"entity": e.entity, "action": e.action, "actor": e.actor, "timestamp": e.timestamp}
-        for e in events
-    ]
-    return Response(data)
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data, status=200)
+
+
+@extend_schema(responses={200: EventSerializer(many=True)})
+@api_view(["GET"])
+def notifications_api(request):
+    critical = Event.objects.filter(notify=True).order_by("-timestamp")[:50]
+    serializer = EventSerializer(critical, many=True)
+    return Response(serializer.data, status=200)
 
 
 @extend_schema(responses={200: OpenApiResponse(description="Auditoría por cita")})
@@ -757,6 +863,17 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         order.mark_void(reason=reason, actor=actor)
         return Response({"status": "void"}, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=["post"])
+    def waive(self, request, pk=None):
+        """
+        Exonerar (waive) una orden de cobro.
+        """
+        order = self.get_object()
+        reason = request.data.get("reason", "")
+        actor = getattr(request.user, "username", "")
+        order.mark_waived(reason=reason, actor=actor)
+        return Response({"status": "waived"}, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=["get"])
     def events(self, request, pk=None):
         order = self.get_object()
@@ -767,8 +884,10 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             if isinstance(notes, dict):
                 if e.action == "payment_registered":
                     notes_str = f"Pago #{notes.get('payment_id')} registrado por ${notes.get('amount')}"
-                elif e.action == "voided":
+                elif e.action == "void":
                     notes_str = f"Orden anulada. Motivo: {notes.get('reason', '—')}"
+                elif e.action == "waived":
+                    notes_str = f"Orden exonerada. Motivo: {notes.get('reason', '—')}"
                 else:
                     notes_str = ", ".join(f"{k}: {v}" for k, v in notes.items())
             else:
@@ -779,6 +898,8 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
                 "action": e.action,
                 "actor": e.actor,
                 "timestamp": e.timestamp,
+                "severity": e.severity,
+                "notify": e.notify,
                 "notes": notes_str,
             })
         return Response(data)
@@ -809,13 +930,15 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             order.status = "open"
         order.save(update_fields=["total", "balance_due", "status"])
 
-        # 🔹 Registrar evento de auditoría
+        # 🔹 Registrar evento de auditoría (notificación crítica)
         Event.objects.create(
             entity="ChargeOrder",
             entity_id=order.id,
             action="payment_registered",
             actor=getattr(request.user, "username", None),
             metadata={"payment_id": payment.id, "amount": str(payment.amount)},
+            severity="info",
+            notify=True,
         )
 
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)

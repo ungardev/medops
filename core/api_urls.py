@@ -69,6 +69,7 @@ urlpatterns = [
 
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
+    path("notifications/", api_views.notifications_api, name="notifications-api"),  # 👈 NUEVO ENDPOINT
     path("audit/aggregates/", api_views.audit_dashboard_api, name="audit-dashboard-api"),
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),

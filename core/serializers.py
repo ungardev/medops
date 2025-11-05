@@ -300,7 +300,7 @@ class MedicalDocumentSerializer(serializers.ModelSerializer):
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = ["id", "timestamp", "actor", "entity", "entity_id", "action", "metadata"]
+        fields = ["id", "timestamp", "actor", "entity", "entity_id", "action", "metadata", "severity", "notify"]
 
 
 # --- Sala de espera (básico) ---
@@ -448,7 +448,7 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         model = ChargeOrder
         fields = (
             "id", "appointment", "patient", "currency",
-            "total", "balance_due", "status",
+            "total", "balance_due", "status",   # 👈 incluye 'waived'
             "issued_at", "issued_by", "items",
             "payments",   # 👈 ahora se incluyen los pagos
             # Auditoría
@@ -486,7 +486,7 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
         fields = (
             # Campos originales (compatibilidad)
             "id", "appointment", "patient", "currency",
-            "total", "balance_due", "status",
+            "total", "balance_due", "status",   # 👈 incluye 'waived'
             "issued_at", "issued_by", "items",
             # Aliases nuevos para Pagos
             "appointment_date", "total_amount", "patient_detail",

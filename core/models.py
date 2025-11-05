@@ -406,12 +406,14 @@ class Payment(models.Model):
             self.charge_order.recalc_totals()
             self.charge_order.save(update_fields=['total', 'balance_due', 'status'])
 
-            # Evento de auditoría
+            # Evento de auditoría con severidad y notificación
             Event.objects.create(
                 entity='Payment',
                 entity_id=self.pk,
                 action='confirm',
-                metadata={'actor': actor, 'note': note}
+                metadata={'actor': actor, 'note': note},
+                severity="info",     # evento informativo
+                notify=True          # visible en notificaciones
             )
 
     # --- Rechazo blindado ---
@@ -425,23 +427,33 @@ class Payment(models.Model):
             self.charge_order.recalc_totals()
             self.charge_order.save(update_fields=['total', 'balance_due', 'status'])
 
-            # Evento de auditoría
+            # Evento de auditoría con severidad y notificación
             Event.objects.create(
                 entity='Payment',
                 entity_id=self.pk,
                 action='reject',
-                metadata={'actor': actor, 'reason': reason}
+                metadata={'actor': actor, 'reason': reason},
+                severity="warning",  # evento de advertencia
+                notify=True          # visible en notificaciones
             )
 
 
 class Event(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
-    actor = models.CharField(max_length=100, blank=True, null=True)  # luego se enlaza a User
-    entity = models.CharField(max_length=50)  # Appointment, Payment, etc.
+    actor = models.CharField(max_length=100, blank=True, null=True)
+    entity = models.CharField(max_length=50)
     entity_id = models.IntegerField()
     action = models.CharField(max_length=100)
     metadata = models.JSONField(blank=True, null=True)
-    
+    # 🔹 Nuevo: severidad y flag de notificación
+    severity = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text="info | warning | critical"
+    )
+    notify = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = "Event"
         verbose_name_plural = "Events"
@@ -476,6 +488,7 @@ class ChargeOrder(models.Model):
         ('partially_paid', 'Partially Paid'),
         ('paid', 'Paid'),
         ('void', 'Void'),
+        ('waived', 'Waived'),  # 👈 nuevo estado para exoneraciones
     ]
 
     appointment = models.ForeignKey('Appointment', on_delete=models.CASCADE, related_name='charge_orders')
@@ -518,8 +531,8 @@ class ChargeOrder(models.Model):
         confirmed = self.payments.filter(status='confirmed').aggregate(s=Sum('amount')).get('s') or Decimal('0.00')
         self.balance_due = max(self.total - confirmed, Decimal('0.00'))
 
-        # 🔹 No tocar si está anulada
-        if self.status == 'void':
+        # 🔹 No tocar si está anulada o exonerada
+        if self.status in ['void', 'waived']:
             return
 
         # 🔹 Actualizar estado
@@ -533,15 +546,44 @@ class ChargeOrder(models.Model):
     def clean(self):
         if self.status == 'paid' and self.balance_due != Decimal('0.00'):
             raise ValidationError("Una orden 'paid' debe tener balance_due = 0.")
+        if self.status == 'waived' and self.balance_due != Decimal('0.00'):
+            raise ValidationError("Una orden 'waived' debe tener balance_due = 0.")
 
     def mark_void(self, reason: str = '', actor: str = ''):
+        """
+        Marca la orden como anulada y registra un evento crítico con notificación.
+        """
         if self.status == 'paid':
             raise ValidationError("No se puede anular una orden ya pagada.")
         self.status = 'void'
         self.save(update_fields=['status'])
+
         Event.objects.create(
-            entity='ChargeOrder', entity_id=self.pk, action='void',
-            metadata={'actor': actor, 'reason': reason}
+            entity='ChargeOrder',
+            entity_id=self.pk,
+            action='void',
+            metadata={'actor': actor, 'reason': reason},
+            severity="critical",   # 👈 severidad alta
+            notify=True            # 👈 notificación visible en Dashboard
+        )
+
+    def mark_waived(self, reason: str = '', actor: str = ''):
+        """
+        Marca la orden como exonerada (waived) y registra un evento informativo con notificación.
+        """
+        if self.status in ['paid', 'void']:
+            raise ValidationError("No se puede exonerar una orden ya pagada o anulada.")
+        self.status = 'waived'
+        self.balance_due = Decimal('0.00')
+        self.save(update_fields=['status', 'balance_due'])
+
+        Event.objects.create(
+            entity='ChargeOrder',
+            entity_id=self.pk,
+            action='waived',
+            metadata={'actor': actor, 'reason': reason},
+            severity="info",       # 👈 evento informativo
+            notify=True            # 👈 notificación visible en Dashboard
         )
 
 
