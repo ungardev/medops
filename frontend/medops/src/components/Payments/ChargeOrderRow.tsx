@@ -4,6 +4,7 @@ import axios from "axios";
 import PaymentList from "./PaymentList";
 import RegisterPaymentModal from "./RegisterPaymentModal";
 import { ChargeOrder } from "../../types/payments";
+import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
 
 interface Props {
   order: ChargeOrder;
@@ -14,6 +15,7 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
+  const invalidateChargeOrders = useInvalidateChargeOrders();
 
   // 🔹 Exportar usando siempre order.id real y tipando correctamente el Blob
   const handleExport = async (e: React.MouseEvent) => {
@@ -121,7 +123,10 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
         <RegisterPaymentModal
           appointmentId={order.appointment}   // 👈 ID de la cita
           chargeOrderId={order.id}           // 👈 ID de la orden
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            invalidateChargeOrders(order.id); // 👈 refresca lista + detalle + eventos
+          }}
         />
       )}
     </div>

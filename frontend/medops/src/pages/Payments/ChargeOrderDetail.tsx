@@ -1,11 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import PageHeader from "../../components/Layout/PageHeader";
 import PaymentList from "../../components/Payments/PaymentList";
 import RegisterPaymentModal from "../../components/Payments/RegisterPaymentModal";
 import { useState } from "react";
 import { ChargeOrder } from "../../types/payments";
+import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
 
 interface Event {
   id: number;
@@ -18,8 +19,8 @@ interface Event {
 export default function ChargeOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const invalidateChargeOrders = useInvalidateChargeOrders();
 
   if (!id) {
     return <p className="text-danger">ID de orden inválido</p>;
@@ -50,9 +51,7 @@ export default function ChargeOrderDetail() {
       await axios.post(`http://127.0.0.1/api/charge-orders/${id}/mark_void/`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["charge-orders"] });
-      queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ["charge-order-events", id] });
+      invalidateChargeOrders(id);
     },
   });
 
@@ -216,8 +215,7 @@ export default function ChargeOrderDetail() {
           chargeOrderId={order.id}
           onClose={() => {
             setShowModal(false);
-            queryClient.invalidateQueries({ queryKey });
-            queryClient.invalidateQueries({ queryKey: ["charge-order-events", id] });
+            invalidateChargeOrders(order.id);
           }}
         />
       )}

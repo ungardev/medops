@@ -733,8 +733,16 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 
 
 class ChargeOrderViewSet(viewsets.ModelViewSet):
-    queryset = ChargeOrder.objects.select_related("appointment", "patient").prefetch_related("items")
+    queryset = ChargeOrder.objects.select_related("appointment", "patient").prefetch_related("items", "payments")
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # 🔹 Forzar recálculo de cada orden antes de serializar
+        for order in qs:
+            order.recalc_totals()
+            order.save(update_fields=["total", "balance_due", "status"])
+        return qs
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
@@ -814,7 +822,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             if os.path.exists(logo_path):
                 try:
                     img = Image(logo_path)
-                    img._restrictSize(100, 100)  # escala proporcional dentro de 100x100
+                    img._restrictSize(100, 100)
                     elements.append(img)
                 except Exception:
                     elements.append(Paragraph("MedOps", styles["Title"]))
@@ -871,7 +879,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             if os.path.exists(firma_path):
                 try:
                     img = Image(firma_path)
-                    img._restrictSize(100, 50)  # firma más discreta
+                    img._restrictSize(100, 50)
                     elements.append(img)
                 except Exception:
                     elements.append(Paragraph("__________________________", styles["Normal"]))

@@ -436,6 +436,7 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
     total = serializers.FloatField(read_only=True)
     balance_due = serializers.FloatField(read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)  # solo lectura
+    payments = PaymentSerializer(many=True, read_only=True)  # 👈 añadido
 
     # 🔹 Campos de auditoría
     created_at = serializers.DateTimeField(read_only=True)
@@ -449,6 +450,7 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
             "id", "appointment", "patient", "currency",
             "total", "balance_due", "status",
             "issued_at", "issued_by", "items",
+            "payments",   # 👈 ahora se incluyen los pagos
             # Auditoría
             "created_at", "updated_at", "created_by", "updated_by",
         )
@@ -461,7 +463,7 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         # Normalmente no se crean ítems aquí, se agregan después
         order = ChargeOrder.objects.create(**validated_data)
         order.recalc_totals()
-        order.save(update_fields=["total", "balance_due"])
+        order.save(update_fields=["total", "balance_due", "status"])
         return order
 
 
@@ -471,6 +473,7 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
     total_amount = serializers.DecimalField(source="total", max_digits=10, decimal_places=2, read_only=True)
     patient_detail = PatientReadSerializer(source="patient", read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)  # 👈 añadido
 
     # 🔹 Campos de auditoría
     created_at = serializers.DateTimeField(read_only=True)
@@ -487,6 +490,7 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
             "issued_at", "issued_by", "items",
             # Aliases nuevos para Pagos
             "appointment_date", "total_amount", "patient_detail",
+            "payments",   # 👈 ahora también en la lista
             # Auditoría
             "created_at", "updated_at", "created_by", "updated_by",
         )
