@@ -746,10 +746,6 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"])
     def events(self, request, pk=None):
-        """
-        Devuelve los eventos de auditoría asociados a la orden.
-        Si no tienes un modelo de eventos, puedes devolver una lista vacía.
-        """
         order = self.get_object()
         if hasattr(order, "events"):
             data = [
@@ -758,9 +754,9 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
                     "action": e.action,
                     "actor": e.actor,
                     "timestamp": e.timestamp,
-                    "notes": e.notes,
+                    "notes": e.metadata or {},
                 }
-                for e in order.events.all().order_by("-timestamp")
+                for e in Event.objects.filter(entity="ChargeOrder", entity_id=order.id).order_by("-timestamp")
             ]
         else:
             data = []
@@ -775,90 +771,84 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         elements = []
         styles = getSampleStyleSheet()
 
-        # 🔹 Logo institucional con fallback
-        logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
-        if os.path.exists(logo_path):
-            try:
+        try:
+            # 🔹 Logo institucional
+            logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
+            if os.path.exists(logo_path):
                 elements.append(Image(logo_path, width=140, height=60))
-            except Exception:
+            else:
                 elements.append(Paragraph("MedOps", styles["Title"]))
-        else:
-            elements.append(Paragraph("MedOps", styles["Title"]))
-        elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, 12))
 
-        # 🔹 Encabezado con defensas
-        paciente = getattr(order.patient, "full_name", None) or f"Paciente #{order.patient_id}"
-        fecha = order.created_at.strftime("%d/%m/%Y %H:%M") if getattr(order, "created_at", None) else "—"
+            # 🔹 Encabezado
+            paciente = getattr(order.patient, "first_name", None)
+            paciente = f"{order.patient}" if order.patient else f"Paciente #{order.patient_id}"
+            fecha = order.created_at.strftime("%d/%m/%Y %H:%M") if order.created_at else "—"
 
-        elements.append(Paragraph(f"<b>Orden de Pago #{order.id}</b>", styles["Title"]))
-        elements.append(Paragraph(f"Paciente: {paciente}", styles["Normal"]))
-        elements.append(Paragraph(f"Fecha: {fecha}", styles["Normal"]))
-        elements.append(Spacer(1, 12))
+            elements.append(Paragraph(f"<b>Orden de Pago #{order.id}</b>", styles["Title"]))
+            elements.append(Paragraph(f"Paciente: {paciente}", styles["Normal"]))
+            elements.append(Paragraph(f"Fecha: {fecha}", styles["Normal"]))
+            elements.append(Spacer(1, 12))
 
-        # 🔹 Tabla de cargos
-        data = [["Código", "Descripción", "Cant.", "Precio", "Subtotal"]]
-        items = getattr(order, "items", None)
-        if items:
-            for item in items.all():
+            # 🔹 Tabla de cargos
+            data = [["Código", "Descripción", "Cant.", "Precio", "Subtotal"]]
+            for item in order.items.all():
+                code = item.code or "—"
+                desc = item.description or "—"
+                qty = item.qty or Decimal("0")
+                unit_price = item.unit_price or Decimal("0")
+                subtotal = item.subtotal or Decimal("0")
                 data.append([
-                    getattr(item, "code", "—"),
-                    getattr(item, "description", "—"),
-                    str(getattr(item, "qty", 0)),
-                    f"${getattr(item, 'unit_price', 0):.2f}",
-                    f"${getattr(item, 'subtotal', 0):.2f}",
+                    code,
+                    desc,
+                    str(qty),
+                    f"${unit_price:.2f}",
+                    f"${subtotal:.2f}",
                 ])
-        else:
-            data.append(["—", "Sin cargos", "—", "—", "—"])
 
-        table = Table(data, colWidths=[70, 200, 50, 80, 80])
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
-            ("ALIGN", (2, 1), (-1, -1), "CENTER"),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ]))
-        elements.append(table)
-        elements.append(Spacer(1, 12))
+            if len(data) == 1:
+                data.append(["—", "Sin cargos", "—", "—", "—"])
 
-        # 🔹 Totales con fallback
-        total = getattr(order, "total_amount", 0) or 0
-        pagos = getattr(order, "payments", None)
-        paid = sum([getattr(p, "amount", 0) for p in pagos.all()]) if pagos else 0
-        pending = total - paid
+            table = Table(data, colWidths=[70, 200, 50, 80, 80])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ]))
+            elements.append(table)
+            elements.append(Spacer(1, 12))
 
-        elements.append(Paragraph(f"<b>Total:</b> ${total:.2f}", styles["Normal"]))
-        elements.append(Paragraph(f"<b>Pagado:</b> ${paid:.2f}", styles["Normal"]))
-        elements.append(Paragraph(f"<b>Pendiente:</b> ${pending:.2f}", styles["Normal"]))
-        elements.append(Spacer(1, 24))
+            # 🔹 Totales
+            total = order.total or Decimal("0")
+            paid = order.payments.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
+            pending = total - paid
 
-        # 🔹 Estado y firma digital
-        estado = "ANULADA" if getattr(order, "is_void", False) else "ACTIVA"
-        elements.append(Paragraph(f"Estado de la orden: <b>{estado}</b>", styles["Normal"]))
-        elements.append(Spacer(1, 36))
+            elements.append(Paragraph(f"<b>Total:</b> ${total:.2f}", styles["Normal"]))
+            elements.append(Paragraph(f"<b>Pagado:</b> ${paid:.2f}", styles["Normal"]))
+            elements.append(Paragraph(f"<b>Pendiente:</b> ${pending:.2f}", styles["Normal"]))
+            elements.append(Spacer(1, 24))
 
-        firma_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "firma.png")
-        if os.path.exists(firma_path):
-            try:
+            # 🔹 Estado y firma
+            estado = order.status.upper()
+            elements.append(Paragraph(f"Estado de la orden: <b>{estado}</b>", styles["Normal"]))
+            elements.append(Spacer(1, 36))
+
+            firma_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "firma.png")
+            if os.path.exists(firma_path):
                 elements.append(Image(firma_path, width=120, height=50))
-            except Exception:
+            else:
                 elements.append(Paragraph("__________________________", styles["Normal"]))
                 elements.append(Paragraph("Firma Digital", styles["Italic"]))
-        else:
-            elements.append(Paragraph("__________________________", styles["Normal"]))
-            elements.append(Paragraph("Firma Digital", styles["Italic"]))
 
-        elements.append(Spacer(1, 12))
-        elements.append(Paragraph("Documento generado automáticamente por MedOps", styles["Italic"]))
+            elements.append(Spacer(1, 12))
+            elements.append(Paragraph("Documento generado automáticamente por MedOps", styles["Italic"]))
 
-        # Construir PDF con try/except
-        try:
+            # Construir PDF
             doc.build(elements)
-        except Exception as e:
-            return Response({"error": f"Error generando PDF: {str(e)}"}, status=500)
+            buffer.seek(0)
+            return FileResponse(buffer, as_attachment=True, filename=f"orden-{order.id}.pdf")
 
-        buffer.seek(0)
-        return FileResponse(buffer, as_attachment=True, filename=f"orden-{order.id}.pdf")
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet):
