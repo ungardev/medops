@@ -12,10 +12,9 @@ interface Props {
 export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onClose }: Props) {
   const queryClient = useQueryClient();
 
-  const [form, setForm] = useState<PaymentInput>({
+  const [form, setForm] = useState<Omit<PaymentInput, "status">>({
     amount: "",
     method: "cash",
-    status: "pending",
     reference_number: "",
     bank_name: "",
   });
@@ -24,7 +23,10 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
     mutationFn: async (data) => {
       const res = await axios.post(
         `http://127.0.0.1/api/charge-orders/${chargeOrderId}/payments/`,
-        data
+        {
+          ...data,
+          status: "confirmed", // 👈 siempre confirmado
+        }
       );
       return res.data as Payment;
     },
@@ -44,7 +46,7 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate(form);
+    mutation.mutate(form as PaymentInput);
   };
 
   return (
@@ -79,20 +81,7 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
             </select>
           </div>
 
-          <div>
-            <label>Estado</label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              className="select"
-            >
-              <option value="pending">Pendiente</option>
-              <option value="confirmed">Confirmado</option>
-              <option value="rejected">Rechazado</option>
-              <option value="void">Anulado</option>
-            </select>
-          </div>
+          {/* 👇 Eliminamos el selector de estado, ya no se expone al usuario */}
 
           <div>
             <label>Referencia</label>
