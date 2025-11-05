@@ -785,14 +785,8 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         payment = serializer.save(charge_order=order, appointment=order.appointment)
 
-        # 🔹 Recalcular totales y estado de la orden
+        # 🔹 Recalcular totales y estado usando el método del modelo
         order.recalc_totals()
-        if order.balance_due <= 0:
-            order.status = "paid"
-        elif order.payments.filter(status="confirmed").exists():
-            order.status = "partially_paid"
-        else:
-            order.status = "open"
         order.save(update_fields=["total", "balance_due", "status"])
 
         # 🔹 Registrar evento de auditoría

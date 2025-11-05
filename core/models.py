@@ -393,32 +393,43 @@ class Payment(models.Model):
     # --- Confirmación blindada ---
     def confirm(self, actor: str = '', note: str = ''):
         with transaction.atomic():
+            # Validar contra saldo pendiente
             self.charge_order.recalc_totals()
             if self.amount > self.charge_order.balance_due:
                 raise ValidationError("El monto excede el saldo pendiente de la orden.")
 
+            # Marcar como confirmado
             self.status = 'confirmed'
             self.save(update_fields=['status'])
 
+            # 🔹 Recalcular totales y estado de la orden
             self.charge_order.recalc_totals()
-            if self.charge_order.balance_due == Decimal('0.00'):
-                self.charge_order.status = 'paid'
-            else:
-                self.charge_order.status = 'partially_paid'
             self.charge_order.save(update_fields=['total', 'balance_due', 'status'])
 
+            # Evento de auditoría
             Event.objects.create(
-                entity='Payment', entity_id=self.pk, action='confirm',
+                entity='Payment',
+                entity_id=self.pk,
+                action='confirm',
                 metadata={'actor': actor, 'note': note}
             )
 
     # --- Rechazo blindado ---
     def reject(self, actor: str = '', reason: str = ''):
         with transaction.atomic():
+            # Marcar como rechazado
             self.status = 'rejected'
             self.save(update_fields=['status'])
+
+            # 🔹 Recalcular totales y estado de la orden
+            self.charge_order.recalc_totals()
+            self.charge_order.save(update_fields=['total', 'balance_due', 'status'])
+
+            # Evento de auditoría
             Event.objects.create(
-                entity='Payment', entity_id=self.pk, action='reject',
+                entity='Payment',
+                entity_id=self.pk,
+                action='reject',
                 metadata={'actor': actor, 'reason': reason}
             )
 
@@ -497,10 +508,27 @@ class ChargeOrder(models.Model):
         return f"Order #{self.pk} for Appt {self.appointment_id} — {self.status}"
 
     def recalc_totals(self):
+        """
+        Recalcula total, balance_due y status de la orden
+        en base a sus ítems y pagos confirmados.
+        """
         items_sum = self.items.aggregate(s=Sum('subtotal')).get('s') or Decimal('0.00')
         self.total = items_sum
+
         confirmed = self.payments.filter(status='confirmed').aggregate(s=Sum('amount')).get('s') or Decimal('0.00')
         self.balance_due = max(self.total - confirmed, Decimal('0.00'))
+
+        # 🔹 No tocar si está anulada
+        if self.status == 'void':
+            return
+
+        # 🔹 Actualizar estado
+        if self.balance_due <= 0 and self.total > 0:
+            self.status = 'paid'
+        elif confirmed > 0:
+            self.status = 'partially_paid'
+        else:
+            self.status = 'open'
 
     def clean(self):
         if self.status == 'paid' and self.balance_due != Decimal('0.00'):
