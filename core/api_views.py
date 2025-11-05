@@ -13,6 +13,9 @@ from django.core.exceptions import ValidationError
 
 # PDF
 import io
+import os
+import logging
+import traceback
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import (
