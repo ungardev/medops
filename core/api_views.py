@@ -752,36 +752,34 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def events(self, request, pk=None):
         order = self.get_object()
-        if hasattr(order, "events"):
-            data = [
-                {
-                    "id": e.id,
-                    "action": e.action,
-                    "actor": e.actor,
-                    "timestamp": e.timestamp,
-                    "notes": e.metadata or {},
-                }
-                for e in Event.objects.filter(entity="ChargeOrder", entity_id=order.id).order_by("-timestamp")
-            ]
-        else:
-            data = []
+        data = [
+            {
+                "id": e.id,
+                "action": e.action,
+                "actor": e.actor,
+                "timestamp": e.timestamp,
+                "notes": e.metadata or {},
+            }
+            for e in Event.objects.filter(entity="ChargeOrder", entity_id=order.id).order_by("-timestamp")
+        ]
         return Response(data)
 
     @action(detail=True, methods=["get"], permission_classes=[AllowAny])
     def export(self, request, pk=None):
         order = self.get_object()
-
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=letter)
         elements = []
         styles = getSampleStyleSheet()
 
         try:
-            # 🔹 Logo institucional
+            # 🔹 Logo institucional con proporción
             logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
             if os.path.exists(logo_path):
                 try:
-                    elements.append(Image(logo_path, width=140, height=60))
+                    img = Image(logo_path)
+                    img._restrictSize(160, 160)  # escala proporcional dentro de 160x160
+                    elements.append(img)
                 except Exception:
                     elements.append(Paragraph("MedOps", styles["Title"]))
             else:
@@ -805,13 +803,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
                 qty = item.qty if item.qty is not None else Decimal("0")
                 unit_price = item.unit_price if item.unit_price is not None else Decimal("0")
                 subtotal = item.subtotal if item.subtotal is not None else Decimal("0")
-                data.append([
-                    code,
-                    desc,
-                    str(qty),
-                    f"${unit_price:.2f}",
-                    f"${subtotal:.2f}",
-                ])
+                data.append([code, desc, str(qty), f"${unit_price:.2f}", f"${subtotal:.2f}"])
 
             if len(data) == 1:
                 data.append(["—", "Sin cargos", "—", "—", "—"])
@@ -825,7 +817,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             elements.append(Spacer(1, 12))
 
             # 🔹 Totales
-            total = order.total if order.total is not None else Decimal("0")
+            total = order.total or Decimal("0")
             paid = order.payments.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
             pending = total - paid
 
@@ -842,7 +834,9 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             firma_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "firma.png")
             if os.path.exists(firma_path):
                 try:
-                    elements.append(Image(firma_path, width=120, height=50))
+                    img = Image(firma_path)
+                    img._restrictSize(120, 60)
+                    elements.append(img)
                 except Exception:
                     elements.append(Paragraph("__________________________", styles["Normal"]))
                     elements.append(Paragraph("Firma Digital", styles["Italic"]))
@@ -859,7 +853,6 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             return FileResponse(buffer, as_attachment=True, filename=f"orden-{order.id}.pdf")
 
         except Exception as e:
-            # 🔹 Mostrar error real en consola
             print("ERROR EXPORT:", e)
             traceback.print_exc()
             return Response({"error": str(e)}, status=500)
