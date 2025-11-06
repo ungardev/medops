@@ -1,68 +1,43 @@
-import { apiFetch } from "./client";
-import { Appointment, AppointmentInput } from "../types/appointments";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 
-// --- Citas ---
-export const getAppointments = () => apiFetch<Appointment[]>("appointments/");
+// ⚠️ Aquí deberías obtener el token desde localStorage o contexto
+const token = localStorage.getItem("authToken");
 
-export const createAppointment = (data: AppointmentInput) =>
-  apiFetch("appointments/", {
-    method: "POST",
-    body: JSON.stringify(data),
+async function get<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Token ${token}` } : {}),
+    },
+    credentials: "include",
+    ...init,
   });
-
-export const updateAppointment = (id: number, data: AppointmentInput) =>
-  apiFetch(`appointments/${id}/`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
-
-export const deleteAppointment = (id: number) =>
-  apiFetch(`appointments/${id}/`, {
-    method: "DELETE",
-  });
-
-// 🔹 Obtener detalle de una cita por ID
-export const fetchAppointmentDetail = (id: number) =>
-  apiFetch<Appointment>(`appointments/${id}/`);
-
-// 🔹 Actualizar solo el estado de una cita
-export const updateAppointmentStatus = (id: number, newStatus: string) =>
-  apiFetch<Appointment>(`appointments/${id}/`, {
-    method: "PATCH",
-    body: JSON.stringify({ status: newStatus }),
-  });
-
-// --- Dashboard ---
-export interface DashboardSummary {
-  total_patients: number;
-  total_appointments: number;
-  completed_appointments: number;
-  pending_appointments: number;
-  total_payments: number;
-  total_events: number;
-  total_waived: number;
-  total_payments_amount: number;
-  estimated_waived_amount: number;
-  financial_balance: number;
-
-  // 🔹 Nuevos campos de tendencias
-  appointments_trend: { month: string; citas: number }[];
-  payments_trend: { week: string; pagos: number }[];
-  balance_trend: { week: string; balance: number }[];
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
 }
 
-// 🔹 Obtener resumen del dashboard con filtros opcionales
-export const getDashboardSummary = (
-  startDate?: string,
-  endDate?: string,
-  status?: string
-) => {
-  const params = new URLSearchParams();
-  if (startDate) params.append("start_date", startDate);
-  if (endDate) params.append("end_date", endDate);
-  if (status) params.append("status", status);
+export const DashboardAPI = {
+  summary: (params?: { start_date?: string; end_date?: string }) => {
+    const qp = params ? `?${new URLSearchParams(params as any).toString()}` : "";
+    return get<import("@/types/dashboard").DashboardSummary>(
+      `/dashboard/summary/${qp}`
+    );
+  },
 
-  return apiFetch<DashboardSummary>(
-    `dashboard/summary/${params.toString() ? "?" + params.toString() : ""}`
-  );
+  notifications: () =>
+    get<import("@/types/dashboard").NotificationEvent[]>(`/notifications/`),
+
+  waitingRoomToday: () =>
+    get<import("@/types/dashboard").AppointmentSummary[]>(
+      `/waitingroom/today/entries/`
+    ),
+
+  appointmentsToday: () =>
+    get<import("@/types/dashboard").AppointmentSummary[]>(`/appointments/today/`),
+
+  eventLog: () =>
+    get<import("@/types/dashboard").EventLogEntry[]>(`/event_log/`),
+
+  payments: () =>
+    get<import("@/types/dashboard").PaymentSummary[]>(`/payments/`),
 };

@@ -5,12 +5,12 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import App from "./App";
-import DashboardSuperUser from "./pages/Dashboard/DashboardSuperUser";
+import DashboardPage from "./pages/Dashboard"; // 👈 nuevo Dashboard
 import Patients from "./pages/Patients/Patients";
 import PatientDetail from "./pages/Patients/PatientDetail";
 import Appointments from "./pages/Appointments/Appointments";
 import Payments from "./pages/Payments/Payments";
-import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail"; // 👈 importado
+import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail";
 import Events from "./pages/Events/Events";
 import AuditDashboard from "./pages/Dashboard/AuditDashboard";
 import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
@@ -21,15 +21,13 @@ import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-// Importa el NotifyProvider
 import { NotifyProvider } from "./context/NotifyContext";
 
-// 🔹 Importa axios y configura headers globales
 import axios from "axios";
 
-// Configuración global de axios
-axios.defaults.baseURL = "/api"; // o la URL completa de tu backend
-const token = localStorage.getItem("authToken"); // ajusta según cómo guardes el token
+// Configuración global de axios usando Vite env
+axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
+const token = localStorage.getItem("authToken");
 if (token) {
   axios.defaults.headers.common["Authorization"] = `Token ${token}`;
 }
@@ -48,13 +46,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             {/* Rutas protegidas */}
             <Route element={<ProtectedRoute />}>
               <Route element={<App />}>
-                <Route index element={<DashboardSuperUser />} />
+                {/* 👇 Nuevo Dashboard en la raíz */}
+                <Route index element={<DashboardPage />} />
+
                 <Route path="patients" element={<Patients />} />
                 <Route path="patients/:id" element={<PatientDetail />} />
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
-                <Route path="charge-orders/:id" element={<ChargeOrderDetail />} /> {/* 👈 nueva ruta */}
+                <Route path="charge-orders/:id" element={<ChargeOrderDetail />} />
                 <Route path="events" element={<Events />} />
                 <Route path="audit-dashboard" element={<AuditDashboard />} />
                 <Route path="consultation" element={<Consultation />} />

@@ -303,8 +303,8 @@ h3 { font-size: 1.2rem; }
 
 /* ============ Citas ============ */
 .citas-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column; /* 👈 calendario arriba, lista abajo */
   gap: var(--space-5);
 }
 
@@ -405,11 +405,6 @@ h3 { font-size: 1.2rem; }
   overflow-wrap: anywhere;
 }
 
-@media (max-width: 1024px) {
-  .consultation-container { grid-template-columns: 1fr; }
-  .consultation-column, .consultation-main { flex-direction: column; }
-}
-
 /* ============ Payments ============ */
 .payments-panel { composes: card; }
 
@@ -437,3 +432,89 @@ h3 { font-size: 1.2rem; }
 }
 
 .payments-panel table { composes: table; }
+
+/* ============ QuickActions ============ */
+.actions {
+  display: flex;
+  gap: var(--space-3); /* 12px */
+  flex-wrap: wrap;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-contrast);
+  border: 1px solid var(--primary);
+}
+.btn-primary:hover {
+  background: #1559c9;
+  border-color: #1559c9;
+}
+
+/* ============ Dashboard Page ============ */
+.container {
+  padding: 24px;
+  background: var(--bg-muted);
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+/* ============ Notifications Feed ============ */
+.notifications-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.notification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  border-radius: var(--radius-1);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  box-shadow: var(--shadow-1);
+}
+
+.notification-message {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.notification-timestamp {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Severities */
+.notification-success {
+  border-color: var(--success);
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.notification-warning {
+  border-color: var(--warning);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.notification-critical {
+  border-color: var(--danger);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.notification-info {
+  border-color: var(--border);
+  background: var(--bg-muted);
+}

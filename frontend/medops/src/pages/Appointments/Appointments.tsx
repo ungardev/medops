@@ -161,8 +161,8 @@ export default function Appointments() {
         />
       )}
 
-      {/* Vista combinada: Calendario + Lista */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+      {/* Vista combinada: Calendario arriba + Lista abajo */}
+      <div className="flex flex-col gap-6 mt-6">
         {/* Calendario */}
         <div>
           <h2 className="text-lg font-semibold mb-2">Calendario</h2>

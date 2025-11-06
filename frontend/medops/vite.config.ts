@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      '@': path.resolve(__dirname, 'src'), // 👈 alias global
       api: path.resolve(__dirname, 'src/api'),
       components: path.resolve(__dirname, 'src/components'),
       pages: path.resolve(__dirname, 'src/pages'),
@@ -18,7 +19,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:80', // 👈 apunta explícitamente al puerto donde Nginx escucha
+        target: 'http://127.0.0.1:80',
         changeOrigin: true,
         secure: false,
       },

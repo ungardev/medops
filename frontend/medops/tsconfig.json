@@ -10,16 +10,26 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
+
+    // 👇 Base y alias
     "baseUrl": "./src",
     "paths": {
+      "@/*": ["*"],
       "api/*": ["api/*"],
       "components/*": ["components/*"],
       "pages/*": ["pages/*"],
       "types/*": ["types/*"],
-      "utils/*": ["utils/*"],       // 👈 agregado
-      "hooks/*": ["hooks/*"],       // 👈 agregado
-      "contexts/*": ["contexts/*"]  // 👈 agregado
-    }
+      "utils/*": ["utils/*"],
+      "hooks/*": ["hooks/*"],
+      "contexts/*": ["contexts/*"]
+    },
+
+    // 👇 Opciones útiles en Vite
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
 }
