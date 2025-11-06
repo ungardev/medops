@@ -6,21 +6,21 @@ export const getPayments = () => apiFetch<Payment[]>("payments/");
 
 // 🔹 Crear un nuevo pago
 export const createPayment = (data: PaymentInput) =>
-  apiFetch("payments/", {
+  apiFetch<Payment>("payments/", {
     method: "POST",
     body: JSON.stringify(data),
   });
 
 // 🔹 Actualizar un pago (PATCH parcial)
 export const updatePayment = (id: number, data: Partial<PaymentInput>) =>
-  apiFetch(`payments/${id}/`, {
+  apiFetch<Payment>(`payments/${id}/`, {
     method: "PATCH",
     body: JSON.stringify(data),
   });
 
 // 🔹 Eliminar un pago
 export const deletePayment = (id: number) =>
-  apiFetch(`payments/${id}/`, {
+  apiFetch<void>(`payments/${id}/`, {
     method: "DELETE",
   });
 

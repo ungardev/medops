@@ -162,6 +162,28 @@ h3 { font-size: 1.2rem; }
   padding-left: calc(14px - 3px);
 }
 
+/* 🔹 Logout */
+.logout-container {
+  margin-top: auto;
+  padding: var(--space-4) 0;
+}
+
+.btn-logout {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--danger);
+  color: var(--primary-contrast);
+  border: none;
+  border-radius: var(--radius-1);
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.btn-logout:hover {
+  background: #b91c1c;
+}
+
 /* ============ Tablas ============ */
 .table {
   width: 100%;
@@ -304,7 +326,7 @@ h3 { font-size: 1.2rem; }
 /* ============ Citas ============ */
 .citas-container {
   display: flex;
-  flex-direction: column; /* 👈 calendario arriba, lista abajo */
+  flex-direction: column;
   gap: var(--space-5);
 }
 
@@ -436,7 +458,7 @@ h3 { font-size: 1.2rem; }
 /* ============ QuickActions ============ */
 .actions {
   display: flex;
-  gap: var(--space-3); /* 12px */
+  gap: var(--space-3);
   flex-wrap: wrap;
 }
 
@@ -517,4 +539,9 @@ h3 { font-size: 1.2rem; }
 .notification-info {
   border-color: var(--border);
   background: var(--bg-muted);
+}
+
+/* ============ Notification Badges ============ */
+.notification-message .badge {
+  margin-right: var(--space-2);
 }

@@ -2,16 +2,17 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PaymentList from "./PaymentList";
-import RegisterPaymentModal from "./RegisterPaymentModal";
+import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
 import { ChargeOrder } from "../../types/payments";
 import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
 
 interface Props {
   order: ChargeOrder;
-  isSelected?: boolean; // <- añadida para resaltar la fila seleccionada
+  isSelected?: boolean;
+  onRegisterPayment?: () => void; // 👈 añadida para integración con ChargeOrderList
 }
 
-export default function ChargeOrderRow({ order, isSelected }: Props) {
+export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
@@ -26,7 +27,6 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
         { responseType: "blob" }
       );
 
-      // Forzamos a Blob válido
       const blob = res.data as Blob;
       const url = window.URL.createObjectURL(blob);
 
@@ -49,9 +49,15 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
     navigate(`/charge-orders/${order.id}`);
   };
 
-  const handleRegisterPayment = (e: React.MouseEvent) => {
+  const handleRegisterPaymentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowModal(true);
+    if (onRegisterPayment) {
+      // 👉 si viene del padre, delega la acción
+      onRegisterPayment();
+    } else {
+      // 👉 si no, abre su propio modal
+      setShowModal(true);
+    }
   };
 
   const formattedDate = order.appointment_date
@@ -105,7 +111,7 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
         </div>
 
         <div className="actions flex gap-2">
-          <button className="btn btn-primary" onClick={handleRegisterPayment}>
+          <button className="btn btn-primary" onClick={handleRegisterPaymentClick}>
             Registrar pago
           </button>
           <button className="btn btn-outline" onClick={handleExport}>
@@ -119,13 +125,18 @@ export default function ChargeOrderRow({ order, isSelected }: Props) {
 
       {expanded && <PaymentList payments={order.payments || []} />}
 
-      {showModal && (
+      {/* Modal local solo si no se delega al padre */}
+      {showModal && !onRegisterPayment && (
         <RegisterPaymentModal
-          appointmentId={order.appointment}   // 👈 ID de la cita
-          chargeOrderId={order.id}           // 👈 ID de la orden
+          appointmentId={order.appointment}
+          chargeOrderId={order.id}
           onClose={() => {
             setShowModal(false);
-            invalidateChargeOrders(order.id); // 👈 refresca lista + detalle + eventos
+            invalidateChargeOrders(order.id);
+          }}
+          onSuccess={() => {
+            console.log("Pago registrado en orden", order.id);
+            invalidateChargeOrders(order.id);
           }}
         />
       )}

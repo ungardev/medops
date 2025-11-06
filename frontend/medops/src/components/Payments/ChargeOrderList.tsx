@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useState, useMemo, useCallback } from "react";
 import ChargeOrderRow from "./ChargeOrderRow";
+import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
 import { ChargeOrder } from "../../types/payments";
 
 export default function ChargeOrderList() {
@@ -15,6 +16,7 @@ export default function ChargeOrderList() {
 
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [selectedOrder, setSelectedOrder] = useState<ChargeOrder | null>(null);
 
   const filteredOrders = useMemo(() => {
     if (!orders) return [];
@@ -50,7 +52,6 @@ export default function ChargeOrderList() {
         e.preventDefault();
         const selected = filteredOrders[selectedIndex];
         console.log("Seleccionado con Enter:", selected.id);
-        // Aquí puedes expandir la fila o navegar al detalle
       }
     },
     [filteredOrders, selectedIndex]
@@ -124,12 +125,26 @@ export default function ChargeOrderList() {
             key={order.id}
             order={order}
             isSelected={idx === selectedIndex}
+            onRegisterPayment={() => setSelectedOrder(order)} // 👈 ahora tipado correctamente
           />
         ))
       ) : (
         <div className="text-center text-muted py-6 border rounded">
           No se encontraron órdenes
         </div>
+      )}
+
+      {/* Modal de Registrar Pago centralizado */}
+      {selectedOrder && (
+        <RegisterPaymentModal
+          chargeOrderId={selectedOrder.id}
+          appointmentId={selectedOrder.appointment ?? undefined} // 👈 pasamos también la cita si existe
+          onClose={() => setSelectedOrder(null)}
+          onSuccess={() => {
+            console.log("Pago registrado en orden", selectedOrder.id);
+            setSelectedOrder(null);
+          }}
+        />
       )}
     </div>
   );

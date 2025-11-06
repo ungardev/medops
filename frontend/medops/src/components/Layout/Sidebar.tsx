@@ -8,9 +8,8 @@ const navItems = [
   { path: "/patients", label: "Pacientes" },
   { path: "/appointments", label: "Citas" },
   { path: "/payments", label: "Pagos" },
-  { path: "/studies", label: "Estudios" },
   { path: "/reports", label: "Reportes" },
-  { path: "/events", label: "Eventos" },
+  { path: "/settings", label: "Configuración" }, // 👈 nuevo orden final
 ];
 
 export default function Sidebar() {
@@ -44,19 +43,8 @@ export default function Sidebar() {
       </nav>
 
       {/* Botón de logout */}
-      <div style={{ marginTop: "2rem", padding: "0 1rem" }}>
-        <button
-          onClick={handleLogout}
-          style={{
-            width: "100%",
-            padding: "8px 12px",
-            background: "#dc2626",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
+      <div className="logout-container">
+        <button onClick={handleLogout} className="btn-logout">
           Cerrar sesión
         </button>
       </div>

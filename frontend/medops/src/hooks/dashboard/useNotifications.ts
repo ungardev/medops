@@ -34,7 +34,7 @@ export function useNotifications() {
           actor: appt.patient.full_name,
           entity: "Appointment",
           entity_id: appt.id,
-          message: "Nueva cita creada",
+          message: `Nueva cita creada para ${appt.patient.full_name}`,
           severity: "info",
           notify: false,
           action: { href: `/appointments/${appt.id}`, label: "Ver cita" },
@@ -49,30 +49,42 @@ export function useNotifications() {
           actor: entry.patient.full_name,
           entity: "WaitingRoom",
           entity_id: entry.id,
-          message: "Paciente entró a la sala de espera",
+          message: `Paciente ${entry.patient.full_name} entró a la sala de espera`,
           severity: "success",
           notify: false,
           action: { href: `/waitingroom/${entry.id}`, label: "Ver entrada" },
         });
       });
 
-      // 📌 Pagos recientes
+      // 📌 Pagos recientes (redirigen a ChargeOrder o abren modal)
       payments.forEach((pay) => {
+        const severity =
+          pay.status === "confirmed"
+            ? "success"
+            : pay.status === "pending"
+            ? "warning"
+            : "critical";
+
         events.push({
           id: pay.id,
           timestamp: pay.received_at ?? pay.appointment_date,
           actor: pay.patient.full_name,
           entity: "Payment",
-          entity_id: pay.id,
-          message: `Pago ${pay.status} de ${pay.amount} ${pay.currency} (${pay.method})`,
-          severity:
-            pay.status === "confirmed"
-              ? "success"
-              : pay.status === "pending"
-              ? "warning"
-              : "critical",
+          // 👇 aquí el entity_id apunta a la ChargeOrder, no al pago
+          entity_id: pay.charge_order,
+          message: `Orden #${pay.charge_order}: pago ${pay.status} de ${pay.amount} ${pay.currency} (${pay.method})`,
+          severity,
           notify: false,
-          action: { href: `/payments/${pay.id}`, label: "Ver pago" },
+          action:
+            pay.status === "pending"
+              ? {
+                  href: `/charge-orders/${pay.charge_order}`,
+                  label: "Registrar Pago", // 👈 acción clara para el modal
+                }
+              : {
+                  href: `/charge-orders/${pay.charge_order}`,
+                  label: "Ver orden",
+                },
         });
       });
 

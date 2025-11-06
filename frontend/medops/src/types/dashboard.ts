@@ -16,23 +16,31 @@ export type DashboardSummary = {
   balance_trend: TrendPoint[];
 };
 
-export type NotificationEvent = {
+// --- Severidad de notificación ---
+export type NotificationSeverity = "info" | "warning" | "critical" | "success";
+
+// --- Entidades posibles en notificaciones ---
+export type NotificationEntity = "Appointment" | "Payment" | "WaitingRoom" | "Dashboard";
+
+// --- Acción asociada a la notificación ---
+export interface NotificationAction {
+  href: string;
+  label: string;
+}
+
+// --- Evento de notificación ---
+export interface NotificationEvent {
   id: number;
-  timestamp: string;
+  timestamp: string; // ISO datetime
   actor?: string | null;
-  entity: string;
-  entity_id: number;
+  entity: NotificationEntity; // 👈 tipado explícito
+  entity_id: number;          // 👈 siempre número
   message: string;
   metadata?: Record<string, any> | null;
-  severity?: "info" | "warning" | "critical" | "success" | null;
+  severity?: NotificationSeverity | null;
   notify?: boolean;
-
-  // 👇 añadimos soporte para acciones rápidas
-  action?: {
-    href: string;
-    label: string;
-  };
-};
+  action?: NotificationAction;
+}
 
 export interface EventLogEntry {
   id: number;

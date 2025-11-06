@@ -19,6 +19,9 @@ export interface Payment {
   bank_name?: string | null;
   received_by?: string | null;
   received_at?: string | null; // ISO string
+
+  // 🔹 Relación con ChargeOrder
+  charge_order: number;
 }
 
 // --- Datos de entrada para crear/editar pago ---
@@ -28,7 +31,10 @@ export interface PaymentInput {
   status?: PaymentStatus;
   reference_number?: string;
   bank_name?: string;
-  appointment?: number;   // ← ahora opcional
+
+  // 🔹 Relaciones
+  charge_order: number;       // 👈 requerido para vincular el pago
+  appointment?: number;       // opcional, si el backend lo admite
 }
 
 // --- Estados de ChargeOrder según el modelo Django ---
