@@ -1,12 +1,13 @@
+// src/components/Appointments/AppointmentForm.tsx
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppointmentInput } from "../../types/appointments";
-import { getPatients } from "../../api/patients"; // 👈 asegúrate de tener este endpoint
+import { getPatients } from "../../api/patients";
 
 interface Props {
   date?: Date;
   onClose: () => void;
-  onSubmit?: (data: AppointmentInput) => void;
+  onSubmit: (data: AppointmentInput) => void; // requerido
 }
 
 export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
@@ -25,7 +26,9 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   });
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -33,7 +36,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) onSubmit(form);
+    onSubmit(form); // 👈 form ya es AppointmentInput
     onClose();
   };
 

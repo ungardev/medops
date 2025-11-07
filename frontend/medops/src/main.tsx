@@ -25,6 +25,9 @@ import { NotifyProvider } from "./context/NotifyContext";
 
 import axios from "axios";
 
+// 👇 nuevo import para Reportes
+import ReportsPage from "./pages/Reports/ReportsPage";
+
 // Configuración global de axios usando Vite env
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = localStorage.getItem("authToken");
@@ -58,6 +61,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="events" element={<Events />} />
                 <Route path="audit-dashboard" element={<AuditDashboard />} />
                 <Route path="consultation" element={<Consultation />} />
+
+                {/* 👇 Nueva ruta de Reportes */}
+                <Route path="reports" element={<ReportsPage />} />
               </Route>
             </Route>
           </Routes>

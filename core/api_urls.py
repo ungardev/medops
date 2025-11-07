@@ -1,3 +1,4 @@
+# src/core/api_urls.py
 from django.urls import path
 from rest_framework import routers
 from . import api_views
@@ -22,6 +23,8 @@ from .api_views import (
     register_arrival,
     waitingroom_entries_today_api,
     appointments_pending_api,
+    reports_api,           # 👈 NUEVO ENDPOINT DE REPORTES
+    reports_export_api,    # 👈 NUEVO ENDPOINT DE EXPORTACIÓN
 )
 
 # --- Swagger / OpenAPI ---
@@ -50,6 +53,10 @@ urlpatterns = [
     # --- Dashboard / métricas ---
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
+
+    # --- Reportes ---
+    path("reports/", reports_api, name="reports-api"),              # 👈 NUEVO ENDPOINT
+    path("reports/export/", reports_export_api, name="reports-export-api"),  # 👈 NUEVO ENDPOINT EXPORTACIÓN
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),

@@ -500,6 +500,49 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
         )
 
 
+# --- Reportes institucionales ---
+class ReportRowSerializer(serializers.Serializer):
+    """
+    Serializer genérico para filas de reporte.
+    Compatible con el frontend ReportRow.ts.
+    """
+    id = serializers.IntegerField()
+    date = serializers.DateField()
+    type = serializers.CharField()       # "financial" | "clinical" | "combined"
+    entity = serializers.CharField()     # paciente, procedimiento o entidad
+    status = serializers.CharField()
+    amount = serializers.FloatField()
+
+
+# --- Filtros de reportes ---
+class ReportFiltersSerializer(serializers.Serializer):
+    """
+    Serializer para documentar los filtros de entrada en /reports.
+    """
+    start_date = serializers.DateField(required=False, help_text="Fecha inicial (YYYY-MM-DD)")
+    end_date = serializers.DateField(required=False, help_text="Fecha final (YYYY-MM-DD)")
+    type = serializers.ChoiceField(
+        choices=["financial", "clinical", "combined"],
+        default="financial",
+        help_text="Tipo de reporte"
+    )
+
+
+# --- Exportación de reportes ---
+class ReportExportSerializer(serializers.Serializer):
+    """
+    Serializer para documentar la exportación de reportes.
+    """
+    format = serializers.ChoiceField(
+        choices=["pdf", "excel"],
+        help_text="Formato de exportación"
+    )
+    filters = ReportFiltersSerializer(
+        required=False,
+        help_text="Filtros aplicados al reporte exportado"
+    )
+
+
 # --- Resumen ejecutivo del Dashboard ---
 class DashboardSummarySerializer(serializers.Serializer):
     total_patients = serializers.IntegerField()

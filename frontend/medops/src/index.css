@@ -496,18 +496,21 @@ h3 { font-size: 1.2rem; }
 .notifications-feed {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2); /* menos separación */
+  /* quitamos max-height y overflow-y */
 }
 
 .notification-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-3);
+  padding: var(--space-2); /* menos padding */
   border-radius: var(--radius-1);
   border: 1px solid var(--border);
   background: var(--bg);
   box-shadow: var(--shadow-1);
+  font-size: 0.85rem; /* más compacto */
+  line-height: 1.2;   /* menos alto */
 }
 
 .notification-message {
@@ -516,7 +519,7 @@ h3 { font-size: 1.2rem; }
 }
 
 .notification-timestamp {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
@@ -545,3 +548,36 @@ h3 { font-size: 1.2rem; }
 .notification-message .badge {
   margin-right: var(--space-2);
 }
+
+.summary-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.summary-value {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Compactar Tendencias */
+.trends-card {
+  composes: card;
+  min-height: 260px; /* más achatado */
+  padding: var(--space-3); /* menos padding */
+}
+
+.trends-card h3 {
+  margin-bottom: var(--space-2); /* menos margen */
+}
+
+/* Títulos dentro de cards */
+.card h2,
+.card h3,
+.card-title {
+  font-size: 1.25rem;       /* tamaño uniforme */
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+  color: var(--text);
+}
+

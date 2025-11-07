@@ -7,6 +7,7 @@ import { ClinicalFlowWidget } from '@/components/Dashboard/ClinicalFlowWidget';
 import NotificationsFeed from '@/components/Dashboard/NotificationsFeed';
 import { TrendsWidget } from '@/components/Dashboard/TrendsWidget';
 import { QuickActionsWidget } from '@/components/Dashboard/QuickActionsWidget';
+import { DateTimeWidget } from '@/components/Dashboard/DateTimeWidget'; // 👈 nuevo
 
 const qc = new QueryClient();
 
@@ -29,11 +30,15 @@ function DashboardContent() {
       </header>
 
       <section className="grid">
+        {/* Primero los dos que quieres arriba */}
+        <QuickActionsWidget />
+        <DateTimeWidget />
+
+        {/* Luego los demás en el mismo orden que ya estaban */}
         <FinancialSummaryWidget data={data} />
         <ClinicalFlowWidget data={data} />
         <NotificationsFeed />
         <TrendsWidget data={data} />
-        <QuickActionsWidget />
       </section>
     </main>
   );

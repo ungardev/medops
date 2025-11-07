@@ -3,11 +3,12 @@ import React from "react";
 import ReactDOM from "react-dom";
 import { useForm } from "react-hook-form";
 import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
+import { PatientInput } from "../../types/patients"; // 👈 importa el tipo correcto
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onCreated: () => void; // callback para refrescar lista
+  onCreated: () => void;
 }
 
 interface FormValues {
@@ -33,23 +34,37 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
   if (!open) return null;
 
   const onSubmit = (values: FormValues) => {
-    const payload: any = {};
-    Object.entries(values).forEach(([key, value]) => {
-      if (value && value.trim() !== "") {
-        payload[key] = value.trim();
-      }
-    });
+    // Construye el payload de forma explícita y tipada
+    const payload: PatientInput = {
+      first_name: values.first_name.trim(),
+      last_name: values.last_name.trim(),
+      national_id: values.national_id.trim(),
+      // Campos opcionales solo si vienen con contenido
+      ...(values.second_name && values.second_name.trim() !== ""
+        ? { second_name: values.second_name.trim() }
+        : {}),
+      ...(values.second_last_name && values.second_last_name.trim() !== ""
+        ? { second_last_name: values.second_last_name.trim() }
+        : {}),
+      ...(values.phone && values.phone.trim() !== ""
+        ? { phone: values.phone.trim() }
+        : {}),
+      ...(values.email && values.email.trim() !== ""
+        ? { email: values.email.trim() }
+        : {}),
+    };
 
     createPatient.mutate(payload, {
       onSuccess: () => {
-        console.log("Paciente creado");
         onCreated();
         reset();
         onClose();
       },
-      onError: (e: any) => {
+      onError: (e: unknown) => {
+        const message =
+          e instanceof Error ? e.message : "Error creando paciente";
         console.error("Error creando paciente:", e);
-        alert(e.message || "Error creando paciente");
+        alert(message);
       },
     });
   };
@@ -64,25 +79,39 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
             placeholder="Nombre"
             {...register("first_name", { required: "El nombre es obligatorio" })}
           />
-          {errors.first_name && <span className="text-danger">{errors.first_name.message}</span>}
+          {errors.first_name && (
+            <span className="text-danger">{errors.first_name.message}</span>
+          )}
 
-          <input className="input" placeholder="Segundo nombre (opcional)" {...register("second_name")} />
+          <input
+            className="input"
+            placeholder="Segundo nombre (opcional)"
+            {...register("second_name")}
+          />
 
           <input
             className="input"
             placeholder="Apellido"
             {...register("last_name", { required: "El apellido es obligatorio" })}
           />
-          {errors.last_name && <span className="text-danger">{errors.last_name.message}</span>}
+          {errors.last_name && (
+            <span className="text-danger">{errors.last_name.message}</span>
+          )}
 
-          <input className="input" placeholder="Segundo apellido (opcional)" {...register("second_last_name")} />
+          <input
+            className="input"
+            placeholder="Segundo apellido (opcional)"
+            {...register("second_last_name")}
+          />
 
           <input
             className="input"
             placeholder="Documento (Cédula)"
             {...register("national_id", { required: "El documento es obligatorio" })}
           />
-          {errors.national_id && <span className="text-danger">{errors.national_id.message}</span>}
+          {errors.national_id && (
+            <span className="text-danger">{errors.national_id.message}</span>
+          )}
 
           <input className="input" placeholder="Teléfono" {...register("phone")} />
 
@@ -91,10 +120,14 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
             placeholder="Email"
             {...register("email", {
               validate: (value) =>
-                !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Email inválido",
+                !value ||
+                /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ||
+                "Email inválido",
             })}
           />
-          {errors.email && <span className="text-danger">{errors.email.message}</span>}
+          {errors.email && (
+            <span className="text-danger">{errors.email.message}</span>
+          )}
 
           <div className="modal-actions mt-3">
             <button

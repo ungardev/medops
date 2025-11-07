@@ -11,6 +11,13 @@ from django.utils import timezone
 from django.utils.timezone import now, localdate, make_aware
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
+from typing import Dict, Any, cast
+
+# Excel
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.drawing.image import Image as XLImage
 
 # PDF
 import io
@@ -44,7 +51,7 @@ from .serializers import (
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
-    EventSerializer
+    EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer
 )
 
 
@@ -1078,4 +1085,280 @@ class ChargeItemViewSet(viewsets.ModelViewSet):
         instance.delete()
         order.recalc_totals()
         order.save(update_fields=["total", "balance_due"])
+
+
+@extend_schema(
+    request=ReportFiltersSerializer,
+    responses={200: ReportRowSerializer(many=True)},
+    examples=[
+        # Ejemplo de request
+        OpenApiExample(
+            "Ejemplo de filtros",
+            value={"start_date": "2025-11-01", "end_date": "2025-11-07", "type": "financial"},
+            request_only=True,
+        ),
+        # Ejemplo de respuesta financiera
+        OpenApiExample(
+            "Reporte financiero",
+            value=[
+                {
+                    "id": 1,
+                    "date": "2025-11-07",
+                    "type": "financial",
+                    "entity": "Paciente Demo",
+                    "status": "confirmed",
+                    "amount": 50.0
+                },
+                {
+                    "id": 2,
+                    "date": "2025-11-07",
+                    "type": "financial",
+                    "entity": "Paciente Demo 2",
+                    "status": "pending",
+                    "amount": 30.0
+                }
+            ],
+            response_only=True,
+        ),
+        # Ejemplo de respuesta clínica
+        OpenApiExample(
+            "Reporte clínico",
+            value=[
+                {
+                    "id": 10,
+                    "date": "2025-11-06",
+                    "type": "clinical",
+                    "entity": "Paciente Demo",
+                    "status": "completed",
+                    "amount": 0.0
+                },
+                {
+                    "id": 11,
+                    "date": "2025-11-06",
+                    "type": "clinical",
+                    "entity": "Paciente Demo 2",
+                    "status": "pending",
+                    "amount": 0.0
+                }
+            ],
+            response_only=True,
+        ),
+    ]
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def reports_api(request):
+    """
+    Endpoint institucional de reportes.
+    Devuelve datos financieros, clínicos o combinados según filtros.
+    """
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    report_type = request.GET.get("type", "financial")
+
+    # 🔹 Parse seguro de fechas
+    start = parse_date(start_date) if start_date else None
+    end = parse_date(end_date) if end_date else None
+
+    data = []
+
+    if report_type == "financial":
+        qs = Payment.objects.all().select_related("appointment__patient")
+        if start:
+            qs = qs.filter(received_at__date__gte=start)
+        if end:
+            qs = qs.filter(received_at__date__lte=end)
+        for p in qs:
+            data.append({
+                "id": p.id,
+                "date": p.received_at.date().isoformat() if p.received_at else None,
+                "type": "financial",
+                "entity": str(p.appointment.patient) if p.appointment else "—",
+                "status": p.status,
+                "amount": float(p.amount or 0),
+            })
+
+    elif report_type == "clinical":
+        qs = Appointment.objects.all().select_related("patient")
+        if start:
+            qs = qs.filter(appointment_date__gte=start)
+        if end:
+            qs = qs.filter(appointment_date__lte=end)
+        for a in qs:
+            data.append({
+                "id": a.id,
+                "date": a.appointment_date.isoformat() if a.appointment_date else None,
+                "type": "clinical",
+                "entity": str(a.patient),
+                "status": a.status,
+                "amount": float(a.expected_amount or 0),
+            })
+
+    else:  # combined
+        payments = Payment.objects.all().select_related("appointment__patient")
+        appointments = Appointment.objects.all().select_related("patient")
+        if start:
+            payments = payments.filter(received_at__date__gte=start)
+            appointments = appointments.filter(appointment_date__gte=start)
+        if end:
+            payments = payments.filter(received_at__date__lte=end)
+            appointments = appointments.filter(appointment_date__lte=end)
+
+        for p in payments:
+            data.append({
+                "id": p.id,
+                "date": p.received_at.date().isoformat() if p.received_at else None,
+                "type": "financial",
+                "entity": str(p.appointment.patient) if p.appointment else "—",
+                "status": p.status,
+                "amount": float(p.amount or 0),
+            })
+        for a in appointments:
+            data.append({
+                "id": a.id,
+                "date": a.appointment_date.isoformat() if a.appointment_date else None,
+                "type": "clinical",
+                "entity": str(a.patient),
+                "status": a.status,
+                "amount": float(a.expected_amount or 0),
+            })
+
+    serializer = ReportRowSerializer(data, many=True)
+    return Response(serializer.data, status=200)
+
+
+@extend_schema(
+    request=ReportExportSerializer,
+    responses={200: OpenApiResponse(description="Archivo PDF/Excel exportado")},
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def reports_export_api(request):
+    """
+    Exporta un reporte en PDF o Excel según los filtros.
+    Layout institucional con logo, encabezado, tabla y pie de auditoría.
+    """
+    serializer = ReportExportSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    validated: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
+
+    export_format = validated["format"]
+    filters = validated.get("filters", {})
+
+    if export_format == "pdf":
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        # --- Logo institucional ---
+        logo_path = os.path.join(settings.BASE_DIR, "core/static/core/img/medops-logo.png")
+        if os.path.exists(logo_path):
+            logo = Image(logo_path, width=100, height=100)
+            elements.append(logo)
+            elements.append(Spacer(1, 12))
+
+        # --- Encabezado institucional ---
+        elements.append(Paragraph("<b>Centro Médico Demo</b>", styles["Title"]))
+        elements.append(Paragraph("Dirección: Av. Principal, Caracas", styles["Normal"]))
+        elements.append(Paragraph("Tel: (0212) 555-1234", styles["Normal"]))
+        elements.append(Spacer(1, 12))
+
+        # --- Título del reporte ---
+        elements.append(Paragraph("<b>Reporte Institucional</b>", styles["Heading2"]))
+        elements.append(Paragraph(f"Filtros aplicados: {filters}", styles["Normal"]))
+        elements.append(Spacer(1, 12))
+
+        # --- Tabla de datos (stub) ---
+        data = [
+            ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto"],
+            [1, "2025-11-07", "financial", "Paciente Demo", "confirmed", "50.00"],
+            [2, "2025-11-07", "clinical", "Paciente Demo 2", "completed", "0.00"],
+        ]
+        table = Table(data, hAlign="LEFT")
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        elements.append(table)
+        elements.append(Spacer(1, 24))
+
+        # --- Pie de auditoría ---
+        user = str(request.user) if request.user.is_authenticated else "system"
+        elements.append(Paragraph(f"Generado por: {user}", styles["Normal"]))
+        elements.append(Paragraph(f"Fecha de generación: {now().strftime('%Y-%m-%d %H:%M:%S')}", styles["Normal"]))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename="reporte.pdf")
+
+    elif export_format == "excel":
+        buffer = io.BytesIO()
+        wb = Workbook()
+        ws: Worksheet = cast(Worksheet, wb.active)
+        ws.title = "Reporte Institucional"
+
+        # --- Logo institucional ---
+        logo_path = os.path.join(settings.BASE_DIR, "core/static/core/img/medops-logo.png")
+        if os.path.exists(logo_path):
+            img = XLImage(logo_path)
+            img.width, img.height = 100, 100
+            ws.add_image(img, "A1")
+
+        # --- Encabezado institucional ---
+        ws["C1"] = "Centro Médico Demo"
+        ws["C1"].font = Font(bold=True, size=14)
+        ws["C2"] = "Dirección: Av. Principal, Caracas"
+        ws["C3"] = "Tel: (0212) 555-1234"
+        ws["C5"] = f"Filtros aplicados: {filters}"
+
+        # --- Tabla de datos (stub) ---
+        headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto"]
+        ws.append([])
+        ws.append(headers)
+        ws.append([1, "2025-11-07", "financial", "Paciente Demo", "confirmed", 50.00])
+        ws.append([2, "2025-11-07", "clinical", "Paciente Demo 2", "completed", 0.00])
+
+        # Estilo de encabezados
+        header_row = ws.max_row - 2  # fila donde se insertaron los headers
+        for cell in ws[header_row]:
+            cell.font = Font(bold=True, color="FFFFFF")
+            cell.alignment = Alignment(horizontal="center")
+            cell.fill = PatternFill(start_color="003366", end_color="003366", fill_type="solid")
+
+        # --- Colores alternos en filas ---
+        for row_idx, row in enumerate(ws.iter_rows(min_row=header_row+1, max_row=ws.max_row), start=0):
+            fill_color = "F2F2F2" if row_idx % 2 == 0 else "FFFFFF"
+            for cell in row:
+                cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
+
+        # --- Ajuste automático de columnas ---
+        for col in ws.columns:
+            max_length = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                try:
+                    if cell.value:
+                        max_length = max(max_length, len(str(cell.value)))
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            ws.column_dimensions[col_letter].width = adjusted_width
+
+        # --- Pie de auditoría ---
+        user = str(request.user) if request.user.is_authenticated else "system"
+        ws.append([])
+        ws.append([f"Generado por: {user}"])
+        ws.append([f"Fecha de generación: {now().strftime('%Y-%m-%d %H:%M:%S')}"])
+
+        wb.save(buffer)
+        buffer.seek(0)
+        return FileResponse(buffer, as_attachment=True, filename="reporte.xlsx")
+
+    return Response({"error": "Formato no soportado"}, status=400)
 
