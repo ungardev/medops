@@ -1228,6 +1228,24 @@ def reports_api(request):
     return Response(serializer.data, status=200)
 
 
+# --- Funciones auxiliares para escalar imágenes ---
+def scaled_image(path: str, max_width: int, max_height: int) -> Image:
+    img = Image(path)
+    iw, ih = img.drawWidth, img.drawHeight
+    scale = min(max_width / iw, max_height / ih)
+    img.drawWidth = iw * scale
+    img.drawHeight = ih * scale
+    return img
+
+def scaled_excel_image(path: str, max_width: int, max_height: int) -> XLImage:
+    img = XLImage(path)
+    iw, ih = img.width, img.height
+    scale = min(max_width / iw, max_height / ih)
+    img.width = int(iw * scale)
+    img.height = int(ih * scale)
+    return img
+
+
 @extend_schema(
     request=ReportExportSerializer,
     responses={200: OpenApiResponse(description="Archivo PDF/Excel exportado")},
@@ -1263,7 +1281,7 @@ def reports_export_api(request):
 
         # --- Logo institucional ---
         if inst and inst.logo and os.path.exists(inst.logo.path):
-            logo = Image(inst.logo.path, width=100, height=100)
+            logo = scaled_image(inst.logo.path, max_width=120, max_height=120)
             elements.append(logo)
             elements.append(Spacer(1, 12))
 
@@ -1307,7 +1325,7 @@ def reports_export_api(request):
 
         # --- Firma del médico ---
         if doc_op and doc_op.signature and os.path.exists(doc_op.signature.path):
-            sig_img = Image(doc_op.signature.path, width=100, height=50)
+            sig_img = scaled_image(doc_op.signature.path, max_width=100, max_height=50)
             elements.append(sig_img)
         else:
             elements.append(Paragraph("__________________________", styles["Normal"]))
@@ -1331,8 +1349,7 @@ def reports_export_api(request):
 
         # --- Logo institucional ---
         if inst and inst.logo and os.path.exists(inst.logo.path):
-            img = XLImage(inst.logo.path)
-            img.width, img.height = 100, 100
+            img = scaled_excel_image(inst.logo.path, max_width=120, max_height=120)
             ws.add_image(img, "A1")
 
         # --- Encabezado institucional ---

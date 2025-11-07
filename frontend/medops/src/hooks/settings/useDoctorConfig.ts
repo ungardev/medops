@@ -14,28 +14,24 @@ export function useDoctorConfig() {
     },
   });
 
-  // 🔹 PATCH actualización del médico operador (parcial)
+  // 🔹 PATCH actualización del médico operador (siempre multipart/form-data)
   const mutation = useMutation({
     mutationFn: async (newSettings: Partial<DoctorConfig>) => {
-      const sig = newSettings.signature;
-      if (sig && sig instanceof File) {
-        const formData = new FormData();
-        if (newSettings.full_name) formData.append("full_name", newSettings.full_name);
-        if (newSettings.colegiado_id) formData.append("colegiado_id", newSettings.colegiado_id);
-        if (newSettings.specialty) formData.append("specialty", newSettings.specialty);
-        if (newSettings.license) formData.append("license", newSettings.license);
-        if (newSettings.email) formData.append("email", newSettings.email);
-        if (newSettings.phone) formData.append("phone", newSettings.phone);
-        formData.append("signature", sig);
-
-        const res = await axios.patch("config/doctor/", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        return res.data;
-      } else {
-        const res = await axios.patch("config/doctor/", newSettings);
-        return res.data;
+      const formData = new FormData();
+      if (newSettings.full_name) formData.append("full_name", newSettings.full_name);
+      if (newSettings.colegiado_id) formData.append("colegiado_id", newSettings.colegiado_id);
+      if (newSettings.specialty) formData.append("specialty", newSettings.specialty);
+      if (newSettings.license) formData.append("license", newSettings.license);
+      if (newSettings.email) formData.append("email", newSettings.email);
+      if (newSettings.phone) formData.append("phone", newSettings.phone);
+      if (newSettings.signature && newSettings.signature instanceof File) {
+        formData.append("signature", newSettings.signature);
       }
+
+      const res = await axios.patch("config/doctor/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["config", "doctor"], data);
@@ -43,9 +39,7 @@ export function useDoctorConfig() {
   });
 
   // 🔹 Manejo de firma digital (preview)
-  const handleSignatureChange = (file: File) => {
-    return URL.createObjectURL(file);
-  };
+  const handleSignatureChange = (file: File) => URL.createObjectURL(file);
 
   return {
     ...query,

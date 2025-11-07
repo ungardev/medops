@@ -60,11 +60,13 @@ export default function ConfigPage() {
                 <p><strong>Dirección:</strong> {instForm.address}</p>
                 <p><strong>Teléfono:</strong> {instForm.phone}</p>
                 <p><strong>RIF/NIT:</strong> {instForm.tax_id}</p>
-                {instForm.logo && typeof instForm.logo === "string" && (
-                  <div className="logo-preview">
-                    <img src={instForm.logo} alt="Logo institucional" />
-                  </div>
-                )}
+                <div className="logo-preview">
+                  {instForm.logo && typeof instForm.logo === "string" && instForm.logo.trim() !== "" ? (
+                    <img src={`http://127.0.0.1${instForm.logo}`} alt="Logo institucional" />
+                  ) : (
+                    <span className="placeholder">Sin logo cargado</span>
+                  )}
+                </div>
                 <button className="btn btn-outline" onClick={() => setEditingInstitution(true)}>
                   Editar
                 </button>
@@ -134,7 +136,7 @@ export default function ConfigPage() {
           </>
         )}
       </section>
-        {/* Configuración Médico Operador */}
+              {/* Configuración Médico Operador */}
       <section className="config-section">
         <h3>Médico Operador</h3>
         {docLoading && <p>Cargando configuración del médico...</p>}
@@ -148,11 +150,13 @@ export default function ConfigPage() {
                 <p><strong>Licencia:</strong> {docForm.license}</p>
                 <p><strong>Email:</strong> {docForm.email}</p>
                 <p><strong>Teléfono:</strong> {docForm.phone}</p>
-                {docForm.signature && typeof docForm.signature === "string" && (
-                  <div className="signature-preview">
-                    <img src={docForm.signature} alt="Firma digital" />
-                  </div>
-                )}
+                <div className="signature-preview">
+                  {docForm.signature && typeof docForm.signature === "string" && docForm.signature.trim() !== "" ? (
+                    <img src={`http://127.0.0.1${docForm.signature}`} alt="Firma digital" />
+                  ) : (
+                    <span className="placeholder">Sin firma cargada</span>
+                  )}
+                </div>
                 <button className="btn btn-outline" onClick={() => setEditingDoctor(true)}>
                   Editar
                 </button>

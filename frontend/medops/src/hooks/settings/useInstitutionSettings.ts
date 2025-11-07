@@ -14,26 +14,22 @@ export function useInstitutionSettings() {
     },
   });
 
-  // 🔹 PATCH actualización institucional (parcial)
+  // 🔹 PATCH actualización institucional (siempre multipart/form-data)
   const mutation = useMutation({
     mutationFn: async (newSettings: Partial<InstitutionSettings>) => {
-      const logo = newSettings.logo;
-      if (logo && logo instanceof File) {
-        const formData = new FormData();
-        if (newSettings.name) formData.append("name", newSettings.name);
-        if (newSettings.address) formData.append("address", newSettings.address);
-        if (newSettings.phone) formData.append("phone", newSettings.phone);
-        if (newSettings.tax_id) formData.append("tax_id", newSettings.tax_id);
-        formData.append("logo", logo);
-
-        const res = await axios.patch("config/institution/", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        return res.data;
-      } else {
-        const res = await axios.patch("config/institution/", newSettings);
-        return res.data;
+      const formData = new FormData();
+      if (newSettings.name) formData.append("name", newSettings.name);
+      if (newSettings.address) formData.append("address", newSettings.address);
+      if (newSettings.phone) formData.append("phone", newSettings.phone);
+      if (newSettings.tax_id) formData.append("tax_id", newSettings.tax_id);
+      if (newSettings.logo && newSettings.logo instanceof File) {
+        formData.append("logo", newSettings.logo);
       }
+
+      const res = await axios.patch("config/institution/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return res.data;
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["config", "institution"], data);
@@ -41,9 +37,7 @@ export function useInstitutionSettings() {
   });
 
   // 🔹 Manejo de logo preview
-  const handleLogoChange = (file: File) => {
-    return URL.createObjectURL(file);
-  };
+  const handleLogoChange = (file: File) => URL.createObjectURL(file);
 
   return {
     ...query,

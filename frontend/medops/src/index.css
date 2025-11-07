@@ -685,3 +685,27 @@ h3 { font-size: 1.2rem; }
   gap: var(--space-3);
   margin-top: var(--space-4);
 }
+
+/* Ajustes visuales para logos y firmas */
+.logo-preview img,
+.signature-preview img {
+  max-width: 120px;     /* ancho máximo */
+  max-height: 120px;    /* alto máximo */
+  object-fit: contain;  /* mantiene proporción sin recortar */
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 4px;
+  background-color: #fafafa;
+}
+.placeholder {
+  display: inline-block;
+  width: 120px;
+  height: 120px;
+  line-height: 120px;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background-color: #f9f9f9;
+}
