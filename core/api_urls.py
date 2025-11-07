@@ -23,8 +23,9 @@ from .api_views import (
     register_arrival,
     waitingroom_entries_today_api,
     appointments_pending_api,
-    reports_api,           # 👈 NUEVO ENDPOINT DE REPORTES
-    reports_export_api,    # 👈 NUEVO ENDPOINT DE EXPORTACIÓN
+    reports_api,           # 👈 ENDPOINT DE REPORTES
+    reports_export_api,    # 👈 ENDPOINT DE EXPORTACIÓN
+    institution_settings_api,  # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN
 )
 
 # --- Swagger / OpenAPI ---
@@ -55,8 +56,11 @@ urlpatterns = [
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
 
     # --- Reportes ---
-    path("reports/", reports_api, name="reports-api"),              # 👈 NUEVO ENDPOINT
-    path("reports/export/", reports_export_api, name="reports-export-api"),  # 👈 NUEVO ENDPOINT EXPORTACIÓN
+    path("reports/", reports_api, name="reports-api"),
+    path("reports/export/", reports_export_api, name="reports-export-api"),
+
+    # --- Configuración Institucional ---
+    path("config/institution/", institution_settings_api, name="institution-settings-api"),
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
@@ -76,7 +80,7 @@ urlpatterns = [
 
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
-    path("notifications/", api_views.notifications_api, name="notifications-api"),  # 👈 NUEVO ENDPOINT
+    path("notifications/", api_views.notifications_api, name="notifications-api"),
     path("audit/aggregates/", api_views.audit_dashboard_api, name="audit-dashboard-api"),
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),

@@ -607,3 +607,25 @@ class ChargeItem(models.Model):
         super().save(*args, **kwargs)
         self.order.recalc_totals()
         self.order.save(update_fields=['total', 'balance_due'])
+
+
+class InstitutionSettings(models.Model):
+    name = models.CharField(max_length=255)         # Nombre del centro médico
+    address = models.CharField(max_length=255)      # Dirección institucional
+    phone = models.CharField(max_length=50)         # Teléfono de contacto
+    logo = models.ImageField(upload_to="logos/")    # Logo institucional
+    tax_id = models.CharField(max_length=50)        # RIF / NIT / identificación fiscal
+
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Configuración Institucional"
+        verbose_name_plural = "Configuraciones Institucionales"
+
+    def __str__(self):
+        return self.name

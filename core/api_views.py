@@ -41,7 +41,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings
 
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
@@ -51,7 +51,7 @@ from .serializers import (
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
-    EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer
+    EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer
 )
 
 
@@ -1362,3 +1362,22 @@ def reports_export_api(request):
 
     return Response({"error": "Formato no soportado"}, status=400)
 
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def institution_settings_api(request):
+    """
+    GET → devuelve la configuración institucional actual
+    PUT → actualiza la configuración institucional
+    """
+    settings_obj, _ = InstitutionSettings.objects.get_or_create(id=1)
+
+    if request.method == "GET":
+        serializer = InstitutionSettingsSerializer(settings_obj)
+        return Response(serializer.data)
+
+    elif request.method == "PUT":
+        serializer = InstitutionSettingsSerializer(settings_obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data)
