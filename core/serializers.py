@@ -544,12 +544,18 @@ class ReportExportSerializer(serializers.Serializer):
 
 
 class InstitutionSettingsSerializer(serializers.ModelSerializer):
+    # 🔹 Logo opcional
+    logo = serializers.ImageField(required=False, allow_null=True)
+
     class Meta:
         model = InstitutionSettings
         fields = ["id", "name", "address", "phone", "logo", "tax_id"]
 
 
 class DoctorOperatorSerializer(serializers.ModelSerializer):
+    # 🔹 Firma opcional
+    signature = serializers.ImageField(required=False, allow_null=True)
+
     class Meta:
         model = DoctorOperator
         fields = [

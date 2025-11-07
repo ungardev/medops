@@ -1404,7 +1404,9 @@ def institution_settings_api(request):
         return Response(serializer.data)
 
     # PUT o PATCH → actualización parcial
-    serializer = InstitutionSettingsSerializer(settings_obj, data=request.data, partial=True)
+    serializer = InstitutionSettingsSerializer(
+        settings_obj, data=request.data, partial=True
+    )
     serializer.is_valid(raise_exception=True)
     serializer.save(updated_by=request.user)
     return Response(serializer.data)
@@ -1422,6 +1424,13 @@ def doctor_operator_settings_api(request):
     if request.method == "GET":
         serializer = DoctorOperatorSerializer(obj)
         return Response(serializer.data)
+
+    # PUT o PATCH → actualización parcial
+    serializer = DoctorOperatorSerializer(obj, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save(updated_by=request.user)
+    return Response(serializer.data)
+
 
     serializer = DoctorOperatorSerializer(obj, data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
