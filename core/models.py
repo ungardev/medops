@@ -629,3 +629,31 @@ class InstitutionSettings(models.Model):
 
     def __str__(self):
         return self.name
+
+
+# src/core/models.py
+class DoctorOperator(models.Model):
+    full_name = models.CharField(max_length=255)
+    colegiado_id = models.CharField(
+        max_length=100,
+        verbose_name="Número de colegiado / ID de ejercicio"
+    )
+    specialty = models.CharField(max_length=100, blank=True, null=True)
+    license = models.CharField(max_length=100, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    phone = models.CharField(max_length=50, blank=True, null=True)
+    signature = models.ImageField(upload_to="signatures/", blank=True, null=True)
+
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        "auth.User", on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        verbose_name = "Médico operador"
+        verbose_name_plural = "Médicos operadores"
+
+    def __str__(self):
+        return f"{self.full_name} — {self.colegiado_id}"

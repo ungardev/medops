@@ -9,7 +9,7 @@ const navItems = [
   { path: "/appointments", label: "Citas" },
   { path: "/payments", label: "Pagos" },
   { path: "/reports", label: "Reportes" },
-  { path: "/settings", label: "Configuración" }, // 👈 nuevo orden final
+  { path: "/settings/institution", label: "Configuración" }, // 👈 apunta al nuevo page
 ];
 
 export default function Sidebar() {

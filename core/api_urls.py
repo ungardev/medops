@@ -23,9 +23,10 @@ from .api_views import (
     register_arrival,
     waitingroom_entries_today_api,
     appointments_pending_api,
-    reports_api,           # 👈 ENDPOINT DE REPORTES
-    reports_export_api,    # 👈 ENDPOINT DE EXPORTACIÓN
-    institution_settings_api,  # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN
+    reports_api,                 # 👈 ENDPOINT DE REPORTES
+    reports_export_api,          # 👈 ENDPOINT DE EXPORTACIÓN
+    institution_settings_api,    # 👈 ENDPOINT DE CONFIGURACIÓN INSTITUCIONAL
+    doctor_operator_settings_api # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
 )
 
 # --- Swagger / OpenAPI ---
@@ -59,8 +60,9 @@ urlpatterns = [
     path("reports/", reports_api, name="reports-api"),
     path("reports/export/", reports_export_api, name="reports-export-api"),
 
-    # --- Configuración Institucional ---
+    # --- Configuración ---
     path("config/institution/", institution_settings_api, name="institution-settings-api"),
+    path("config/doctor/", doctor_operator_settings_api, name="doctor-operator-settings-api"),
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),

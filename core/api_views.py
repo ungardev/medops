@@ -41,7 +41,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator
 
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
@@ -51,7 +51,8 @@ from .serializers import (
     GeneticPredispositionSerializer, MedicalDocumentSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
-    EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer
+    EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer,
+    DoctorOperatorSerializer
 )
 
 
@@ -1242,9 +1243,17 @@ def reports_export_api(request):
     serializer.is_valid(raise_exception=True)
 
     validated: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
-
     export_format = validated["format"]
     filters = validated.get("filters", {})
+
+    # --- Configuración institucional y médico operador ---
+    inst = InstitutionSettings.objects.first()
+    doc_op = None
+    try:
+        from .models import DoctorOperator
+        doc_op = DoctorOperator.objects.first()
+    except Exception:
+        pass
 
     if export_format == "pdf":
         buffer = io.BytesIO()
@@ -1253,17 +1262,25 @@ def reports_export_api(request):
         styles = getSampleStyleSheet()
 
         # --- Logo institucional ---
-        logo_path = os.path.join(settings.BASE_DIR, "core/static/core/img/medops-logo.png")
-        if os.path.exists(logo_path):
-            logo = Image(logo_path, width=100, height=100)
+        if inst and inst.logo and os.path.exists(inst.logo.path):
+            logo = Image(inst.logo.path, width=100, height=100)
             elements.append(logo)
             elements.append(Spacer(1, 12))
 
         # --- Encabezado institucional ---
-        elements.append(Paragraph("<b>Centro Médico Demo</b>", styles["Title"]))
-        elements.append(Paragraph("Dirección: Av. Principal, Caracas", styles["Normal"]))
-        elements.append(Paragraph("Tel: (0212) 555-1234", styles["Normal"]))
-        elements.append(Spacer(1, 12))
+        if inst:
+            elements.append(Paragraph(f"<b>{inst.name}</b>", styles["Title"]))
+            elements.append(Paragraph(f"Dirección: {inst.address}", styles["Normal"]))
+            elements.append(Paragraph(f"Tel: {inst.phone} • RIF: {inst.tax_id}", styles["Normal"]))
+            elements.append(Spacer(1, 12))
+
+        # --- Identidad del médico operador ---
+        if doc_op:
+            elements.append(Paragraph(
+                f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}",
+                styles["Normal"]
+            ))
+            elements.append(Spacer(1, 8))
 
         # --- Título del reporte ---
         elements.append(Paragraph("<b>Reporte Institucional</b>", styles["Heading2"]))
@@ -1288,6 +1305,15 @@ def reports_export_api(request):
         elements.append(table)
         elements.append(Spacer(1, 24))
 
+        # --- Firma del médico ---
+        if doc_op and doc_op.signature and os.path.exists(doc_op.signature.path):
+            sig_img = Image(doc_op.signature.path, width=100, height=50)
+            elements.append(sig_img)
+        else:
+            elements.append(Paragraph("__________________________", styles["Normal"]))
+            elements.append(Paragraph("Firma Digital", styles["Italic"]))
+        elements.append(Spacer(1, 12))
+
         # --- Pie de auditoría ---
         user = str(request.user) if request.user.is_authenticated else "system"
         elements.append(Paragraph(f"Generado por: {user}", styles["Normal"]))
@@ -1304,18 +1330,20 @@ def reports_export_api(request):
         ws.title = "Reporte Institucional"
 
         # --- Logo institucional ---
-        logo_path = os.path.join(settings.BASE_DIR, "core/static/core/img/medops-logo.png")
-        if os.path.exists(logo_path):
-            img = XLImage(logo_path)
+        if inst and inst.logo and os.path.exists(inst.logo.path):
+            img = XLImage(inst.logo.path)
             img.width, img.height = 100, 100
             ws.add_image(img, "A1")
 
         # --- Encabezado institucional ---
-        ws["C1"] = "Centro Médico Demo"
-        ws["C1"].font = Font(bold=True, size=14)
-        ws["C2"] = "Dirección: Av. Principal, Caracas"
-        ws["C3"] = "Tel: (0212) 555-1234"
-        ws["C5"] = f"Filtros aplicados: {filters}"
+        if inst:
+            ws["C1"] = inst.name
+            ws["C1"].font = Font(bold=True, size=14)
+            ws["C2"] = f"Dirección: {inst.address}"
+            ws["C3"] = f"Tel: {inst.phone} • RIF: {inst.tax_id}"
+        if doc_op:
+            ws["C4"] = f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}"
+        ws["C6"] = f"Filtros aplicados: {filters}"
 
         # --- Tabla de datos (stub) ---
         headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto"]
@@ -1325,19 +1353,19 @@ def reports_export_api(request):
         ws.append([2, "2025-11-07", "clinical", "Paciente Demo 2", "completed", 0.00])
 
         # Estilo de encabezados
-        header_row = ws.max_row - 2  # fila donde se insertaron los headers
+        header_row = ws.max_row - 2
         for cell in ws[header_row]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.alignment = Alignment(horizontal="center")
             cell.fill = PatternFill(start_color="003366", end_color="003366", fill_type="solid")
 
-        # --- Colores alternos en filas ---
+        # Colores alternos en filas
         for row_idx, row in enumerate(ws.iter_rows(min_row=header_row+1, max_row=ws.max_row), start=0):
             fill_color = "F2F2F2" if row_idx % 2 == 0 else "FFFFFF"
             for cell in row:
                 cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
 
-        # --- Ajuste automático de columnas ---
+        # Ajuste automático de columnas
         for col in ws.columns:
             max_length = 0
             col_letter = col[0].column_letter
@@ -1347,8 +1375,7 @@ def reports_export_api(request):
                         max_length = max(max_length, len(str(cell.value)))
                 except:
                     pass
-            adjusted_width = (max_length + 2)
-            ws.column_dimensions[col_letter].width = adjusted_width
+            ws.column_dimensions[col_letter].width = max_length + 2
 
         # --- Pie de auditoría ---
         user = str(request.user) if request.user.is_authenticated else "system"
@@ -1361,6 +1388,7 @@ def reports_export_api(request):
         return FileResponse(buffer, as_attachment=True, filename="reporte.xlsx")
 
     return Response({"error": "Formato no soportado"}, status=400)
+
 
 
 @api_view(["GET", "PUT"])
@@ -1381,3 +1409,23 @@ def institution_settings_api(request):
         serializer.is_valid(raise_exception=True)
         serializer.save(updated_by=request.user)
         return Response(serializer.data)
+
+
+@api_view(["GET", "PUT"])
+@permission_classes([IsAuthenticated])
+def doctor_operator_settings_api(request):
+    """
+    GET → devuelve la configuración del médico operador
+    PUT → actualiza la configuración del médico operador
+    """
+    from .models import DoctorOperator
+    obj, _ = DoctorOperator.objects.get_or_create(id=1)
+
+    if request.method == "GET":
+        serializer = DoctorOperatorSerializer(obj)
+        return Response(serializer.data)
+
+    serializer = DoctorOperatorSerializer(obj, data=request.data, partial=True)
+    serializer.is_valid(raise_exception=True)
+    serializer.save(updated_by=request.user)
+    return Response(serializer.data)

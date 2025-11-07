@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema_field
 from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
-    ChargeOrder, ChargeItem, InstitutionSettings
+    ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator
 )
 from datetime import date
 from typing import Optional
@@ -547,6 +547,21 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = InstitutionSettings
         fields = ["id", "name", "address", "phone", "logo", "tax_id"]
+
+
+class DoctorOperatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DoctorOperator
+        fields = [
+            "id",
+            "full_name",
+            "colegiado_id",
+            "specialty",
+            "license",
+            "email",
+            "phone",
+            "signature",
+        ]
 
 
 # --- Resumen ejecutivo del Dashboard ---

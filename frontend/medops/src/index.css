@@ -581,3 +581,86 @@ h3 { font-size: 1.2rem; }
   color: var(--text);
 }
 
+/* ============ Institution Settings Page ============ */
+.settings-page {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.settings-page h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  color: var(--text);
+}
+
+.settings-page .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.settings-page label {
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.settings-page input[type="text"],
+.settings-page input[type="file"] {
+  composes: input;
+}
+
+.logo-preview {
+  margin-top: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  padding: var(--space-2);
+  background: var(--bg-muted);
+  display: inline-block;
+}
+
+.settings-page button {
+  composes: btn btn-primary;
+  margin-top: var(--space-4);
+}
+
+/* ============ Reports Page ============ */
+.reports-page {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.reports-page h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: var(--space-4);
+  color: var(--text);
+}
+
+.reports-filters {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.reports-table {
+  composes: table;
+}
+
+.reports-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

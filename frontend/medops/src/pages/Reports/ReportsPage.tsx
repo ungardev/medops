@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import ReportFilters from "@/components/Reports/ReportFilters";
 import ReportTable from "@/components/Reports/ReportTable";
 import ReportExport from "@/components/Reports/ReportExport";
-import { ReportFiltersInput, ExportFormat } from "@/types/reports";
+import { ReportFiltersInput } from "@/types/reports";
 import { useReports } from "@/hooks/reports/useReports";
 
 export default function ReportsPage() {
@@ -16,19 +16,14 @@ export default function ReportsPage() {
     setFilters(newFilters);
   };
 
-  const handleExport = (format: ExportFormat) => {
-    console.log(`Exportando reporte en formato ${format}`, { filters, data });
-    // Aquí luego añadiremos lógica real de exportación
-  };
-
   return (
-    <main className="container">
-      <header className="header">
+    <main className="reports-page">
+      <header className="page-header">
         <h2>Reportes Institucionales</h2>
       </header>
 
       {/* Filtros */}
-      <section className="card">
+      <section className="card reports-filters">
         <ReportFilters onFilter={handleFilter} />
       </section>
 
@@ -40,8 +35,9 @@ export default function ReportsPage() {
       </section>
 
       {/* Exportación */}
-      <section className="card">
-        <ReportExport onExport={handleExport} />
+      <section className="card reports-actions">
+        {/* ✅ ahora pasamos filters y data */}
+        <ReportExport filters={filters} data={data} />
       </section>
     </main>
   );
