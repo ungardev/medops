@@ -1,8 +1,8 @@
-// src/hooks/settings/useInstitutionSettings.ts
-import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 
 export interface InstitutionSettings {
+  id?: number;
   name: string;
   address: string;
   phone: string;
@@ -11,42 +11,41 @@ export interface InstitutionSettings {
 }
 
 export function useInstitutionSettings() {
-  const [settings, setSettings] = useState<InstitutionSettings>({
-    name: "",
-    address: "",
-    phone: "",
-    tax_id: "",
-    logo: "",
+  const queryClient = useQueryClient();
+
+  // 🔹 GET configuración institucional
+  const query = useQuery<InstitutionSettings>({
+    queryKey: ["config", "institution"],
+    queryFn: async () => {
+      const res = await axios.get<InstitutionSettings>("config/institution/");
+      return res.data;
+    },
   });
-  const [preview, setPreview] = useState<string>("");
 
-  useEffect(() => {
-    axios.get<InstitutionSettings>("/api/config/institution/").then((res) => {
-      setSettings(res.data);
-      setPreview(res.data.logo);
-    });
-  }, []);
+  // 🔹 PATCH actualización institucional (parcial)
+  const mutation = useMutation({
+    mutationFn: async (newSettings: Partial<InstitutionSettings>) => {
+      const res = await axios.patch<InstitutionSettings>(
+        "config/institution/",
+        newSettings
+      );
+      return res.data;
+    },
+    onSuccess: (data) => {
+      // refresca cache
+      queryClient.setQueryData(["config", "institution"], data);
+    },
+  });
 
-  const updateSettings = async (newSettings: InstitutionSettings) => {
-    const res = await axios.put<InstitutionSettings>(
-      "/api/config/institution/",
-      newSettings
-    );
-    setSettings(res.data);
-    setPreview(res.data.logo);
-  };
-
+  // 🔹 Manejo de logo preview
   const handleLogoChange = (file: File) => {
-    setPreview(URL.createObjectURL(file));
+    return URL.createObjectURL(file);
     // En producción: enviar como multipart/form-data
   };
 
   return {
-    settings,
-    setSettings,
-    preview,
-    setPreview,
-    updateSettings,
+    ...query, // data, isLoading, isError
+    updateInstitution: mutation.mutateAsync,
     handleLogoChange,
   };
 }

@@ -28,8 +28,8 @@ import axios from "axios";
 // 👇 nuevo import para Reportes
 import ReportsPage from "./pages/Reports/ReportsPage";
 
-// 👇 nuevo import para Configuración Institucional
-import InstitutionSettingsPage from "./pages/Settings/InstitutionSettingsPage";
+// 👇 nuevo import para Configuración completa
+import ConfigPage from "./pages/Settings/ConfigPage";
 
 // Configuración global de axios usando Vite env
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
@@ -68,8 +68,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 {/* 👇 Nueva ruta de Reportes */}
                 <Route path="reports" element={<ReportsPage />} />
 
-                {/* 👇 Nueva ruta de Configuración Institucional */}
-                <Route path="settings/institution" element={<InstitutionSettingsPage />} />
+                {/* 👇 Nueva ruta de Configuración */}
+                <Route path="settings/config" element={<ConfigPage />} />
               </Route>
             </Route>
           </Routes>

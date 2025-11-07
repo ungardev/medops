@@ -581,42 +581,63 @@ h3 { font-size: 1.2rem; }
   color: var(--text);
 }
 
-/* ============ Institution Settings Page ============ */
-.settings-page {
+/* ============ Config Page (Institución + Médico) ============ */
+.config-page {
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-1);
   box-shadow: var(--shadow-1);
   padding: var(--space-5);
-  max-width: 800px;
+  max-width: 960px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6); /* separación entre secciones */
 }
 
-.settings-page h2 {
+.config-page h2 {
   font-size: 1.5rem;
   font-weight: 600;
   margin-bottom: var(--space-4);
   color: var(--text);
 }
 
-.settings-page .form-group {
+.config-section {
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-1);
+}
+
+.config-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--space-3);
+  color: var(--text);
+}
+
+.config-form .form-group {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   margin-bottom: var(--space-4);
 }
 
-.settings-page label {
+.config-form label {
   font-weight: 500;
   color: var(--text-muted);
 }
 
-.settings-page input[type="text"],
-.settings-page input[type="file"] {
+.config-form input[type="text"],
+.config-form input[type="email"],
+.config-form input[type="tel"],
+.config-form input[type="file"] {
   composes: input;
 }
 
-.logo-preview {
+.logo-preview,
+.signature-preview {
   margin-top: var(--space-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-1);
@@ -625,7 +646,7 @@ h3 { font-size: 1.2rem; }
   display: inline-block;
 }
 
-.settings-page button {
+.config-form button {
   composes: btn btn-primary;
   margin-top: var(--space-4);
 }
