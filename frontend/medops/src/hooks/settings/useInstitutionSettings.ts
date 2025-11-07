@@ -1,14 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
-
-export interface InstitutionSettings {
-  id?: number;
-  name: string;
-  address: string;
-  phone: string;
-  tax_id: string;
-  logo: string;
-}
+import { InstitutionSettings } from "@/types/config";
 
 export function useInstitutionSettings() {
   const queryClient = useQueryClient();
@@ -25,14 +17,25 @@ export function useInstitutionSettings() {
   // 🔹 PATCH actualización institucional (parcial)
   const mutation = useMutation({
     mutationFn: async (newSettings: Partial<InstitutionSettings>) => {
-      const res = await axios.patch<InstitutionSettings>(
-        "config/institution/",
-        newSettings
-      );
-      return res.data;
+      const logo = newSettings.logo;
+      if (logo && logo instanceof File) {
+        const formData = new FormData();
+        if (newSettings.name) formData.append("name", newSettings.name);
+        if (newSettings.address) formData.append("address", newSettings.address);
+        if (newSettings.phone) formData.append("phone", newSettings.phone);
+        if (newSettings.tax_id) formData.append("tax_id", newSettings.tax_id);
+        formData.append("logo", logo);
+
+        const res = await axios.patch("config/institution/", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        return res.data;
+      } else {
+        const res = await axios.patch("config/institution/", newSettings);
+        return res.data;
+      }
     },
     onSuccess: (data) => {
-      // refresca cache
       queryClient.setQueryData(["config", "institution"], data);
     },
   });
@@ -40,11 +43,10 @@ export function useInstitutionSettings() {
   // 🔹 Manejo de logo preview
   const handleLogoChange = (file: File) => {
     return URL.createObjectURL(file);
-    // En producción: enviar como multipart/form-data
   };
 
   return {
-    ...query, // data, isLoading, isError
+    ...query,
     updateInstitution: mutation.mutateAsync,
     handleLogoChange,
   };
