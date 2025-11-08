@@ -108,6 +108,69 @@ def metrics_api(request):
     return JsonResponse(data)
 
 
+audit = logging.getLogger("audit")
+
+# --- Scraping helpers ---
+def fetch_bcv_html() -> str | None:
+    """Obtiene el HTML de la página del BCV usando Playwright."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/120.0 Safari/537.36",
+            locale="es-VE"
+        )
+        page = context.new_page()
+        try:
+            page.goto("https://www.bcv.org.ve/", wait_until="domcontentloaded", timeout=60000)
+            page.wait_for_selector("#dolar .centrado strong", timeout=15000)
+            html = page.content()
+        except Exception as e:
+            audit.error(f"BCV: error al obtener HTML → {e}")
+            html = None
+        finally:
+            browser.close()
+        return html
+
+def extract_bcv_rate(html: str) -> Decimal | None:
+    """Extrae la tasa USD desde el bloque #dolar."""
+    soup = BeautifulSoup(html, "html.parser")
+    dolar = soup.select_one("#dolar .centrado strong")
+    raw = dolar.get_text(strip=True) if dolar else None
+
+    if not raw:
+        # fallback regex dentro del HTML
+        m = re.search(r"(\d{2,3}(?:\.\d{3})*,\d{2,8})", html)
+        if not m:
+            return None
+        raw = m.group(1)
+
+    normalized = raw.replace(".", "").replace(",", ".")
+    try:
+        return Decimal(normalized)
+    except Exception:
+        return None
+
+def get_bcv_rate() -> Decimal:
+    """Función principal: devuelve la tasa BCV o fallback."""
+    html = fetch_bcv_html()
+    if not html:
+        audit.error("BCV: no se pudo obtener HTML, usando fallback")
+        return Decimal("231.0462")
+
+    rate = extract_bcv_rate(html)
+    if not rate:
+        audit.error("BCV: no se pudo extraer tasa, usando fallback")
+        return Decimal("231.0462")
+
+    audit.info(f"BCV: tasa capturada {rate} Bs/USD")
+    return rate
+
+# --- Endpoint REST ---
 @api_view(["GET"])
 def bcv_rate_api(request):
     """
@@ -117,7 +180,6 @@ def bcv_rate_api(request):
     try:
         rate = get_bcv_rate()
         is_fallback = rate == Decimal("231.0462")
-
         data = {
             "source": "BCV",
             "date": date.today().isoformat(),
@@ -132,67 +194,6 @@ def bcv_rate_api(request):
             {"error": "No se pudo obtener la tasa BCV", "detalle": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
-audit = logging.getLogger("audit")
-
-def extract_bcv_from_html(html: str):
-    soup = BeautifulSoup(html, "html.parser")
-    dolar = soup.select_one("#dolar .centrado strong")
-    raw = dolar.get_text(strip=True) if dolar else None
-    if not raw:
-        m = re.search(r"(\d{2,3}(?:\.\d{3})*,\d{2,8})", html)
-        if not m:
-            return None, None
-        raw = m.group(1)
-    normalized = raw.replace(".", "").replace(",", ".")
-    try:
-        rate = Decimal(normalized)
-    except Exception:
-        return None, None
-    date_el = soup.select_one(".pull-right.dinpro .date-display-single")
-    value_date_iso = date_el.get("content") if date_el else None
-    return rate, value_date_iso
-
-def fetch_bcv_html(max_retries: int = 3) -> str | None:
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) "
-                       "Chrome/120.0 Safari/537.36",
-            locale="es-VE"
-        )
-        page = context.new_page()
-        for attempt in range(1, max_retries + 1):
-            try:
-                page.goto("https://www.bcv.org.ve/", wait_until="domcontentloaded", timeout=60000)
-                try:
-                    page.wait_for_selector("#dolar .centrado strong", timeout=5000)
-                except Exception:
-                    pass
-                html = page.content()
-                browser.close()
-                return html
-            except Exception:
-                time.sleep(1.25 * attempt)
-                continue
-        browser.close()
-        return None
-
-def get_bcv_rate() -> Decimal:
-    t0 = time.time()
-    html = fetch_bcv_html()
-    if not html:
-        audit.error("BCV: no se pudo obtener HTML")
-        return Decimal("231.0462")
-    rate, value_date_iso = extract_bcv_from_html(html)
-    elapsed = int((time.time() - t0) * 1000)
-    if rate is None:
-        sample = html[:1200].replace("\n", " ")
-        audit.error(f"BCV: extracción fallida; elapsed_ms={elapsed}; sample='{sample}'")
-        return Decimal("231.0462")
-    audit.info(f"BCV: tasa {rate} Bs/USD capturada; fecha_valor={value_date_iso}; elapsed_ms={elapsed}")
-    return rate
 
 
 @extend_schema(
