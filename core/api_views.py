@@ -104,20 +104,25 @@ def metrics_api(request):
     return JsonResponse(data)
 
 
+audit = logging.getLogger("audit")
+
 def get_bcv_rate() -> Decimal:
     try:
-        response = requests.get("https://ve.dolarapi.com/v1/dollar", timeout=5)
+        response = requests.get("https://pydolarvenezuela-api.vercel.app/api/v1/dollar/bcv", timeout=5)
         if response.status_code == 200:
             data = response.json()
-            if data.get("fuente") == "BCV":
-                return Decimal(str(data["valor"]))
+            if data.get("source") == "BCV":
+                rate = Decimal(str(data["price"]))
+                audit.info(f"Tasa BCV consultada: {rate} Bs/USD")
+                return rate
             else:
-                print("⚠️ Fuente no es BCV, ignorando")
+                audit.warning(f"Fuente inesperada: {data.get('source')}")
         else:
-            print(f"⚠️ API respondió con status {response.status_code}")
+            audit.warning(f"API BCV respondió con status {response.status_code}")
     except Exception as e:
-        print(f"⚠️ Error al consultar DolarApi: {e}")
-    return Decimal("231.0462")  # fallback seguro
+        audit.error(f"Error al consultar pyDolarVenezuela: {e}")
+    audit.info("Usando fallback BCV: 231.0462 Bs")
+    return Decimal("231.0462")
 
 
 @extend_schema(
