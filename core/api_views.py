@@ -1263,35 +1263,71 @@ def reports_export_api(request):
         export_format = validated["format"]
         filters = validated.get("filters", {})
 
+        # --- Configuración institucional y médico operador ---
         inst = InstitutionSettings.objects.first()
-        doc_op = None
-        try:
-            from .models import DoctorOperator, Report
-            doc_op = DoctorOperator.objects.first()
-        except Exception:
-            from .models import Report
-            pass
+        doc_op = DoctorOperator.objects.first()
 
-        try:
-            rows = Report.objects.all()
-            if filters:
-                rows = rows.filter(**filters)
-        except Exception as e:
-            return Response({"error": f"Filtros inválidos: {str(e)}"}, status=400)
+        # --- Construcción de datos de reporte ---
+        report_type = filters.get("type")
+        serialized = []
 
-        serialized = ReportRowSerializer(rows, many=True).data
+        if report_type == "financial":
+            from .models import Payment
+            rows = Payment.objects.all()
+            for p in rows:
+                serialized.append({
+                    "id": p.id,
+                    "date": p.received_at.date() if p.received_at else None,
+                    "type": "financial",
+                    "entity": f"Appt {p.appointment_id} / Order {p.charge_order_id}",
+                    "status": p.status,
+                    "amount": float(p.amount),
+                    "currency": p.currency,
+                })
 
+        elif report_type == "clinical":
+            from .models import Appointment
+            rows = Appointment.objects.all()
+            for a in rows:
+                serialized.append({
+                    "id": a.id,
+                    "date": a.appointment_date,
+                    "type": "clinical",
+                    "entity": str(a.patient),
+                    "status": a.status,
+                    "amount": float(a.expected_amount),
+                    "currency": "USD",
+                })
+
+        else:  # combinado
+            from .models import Payment, Appointment
+            for p in Payment.objects.all():
+                serialized.append({
+                    "id": p.id,
+                    "date": p.received_at.date() if p.received_at else None,
+                    "type": "financial",
+                    "entity": f"Appt {p.appointment_id} / Order {p.charge_order_id}",
+                    "status": p.status,
+                    "amount": float(p.amount),
+                    "currency": p.currency,
+                })
+            for a in Appointment.objects.all():
+                serialized.append({
+                    "id": a.id,
+                    "date": a.appointment_date,
+                    "type": "clinical",
+                    "entity": str(a.patient),
+                    "status": a.status,
+                    "amount": float(a.expected_amount),
+                    "currency": "USD",
+                })
+
+        # --- Export PDF ---
         if export_format == "pdf":
             buffer = io.BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=letter)
             elements = []
             styles = getSampleStyleSheet()
-
-            # Desactiva temporalmente imágenes para aislar error
-            # if inst and inst.logo and os.path.exists(inst.logo.path):
-            #     logo = scaled_image(inst.logo.path, max_width=120, max_height=120)
-            #     elements.append(logo)
-            #     elements.append(Spacer(1, 12))
 
             if inst:
                 elements.append(Paragraph(f"<b>{inst.name}</b>", styles["Title"]))
@@ -1333,11 +1369,6 @@ def reports_export_api(request):
             elements.append(table)
             elements.append(Spacer(1, 24))
 
-            # Desactiva firma temporalmente para aislar error
-            # if doc_op and doc_op.signature and os.path.exists(doc_op.signature.path):
-            #     sig_img = scaled_image(doc_op.signature.path, max_width=100, max_height=50)
-            #     elements.append(sig_img)
-            # else:
             elements.append(Paragraph("__________________________", styles["Normal"]))
             elements.append(Paragraph("Firma Digital", styles["Italic"]))
             elements.append(Spacer(1, 12))
@@ -1350,16 +1381,12 @@ def reports_export_api(request):
             buffer.seek(0)
             return FileResponse(buffer, as_attachment=True, filename="reporte.pdf")
 
+        # --- Export Excel ---
         elif export_format == "excel":
             buffer = io.BytesIO()
             wb = Workbook()
             ws: Worksheet = cast(Worksheet, wb.active)
             ws.title = "Reporte Institucional"
-
-            # Desactiva temporalmente logo para aislar error
-            # if inst and inst.logo and os.path.exists(inst.logo.path):
-            #     img = scaled_excel_image(inst.logo.path, max_width=120, max_height=120)
-            #     ws.add_image(img, "A1")
 
             if inst:
                 ws["C1"] = inst.name
