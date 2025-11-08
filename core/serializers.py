@@ -597,3 +597,9 @@ class DashboardSummarySerializer(serializers.Serializer):
 
     # 🔹 Auditoría
     event_log = serializers.ListField(required=False)
+
+    # 🔹 Tasa BCV
+    bcv_rate = serializers.DictField(
+        child=serializers.FloatField(),
+        help_text="Tasa oficial BCV con unidad, precisión y bandera de fallback"
+    )

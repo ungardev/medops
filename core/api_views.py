@@ -111,15 +111,19 @@ def metrics_api(request):
 def bcv_rate_api(request):
     """
     Endpoint REST para consultar la tasa oficial BCV.
-    Devuelve JSON con fuente, fecha y valor.
+    Devuelve JSON con fuente, fecha, valor y bandera de fallback.
     """
     try:
         rate = get_bcv_rate()
+        is_fallback = rate == Decimal("231.0462")
+
         data = {
             "source": "BCV",
             "date": date.today().isoformat(),
             "value": float(rate),
-            "currency": "VES/USD"
+            "unit": "VES_per_USD",
+            "precision": 4,
+            "is_fallback": is_fallback,
         }
         return Response(data, status=200)
     except Exception as e:
@@ -127,7 +131,6 @@ def bcv_rate_api(request):
             {"error": "No se pudo obtener la tasa BCV", "detalle": str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
 
 audit = logging.getLogger("audit")
 
@@ -143,7 +146,6 @@ def get_bcv_rate() -> Decimal:
             page.goto("https://www.bcv.org.ve/", timeout=30000)
 
             # Ajusta el selector según el HTML renderizado del BCV
-            # Ejemplo: div.centrado donde aparece la tasa
             text = page.inner_text("div.centrado")
             browser.close()
 
@@ -259,16 +261,18 @@ def dashboard_summary_api(request):
         ]
 
         # 🔹 Conversión de moneda
+        bcv_rate = get_bcv_rate()
+        is_fallback = bcv_rate == Decimal("231.0462")
+
         if currency == "VES":
-            conversion_rate = get_bcv_rate()
-            confirmed_amount *= conversion_rate
-            estimated_waived_amount *= conversion_rate
-            total_amount *= conversion_rate
-            balance_due *= conversion_rate
+            confirmed_amount *= bcv_rate
+            estimated_waived_amount *= bcv_rate
+            total_amount *= bcv_rate
+            balance_due *= bcv_rate
             for p in pay_trend:
-                p["value"] = float(Decimal(p["value"]) * conversion_rate)
+                p["value"] = float(Decimal(p["value"]) * bcv_rate)
             for b in balance_trend:
-                b["value"] = float(Decimal(b["value"]) * conversion_rate)
+                b["value"] = float(Decimal(b["value"]) * bcv_rate)
 
         # 🔹 Totales
         total_patients = Patient.objects.count()
@@ -293,6 +297,12 @@ def dashboard_summary_api(request):
             "appointments_trend": appt_trend,
             "payments_trend": pay_trend,
             "balance_trend": balance_trend,
+            "bcv_rate": {
+                "value": float(bcv_rate),
+                "unit": "VES_per_USD",
+                "precision": 4,
+                "is_fallback": is_fallback,
+            },
         }
 
         return Response(data, status=200)
