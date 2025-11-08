@@ -16,6 +16,7 @@ import calendar
 import requests
 import re
 from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 
 # Excel
 from openpyxl import Workbook
@@ -106,42 +107,54 @@ def metrics_api(request):
     return JsonResponse(data)
 
 
+@api_view(["GET"])
+def bcv_rate_api(request):
+    """
+    Endpoint REST para consultar la tasa oficial BCV.
+    Devuelve JSON con fuente, fecha y valor.
+    """
+    try:
+        rate = get_bcv_rate()
+        data = {
+            "source": "BCV",
+            "date": date.today().isoformat(),
+            "value": float(rate),
+            "currency": "VES/USD"
+        }
+        return Response(data, status=200)
+    except Exception as e:
+        return Response(
+            {"error": "No se pudo obtener la tasa BCV", "detalle": str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
 audit = logging.getLogger("audit")
 
 def get_bcv_rate() -> Decimal:
     """
-    Consulta directamente la página oficial del BCV y extrae la tasa USD/VEF.
+    Consulta directamente la página oficial del BCV usando Playwright.
     Si falla, retorna el fallback institucional.
     """
     try:
-        response = requests.get("https://www.bcv.org.ve/", timeout=10)
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.text, "lxml")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto("https://www.bcv.org.ve/", timeout=30000)
 
-            # 🔹 Intento 1: buscar div con id="dolar"
-            dolar_div = soup.find("div", {"id": "dolar"})
-            if dolar_div:
-                rate_text = dolar_div.text.strip()
-                rate = Decimal(rate_text.replace(",", "."))
-                audit.info(f"Tasa BCV consultada directamente: {rate} Bs/USD")
-                return rate
+            # Ajusta el selector según el HTML renderizado del BCV
+            # Ejemplo: div.centrado donde aparece la tasa
+            text = page.inner_text("div.centrado")
+            browser.close()
 
-            # 🔹 Intento 2: buscar cualquier <strong> que contenga "USD"
-            possible = soup.find("strong", text=re.compile("USD"))
-            if possible:
-                rate_text = possible.text.strip()
-                rate = Decimal(rate_text.replace(",", "."))
-                audit.info(f"Tasa BCV consultada (regex): {rate} Bs/USD")
-                return rate
-
-            audit.warning("No se encontró la tasa en la página BCV")
-        else:
-            audit.warning(f"BCV respondió con status {response.status_code}")
+            rate = Decimal(text.replace(",", "."))
+            audit.info(f"Tasa BCV consultada con Playwright: {rate} Bs/USD")
+            return rate
     except Exception as e:
-        audit.error(f"Error al consultar BCV directamente: {e}")
+        audit.error(f"Error al consultar BCV con Playwright: {e}")
+        audit.info("Usando fallback BCV: 231.0462 Bs")
+        return Decimal("231.0462")
 
-    audit.info("Usando fallback BCV: 231.0462 Bs")
-    return Decimal("231.0462")
 
 @extend_schema(
     parameters=[

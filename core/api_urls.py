@@ -26,7 +26,8 @@ from .api_views import (
     reports_api,                 # 👈 ENDPOINT DE REPORTES
     reports_export_api,          # 👈 ENDPOINT DE EXPORTACIÓN
     institution_settings_api,    # 👈 ENDPOINT DE CONFIGURACIÓN INSTITUCIONAL
-    doctor_operator_settings_api # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
+    doctor_operator_settings_api, # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
+    bcv_rate_api                 # 👈 NUEVO ENDPOINT DE TASA BCV
 )
 
 # --- Swagger / OpenAPI ---
@@ -92,6 +93,9 @@ urlpatterns = [
     path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
+
+    # --- Tasa BCV ---
+    path("bcv-rate/", bcv_rate_api, name="bcv-rate-api"),
 ]
 
 # --- Documentación OpenAPI ---
