@@ -1274,8 +1274,14 @@ def reports_export_api(request):
         from .models import Report
         pass
 
-    # --- Query de reportes con serializer ---
-    rows = Report.objects.filter(**filters)
+    # --- Query de reportes con manejo seguro ---
+    try:
+        rows = Report.objects.all()
+        if filters:
+            rows = rows.filter(**filters)
+    except Exception as e:
+        return Response({"error": f"Filtros inválidos: {str(e)}"}, status=400)
+
     serialized = ReportRowSerializer(rows, many=True).data
 
     if export_format == "pdf":
@@ -1315,11 +1321,11 @@ def reports_export_api(request):
         for r in serialized:
             data.append([
                 r["id"],
-                r["date"],
+                str(r["date"]),
                 r["type"],
                 r["entity"],
                 r["status"],
-                f"{r['amount']:.2f}",
+                f"{float(r['amount']):.2f}",
                 r.get("currency", "VES")
             ])
         table = Table(data, hAlign="LEFT")
@@ -1381,11 +1387,11 @@ def reports_export_api(request):
         for r in serialized:
             ws.append([
                 r["id"],
-                r["date"],
+                str(r["date"]),
                 r["type"],
                 r["entity"],
                 r["status"],
-                r["amount"],
+                float(r["amount"]),
                 r.get("currency", "VES")
             ])
 
