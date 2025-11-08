@@ -14,6 +14,8 @@ from django.core.exceptions import ValidationError
 from typing import Dict, Any, cast
 import calendar
 import requests
+import re
+from bs4 import BeautifulSoup
 
 # Excel
 from openpyxl import Workbook
@@ -107,23 +109,39 @@ def metrics_api(request):
 audit = logging.getLogger("audit")
 
 def get_bcv_rate() -> Decimal:
+    """
+    Consulta directamente la página oficial del BCV y extrae la tasa USD/VEF.
+    Si falla, retorna el fallback institucional.
+    """
     try:
-        response = requests.get("https://ve.dolarapi.com/v1/dollar", timeout=5)
+        response = requests.get("https://www.bcv.org.ve/", timeout=10)
         if response.status_code == 200:
-            data = response.json()
-            if data.get("fuente") == "BCV":
-                rate = Decimal(str(data["valor"]))
-                audit.info(f"Tasa BCV consultada: {rate} Bs/USD")
+            soup = BeautifulSoup(response.text, "lxml")
+
+            # 🔹 Intento 1: buscar div con id="dolar"
+            dolar_div = soup.find("div", {"id": "dolar"})
+            if dolar_div:
+                rate_text = dolar_div.text.strip()
+                rate = Decimal(rate_text.replace(",", "."))
+                audit.info(f"Tasa BCV consultada directamente: {rate} Bs/USD")
                 return rate
-            else:
-                audit.warning(f"Fuente inesperada: {data.get('fuente')}")
+
+            # 🔹 Intento 2: buscar cualquier <strong> que contenga "USD"
+            possible = soup.find("strong", text=re.compile("USD"))
+            if possible:
+                rate_text = possible.text.strip()
+                rate = Decimal(rate_text.replace(",", "."))
+                audit.info(f"Tasa BCV consultada (regex): {rate} Bs/USD")
+                return rate
+
+            audit.warning("No se encontró la tasa en la página BCV")
         else:
-            audit.warning(f"API BCV respondió con status {response.status_code}")
+            audit.warning(f"BCV respondió con status {response.status_code}")
     except Exception as e:
-        audit.error(f"Error al consultar DolarApi.com: {e}")
+        audit.error(f"Error al consultar BCV directamente: {e}")
+
     audit.info("Usando fallback BCV: 231.0462 Bs")
     return Decimal("231.0462")
-
 
 @extend_schema(
     parameters=[
