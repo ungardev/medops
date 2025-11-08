@@ -135,7 +135,7 @@ def fetch_bcv_html() -> str | None:
         page = context.new_page()
         try:
             page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
-            page.wait_for_selector("#sidebar_first #dolar strong", timeout=30000)
+            page.wait_for_selector("#dolar .centrado strong", timeout=30000)
             html = page.content()
         except Exception as e:
             audit.error(f"BCV: error al obtener HTML → {e}")
@@ -152,12 +152,12 @@ def fetch_bcv_html() -> str | None:
 def extract_bcv_rate(html: str) -> Decimal | None:
     """Extrae la tasa USD desde el bloque #dolar."""
     soup = BeautifulSoup(html, "html.parser")
-    dolar = soup.select_one("#sidebar_first #dolar strong")
+    dolar = soup.select_one("#dolar .centrado strong")
     raw = dolar.get_text(strip=True) if dolar else None
 
     if not raw:
         # fallback regex dentro del HTML
-        m = re.search(r"(\d{2,3}(?:\.\d{3})*,\d{2,8})", html)
+        m = re.search(r"\d{2,3}(?:\.\d{3})*,\d{2,8}", html)
         if not m:
             return None
         raw = m.group(1)
@@ -172,53 +172,48 @@ def extract_bcv_rate(html: str) -> Decimal | None:
         return None
 
 def get_bcv_rate() -> Decimal:
-    """Función principal: devuelve la tasa BCV o fallback."""
+    """Función principal: devuelve la tasa BCV, sin fallback."""
     html = fetch_bcv_html()
     if not html:
-        audit.error("BCV: no se pudo obtener HTML, usando fallback")
-        return Decimal("231.0462")
+        audit.error("BCV: no se pudo obtener HTML")
+        raise RuntimeError("BCV: no se pudo obtener HTML")
 
     rate = extract_bcv_rate(html)
     if not rate:
-        audit.error("BCV: no se pudo extraer tasa, usando fallback")
-        return Decimal("231.0462")
+        audit.error("BCV: no se pudo extraer tasa")
+        raise RuntimeError("BCV: no se pudo extraer tasa")
 
     audit.info(f"BCV: tasa capturada {rate} Bs/USD (real)")
     return rate
 
-# --- Endpoint REST ---
+
 @api_view(["GET"])
 def bcv_rate_api(request):
     """
     Endpoint REST para consultar la tasa oficial BCV.
-    Devuelve JSON con fuente, fecha, valor y bandera de fallback.
+    Devuelve JSON con fuente, fecha, valor.
+    Si falla, devuelve error 500 explícito.
     """
     try:
         rate = get_bcv_rate()
-        is_fallback = rate == Decimal("231.0462")
         data = {
             "source": "BCV",
             "date": date.today().isoformat(),
             "value": float(rate),
             "unit": "VES_per_USD",
             "precision": 6,
-            "is_fallback": is_fallback,
+            "is_fallback": False,
         }
         return Response(data, status=200)
     except Exception as e:
-        fallback = Decimal("231.0462")
-        audit.error(f"BCV: excepción en endpoint, usando fallback → {e}")
+        audit.error(f"BCV: excepción en endpoint → {e}")
         return Response(
             {
+                "error": str(e),
                 "source": "BCV",
                 "date": date.today().isoformat(),
-                "value": float(fallback),
-                "unit": "VES_per_USD",
-                "precision": 4,
-                "is_fallback": True,
-                "error": str(e),
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
