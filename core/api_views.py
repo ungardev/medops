@@ -126,13 +126,24 @@ def fetch_bcv_html() -> str | None:
         )
         page = context.new_page()
         try:
-            page.goto("https://www.bcv.org.ve/", wait_until="domcontentloaded", timeout=60000)
-            page.wait_for_selector("#dolar .centrado strong", timeout=15000)
+            # Usa networkidle para esperar que terminen las requests
+            page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
+            page.wait_for_selector("#dolar .centrado strong", timeout=25000)
             html = page.content()
         except Exception as e:
             audit.error(f"BCV: error al obtener HTML → {e}")
             html = None
         finally:
+            # Dump de evidencia para diagnóstico
+            try:
+                if html:
+                    with open("/tmp/bcv_dump.html", "w", encoding="utf-8") as f:
+                        f.write(html)
+                else:
+                    with open("/tmp/bcv_dump.html", "w", encoding="utf-8") as f:
+                        f.write("NO HTML CAPTURADO")
+            except Exception as dump_err:
+                audit.error(f"BCV: error al guardar dump HTML → {dump_err}")
             browser.close()
         return html
 
@@ -167,7 +178,7 @@ def get_bcv_rate() -> Decimal:
         audit.error("BCV: no se pudo extraer tasa, usando fallback")
         return Decimal("231.0462")
 
-    audit.info(f"BCV: tasa capturada {rate} Bs/USD")
+    audit.info(f"BCV: tasa capturada {rate} Bs/USD (real)")
     return rate
 
 # --- Endpoint REST ---
