@@ -151,20 +151,19 @@ def dashboard_summary_api(request):
         total_waived = waived_qs.count()
         estimated_waived_amount = waived_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
 
-        # 🔹 Clínico-operativo
-        appts_today = Appointment.objects.filter(appointment_date=today)
-        total_appointments = appts_today.count()
-        completed_appointments = appts_today.filter(status="completed").count()
-        pending_appointments = appts_today.exclude(status__in=["completed", "canceled"]).count()
+        # 🔹 Clínico-operativo (ajustado por rango)
+        appts_qs = Appointment.objects.filter(appointment_date__range=(start, end))
+        total_appointments = appts_qs.count()
+        completed_appointments = appts_qs.filter(status="completed").count()
+        pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
 
-        # ✅ FIX: WaitingRoomEntry no tiene 'active'
         waiting_room_count = WaitingRoomEntry.objects.filter(
-            arrival_time__date=today,
+            arrival_time__date__range=(start, end),
             status__in=["waiting", "in_consultation"]
         ).count()
 
         active_consultations = Appointment.objects.filter(
-            appointment_date=today,
+            appointment_date__range=(start, end),
             status="in_consultation"
         ).count()
 
