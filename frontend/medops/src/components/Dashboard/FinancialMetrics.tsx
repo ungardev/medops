@@ -4,15 +4,16 @@ import MetricCard from "./MetricCard";
 
 const FinancialMetrics: React.FC = () => {
   const [currency, setCurrency] = useState<"USD" | "VES">("USD");
-  const { data, isLoading } = useDashboard({ currency }); // ✅ pasar currency
+  const { data, isLoading } = useDashboard({ currency }); // ✅ pasar currency al hook
 
   if (isLoading) return <p>Cargando métricas financieras...</p>;
   if (!data) return <p>No se pudo cargar la información financiera.</p>;
 
+  // 🔹 El backend ya devuelve los montos convertidos según currency
   const formatAmount = (amount: number) =>
     currency === "USD"
       ? `$${amount.toLocaleString()}`
-      : `${(amount * 35).toLocaleString()} Bs`; // ⚠️ tasa temporal
+      : `${amount.toLocaleString()} Bs`;
 
   return (
     <section className="dashboard-widget">
@@ -23,7 +24,7 @@ const FinancialMetrics: React.FC = () => {
             <button
               key={c}
               className={`btn ${currency === c ? "btn-primary" : "btn-outline"}`}
-              onClick={() => setCurrency(c as any)}
+              onClick={() => setCurrency(c as "USD" | "VES")}
             >
               {c}
             </button>

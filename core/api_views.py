@@ -13,6 +13,7 @@ from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from typing import Dict, Any, cast
 import calendar
+import requests
 
 # Excel
 from openpyxl import Workbook
@@ -103,6 +104,19 @@ def metrics_api(request):
     return JsonResponse(data)
 
 
+def get_bcv_rate() -> Decimal:
+    """
+    Obtiene la tasa oficial del dólar en bolívares desde la API pública.
+    Si la API falla, retorna un valor de respaldo institucional.
+    """
+    try:
+        response = requests.get("https://api.dolarvzla.com/public/exchange-rate", timeout=5)
+        data = response.json()
+        return Decimal(str(data["usd"]))
+    except Exception:
+        return Decimal("231.0462")  # Fallback seguro basado en último valor publicado por BCV
+
+
 @extend_schema(
     parameters=[
         OpenApiParameter("start_date", str, OpenApiParameter.QUERY),
@@ -127,17 +141,14 @@ def dashboard_summary_api(request):
         # 🔹 Determinar rango institucional
         if range_param == "day":
             start = end = today
-
         elif range_param == "week":
             start = today - timedelta(days=today.weekday())  # lunes
             end = start + timedelta(days=6)                  # domingo
-
         elif range_param == "month":
             first_day = today.replace(day=1)
             last_day = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
             start = first_day
             end = last_day
-
         else:
             def parse_d(d):
                 try:
@@ -210,7 +221,7 @@ def dashboard_summary_api(request):
 
         # 🔹 Conversión de moneda
         if currency == "VES":
-            conversion_rate = Decimal("35")  # ⚠️ temporal
+            conversion_rate = get_bcv_rate()
             confirmed_amount *= conversion_rate
             estimated_waived_amount *= conversion_rate
             total_amount *= conversion_rate
@@ -246,8 +257,6 @@ def dashboard_summary_api(request):
         }
 
         return Response(data, status=200)
-    
-    
 
     except Exception as e:
         print("🔥 ERROR EN DASHBOARD SUMMARY 🔥")
