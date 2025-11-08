@@ -157,8 +157,16 @@ def dashboard_summary_api(request):
         completed_appointments = appts_today.filter(status="completed").count()
         pending_appointments = appts_today.exclude(status__in=["completed", "canceled"]).count()
 
-        waiting_room_count = WaitingRoomEntry.objects.filter(active=True).count()
-        active_consultations = Appointment.objects.filter(status="in_consultation").count()
+        # ✅ FIX: WaitingRoomEntry no tiene 'active'
+        waiting_room_count = WaitingRoomEntry.objects.filter(
+            arrival_time__date=today,
+            status__in=["waiting", "in_consultation"]
+        ).count()
+
+        active_consultations = Appointment.objects.filter(
+            appointment_date=today,
+            status="in_consultation"
+        ).count()
 
         # 🔹 Tendencias
         appt_trend_qs = (
@@ -233,7 +241,6 @@ def dashboard_summary_api(request):
         return Response(data, status=200)
 
     except Exception as e:
-        import traceback
         print("🔥 ERROR EN DASHBOARD SUMMARY 🔥")
         traceback.print_exc()
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
