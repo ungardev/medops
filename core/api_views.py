@@ -1268,10 +1268,15 @@ def reports_export_api(request):
     inst = InstitutionSettings.objects.first()
     doc_op = None
     try:
-        from .models import DoctorOperator
+        from .models import DoctorOperator, Report
         doc_op = DoctorOperator.objects.first()
     except Exception:
+        from .models import Report
         pass
+
+    # --- Query de reportes con serializer ---
+    rows = Report.objects.filter(**filters)
+    serialized = ReportRowSerializer(rows, many=True).data
 
     if export_format == "pdf":
         buffer = io.BytesIO()
@@ -1305,12 +1310,18 @@ def reports_export_api(request):
         elements.append(Paragraph(f"Filtros aplicados: {filters}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
-        # --- Tabla de datos (stub) ---
-        data = [
-            ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto"],
-            [1, "2025-11-07", "financial", "Paciente Demo", "confirmed", "50.00"],
-            [2, "2025-11-07", "clinical", "Paciente Demo 2", "completed", "0.00"],
-        ]
+        # --- Tabla de datos reales con serializer ---
+        data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
+        for r in serialized:
+            data.append([
+                r["id"],
+                r["date"],
+                r["type"],
+                r["entity"],
+                r["status"],
+                f"{r['amount']:.2f}",
+                r.get("currency", "VES")
+            ])
         table = Table(data, hAlign="LEFT")
         table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
@@ -1362,15 +1373,24 @@ def reports_export_api(request):
             ws["C4"] = f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}"
         ws["C6"] = f"Filtros aplicados: {filters}"
 
-        # --- Tabla de datos (stub) ---
-        headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto"]
+        # --- Tabla de datos reales con serializer ---
+        headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]
         ws.append([])
         ws.append(headers)
-        ws.append([1, "2025-11-07", "financial", "Paciente Demo", "confirmed", 50.00])
-        ws.append([2, "2025-11-07", "clinical", "Paciente Demo 2", "completed", 0.00])
+
+        for r in serialized:
+            ws.append([
+                r["id"],
+                r["date"],
+                r["type"],
+                r["entity"],
+                r["status"],
+                r["amount"],
+                r.get("currency", "VES")
+            ])
 
         # Estilo de encabezados
-        header_row = ws.max_row - 2
+        header_row = ws.max_row - len(serialized)
         for cell in ws[header_row]:
             cell.font = Font(bold=True, color="FFFFFF")
             cell.alignment = Alignment(horizontal="center")

@@ -504,14 +504,15 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
 class ReportRowSerializer(serializers.Serializer):
     """
     Serializer genérico para filas de reporte.
-    Compatible con el frontend ReportRow.ts.
+    Compatible con el frontend ReportRow.ts y usado en export PDF/Excel.
     """
     id = serializers.IntegerField()
-    date = serializers.DateField()
-    type = serializers.CharField()       # "financial" | "clinical" | "combined"
-    entity = serializers.CharField()     # paciente, procedimiento o entidad
+    date = serializers.DateField()        # por defecto ISO YYYY-MM-DD
+    type = serializers.CharField()        # "financial" | "clinical" | "combined"
+    entity = serializers.CharField()      # paciente, procedimiento o entidad
     status = serializers.CharField()
     amount = serializers.FloatField()
+    currency = serializers.CharField(default="VES")  # campo adicional opcional
 
 
 # --- Filtros de reportes ---
