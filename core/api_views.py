@@ -157,6 +157,9 @@ def dashboard_summary_api(request):
         completed_appointments = appts_qs.filter(status="completed").count()
         pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
 
+        # ✅ Nueva métrica: actividad clínica real
+        active_appointments = appts_qs.filter(status__in=["arrived", "in_consultation", "completed"]).count()
+
         waiting_room_count = WaitingRoomEntry.objects.filter(
             arrival_time__date__range=(start, end),
             status__in=["waiting", "in_consultation"]
@@ -222,6 +225,7 @@ def dashboard_summary_api(request):
         data = {
             "total_patients": total_patients,
             "total_appointments": total_appointments,
+            "active_appointments": active_appointments,  # 👈 nuevo campo
             "completed_appointments": completed_appointments,
             "pending_appointments": pending_appointments,
             "waiting_room_count": waiting_room_count,

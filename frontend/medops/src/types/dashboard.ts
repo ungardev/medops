@@ -4,20 +4,21 @@ export type DashboardSummary = {
   // 🔹 Pacientes y citas
   total_patients: number;
   total_appointments: number;
+  active_appointments: number;          // ✅ nuevo campo: citas con actividad clínica real
   completed_appointments: number;
   pending_appointments: number;
 
   // 🔹 Estado clínico en tiempo real
-  waiting_room_count?: number;     // pacientes en sala de espera
-  active_consultations?: number;   // pacientes actualmente en consulta
+  waiting_room_count?: number;          // pacientes en sala de espera
+  active_consultations?: number;        // pacientes actualmente en consulta
 
   // 🔹 Pagos y finanzas
-  total_payments: number;              // número de pagos confirmados
-  total_payments_amount: number;       // monto total facturado
-  total_waived: number;                // número de exoneraciones
-  estimated_waived_amount: number;     // monto estimado exonerado
-  financial_balance: number;           // balance acumulado
-  total_events: number;                // anulaciones / eventos críticos
+  total_payments: number;               // número de pagos confirmados
+  total_payments_amount: number;        // monto total facturado
+  total_waived: number;                 // número de exoneraciones
+  estimated_waived_amount: number;      // monto estimado exonerado
+  financial_balance: number;            // balance acumulado
+  total_events: number;                 // anulaciones / eventos críticos
 
   // 🔹 Tendencias
   appointments_trend: TrendPoint[];

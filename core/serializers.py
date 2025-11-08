@@ -576,10 +576,11 @@ class DashboardSummarySerializer(serializers.Serializer):
     # 🔹 Clínico
     total_patients = serializers.IntegerField()
     total_appointments = serializers.IntegerField()
+    active_appointments = serializers.IntegerField()     # ✅ nuevo campo
     completed_appointments = serializers.IntegerField()
     pending_appointments = serializers.IntegerField()
-    waiting_room_count = serializers.IntegerField()     # 👈 ahora obligatorio
-    active_consultations = serializers.IntegerField()   # 👈 ahora obligatorio
+    waiting_room_count = serializers.IntegerField()
+    active_consultations = serializers.IntegerField()
 
     # 🔹 Financiero
     total_payments = serializers.IntegerField()
