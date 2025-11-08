@@ -16,11 +16,19 @@ async function get<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+type DashboardParams = {
+  start_date?: string;
+  end_date?: string;
+  range?: "day" | "week" | "month";
+  currency?: "USD" | "VES";
+};
+
 export const DashboardAPI = {
-  summary: (params?: { start_date?: string; end_date?: string }) => {
-    const qp = params ? `?${new URLSearchParams(params as any).toString()}` : "";
+  summary: (params?: DashboardParams) => {
+    const query = params ? new URLSearchParams(params as any).toString() : "";
+    const qp = query ? `?${query}` : "";
     return get<import("@/types/dashboard").DashboardSummary>(
-      `/dashboard/summary/${qp}`
+      `/dashboard/summary${qp}`
     );
   },
 

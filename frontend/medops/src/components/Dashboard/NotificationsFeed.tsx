@@ -8,25 +8,42 @@ import { Link } from "react-router-dom";
 export default function NotificationsFeed() {
   const { data: notifications, isLoading } = useNotifications();
   const [selectedChargeOrder, setSelectedChargeOrder] = useState<number | null>(null);
+  const [filter, setFilter] = useState<"all" | "info" | "warning" | "critical">("all");
 
   if (isLoading) return <p>Cargando notificaciones...</p>;
   if (!notifications?.length) return <p>No hay notificaciones recientes.</p>;
 
+  // 🔹 Filtrar notificaciones según severidad
+  const filteredNotifications =
+    filter === "all"
+      ? notifications
+      : notifications.filter((n) => n.severity === filter);
+
   return (
-    <div className="card">
-      <h2 className="text-lg font-semibold mb-4">Notificaciones</h2>
+    <section className="dashboard-widget">
+      <div className="widget-header">
+        <h3>Notificaciones y eventos</h3>
+        <div className="widget-actions">
+          {["all", "info", "warning", "critical"].map((level) => (
+            <button
+              key={level}
+              className={`btn ${filter === level ? "btn-primary" : "btn-outline"}`}
+              onClick={() => setFilter(level as any)}
+            >
+              {level === "all"
+                ? "Todo"
+                : level.charAt(0).toUpperCase() + level.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <ul className="notifications-feed">
-        {notifications.map((n: NotificationEvent) => (
+        {filteredNotifications.map((n: NotificationEvent) => (
           <li
             key={n.id}
             className={`notification-item ${
-              n.severity === "success"
-                ? "notification-success"
-                : n.severity === "warning"
-                ? "notification-warning"
-                : n.severity === "critical"
-                ? "notification-critical"
-                : "notification-info"
+              n.severity ? `notification-${n.severity}` : "notification-info"
             }`}
           >
             <div>
@@ -44,6 +61,7 @@ export default function NotificationsFeed() {
               </p>
               <span className="notification-timestamp">
                 {moment(n.timestamp).fromNow()}
+                {n.actor ? ` • ${n.actor}` : ""}
               </span>
             </div>
 
@@ -77,6 +95,6 @@ export default function NotificationsFeed() {
           }}
         />
       )}
-    </div>
+    </section>
   );
 }

@@ -573,10 +573,15 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
 
 # --- Resumen ejecutivo del Dashboard ---
 class DashboardSummarySerializer(serializers.Serializer):
+    # 🔹 Clínico
     total_patients = serializers.IntegerField()
     total_appointments = serializers.IntegerField()
     completed_appointments = serializers.IntegerField()
     pending_appointments = serializers.IntegerField()
+    waiting_room_count = serializers.IntegerField()     # 👈 ahora obligatorio
+    active_consultations = serializers.IntegerField()   # 👈 ahora obligatorio
+
+    # 🔹 Financiero
     total_payments = serializers.IntegerField()
     total_events = serializers.IntegerField()
     total_waived = serializers.IntegerField()
@@ -584,6 +589,10 @@ class DashboardSummarySerializer(serializers.Serializer):
     estimated_waived_amount = serializers.FloatField()
     financial_balance = serializers.FloatField()
 
+    # 🔹 Tendencias
     appointments_trend = serializers.ListField()
     payments_trend = serializers.ListField()
     balance_trend = serializers.ListField()
+
+    # 🔹 Auditoría
+    event_log = serializers.ListField(required=False)

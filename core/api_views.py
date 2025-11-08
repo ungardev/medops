@@ -107,76 +107,106 @@ def metrics_api(request):
         OpenApiParameter("start_date", str, OpenApiParameter.QUERY),
         OpenApiParameter("end_date", str, OpenApiParameter.QUERY),
         OpenApiParameter("status", str, OpenApiParameter.QUERY),
+        OpenApiParameter("range", str, OpenApiParameter.QUERY, description="day|week|month"),
+        OpenApiParameter("currency", str, OpenApiParameter.QUERY, description="USD|VES"),
     ],
     responses={200: DashboardSummarySerializer}
 )
 @api_view(["GET"])
 def dashboard_summary_api(request):
-    # Rango de fechas
-    start_date = request.GET.get("start_date")
-    end_date = request.GET.get("end_date")
     today = localdate()
 
-    # Defaults: últimos 7 días
-    if not start_date or not end_date:
-        end_date = today
-        start_date = today - timezone.timedelta(days=6)
+    # 🔹 Parámetros
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    range_param = request.GET.get("range")
+    currency = request.GET.get("currency", "USD")
 
-    # Parse seguro
-    def parse_d(d):
-        try:
-            return parse_date(str(d))
-        except Exception:
-            return None
+    # 🔹 Determinar rango temporal
+    if range_param == "day":
+        start = today
+        end = today
+    elif range_param == "week":
+        start = today - timezone.timedelta(days=6)
+        end = today
+    elif range_param == "month":
+        start = today - timezone.timedelta(days=29)
+        end = today
+    else:
+        def parse_d(d):
+            try:
+                return parse_date(str(d))
+            except Exception:
+                return None
+        start = parse_d(start_date) or (today - timezone.timedelta(days=6))
+        end = parse_d(end_date) or today
 
-    start = parse_d(start_date) or (today - timezone.timedelta(days=6))
-    end = parse_d(end_date) or today
-
-    # Finanzas
+    # 🔹 Finanzas
     orders_qs = ChargeOrder.objects.exclude(status="void")
     total_amount = orders_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
     confirmed_amount = Payment.objects.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
     balance_due = orders_qs.aggregate(s=Sum("balance_due")).get("s") or Decimal("0")
-    # Fallidos: si luego implementamos pagos fallidos; por ahora 0
-    failed_amount = Decimal("0")
 
-    # 🔹 Exoneradas (waived)
     waived_qs = ChargeOrder.objects.filter(status="waived")
     total_waived = waived_qs.count()
     estimated_waived_amount = waived_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
 
-    # Clínico-operativo (día)
+    # 🔹 Clínico-operativo (día actual)
     appts_today = Appointment.objects.filter(appointment_date=today)
     total_appointments = appts_today.count()
     completed_appointments = appts_today.filter(status="completed").count()
     pending_appointments = appts_today.exclude(status__in=["completed", "canceled"]).count()
 
-    # Tendencias (últimos 7 días)
-    def date_range(d1, d2):
-        delta = (d2 - d1).days
-        return [d1 + timezone.timedelta(days=i) for i in range(delta + 1)]
+    waiting_room_count = WaitingRoomEntry.objects.filter(active=True).count()
+    active_consultations = Appointment.objects.filter(status="in_consultation").count()
 
-    days = date_range(start, end)
-    # Citas completadas por día
-    appt_trend = []
-    for d in days:
-        cnt = Appointment.objects.filter(appointment_date=d, status="completed").count()
-        appt_trend.append({"date": d.isoformat(), "value": cnt})
+    # 🔹 Tendencias optimizadas
+    appt_trend_qs = (
+        Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
+        .annotate(date=TruncDate("appointment_date"))
+        .values("date")
+        .annotate(value=Count("id"))
+        .order_by("date")
+    )
+    appt_trend = [{"date": str(row["date"]), "value": row["value"]} for row in appt_trend_qs]
 
-    # Pagos confirmados por día
-    pay_trend = []
-    for d in days:
-        amt = Payment.objects.filter(status="confirmed", received_at__date=d).aggregate(s=Sum("amount")).get("s") or Decimal("0")
-        pay_trend.append({"date": d.isoformat(), "value": float(amt)})
+    pay_trend_qs = (
+        Payment.objects.filter(status="confirmed", received_at__date__range=(start, end))
+        .annotate(date=TruncDate("received_at"))
+        .values("date")
+        .annotate(value=Sum("amount"))
+        .order_by("date")
+    )
+    pay_trend = [{"date": str(row["date"]), "value": float(row["value"] or 0)} for row in pay_trend_qs]
 
-    # Balance acumulado (total - balance_due) como indicador
-    balance_trend = []
-    for d in days:
-        total_d = ChargeOrder.objects.filter(issued_at__date=d).aggregate(s=Sum("total")).get("s") or Decimal("0")
-        balance_d = ChargeOrder.objects.filter(issued_at__date=d).aggregate(s=Sum("balance_due")).get("s") or Decimal("0")
-        balance_trend.append({"date": d.isoformat(), "value": float(max(total_d - balance_d, Decimal("0")))})
+    balance_trend_qs = (
+        ChargeOrder.objects.filter(issued_at__date__range=(start, end))
+        .annotate(date=TruncDate("issued_at"))
+        .values("date")
+        .annotate(
+            total=Sum("total"),
+            balance=Sum("balance_due"),
+        )
+        .order_by("date")
+    )
+    balance_trend = [
+        {"date": str(row["date"]), "value": float(max((row["total"] or 0) - (row["balance"] or 0), 0))}
+        for row in balance_trend_qs
+    ]
 
-    # Totales de apoyo
+    # 🔹 Conversión de moneda (temporal)
+    if currency == "VES":
+        conversion_rate = Decimal("35")  # ⚠️ temporal
+        confirmed_amount *= conversion_rate
+        estimated_waived_amount *= conversion_rate
+        total_amount *= conversion_rate
+        balance_due *= conversion_rate
+        for p in pay_trend:
+            p["value"] = float(Decimal(p["value"]) * conversion_rate)
+        for b in balance_trend:
+            b["value"] = float(Decimal(b["value"]) * conversion_rate)
+
+    # 🔹 Totales
     total_patients = Patient.objects.count()
     total_payments = Payment.objects.count()
     total_events = Event.objects.count()
@@ -186,11 +216,13 @@ def dashboard_summary_api(request):
         "total_appointments": total_appointments,
         "completed_appointments": completed_appointments,
         "pending_appointments": pending_appointments,
+        "waiting_room_count": waiting_room_count,
+        "active_consultations": active_consultations,
         "total_payments": total_payments,
         "total_events": total_events,
-        "total_waived": total_waived,  # 👈 ahora real
+        "total_waived": total_waived,
         "total_payments_amount": float(confirmed_amount),
-        "estimated_waived_amount": float(estimated_waived_amount),  # 👈 ahora real
+        "estimated_waived_amount": float(estimated_waived_amount),
         "financial_balance": float(max(total_amount - balance_due, Decimal("0"))),
         "appointments_trend": appt_trend,
         "payments_trend": pay_trend,

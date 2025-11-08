@@ -1,19 +1,31 @@
 export type TrendPoint = { date: string; value: number };
 
 export type DashboardSummary = {
+  // 🔹 Pacientes y citas
   total_patients: number;
   total_appointments: number;
   completed_appointments: number;
   pending_appointments: number;
-  total_payments: number;
-  total_events: number;
-  total_waived: number;
-  total_payments_amount: number;
-  estimated_waived_amount: number;
-  financial_balance: number;
+
+  // 🔹 Estado clínico en tiempo real
+  waiting_room_count?: number;     // pacientes en sala de espera
+  active_consultations?: number;   // pacientes actualmente en consulta
+
+  // 🔹 Pagos y finanzas
+  total_payments: number;              // número de pagos confirmados
+  total_payments_amount: number;       // monto total facturado
+  total_waived: number;                // número de exoneraciones
+  estimated_waived_amount: number;     // monto estimado exonerado
+  financial_balance: number;           // balance acumulado
+  total_events: number;                // anulaciones / eventos críticos
+
+  // 🔹 Tendencias
   appointments_trend: TrendPoint[];
   payments_trend: TrendPoint[];
   balance_trend: TrendPoint[];
+
+  // 🔹 Nuevo: trazabilidad institucional
+  event_log?: EventLogEntry[];
 };
 
 // --- Severidad de notificación ---
