@@ -108,19 +108,19 @@ audit = logging.getLogger("audit")
 
 def get_bcv_rate() -> Decimal:
     try:
-        response = requests.get("https://pydolarvenezuela-api.vercel.app/api/v1/dollar/bcv", timeout=5)
+        response = requests.get("https://ve.dolarapi.com/v1/dollar", timeout=5)
         if response.status_code == 200:
             data = response.json()
-            if data.get("source") == "BCV":
-                rate = Decimal(str(data["price"]))
+            if data.get("fuente") == "BCV":
+                rate = Decimal(str(data["valor"]))
                 audit.info(f"Tasa BCV consultada: {rate} Bs/USD")
                 return rate
             else:
-                audit.warning(f"Fuente inesperada: {data.get('source')}")
+                audit.warning(f"Fuente inesperada: {data.get('fuente')}")
         else:
             audit.warning(f"API BCV respondió con status {response.status_code}")
     except Exception as e:
-        audit.error(f"Error al consultar pyDolarVenezuela: {e}")
+        audit.error(f"Error al consultar DolarApi.com: {e}")
     audit.info("Usando fallback BCV: 231.0462 Bs")
     return Decimal("231.0462")
 
