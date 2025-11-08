@@ -106,16 +106,18 @@ def metrics_api(request):
 
 def get_bcv_rate() -> Decimal:
     try:
-        response = requests.get("https://api.dolarvzla.com/public/exchange-rate", timeout=5)
+        response = requests.get("https://ve.dolarapi.com/v1/dollar", timeout=5)
         if response.status_code == 200:
             data = response.json()
-            return Decimal(str(data.get("usd", "231.0462")))
+            if data.get("fuente") == "BCV":
+                return Decimal(str(data["valor"]))
+            else:
+                print("⚠️ Fuente no es BCV, ignorando")
         else:
-            print(f"⚠️ BCV API respondió con status {response.status_code}")
+            print(f"⚠️ API respondió con status {response.status_code}")
     except Exception as e:
-        print(f"⚠️ Error al consultar BCV API: {e}")
+        print(f"⚠️ Error al consultar DolarApi: {e}")
     return Decimal("231.0462")  # fallback seguro
-
 
 
 @extend_schema(
