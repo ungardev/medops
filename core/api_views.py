@@ -137,11 +137,11 @@ audit = logging.getLogger("audit")
 def get_bcv_rate() -> Decimal:
     """
     Consulta la página oficial del BCV usando Playwright.
-    Espera el selector correcto y simula un navegador real.
+    Captura el bloque dinámico de tipo de cambio y extrae la tasa USD.
     """
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
+            browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
             context = browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                            "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -151,13 +151,20 @@ def get_bcv_rate() -> Decimal:
             page = context.new_page()
             page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
 
-            # ⚔️ Ajusta el selector: en la página oficial la tasa aparece en un span dentro de div.tasa
-            page.wait_for_selector("div.tasa span", timeout=15000)
-            text = page.inner_text("div.tasa span")
+            # ⚔️ Espera el bloque dinámico
+            page.wait_for_selector("div.view-tipo-de-cambio", timeout=20000)
+            html = page.inner_html("div.view-tipo-de-cambio")
 
             browser.close()
 
-            rate = Decimal(text.replace(",", "."))
+            # ⚔️ Extrae el número con regex (ej: 35,94)
+            match = re.search(r"(\d+,\d+)", html)
+            if not match:
+                raise ValueError("No se encontró la tasa en el HTML")
+
+            rate_str = match.group(1).replace(",", ".")
+            rate = Decimal(rate_str)
+
             audit.info(f"Tasa BCV capturada: {rate} Bs/USD")
             return rate
     except Exception as e:
