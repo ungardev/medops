@@ -132,28 +132,36 @@ def bcv_rate_api(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
+
 audit = logging.getLogger("audit")
 
 def get_bcv_rate() -> Decimal:
     """
-    Consulta directamente la página oficial del BCV usando Playwright.
-    Si falla, retorna el fallback institucional.
+    Consulta la página oficial del BCV usando Playwright.
+    Espera el selector correcto y simula un navegador real.
     """
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto("https://www.bcv.org.ve/", timeout=30000)
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                           "AppleWebKit/537.36 (KHTML, like Gecko) "
+                           "Chrome/120.0 Safari/537.36"
+            )
+            page = context.new_page()
+            page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
 
-            # Ajusta el selector según el HTML renderizado del BCV
-            text = page.inner_text("div.centrado")
+            # Espera explícitamente el elemento donde aparece la tasa
+            page.wait_for_selector("div#dolar", timeout=15000)
+
+            text = page.inner_text("div#dolar")
             browser.close()
 
             rate = Decimal(text.replace(",", "."))
-            audit.info(f"Tasa BCV consultada con Playwright: {rate} Bs/USD")
+            audit.info(f"Tasa BCV capturada: {rate} Bs/USD")
             return rate
     except Exception as e:
-        audit.error(f"Error al consultar BCV con Playwright: {e}")
+        audit.error(f"Error al consultar BCV: {e}")
         audit.info("Usando fallback BCV: 231.0462 Bs")
         return Decimal("231.0462")
 
