@@ -246,6 +246,8 @@ def dashboard_summary_api(request):
         }
 
         return Response(data, status=200)
+    
+    
 
     except Exception as e:
         print("🔥 ERROR EN DASHBOARD SUMMARY 🔥")
