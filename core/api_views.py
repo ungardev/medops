@@ -135,42 +135,36 @@ def bcv_rate_api(request):
 audit = logging.getLogger("audit")
 
 def get_bcv_rate() -> Decimal:
-    """
-    Consulta la página oficial del BCV usando Playwright.
-    Captura el bloque dinámico de tipo de cambio y extrae la tasa USD.
-    """
-    try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-            context = browser.new_context(
-                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                           "AppleWebKit/537.36 (KHTML, like Gecko) "
-                           "Chrome/120.0 Safari/537.36",
-                locale="es-VE"
-            )
-            page = context.new_page()
-            page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
+        context = browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/120.0 Safari/537.36",
+            locale="es-VE"
+        )
+        page = context.new_page()
+        page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
 
-            # ⚔️ Espera el bloque dinámico
-            page.wait_for_selector("div.view-tipo-de-cambio", timeout=20000)
-            html = page.inner_html("div.view-tipo-de-cambio")
+        # ⚔️ Espera la tabla de tipo de cambio
+        page.wait_for_selector("div.view-tipo-de-cambio table", timeout=20000)
 
-            browser.close()
+        # Busca la fila del USD
+        rows = page.query_selector_all("div.view-tipo-de-cambio table tbody tr")
+        rate = None
+        for row in rows:
+            text = row.inner_text()
+            if "USD" in text:
+                parts = text.split()
+                for part in parts:
+                    if "," in part:
+                        rate = Decimal(part.replace(",", "."))
+                        break
+        browser.close()
 
-            # ⚔️ Extrae el número con regex (ej: 35,94)
-            match = re.search(r"(\d+,\d+)", html)
-            if not match:
-                raise ValueError("No se encontró la tasa en el HTML")
-
-            rate_str = match.group(1).replace(",", ".")
-            rate = Decimal(rate_str)
-
-            audit.info(f"Tasa BCV capturada: {rate} Bs/USD")
-            return rate
-    except Exception as e:
-        audit.error(f"Error al consultar BCV: {e}")
-        audit.info("Usando fallback BCV: 231.0462 Bs")
-        return Decimal("231.0462")
+        if not rate:
+            raise ValueError("No se encontró la tasa USD en la tabla")
+        return rate
 
 
 @extend_schema(
