@@ -134,7 +134,25 @@ def bcv_rate_api(request):
 
 audit = logging.getLogger("audit")
 
-def get_bcv_rate() -> Decimal:
+def extract_bcv_from_html(html: str):
+    soup = BeautifulSoup(html, "html.parser")
+    dolar = soup.select_one("#dolar .centrado strong")
+    raw = dolar.get_text(strip=True) if dolar else None
+    if not raw:
+        m = re.search(r"(\d{2,3}(?:\.\d{3})*,\d{2,8})", html)
+        if not m:
+            return None, None
+        raw = m.group(1)
+    normalized = raw.replace(".", "").replace(",", ".")
+    try:
+        rate = Decimal(normalized)
+    except Exception:
+        return None, None
+    date_el = soup.select_one(".pull-right.dinpro .date-display-single")
+    value_date_iso = date_el.get("content") if date_el else None
+    return rate, value_date_iso
+
+def fetch_bcv_html(max_retries: int = 3) -> str | None:
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
         context = browser.new_context(
@@ -144,27 +162,36 @@ def get_bcv_rate() -> Decimal:
             locale="es-VE"
         )
         page = context.new_page()
-        page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
-
-        # ⚔️ Espera la tabla de tipo de cambio
-        page.wait_for_selector("div.view-tipo-de-cambio table", timeout=20000)
-
-        # Busca la fila del USD
-        rows = page.query_selector_all("div.view-tipo-de-cambio table tbody tr")
-        rate = None
-        for row in rows:
-            text = row.inner_text()
-            if "USD" in text:
-                parts = text.split()
-                for part in parts:
-                    if "," in part:
-                        rate = Decimal(part.replace(",", "."))
-                        break
+        for attempt in range(1, max_retries + 1):
+            try:
+                page.goto("https://www.bcv.org.ve/", wait_until="domcontentloaded", timeout=60000)
+                try:
+                    page.wait_for_selector("#dolar .centrado strong", timeout=5000)
+                except Exception:
+                    pass
+                html = page.content()
+                browser.close()
+                return html
+            except Exception:
+                time.sleep(1.25 * attempt)
+                continue
         browser.close()
+        return None
 
-        if not rate:
-            raise ValueError("No se encontró la tasa USD en la tabla")
-        return rate
+def get_bcv_rate() -> Decimal:
+    t0 = time.time()
+    html = fetch_bcv_html()
+    if not html:
+        audit.error("BCV: no se pudo obtener HTML")
+        return Decimal("231.0462")
+    rate, value_date_iso = extract_bcv_from_html(html)
+    elapsed = int((time.time() - t0) * 1000)
+    if rate is None:
+        sample = html[:1200].replace("\n", " ")
+        audit.error(f"BCV: extracción fallida; elapsed_ms={elapsed}; sample='{sample}'")
+        return Decimal("231.0462")
+    audit.info(f"BCV: tasa {rate} Bs/USD capturada; fecha_valor={value_date_iso}; elapsed_ms={elapsed}")
+    return rate
 
 
 @extend_schema(
@@ -1614,12 +1641,6 @@ def doctor_operator_settings_api(request):
         return Response(serializer.data)
 
     # PUT o PATCH → actualización parcial
-    serializer = DoctorOperatorSerializer(obj, data=request.data, partial=True)
-    serializer.is_valid(raise_exception=True)
-    serializer.save(updated_by=request.user)
-    return Response(serializer.data)
-
-
     serializer = DoctorOperatorSerializer(obj, data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
     serializer.save(updated_by=request.user)
