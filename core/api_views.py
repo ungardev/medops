@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from datetime import datetime, date, timedelta
 from django.conf import settings
 from django.db import transaction
@@ -116,32 +116,34 @@ def fetch_bcv_html() -> str | None:
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
-            args=["--disable-blink-features=AutomationControlled"]
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+            ]
         )
         context = browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                       "AppleWebKit/537.36 (KHTML, like Gecko) "
-                       "Chrome/120.0 Safari/537.36",
-            locale="es-VE"
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            locale="es-VE",
+            viewport={"width": 1366, "height": 900},
+            timezone_id="America/Caracas",
         )
         page = context.new_page()
         try:
-            # Usa networkidle para esperar que terminen las requests
             page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=60000)
-            page.wait_for_selector("#dolar .centrado strong", timeout=25000)
+            page.wait_for_selector("#sidebar_first #dolar strong", timeout=30000)
             html = page.content()
         except Exception as e:
             audit.error(f"BCV: error al obtener HTML → {e}")
             html = None
         finally:
-            # Dump de evidencia para diagnóstico
             try:
-                if html:
-                    with open("/tmp/bcv_dump.html", "w", encoding="utf-8") as f:
-                        f.write(html)
-                else:
-                    with open("/tmp/bcv_dump.html", "w", encoding="utf-8") as f:
-                        f.write("NO HTML CAPTURADO")
+                with open("/tmp/bcv_dump.html", "w", encoding="utf-8") as f:
+                    f.write(html or "NO HTML CAPTURADO")
             except Exception as dump_err:
                 audit.error(f"BCV: error al guardar dump HTML → {dump_err}")
             browser.close()
@@ -150,7 +152,7 @@ def fetch_bcv_html() -> str | None:
 def extract_bcv_rate(html: str) -> Decimal | None:
     """Extrae la tasa USD desde el bloque #dolar."""
     soup = BeautifulSoup(html, "html.parser")
-    dolar = soup.select_one("#dolar .centrado strong")
+    dolar = soup.select_one("#sidebar_first #dolar strong")
     raw = dolar.get_text(strip=True) if dolar else None
 
     if not raw:
@@ -162,8 +164,11 @@ def extract_bcv_rate(html: str) -> Decimal | None:
 
     normalized = raw.replace(".", "").replace(",", ".")
     try:
-        return Decimal(normalized)
-    except Exception:
+        rate = Decimal(normalized)
+        if rate <= 0:
+            return None
+        return rate
+    except (InvalidOperation, Exception):
         return None
 
 def get_bcv_rate() -> Decimal:
@@ -196,14 +201,24 @@ def bcv_rate_api(request):
             "date": date.today().isoformat(),
             "value": float(rate),
             "unit": "VES_per_USD",
-            "precision": 4,
+            "precision": 6,
             "is_fallback": is_fallback,
         }
         return Response(data, status=200)
     except Exception as e:
+        fallback = Decimal("231.0462")
+        audit.error(f"BCV: excepción en endpoint, usando fallback → {e}")
         return Response(
-            {"error": "No se pudo obtener la tasa BCV", "detalle": str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            {
+                "source": "BCV",
+                "date": date.today().isoformat(),
+                "value": float(fallback),
+                "unit": "VES_per_USD",
+                "precision": 4,
+                "is_fallback": True,
+                "error": str(e),
+            },
+            status=status.HTTP_200_OK
         )
 
 
