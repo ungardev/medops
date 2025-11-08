@@ -877,3 +877,42 @@ h3 { font-size: 1.2rem; }
   border: 1px solid var(--danger);
   color: var(--danger);
 }
+
+.metric-card {
+  position: relative;
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tooltip-icon {
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: 6px;
+}
+
+.tooltip-icon:hover {
+  color: #007bff; /* azul institucional */
+}
+
+.tooltip-icon[title] {
+  position: relative;
+}
+
+.tooltip-icon[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  z-index: 10;
+}

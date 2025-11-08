@@ -1,5 +1,5 @@
 from decimal import Decimal
-from datetime import datetime, time
+from datetime import datetime, time, date, timedelta
 from django.conf import settings
 from django.db import transaction
 from django.db.models import Count, Sum, Q
@@ -12,6 +12,7 @@ from django.utils.timezone import now, localdate, make_aware
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from typing import Dict, Any, cast
+import calendar
 
 # Excel
 from openpyxl import Workbook
@@ -123,22 +124,27 @@ def dashboard_summary_api(request):
         range_param = request.GET.get("range")
         currency = request.GET.get("currency", "USD")
 
-        # 🔹 Determinar rango temporal
+        # 🔹 Determinar rango institucional
         if range_param == "day":
             start = end = today
+
         elif range_param == "week":
-            start = today - timezone.timedelta(days=6)
-            end = today
+            start = today - timedelta(days=today.weekday())  # lunes
+            end = start + timedelta(days=6)                  # domingo
+
         elif range_param == "month":
-            start = today - timezone.timedelta(days=29)
-            end = today
+            first_day = today.replace(day=1)
+            last_day = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+            start = first_day
+            end = last_day
+
         else:
             def parse_d(d):
                 try:
                     return parse_date(str(d))
                 except Exception:
                     return None
-            start = parse_d(start_date) or (today - timezone.timedelta(days=6))
+            start = parse_d(start_date) or (today - timedelta(days=6))
             end = parse_d(end_date) or today
 
         # 🔹 Finanzas
@@ -151,13 +157,11 @@ def dashboard_summary_api(request):
         total_waived = waived_qs.count()
         estimated_waived_amount = waived_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
 
-        # 🔹 Clínico-operativo (ajustado por rango)
+        # 🔹 Clínico-operativo
         appts_qs = Appointment.objects.filter(appointment_date__range=(start, end))
         total_appointments = appts_qs.count()
         completed_appointments = appts_qs.filter(status="completed").count()
         pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
-
-        # ✅ Nueva métrica: actividad clínica real
         active_appointments = appts_qs.filter(status__in=["arrived", "in_consultation", "completed"]).count()
 
         waiting_room_count = WaitingRoomEntry.objects.filter(
@@ -225,7 +229,7 @@ def dashboard_summary_api(request):
         data = {
             "total_patients": total_patients,
             "total_appointments": total_appointments,
-            "active_appointments": active_appointments,  # 👈 nuevo campo
+            "active_appointments": active_appointments,
             "completed_appointments": completed_appointments,
             "pending_appointments": pending_appointments,
             "waiting_room_count": waiting_room_count,
