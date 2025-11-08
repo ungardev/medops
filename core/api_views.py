@@ -1319,15 +1319,18 @@ def reports_export_api(request):
         # --- Tabla de datos reales con serializer ---
         data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
         for r in serialized:
-            data.append([
-                r["id"],
-                str(r["date"]),
-                r["type"],
-                r["entity"],
-                r["status"],
-                f"{float(r['amount']):.2f}",
-                r.get("currency", "VES")
-            ])
+            try:
+                data.append([
+                    r.get("id"),
+                    str(r.get("date")),
+                    r.get("type"),
+                    r.get("entity"),
+                    r.get("status"),
+                    f"{float(r.get('amount', 0)):.2f}",
+                    r.get("currency", "VES")
+                ])
+            except Exception as e:
+                continue
         table = Table(data, hAlign="LEFT")
         table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
@@ -1385,15 +1388,18 @@ def reports_export_api(request):
         ws.append(headers)
 
         for r in serialized:
-            ws.append([
-                r["id"],
-                str(r["date"]),
-                r["type"],
-                r["entity"],
-                r["status"],
-                float(r["amount"]),
-                r.get("currency", "VES")
-            ])
+            try:
+                ws.append([
+                    r.get("id"),
+                    str(r.get("date")),
+                    r.get("type"),
+                    r.get("entity"),
+                    r.get("status"),
+                    float(r.get("amount", 0)),
+                    r.get("currency", "VES")
+                ])
+            except Exception as e:
+                continue
 
         # Estilo de encabezados
         header_row = ws.max_row - len(serialized)
