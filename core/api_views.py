@@ -105,16 +105,17 @@ def metrics_api(request):
 
 
 def get_bcv_rate() -> Decimal:
-    """
-    Obtiene la tasa oficial del dólar en bolívares desde la API pública.
-    Si la API falla, retorna un valor de respaldo institucional.
-    """
     try:
         response = requests.get("https://api.dolarvzla.com/public/exchange-rate", timeout=5)
-        data = response.json()
-        return Decimal(str(data["usd"]))
-    except Exception:
-        return Decimal("231.0462")  # Fallback seguro basado en último valor publicado por BCV
+        if response.status_code == 200:
+            data = response.json()
+            return Decimal(str(data.get("usd", "231.0462")))
+        else:
+            print(f"⚠️ BCV API respondió con status {response.status_code}")
+    except Exception as e:
+        print(f"⚠️ Error al consultar BCV API: {e}")
+    return Decimal("231.0462")  # fallback seguro
+
 
 
 @extend_schema(
