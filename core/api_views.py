@@ -1246,6 +1246,8 @@ def scaled_excel_image(path: str, max_width: int, max_height: int) -> XLImage:
     return img
 
 
+logger = logging.getLogger(__name__)
+
 @extend_schema(
     request=ReportExportSerializer,
     responses={200: OpenApiResponse(description="Archivo PDF/Excel exportado")},
@@ -1253,190 +1255,177 @@ def scaled_excel_image(path: str, max_width: int, max_height: int) -> XLImage:
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def reports_export_api(request):
-    """
-    Exporta un reporte en PDF o Excel según los filtros.
-    Layout institucional con logo, encabezado, tabla y pie de auditoría.
-    """
-    serializer = ReportExportSerializer(data=request.data)
-    serializer.is_valid(raise_exception=True)
-
-    validated: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
-    export_format = validated["format"]
-    filters = validated.get("filters", {})
-
-    # --- Configuración institucional y médico operador ---
-    inst = InstitutionSettings.objects.first()
-    doc_op = None
     try:
-        from .models import DoctorOperator, Report
-        doc_op = DoctorOperator.objects.first()
-    except Exception:
-        from .models import Report
-        pass
+        serializer = ReportExportSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-    # --- Query de reportes con manejo seguro ---
-    try:
-        rows = Report.objects.all()
-        if filters:
-            rows = rows.filter(**filters)
-    except Exception as e:
-        return Response({"error": f"Filtros inválidos: {str(e)}"}, status=400)
+        validated: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
+        export_format = validated["format"]
+        filters = validated.get("filters", {})
 
-    serialized = ReportRowSerializer(rows, many=True).data
+        inst = InstitutionSettings.objects.first()
+        doc_op = None
+        try:
+            from .models import DoctorOperator, Report
+            doc_op = DoctorOperator.objects.first()
+        except Exception:
+            from .models import Report
+            pass
 
-    if export_format == "pdf":
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
-        elements = []
-        styles = getSampleStyleSheet()
+        try:
+            rows = Report.objects.all()
+            if filters:
+                rows = rows.filter(**filters)
+        except Exception as e:
+            return Response({"error": f"Filtros inválidos: {str(e)}"}, status=400)
 
-        # --- Logo institucional ---
-        if inst and inst.logo and os.path.exists(inst.logo.path):
-            logo = scaled_image(inst.logo.path, max_width=120, max_height=120)
-            elements.append(logo)
+        serialized = ReportRowSerializer(rows, many=True).data
+
+        if export_format == "pdf":
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            elements = []
+            styles = getSampleStyleSheet()
+
+            # Desactiva temporalmente imágenes para aislar error
+            # if inst and inst.logo and os.path.exists(inst.logo.path):
+            #     logo = scaled_image(inst.logo.path, max_width=120, max_height=120)
+            #     elements.append(logo)
+            #     elements.append(Spacer(1, 12))
+
+            if inst:
+                elements.append(Paragraph(f"<b>{inst.name}</b>", styles["Title"]))
+                elements.append(Paragraph(f"Dirección: {inst.address}", styles["Normal"]))
+                elements.append(Paragraph(f"Tel: {inst.phone} • RIF: {inst.tax_id}", styles["Normal"]))
+                elements.append(Spacer(1, 12))
+
+            if doc_op:
+                elements.append(Paragraph(
+                    f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}",
+                    styles["Normal"]
+                ))
+                elements.append(Spacer(1, 8))
+
+            elements.append(Paragraph("<b>Reporte Institucional</b>", styles["Heading2"]))
+            elements.append(Paragraph(f"Filtros aplicados: {filters}", styles["Normal"]))
             elements.append(Spacer(1, 12))
 
-        # --- Encabezado institucional ---
-        if inst:
-            elements.append(Paragraph(f"<b>{inst.name}</b>", styles["Title"]))
-            elements.append(Paragraph(f"Dirección: {inst.address}", styles["Normal"]))
-            elements.append(Paragraph(f"Tel: {inst.phone} • RIF: {inst.tax_id}", styles["Normal"]))
-            elements.append(Spacer(1, 12))
-
-        # --- Identidad del médico operador ---
-        if doc_op:
-            elements.append(Paragraph(
-                f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}",
-                styles["Normal"]
-            ))
-            elements.append(Spacer(1, 8))
-
-        # --- Título del reporte ---
-        elements.append(Paragraph("<b>Reporte Institucional</b>", styles["Heading2"]))
-        elements.append(Paragraph(f"Filtros aplicados: {filters}", styles["Normal"]))
-        elements.append(Spacer(1, 12))
-
-        # --- Tabla de datos reales con serializer ---
-        data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
-        for r in serialized:
-            try:
+            data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
+            for r in serialized:
                 data.append([
                     r.get("id"),
                     str(r.get("date")),
                     r.get("type"),
                     r.get("entity"),
                     r.get("status"),
-                    f"{float(r.get('amount', 0)):.2f}",
+                    f"{float(r.get('amount', 0) or 0):.2f}",
                     r.get("currency", "VES")
                 ])
-            except Exception as e:
-                continue
-        table = Table(data, hAlign="LEFT")
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
-        ]))
-        elements.append(table)
-        elements.append(Spacer(1, 24))
+            table = Table(data, hAlign="LEFT")
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ]))
+            elements.append(table)
+            elements.append(Spacer(1, 24))
 
-        # --- Firma del médico ---
-        if doc_op and doc_op.signature and os.path.exists(doc_op.signature.path):
-            sig_img = scaled_image(doc_op.signature.path, max_width=100, max_height=50)
-            elements.append(sig_img)
-        else:
+            # Desactiva firma temporalmente para aislar error
+            # if doc_op and doc_op.signature and os.path.exists(doc_op.signature.path):
+            #     sig_img = scaled_image(doc_op.signature.path, max_width=100, max_height=50)
+            #     elements.append(sig_img)
+            # else:
             elements.append(Paragraph("__________________________", styles["Normal"]))
             elements.append(Paragraph("Firma Digital", styles["Italic"]))
-        elements.append(Spacer(1, 12))
+            elements.append(Spacer(1, 12))
 
-        # --- Pie de auditoría ---
-        user = str(request.user) if request.user.is_authenticated else "system"
-        elements.append(Paragraph(f"Generado por: {user}", styles["Normal"]))
-        elements.append(Paragraph(f"Fecha de generación: {now().strftime('%Y-%m-%d %H:%M:%S')}", styles["Normal"]))
+            user = str(request.user) if request.user.is_authenticated else "system"
+            elements.append(Paragraph(f"Generado por: {user}", styles["Normal"]))
+            elements.append(Paragraph(f"Fecha de generación: {now().strftime('%Y-%m-%d %H:%M:%S')}", styles["Normal"]))
 
-        doc.build(elements)
-        buffer.seek(0)
-        return FileResponse(buffer, as_attachment=True, filename="reporte.pdf")
+            doc.build(elements)
+            buffer.seek(0)
+            return FileResponse(buffer, as_attachment=True, filename="reporte.pdf")
 
-    elif export_format == "excel":
-        buffer = io.BytesIO()
-        wb = Workbook()
-        ws: Worksheet = cast(Worksheet, wb.active)
-        ws.title = "Reporte Institucional"
+        elif export_format == "excel":
+            buffer = io.BytesIO()
+            wb = Workbook()
+            ws: Worksheet = cast(Worksheet, wb.active)
+            ws.title = "Reporte Institucional"
 
-        # --- Logo institucional ---
-        if inst and inst.logo and os.path.exists(inst.logo.path):
-            img = scaled_excel_image(inst.logo.path, max_width=120, max_height=120)
-            ws.add_image(img, "A1")
+            # Desactiva temporalmente logo para aislar error
+            # if inst and inst.logo and os.path.exists(inst.logo.path):
+            #     img = scaled_excel_image(inst.logo.path, max_width=120, max_height=120)
+            #     ws.add_image(img, "A1")
 
-        # --- Encabezado institucional ---
-        if inst:
-            ws["C1"] = inst.name
-            ws["C1"].font = Font(bold=True, size=14)
-            ws["C2"] = f"Dirección: {inst.address}"
-            ws["C3"] = f"Tel: {inst.phone} • RIF: {inst.tax_id}"
-        if doc_op:
-            ws["C4"] = f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}"
-        ws["C6"] = f"Filtros aplicados: {filters}"
+            if inst:
+                ws["C1"] = inst.name
+                ws["C1"].font = Font(bold=True, size=14)
+                ws["C2"] = f"Dirección: {inst.address}"
+                ws["C3"] = f"Tel: {inst.phone} • RIF: {inst.tax_id}"
+            if doc_op:
+                ws["C4"] = f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}"
+            ws["C6"] = f"Filtros aplicados: {filters}"
 
-        # --- Tabla de datos reales con serializer ---
-        headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]
-        ws.append([])
-        ws.append(headers)
+            headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]
+            ws.append([])
+            ws.append(headers)
 
-        for r in serialized:
-            try:
+            for r in serialized:
                 ws.append([
                     r.get("id"),
                     str(r.get("date")),
                     r.get("type"),
                     r.get("entity"),
                     r.get("status"),
-                    float(r.get("amount", 0)),
+                    float(r.get("amount", 0) or 0),
                     r.get("currency", "VES")
                 ])
-            except Exception as e:
-                continue
 
-        # Estilo de encabezados
-        header_row = ws.max_row - len(serialized)
-        for cell in ws[header_row]:
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.alignment = Alignment(horizontal="center")
-            cell.fill = PatternFill(start_color="003366", end_color="003366", fill_type="solid")
+            header_row = ws.max_row - len(serialized)
+            for cell in ws[header_row]:
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.alignment = Alignment(horizontal="center")
+                cell.fill = PatternFill(start_color="003366", end_color="003366", fill_type="solid")
 
-        # Colores alternos en filas
-        for row_idx, row in enumerate(ws.iter_rows(min_row=header_row+1, max_row=ws.max_row), start=0):
-            fill_color = "F2F2F2" if row_idx % 2 == 0 else "FFFFFF"
-            for cell in row:
-                cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
+            for row_idx, row in enumerate(ws.iter_rows(min_row=header_row+1, max_row=ws.max_row), start=0):
+                fill_color = "F2F2F2" if row_idx % 2 == 0 else "FFFFFF"
+                for cell in row:
+                    cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
 
-        # Ajuste automático de columnas
-        for col in ws.columns:
-            max_length = 0
-            col_letter = col[0].column_letter
-            for cell in col:
-                try:
-                    if cell.value:
-                        max_length = max(max_length, len(str(cell.value)))
-                except:
-                    pass
-            ws.column_dimensions[col_letter].width = max_length + 2
+            for col in ws.columns:
+                max_length = 0
+                col_letter = col[0].column_letter
+                for cell in col:
+                    try:
+                        if cell.value:
+                            max_length = max(max_length, len(str(cell.value)))
+                    except:
+                        pass
+                ws.column_dimensions[col_letter].width = max_length + 2
 
-        # --- Pie de auditoría ---
-        user = str(request.user) if request.user.is_authenticated else "system"
-        ws.append([])
-        ws.append([f"Generado por: {user}"])
-        ws.append([f"Fecha de generación: {now().strftime('%Y-%m-%d %H:%M:%S')}"])
+            user = str(request.user) if request.user.is_authenticated else "system"
+            ws.append([])
+            ws.append([f"Generado por: {user}"])
+            ws.append([f"Fecha de generación: {now().strftime('%Y-%m-%d %H:%M:%S')}"])
 
-        wb.save(buffer)
-        buffer.seek(0)
-        return FileResponse(buffer, as_attachment=True, filename="reporte.xlsx")
+            wb.save(buffer)
+            buffer.seek(0)
+            return FileResponse(buffer, as_attachment=True, filename="reporte.xlsx")
 
-    return Response({"error": "Formato no soportado"}, status=400)
+        return Response({"error": "Formato no soportado"}, status=400)
+
+    except Exception as e:
+        tb = traceback.format_exc()
+        logger.error(f"Export error: {e}\n{tb}")
+        return Response(
+            {"error": str(e), "traceback": tb},
+            status=500,
+            content_type="application/json"
+        )
 
 
 @api_view(["GET", "PUT", "PATCH"])
