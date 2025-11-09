@@ -20,12 +20,12 @@ export type WaitingRoomSourceType =
 
 // --- Entrada de la sala de espera
 export interface WaitingRoomEntry {
-  id: number;
-  patient: PatientRef;          // objeto { id, name }
+  id: number | string;               // 👈 permite ID temporal para optimistic update
+  patient: PatientRef;              // objeto { id, full_name }
   appointment_id: number | null;
-  appointment_status?: WaitingRoomStatus; // 👈 añadido como opcional
+  appointment_status?: WaitingRoomStatus;
   status: WaitingRoomStatus;
-  arrival_time: string | null;  // ISO string
+  arrival_time: string | null;      // ISO string
   priority: WaitingRoomPriority;
   source_type: WaitingRoomSourceType;
   order: number;
@@ -33,7 +33,7 @@ export interface WaitingRoomEntry {
 
 // --- Datos de entrada para crear/editar entrada en sala de espera
 export interface WaitingRoomEntryInput {
-  patient: number;              // id del paciente
+  patient: number;                  // id del paciente
   appointment_id: number | null;
   priority?: WaitingRoomPriority;
   source_type?: WaitingRoomSourceType;
@@ -41,7 +41,7 @@ export interface WaitingRoomEntryInput {
 
 // --- Grupo de sala de espera por estado
 export interface WaitingroomGroupByStatus {
-  status: string; // waiting, in_consultation, completed, canceled, pending
+  status: string;                   // waiting, in_consultation, completed, canceled, pending
   total: number;
 }
 

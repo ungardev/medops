@@ -666,3 +666,14 @@ class BCVRateCache(models.Model):
 
     def __str__(self):
         return f"{self.date} → {self.value}"
+
+
+class MedicalReport(models.Model):
+    appointment = models.ForeignKey("Appointment", on_delete=models.CASCADE, related_name="medical_reports")
+    patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="medical_reports")
+    created_at = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, default="generated")
+    file_url = models.CharField(max_length=255, blank=True, null=True)  # opcional, si guardas PDF
+
+    def __str__(self):
+        return f"Informe Médico #{self.id} - Paciente {self.patient_id}"

@@ -1,21 +1,17 @@
-// src/hooks/useRegisterArrival.ts
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
+import type { WaitingRoomEntry } from "../../types/waitingRoom";
 
 export function useRegisterArrival() {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (payload: { patient_id: number; appointment_id?: number }) => {
-      return apiFetch("waitingroom/register/", {
+    // 🔹 Tipado estricto: devuelve el objeto completo
+    mutationFn: async (
+      payload: { patient_id: number; appointment_id?: number }
+    ): Promise<WaitingRoomEntry> => {
+      return apiFetch<WaitingRoomEntry>("waitingroom/register/", {
         method: "POST",
         body: JSON.stringify(payload),
       });
-    },
-    onSuccess: () => {
-      // 🔹 invalida también la query de la sala de espera
-      queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
-      queryClient.invalidateQueries({ queryKey: ["waitingroomGroupsToday"] });
     },
   });
 }

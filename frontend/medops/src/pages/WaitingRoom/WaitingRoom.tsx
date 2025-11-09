@@ -111,7 +111,7 @@ export default function WaitingRoom() {
   useEffect(() => {
     const interval = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
-    }, 5000); // refresco automático cada 5s
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -121,13 +121,40 @@ export default function WaitingRoom() {
         updateAppointmentStatus.mutate({ id: entry.appointment_id, status: newStatus });
       }
     } else {
-      updateWaitingRoomStatus.mutate({ id: entry.id, status: newStatus });
+      if (typeof entry.id === "number") {
+        updateWaitingRoomStatus.mutate({ id: entry.id, status: newStatus });
+      } else {
+        console.warn("⏳ Entrada temporal, no se puede mutar aún:", entry);
+      }
     }
   };
 
   const handleRegisterArrival = async (patientId: number) => {
-    await registerArrival.mutateAsync({ patient_id: patientId });
-    queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
+    const tempId = `temp-${Date.now()}`;
+
+    const newEntry: WaitingRoomEntry = {
+      id: tempId,
+      patient: { id: patientId, full_name: "Cargando..." },
+      appointment_id: null,
+      appointment_status: "pending",
+      status: "pending",
+      arrival_time: new Date().toISOString(),
+      priority: "normal",
+      source_type: "walkin",
+      order: 99,
+    };
+
+    queryClient.setQueryData(["waitingRoomEntriesToday"], (old: WaitingRoomEntry[] = []) => [
+      ...old,
+      newEntry,
+    ]);
+
+    const result = await registerArrival.mutateAsync({ patient_id: patientId });
+
+    queryClient.setQueryData(["waitingRoomEntriesToday"], (old: WaitingRoomEntry[] = []) =>
+      old.map((entry) => (entry.id === tempId ? result : entry))
+    );
+
     setShowModal(false);
   };
 

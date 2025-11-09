@@ -3,7 +3,7 @@ from drf_spectacular.utils import extend_schema_field
 from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
-    ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator
+    ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport
 )
 from datetime import date
 from typing import Optional
@@ -634,3 +634,16 @@ class DashboardSummarySerializer(serializers.Serializer):
         child=serializers.FloatField(),
         help_text="Tasa oficial BCV con unidad, precisión y bandera de fallback"
     )
+
+
+class MedicalReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalReport
+        fields = [
+            "id",
+            "appointment",
+            "patient",
+            "created_at",
+            "status",
+            "file_url",
+        ]

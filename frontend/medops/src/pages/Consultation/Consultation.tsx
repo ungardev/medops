@@ -8,7 +8,7 @@ import {
   NotesPanel,
   DocumentsPanel,
   ConsultationActions,
-  ChargeOrderPanel,   // 👈 nuevo import
+  ChargeOrderPanel,
 } from "../../components/Consultation";
 
 import {
@@ -19,6 +19,7 @@ import {
 } from "../../hooks/consultations";
 
 import { Tabs, Tab } from "../../components/ui/Tabs";
+import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport"; // 👈 nuevo import
 
 export default function Consultation() {
   const { data: appointment, isLoading } = useCurrentConsultation();
@@ -26,9 +27,14 @@ export default function Consultation() {
   const createDiagnosis = useCreateDiagnosis();
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
+  const generateReport = useGenerateMedicalReport(); // 👈 hook
 
   if (isLoading) return <p>Cargando consulta...</p>;
   if (!appointment) return <p>No hay paciente en consulta</p>;
+
+  // 🔹 Ajuste: usar "in_progress" en vez de "in_consultation"
+  const canGenerateReport =
+    appointment.status === "in_progress" || appointment.status === "completed";
 
   return (
     <div className="consultation-page page">
@@ -91,8 +97,33 @@ export default function Consultation() {
         </div>
       </div>
 
-      {/* 🔹 Footer: acciones de cierre */}
-      <ConsultationActions consultationId={appointment.id} />
+      {/* 🔹 Footer: acciones de cierre + informe médico */}
+      <div className="consultation-footer flex items-center justify-between mt-4">
+        <ConsultationActions consultationId={appointment.id} />
+
+        {canGenerateReport && (
+          <div>
+            <button
+              className="btn btn-primary"
+              disabled={generateReport.isPending}
+              onClick={() => generateReport.mutate(appointment.id)}
+            >
+              {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
+            </button>
+
+            {generateReport.data && (
+              <a
+                href={generateReport.data.file_url ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-secondary ml-2"
+              >
+                Ver Informe Médico
+              </a>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

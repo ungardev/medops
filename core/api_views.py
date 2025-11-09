@@ -47,7 +47,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport
 
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
@@ -58,7 +58,7 @@ from .serializers import (
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
     EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer,
-    DoctorOperatorSerializer
+    DoctorOperatorSerializer, MedicalReportSerializer
 )
 
 
@@ -1798,3 +1798,47 @@ def audit_log_api(request):
     except Exception as e:
         print("🔥 ERROR EN AUDIT LOG 🔥", e)
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@extend_schema(
+    request=None,
+    responses={201: MedicalReportSerializer}
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_report(request, pk: int):
+    """
+    Genera un informe médico para la consulta/appointment indicada.
+    Devuelve el objeto MedicalReport completo.
+    """
+    appointment = get_object_or_404(Appointment, pk=pk)
+
+    # Validación: solo consultas atendidas pueden generar informe
+    if appointment.status not in ["in_consultation", "completed"]:
+        return Response(
+            {"detail": "La consulta debe estar en curso o finalizada para generar informe"},
+            status=400
+        )
+
+    # Idempotencia: si ya existe informe, devolverlo
+    report, created = MedicalReport.objects.get_or_create(
+        appointment=appointment,
+        defaults={
+            "patient": appointment.patient,
+            "created_at": timezone.now(),
+            "status": "generated",
+        }
+    )
+
+    # Evento de auditoría
+    Event.objects.create(
+        entity="MedicalReport",
+        entity_id=report.id,
+        action="generated",
+        actor=str(request.user),
+        metadata={"appointment_id": appointment.id, "patient_id": appointment.patient.id},
+        severity="info",
+        notify=True
+    )
+
+    return Response(MedicalReportSerializer(report).data, status=201)
