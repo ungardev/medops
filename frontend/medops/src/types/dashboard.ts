@@ -1,10 +1,11 @@
+// --- Tendencias ---
 export type TrendPoint = { date: string; value: number };
 
 export type DashboardSummary = {
   // 🔹 Pacientes y citas
   total_patients: number;
   total_appointments: number;
-  active_appointments: number;          // ✅ nuevo campo: citas con actividad clínica real
+  active_appointments: number;          // ✅ citas con actividad clínica real
   completed_appointments: number;
   pending_appointments: number;
 
@@ -54,8 +55,8 @@ export interface NotificationEvent {
   id: number;
   timestamp: string; // ISO datetime
   actor?: string | null;
-  entity: NotificationEntity; // 👈 tipado explícito
-  entity_id: number;          // 👈 siempre número
+  entity: NotificationEntity;
+  entity_id: number;
   message: string;
   metadata?: Record<string, any> | null;
   severity?: NotificationSeverity | null;
@@ -63,20 +64,26 @@ export interface NotificationEvent {
   action?: NotificationAction;
 }
 
+// --- Evento de auditoría extendido ---
 export interface EventLogEntry {
   id: number;
+  timestamp: string;   // ISO datetime
+  actor: string;       // ✅ corregido: antes era 'user'
   entity: string;
   action: string;
-  user: string;
-  timestamp: string;
+  severity?: NotificationSeverity | null;   // 🔹 nivel de criticidad
+  notify?: boolean;                         // 🔹 si debe notificar
+  metadata?: Record<string, any> | null;    // 🔹 contexto adicional
 }
 
+// --- Resumen de citas ---
 export interface AppointmentSummary {
   id: number;
   appointment_date: string;
   patient: { full_name: string };
 }
 
+// --- Resumen de pagos ---
 export interface PaymentSummary {
   id: number;
   appointment: number;

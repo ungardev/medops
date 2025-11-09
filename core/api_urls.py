@@ -27,7 +27,8 @@ from .api_views import (
     reports_export_api,          # 👈 ENDPOINT DE EXPORTACIÓN
     institution_settings_api,    # 👈 ENDPOINT DE CONFIGURACIÓN INSTITUCIONAL
     doctor_operator_settings_api, # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
-    bcv_rate_api                 # 👈 NUEVO ENDPOINT DE TASA BCV
+    bcv_rate_api,                # 👈 NUEVO ENDPOINT DE TASA BCV
+    audit_log_api                # 👈 NUEVO ENDPOINT DE AUDITORÍA REAL
 )
 
 # --- Swagger / OpenAPI ---
@@ -87,6 +88,7 @@ urlpatterns = [
     path("audit/aggregates/", api_views.audit_dashboard_api, name="audit-dashboard-api"),
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),
+    path("audit/log/", audit_log_api, name="audit-log-api"),  # ✅ nuevo endpoint institucional
 
     # --- Sala de Espera ---
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),

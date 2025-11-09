@@ -9,6 +9,7 @@ export type DashboardParams = {
   currency?: "USD" | "VES";
 };
 
+// 🔹 Hook principal para el Dashboard
 export function useDashboard(params?: DashboardParams) {
   return useQuery<DashboardSummary>({
     queryKey: [
@@ -23,20 +24,15 @@ export function useDashboard(params?: DashboardParams) {
   });
 }
 
-// 🔹 Selector específico para auditoría
-export function useAuditLog(params?: DashboardParams) {
+// 🔹 Hook específico para auditoría real (nuevo endpoint /api/audit/log/)
+export function useAuditLogDirect(limit: number = 10) {
   return useQuery<EventLogEntry[]>({
-    queryKey: [
-      "audit-log",
-      params?.start_date ?? null,
-      params?.end_date ?? null,
-      params?.range ?? "month",
-      params?.currency ?? "USD",
-    ],
+    queryKey: ["audit-log-direct", limit],
     queryFn: async () => {
-      const summary = await DashboardAPI.summary(params);
-      return summary.event_log ?? [];
+      const resp = await fetch(`/api/audit/log/?limit=${limit}`);
+      if (!resp.ok) throw new Error("Error al cargar auditoría");
+      return (await resp.json()) as EventLogEntry[];
     },
-    staleTime: 60_000,
+    staleTime: 30_000, // cache corto para auditoría en vivo
   });
 }

@@ -1689,3 +1689,32 @@ def doctor_operator_settings_api(request):
     serializer.is_valid(raise_exception=True)
     serializer.save(updated_by=request.user)
     return Response(serializer.data)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter("limit", int, OpenApiParameter.QUERY, description="Número máximo de eventos a devolver"),
+    ],
+    responses={200: "Lista de eventos de auditoría"}
+)
+@api_view(["GET"])
+def audit_log_api(request):
+    try:
+        limit = int(request.GET.get("limit", 10))
+
+        events_qs = Event.objects.order_by("-timestamp").values(
+            "id",
+            "timestamp",
+            "actor",
+            "entity",
+            "action",
+            "severity",
+            "notify",
+            "metadata",
+        )[:limit]
+
+        return Response(list(events_qs), status=200)
+
+    except Exception as e:
+        print("🔥 ERROR EN AUDIT LOG 🔥", e)
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
