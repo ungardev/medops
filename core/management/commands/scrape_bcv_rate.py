@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from core.models import BCVRateCache
-from core.scraper import get_bcv_rate
+from core.api_views import get_bcv_rate   # ✅ corregido: importar desde api_views
 from datetime import date
 
 class Command(BaseCommand):
