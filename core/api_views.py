@@ -242,8 +242,8 @@ def dashboard_summary_api(request):
         if range_param == "day":
             start = end = today
         elif range_param == "week":
-            start = today - timedelta(days=today.weekday())  # lunes
-            end = start + timedelta(days=6)                  # domingo
+            start = today - timedelta(days=today.weekday())
+            end = start + timedelta(days=6)
         elif range_param == "month":
             first_day = today.replace(day=1)
             last_day = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
@@ -319,23 +319,34 @@ def dashboard_summary_api(request):
             for row in balance_trend_qs
         ]
 
-        # 🔹 Conversión de moneda con cache diario
+        # 🔹 Conversión de moneda con cache diario (blindado)
         try:
             cache = BCVRateCache.objects.get(date=today)
-            bcv_rate = cache.value
+            bcv_rate = Decimal(str(cache.value))
             is_fallback = False
         except BCVRateCache.DoesNotExist:
-            raise RuntimeError("BCV: no se encontró tasa cacheada para hoy")
+            bcv_rate = Decimal("1")
+            is_fallback = True
+
+        # 🔹 Blindaje de valores financieros
+        total_amount = Decimal(str(total_amount or "0"))
+        confirmed_amount = Decimal(str(confirmed_amount or "0"))
+        balance_due = Decimal(str(balance_due or "0"))
+        estimated_waived_amount = Decimal(str(estimated_waived_amount or "0"))
 
         if currency == "VES":
-            confirmed_amount *= bcv_rate
-            estimated_waived_amount *= bcv_rate
-            total_amount *= bcv_rate
-            balance_due *= bcv_rate
+            confirmed_amount = confirmed_amount * bcv_rate
+            estimated_waived_amount = estimated_waived_amount * bcv_rate
+            total_amount = total_amount * bcv_rate
+            balance_due = balance_due * bcv_rate
+
             for p in pay_trend:
-                p["value"] = float(Decimal(p["value"]) * bcv_rate)
+                p_val = Decimal(str(p["value"] or 0))
+                p["value"] = float(p_val * bcv_rate)
+
             for b in balance_trend:
-                b["value"] = float(Decimal(b["value"]) * bcv_rate)
+                b_val = Decimal(str(b["value"] or 0))
+                b["value"] = float(b_val * bcv_rate)
 
         # 🔹 Totales
         total_patients = Patient.objects.count()

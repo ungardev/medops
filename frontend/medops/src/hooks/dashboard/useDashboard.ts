@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DashboardAPI } from "@/api/dashboard";
-import type { DashboardSummary, EventLogEntry } from "@/types/dashboard"; // ✅
+import type { DashboardSummary, EventLogEntry } from "@/types/dashboard";
 
 export type DashboardParams = {
   start_date?: string;
@@ -13,7 +13,7 @@ export function useDashboard(params?: DashboardParams) {
   return useQuery<DashboardSummary>({
     queryKey: ["dashboard-summary", params],
     queryFn: () => DashboardAPI.summary(params),
-    staleTime: 60_000,
+    staleTime: 60_000, // 1 minuto de cache para evitar llamadas excesivas
   });
 }
 

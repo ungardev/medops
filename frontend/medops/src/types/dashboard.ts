@@ -27,6 +27,14 @@ export type DashboardSummary = {
 
   // 🔹 Nuevo: trazabilidad institucional
   event_log?: EventLogEntry[];
+
+  // 🔹 Tasa BCV aplicada (solo si currency = VES)
+  bcv_rate?: {
+    value: number;
+    unit: string;
+    precision: number;
+    is_fallback: boolean;
+  };
 };
 
 // --- Severidad de notificación ---

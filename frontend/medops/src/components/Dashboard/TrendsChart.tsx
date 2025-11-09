@@ -22,30 +22,42 @@ const TrendsChart: React.FC = () => {
   if (isLoading) return <p>Cargando tendencias...</p>;
   if (!data) return <p>No se pudo cargar la información de tendencias.</p>;
 
-  const labels = data.appointments_trend.map((point) => point.date);
+  const appointmentsTrend = data.appointments_trend || [];
+  const paymentsTrend = data.payments_trend || [];
+  const balanceTrend = data.balance_trend || [];
+  const bcvRate = data.bcv_rate?.value;
+
+  const hasData =
+    appointmentsTrend.length > 0 ||
+    paymentsTrend.length > 0 ||
+    balanceTrend.length > 0;
+
+  if (!hasData) return <p>No hay datos disponibles para el rango seleccionado.</p>;
+
+  const labels = appointmentsTrend.map((p) => p.date);
 
   const chartData = {
     labels,
     datasets: [
       {
         label: "Citas completadas",
-        data: data.appointments_trend.map((point) => point.value),
-        borderColor: "#3b82f6", // azul institucional
+        data: appointmentsTrend.map((p) => p.value ?? 0),
+        borderColor: "#3b82f6",
         backgroundColor: "rgba(59, 130, 246, 0.2)",
         tension: 0.3,
       },
       {
         label: `Pagos confirmados (${currency})`,
-        data: data.payments_trend.map((point) => point.value),
-        borderColor: "#22c55e", // verde institucional
+        data: paymentsTrend.map((p) => p.value ?? 0),
+        borderColor: "#22c55e",
         backgroundColor: "rgba(34, 197, 94, 0.2)",
         tension: 0.3,
         yAxisID: "y1",
       },
       {
         label: `Balance financiero (${currency})`,
-        data: data.balance_trend.map((point) => point.value),
-        borderColor: "#ef4444", // rojo institucional
+        data: balanceTrend.map((p) => p.value ?? 0),
+        borderColor: "#ef4444",
         backgroundColor: "rgba(239, 68, 68, 0.2)",
         tension: 0.3,
         yAxisID: "y1",
@@ -112,6 +124,11 @@ const TrendsChart: React.FC = () => {
             </button>
           ))}
         </div>
+        {currency === "VES" && bcvRate && (
+          <p className="text-xs text-gray-500 mt-1">
+            Tasa BCV aplicada: {bcvRate.toFixed(2)} Bs/USD
+          </p>
+        )}
       </div>
       <Line data={chartData} options={chartOptions} />
     </section>
