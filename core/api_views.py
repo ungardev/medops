@@ -885,36 +885,24 @@ class PatientViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def waitingroom_entries_today_api(request):
     try:
-        tz = timezone.get_current_timezone()
         today = timezone.localdate()
 
-        # 🔹 Rango del día completo
-        start = datetime.combine(today, time.min)
-        end = datetime.combine(today, time.max)
-
-        if timezone.is_naive(start):
-            start = timezone.make_aware(start, tz)
-        if timezone.is_naive(end):
-            end = timezone.make_aware(end, tz)
-
-        # 🔹 Query blindado
+        # 🔹 Query blindado: incluye todas las entradas de hoy
         qs = (
             WaitingRoomEntry.objects.filter(
                 Q(appointment__appointment_date=today)
-                | Q(arrival_time__range=(start, end))
-                | Q(created_at__date=today)  # 👈 incluye walk-ins
+                | Q(arrival_time__date=today)   # 👈 más seguro que range
+                | Q(created_at__date=today)     # 👈 incluye walk-ins
             )
             .select_related("patient", "appointment")
             .order_by("order", "arrival_time")
         )
 
-        # 🔹 Serialización segura
         serializer = WaitingRoomEntrySerializer(qs, many=True)
         return Response(serializer.data, status=200)
 
     except Exception as e:
         print("🔥 ERROR EN WAITING ROOM ENTRIES 🔥", e)
-        # ✅ nunca 500: devolvemos lista vacía
         return Response([], status=200)
 
 

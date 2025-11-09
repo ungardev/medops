@@ -74,7 +74,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "email",
             "age",
             "allergies",
-            "gender",   # 👈 añadido
+            "gender",
         ]
 
     @extend_schema_field(serializers.CharField())
@@ -82,7 +82,14 @@ class PatientReadSerializer(serializers.ModelSerializer):
         """
         Construye el nombre completo, devolviendo 'SIN-NOMBRE' si no hay datos.
         """
-        parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
+        if not obj:  # 👈 blindaje extra
+            return "SIN-NOMBRE"
+        parts = [
+            getattr(obj, "first_name", None),
+            getattr(obj, "middle_name", None),
+            getattr(obj, "last_name", None),
+            getattr(obj, "second_last_name", None),
+        ]
         full_name = " ".join(filter(None, parts)).strip()
         return full_name if full_name else "SIN-NOMBRE"
 
@@ -91,7 +98,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
         """
         Calcula la edad si hay fecha de nacimiento válida.
         """
-        if not obj.birthdate:
+        if not obj or not obj.birthdate:
             return None
         today = date.today()
         age = today.year - obj.birthdate.year - (
@@ -104,6 +111,8 @@ class PatientReadSerializer(serializers.ModelSerializer):
         """
         Devuelve alergias como string, vacío si es None.
         """
+        if not obj:
+            return ""
         return obj.allergies or ""
 
 
@@ -320,7 +329,7 @@ class EventSerializer(serializers.ModelSerializer):
 
 # --- Sala de espera (básico) ---
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
-    patient = PatientReadSerializer(read_only=True)
+    patient = serializers.SerializerMethodField()
     appointment_id = serializers.SerializerMethodField()
     appointment_status = serializers.SerializerMethodField()
 
@@ -338,17 +347,18 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "order",
         ]
 
+    def get_patient(self, obj):
+        """
+        Devuelve siempre un objeto paciente válido.
+        """
+        if obj.patient:
+            return PatientReadSerializer(obj.patient).data
+        return {"id": None, "full_name": "SIN-NOMBRE"}
+
     def get_appointment_id(self, obj):
-        """
-        Devuelve el ID de la cita si existe, o None si es walk-in.
-        """
         return obj.appointment.id if obj.appointment else None
 
     def get_appointment_status(self, obj):
-        """
-        Devuelve el estado del Appointment si existe,
-        normalizando 'arrived' como 'waiting' para la UI.
-        """
         if obj.appointment:
             status = obj.appointment.status
             if status == "arrived":

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import RegisterWalkinModal from "../../components/WaitingRoom/RegisterWalkinModal";
 import { useWaitingRoomEntriesToday } from "../../hooks/waitingroom/useWaitingRoomEntriesToday";
 import { useUpdateWaitingRoomStatus } from "../../hooks/waitingroom/useUpdateWaitingRoomStatus";
@@ -15,7 +15,7 @@ const renderStatusBadge = (status: WaitingRoomStatus | string) => (
 
 // Calcular tiempo de espera
 const renderWaitTime = (arrival_time: string | null) => {
-  if (!arrival_time) return "-";
+  if (!arrival_time || isNaN(new Date(arrival_time).getTime())) return "-";
   const minutes = Math.floor(
     (new Date().getTime() - new Date(arrival_time).getTime()) / 60000
   );
@@ -30,9 +30,9 @@ const renderActionButton = (
   onChange: (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => void,
   entries: WaitingRoomEntry[]
 ) => {
-  const effectiveStatus = entry.appointment_status ?? entry.status;
+  const effectiveStatus = entry.appointment_status ?? entry.status ?? "waiting";
   const hasActiveConsultation = entries.some(
-    (e) => (e.appointment_status ?? e.status) === "in_consultation"
+    (e) => (e.appointment_status ?? e.status ?? "waiting") === "in_consultation"
   );
 
   switch (effectiveStatus) {
@@ -102,10 +102,18 @@ export default function WaitingRoom() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const { data: entries, isLoading, error } = useWaitingRoomEntriesToday();
+  console.log("🧪 WaitingRoom entries:", entries);
   const updateWaitingRoomStatus = useUpdateWaitingRoomStatus();
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
+    }, 5000); // refresco automático cada 5s
+    return () => clearInterval(interval);
+  }, []);
 
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (["in_consultation", "completed", "canceled"].includes(newStatus)) {
@@ -147,14 +155,14 @@ export default function WaitingRoom() {
 
   const orderedGroup: WaitingRoomEntry[] =
     entries?.filter((e) => {
-      const effectiveStatus = e.appointment_status ?? e.status;
-      return ["waiting", "in_consultation", "completed"].includes(effectiveStatus);
+      const status = e.appointment_status ?? e.status ?? "waiting";
+      return ["waiting", "in_consultation", "completed"].includes(status);
     }) ?? [];
 
   const pendingGroup: WaitingRoomEntry[] =
     entries?.filter((e) => {
-      const effectiveStatus = e.appointment_status ?? e.status;
-      return ["pending", "canceled"].includes(effectiveStatus);
+      const status = e.appointment_status ?? e.status ?? "waiting";
+      return ["pending", "canceled"].includes(status);
     }) ?? [];
 
   return (
@@ -183,11 +191,12 @@ export default function WaitingRoom() {
         </thead>
         <tbody>
           {orderedGroup.map((entry) => {
-            const effectiveStatus = entry.appointment_status ?? entry.status;
+            const status = entry.appointment_status ?? entry.status ?? "waiting";
+            console.log("🔎 orderedGroup entry:", entry);
             return (
               <tr key={entry.id}>
-                <td>{entry.patient.full_name}</td>
-                <td>{renderStatusBadge(effectiveStatus)}</td>
+                <td>{entry.patient?.full_name ?? "SIN-NOMBRE"}</td>
+                <td>{renderStatusBadge(status)}</td>
                 <td>{renderWaitTime(entry.arrival_time)}</td>
                 <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
               </tr>
@@ -208,11 +217,12 @@ export default function WaitingRoom() {
         </thead>
         <tbody>
           {pendingGroup.map((entry) => {
-            const effectiveStatus = entry.appointment_status ?? entry.status;
+            const status = entry.appointment_status ?? entry.status ?? "waiting";
+            console.log("🔎 pendingGroup entry:", entry);
             return (
               <tr key={entry.id}>
-                <td>{entry.patient.full_name}</td>
-                <td>{renderStatusBadge(effectiveStatus)}</td>
+                <td>{entry.patient?.full_name ?? "SIN-NOMBRE"}</td>
+                <td>{renderStatusBadge(status)}</td>
                 <td>{renderWaitTime(entry.arrival_time)}</td>
                 <td>{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
               </tr>
