@@ -1,5 +1,5 @@
 // src/hooks/patients/useUploadDocument.ts
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 import { MedicalDocument } from "../../types/documents";
 
@@ -10,6 +10,8 @@ interface UploadPayload {
 }
 
 export function useUploadDocument(patientId: number) {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: async ({ file, description, category }: UploadPayload) => {
       const formData = new FormData();
@@ -22,6 +24,10 @@ export function useUploadDocument(patientId: number) {
         method: "POST",
         body: formData,
       });
+    },
+    onSuccess: () => {
+      // 🔹 Invalida la cache de documentos del paciente
+      queryClient.invalidateQueries({ queryKey: ["documents", patientId] });
     },
   });
 }

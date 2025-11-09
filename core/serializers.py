@@ -637,6 +637,9 @@ class DashboardSummarySerializer(serializers.Serializer):
 
 
 class MedicalReportSerializer(serializers.ModelSerializer):
+    institution = serializers.SerializerMethodField()
+    doctor = serializers.SerializerMethodField()
+
     class Meta:
         model = MedicalReport
         fields = [
@@ -646,4 +649,14 @@ class MedicalReportSerializer(serializers.ModelSerializer):
             "created_at",
             "status",
             "file_url",
+            "institution",  # 🔹 datos institucionales
+            "doctor",       # 🔹 datos del médico operador
         ]
+
+    def get_institution(self, obj):
+        institution = InstitutionSettings.objects.first()
+        return InstitutionSettingsSerializer(institution).data if institution else None
+
+    def get_doctor(self, obj):
+        doctor = DoctorOperator.objects.first()
+        return DoctorOperatorSerializer(doctor).data if doctor else None

@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { useDocuments, useUploadDocument } from "../../hooks/consultations/useDocuments";
+import {
+  useDocuments,
+  useUploadDocument,
+} from "../../hooks/consultations/useDocuments";
 
 interface DocumentsPanelProps {
   patientId: number;
@@ -16,10 +19,17 @@ export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
   const handleUpload = (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
-    uploadDocument.mutate({ patient: patientId, file, description, category });
-    setFile(null);
-    setDescription("");
-    setCategory("");
+    uploadDocument.mutate(
+      { patient: patientId, file, description, category },
+      {
+        onSuccess: () => {
+          // 🔹 Limpieza de formulario tras subir
+          setFile(null);
+          setDescription("");
+          setCategory("");
+        },
+      }
+    );
   };
 
   return (
@@ -29,7 +39,9 @@ export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
       {isLoading && <p className="text-muted">Cargando documentos...</p>}
 
       <ul className="mb-4">
-        {documents?.length === 0 && <li className="text-muted">Sin documentos</li>}
+        {documents?.length === 0 && (
+          <li className="text-muted">Sin documentos</li>
+        )}
         {documents?.map((doc) => (
           <li key={doc.id} className="border-b py-1">
             <a
@@ -41,7 +53,9 @@ export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
               {doc.description || "Documento"}
             </a>{" "}
             <span className="text-sm text-muted">
-              ({doc.category}) — {new Date(doc.uploaded_at).toLocaleDateString()} por {doc.uploaded_by}
+              ({doc.category}) —{" "}
+              {new Date(doc.uploaded_at).toLocaleDateString()} por{" "}
+              {doc.uploaded_by}
             </span>
           </li>
         ))}

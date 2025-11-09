@@ -1,6 +1,7 @@
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, date, timedelta
 from django.conf import settings
+from django.core.files import File
 from django.db import transaction
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
@@ -12,6 +13,7 @@ from django.utils.timezone import now, localdate, make_aware
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from typing import Dict, Any, cast
+from django.template.loader import render_to_string
 import calendar
 import requests
 import time
@@ -29,6 +31,8 @@ from openpyxl.drawing.image import Image as XLImage
 import io
 import os
 import logging
+import tempfile
+from weasyprint import HTML
 import traceback
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -1800,6 +1804,19 @@ def audit_log_api(request):
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+def generate_pdf_from_html(html: str, filename: str = "informe.pdf") -> File:
+    """
+    Convierte HTML en PDF y retorna un archivo Django File listo para guardar en un FileField.
+    - Usa archivo temporal seguro.
+    - Compatible con MedicalDocument.file.
+    """
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        # Renderizar PDF desde HTML
+        HTML(string=html).write_pdf(tmp.name)
+        tmp.seek(0)
+        # Retornar como File listo para guardar
+        return File(tmp, name=filename)
+
 @extend_schema(
     request=None,
     responses={201: MedicalReportSerializer}
@@ -1808,20 +1825,58 @@ def audit_log_api(request):
 @permission_classes([IsAuthenticated])
 def generate_report(request, pk: int):
     """
-    Genera un informe médico para la consulta/appointment indicada.
-    Devuelve el objeto MedicalReport completo.
+    Genera un informe médico oficial en PDF para la consulta indicada.
+    Devuelve el objeto MedicalReport con file_url.
     """
     appointment = get_object_or_404(Appointment, pk=pk)
 
-    # Validación: solo consultas atendidas pueden generar informe
     if appointment.status not in ["in_consultation", "completed"]:
         return Response(
             {"detail": "La consulta debe estar en curso o finalizada para generar informe"},
             status=400
         )
 
-    # Idempotencia: si ya existe informe, devolverlo
-    report, created = MedicalReport.objects.get_or_create(
+    # Idempotencia: si ya existe informe con archivo, devolverlo
+    existing = MedicalReport.objects.filter(appointment=appointment).first()
+    if existing and existing.file_url:
+        return Response(MedicalReportSerializer(existing).data, status=200)
+
+    # 🔹 Datos institucionales
+    institution = InstitutionSettings.objects.first()
+    doctor = DoctorOperator.objects.first()  # luego filtrar por usuario si aplica
+
+    # 🔹 Construcción del contenido clínico
+    diagnoses = appointment.diagnoses.all()
+    treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
+    prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
+
+    # 🔹 Renderizar PDF (puedes usar WeasyPrint, xhtml2pdf, ReportLab, etc.)
+    html = render_to_string("pdf/medical_report.html", {
+        "appointment": appointment,
+        "patient": appointment.patient,
+        "institution": institution,
+        "doctor": doctor,
+        "diagnoses": diagnoses,
+        "treatments": treatments,
+        "prescriptions": prescriptions,
+        "notes": appointment.notes,
+        "generated_at": timezone.now(),
+    })
+
+    pdf_file = generate_pdf_from_html(html)  # 👈 función utilitaria que retorna archivo
+
+    # 🔹 Guardar como MedicalDocument
+    doc = MedicalDocument.objects.create(
+        patient=appointment.patient,
+        appointment=appointment,
+        file=pdf_file,
+        description=f"Informe de consulta del {appointment.appointment_date}",
+        category="Informe Médico",
+        uploaded_by=str(request.user),
+    )
+
+    # 🔹 Crear MedicalReport y asociar file_url
+    report, _ = MedicalReport.objects.get_or_create(
         appointment=appointment,
         defaults={
             "patient": appointment.patient,
@@ -1829,16 +1884,19 @@ def generate_report(request, pk: int):
             "status": "generated",
         }
     )
+    report.file_url = doc.file.url
+    report.save(update_fields=["file_url"])
 
-    # Evento de auditoría
+    # 🔹 Auditoría
     Event.objects.create(
         entity="MedicalReport",
         entity_id=report.id,
         action="generated",
         actor=str(request.user),
-        metadata={"appointment_id": appointment.id, "patient_id": appointment.patient.id},
+        metadata={"appointment_id": appointment.id, "document_id": doc.id},
         severity="info",
         notify=True
     )
 
     return Response(MedicalReportSerializer(report).data, status=201)
+

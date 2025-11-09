@@ -19,7 +19,8 @@ import {
 } from "../../hooks/consultations";
 
 import { Tabs, Tab } from "../../components/ui/Tabs";
-import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport"; // 👈 nuevo import
+import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport"; // 👈 hook para generar informe
+import { MedicalReportViewer } from "../../components/Consultation/MedicalReportViewer"; // 👈 nuevo componente viewer
 
 export default function Consultation() {
   const { data: appointment, isLoading } = useCurrentConsultation();
@@ -32,9 +33,9 @@ export default function Consultation() {
   if (isLoading) return <p>Cargando consulta...</p>;
   if (!appointment) return <p>No hay paciente en consulta</p>;
 
-  // 🔹 Ajuste: usar "in_progress" en vez de "in_consultation"
+  // 🔹 Condición exacta según tu models.py
   const canGenerateReport =
-    appointment.status === "in_progress" || appointment.status === "completed";
+    appointment.status === "in_consultation" || appointment.status === "completed";
 
   return (
     <div className="consultation-page page">
@@ -98,29 +99,38 @@ export default function Consultation() {
       </div>
 
       {/* 🔹 Footer: acciones de cierre + informe médico */}
-      <div className="consultation-footer flex items-center justify-between mt-4">
-        <ConsultationActions consultationId={appointment.id} />
+      <div className="consultation-footer flex flex-col gap-4 mt-4">
+        <div className="flex items-center justify-between">
+          <ConsultationActions consultationId={appointment.id} />
 
-        {canGenerateReport && (
-          <div>
-            <button
-              className="btn btn-primary"
-              disabled={generateReport.isPending}
-              onClick={() => generateReport.mutate(appointment.id)}
-            >
-              {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
-            </button>
-
-            {generateReport.data && (
-              <a
-                href={generateReport.data.file_url ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-secondary ml-2"
+          {canGenerateReport && (
+            <div>
+              <button
+                className="btn btn-primary"
+                disabled={generateReport.isPending}
+                onClick={() => generateReport.mutate(appointment.id)}
               >
-                Ver Informe Médico
-              </a>
-            )}
+                {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
+              </button>
+
+              {generateReport.data && (
+                <a
+                  href={generateReport.data.file_url ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary ml-2"
+                >
+                  Ver Informe Médico
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 🔹 Viewer inline del informe médico */}
+        {generateReport.data && (
+          <div className="consultation-report mt-4">
+            <MedicalReportViewer report={generateReport.data} />
           </div>
         )}
       </div>
