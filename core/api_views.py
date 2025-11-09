@@ -353,6 +353,11 @@ def dashboard_summary_api(request):
         total_payments = Payment.objects.count()
         total_events = Event.objects.count()
 
+        # 🔹 Auditoría institucional
+        event_log_qs = Event.objects.order_by("-timestamp").values(
+            "id", "timestamp", "entity", "action", "user"
+        )[:10]
+
         # 🔹 Payload blindado
         data = {
             "total_patients": total_patients,
@@ -377,6 +382,7 @@ def dashboard_summary_api(request):
                 "precision": 8,
                 "is_fallback": is_fallback,
             },
+            "event_log": list(event_log_qs),  # ✅ agregado
         }
 
         return Response(data, status=200)
