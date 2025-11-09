@@ -47,7 +47,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache
 
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
@@ -191,29 +191,29 @@ def get_bcv_rate() -> Decimal:
 def bcv_rate_api(request):
     """
     Endpoint REST para consultar la tasa oficial BCV.
-    Devuelve JSON con fuente, fecha, valor.
-    Si falla, devuelve error 500 explícito.
+    Devuelve JSON desde cache diario.
     """
+    today = date.today()
     try:
-        rate = get_bcv_rate()
+        cache = BCVRateCache.objects.get(date=today)
         data = {
             "source": "BCV",
-            "date": date.today().isoformat(),
-            "value": float(rate),
+            "date": today.isoformat(),
+            "value": float(cache.value),
             "unit": "VES_per_USD",
-            "precision": 6,
+            "precision": 8,
             "is_fallback": False,
         }
         return Response(data, status=200)
-    except Exception as e:
-        audit.error(f"BCV: excepción en endpoint → {e}")
+    except BCVRateCache.DoesNotExist:
+        audit.error("BCV: no se encontró tasa cacheada para hoy")
         return Response(
             {
-                "error": str(e),
+                "error": "No se encontró tasa cacheada para hoy",
                 "source": "BCV",
-                "date": date.today().isoformat(),
+                "date": today.isoformat(),
             },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_404_NOT_FOUND
         )
 
 
@@ -319,9 +319,13 @@ def dashboard_summary_api(request):
             for row in balance_trend_qs
         ]
 
-        # 🔹 Conversión de moneda
-        bcv_rate = get_bcv_rate()
-        is_fallback = bcv_rate == Decimal("231.0462")
+        # 🔹 Conversión de moneda con cache diario
+        try:
+            cache = BCVRateCache.objects.get(date=today)
+            bcv_rate = cache.value
+            is_fallback = False
+        except BCVRateCache.DoesNotExist:
+            raise RuntimeError("BCV: no se encontró tasa cacheada para hoy")
 
         if currency == "VES":
             confirmed_amount *= bcv_rate
@@ -359,7 +363,7 @@ def dashboard_summary_api(request):
             "bcv_rate": {
                 "value": float(bcv_rate),
                 "unit": "VES_per_USD",
-                "precision": 4,
+                "precision": 8,
                 "is_fallback": is_fallback,
             },
         }
