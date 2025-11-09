@@ -32,7 +32,6 @@ import io
 import os
 import logging
 import tempfile
-from weasyprint import HTML
 import traceback
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
@@ -1810,6 +1809,7 @@ def generate_pdf_from_html(html: str, filename: str = "informe.pdf") -> File:
     - Usa archivo temporal seguro.
     - Compatible con MedicalDocument.file.
     """
+    from weasyprint import HTML
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
         # Renderizar PDF desde HTML
         HTML(string=html).write_pdf(tmp.name)
