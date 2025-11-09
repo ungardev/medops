@@ -63,7 +63,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
 class PatientReadSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
-    allergies = serializers.CharField(read_only=True)
+    allergies = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
@@ -79,17 +79,32 @@ class PatientReadSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
+        """
+        Construye el nombre completo, devolviendo 'SIN-NOMBRE' si no hay datos.
+        """
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
-        return " ".join(filter(None, parts))
+        full_name = " ".join(filter(None, parts)).strip()
+        return full_name if full_name else "SIN-NOMBRE"
 
     @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_age(self, obj) -> Optional[int]:
+        """
+        Calcula la edad si hay fecha de nacimiento válida.
+        """
         if not obj.birthdate:
             return None
         today = date.today()
-        return today.year - obj.birthdate.year - (
+        age = today.year - obj.birthdate.year - (
             (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
         )
+        return age if age >= 0 else None
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_allergies(self, obj) -> str:
+        """
+        Devuelve alergias como string, vacío si es None.
+        """
+        return obj.allergies or ""
 
 
 class PatientListSerializer(serializers.ModelSerializer):
@@ -306,7 +321,7 @@ class EventSerializer(serializers.ModelSerializer):
 # --- Sala de espera (básico) ---
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
-    appointment_id = serializers.IntegerField(source="appointment.id", read_only=True)
+    appointment_id = serializers.SerializerMethodField()
     appointment_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -322,6 +337,12 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "source_type",
             "order",
         ]
+
+    def get_appointment_id(self, obj):
+        """
+        Devuelve el ID de la cita si existe, o None si es walk-in.
+        """
+        return obj.appointment.id if obj.appointment else None
 
     def get_appointment_status(self, obj):
         """

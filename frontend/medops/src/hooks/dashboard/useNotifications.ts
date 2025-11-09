@@ -12,21 +12,16 @@ export function useNotifications() {
   return useQuery<NotificationEvent[]>({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const appointments: AppointmentSummary[] =
-        await DashboardAPI.appointmentsToday();
-
-      let waitingRoom: AppointmentSummary[] = [];
-      try {
-        waitingRoom = await DashboardAPI.waitingRoomToday();
-      } catch (err) {
-        console.warn("WaitingRoom endpoint forbidden:", err);
-      }
-
-      const payments: PaymentSummary[] = await DashboardAPI.payments();
-
       const events: NotificationEvent[] = [];
 
       // 📌 Citas del día
+      let appointments: AppointmentSummary[] = [];
+      try {
+        appointments = await DashboardAPI.appointmentsToday();
+      } catch (err) {
+        console.warn("Appointments endpoint error:", err);
+      }
+
       appointments.forEach((appt) => {
         events.push({
           id: appt.id,
@@ -41,7 +36,15 @@ export function useNotifications() {
         });
       });
 
-      // 📌 Sala de espera
+      // 📌 Sala de espera (blindado)
+      let waitingRoom: AppointmentSummary[] = [];
+      try {
+        waitingRoom = await DashboardAPI.waitingRoomToday();
+      } catch (err) {
+        console.warn("WaitingRoom endpoint error:", err);
+        waitingRoom = []; // ✅ fallback institucional
+      }
+
       waitingRoom.forEach((entry) => {
         events.push({
           id: entry.id,
@@ -56,7 +59,15 @@ export function useNotifications() {
         });
       });
 
-      // 📌 Pagos recientes (redirigen a ChargeOrder o abren modal)
+      // 📌 Pagos recientes
+      let payments: PaymentSummary[] = [];
+      try {
+        payments = await DashboardAPI.payments();
+      } catch (err) {
+        console.warn("Payments endpoint error:", err);
+        payments = []; // ✅ fallback institucional
+      }
+
       payments.forEach((pay) => {
         const severity =
           pay.status === "confirmed"
@@ -70,7 +81,6 @@ export function useNotifications() {
           timestamp: pay.received_at ?? pay.appointment_date,
           actor: pay.patient.full_name,
           entity: "Payment",
-          // 👇 aquí el entity_id apunta a la ChargeOrder, no al pago
           entity_id: pay.charge_order,
           message: `Orden #${pay.charge_order}: pago ${pay.status} de ${pay.amount} ${pay.currency} (${pay.method})`,
           severity,
@@ -79,7 +89,7 @@ export function useNotifications() {
             pay.status === "pending"
               ? {
                   href: `/charge-orders/${pay.charge_order}`,
-                  label: "Registrar Pago", // 👈 acción clara para el modal
+                  label: "Registrar Pago",
                 }
               : {
                   href: `/charge-orders/${pay.charge_order}`,

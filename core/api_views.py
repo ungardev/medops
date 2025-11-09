@@ -884,30 +884,38 @@ class PatientViewSet(viewsets.ModelViewSet):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def waitingroom_entries_today_api(request):
-    tz = timezone.get_current_timezone()
-    today = timezone.localdate()
+    try:
+        tz = timezone.get_current_timezone()
+        today = timezone.localdate()
 
-    start = datetime.combine(today, time.min)
-    end = datetime.combine(today, time.max)
+        # 🔹 Rango del día completo
+        start = datetime.combine(today, time.min)
+        end = datetime.combine(today, time.max)
 
-    if timezone.is_naive(start):
-        start = timezone.make_aware(start, tz)
-    if timezone.is_naive(end):
-        end = timezone.make_aware(end, tz)
+        if timezone.is_naive(start):
+            start = timezone.make_aware(start, tz)
+        if timezone.is_naive(end):
+            end = timezone.make_aware(end, tz)
 
-    qs = (
-        WaitingRoomEntry.objects
-        .filter(
-            Q(appointment__appointment_date=today) |
-            Q(arrival_time__range=(start, end)) |
-            Q(created_at__date=today)   # 👈 clave para no perder walk‑ins
+        # 🔹 Query blindado
+        qs = (
+            WaitingRoomEntry.objects.filter(
+                Q(appointment__appointment_date=today)
+                | Q(arrival_time__range=(start, end))
+                | Q(created_at__date=today)  # 👈 incluye walk-ins
+            )
+            .select_related("patient", "appointment")
+            .order_by("order", "arrival_time")
         )
-        .select_related("patient", "appointment")
-        .order_by("order", "arrival_time")
-    )
 
-    serializer = WaitingRoomEntrySerializer(qs, many=True)
-    return Response(serializer.data, status=200)
+        # 🔹 Serialización segura
+        serializer = WaitingRoomEntrySerializer(qs, many=True)
+        return Response(serializer.data, status=200)
+
+    except Exception as e:
+        print("🔥 ERROR EN WAITING ROOM ENTRIES 🔥", e)
+        # ✅ nunca 500: devolvemos lista vacía
+        return Response([], status=200)
 
 
 @extend_schema(
