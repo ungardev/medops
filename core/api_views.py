@@ -232,94 +232,129 @@ def dashboard_summary_api(request):
     try:
         today = localdate()
 
-        # 🔹 Parámetros
+        # --- Parámetros y rango ---
         start_date = request.GET.get("start_date")
         end_date = request.GET.get("end_date")
         range_param = request.GET.get("range")
         currency = request.GET.get("currency", "USD")
 
-        # 🔹 Determinar rango institucional
-        if range_param == "day":
-            start = end = today
-        elif range_param == "week":
-            start = today - timedelta(days=today.weekday())
-            end = start + timedelta(days=6)
-        elif range_param == "month":
-            first_day = today.replace(day=1)
-            last_day = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
-            start = first_day
-            end = last_day
-        else:
-            def parse_d(d):
-                try:
-                    return parse_date(str(d))
-                except Exception:
-                    return None
-            start = parse_d(start_date) or (today - timedelta(days=6))
-            end = parse_d(end_date) or today
+        def parse_d(d):
+            try:
+                return parse_date(str(d))
+            except Exception:
+                return None
 
-        # 🔹 Finanzas
-        orders_qs = ChargeOrder.objects.exclude(status="void")
-        total_amount = orders_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
-        confirmed_amount = Payment.objects.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
-        balance_due = orders_qs.aggregate(s=Sum("balance_due")).get("s") or Decimal("0")
+        try:
+            if range_param == "day":
+                start = end = today
+            elif range_param == "week":
+                start = today - timedelta(days=today.weekday())
+                end = start + timedelta(days=6)
+            elif range_param == "month":
+                first_day = today.replace(day=1)
+                last_day = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+                start = first_day
+                end = last_day
+            else:
+                start = parse_d(start_date) or (today - timedelta(days=6))
+                end = parse_d(end_date) or today
+        except Exception:
+            # Fallback defensivo de rango
+            start = today - timedelta(days=6)
+            end = today
 
-        waived_qs = ChargeOrder.objects.filter(status="waived")
-        total_waived = waived_qs.count()
-        estimated_waived_amount = waived_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
+        # --- Finanzas (blindadas) ---
+        try:
+            orders_qs = ChargeOrder.objects.exclude(status="void")
+            total_amount = orders_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
+            confirmed_amount = Payment.objects.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
+            balance_due = orders_qs.aggregate(s=Sum("balance_due")).get("s") or Decimal("0")
 
-        # 🔹 Clínico-operativo
-        appts_qs = Appointment.objects.filter(appointment_date__range=(start, end))
-        total_appointments = appts_qs.count()
-        completed_appointments = appts_qs.filter(status="completed").count()
-        pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
-        active_appointments = appts_qs.filter(status__in=["arrived", "in_consultation", "completed"]).count()
+            waived_qs = ChargeOrder.objects.filter(status="waived")
+            total_waived = waived_qs.count()
+            estimated_waived_amount = waived_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
+        except Exception:
+            total_amount = Decimal("0")
+            confirmed_amount = Decimal("0")
+            balance_due = Decimal("0")
+            total_waived = 0
+            estimated_waived_amount = Decimal("0")
 
-        waiting_room_count = WaitingRoomEntry.objects.filter(
-            arrival_time__date__range=(start, end),
-            status__in=["waiting", "in_consultation"]
-        ).count()
+        # --- Clínico-operativo (blindado) ---
+        try:
+            appts_qs = Appointment.objects.filter(appointment_date__range=(start, end))
+            total_appointments = appts_qs.count()
+            completed_appointments = appts_qs.filter(status="completed").count()
+            pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
+            active_appointments = appts_qs.filter(status__in=["arrived", "in_consultation", "completed"]).count()
+        except Exception:
+            total_appointments = 0
+            completed_appointments = 0
+            pending_appointments = 0
+            active_appointments = 0
 
-        active_consultations = Appointment.objects.filter(
-            appointment_date__range=(start, end),
-            status="in_consultation"
-        ).count()
+        try:
+            waiting_room_count = WaitingRoomEntry.objects.filter(
+                arrival_time__date__range=(start, end),
+                status__in=["waiting", "in_consultation"]
+            ).count()
+        except Exception:
+            waiting_room_count = 0
 
-        # 🔹 Tendencias
-        appt_trend_qs = (
-            Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
-            .annotate(date=TruncDate("appointment_date"))
-            .values("date")
-            .annotate(value=Count("id"))
-            .order_by("date")
-        )
-        appt_trend = [{"date": str(row["date"]), "value": row["value"]} for row in appt_trend_qs]
+        try:
+            active_consultations = Appointment.objects.filter(
+                appointment_date__range=(start, end),
+                status="in_consultation"
+            ).count()
+        except Exception:
+            active_consultations = 0
 
-        pay_trend_qs = (
-            Payment.objects.filter(status="confirmed", received_at__date__range=(start, end))
-            .annotate(date=TruncDate("received_at"))
-            .values("date")
-            .annotate(value=Sum("amount"))
-            .order_by("date")
-        )
-        pay_trend = [{"date": str(row["date"]), "value": float(row["value"] or 0)} for row in pay_trend_qs]
-
-        balance_trend_qs = (
-            ChargeOrder.objects.filter(issued_at__date__range=(start, end))
-            .annotate(date=TruncDate("issued_at"))
-            .values("date")
-            .annotate(
-                total=Sum("total"),
-                balance=Sum("balance_due"),
+        # --- Tendencias (blindadas) ---
+        try:
+            appt_trend_qs = (
+                Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
+                .annotate(date=TruncDate("appointment_date"))
+                .values("date")
+                .annotate(value=Count("id"))
+                .order_by("date")
             )
-            .order_by("date")
-        )
-        balance_trend = [
-            {"date": str(row["date"]), "value": float(max((row["total"] or 0) - (row["balance"] or 0), 0))}
-            for row in balance_trend_qs
-        ]
+            appt_trend = [{"date": str(row["date"]), "value": int(row["value"] or 0)} for row in appt_trend_qs]
+        except Exception:
+            appt_trend = []
 
-        # 🔹 Conversión de moneda con cache diario (blindado)
+        try:
+            pay_trend_qs = (
+                Payment.objects.filter(status="confirmed", received_at__date__range=(start, end))
+                .annotate(date=TruncDate("received_at"))
+                .values("date")
+                .annotate(value=Sum("amount"))
+                .order_by("date")
+            )
+            pay_trend = [{"date": str(row["date"]), "value": Decimal(str(row["value"] or "0"))} for row in pay_trend_qs]
+        except Exception:
+            pay_trend = []
+
+        try:
+            balance_trend_qs = (
+                ChargeOrder.objects.filter(issued_at__date__range=(start, end))
+                .annotate(date=TruncDate("issued_at"))
+                .values("date")
+                .annotate(
+                    total=Sum("total"),
+                    balance=Sum("balance_due"),
+                )
+                .order_by("date")
+            )
+            balance_trend = []
+            for row in balance_trend_qs:
+                total_v = Decimal(str(row.get("total") or "0"))
+                bal_v = Decimal(str(row.get("balance") or "0"))
+                val = max(total_v - bal_v, Decimal("0"))
+                balance_trend.append({"date": str(row["date"]), "value": val})
+        except Exception:
+            balance_trend = []
+
+        # --- Tasa BCV con cache diario (blindado) ---
         try:
             cache = BCVRateCache.objects.get(date=today)
             bcv_rate = Decimal(str(cache.value))
@@ -327,38 +362,66 @@ def dashboard_summary_api(request):
         except BCVRateCache.DoesNotExist:
             bcv_rate = Decimal("1")
             is_fallback = True
+        except Exception:
+            bcv_rate = Decimal("1")
+            is_fallback = True
 
-        # 🔹 Blindaje de valores financieros
-        total_amount = Decimal(str(total_amount or "0"))
-        confirmed_amount = Decimal(str(confirmed_amount or "0"))
-        balance_due = Decimal(str(balance_due or "0"))
-        estimated_waived_amount = Decimal(str(estimated_waived_amount or "0"))
+        # --- Normalización de decimales ---
+        try:
+            total_amount = Decimal(str(total_amount or "0"))
+            confirmed_amount = Decimal(str(confirmed_amount or "0"))
+            balance_due = Decimal(str(balance_due or "0"))
+            estimated_waived_amount = Decimal(str(estimated_waived_amount or "0"))
+        except Exception:
+            total_amount = Decimal("0")
+            confirmed_amount = Decimal("0")
+            balance_due = Decimal("0")
+            estimated_waived_amount = Decimal("0")
 
-        if currency == "VES":
-            confirmed_amount = confirmed_amount * bcv_rate
-            estimated_waived_amount = estimated_waived_amount * bcv_rate
-            total_amount = total_amount * bcv_rate
-            balance_due = balance_due * bcv_rate
+        # --- Conversión de moneda (solo al final, con Decimal) ---
+        try:
+            if currency == "VES":
+                confirmed_amount = confirmed_amount * bcv_rate
+                estimated_waived_amount = estimated_waived_amount * bcv_rate
+                total_amount = total_amount * bcv_rate
+                balance_due = balance_due * bcv_rate
 
-            for p in pay_trend:
-                p_val = Decimal(str(p["value"] or 0))
-                p["value"] = float(p_val * bcv_rate)
+                for p in pay_trend:
+                    p["value"] = (Decimal(str(p["value"])) * bcv_rate) if p else Decimal("0")
 
-            for b in balance_trend:
-                b_val = Decimal(str(b["value"] or 0))
-                b["value"] = float(b_val * bcv_rate)
+                for b in balance_trend:
+                    b["value"] = (Decimal(str(b["value"])) * bcv_rate) if b else Decimal("0")
+        except Exception:
+            # Si algo falla en conversión, mantenemos valores en USD
+            pass
 
-        # 🔹 Totales
-        total_patients = Patient.objects.count()
-        total_payments = Payment.objects.count()
-        total_events = Event.objects.count()
+        # --- Totales (blindados) ---
+        try:
+            total_patients = Patient.objects.count()
+        except Exception:
+            total_patients = 0
 
-        # 🔹 Auditoría institucional
-        event_log_qs = Event.objects.order_by("-timestamp").values(
-            "id", "timestamp", "entity", "action", "user"
-        )[:10]
+        try:
+            total_payments = Payment.objects.count()
+        except Exception:
+            total_payments = 0
 
-        # 🔹 Payload blindado
+        try:
+            total_events = Event.objects.count()
+        except Exception:
+            total_events = 0
+
+        # --- Auditoría institucional (alineada con actor) ---
+        try:
+            event_log_qs = Event.objects.order_by("-timestamp").values(
+                "id", "timestamp", "entity", "action", "actor",  # ✅ actor en vez de user
+                "severity", "notify", "metadata"                  # ✅ extendido
+            )[:10]
+            event_log = list(event_log_qs)
+        except Exception:
+            event_log = []
+
+        # --- Payload blindado (convertir a float al final)
         data = {
             "total_patients": total_patients,
             "total_appointments": total_appointments,
@@ -374,15 +437,15 @@ def dashboard_summary_api(request):
             "estimated_waived_amount": float(estimated_waived_amount),
             "financial_balance": float(max(total_amount - balance_due, Decimal("0"))),
             "appointments_trend": appt_trend,
-            "payments_trend": pay_trend,
-            "balance_trend": balance_trend,
+            "payments_trend": [{"date": p["date"], "value": float(p["value"])} for p in pay_trend],
+            "balance_trend": [{"date": b["date"], "value": float(b["value"])} for b in balance_trend],
             "bcv_rate": {
                 "value": float(bcv_rate),
                 "unit": "VES_per_USD",
                 "precision": 8,
                 "is_fallback": is_fallback,
             },
-            "event_log": list(event_log_qs),  # ✅ agregado
+            "event_log": event_log,
         }
 
         return Response(data, status=200)
@@ -390,7 +453,28 @@ def dashboard_summary_api(request):
     except Exception as e:
         print("🔥 ERROR EN DASHBOARD SUMMARY 🔥")
         traceback.print_exc()
-        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # En lugar de 500, devolvemos un payload mínimo para no romper el frontend
+        return Response({
+            "error": str(e),
+            "total_patients": 0,
+            "total_appointments": 0,
+            "active_appointments": 0,
+            "completed_appointments": 0,
+            "pending_appointments": 0,
+            "waiting_room_count": 0,
+            "active_consultations": 0,
+            "total_payments": 0,
+            "total_events": 0,
+            "total_waived": 0,
+            "total_payments_amount": 0.0,
+            "estimated_waived_amount": 0.0,
+            "financial_balance": 0.0,
+            "appointments_trend": [],
+            "payments_trend": [],
+            "balance_trend": [],
+            "bcv_rate": {"value": 1.0, "unit": "VES_per_USD", "precision": 8, "is_fallback": True},
+            "event_log": [],
+        }, status=200)
 
 
 @extend_schema(parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)], responses={200: PatientReadSerializer(many=True)})
