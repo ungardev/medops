@@ -18,7 +18,9 @@ from .models import (
     WaitingRoomEntry,
     GeneticPredisposition,
     ChargeOrder,
-    ChargeItem
+    ChargeItem,
+    MedicalTest,       # 👈 nuevo
+    MedicalReferral    # 👈 nuevo
 )
 
 logger = logging.getLogger("core")
@@ -50,7 +52,6 @@ class MedicalDocumentInlineForPatient(admin.TabularInline):
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
-
 
 class MedicalDocumentInlineForAppointment(admin.TabularInline):
     model = MedicalDocument
@@ -134,6 +135,7 @@ class AppointmentAdmin(admin.ModelAdmin):
     def balance_due_display(self, obj): return f"{obj.balance_due():.2f}"
     balance_due_display.short_description = "Saldo Pendiente"
 
+
 # -------------------------
 # Diagnosis / Treatment / Prescription
 # -------------------------
@@ -163,6 +165,29 @@ class PrescriptionAdmin(admin.ModelAdmin):
     ordering = ('medication',)
     list_per_page = 25
 
+
+# -------------------------
+# MedicalTest
+# -------------------------
+@admin.register(MedicalTest)
+class MedicalTestAdmin(admin.ModelAdmin):
+    list_display = ("id", "appointment", "diagnosis", "test_type", "status", "requested_at", "completed_at")
+    list_filter = ("status", "test_type", "requested_at")
+    search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code")
+    ordering = ("-requested_at",)
+    list_per_page = 25
+
+
+# -------------------------
+# MedicalReferral
+# -------------------------
+@admin.register(MedicalReferral)
+class MedicalReferralAdmin(admin.ModelAdmin):
+    list_display = ("id", "appointment", "diagnosis", "referred_to", "status", "issued_at")
+    list_filter = ("status", "issued_at")
+    search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code", "referred_to")
+    ordering = ("-issued_at",)
+    list_per_page = 25
 
 # -------------------------
 # ChargeOrder (centro financiero)
