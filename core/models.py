@@ -290,6 +290,15 @@ class Diagnosis(models.Model):
     def __str__(self):
         return f"{self.icd_code} - {self.title}"
 
+    def clean(self):
+        """
+        Blindaje institucional:
+        valida que el código ICD-11 exista en el catálogo local ICD11Entry.
+        """
+        from .models import ICD11Entry
+        if self.icd_code and not ICD11Entry.objects.filter(icd_code=self.icd_code).exists():
+            raise ValidationError({"icd_code": "ICD-11 code no reconocido por el catálogo institucional."})
+
 
 class Treatment(models.Model):
     diagnosis = models.ForeignKey(Diagnosis, on_delete=models.CASCADE, related_name='treatments')
@@ -302,7 +311,7 @@ class Treatment(models.Model):
         verbose_name_plural = "Treatments"
 
     def __str__(self):
-        return f"Treatment for {self.diagnosis.code}"
+        return f"Treatment for {self.diagnosis.icd_code}"
 
 
 class Prescription(models.Model):
@@ -316,7 +325,7 @@ class Prescription(models.Model):
         verbose_name_plural = "Prescriptions"
 
     def __str__(self):
-        return f"{self.medication} ({self.diagnosis.code})"
+        return f"{self.medication} ({self.diagnosis.icd_code})"
 
 
 class Payment(models.Model):
@@ -679,3 +688,43 @@ class MedicalReport(models.Model):
 
     def __str__(self):
         return f"Informe Médico #{self.id} - Paciente {self.patient_id}"
+
+
+# --- Catálogo institucional ICD‑11 ---
+class ICD11Entry(models.Model):
+    icd_code = models.CharField(max_length=20, unique=True)          # Ej: "CA23.0"
+    title = models.CharField(max_length=255)                         # Ej: "Asma"
+    foundation_id = models.CharField(max_length=100, blank=True, null=True)  # ID foundation OMS
+    definition = models.TextField(blank=True, null=True)             # Texto oficial OMS
+    synonyms = models.JSONField(blank=True, null=True)               # Lista de sinónimos
+    parent_code = models.CharField(max_length=20, blank=True, null=True)     # Jerarquía inmediata
+
+    # Auditoría mínima del catálogo
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "ICD-11 entry"
+        verbose_name_plural = "ICD-11 entries"
+        indexes = [
+            models.Index(fields=["icd_code"]),
+            models.Index(fields=["title"]),
+        ]
+
+    def __str__(self):
+        return f"{self.icd_code} — {self.title}"
+
+
+class ICD11UpdateLog(models.Model):
+    run_at = models.DateTimeField(auto_now_add=True)
+    source = models.CharField(max_length=255, blank=True, null=True)   # URL/archivo/hash de origen
+    added = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    removed = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = "ICD-11 update log"
+        verbose_name_plural = "ICD-11 update logs"
+
+    def __str__(self):
+        return f"ICD-11 update @ {self.run_at} (+{self.added} ~{self.updated} -{self.removed})"

@@ -20,7 +20,7 @@ export default function DiagnosisPanel({ diagnoses, onAdd }: DiagnosisPanelProps
   const [query, setQuery] = useState("");
   const [description, setDescription] = useState("");
 
-  // ✅ results siempre será un array (default [])
+  // ✅ Hook de búsqueda ICD‑11
   const { data: results = [], isLoading } = useIcdSearch(query);
 
   const handleSelect = (item: IcdResult) => {
@@ -57,7 +57,16 @@ export default function DiagnosisPanel({ diagnoses, onAdd }: DiagnosisPanelProps
           onChange={(e) => setQuery(e.target.value)}
           className="input"
         />
-        {isLoading && <p>Buscando...</p>}
+
+        {/* Indicador de carga */}
+        {isLoading && <p className="text-sm text-muted">Buscando...</p>}
+
+        {/* Fallback si no hay resultados */}
+        {!isLoading && query.length >= 2 && results.length === 0 && (
+          <p className="text-sm text-warning">Sin resultados para "{query}"</p>
+        )}
+
+        {/* Lista de resultados */}
         {results.length > 0 && (
           <ul className="border rounded p-2 max-h-40 overflow-y-auto">
             {results.map((r) => (
