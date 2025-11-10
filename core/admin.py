@@ -134,16 +134,15 @@ class AppointmentAdmin(admin.ModelAdmin):
     def balance_due_display(self, obj): return f"{obj.balance_due():.2f}"
     balance_due_display.short_description = "Saldo Pendiente"
 
-
 # -------------------------
 # Diagnosis / Treatment / Prescription
 # -------------------------
 @admin.register(Diagnosis)
 class DiagnosisAdmin(admin.ModelAdmin):
-    list_display = ('id', 'appointment', 'code', 'description')
-    list_display_links = ('id', 'code')
-    search_fields = ('code', 'description', 'appointment__patient__national_id')
-    ordering = ('code',)
+    list_display = ('id', 'appointment', 'icd_code', 'title', 'description')
+    list_display_links = ('id', 'icd_code')
+    search_fields = ('icd_code', 'title', 'description', 'appointment__patient__national_id')
+    ordering = ('icd_code',)
     list_per_page = 25
     inlines = [MedicalDocumentInlineForDiagnosis]
 
