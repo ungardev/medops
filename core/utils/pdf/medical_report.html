@@ -15,22 +15,27 @@
 </head>
 <body>
   <header>
-    {% if institution.logo_url %}
-      <img src="{{ institution.logo_url }}" alt="Logo" style="height:80px; margin-bottom:10px;">
+    {% if institution.logo %}
+      <img src="{{ institution.logo.url }}" alt="Logo" style="height:80px; margin-bottom:10px;">
     {% endif %}
     <h1>{{ institution.name }}</h1>
-    <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.rif }}</p>
+    <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
     <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
   </header>
 
   <div class="section">
-    <strong>Paciente:</strong> {{ patient.full_name }}<br>
-    C.I.: {{ patient.ci }} - Edad: {{ patient.age }} - Sexo: {{ patient.gender }}
+    <strong>Paciente:</strong> {{ patient.first_name }} {{ patient.last_name }}<br>
+    C.I.: {{ patient.national_id }} - Edad: {{ patient.age }} - Sexo: {{ patient.gender }}
   </div>
 
   <div class="section">
     <strong>Médico:</strong> {{ doctor.full_name }}<br>
-    Especialidad: {{ doctor.specialty }} - Nº Colegiado: {{ doctor.license }}
+    Especialidad: {{ doctor.specialty }} - Nº Colegiado: {{ doctor.colegiado_id }}
+    {% if doctor.signature %}
+      <div style="margin-top:10px;">
+        <img src="{{ doctor.signature.url }}" alt="Firma" style="height:60px;">
+      </div>
+    {% endif %}
   </div>
 
   <div class="section">
@@ -49,7 +54,7 @@
     <h2>Tratamientos</h2>
     <ul>
       {% for t in treatments %}
-      <li>{{ t.description }}</li>
+      <li>{{ t.plan }}</li>
       {% empty %}
       <li>Sin tratamientos</li>
       {% endfor %}
@@ -61,7 +66,7 @@
     <table>
       <tr><th>Medicamento</th><th>Dosis</th><th>Duración</th></tr>
       {% for p in prescriptions %}
-      <tr><td>{{ p.medicine }}</td><td>{{ p.dosage }}</td><td>{{ p.duration }}</td></tr>
+      <tr><td>{{ p.medication }}</td><td>{{ p.dosage }}</td><td>{{ p.duration }}</td></tr>
       {% empty %}
       <tr><td colspan="3">Sin prescripciones</td></tr>
       {% endfor %}
@@ -70,7 +75,7 @@
 
   <div class="section">
     <h2>Notas</h2>
-    <p>{{ notes|default:"Sin notas" }}</p>
+    <p>{{ appointment.notes|default:"Sin notas" }}</p>
   </div>
 
   <footer>

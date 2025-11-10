@@ -28,7 +28,8 @@ from .api_views import (
     institution_settings_api,    # 👈 ENDPOINT DE CONFIGURACIÓN INSTITUCIONAL
     doctor_operator_settings_api, # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
     bcv_rate_api,                # 👈 NUEVO ENDPOINT DE TASA BCV
-    audit_log_api                # 👈 NUEVO ENDPOINT DE AUDITORÍA REAL
+    audit_log_api,               # 👈 NUEVO ENDPOINT DE AUDITORÍA REAL
+    generate_medical_report      # 👈 NUEVO ENDPOINT DE INFORME MÉDICO
 )
 
 # --- Swagger / OpenAPI ---
@@ -77,6 +78,7 @@ urlpatterns = [
 
     # --- Consultas ---
     path("consultation/current/", api_views.current_consultation_api, name="current-consultation-api"),
+    path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),  # 👈 NUEVO
 
     # --- Pagos ---
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),

@@ -1900,3 +1900,71 @@ def generate_report(request, pk: int):
 
     return Response(MedicalReportSerializer(report).data, status=201)
 
+
+@extend_schema(
+    responses={201: MedicalReportSerializer},
+    description="Genera un informe médico para la consulta indicada, crea PDF y lo registra como documento clínico."
+)
+@api_view(["POST"])
+def generate_medical_report(request, pk):
+    appointment = get_object_or_404(Appointment, pk=pk)
+
+    # Crear el informe médico
+    report = MedicalReport.objects.create(
+        appointment=appointment,
+        patient=appointment.patient,
+        status="generated"
+    )
+
+    # Renderizar HTML con plantilla institucional
+    html_string = render_to_string("medical_report.html", {
+        "appointment": appointment,
+        "patient": appointment.patient,
+        "diagnoses": appointment.diagnoses.all(),
+        "institution": InstitutionSettings.objects.first(),
+        "doctor": DoctorOperator.objects.first(),
+        "generated_at": timezone.now(),
+    })
+
+    # Generar PDF con WeasyPrint
+    from weasyprint import HTML
+    pdf_bytes = HTML(string=html_string).write_pdf()
+
+    # Guardar PDF en almacenamiento
+    filename = f"medical_report_{report.id}.pdf"
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes or b"")   # fallback defensivo
+
+    # Actualizar el MedicalReport con la URL del archivo
+    report.file_url = file_path
+    report.save(update_fields=["file_url"])
+
+    # Registrar también un MedicalDocument asociado
+    MedicalDocument.objects.create(
+        patient=appointment.patient,
+        appointment=appointment,
+        diagnosis=None,
+        description="Informe Médico generado automáticamente",
+        category="Informe Médico",
+        file=file_path,
+        uploaded_by=str(request.user) if request.user.is_authenticated else "system"
+    )
+
+    # Evento de auditoría
+    Event.objects.create(
+        entity="MedicalReport",
+        entity_id=report.id,
+        action="generated",
+        actor=str(request.user) if request.user.is_authenticated else "system",
+        metadata={"appointment_id": appointment.id, "patient_id": appointment.patient.id},
+        severity="info",
+        notify=True
+    )
+
+    serializer = MedicalReportSerializer(report)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
