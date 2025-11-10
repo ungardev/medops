@@ -1,5 +1,3 @@
-// src/pages/Consultation/Consultation.tsx
-
 import {
   PatientHeader,
   DiagnosisPanel,
@@ -13,27 +11,24 @@ import {
 
 import {
   useCurrentConsultation,
-  useCreateDiagnosis,
   useCreateTreatment,
   useCreatePrescription,
 } from "../../hooks/consultations";
 
 import { Tabs, Tab } from "../../components/ui/Tabs";
-import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport"; // 👈 hook para generar informe
-import { MedicalReportViewer } from "../../components/Consultation/MedicalReportViewer"; // 👈 nuevo componente viewer
+import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
+import { MedicalReportViewer } from "../../components/Consultation/MedicalReportViewer";
 
 export default function Consultation() {
   const { data: appointment, isLoading } = useCurrentConsultation();
 
-  const createDiagnosis = useCreateDiagnosis();
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
-  const generateReport = useGenerateMedicalReport(); // 👈 hook
+  const generateReport = useGenerateMedicalReport();
 
   if (isLoading) return <p>Cargando consulta...</p>;
   if (!appointment) return <p>No hay paciente en consulta</p>;
 
-  // 🔹 Condición exacta según tu models.py
   const canGenerateReport =
     appointment.status === "in_consultation" || appointment.status === "completed";
 
@@ -55,37 +50,37 @@ export default function Consultation() {
           <div className="consultation-tabs">
             <Tabs defaultTab="diagnosis">
               <Tab id="diagnosis" label="Diagnóstico">
-                <DiagnosisPanel
-                  diagnoses={appointment.diagnoses}
-                  onAdd={(data) =>
-                    createDiagnosis.mutate({
-                      appointment: appointment.id,
-                      icd_code: data.icd_code,
-                      title: data.title,
-                      foundation_id: data.foundation_id,
-                      description: data.description,
-                    })
-                  }
-                />
+                {/* DiagnosisPanel ya usa useCreateDiagnosis internamente */}
+                <DiagnosisPanel />
               </Tab>
 
               <Tab id="treatment" label="Tratamiento">
                 <TreatmentPanel
                   diagnoses={appointment.diagnoses}
-                  onAdd={(data) => createTreatment.mutate({ ...data })}
+                  onAdd={(data) =>
+                    createTreatment.mutate({
+                      ...data,
+                      appointment: appointment.id, // ✅ ahora válido
+                    })
+                  }
                 />
               </Tab>
 
               <Tab id="prescription" label="Prescripción">
                 <PrescriptionPanel
                   diagnoses={appointment.diagnoses}
-                  onAdd={(data) => createPrescription.mutate({ ...data })}
+                  onAdd={(data) =>
+                    createPrescription.mutate({
+                      ...data,
+                      appointment: appointment.id, // ✅ ahora válido
+                    })
+                  }
                 />
               </Tab>
 
               <Tab id="notes" label="Notas">
                 <NotesPanel
-                  consultationId={appointment.id}
+                  appointmentId={appointment.id} // ✅ corregido
                   notes={appointment.notes}
                 />
               </Tab>

@@ -61,7 +61,7 @@ from .serializers import (
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
     EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer,
-    DoctorOperatorSerializer, MedicalReportSerializer, ICD11EntrySerializer
+    DoctorOperatorSerializer, MedicalReportSerializer, ICD11EntrySerializer, DiagnosisWriteSerializer
 )
 
 
@@ -1084,7 +1084,11 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet):
 
 class DiagnosisViewSet(viewsets.ModelViewSet):
     queryset = Diagnosis.objects.all().select_related("appointment")
-    serializer_class = DiagnosisSerializer
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return DiagnosisWriteSerializer
+        return DiagnosisSerializer
 
     def perform_create(self, serializer):
         diagnosis = serializer.save()
@@ -1095,6 +1099,7 @@ class DiagnosisViewSet(viewsets.ModelViewSet):
             action="create",
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
         )
+
 
 class TreatmentViewSet(viewsets.ModelViewSet):
     queryset = Treatment.objects.all().select_related("diagnosis")

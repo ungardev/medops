@@ -4,10 +4,10 @@ import { apiFetch } from "../../api/client";
 
 // ✅ Tipo actualizado para ICD-11
 export interface CreateDiagnosisInput {
-  appointment: number;
-  icd_code: string;        // código ICD-11 oficial
-  title?: string;          // descripción oficial OMS
-  foundation_id?: string;  // ID único ICD-11
+  appointment: number;     // id de la cita (obligatorio)
+  icd_code: string;        // código ICD-11 oficial (obligatorio)
+  title: string;           // descripción oficial OMS (obligatorio en modelo)
+  foundation_id?: string;  // 👈 corregido: en tu modelo es CharField, no number
   description?: string;    // notas adicionales del médico
 }
 
@@ -16,6 +16,10 @@ export function useCreateDiagnosis() {
 
   const mutation = useMutation({
     mutationFn: async (data: CreateDiagnosisInput) => {
+      // Logging defensivo para inspección
+      console.log("Payload diagnóstico:", data);
+
+      // ❗ Importante: no anteponer /api si apiFetch ya lo añade
       return apiFetch("diagnoses/", {
         method: "POST",
         body: JSON.stringify(data),

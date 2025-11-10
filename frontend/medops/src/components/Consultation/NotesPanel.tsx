@@ -1,21 +1,21 @@
 // src/components/Consultation/NotesPanel.tsx
 import { useState } from "react";
-import { useUpdateNotes } from "../../hooks/consultations/useNotes";
+import { useUpdateAppointmentNotes } from "../../hooks/appointments/useUpdateAppointmentNotes";
 
 interface NotesPanelProps {
-  consultationId: number;
+  appointmentId: number;
   notes: string | null;
 }
 
-export default function NotesPanel({ consultationId, notes }: NotesPanelProps) {
+export default function NotesPanel({ appointmentId, notes }: NotesPanelProps) {
   const [value, setValue] = useState(notes || "");
   const [isEditing, setIsEditing] = useState(false);
 
-  const updateNotes = useUpdateNotes();
+  const { mutate: updateNotes, isPending } = useUpdateAppointmentNotes();
 
   const handleSave = () => {
     if (value.trim() === "") return;
-    updateNotes.mutate({ id: consultationId, notes: value });
+    updateNotes({ id: appointmentId, notes: value });
     setIsEditing(false);
   };
 
@@ -28,7 +28,10 @@ export default function NotesPanel({ consultationId, notes }: NotesPanelProps) {
           <p className="whitespace-pre-line">
             {value || "Sin notas registradas"}
           </p>
-          <button className="btn-secondary mt-2" onClick={() => setIsEditing(true)}>
+          <button
+            className="btn-secondary mt-2"
+            onClick={() => setIsEditing(true)}
+          >
             Editar notas
           </button>
         </div>
@@ -41,8 +44,12 @@ export default function NotesPanel({ consultationId, notes }: NotesPanelProps) {
             rows={6}
           />
           <div className="flex gap-2">
-            <button className="btn-primary" onClick={handleSave}>
-              Guardar
+            <button
+              className="btn-primary"
+              onClick={handleSave}
+              disabled={isPending}
+            >
+              {isPending ? "Guardando..." : "Guardar"}
             </button>
             <button
               className="btn-secondary"

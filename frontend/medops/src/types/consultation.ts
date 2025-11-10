@@ -41,12 +41,14 @@ export interface MedicalDocument {
 export interface Payment {
   id: number;
   amount: number;
+  currency: string;      // 👈 añadido
   method: string;
   status: string;
   reference_number?: string | null;
   bank_name?: string | null;
   received_by?: string | null;
   received_at?: string | null;
+  idempotency_key?: string | null; // 👈 añadido
 }
 
 // --- Paciente (mínimo para cockpit) ---
@@ -62,7 +64,9 @@ export interface Patient {
 export interface Appointment {
   id: number;
   patient: Patient;
-  status: "scheduled" | "in_progress" | "completed" | "canceled";
+  appointment_date?: string; // 👈 añadido
+  arrival_time?: string | null; // 👈 añadido
+  status: "pending" | "arrived" | "in_consultation" | "completed" | "canceled"; // 👈 corregido
   notes?: string | null;
   diagnoses: Diagnosis[];
   treatments: Treatment[];

@@ -1,30 +1,17 @@
 // src/hooks/appointments/useAppointments.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Appointment, AppointmentInput } from "../../types/appointments";
-
-// 🔹 Helper genérico para fetch (ajústalo a tu apiFetch/axios centralizado)
-async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      // Authorization: `Bearer ${token}`, // si usas JWT
-    },
-    credentials: "include", // si usas cookies de sesión
-    ...options,
-  });
-  if (!res.ok) {
-    throw new Error(`Error ${res.status}: ${res.statusText}`);
-  }
-  return res.json();
-}
+import { apiFetch } from "../../api/client"; // 👈 usa tu helper centralizado
+import { mapAppointmentList } from "../../utils/appointmentsMapper";
 
 // --- GET: lista de citas ---
 export function useAppointments(params?: { date?: string }) {
   return useQuery<Appointment[]>({
     queryKey: ["appointments", params],
-    queryFn: () => {
+    queryFn: async () => {
       const query = params?.date ? `?date=${params.date}` : "";
-      return apiFetch<Appointment[]>(`/api/appointments/${query}`);
+      const raw = await apiFetch<Appointment[]>(`/api/appointments/${query}`);
+      return raw.map(mapAppointmentList); // 👈 normalización
     },
   });
 }
@@ -33,7 +20,10 @@ export function useAppointments(params?: { date?: string }) {
 export function useAppointment(id: number) {
   return useQuery<Appointment>({
     queryKey: ["appointments", id],
-    queryFn: () => apiFetch<Appointment>(`/api/appointments/${id}/`),
+    queryFn: async () => {
+      const raw = await apiFetch<Appointment>(`/api/appointments/${id}/`);
+      return mapAppointmentList(raw); // 👈 normalización
+    },
     enabled: !!id,
   });
 }
@@ -42,11 +32,13 @@ export function useAppointment(id: number) {
 export function useCreateAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: AppointmentInput) =>
-      apiFetch<Appointment>(`/api/appointments/`, {
+    mutationFn: async (data: AppointmentInput) => {
+      const raw = await apiFetch<Appointment>(`/api/appointments/`, {
         method: "POST",
         body: JSON.stringify(data),
-      }),
+      });
+      return mapAppointmentList(raw); // 👈 normalización
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
     },
@@ -57,10 +49,13 @@ export function useCreateAppointment() {
 export function useCancelAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: number) =>
-      apiFetch<Appointment>(`/api/appointments/${id}/cancel/`, {
+    mutationFn: async (id: number) => {
+      const raw = await apiFetch<Appointment>(`/api/appointments/${id}/status/`, {
         method: "PATCH",
-      }),
+        body: JSON.stringify({ status: "canceled" }), // 👈 payload correcto
+      });
+      return mapAppointmentList(raw); // 👈 normalización
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
     },

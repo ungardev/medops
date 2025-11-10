@@ -1,78 +1,114 @@
 // src/components/Consultation/DiagnosisPanel.tsx
-import { useState } from "react";
-import { Diagnosis } from "../../types/consultation";
+import { useState, useEffect, useRef } from "react";
 import { useIcdSearch } from "../../hooks/diagnosis/useIcdSearch";
-
-// ✅ Importamos el tipo IcdResult desde el hook
 import type { IcdResult } from "../../hooks/diagnosis/useIcdSearch";
+import { useCreateDiagnosis } from "../../hooks/consultations/useCreateDiagnosis";
+import { useCurrentConsultation } from "../../hooks/consultations/useCurrentConsultation";
 
-interface DiagnosisPanelProps {
-  diagnoses: Diagnosis[];
-  onAdd: (data: {
-    icd_code: string;
-    title?: string;
-    foundation_id?: string;
-    description?: string;
-  }) => void;
-}
-
-export default function DiagnosisPanel({ diagnoses, onAdd }: DiagnosisPanelProps) {
+export default function DiagnosisPanel() {
   const [query, setQuery] = useState("");
   const [description, setDescription] = useState("");
+  const [highlightIndex, setHighlightIndex] = useState<number>(-1);
 
-  // ✅ Hook de búsqueda ICD‑11
   const { data: results = [], isLoading } = useIcdSearch(query);
+  const { data: appointment } = useCurrentConsultation();
+  const { mutate: createDiagnosis } = useCreateDiagnosis();
+
+  const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
+
+  useEffect(() => {
+    itemRefs.current = [];
+    setHighlightIndex(-1);
+  }, [results]);
 
   const handleSelect = (item: IcdResult) => {
-    onAdd({
+    if (!appointment) return;
+
+    const payload = {
+      appointment: appointment.id,
       icd_code: item.icd_code,
       title: item.title,
-      foundation_id: item.foundation_id,
       description,
-    });
+      ...(item.foundation_id ? { foundation_id: item.foundation_id } : {}), // ✅ ahora string
+    };
+
+    console.log("Creando diagnóstico con:", payload);
+    createDiagnosis(payload);
+
     setQuery("");
     setDescription("");
+    setHighlightIndex(-1);
   };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!results || results.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIndex((prev) => (prev + 1) % results.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIndex((prev) => (prev - 1 + results.length) % results.length);
+    } else if (e.key === "Enter" && highlightIndex >= 0) {
+      e.preventDefault();
+      handleSelect(results[highlightIndex]);
+    } else if (e.key === "Escape") {
+      setHighlightIndex(-1);
+    }
+  };
+
+  useEffect(() => {
+    if (highlightIndex >= 0) {
+      const el = itemRefs.current[highlightIndex];
+      if (el) el.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIndex]);
 
   return (
     <div className="diagnosis-panel card">
       <h3 className="text-lg font-bold mb-2">Diagnósticos</h3>
 
-      {/* Lista de diagnósticos existentes */}
       <ul className="mb-4">
-        {diagnoses.length === 0 && <li className="text-muted">Sin diagnósticos</li>}
-        {diagnoses.map((d) => (
+        {(!appointment || appointment.diagnoses.length === 0) && (
+          <li className="text-muted">Sin diagnósticos</li>
+        )}
+        {appointment?.diagnoses.map((d) => (
           <li key={d.id} className="border-b py-1">
             <strong>{d.icd_code}</strong> — {d.title || "Sin descripción"}
           </li>
         ))}
       </ul>
 
-      {/* Formulario para agregar nuevo diagnóstico */}
       <div className="flex flex-col gap-2">
         <input
           type="text"
           placeholder="Buscar diagnóstico ICD-11..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setHighlightIndex(-1);
+          }}
+          onKeyDown={handleKeyDown}
           className="input"
         />
 
-        {/* Indicador de carga */}
         {isLoading && <p className="text-sm text-muted">Buscando...</p>}
-
-        {/* Fallback si no hay resultados */}
         {!isLoading && query.length >= 2 && results.length === 0 && (
           <p className="text-sm text-warning">Sin resultados para "{query}"</p>
         )}
 
-        {/* Lista de resultados */}
         {results.length > 0 && (
           <ul className="border rounded p-2 max-h-40 overflow-y-auto">
-            {results.map((r) => (
+            {results.map((r, idx) => (
               <li
                 key={r.icd_code}
-                className="cursor-pointer hover:bg-gray-100 p-1"
+                ref={(el) => {
+                  itemRefs.current[idx] = el;
+                }}
+                className={`cursor-pointer p-1 ${
+                  idx === highlightIndex ? "bg-blue-100" : "hover:bg-gray-100"
+                }`}
+                onMouseEnter={() => setHighlightIndex(idx)}
                 onClick={() => handleSelect(r)}
               >
                 <strong>{r.icd_code}</strong> — {r.title}

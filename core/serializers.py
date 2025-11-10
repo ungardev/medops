@@ -214,6 +214,18 @@ class DiagnosisSerializer(serializers.ModelSerializer):
         ]
 
 
+class DiagnosisWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Diagnosis
+        fields = [
+            "id",
+            "appointment",   # 👈 necesario para crear
+            "icd_code",
+            "title",
+            "foundation_id",
+            "description",
+        ]
+
 
 # --- Citas ---
 class AppointmentSerializer(serializers.ModelSerializer):

@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 
-export interface CreateTreatmentInput {   // 👈 export aquí
+export interface CreateTreatmentInput {
+  appointment: number;   // 👈 añadido
   diagnosis: number;
   plan: string;
   start_date?: string;
