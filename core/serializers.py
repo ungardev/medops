@@ -202,7 +202,16 @@ class DiagnosisSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Diagnosis
-        fields = ["id", "code", "description", "treatments", "prescriptions"]
+        fields = [
+            "id",
+            "icd_code",       # código ICD-11
+            "title",          # descripción oficial OMS
+            "foundation_id",  # ID único ICD-11
+            "description",    # notas adicionales
+            "treatments",
+            "prescriptions",
+        ]
+
 
 
 # --- Citas ---

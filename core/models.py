@@ -278,15 +278,17 @@ class WaitingRoomEntry(models.Model):
 
 class Diagnosis(models.Model):
     appointment = models.ForeignKey(Appointment, on_delete=models.CASCADE, related_name='diagnoses')
-    code = models.CharField(max_length=50)
-    description = models.TextField(blank=True, null=True)
-    
+    icd_code = models.CharField(max_length=20)  # Ejemplo: "CA23.0"
+    title = models.CharField(max_length=255)    # Ejemplo: "Asma"
+    foundation_id = models.CharField(max_length=100, blank=True, null=True)  # ID único ICD-11
+    description = models.TextField(blank=True, null=True)  # notas adicionales del médico
+
     class Meta:
         verbose_name = "Diagnosis"
         verbose_name_plural = "Diagnoses"
 
     def __str__(self):
-        return f"{self.code} ({self.appointment.pk if self.appointment else 'no-appointment'})"
+        return f"{self.icd_code} - {self.title}"
 
 
 class Treatment(models.Model):

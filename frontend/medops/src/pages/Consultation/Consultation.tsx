@@ -59,8 +59,11 @@ export default function Consultation() {
                   diagnoses={appointment.diagnoses}
                   onAdd={(data) =>
                     createDiagnosis.mutate({
-                      ...data,
                       appointment: appointment.id,
+                      icd_code: data.icd_code,
+                      title: data.title,
+                      foundation_id: data.foundation_id,
+                      description: data.description,
                     })
                   }
                 />

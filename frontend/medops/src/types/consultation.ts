@@ -3,8 +3,10 @@
 // --- Diagnóstico ---
 export interface Diagnosis {
   id: number;
-  code: string;
-  description?: string;
+  icd_code: string;        // código ICD-11 oficial (ej: "CA23.0")
+  title?: string;          // descripción oficial OMS
+  foundation_id?: string;  // ID único ICD-11
+  description?: string;    // notas adicionales del médico
   treatments: Treatment[];
   prescriptions: Prescription[];
 }

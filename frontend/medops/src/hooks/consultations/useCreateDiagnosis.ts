@@ -1,10 +1,14 @@
+// src/hooks/consultations/useCreateDiagnosis.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 
-export interface CreateDiagnosisInput {   // 👈 export aquí
+// ✅ Tipo actualizado para ICD-11
+export interface CreateDiagnosisInput {
   appointment: number;
-  code: string;
-  description?: string;
+  icd_code: string;        // código ICD-11 oficial
+  title?: string;          // descripción oficial OMS
+  foundation_id?: string;  // ID único ICD-11
+  description?: string;    // notas adicionales del médico
 }
 
 export function useCreateDiagnosis() {
@@ -18,6 +22,7 @@ export function useCreateDiagnosis() {
       });
     },
     onSuccess: () => {
+      // ✅ Invalida la consulta actual para refrescar diagnósticos
       queryClient.invalidateQueries({ queryKey: ["consultation", "current"] });
     },
   });
