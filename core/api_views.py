@@ -1916,19 +1916,29 @@ def generate_medical_report(request, pk):
         status="generated"
     )
 
-    # Renderizar HTML con plantilla institucional
-    html_string = render_to_string("medical_report.html", {
+    # Obtener datos institucionales y del médico
+    institution = InstitutionSettings.objects.first()
+    doctor = DoctorOperator.objects.first()
+
+    # Preparar contexto completo
+    context = {
         "appointment": appointment,
         "patient": appointment.patient,
         "diagnoses": appointment.diagnoses.all(),
-        "institution": InstitutionSettings.objects.first(),
-        "doctor": DoctorOperator.objects.first(),
+        "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
+        "prescriptions": Prescription.objects.filter(diagnosis__appointment=appointment),
+        "institution": institution,
+        "doctor": doctor,
+        "report": report,
         "generated_at": timezone.now(),
-    })
+    }
 
-    # Generar PDF con WeasyPrint
+    # Renderizar HTML con plantilla institucional
+    html_string = render_to_string("pdf/medical_report.html", context)
+
+    # Generar PDF con base_url para que WeasyPrint acceda a imágenes
     from weasyprint import HTML
-    pdf_bytes = HTML(string=html_string).write_pdf()
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
     # Guardar PDF en almacenamiento
     filename = f"medical_report_{report.id}.pdf"
@@ -1936,7 +1946,7 @@ def generate_medical_report(request, pk):
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
     with open(full_path, "wb") as f:
-        f.write(pdf_bytes or b"")   # fallback defensivo
+        f.write(pdf_bytes or b"")
 
     # Actualizar el MedicalReport con la URL del archivo
     report.file_url = file_path
@@ -1966,5 +1976,6 @@ def generate_medical_report(request, pk):
 
     serializer = MedicalReportSerializer(report)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 
