@@ -5,8 +5,11 @@ import { apiFetch } from "../../api/client";
 // ✅ Interfaz exportada para tipar resultados ICD-11
 export interface IcdResult {
   icd_code: string;
-  title?: string;
+  title: string;
   foundation_id?: string;
+  definition?: string;
+  synonyms?: string[];
+  parent_code?: string;
 }
 
 export function useIcdSearch(query: string) {

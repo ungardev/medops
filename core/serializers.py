@@ -3,7 +3,8 @@ from drf_spectacular.utils import extend_schema_field
 from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
-    ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport
+    ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
+    ICD11Entry
 )
 from datetime import date
 from typing import Optional
@@ -669,3 +670,9 @@ class MedicalReportSerializer(serializers.ModelSerializer):
     def get_doctor(self, obj):
         doctor = DoctorOperator.objects.first()
         return DoctorOperatorSerializer(doctor).data if doctor else None
+
+
+class ICD11EntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ICD11Entry
+        fields = ["icd_code", "title", "definition", "synonyms", "parent_code"]

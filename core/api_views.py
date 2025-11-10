@@ -50,7 +50,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport
+from .models import Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry
 
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
@@ -61,7 +61,7 @@ from .serializers import (
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
     EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer,
-    DoctorOperatorSerializer, MedicalReportSerializer
+    DoctorOperatorSerializer, MedicalReportSerializer, ICD11EntrySerializer
 )
 
 
@@ -1980,54 +1980,23 @@ def generate_medical_report(request, pk):
 
 @extend_schema(
     parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)],
-    responses={200: OpenApiResponse(description="Resultados ICD-11")}
+    responses={200: ICD11EntrySerializer(many=True)}
 )
 @api_view(["GET"])
 def icd_search_api(request):
     """
-    Endpoint REST para buscar diagnósticos ICD-11.
-    Consulta la API oficial de la OMS y usa NLM como fallback.
+    Endpoint institucional para búsqueda ICD-11 local.
     """
-    query = request.GET.get("q", "").strip()
-    if not query or len(query) < 2:
+    q = request.GET.get("q", "").strip()
+    if not q:
         return Response([], status=200)
 
-    results = []
+    # Buscar por título
+    qs = ICD11Entry.objects.filter(title__icontains=q)[:50]
+    if not qs.exists():
+        # fallback: buscar por código
+        qs = ICD11Entry.objects.filter(icd_code__icontains=q)[:50]
 
-    # --- Fuente primaria: ICD API OMS ---
-    try:
-        url = f"https://id.who.int/icd/entity/search?q={query}"
-        headers = {"Accept": "application/json"}
-        resp = requests.get(url, headers=headers, timeout=3)
-
-        if resp.status_code == 200:
-            for item in resp.json().get("destinationEntities", []):
-                results.append({
-                    "icd_code": item.get("code"),
-                    "title": item.get("title", {}).get("@value"),
-                    "foundation_id": item.get("id"),
-                })
-            if results:
-                return Response(results, status=200)
-    except Exception as e:
-        audit.error(f"ICD search error (OMS): {e}")
-
-    # --- Fallback: NLM Clinical Tables ---
-    try:
-        url = f"https://clinicaltables.nlm.nih.gov/api/icd11_codes/v3/search?sf=code,title&q={query}"
-        resp = requests.get(url, timeout=3)
-        if resp.status_code == 200:
-            data = resp.json()
-            for r in data[3]:  # lista de resultados
-                results.append({
-                    "icd_code": r[0],
-                    "title": r[1],
-                    "foundation_id": None,
-                })
-            return Response(results, status=200)
-    except Exception as e:
-        audit.error(f"NLM fallback error: {e}")
-
-    # --- Si ambas fuentes fallan ---
-    return Response([], status=200)
+    serializer = ICD11EntrySerializer(qs, many=True)
+    return Response(serializer.data, status=200)
 
