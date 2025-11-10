@@ -1,6 +1,9 @@
 // src/components/Consultation/TreatmentPanel.tsx
 import { useState } from "react";
 import { Diagnosis, Treatment } from "../../types/consultation";
+import TreatmentBadge from "./TreatmentBadge";
+import { useUpdateTreatment } from "../../hooks/consultations/useUpdateTreatment";
+import { useDeleteTreatment } from "../../hooks/consultations/useDeleteTreatment";
 
 interface TreatmentPanelProps {
   diagnoses: Diagnosis[];
@@ -12,6 +15,9 @@ export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps
   const [plan, setPlan] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  const { mutate: updateTreatment } = useUpdateTreatment();
+  const { mutate: deleteTreatment } = useDeleteTreatment();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,21 +33,26 @@ export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps
     <div className="treatment-panel card">
       <h3 className="text-lg font-bold mb-2">Tratamientos</h3>
 
-      {/* Lista de diagnósticos con sus tratamientos */}
       {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
       {diagnoses.map((d) => (
         <div key={d.id} className="mb-3">
           <h4 className="font-semibold">
-            {d.code} — {d.description || "Sin descripción"}
+            {d.icd_code} — {d.title || d.description || "Sin descripción"}
           </h4>
-          <ul className="ml-4 list-disc">
+          <ul className="ml-4">
             {d.treatments && d.treatments.length > 0 ? (
               d.treatments.map((t: Treatment) => (
                 <li key={t.id}>
-                  {t.plan}{" "}
-                  {t.start_date && t.end_date
-                    ? `(${t.start_date} → ${t.end_date})`
-                    : ""}
+                  <TreatmentBadge
+                    id={t.id}
+                    plan={t.plan}
+                    start_date={t.start_date}
+                    end_date={t.end_date}
+                    onEdit={(id, newPlan, start, end) =>
+                      updateTreatment({ id, plan: newPlan, start_date: start, end_date: end })
+                    }
+                    onDelete={(id) => deleteTreatment(id)}
+                  />
                 </li>
               ))
             ) : (
@@ -51,7 +62,6 @@ export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps
         </div>
       ))}
 
-      {/* Formulario para agregar nuevo tratamiento */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
         <select
           value={diagnosisId}
@@ -61,7 +71,7 @@ export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps
           <option value="">Seleccionar diagnóstico</option>
           {diagnoses.map((d) => (
             <option key={d.id} value={d.id}>
-              {d.code} — {d.description}
+              {d.icd_code} — {d.title || d.description}
             </option>
           ))}
         </select>

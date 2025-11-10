@@ -4,7 +4,7 @@ from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
-    ICD11Entry
+    ICD11Entry, MedicalTest, MedicalReferral, TEST_TYPE_CHOICES
 )
 from datetime import date
 from typing import Optional
@@ -688,3 +688,59 @@ class ICD11EntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = ICD11Entry
         fields = ["icd_code", "title", "definition", "synonyms", "parent_code"]
+
+
+class MedicalTestSerializer(serializers.ModelSerializer):
+    test_type_display = serializers.CharField(source="get_test_type_display", read_only=True)
+
+    class Meta:
+        model = MedicalTest
+        fields = [
+            "id",
+            "appointment",
+            "diagnosis",
+            "requested_by",
+            "test_type",
+            "test_type_display",
+            "description",
+            "status",
+            "requested_at",
+            "completed_at",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        ]
+        read_only_fields = ["requested_at", "completed_at", "created_at", "updated_at"]
+
+    def validate_test_type(self, value):
+        valid_values = [choice[0] for choice in TEST_TYPE_CHOICES]
+        if value not in valid_values:
+            raise serializers.ValidationError("Tipo de examen inválido.")
+        return value
+
+
+class MedicalReferralSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalReferral
+        fields = [
+            "id",
+            "appointment",
+            "diagnosis",
+            "issued_by",
+            "referred_to",
+            "reason",
+            "status",
+            "issued_at",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        ]
+        read_only_fields = ["issued_at", "created_at", "updated_at"]
+
+    def validate_status(self, value):
+        valid_values = ["issued", "accepted", "rejected"]
+        if value not in valid_values:
+            raise serializers.ValidationError("Estado inválido para la referencia médica.")
+        return value

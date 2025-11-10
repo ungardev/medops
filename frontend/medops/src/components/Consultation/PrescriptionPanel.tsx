@@ -1,6 +1,9 @@
 // src/components/Consultation/PrescriptionPanel.tsx
 import { useState } from "react";
 import { Diagnosis, Prescription } from "../../types/consultation";
+import PrescriptionBadge from "./PrescriptionBadge";
+import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescription";
+import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescription";
 
 interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
@@ -12,6 +15,9 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
   const [medication, setMedication] = useState("");
   const [dosage, setDosage] = useState("");
   const [duration, setDuration] = useState("");
+
+  const { mutate: updatePrescription } = useUpdatePrescription();
+  const { mutate: deletePrescription } = useDeletePrescription();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,20 +33,26 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
     <div className="prescription-panel card">
       <h3 className="text-lg font-bold mb-2">Prescripciones</h3>
 
-      {/* Lista de diagnósticos con sus prescripciones */}
       {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
       {diagnoses.map((d) => (
         <div key={d.id} className="mb-3">
           <h4 className="font-semibold">
-            {d.code} — {d.description || "Sin descripción"}
+            {d.icd_code} — {d.title || d.description || "Sin descripción"}
           </h4>
-          <ul className="ml-4 list-disc">
+          <ul className="ml-4">
             {d.prescriptions && d.prescriptions.length > 0 ? (
               d.prescriptions.map((p: Prescription) => (
                 <li key={p.id}>
-                  <strong>{p.medication}</strong>
-                  {p.dosage && ` — ${p.dosage}`}
-                  {p.duration && ` (${p.duration})`}
+                  <PrescriptionBadge
+                    id={p.id}
+                    medication={p.medication}
+                    dosage={p.dosage}
+                    duration={p.duration}
+                    onEdit={(id, med, dos, dur) =>
+                      updatePrescription({ id, medication: med, dosage: dos, duration: dur })
+                    }
+                    onDelete={(id) => deletePrescription(id)}
+                  />
                 </li>
               ))
             ) : (
@@ -50,7 +62,6 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
         </div>
       ))}
 
-      {/* Formulario para agregar nueva prescripción */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
         <select
           value={diagnosisId}
@@ -60,7 +71,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           <option value="">Seleccionar diagnóstico</option>
           {diagnoses.map((d) => (
             <option key={d.id} value={d.id}>
-              {d.code} — {d.description}
+              {d.icd_code} — {d.title || d.description}
             </option>
           ))}
         </select>

@@ -1,5 +1,3 @@
-// src/types/consultation.ts
-
 // --- Diagnóstico ---
 export interface Diagnosis {
   id: number;
@@ -75,4 +73,38 @@ export interface Appointment {
   payments?: Payment[];
   created_at: string;
   updated_at: string;
+}
+
+// --- Examen médico ---
+export interface MedicalTest {
+  id: number;
+  appointment: number;
+  diagnosis?: number | null;
+  requested_by?: number | null;
+  test_type: string;
+  test_type_display?: string;
+  description?: string;
+  status: "pending" | "completed" | "cancelled";
+  requested_at: string;
+  completed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  created_by?: number | null;
+  updated_by?: number | null;
+}
+
+// --- Referencia médica ---
+export interface MedicalReferral {
+  id: number;
+  appointment: number;
+  diagnosis?: number | null;
+  issued_by?: number | null;
+  referred_to: string;
+  reason?: string;
+  status: "issued" | "accepted" | "rejected";
+  issued_at: string;
+  created_at: string;
+  updated_at: string;
+  created_by?: number | null;
+  updated_by?: number | null;
 }

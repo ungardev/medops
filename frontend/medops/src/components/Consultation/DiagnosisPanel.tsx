@@ -3,16 +3,22 @@ import { useState, useEffect, useRef } from "react";
 import { useIcdSearch } from "../../hooks/diagnosis/useIcdSearch";
 import type { IcdResult } from "../../hooks/diagnosis/useIcdSearch";
 import { useCreateDiagnosis } from "../../hooks/consultations/useCreateDiagnosis";
+import { useUpdateDiagnosis } from "../../hooks/consultations/useUpdateDiagnosis";
+import { useDeleteDiagnosis } from "../../hooks/consultations/useDeleteDiagnosis";
 import { useCurrentConsultation } from "../../hooks/consultations/useCurrentConsultation";
+import DiagnosisBadge from "./DiagnosisBadge";
 
 export default function DiagnosisPanel() {
   const [query, setQuery] = useState("");
   const [description, setDescription] = useState("");
   const [highlightIndex, setHighlightIndex] = useState<number>(-1);
+  const [selectedDiagnosis, setSelectedDiagnosis] = useState<IcdResult | null>(null);
 
   const { data: results = [], isLoading } = useIcdSearch(query);
   const { data: appointment } = useCurrentConsultation();
   const { mutate: createDiagnosis } = useCreateDiagnosis();
+  const { mutate: updateDiagnosis } = useUpdateDiagnosis();
+  const { mutate: deleteDiagnosis } = useDeleteDiagnosis();
 
   const itemRefs = useRef<Array<HTMLLIElement | null>>([]);
 
@@ -22,21 +28,27 @@ export default function DiagnosisPanel() {
   }, [results]);
 
   const handleSelect = (item: IcdResult) => {
-    if (!appointment) return;
+    setSelectedDiagnosis(item);
+    setDescription("");
+  };
+
+  const handleSave = () => {
+    if (!appointment || !selectedDiagnosis) return;
 
     const payload = {
       appointment: appointment.id,
-      icd_code: item.icd_code,
-      title: item.title,
+      icd_code: selectedDiagnosis.icd_code,
+      title: selectedDiagnosis.title || "Sin título",
       description,
-      ...(item.foundation_id ? { foundation_id: item.foundation_id } : {}), // ✅ ahora string
+      ...(selectedDiagnosis.foundation_id ? { foundation_id: selectedDiagnosis.foundation_id } : {}),
     };
 
-    console.log("Creando diagnóstico con:", payload);
+    console.log("Guardando diagnóstico:", payload);
     createDiagnosis(payload);
 
-    setQuery("");
+    setSelectedDiagnosis(null);
     setDescription("");
+    setQuery("");
     setHighlightIndex(-1);
   };
 
@@ -57,6 +69,16 @@ export default function DiagnosisPanel() {
     }
   };
 
+  const handleEdit = (id: number, newDescription: string) => {
+    console.log("Editar diagnóstico:", id, newDescription);
+    updateDiagnosis({ id, description: newDescription });
+  };
+
+  const handleDelete = (id: number) => {
+    console.log("Eliminar diagnóstico:", id);
+    deleteDiagnosis(id);
+  };
+
   useEffect(() => {
     if (highlightIndex >= 0) {
       const el = itemRefs.current[highlightIndex];
@@ -73,8 +95,15 @@ export default function DiagnosisPanel() {
           <li className="text-muted">Sin diagnósticos</li>
         )}
         {appointment?.diagnoses.map((d) => (
-          <li key={d.id} className="border-b py-1">
-            <strong>{d.icd_code}</strong> — {d.title || "Sin descripción"}
+          <li key={d.id}>
+            <DiagnosisBadge
+              id={d.id}
+              icd_code={d.icd_code}
+              title={d.title || "Sin título"}
+              description={d.description}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
           </li>
         ))}
       </ul>
@@ -117,12 +146,25 @@ export default function DiagnosisPanel() {
           </ul>
         )}
 
-        <textarea
-          placeholder="Notas adicionales"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="textarea"
-        />
+        {selectedDiagnosis && (
+          <div className="p-2 border rounded bg-gray-50">
+            <strong>{selectedDiagnosis.icd_code}</strong> — {selectedDiagnosis.title}
+          </div>
+        )}
+
+        {selectedDiagnosis && (
+          <>
+            <textarea
+              placeholder="Notas clínicas para este diagnóstico"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="textarea"
+            />
+            <button onClick={handleSave} className="btn btn-primary">
+              Guardar diagnóstico
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

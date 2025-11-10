@@ -8,6 +8,7 @@ from simple_history.models import HistoricalRecords, HistoricalChanges
 from django.db.models import Sum
 from decimal import Decimal
 from django.utils import timezone
+from django.conf import settings
 
 # Create your models here.
 class GeneticPredisposition(models.Model):
@@ -728,3 +729,151 @@ class ICD11UpdateLog(models.Model):
 
     def __str__(self):
         return f"ICD-11 update @ {self.run_at} (+{self.added} ~{self.updated} -{self.removed})"
+
+
+# 🔹 Tipos de exámenes médicos normalizados
+TEST_TYPE_CHOICES = [
+    # Análisis de laboratorio
+    ("blood_test", "Análisis de sangre"),
+    ("urine_test", "Análisis de orina"),
+    ("biopsy", "Biopsia"),
+    ("genetic_test", "Prueba genética"),
+    ("microbiology_culture", "Cultivo microbiológico"),
+
+    # Imagenología
+    ("xray", "Rayos X / Radiografía"),
+    ("ultrasound", "Ecografía"),
+    ("ct_scan", "Tomografía computarizada (TC)"),
+    ("mri", "Resonancia magnética (RM)"),
+
+    # Pruebas funcionales
+    ("ecg", "Electrocardiograma (ECG)"),
+    ("stress_test", "Ergometría / Prueba de esfuerzo"),
+    ("audiometry", "Audiometría"),
+    ("spirometry", "Espirometría"),
+
+    # Exámenes físicos y clínicos
+    ("physical_exam", "Examen físico"),
+    ("eye_exam", "Examen visual / Oftalmológico"),
+    ("dental_exam", "Examen dental / Odontológico"),
+    ("gynecological_exam", "Examen ginecológico"),
+    ("prostate_exam", "Examen prostático"),
+]
+
+class MedicalTest(models.Model):
+    appointment = models.ForeignKey(
+        "Appointment",
+        on_delete=models.CASCADE,
+        related_name="medical_tests"
+    )
+    diagnosis = models.ForeignKey(
+        "Diagnosis",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="medical_tests"
+    )
+    requested_by = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="requested_tests"
+    )
+
+    test_type = models.CharField(
+        max_length=50,
+        choices=TEST_TYPE_CHOICES
+    )
+    description = models.TextField(blank=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pendiente"),
+            ("completed", "Completado"),
+            ("cancelled", "Cancelado"),
+        ],
+        default="pending"
+    )
+
+    requested_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="medicaltest_created"
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="medicaltest_updated"
+    )
+
+    def __str__(self):
+        return f"{self.get_test_type_display()} ({self.status})"
+
+
+class MedicalReferral(models.Model):
+    appointment = models.ForeignKey(
+        "Appointment",
+        on_delete=models.CASCADE,
+        related_name="medical_referrals"
+    )
+    diagnosis = models.ForeignKey(
+        "Diagnosis",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="medical_referrals"
+    )
+    issued_by = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="issued_referrals"
+    )
+
+    referred_to = models.CharField(max_length=255)   # Especialista/servicio destino
+    reason = models.TextField(blank=True)            # Motivo clínico
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ("issued", "Emitida"),
+            ("accepted", "Aceptada"),
+            ("rejected", "Rechazada"),
+        ],
+        default="issued"
+    )
+
+    issued_at = models.DateTimeField(auto_now_add=True)
+
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="referral_created"
+    )
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="referral_updated"
+    )
+
+    def __str__(self):
+        return f"Referral to {self.referred_to} ({self.status})"
