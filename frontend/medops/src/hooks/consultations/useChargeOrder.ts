@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetchOptional } from "../../api/client"; // 👈 usamos client.ts para manejar token y 404→null
+import { apiFetchOptional, apiFetch } from "../../api/client"; // 👈 apiFetchOptional para GET, apiFetch para POST
 
 // -----------------------------
 // Tipos
@@ -37,7 +37,7 @@ export interface ChargeOrder {
   appointment: number;
   patient: number;
   currency: string;
-  status: "open" | "partially_paid" | "paid" | "void";
+  status: "open" | "partially_paid" | "paid" | "void" | "waived"; // 👈 añadido "waived"
   total: number;
   balance_due: number;
   items: ChargeItem[];
@@ -48,16 +48,16 @@ export interface ChargeOrder {
 // API helpers
 // -----------------------------
 async function fetchChargeOrder(appointmentId: number): Promise<ChargeOrder | null> {
-  // 👇 apiFetchOptional ya convierte 404 → null
+  // 👇 apiFetchOptional convierte 404 → null
   return apiFetchOptional<ChargeOrder>(`appointments/${appointmentId}/charge-order/`);
 }
 
 async function createPayment(orderId: number, payload: PaymentPayload): Promise<Payment> {
-  // 👇 aquí usamos apiFetch para que también maneje token y errores
-  return apiFetchOptional<Payment>(`charge-orders/${orderId}/payments/`, {
+  // 👇 apiFetch asegura que siempre devuelva un Payment válido
+  return apiFetch<Payment>(`charge-orders/${orderId}/payments/`, {
     method: "POST",
     body: JSON.stringify(payload),
-  }) as Promise<Payment>;
+  });
 }
 
 // -----------------------------

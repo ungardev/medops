@@ -26,8 +26,8 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
   // Estado local para ítems
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
-  const [qty, setQty] = useState<string>("");          // 👈 ahora string vacío
-  const [unitPrice, setUnitPrice] = useState<string>(""); // 👈 ahora string vacío
+  const [qty, setQty] = useState<string>("");
+  const [unitPrice, setUnitPrice] = useState<string>("");
 
   // Estado local para pagos
   const [amount, setAmount] = useState("");
@@ -40,17 +40,6 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
   const [showItems, setShowItems] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
 
-    // Crear orden si no existe
-  const handleCreateOrder = async () => {
-    try {
-      await axios.post(`/appointments/${appointmentId}/charge-order/`);
-      await refetch();
-    } catch (err) {
-      console.error("Error creando orden:", err);
-      alert("No se pudo crear la orden.");
-    }
-  };
-
   // Agregar ítem
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,8 +49,8 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
         order: order.id,
         code,
         description,
-        qty: Number(qty) || 1,              // 👈 fallback a 1
-        unit_price: Number(unitPrice) || 0, // 👈 fallback a 0
+        qty: Number(qty) || 1,
+        unit_price: Number(unitPrice) || 0,
       });
       setCode("");
       setDescription("");
@@ -73,7 +62,7 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
     }
   };
 
-  // Agregar pago
+    // Agregar pago
   const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
@@ -100,19 +89,8 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
     });
   };
 
-    if (isLoading) return <p className="text-muted">Cargando orden...</p>;
-
-  if (!order) {
-    return (
-      <div className="chargeorder-panel card">
-        <h3 className="text-lg font-bold mb-2">Orden de Cobro</h3>
-        <p className="text-muted">No hay orden asociada a esta consulta.</p>
-        <button onClick={handleCreateOrder} className="btn-primary mt-2">
-          + Crear orden
-        </button>
-      </div>
-    );
-  }
+  if (isLoading) return <p className="text-muted">Cargando orden...</p>;
+  if (!order) return null; // 🔹 ya no mostramos botón de crear orden
 
   return (
     <div className="chargeorder-panel card">
@@ -126,7 +104,7 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
         <p><strong>Estado:</strong> {order.status}</p>
       </div>
 
-              {/* Ítems */}
+      {/* Ítems */}
       <button onClick={() => setShowItems(!showItems)} className="btn-toggle mb-2">
         {showItems ? "▼ Ítems" : "▶ Ítems"}
       </button>
@@ -143,41 +121,11 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
           </ul>
 
           <form onSubmit={handleAddItem} className="flex flex-col gap-2">
-            <input
-              type="text"
-              placeholder="Servicio / Procedimiento"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="input"
-              required
-            />
-            <input
-              type="text"
-              placeholder="Detalle adicional (opcional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="input"
-            />
-            <input
-              type="number"
-              placeholder="Cantidad"
-              value={qty}
-              onChange={(e) => setQty(e.target.value)}
-              className="input"
-              required
-            />
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Precio unitario"
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-              className="input"
-              required
-            />
-            <button type="submit" className="btn-secondary self-start">
-              + Agregar ítem
-            </button>
+            <input type="text" placeholder="Servicio / Procedimiento" value={code} onChange={(e) => setCode(e.target.value)} className="input" required />
+            <input type="text" placeholder="Detalle adicional (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} className="input" />
+            <input type="number" placeholder="Cantidad" value={qty} onChange={(e) => setQty(e.target.value)} className="input" required />
+            <input type="number" step="0.01" placeholder="Precio unitario" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="input" required />
+            <button type="submit" className="btn-secondary self-start">+ Agregar ítem</button>
           </form>
         </div>
       )}
@@ -201,20 +149,8 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
           </ul>
 
           <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
-            <input
-              type="number"
-              step="0.01"
-              placeholder="Monto"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="input"
-              required
-            />
-            <select
-              value={method}
-              onChange={(e) => setMethod(e.target.value as "cash" | "card" | "transfer" | "other")}
-              className="select"
-            >
+            <input type="number" step="0.01" placeholder="Monto" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" required />
+            <select value={method} onChange={(e) => setMethod(e.target.value as "cash" | "card" | "transfer" | "other")} className="select">
               <option value="cash">Efectivo</option>
               <option value="card">Tarjeta</option>
               <option value="transfer">Transferencia</option>
@@ -222,57 +158,23 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
             </select>
 
             {method === "card" && (
-              <input
-                type="text"
-                placeholder="Referencia de tarjeta"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                className="input"
-                required
-              />
+              <input type="text" placeholder="Referencia de tarjeta" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
             )}
             {method === "transfer" && (
               <>
-                <input
-                  type="text"
-                  placeholder="Banco"
-                  value={bank}
-                  onChange={(e) => setBank(e.target.value)}
-                  className="input"
-                  required
-                />
-                <input
-                  type="text"
-                  placeholder="Referencia de transferencia"
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  className="input"
-                  required
-                />
+                <input type="text" placeholder="Banco" value={bank} onChange={(e) => setBank(e.target.value)} className="input" required />
+                <input type="text" placeholder="Referencia de transferencia" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
               </>
             )}
             {method === "other" && (
-              <input
-                type="text"
-                placeholder="Detalle del pago"
-                value={otherDetail}
-                onChange={(e) => setOtherDetail(e.target.value)}
-                className="input"
-                required
-              />
+              <input type="text" placeholder="Detalle del pago" value={otherDetail} onChange={(e) => setOtherDetail(e.target.value)} className="input" required />
             )}
 
-            <button
-              type="submit"
-              className="btn-primary self-start"
-              disabled={createPayment.isPending}
-            >
+            <button type="submit" className="btn-primary self-start" disabled={createPayment.isPending}>
               {createPayment.isPending ? "Registrando..." : "+ Registrar pago"}
             </button>
             {createPayment.isError && (
-              <p className="text-red-500 text-sm">
-                Error al registrar el pago. Intente de nuevo.
-              </p>
+              <p className="text-red-500 text-sm">Error al registrar el pago. Intente de nuevo.</p>
             )}
           </form>
         </div>

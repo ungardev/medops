@@ -124,8 +124,18 @@ class Appointment(models.Model):
     appointment_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     arrival_time = models.TimeField(blank=True, null=True)
-    appointment_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='general', verbose_name="Tipo de consulta")
-    expected_amount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'), verbose_name="Monto esperado")
+    appointment_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='general',
+        verbose_name="Tipo de consulta"
+    )
+    expected_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Monto esperado"
+    )
     notes = models.TextField(blank=True, null=True)
 
     history = HistoricalRecords()
@@ -195,6 +205,21 @@ class Appointment(models.Model):
     def mark_completed(self):
         self.status = 'completed'
         self.save(update_fields=['status'])
+
+
+# --- Señal para crear automáticamente la orden de cobro ---
+@receiver(post_save, sender=Appointment)
+def create_charge_order(sender, instance, created, **kwargs):
+    if created and not instance.charge_orders.exists():
+        from .models import ChargeOrder
+        ChargeOrder.objects.create(
+            appointment=instance,
+            patient=instance.patient,
+            currency="USD",
+            status="open",
+            total=Decimal('0.00'),
+            balance_due=Decimal('0.00'),
+        )
 
 
 class WaitingRoomEntry(models.Model):
