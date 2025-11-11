@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { apiFetchOptional } from "../../api/client"; // 👈 usamos client.ts para manejar token y 404→null
 
 // -----------------------------
 // Tipos
@@ -10,17 +10,17 @@ export interface Payment {
   method: string;
   status: string;
   reference_number?: string | null;
-  bank?: string | null;     // 👈 agregado
-  detail?: string | null;   // 👈 agregado
+  bank?: string | null;
+  detail?: string | null;
 }
 
 export interface PaymentPayload {
   charge_order: number;
   amount: number;
-  method: "cash" | "card" | "transfer" | "other"; // 👈 más estricto
+  method: "cash" | "card" | "transfer" | "other";
   reference_number?: string | null;
-  bank?: string | null;     // 👈 agregado
-  detail?: string | null;   // 👈 agregado
+  bank?: string | null;
+  detail?: string | null;
 }
 
 export interface ChargeItem {
@@ -48,22 +48,16 @@ export interface ChargeOrder {
 // API helpers
 // -----------------------------
 async function fetchChargeOrder(appointmentId: number): Promise<ChargeOrder | null> {
-  try {
-    // 👇 quitamos el /api, axios ya lo añade desde baseURL
-    const res = await axios.get(`/appointments/${appointmentId}/charge-order/`);
-    return res.data as ChargeOrder;
-  } catch (err: any) {
-    if (err.response && err.response.status === 404) {
-      return null;
-    }
-    throw err;
-  }
+  // 👇 apiFetchOptional ya convierte 404 → null
+  return apiFetchOptional<ChargeOrder>(`appointments/${appointmentId}/charge-order/`);
 }
 
 async function createPayment(orderId: number, payload: PaymentPayload): Promise<Payment> {
-  // 👇 igual aquí, sin /api
-  const res = await axios.post(`/charge-orders/${orderId}/payments/`, payload);
-  return res.data as Payment;
+  // 👇 aquí usamos apiFetch para que también maneje token y errores
+  return apiFetchOptional<Payment>(`charge-orders/${orderId}/payments/`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  }) as Promise<Payment>;
 }
 
 // -----------------------------
@@ -73,7 +67,7 @@ export function useChargeOrder(appointmentId: number) {
   return useQuery<ChargeOrder | null>({
     queryKey: ["chargeOrder", appointmentId],
     queryFn: () => fetchChargeOrder(appointmentId),
-    staleTime: 30_000, // 30s
+    staleTime: 30_000,
   });
 }
 

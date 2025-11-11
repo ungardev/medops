@@ -1,29 +1,19 @@
 import {
   PatientHeader,
-  DiagnosisPanel,
-  TreatmentPanel,
-  PrescriptionPanel,
-  NotesPanel,
   DocumentsPanel,
   ConsultationActions,
   ChargeOrderPanel,
 } from "../../components/Consultation";
 
-import {
-  useCurrentConsultation,
-  useCreateTreatment,
-  useCreatePrescription,
-} from "../../hooks/consultations";
-
-import { Tabs, Tab } from "../../components/ui/Tabs";
+import { useCurrentConsultation } from "../../hooks/consultations";
 import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
 import { MedicalReportViewer } from "../../components/Consultation/MedicalReportViewer";
 
+// 🔹 Importamos el workflow clínico completo
+import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
+
 export default function Consultation() {
   const { data: appointment, isLoading } = useCurrentConsultation();
-
-  const createTreatment = useCreateTreatment();
-  const createPrescription = useCreatePrescription();
   const generateReport = useGenerateMedicalReport();
 
   if (isLoading) return <p>Cargando consulta...</p>;
@@ -45,46 +35,14 @@ export default function Consultation() {
           </div>
         </div>
 
-        {/* 🔹 Columna central: Tabs clínicos */}
+        {/* 🔹 Columna central: Workflow clínico completo */}
         <div className="consultation-main">
           <div className="consultation-tabs">
-            <Tabs defaultTab="diagnosis">
-              <Tab id="diagnosis" label="Diagnóstico">
-                {/* DiagnosisPanel ya usa useCreateDiagnosis internamente */}
-                <DiagnosisPanel />
-              </Tab>
-
-              <Tab id="treatment" label="Tratamiento">
-                <TreatmentPanel
-                  diagnoses={appointment.diagnoses}
-                  onAdd={(data) =>
-                    createTreatment.mutate({
-                      ...data,
-                      appointment: appointment.id, // ✅ ahora válido
-                    })
-                  }
-                />
-              </Tab>
-
-              <Tab id="prescription" label="Prescripción">
-                <PrescriptionPanel
-                  diagnoses={appointment.diagnoses}
-                  onAdd={(data) =>
-                    createPrescription.mutate({
-                      ...data,
-                      appointment: appointment.id, // ✅ ahora válido
-                    })
-                  }
-                />
-              </Tab>
-
-              <Tab id="notes" label="Notas">
-                <NotesPanel
-                  appointmentId={appointment.id} // ✅ corregido
-                  notes={appointment.notes}
-                />
-              </Tab>
-            </Tabs>
+            <ConsultationWorkflow
+              diagnoses={appointment.diagnoses}
+              appointmentId={appointment.id}
+              notes={appointment.notes}
+            />
           </div>
         </div>
 

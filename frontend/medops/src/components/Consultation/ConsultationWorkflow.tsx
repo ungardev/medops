@@ -1,4 +1,3 @@
-// src/components/Consultation/ConsultationWorkflow.tsx
 import DiagnosisPanel from "./DiagnosisPanel";
 import TreatmentPanel from "./TreatmentPanel";
 import PrescriptionPanel from "./PrescriptionPanel";
@@ -8,31 +7,23 @@ import MedicalReferralsPanel from "./MedicalReferralsPanel"; // 👈 nuevo
 import { Tabs, Tab } from "../ui/Tabs";
 import { Diagnosis } from "../../types/consultation";
 
+// 🔹 Hooks de creación para conectar directamente
+import { useCreateTreatment, useCreatePrescription } from "../../hooks/consultations";
+
 interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
-  onAddTreatment: (data: {
-    diagnosis: number;
-    plan: string;
-    start_date?: string;
-    end_date?: string;
-  }) => void;
-  onAddPrescription: (data: {
-    diagnosis: number;
-    medication: string;
-    dosage?: string;
-    duration?: string;
-  }) => void;
   appointmentId: number;
   notes: string | null;
 }
 
 export default function ConsultationWorkflow({
   diagnoses,
-  onAddTreatment,
-  onAddPrescription,
   appointmentId,
   notes,
 }: ConsultationWorkflowProps) {
+  const createTreatment = useCreateTreatment();
+  const createPrescription = useCreatePrescription();
+
   return (
     <Tabs defaultTab="diagnosis" className="consultation-workflow">
       <Tab id="diagnosis" label="Diagnóstico">
@@ -41,11 +32,27 @@ export default function ConsultationWorkflow({
       </Tab>
 
       <Tab id="treatment" label="Tratamiento">
-        <TreatmentPanel diagnoses={diagnoses} onAdd={onAddTreatment} />
+        <TreatmentPanel
+          diagnoses={diagnoses}
+          appointmentId={appointmentId}   // 👈 añadido para cumplir con TreatmentPanelProps
+          onAdd={(data) =>
+            createTreatment.mutate({
+              ...data,
+              appointment: appointmentId, // ✅ se pasa appointment al backend
+            })
+          }
+        />
       </Tab>
 
       <Tab id="prescription" label="Prescripción">
-        <PrescriptionPanel diagnoses={diagnoses} onAdd={onAddPrescription} />
+        <PrescriptionPanel
+          diagnoses={diagnoses}
+          onAdd={(data) =>
+            createPrescription.mutate({
+              ...data, // 👈 solo diagnosis, medication, dosage, duration
+            })
+          }
+        />
       </Tab>
 
       <Tab id="notes" label="Notas">

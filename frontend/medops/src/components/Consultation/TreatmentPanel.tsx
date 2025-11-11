@@ -1,4 +1,3 @@
-// src/components/Consultation/TreatmentPanel.tsx
 import { useState } from "react";
 import { Diagnosis, Treatment } from "../../types/consultation";
 import TreatmentBadge from "./TreatmentBadge";
@@ -7,10 +6,17 @@ import { useDeleteTreatment } from "../../hooks/consultations/useDeleteTreatment
 
 interface TreatmentPanelProps {
   diagnoses: Diagnosis[];
-  onAdd: (data: { diagnosis: number; plan: string; start_date?: string; end_date?: string }) => void;
+  appointmentId: number; // 👈 añadido para enviar al backend
+  onAdd: (data: {
+    appointment: number;
+    diagnosis: number;
+    plan: string;
+    start_date?: string;
+    end_date?: string;
+  }) => void;
 }
 
-export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps) {
+export default function TreatmentPanel({ diagnoses, appointmentId, onAdd }: TreatmentPanelProps) {
   const [diagnosisId, setDiagnosisId] = useState<number | "">("");
   const [plan, setPlan] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -22,7 +28,17 @@ export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnosisId || !plan.trim()) return;
-    onAdd({ diagnosis: Number(diagnosisId), plan, start_date: startDate, end_date: endDate });
+
+    // 👇 enviamos appointment + diagnosis + datos clínicos
+    onAdd({
+      appointment: appointmentId,
+      diagnosis: Number(diagnosisId),
+      plan: plan.trim(),
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
+    });
+
+    // reset form
     setDiagnosisId("");
     setPlan("");
     setStartDate("");
@@ -67,6 +83,7 @@ export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps
           value={diagnosisId}
           onChange={(e) => setDiagnosisId(Number(e.target.value))}
           className="select"
+          required
         >
           <option value="">Seleccionar diagnóstico</option>
           {diagnoses.map((d) => (
@@ -82,6 +99,7 @@ export default function TreatmentPanel({ diagnoses, onAdd }: TreatmentPanelProps
           value={plan}
           onChange={(e) => setPlan(e.target.value)}
           className="input"
+          required
         />
 
         <div className="flex gap-2">

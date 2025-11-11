@@ -1,4 +1,3 @@
-// src/components/Consultation/PrescriptionPanel.tsx
 import { useState } from "react";
 import { Diagnosis, Prescription } from "../../types/consultation";
 import PrescriptionBadge from "./PrescriptionBadge";
@@ -22,7 +21,16 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnosisId || !medication.trim()) return;
-    onAdd({ diagnosis: Number(diagnosisId), medication, dosage, duration });
+
+    // 👇 enviamos solo diagnosis + datos clínicos
+    onAdd({
+      diagnosis: Number(diagnosisId),
+      medication: medication.trim(),
+      dosage: dosage.trim() || undefined,
+      duration: duration.trim() || undefined,
+    });
+
+    // reset form
     setDiagnosisId("");
     setMedication("");
     setDosage("");
@@ -67,6 +75,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           value={diagnosisId}
           onChange={(e) => setDiagnosisId(Number(e.target.value))}
           className="select"
+          required
         >
           <option value="">Seleccionar diagnóstico</option>
           {diagnoses.map((d) => (
@@ -82,6 +91,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           value={medication}
           onChange={(e) => setMedication(e.target.value)}
           className="input"
+          required
         />
 
         <input

@@ -1,6 +1,7 @@
 // src/hooks/consultations/useUpdatePrescription.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
+import type { Prescription } from "../../types/consultation";
 
 export interface UpdatePrescriptionInput {
   id: number;
@@ -9,12 +10,18 @@ export interface UpdatePrescriptionInput {
   duration?: string | null;
 }
 
+// 👇 definimos el tipo de contexto
+interface MutationContext {
+  previous: unknown;
+}
+
 export function useUpdatePrescription() {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async ({ id, ...data }: UpdatePrescriptionInput) => {
-      return apiFetch(`prescriptions/${id}/`, {
+  return useMutation<Prescription, Error, UpdatePrescriptionInput, MutationContext>({
+    mutationFn: async ({ id, ...data }) => {
+      console.debug("Payload enviado a PATCH /api/prescriptions/:id", data);
+      return apiFetch<Prescription>(`prescriptions/${id}/`, {
         method: "PATCH",
         body: JSON.stringify(data),
       });
@@ -36,6 +43,7 @@ export function useUpdatePrescription() {
         };
       });
 
+      // 👇 devolvemos el contexto tipado
       return { previous };
     },
     onError: (_err, _vars, ctx) => {

@@ -186,15 +186,42 @@ class PatientDetailSerializer(serializers.ModelSerializer):
 
 # --- Diagnósticos, Tratamientos y Prescripciones ---
 class PrescriptionSerializer(serializers.ModelSerializer):
+    """Serializer de lectura: usado en GET"""
     class Meta:
         model = Prescription
         fields = ["id", "medication", "dosage", "duration"]
+
+
+class PrescriptionWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura: usado en POST/PUT/PATCH"""
+    class Meta:
+        model = Prescription
+        fields = [
+            "id",
+            "diagnosis",   # 👈 necesario para crear
+            "medication",
+            "dosage",
+            "duration",
+        ]
 
 
 class TreatmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Treatment
         fields = ["id", "plan", "start_date", "end_date"]
+
+
+class TreatmentWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Treatment
+        fields = [
+            "id",
+            "appointment",   # 👈 necesario para crear
+            "diagnosis",     # 👈 si tu modelo lo tiene
+            "plan",
+            "start_date",
+            "end_date",
+        ]
 
 
 class DiagnosisSerializer(serializers.ModelSerializer):

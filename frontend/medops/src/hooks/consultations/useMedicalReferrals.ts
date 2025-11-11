@@ -1,9 +1,9 @@
-// src/hooks/consultations/useMedicalReferrals.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { MedicalReferral } from "../../types/consultation";
 
-const API_URL = "/api/medical-referrals/";
+// 👇 endpoint relativo, sin /api
+const API_URL = "medical-referrals/";
 
 export function useMedicalReferrals(appointmentId: number) {
   return useQuery<MedicalReferral[], Error>({
