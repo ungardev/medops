@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useChargeOrder,
   useCreatePayment,
@@ -22,6 +22,18 @@ interface ChargeItem {
 export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProps) {
   const { data: order, isLoading, refetch } = useChargeOrder(appointmentId);
   const createPayment = useCreatePayment(order?.id, appointmentId);
+
+  // 🔹 Fallback automático si no existe orden
+  useEffect(() => {
+    if (order === null && appointmentId) {
+      axios
+        .post(`/appointments/${appointmentId}/charge-order/`)
+        .then(() => refetch())
+        .catch((err) => {
+          console.error("Error creando orden automáticamente:", err);
+        });
+    }
+  }, [order, appointmentId, refetch]);
 
   // Estado local para ítems
   const [code, setCode] = useState("");
@@ -90,13 +102,12 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
   };
 
   if (isLoading) return <p className="text-muted">Cargando orden...</p>;
-  if (!order) return null; // 🔹 ya no mostramos botón de crear orden
+  if (!order) return null;
 
   return (
     <div className="chargeorder-panel card">
       <h3 className="text-lg font-bold mb-2">Orden de Cobro</h3>
 
-      {/* Resumen */}
       <div className="mb-3 text-sm bg-gray-50 p-2 rounded">
         <p><strong>Total:</strong> ${Number(order.total ?? 0).toFixed(2)}</p>
         <p><strong>Pagado:</strong> ${(Number(order.total ?? 0) - Number(order.balance_due ?? 0)).toFixed(2)}</p>
@@ -104,7 +115,6 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
         <p><strong>Estado:</strong> {order.status}</p>
       </div>
 
-      {/* Ítems */}
       <button onClick={() => setShowItems(!showItems)} className="btn-toggle mb-2">
         {showItems ? "▼ Ítems" : "▶ Ítems"}
       </button>
@@ -130,7 +140,6 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
         </div>
       )}
 
-      {/* Pagos */}
       <button onClick={() => setShowPayments(!showPayments)} className="btn-toggle mb-2">
         {showPayments ? "▼ Pagos" : "▶ Pagos"}
       </button>
