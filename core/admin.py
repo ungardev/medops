@@ -19,8 +19,8 @@ from .models import (
     GeneticPredisposition,
     ChargeOrder,
     ChargeItem,
-    MedicalTest,       # 👈 nuevo
-    MedicalReferral    # 👈 nuevo
+    MedicalTest,
+    MedicalReferral
 )
 
 logger = logging.getLogger("core")
@@ -41,28 +41,41 @@ class WaitingRoomEntryAdmin(admin.ModelAdmin):
 # -------------------------
 class MedicalDocumentInlineForPatient(admin.TabularInline):
     model = MedicalDocument
-    extra = 1
-    fields = ("file", "description", "category", "preview_file")
-    readonly_fields = ("preview_file",)
+    extra = 0
+    fields = (
+        "file", "description", "category",
+        "source", "template_version", "is_signed",
+        "preview_file"
+    )
+    readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
     def preview_file(self, obj):
-        if obj.file and obj.file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+        if obj.file and obj.mime_type.startswith("image/"):
             return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+        elif obj.file and obj.mime_type == "application/pdf":
+            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
 
+
 class MedicalDocumentInlineForAppointment(admin.TabularInline):
     model = MedicalDocument
-    extra = 1
-    fields = ("file", "description", "category", "preview_file")
-    readonly_fields = ("preview_file",)
+    extra = 0
+    fields = (
+        "file", "description", "category",
+        "source", "template_version", "is_signed",
+        "preview_file"
+    )
+    readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
     def preview_file(self, obj):
-        if obj.file and obj.file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+        if obj.file and obj.mime_type.startswith("image/"):
             return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+        elif obj.file and obj.mime_type == "application/pdf":
+            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
@@ -70,18 +83,23 @@ class MedicalDocumentInlineForAppointment(admin.TabularInline):
 
 class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
     model = MedicalDocument
-    extra = 1
-    fields = ("file", "description", "category", "preview_file")
-    readonly_fields = ("preview_file",)
+    extra = 0
+    fields = (
+        "file", "description", "category",
+        "source", "template_version", "is_signed",
+        "preview_file"
+    )
+    readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
     def preview_file(self, obj):
-        if obj.file and obj.file.name.lower().endswith((".png", ".jpg", ".jpeg")):
+        if obj.file and obj.mime_type.startswith("image/"):
             return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
+        elif obj.file and obj.mime_type == "application/pdf":
+            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
-
 
 # -------------------------
 # Patient
@@ -167,6 +185,7 @@ class PrescriptionAdmin(admin.ModelAdmin):
     ordering = ('medication',)
     list_per_page = 25
 
+
 # -------------------------
 # MedicalTest
 # -------------------------
@@ -189,7 +208,6 @@ class MedicalReferralAdmin(admin.ModelAdmin):
     search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code", "reason")
     ordering = ("id",)
     list_per_page = 25
-
 
 # -------------------------
 # ChargeOrder (centro financiero)
@@ -269,11 +287,33 @@ class GeneticPredispositionAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(MedicalDocument)
 class MedicalDocumentAdmin(admin.ModelAdmin):
-    list_display = ("id", "patient", "appointment", "diagnosis", "category", "description", "uploaded_at", "uploaded_by")
-    list_filter = ("category", "uploaded_at")
-    search_fields = ("description", "patient__first_name", "patient__last_name", "appointment__id")
+    list_display = (
+        "id", "patient", "appointment", "diagnosis",
+        "category", "source", "origin_panel",
+        "description", "template_version", "is_signed",
+        "uploaded_at", "uploaded_by", "generated_by"
+    )
+    list_filter = ("category", "source", "template_version", "is_signed", "uploaded_at")
+    search_fields = (
+        "description", "patient__first_name", "patient__last_name",
+        "appointment__id", "diagnosis__icd_code"
+    )
     ordering = ("-uploaded_at",)
     list_per_page = 25
+    readonly_fields = ("checksum_sha256", "size_bytes", "mime_type", "uploaded_at")
+
+    @admin.display(description="Archivo")
+    def preview_file(self, obj):
+        if obj.file and obj.mime_type.startswith("image/"):
+            return format_html(
+                '<img src="{}" width="60" height="60" style="object-fit:cover;" />',
+                obj.file.url
+            )
+        elif obj.file and obj.mime_type == "application/pdf":
+            return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
+        elif obj.file:
+            return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
+        return "-"
 
 
 # Personalización del panel de administración
