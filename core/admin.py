@@ -151,30 +151,31 @@ class DiagnosisAdmin(admin.ModelAdmin):
 
 @admin.register(Treatment)
 class TreatmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'diagnosis', 'plan', 'start_date', 'end_date')
+    list_display = ('id', 'diagnosis', 'treatment_type', 'plan', 'start_date', 'end_date', 'status')
     list_display_links = ('id', 'diagnosis')
+    list_filter = ('treatment_type', 'status')
     ordering = ('-start_date',)
     list_per_page = 25
 
 
 @admin.register(Prescription)
 class PrescriptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'diagnosis', 'medication', 'dosage', 'duration')
+    list_display = ('id', 'diagnosis', 'medication', 'dosage', 'unit', 'route', 'frequency', 'duration')
     list_display_links = ('id', 'medication')
+    list_filter = ('route', 'frequency', 'unit')
     search_fields = ('medication', 'diagnosis__appointment__patient__national_id')
     ordering = ('medication',)
     list_per_page = 25
-
 
 # -------------------------
 # MedicalTest
 # -------------------------
 @admin.register(MedicalTest)
 class MedicalTestAdmin(admin.ModelAdmin):
-    list_display = ("id", "appointment", "diagnosis", "test_type", "status", "requested_at", "completed_at")
-    list_filter = ("status", "test_type", "requested_at")
+    list_display = ("id", "appointment", "diagnosis", "test_type", "urgency", "status", "description")
+    list_filter = ("test_type", "urgency", "status")
     search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code")
-    ordering = ("-requested_at",)
+    ordering = ("id",)
     list_per_page = 25
 
 
@@ -183,11 +184,12 @@ class MedicalTestAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(MedicalReferral)
 class MedicalReferralAdmin(admin.ModelAdmin):
-    list_display = ("id", "appointment", "diagnosis", "referred_to", "status", "issued_at")
-    list_filter = ("status", "issued_at")
-    search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code", "referred_to")
-    ordering = ("-issued_at",)
+    list_display = ("id", "appointment", "diagnosis", "specialty", "urgency", "status", "reason")
+    list_filter = ("specialty", "urgency", "status")
+    search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code", "reason")
+    ordering = ("id",)
     list_per_page = 25
+
 
 # -------------------------
 # ChargeOrder (centro financiero)

@@ -63,7 +63,8 @@ from .serializers import (
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
     EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer,
     DoctorOperatorSerializer, MedicalReportSerializer, ICD11EntrySerializer, DiagnosisWriteSerializer,
-    MedicalTestSerializer, MedicalReferralSerializer, PrescriptionWriteSerializer, TreatmentWriteSerializer
+    MedicalTestSerializer, MedicalReferralSerializer, PrescriptionWriteSerializer, TreatmentWriteSerializer,
+    MedicalTestWriteSerializer, MedicalReferralWriteSerializer
 )
 
 
@@ -1108,8 +1109,8 @@ class TreatmentViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
-            return TreatmentWriteSerializer   # 👈 serializer de escritura
-        return TreatmentSerializer            # 👈 serializer de lectura
+            return TreatmentWriteSerializer
+        return TreatmentSerializer
 
     def perform_create(self, serializer):
         treatment = serializer.save()
@@ -1118,6 +1119,13 @@ class TreatmentViewSet(viewsets.ModelViewSet):
             entity_id=treatment.id,
             action="create",
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "diagnosis_id": treatment.diagnosis_id,
+                "treatment_type": treatment.treatment_type,
+                "status": treatment.status,
+            },
+            severity="info",
+            notify=True,
         )
 
 
@@ -1126,8 +1134,8 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
-            return PrescriptionWriteSerializer   # 👈 serializer de escritura
-        return PrescriptionSerializer            # 👈 serializer de lectura
+            return PrescriptionWriteSerializer
+        return PrescriptionSerializer
 
     def perform_create(self, serializer):
         prescription = serializer.save()
@@ -1136,6 +1144,16 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
             entity_id=prescription.id,
             action="create",
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "diagnosis_id": prescription.diagnosis_id,
+                "medication": prescription.medication,
+                "dosage": str(prescription.dosage),
+                "unit": prescription.unit,
+                "route": prescription.route,
+                "frequency": prescription.frequency,
+            },
+            severity="info",
+            notify=True,
         )
 
 
@@ -2021,27 +2039,128 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
     """
     API endpoint para gestionar órdenes de exámenes médicos (MedicalTest).
     """
-    queryset = MedicalTest.objects.all().order_by("-requested_at")
-    serializer_class = MedicalTestSerializer
+    queryset = MedicalTest.objects.all().select_related("appointment", "diagnosis").order_by("-id")
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return MedicalTestWriteSerializer
+        return MedicalTestSerializer
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        test = serializer.save(created_by=self.request.user)
+        Event.objects.create(
+            entity="MedicalTest",
+            entity_id=test.id,
+            action="create",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "appointment_id": test.appointment_id,
+                "diagnosis_id": test.diagnosis_id,
+                "test_type": test.test_type,
+                "urgency": test.urgency,
+                "status": test.status,
+            },
+            severity="info",
+            notify=True,
+        )
 
     def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
+        test = serializer.save(updated_by=self.request.user)
+        Event.objects.create(
+            entity="MedicalTest",
+            entity_id=test.id,
+            action="update",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "test_type": test.test_type,
+                "urgency": test.urgency,
+                "status": test.status,
+            },
+            severity="info",
+            notify=True,
+        )
 
 
 class MedicalReferralViewSet(viewsets.ModelViewSet):
     """
     API endpoint para gestionar referencias médicas (MedicalReferral).
     """
-    queryset = MedicalReferral.objects.all().order_by("-issued_at")
-    serializer_class = MedicalReferralSerializer
+    queryset = MedicalReferral.objects.all().select_related("appointment", "diagnosis").order_by("-id")
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return MedicalReferralWriteSerializer
+        return MedicalReferralSerializer
+
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        referral = serializer.save(created_by=self.request.user)
+        Event.objects.create(
+            entity="MedicalReferral",
+            entity_id=referral.id,
+            action="create",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "appointment_id": referral.appointment_id,
+                "diagnosis_id": referral.diagnosis_id,
+                "specialty": referral.specialty,
+                "urgency": referral.urgency,
+                "status": referral.status,
+            },
+            severity="info",
+            notify=True,
+        )
 
     def perform_update(self, serializer):
-        serializer.save(updated_by=self.request.user)
+        referral = serializer.save(updated_by=self.request.user)
+        Event.objects.create(
+            entity="MedicalReferral",
+            entity_id=referral.id,
+            action="update",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "specialty": referral.specialty,
+                "urgency": referral.urgency,
+                "status": referral.status,
+            },
+            severity="info",
+            notify=True,
+        )
+
+
+# --- Endpoints para exponer choices al frontend ---
+
+@api_view(["GET"])
+def treatment_choices_api(request):
+    return Response({
+        "treatment_types": [{"key": k, "label": v} for k, v in Treatment.TREATMENT_TYPE_CHOICES],
+        "statuses": [{"key": k, "label": v} for k, v in Treatment.STATUS_CHOICES],
+    })
+
+
+@api_view(["GET"])
+def prescription_choices_api(request):
+    return Response({
+        "routes": [{"key": k, "label": v} for k, v in Prescription.ROUTE_CHOICES],
+        "frequencies": [{"key": k, "label": v} for k, v in Prescription.FREQUENCY_CHOICES],
+        "units": [{"key": k, "label": v} for k, v in Prescription.UNIT_CHOICES],
+    })
+
+
+@api_view(["GET"])
+def medicaltest_choices_api(request):
+    return Response({
+        "test_types": [{"key": k, "label": v} for k, v in MedicalTest.TEST_TYPE_CHOICES],
+        "urgencies": [{"key": k, "label": v} for k, v in MedicalTest.URGENCY_CHOICES],
+        "statuses": [{"key": k, "label": v} for k, v in MedicalTest.STATUS_CHOICES],
+    })
+
+
+@api_view(["GET"])
+def medicalreferral_choices_api(request):
+    return Response({
+        "specialties": [{"key": k, "label": v} for k, v in MedicalReferral.SPECIALTY_CHOICES],
+        "urgencies": [{"key": k, "label": v} for k, v in MedicalReferral.URGENCY_CHOICES],
+        "statuses": [{"key": k, "label": v} for k, v in MedicalReferral.STATUS_CHOICES],
+    })

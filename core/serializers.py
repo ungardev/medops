@@ -4,7 +4,7 @@ from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
-    ICD11Entry, MedicalTest, MedicalReferral, TEST_TYPE_CHOICES
+    ICD11Entry, MedicalTest, MedicalReferral
 )
 from datetime import date
 from typing import Optional
@@ -184,31 +184,61 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         return " ".join(filter(None, parts))
 
 
-# --- Diagnósticos, Tratamientos y Prescripciones ---
+# --- Prescripciones ---
 class PrescriptionSerializer(serializers.ModelSerializer):
-    """Serializer de lectura: usado en GET"""
-    class Meta:
-        model = Prescription
-        fields = ["id", "medication", "dosage", "duration"]
+    route_display = serializers.CharField(source="get_route_display", read_only=True)
+    frequency_display = serializers.CharField(source="get_frequency_display", read_only=True)
+    unit_display = serializers.CharField(source="get_unit_display", read_only=True)
 
-
-class PrescriptionWriteSerializer(serializers.ModelSerializer):
-    """Serializer de escritura: usado en POST/PUT/PATCH"""
     class Meta:
         model = Prescription
         fields = [
             "id",
-            "diagnosis",   # 👈 necesario para crear
+            "diagnosis",
             "medication",
             "dosage",
+            "unit",
+            "unit_display",
+            "route",
+            "route_display",
+            "frequency",
+            "frequency_display",
+            "duration",
+        ]
+
+
+class PrescriptionWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prescription
+        fields = [
+            "id",
+            "diagnosis",
+            "medication",
+            "dosage",
+            "unit",
+            "route",
+            "frequency",
             "duration",
         ]
 
 
 class TreatmentSerializer(serializers.ModelSerializer):
+    treatment_type_display = serializers.CharField(source="get_treatment_type_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
     class Meta:
         model = Treatment
-        fields = ["id", "plan", "start_date", "end_date"]
+        fields = [
+            "id",
+            "diagnosis",
+            "treatment_type",
+            "treatment_type_display",
+            "plan",
+            "start_date",
+            "end_date",
+            "status",
+            "status_display",
+        ]
 
 
 class TreatmentWriteSerializer(serializers.ModelSerializer):
@@ -216,11 +246,12 @@ class TreatmentWriteSerializer(serializers.ModelSerializer):
         model = Treatment
         fields = [
             "id",
-            "appointment",   # 👈 necesario para crear
-            "diagnosis",     # 👈 si tu modelo lo tiene
+            "diagnosis",
+            "treatment_type",
             "plan",
             "start_date",
             "end_date",
+            "status",
         ]
 
 
@@ -717,8 +748,11 @@ class ICD11EntrySerializer(serializers.ModelSerializer):
         fields = ["icd_code", "title", "definition", "synonyms", "parent_code"]
 
 
+# --- Exámenes médicos ---
 class MedicalTestSerializer(serializers.ModelSerializer):
     test_type_display = serializers.CharField(source="get_test_type_display", read_only=True)
+    urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
 
     class Meta:
         model = MedicalTest
@@ -726,48 +760,105 @@ class MedicalTestSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "diagnosis",
-            "requested_by",
             "test_type",
             "test_type_display",
-            "description",
+            "urgency",
+            "urgency_display",
             "status",
-            "requested_at",
-            "completed_at",
-            "created_at",
-            "updated_at",
-            "created_by",
-            "updated_by",
+            "status_display",
+            "description",
         ]
-        read_only_fields = ["requested_at", "completed_at", "created_at", "updated_at"]
 
     def validate_test_type(self, value):
-        valid_values = [choice[0] for choice in TEST_TYPE_CHOICES]
+        valid_values = [choice[0] for choice in MedicalTest.TEST_TYPE_CHOICES]
         if value not in valid_values:
             raise serializers.ValidationError("Tipo de examen inválido.")
         return value
 
 
+# --- Exámenes médicos (escritura) ---
+class MedicalTestWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalTest
+        fields = [
+            "id",
+            "appointment",
+            "diagnosis",
+            "test_type",
+            "urgency",
+            "status",
+            "description",
+        ]
+
+    def validate_test_type(self, value):
+        valid_values = [choice[0] for choice in MedicalTest.TEST_TYPE_CHOICES]
+        if value not in valid_values:
+            raise serializers.ValidationError("Tipo de examen inválido.")
+        return value
+
+    def validate_status(self, value):
+        valid_values = [choice[0] for choice in MedicalTest.STATUS_CHOICES]
+        if value not in valid_values:
+            raise serializers.ValidationError("Estado inválido para el examen médico.")
+        return value
+
+
+# --- Referencias médicas ---
 class MedicalReferralSerializer(serializers.ModelSerializer):
+    specialty_display = serializers.CharField(source="get_specialty_display", read_only=True)
+    urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
     class Meta:
         model = MedicalReferral
         fields = [
             "id",
             "appointment",
             "diagnosis",
-            "issued_by",
-            "referred_to",
+            "specialty",
+            "specialty_display",
+            "urgency",
+            "urgency_display",
             "reason",
             "status",
-            "issued_at",
-            "created_at",
-            "updated_at",
-            "created_by",
-            "updated_by",
+            "status_display",
         ]
-        read_only_fields = ["issued_at", "created_at", "updated_at"]
 
     def validate_status(self, value):
-        valid_values = ["issued", "accepted", "rejected"]
+        valid_values = [choice[0] for choice in MedicalReferral.STATUS_CHOICES]
         if value not in valid_values:
             raise serializers.ValidationError("Estado inválido para la referencia médica.")
         return value
+
+
+# --- Referencias médicas (escritura) ---
+class MedicalReferralWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalReferral
+        fields = [
+            "id",
+            "appointment",
+            "diagnosis",
+            "specialty",
+            "urgency",
+            "reason",
+            "status",
+        ]
+
+    def validate_specialty(self, value):
+        valid_values = [choice[0] for choice in MedicalReferral.SPECIALTY_CHOICES]
+        if value not in valid_values:
+            raise serializers.ValidationError("Especialidad inválida para la referencia médica.")
+        return value
+
+    def validate_status(self, value):
+        valid_values = [choice[0] for choice in MedicalReferral.STATUS_CHOICES]
+        if value not in valid_values:
+            raise serializers.ValidationError("Estado inválido para la referencia médica.")
+        return value
+    
+
+# --- Serializador genérico para exponer choices ---
+class ChoicesSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()

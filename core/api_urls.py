@@ -25,14 +25,19 @@ from .api_views import (
     register_arrival,
     waitingroom_entries_today_api,
     appointments_pending_api,
-    reports_api,                 # 👈 ENDPOINT DE REPORTES
-    reports_export_api,          # 👈 ENDPOINT DE EXPORTACIÓN
-    institution_settings_api,    # 👈 ENDPOINT DE CONFIGURACIÓN INSTITUCIONAL
-    doctor_operator_settings_api, # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
-    bcv_rate_api,                # 👈 NUEVO ENDPOINT DE TASA BCV
-    audit_log_api,               # 👈 NUEVO ENDPOINT DE AUDITORÍA REAL
-    generate_medical_report,     # 👈 NUEVO ENDPOINT DE INFORME MÉDICO
-    icd_search_api               # 👈 NUEVO ENDPOINT DE BÚSQUEDA ICD-11
+    reports_api,                   # 👈 ENDPOINT DE REPORTES
+    reports_export_api,            # 👈 ENDPOINT DE EXPORTACIÓN
+    institution_settings_api,      # 👈 ENDPOINT DE CONFIGURACIÓN INSTITUCIONAL
+    doctor_operator_settings_api,  # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
+    bcv_rate_api,                  # 👈 NUEVO ENDPOINT DE TASA BCV
+    audit_log_api,                 # 👈 NUEVO ENDPOINT DE AUDITORÍA REAL
+    generate_medical_report,       # 👈 NUEVO ENDPOINT DE INFORME MÉDICO
+    icd_search_api,                # 👈 NUEVO ENDPOINT DE BÚSQUEDA ICD-11
+    # --- Endpoints de choices ---
+    treatment_choices_api,
+    prescription_choices_api,
+    medicaltest_choices_api,
+    medicalreferral_choices_api,
 )
 
 # --- Swagger / OpenAPI ---
@@ -108,6 +113,12 @@ urlpatterns = [
 
     # --- Tasa BCV ---
     path("bcv-rate/", bcv_rate_api, name="bcv-rate-api"),
+
+    # --- Choices ---
+    path("choices/treatment/", treatment_choices_api, name="treatment-choices-api"),
+    path("choices/prescription/", prescription_choices_api, name="prescription-choices-api"),
+    path("choices/medical-test/", medicaltest_choices_api, name="medicaltest-choices-api"),
+    path("choices/medical-referral/", medicalreferral_choices_api, name="medicalreferral-choices-api"),
 ]
 
 # --- Documentación OpenAPI ---
