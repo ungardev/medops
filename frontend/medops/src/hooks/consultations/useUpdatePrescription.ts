@@ -8,9 +8,11 @@ export interface UpdatePrescriptionInput {
   medication?: string;
   dosage?: string | null;
   duration?: string | null;
+  frequency?: "daily" | "bid" | "tid" | "qid"; // 👈 añadido
+  route?: "oral" | "iv" | "im" | "sc";         // 👈 añadido
+  unit?: "mg" | "ml" | "g" | "tablet";         // 👈 añadido
 }
 
-// 👇 definimos el tipo de contexto
 interface MutationContext {
   previous: unknown;
 }
@@ -43,7 +45,6 @@ export function useUpdatePrescription() {
         };
       });
 
-      // 👇 devolvemos el contexto tipado
       return { previous };
     },
     onError: (_err, _vars, ctx) => {

@@ -2,11 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 import type { Treatment } from "../../types/consultation"; // 👈 tipado explícito
 
+// 👇 ahora incluye status y treatment_type
 export interface UpdateTreatmentInput {
   id: number;
-  plan: string;
+  plan?: string;
   start_date?: string | null;
   end_date?: string | null;
+  status?: "active" | "completed" | "suspended";
+  treatment_type?: "pharmacological" | "surgical" | "therapeutic" | "other";
 }
 
 // 👇 definimos el tipo de contexto con tipado más claro

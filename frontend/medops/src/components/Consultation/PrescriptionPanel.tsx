@@ -6,7 +6,15 @@ import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescr
 
 interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
-  onAdd: (data: { diagnosis: number; medication: string; dosage?: string; duration?: string }) => void;
+  onAdd: (data: {
+    diagnosis: number;
+    medication: string;
+    dosage?: string;
+    duration?: string;
+    frequency?: "daily" | "bid" | "tid" | "qid";
+    route?: "oral" | "iv" | "im" | "sc";
+    unit?: "mg" | "ml" | "g" | "tablet";
+  }) => void;
 }
 
 export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPanelProps) {
@@ -14,6 +22,9 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
   const [medication, setMedication] = useState("");
   const [dosage, setDosage] = useState("");
   const [duration, setDuration] = useState("");
+  const [frequency, setFrequency] = useState<"daily" | "bid" | "tid" | "qid">("daily");
+  const [route, setRoute] = useState<"oral" | "iv" | "im" | "sc">("oral");
+  const [unit, setUnit] = useState<"mg" | "ml" | "g" | "tablet">("mg");
 
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
@@ -22,12 +33,14 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
     e.preventDefault();
     if (!diagnosisId || !medication.trim()) return;
 
-    // 👇 enviamos solo diagnosis + datos clínicos
     onAdd({
       diagnosis: Number(diagnosisId),
       medication: medication.trim(),
       dosage: dosage.trim() || undefined,
       duration: duration.trim() || undefined,
+      frequency,
+      route,
+      unit,
     });
 
     // reset form
@@ -35,6 +48,9 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
     setMedication("");
     setDosage("");
     setDuration("");
+    setFrequency("daily");
+    setRoute("oral");
+    setUnit("mg");
   };
 
   return (
@@ -56,8 +72,19 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
                     medication={p.medication}
                     dosage={p.dosage}
                     duration={p.duration}
-                    onEdit={(id, med, dos, dur) =>
-                      updatePrescription({ id, medication: med, dosage: dos, duration: dur })
+                    frequency={p.frequency}
+                    route={p.route}
+                    unit={p.unit}
+                    onEdit={(id, med, dos, dur, freq, rt, un) =>
+                      updatePrescription({
+                        id,
+                        medication: med,
+                        dosage: dos,
+                        duration: dur,
+                        frequency: freq,
+                        route: rt,
+                        unit: un,
+                      })
                     }
                     onDelete={(id) => deletePrescription(id)}
                   />
@@ -96,7 +123,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
 
         <input
           type="text"
-          placeholder="Dosis (ej: 500mg cada 8h)"
+          placeholder="Dosis (ej: 500)"
           value={dosage}
           onChange={(e) => setDosage(e.target.value)}
           className="input"
@@ -109,6 +136,27 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           onChange={(e) => setDuration(e.target.value)}
           className="input"
         />
+
+        <select value={frequency} onChange={(e) => setFrequency(e.target.value as any)} className="select">
+          <option value="daily">Diaria</option>
+          <option value="bid">2 veces al día (BID)</option>
+          <option value="tid">3 veces al día (TID)</option>
+          <option value="qid">4 veces al día (QID)</option>
+        </select>
+
+        <select value={route} onChange={(e) => setRoute(e.target.value as any)} className="select">
+          <option value="oral">Oral</option>
+          <option value="iv">Intravenosa (IV)</option>
+          <option value="im">Intramuscular (IM)</option>
+          <option value="sc">Subcutánea (SC)</option>
+        </select>
+
+        <select value={unit} onChange={(e) => setUnit(e.target.value as any)} className="select">
+          <option value="mg">mg</option>
+          <option value="ml">ml</option>
+          <option value="g">g</option>
+          <option value="tablet">Tableta</option>
+        </select>
 
         <button type="submit" className="btn-primary self-start">
           + Agregar prescripción

@@ -15,6 +15,8 @@ export interface Treatment {
   plan: string;
   start_date?: string; // ISO date
   end_date?: string;   // ISO date
+  status: "active" | "completed" | "suspended";   // 👈 añadido
+  treatment_type: "pharmacological" | "surgical" | "therapeutic" | "other"; // 👈 añadido
 }
 
 // --- Prescripción ---
@@ -23,6 +25,9 @@ export interface Prescription {
   medication: string;
   dosage?: string;
   duration?: string;
+  frequency?: "daily" | "bid" | "tid" | "qid"; // 👈 añadido
+  route?: "oral" | "iv" | "im" | "sc";         // 👈 añadido
+  unit?: "mg" | "ml" | "g" | "tablet";         // 👈 añadido
 }
 
 // --- Documento clínico ---
@@ -84,7 +89,8 @@ export interface MedicalTest {
   test_type: string;
   test_type_display?: string;
   description?: string;
-  status: "pending" | "completed" | "cancelled";
+  urgency: "routine" | "urgent" | "stat";   // 👈 añadido
+  status: "pending" | "completed" | "cancelled"; // 👈 ya estaba, pero lo confirmamos
   requested_at: string;
   completed_at?: string | null;
   created_at: string;
@@ -101,7 +107,9 @@ export interface MedicalReferral {
   issued_by?: number | null;
   referred_to: string;
   reason?: string;
-  status: "issued" | "accepted" | "rejected";
+  specialty: string; // 👈 añadido, con choices definidos en backend (ej: "cardiology", "neurology", "other")
+  urgency: "routine" | "urgent" | "stat"; // 👈 añadido
+  status: "issued" | "accepted" | "rejected"; // 👈 ya estaba, se mantiene
   issued_at: string;
   created_at: string;
   updated_at: string;

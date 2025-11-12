@@ -21,7 +21,14 @@ export function useCreateMedicalReferral() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<MedicalReferral>) => {
-      const { data } = await axios.post<MedicalReferral>(API_URL, payload);
+      // 🔹 aplicamos defaults si no vienen del formulario
+      const finalPayload = {
+        specialty: payload.specialty ?? "other",
+        urgency: payload.urgency ?? "routine",
+        status: payload.status ?? "issued",
+        ...payload,
+      };
+      const { data } = await axios.post<MedicalReferral>(API_URL, finalPayload);
       return data;
     },
     onSuccess: (_, variables: any) => {

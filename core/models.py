@@ -5,6 +5,8 @@ from django.dispatch import receiver
 from django.utils.timezone import now
 from django.core.exceptions import ValidationError
 from simple_history.models import HistoricalRecords, HistoricalChanges
+from django.contrib.auth import get_user_model
+from django.core.validators import FileExtensionValidator
 from django.db.models import Sum
 from decimal import Decimal
 from django.utils import timezone
@@ -543,23 +545,86 @@ class Event(models.Model):
 
 
 # Nuevo modelo para documentos clínicos
-class MedicalDocument(models.Model):
-    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="documents")
-    appointment = models.ForeignKey(Appointment, on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
-    diagnosis = models.ForeignKey(Diagnosis, on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
+User = get_user_model()
 
-    file = models.FileField(upload_to="medical_documents/")
+class DocumentCategory(models.TextChoices):
+    PRESCRIPTION = "prescription", "Prescripción"
+    TREATMENT = "treatment", "Tratamiento"
+    MEDICAL_TEST_ORDER = "medical_test_order", "Órdenes de Exámenes"
+    MEDICAL_REFERRAL = "medical_referral", "Referencia Médica"
+    MEDICAL_REPORT = "medical_report", "Informe Médico General"
+    OTHER = "other", "Otro"
+
+class DocumentSource(models.TextChoices):
+    SYSTEM_GENERATED = "system_generated", "Generado por el sistema"
+    USER_UPLOADED = "user_uploaded", "Subido por usuario"
+
+class MedicalDocument(models.Model):
+    patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="documents")
+    appointment = models.ForeignKey("Appointment", on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
+    diagnosis = models.ForeignKey("Diagnosis", on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
+
+    category = models.CharField(max_length=40, choices=DocumentCategory.choices, default=DocumentCategory.OTHER)
+    source = models.CharField(max_length=20, choices=DocumentSource.choices, default=DocumentSource.SYSTEM_GENERATED)
+    origin_panel = models.CharField(max_length=50, blank=True, null=True)  # prescriptions|treatments|tests|referrals|report
+
+    file = models.FileField(
+        upload_to="medical_documents/",
+        validators=[FileExtensionValidator(allowed_extensions=["pdf","png","jpg","jpeg"])]
+    )
+    mime_type = models.CharField(max_length=100, default="application/pdf")
+    storage_key = models.CharField(max_length=255, blank=True, null=True)
+    size_bytes = models.PositiveIntegerField(blank=True, null=True)
+
     description = models.CharField(max_length=255, blank=True, null=True)
-    category = models.CharField(max_length=100, blank=True, null=True)  # Ej: "Laboratorio", "Imagenología"
+
+    template_version = models.CharField(max_length=20, blank=True, null=True)  # ej: "v1.1"
+    checksum_sha256 = models.CharField(max_length=64, blank=True, null=True)
+    is_signed = models.BooleanField(default=False)
+    signer_name = models.CharField(max_length=100, blank=True, null=True)
+    signer_registration = models.CharField(max_length=50, blank=True, null=True)
+
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by = models.CharField(max_length=100, blank=True, null=True)  # luego enlazable a User
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="uploaded_documents")
+    generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="generated_documents")
 
     class Meta:
         verbose_name = "Medical Document"
         verbose_name_plural = "Medical Documents"
+        indexes = [
+            models.Index(fields=["patient", "appointment", "category"]),
+            models.Index(fields=["category", "template_version"]),
+            models.Index(fields=["uploaded_at"]),
+        ]
 
     def __str__(self):
-        return f"{self.description or 'Documento'} - {self.patient}"
+        return f"{self.get_category_display()} — {self.patient}"
+
+    def save(self, *args, **kwargs):
+        if self.file and not self.size_bytes:
+            try:
+                self.size_bytes = self.file.size
+            except Exception:
+                pass
+        super().save(*args, **kwargs)
+
+    # Reglas de negocio fuertes
+    def clean(self):
+        errors = {}
+        # Si es system_generated, debe ser PDF
+        if self.source == DocumentSource.SYSTEM_GENERATED and self.mime_type != "application/pdf":
+            errors["mime_type"] = "Documentos generados por el sistema deben ser PDF."
+        # Categorías operativas requieren appointment
+        if self.category in {
+            DocumentCategory.PRESCRIPTION,
+            DocumentCategory.TREATMENT,
+            DocumentCategory.MEDICAL_TEST_ORDER,
+            DocumentCategory.MEDICAL_REFERRAL,
+        } and not self.appointment:
+            errors["appointment"] = "Esta categoría requiere una cita (appointment)."
+        if errors:
+            from django.core.exceptions import ValidationError
+            raise ValidationError(errors)
 
 
 class ChargeOrder(models.Model):

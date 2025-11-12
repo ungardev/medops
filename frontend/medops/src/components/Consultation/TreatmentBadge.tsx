@@ -1,4 +1,3 @@
-// src/components/Consultation/TreatmentBadge.tsx
 import React, { useState } from "react";
 
 export interface TreatmentBadgeProps {
@@ -6,7 +5,16 @@ export interface TreatmentBadgeProps {
   plan: string;
   start_date?: string | null;
   end_date?: string | null;
-  onEdit?: (id: number, newPlan: string, start_date?: string | null, end_date?: string | null) => void;
+  status: "active" | "completed" | "suspended";
+  treatment_type: "pharmacological" | "surgical" | "therapeutic" | "other";
+  onEdit?: (
+    id: number,
+    newPlan: string,
+    start_date?: string | null,
+    end_date?: string | null,
+    status?: "active" | "completed" | "suspended",
+    treatment_type?: "pharmacological" | "surgical" | "therapeutic" | "other"
+  ) => void;
   onDelete?: (id: number) => void;
 }
 
@@ -15,6 +23,8 @@ export default function TreatmentBadge({
   plan,
   start_date,
   end_date,
+  status,
+  treatment_type,
   onEdit,
   onDelete,
 }: TreatmentBadgeProps) {
@@ -22,10 +32,19 @@ export default function TreatmentBadge({
   const [editedPlan, setEditedPlan] = useState(plan);
   const [editedStart, setEditedStart] = useState(start_date || "");
   const [editedEnd, setEditedEnd] = useState(end_date || "");
+  const [editedStatus, setEditedStatus] = useState(status);
+  const [editedType, setEditedType] = useState(treatment_type);
 
   const handleSave = () => {
     if (onEdit) {
-      onEdit(id, editedPlan.trim(), editedStart || null, editedEnd || null);
+      onEdit(
+        id,
+        editedPlan.trim(),
+        editedStart || null,
+        editedEnd || null,
+        editedStatus,
+        editedType
+      );
     }
     setIsEditing(false);
   };
@@ -34,6 +53,8 @@ export default function TreatmentBadge({
     setEditedPlan(plan);
     setEditedStart(start_date || "");
     setEditedEnd(end_date || "");
+    setEditedStatus(status);
+    setEditedType(treatment_type);
     setIsEditing(false);
   };
 
@@ -43,7 +64,10 @@ export default function TreatmentBadge({
         <span className="text-sm text-gray-700 font-semibold">Tratamiento</span>
         <div className="flex gap-2">
           {onEdit && (
-            <button className="text-sm text-blue-600 hover:underline" onClick={() => setIsEditing(true)}>
+            <button
+              className="text-sm text-blue-600 hover:underline"
+              onClick={() => setIsEditing(true)}
+            >
               Editar
             </button>
           )}
@@ -82,6 +106,28 @@ export default function TreatmentBadge({
             onChange={(e) => setEditedEnd(e.target.value)}
             className="input"
           />
+
+          <select
+            value={editedStatus}
+            onChange={(e) => setEditedStatus(e.target.value as any)}
+            className="select"
+          >
+            <option value="active">Activo</option>
+            <option value="completed">Completado</option>
+            <option value="suspended">Suspendido</option>
+          </select>
+
+          <select
+            value={editedType}
+            onChange={(e) => setEditedType(e.target.value as any)}
+            className="select"
+          >
+            <option value="pharmacological">Farmacológico</option>
+            <option value="surgical">Quirúrgico</option>
+            <option value="therapeutic">Terapéutico</option>
+            <option value="other">Otro</option>
+          </select>
+
           <div className="flex gap-2 mt-1">
             <button className="btn btn-primary btn-sm" onClick={handleSave}>
               Guardar
@@ -96,6 +142,8 @@ export default function TreatmentBadge({
           {plan}
           {start_date && <div>Inicio: {start_date}</div>}
           {end_date && <div>Fin: {end_date}</div>}
+          <div>Estado: {status}</div>
+          <div>Tipo: {treatment_type}</div>
         </div>
       )}
     </div>

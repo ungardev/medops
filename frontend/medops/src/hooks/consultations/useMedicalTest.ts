@@ -21,7 +21,13 @@ export function useCreateMedicalTest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<MedicalTest>) => {
-      const { data } = await axios.post<MedicalTest>(API_URL, payload);
+      // 🔹 aplicamos defaults si no vienen del formulario
+      const finalPayload = {
+        urgency: payload.urgency ?? "routine",
+        status: payload.status ?? "pending",
+        ...payload,
+      };
+      const { data } = await axios.post<MedicalTest>(API_URL, finalPayload);
       return data;
     },
     onSuccess: (_, variables: any) => {

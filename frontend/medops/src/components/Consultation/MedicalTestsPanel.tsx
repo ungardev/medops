@@ -1,4 +1,3 @@
-// src/components/Consultation/MedicalTestsPanel.tsx
 import { useState } from "react";
 import {
   useMedicalTest,
@@ -19,12 +18,22 @@ export default function MedicalTestsPanel({ appointmentId }: MedicalTestsPanelPr
 
   const [testType, setTestType] = useState("");
   const [description, setDescription] = useState("");
+  const [urgency, setUrgency] = useState<"routine" | "urgent" | "stat">("routine");
+  const [status, setStatus] = useState<"pending" | "completed" | "cancelled">("pending");
 
   const handleAdd = () => {
     if (!testType) return;
-    createTest({ appointment: appointmentId, test_type: testType, description });
+    createTest({
+      appointment: appointmentId,
+      test_type: testType,
+      description,
+      urgency,
+      status,
+    });
     setTestType("");
     setDescription("");
+    setUrgency("routine");
+    setStatus("pending");
   };
 
   return (
@@ -39,7 +48,9 @@ export default function MedicalTestsPanel({ appointmentId }: MedicalTestsPanelPr
           <li key={t.id} className="flex justify-between items-center border-b py-1">
             <div>
               <strong>{t.test_type_display}</strong> — {t.description || "Sin descripción"}
-              <span className="ml-2 text-sm text-muted">({t.status})</span>
+              <span className="ml-2 text-sm text-muted">
+                ({t.urgency} / {t.status})
+              </span>
             </div>
             <button
               className="btn-danger btn-sm"
@@ -84,6 +95,18 @@ export default function MedicalTestsPanel({ appointmentId }: MedicalTestsPanelPr
           onChange={(e) => setDescription(e.target.value)}
           className="textarea"
         />
+
+        <select value={urgency} onChange={(e) => setUrgency(e.target.value as any)} className="select">
+          <option value="routine">Rutina</option>
+          <option value="urgent">Urgente</option>
+          <option value="stat">Inmediato (STAT)</option>
+        </select>
+
+        <select value={status} onChange={(e) => setStatus(e.target.value as any)} className="select">
+          <option value="pending">Pendiente</option>
+          <option value="completed">Completado</option>
+          <option value="cancelled">Cancelado</option>
+        </select>
 
         <button onClick={handleAdd} className="btn-primary self-start">
           + Agregar examen

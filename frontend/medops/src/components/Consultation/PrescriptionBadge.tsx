@@ -1,4 +1,3 @@
-// src/components/Consultation/PrescriptionBadge.tsx
 import React, { useState } from "react";
 
 export interface PrescriptionBadgeProps {
@@ -6,7 +5,18 @@ export interface PrescriptionBadgeProps {
   medication: string;
   dosage?: string | null;
   duration?: string | null;
-  onEdit?: (id: number, medication: string, dosage?: string | null, duration?: string | null) => void;
+  frequency?: "daily" | "bid" | "tid" | "qid";
+  route?: "oral" | "iv" | "im" | "sc";
+  unit?: "mg" | "ml" | "g" | "tablet";
+  onEdit?: (
+    id: number,
+    medication: string,
+    dosage?: string | null,
+    duration?: string | null,
+    frequency?: "daily" | "bid" | "tid" | "qid",
+    route?: "oral" | "iv" | "im" | "sc",
+    unit?: "mg" | "ml" | "g" | "tablet"
+  ) => void;
   onDelete?: (id: number) => void;
 }
 
@@ -15,6 +25,9 @@ export default function PrescriptionBadge({
   medication,
   dosage,
   duration,
+  frequency = "daily",
+  route = "oral",
+  unit = "mg",
   onEdit,
   onDelete,
 }: PrescriptionBadgeProps) {
@@ -22,10 +35,21 @@ export default function PrescriptionBadge({
   const [editedMedication, setEditedMedication] = useState(medication);
   const [editedDosage, setEditedDosage] = useState(dosage || "");
   const [editedDuration, setEditedDuration] = useState(duration || "");
+  const [editedFrequency, setEditedFrequency] = useState(frequency);
+  const [editedRoute, setEditedRoute] = useState(route);
+  const [editedUnit, setEditedUnit] = useState(unit);
 
   const handleSave = () => {
     if (onEdit) {
-      onEdit(id, editedMedication.trim(), editedDosage || null, editedDuration || null);
+      onEdit(
+        id,
+        editedMedication.trim(),
+        editedDosage || null,
+        editedDuration || null,
+        editedFrequency,
+        editedRoute,
+        editedUnit
+      );
     }
     setIsEditing(false);
   };
@@ -34,6 +58,9 @@ export default function PrescriptionBadge({
     setEditedMedication(medication);
     setEditedDosage(dosage || "");
     setEditedDuration(duration || "");
+    setEditedFrequency(frequency);
+    setEditedRoute(route);
+    setEditedUnit(unit);
     setIsEditing(false);
   };
 
@@ -43,7 +70,10 @@ export default function PrescriptionBadge({
         <span className="text-sm text-gray-700 font-semibold">Prescripción</span>
         <div className="flex gap-2">
           {onEdit && (
-            <button className="text-sm text-blue-600 hover:underline" onClick={() => setIsEditing(true)}>
+            <button
+              className="text-sm text-blue-600 hover:underline"
+              onClick={() => setIsEditing(true)}
+            >
               Editar
             </button>
           )}
@@ -85,6 +115,40 @@ export default function PrescriptionBadge({
             className="input"
             placeholder="Duración"
           />
+
+          <select
+            value={editedFrequency}
+            onChange={(e) => setEditedFrequency(e.target.value as any)}
+            className="select"
+          >
+            <option value="daily">Diaria</option>
+            <option value="bid">2 veces al día (BID)</option>
+            <option value="tid">3 veces al día (TID)</option>
+            <option value="qid">4 veces al día (QID)</option>
+          </select>
+
+          <select
+            value={editedRoute}
+            onChange={(e) => setEditedRoute(e.target.value as any)}
+            className="select"
+          >
+            <option value="oral">Oral</option>
+            <option value="iv">Intravenosa (IV)</option>
+            <option value="im">Intramuscular (IM)</option>
+            <option value="sc">Subcutánea (SC)</option>
+          </select>
+
+          <select
+            value={editedUnit}
+            onChange={(e) => setEditedUnit(e.target.value as any)}
+            className="select"
+          >
+            <option value="mg">mg</option>
+            <option value="ml">ml</option>
+            <option value="g">g</option>
+            <option value="tablet">Tableta</option>
+          </select>
+
           <div className="flex gap-2 mt-1">
             <button className="btn btn-primary btn-sm" onClick={handleSave}>
               Guardar
@@ -97,8 +161,10 @@ export default function PrescriptionBadge({
       ) : (
         <div className="mt-1 text-sm text-muted whitespace-pre-line">
           {medication}
-          {dosage && <div>Dosis: {dosage}</div>}
+          {dosage && <div>Dosis: {dosage} {unit}</div>}
           {duration && <div>Duración: {duration}</div>}
+          <div>Frecuencia: {frequency}</div>
+          <div>Vía: {route}</div>
         </div>
       )}
     </div>
