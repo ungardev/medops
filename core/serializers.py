@@ -895,7 +895,7 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "diagnosis",
-            "referred_to",       # 👈 asegúrate de tener este campo en el modelo si lo usas
+            "referred_to",       # 👈 ahora sí existe en el modelo
             "reason",
             "specialties",       # lectura
             "specialty_ids",     # escritura
@@ -909,6 +909,12 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
         valid_values = [choice[0] for choice in MedicalReferral.STATUS_CHOICES]
         if value not in valid_values:
             raise serializers.ValidationError("Estado inválido para la referencia médica.")
+        return value
+
+    def validate_urgency(self, value):
+        valid_values = [choice[0] for choice in MedicalReferral.URGENCY_CHOICES]
+        if value not in valid_values:
+            raise serializers.ValidationError("Urgencia inválida para la referencia médica.")
         return value
 
 
