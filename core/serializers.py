@@ -4,7 +4,7 @@ from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
-    ICD11Entry, MedicalTest, MedicalReferral
+    ICD11Entry, MedicalTest, MedicalReferral, Specialty
 )
 from datetime import date
 from typing import Optional
@@ -379,25 +379,80 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 # --- Documentos clínicos ---
-class MedicalDocumentSerializer(serializers.ModelSerializer):
-    # write_only: se envía en POST pero no se devuelve en GET
-    patient = serializers.PrimaryKeyRelatedField(
-        queryset=Patient.objects.all(),
-        write_only=True
-    )
+class MedicalDocumentReadSerializer(serializers.ModelSerializer):
+    patient = PatientReadSerializer(read_only=True)
+    appointment = AppointmentSerializer(read_only=True)
+    diagnosis = DiagnosisSerializer(read_only=True)
+    uploaded_by = serializers.StringRelatedField(read_only=True)
+    generated_by = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = MedicalDocument
         fields = [
             "id",
-            "patient",        # write-only
+            "patient",
+            "appointment",
+            "diagnosis",
             "description",
             "category",
+            "source",
+            "origin_panel",
+            "template_version",
+            "is_signed",
+            "signer_name",
+            "signer_registration",
             "uploaded_at",
             "uploaded_by",
+            "generated_by",
+            "file",
+            "mime_type",
+            "size_bytes",
+            "checksum_sha256",
+            "storage_key",
+        ]
+        read_only_fields = fields  # todo es solo lectura en el serializer de salida
+
+
+class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
+    patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all())
+    appointment = serializers.PrimaryKeyRelatedField(queryset=Appointment.objects.all(), required=False, allow_null=True)
+    diagnosis = serializers.PrimaryKeyRelatedField(queryset=Diagnosis.objects.all(), required=False, allow_null=True)
+
+    class Meta:
+        model = MedicalDocument
+        fields = [
+            "id",
+            "patient",
+            "appointment",
+            "diagnosis",
+            "description",
+            "category",
             "file",
         ]
-        read_only_fields = ["id", "uploaded_at", "uploaded_by"]
+        read_only_fields = ["id"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        # Calcular metadatos del archivo
+        file = validated_data.get("file")
+        if file:
+            validated_data["mime_type"] = file.content_type or "application/octet-stream"
+            validated_data["size_bytes"] = file.size
+            import hashlib
+            sha256 = hashlib.sha256()
+            for chunk in file.chunks():
+                sha256.update(chunk)
+            validated_data["checksum_sha256"] = sha256.hexdigest()
+
+        # Setear metadatos institucionales
+        validated_data["source"] = "user_uploaded"
+        validated_data["origin_panel"] = "admin_or_api"
+        validated_data["template_version"] = "v1.0"
+        validated_data["uploaded_by"] = user if user and user.is_authenticated else None
+
+        return super().create(validated_data)
 
 
 # --- Eventos (auditoría) ---
@@ -664,9 +719,24 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "address", "phone", "logo", "tax_id"]
 
 
+class SpecialtySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Specialty
+        fields = ["id", "code", "name"]
+
+
 class DoctorOperatorSerializer(serializers.ModelSerializer):
     # 🔹 Firma opcional con URL completa
     signature = serializers.ImageField(required=False, allow_null=True, use_url=True)
+
+    # 🔹 Especialidades: lectura y escritura
+    specialties = SpecialtySerializer(many=True, read_only=True)
+    specialty_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Specialty.objects.all(),
+        many=True,
+        write_only=True,
+        source="specialties"
+    )
 
     class Meta:
         model = DoctorOperator
@@ -674,7 +744,8 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "id",
             "full_name",
             "colegiado_id",
-            "specialty",
+            "specialties",      # lectura
+            "specialty_ids",    # escritura
             "license",
             "email",
             "phone",
@@ -805,7 +876,14 @@ class MedicalTestWriteSerializer(serializers.ModelSerializer):
 
 # --- Referencias médicas ---
 class MedicalReferralSerializer(serializers.ModelSerializer):
-    specialty_display = serializers.CharField(source="get_specialty_display", read_only=True)
+    specialties = SpecialtySerializer(many=True, read_only=True)
+    specialty_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Specialty.objects.all(),
+        many=True,
+        write_only=True,
+        source="specialties"
+    )
+
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
@@ -815,8 +893,8 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "diagnosis",
-            "specialty",
-            "specialty_display",
+            "specialties",       # lectura
+            "specialty_ids",     # escritura
             "urgency",
             "urgency_display",
             "reason",

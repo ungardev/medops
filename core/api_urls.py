@@ -16,6 +16,7 @@ from .api_views import (
     ChargeItemViewSet,         # 👈 nuevo
     MedicalTestViewSet,        # 👈 NUEVO
     MedicalReferralViewSet,    # 👈 NUEVO
+    SpecialtyViewSet,          # 👈 NUEVO catálogo institucional
     update_appointment_status,
     update_waitingroom_status,
     patient_search_api,
@@ -31,13 +32,18 @@ from .api_views import (
     doctor_operator_settings_api,  # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
     bcv_rate_api,                  # 👈 NUEVO ENDPOINT DE TASA BCV
     audit_log_api,                 # 👈 NUEVO ENDPOINT DE AUDITORÍA REAL
-    generate_medical_report,       # 👈 NUEVO ENDPOINT DE INFORME MÉDICO
-    icd_search_api,                # 👈 NUEVO ENDPOINT DE BÚSQUEDA ICD-11
+    generate_medical_report,       # 👈 ENDPOINT DE INFORME MÉDICO
+    generate_prescription_pdf,     # 👈 NUEVO ENDPOINT DE PRESCRIPCIÓN
+    generate_treatment_pdf,        # 👈 NUEVO ENDPOINT DE TRATAMIENTO
+    generate_referral_pdf,         # 👈 NUEVO ENDPOINT DE REFERENCIA MÉDICA
+    generate_chargeorder_pdf,      # 👈 NUEVO ENDPOINT DE ORDEN FINANCIERA
+    icd_search_api,                # 👈 ENDPOINT DE BÚSQUEDA ICD-11
     # --- Endpoints de choices ---
     treatment_choices_api,
     prescription_choices_api,
     medicaltest_choices_api,
     medicalreferral_choices_api,
+    specialty_choices_api,         # 👈 NUEVO ENDPOINT DE CHOICES DE ESPECIALIDADES
 )
 
 # --- Swagger / OpenAPI ---
@@ -59,6 +65,7 @@ router.register(r"charge-orders", ChargeOrderViewSet, basename="chargeorder")   
 router.register(r"charge-items", ChargeItemViewSet, basename="chargeitem")      # 👈 ítems
 router.register(r"medical-tests", MedicalTestViewSet, basename="medicaltest")   # 👈 NUEVO
 router.register(r"medical-referrals", MedicalReferralViewSet, basename="medicalreferral")  # 👈 NUEVO
+router.register(r"specialties", SpecialtyViewSet, basename="specialty")         # 👈 NUEVO catálogo institucional
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -88,10 +95,14 @@ urlpatterns = [
 
     # --- Consultas ---
     path("consultation/current/", api_views.current_consultation_api, name="current-consultation-api"),
-    path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),  # 👈 NUEVO
+    path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
+    path("prescriptions/<int:pk>/generate-pdf/", generate_prescription_pdf, name="generate-prescription-pdf"),
+    path("treatments/<int:pk>/generate-pdf/", generate_treatment_pdf, name="generate-treatment-pdf"),
+    path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
+    path("chargeorders/<int:pk>/generate-pdf/", generate_chargeorder_pdf, name="generate-chargeorder-pdf"),
 
     # --- Diagnósticos ICD-11 ---
-    path("icd/search/", icd_search_api, name="icd-search-api"),  # 👈 NUEVO
+    path("icd/search/", icd_search_api, name="icd-search-api"),
 
     # --- Pagos ---
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
@@ -103,7 +114,7 @@ urlpatterns = [
     path("audit/aggregates/", api_views.audit_dashboard_api, name="audit-dashboard-api"),
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),
-    path("audit/log/", audit_log_api, name="audit-log-api"),  # ✅ nuevo endpoint institucional
+    path("audit/log/", audit_log_api, name="audit-log-api"),
 
     # --- Sala de Espera ---
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
@@ -119,6 +130,7 @@ urlpatterns = [
     path("choices/prescription/", prescription_choices_api, name="prescription-choices-api"),
     path("choices/medical-test/", medicaltest_choices_api, name="medicaltest-choices-api"),
     path("choices/medical-referral/", medicalreferral_choices_api, name="medicalreferral-choices-api"),
+    path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),  # 👈 NUEVO
 ]
 
 # --- Documentación OpenAPI ---

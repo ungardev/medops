@@ -20,7 +20,9 @@ from .models import (
     ChargeOrder,
     ChargeItem,
     MedicalTest,
-    MedicalReferral
+    MedicalReferral,
+    DoctorOperator,
+    Specialty
 )
 
 logger = logging.getLogger("core")
@@ -203,11 +205,25 @@ class MedicalTestAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(MedicalReferral)
 class MedicalReferralAdmin(admin.ModelAdmin):
-    list_display = ("id", "appointment", "diagnosis", "specialty", "urgency", "status", "reason")
-    list_filter = ("specialty", "urgency", "status")
-    search_fields = ("appointment__patient__first_name", "appointment__patient__last_name", "diagnosis__icd_code", "reason")
+    list_display = (
+        "id", "appointment", "diagnosis",
+        "get_specialties_display",  # 👈 nuevo método
+        "urgency", "status", "reason"
+    )
+    list_filter = ("urgency", "status")
+    search_fields = (
+        "appointment__patient__first_name",
+        "appointment__patient__last_name",
+        "diagnosis__icd_code",
+        "reason"
+    )
+    autocomplete_fields = ["appointment", "diagnosis", "specialties"]
     ordering = ("id",)
     list_per_page = 25
+
+    @admin.display(description="Especialidades referidas")
+    def get_specialties_display(self, obj):
+        return ", ".join([s.name for s in obj.specialties.all()])
 
 # -------------------------
 # ChargeOrder (centro financiero)
@@ -314,6 +330,29 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
+
+
+from .models import DoctorOperator
+
+@admin.register(DoctorOperator)
+class DoctorOperatorAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "colegiado_id", "get_specialties_display", "email", "phone")
+    search_fields = ("full_name", "colegiado_id", "email", "phone")
+    autocomplete_fields = ["specialties"]
+    ordering = ("full_name",)
+    list_per_page = 25
+
+    @admin.display(description="Especialidades")
+    def get_specialties_display(self, obj):
+        return ", ".join([s.name for s in obj.specialties.all()])
+
+
+@admin.register(Specialty)
+class SpecialtyAdmin(admin.ModelAdmin):
+    list_display = ("code", "name")
+    search_fields = ("code", "name")
+    ordering = ("name",)
+    list_per_page = 50
 
 
 # Personalización del panel de administración

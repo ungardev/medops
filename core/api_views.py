@@ -50,7 +50,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral
+from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty
 )
 
 from .serializers import (
@@ -58,13 +58,13 @@ from .serializers import (
     AppointmentSerializer, PaymentSerializer,
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer,
-    GeneticPredispositionSerializer, MedicalDocumentSerializer,
+    GeneticPredispositionSerializer, MedicalDocumentReadSerializer, MedicalDocumentWriteSerializer,
     AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, PrescriptionSerializer,
     AppointmentDetailSerializer, ChargeOrderSerializer, ChargeItemSerializer, ChargeOrderPaymentSerializer,
     EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer,
     DoctorOperatorSerializer, MedicalReportSerializer, ICD11EntrySerializer, DiagnosisWriteSerializer,
     MedicalTestSerializer, MedicalReferralSerializer, PrescriptionWriteSerializer, TreatmentWriteSerializer,
-    MedicalTestWriteSerializer, MedicalReferralWriteSerializer
+    MedicalTestWriteSerializer, MedicalReferralWriteSerializer, SpecialtySerializer
 )
 
 
@@ -770,55 +770,67 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
     """
     CRUD de documentos clínicos.
     - GET /documents/?patient={id} → lista documentos de un paciente
-    - POST /documents/ (multipart) → subir documento
-    - DELETE /documents/{id}/ → eliminar documento
+    - POST /documents/ (multipart) → subir documento clínico
+    - Los PDFs institucionales se registran con metadatos blindados automáticamente.
     """
     queryset = MedicalDocument.objects.all().order_by("-uploaded_at")
-    serializer_class = MedicalDocumentSerializer
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        patient_id = self.request.query_params.get("patient")
-        if patient_id:
-            qs = qs.filter(patient_id=patient_id)
-        return qs
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return MedicalDocumentWriteSerializer
+        return MedicalDocumentReadSerializer
 
     def perform_create(self, serializer):
+        """
+        Al crear un documento:
+        - Calcula checksum SHA256
+        - Guarda tamaño y mime_type
+        - Setea source, origin_panel, template_version
+        - Asigna uploaded_by y generated_by
+        """
+        user = self.request.user if self.request.user.is_authenticated else None
         file = self.request.FILES.get("file")
-        if not file:
-            raise ValidationError({"file": "Debe adjuntar un archivo."})
 
-        # Validación de extensión
-        allowed_extensions = ["pdf", "jpg", "jpeg", "png"]
-        filename = getattr(file, "name", None)
-        if not filename:
-            raise ValidationError({"file": "El archivo no tiene nombre válido."})
+        extra_data = {}
+        if file:
+            extra_data["mime_type"] = file.content_type or "application/octet-stream"
+            extra_data["size_bytes"] = file.size
 
-        ext = filename.rsplit(".", 1)[-1].lower()
-        if ext not in allowed_extensions:
-            raise ValidationError({"file": f"Formato no permitido: .{ext}"})
+            import hashlib
+            sha256 = hashlib.sha256()
+            for chunk in file.chunks():
+                sha256.update(chunk)
+            extra_data["checksum_sha256"] = sha256.hexdigest()
 
-        # Validación de tamaño (ej. 10 MB)
-        size = getattr(file, "size", None)
-        if size is None:
-            raise ValidationError({"file": "No se pudo determinar el tamaño del archivo."})
+        extra_data["source"] = "user_uploaded"
+        extra_data["origin_panel"] = "admin_or_api"
+        extra_data["template_version"] = "v1.0"
+        extra_data["uploaded_by"] = user
+        extra_data["generated_by"] = user
 
-        max_size = 10 * 1024 * 1024
-        if size > max_size:
-            raise ValidationError({"file": "El archivo excede el tamaño máximo de 10 MB."})
+        serializer.save(**extra_data)
 
-        # 👇 Aquí está la clave: asignamos patient y uploaded_by
-        patient_id = self.request.data.get("patient")
-        if not patient_id:
-            raise ValidationError({"patient": "Debe especificar el paciente."})
+    def perform_update(self, serializer):
+        """
+        Al actualizar un documento:
+        - Recalcula checksum si cambia el archivo
+        - Actualiza tamaño y mime_type
+        """
+        file = self.request.FILES.get("file")
+        extra_data = {}
+        if file:
+            extra_data["mime_type"] = file.content_type or "application/octet-stream"
+            extra_data["size_bytes"] = file.size
 
-        serializer.save(
-            patient_id=patient_id,
-            uploaded_by=str(self.request.user),
-        )
+            import hashlib
+            sha256 = hashlib.sha256()
+            for chunk in file.chunks():
+                sha256.update(chunk)
+            extra_data["checksum_sha256"] = sha256.hexdigest()
 
+        serializer.save(**extra_data)
 
 
 class PatientViewSet(viewsets.ModelViewSet):
@@ -1940,21 +1952,20 @@ def generate_report(request, pk: int):
     description="Genera un informe médico para la consulta indicada, crea PDF y lo registra como documento clínico."
 )
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def generate_medical_report(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
 
-    # Crear el informe médico
+    # Crear el informe médico institucional
     report = MedicalReport.objects.create(
         appointment=appointment,
         patient=appointment.patient,
         status="generated"
     )
 
-    # Obtener datos institucionales y del médico
     institution = InstitutionSettings.objects.first()
     doctor = DoctorOperator.objects.first()
 
-    # Preparar contexto completo
     context = {
         "appointment": appointment,
         "patient": appointment.patient,
@@ -1967,14 +1978,12 @@ def generate_medical_report(request, pk):
         "generated_at": timezone.now(),
     }
 
-    # Renderizar HTML con plantilla institucional
+    # Renderizar HTML → PDF
     html_string = render_to_string("pdf/medical_report.html", context)
-
-    # Generar PDF con base_url para que WeasyPrint acceda a imágenes
     from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    # Guardar PDF en almacenamiento
+    # Guardar PDF en storage
     filename = f"medical_report_{report.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -1982,19 +1991,34 @@ def generate_medical_report(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    # Actualizar el MedicalReport con la URL del archivo
+    # Actualizar MedicalReport con URL del archivo
     report.file_url = file_path
     report.save(update_fields=["file_url"])
 
-    # Registrar también un MedicalDocument asociado
-    MedicalDocument.objects.create(
+    # Crear MedicalDocument blindado
+    from django.core.files import File
+    django_file = File(open(full_path, "rb"), name=filename)
+
+    import hashlib
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
+    doc = MedicalDocument.objects.create(
         patient=appointment.patient,
         appointment=appointment,
         diagnosis=None,
         description="Informe Médico generado automáticamente",
-        category="Informe Médico",
-        file=file_path,
-        uploaded_by=str(request.user) if request.user.is_authenticated else "system"
+        category="medical_report",          # 🔹 ahora con choice institucional
+        source="system_generated",          # 🔹 origen blindado
+        origin_panel="consultation",        # 🔹 panel origen
+        template_version="v1.1",            # 🔹 versión de plantilla
+        generated_by=request.user,          # 🔹 usuario autenticado
+        uploaded_by=request.user,           # 🔹 también como uploader
+        file=django_file,
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
     )
 
     # Evento de auditoría
@@ -2002,14 +2026,298 @@ def generate_medical_report(request, pk):
         entity="MedicalReport",
         entity_id=report.id,
         action="generated",
-        actor=str(request.user) if request.user.is_authenticated else "system",
-        metadata={"appointment_id": appointment.id, "patient_id": appointment.patient.id},
+        actor=str(request.user),
+        metadata={"appointment_id": appointment.id, "patient_id": appointment.patient.id, "document_id": doc.id},
         severity="info",
         notify=True
     )
 
     serializer = MedicalReportSerializer(report)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    responses={201: PrescriptionSerializer},
+    description="Genera una prescripción en PDF y la registra como documento clínico."
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_prescription_pdf(request, pk):
+    prescription = get_object_or_404(Prescription, pk=pk)
+    diagnosis = prescription.diagnosis
+    appointment = diagnosis.appointment
+    patient = appointment.patient
+
+    context = {
+        "prescription": prescription,
+        "diagnosis": diagnosis,
+        "appointment": appointment,
+        "patient": patient,
+        "doctor": request.user,
+        "institution": InstitutionSettings.objects.first(),
+    }
+
+    html_string = render_to_string("pdf/prescription.html", context)
+    from weasyprint import HTML
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+
+    filename = f"prescription_{prescription.id}.pdf"
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes or b"")
+
+    from django.core.files import File
+    django_file = File(open(full_path, "rb"), name=filename)
+
+    import hashlib
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
+    doc = MedicalDocument.objects.create(
+        patient=patient,
+        appointment=appointment,
+        diagnosis=diagnosis,
+        description="Prescripción generada automáticamente",
+        category="prescription",
+        source="system_generated",
+        origin_panel="prescription_panel",
+        template_version="v1.1",
+        generated_by=request.user,
+        uploaded_by=request.user,
+        file=django_file,
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
+    )
+
+    Event.objects.create(
+        entity="MedicalDocument",
+        entity_id=doc.id,
+        action="generate_prescription",
+        actor=str(request.user),
+        metadata={"appointment_id": appointment.id, "patient_id": patient.id, "prescription_id": prescription.id},
+        severity="info",
+        notify=True
+    )
+
+    return Response(PrescriptionSerializer(prescription).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    responses={201: TreatmentSerializer},
+    description="Genera un plan de tratamiento en PDF y lo registra como documento clínico."
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_treatment_pdf(request, pk):
+    treatment = get_object_or_404(Treatment, pk=pk)
+    diagnosis = treatment.diagnosis
+    appointment = diagnosis.appointment
+    patient = appointment.patient
+
+    context = {
+        "treatment": treatment,
+        "diagnosis": diagnosis,
+        "appointment": appointment,
+        "patient": patient,
+        "doctor": request.user,
+        "institution": InstitutionSettings.objects.first(),
+    }
+
+    html_string = render_to_string("pdf/treatment.html", context)
+    from weasyprint import HTML
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+
+    filename = f"treatment_{treatment.id}.pdf"
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes or b"")
+
+    from django.core.files import File
+    django_file = File(open(full_path, "rb"), name=filename)
+
+    import hashlib
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
+    doc = MedicalDocument.objects.create(
+        patient=patient,
+        appointment=appointment,
+        diagnosis=diagnosis,
+        description="Plan de tratamiento generado automáticamente",
+        category="treatment_plan",
+        source="system_generated",
+        origin_panel="treatment_panel",
+        template_version="v1.1",
+        generated_by=request.user,
+        uploaded_by=request.user,
+        file=django_file,
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
+    )
+
+    Event.objects.create(
+        entity="MedicalDocument",
+        entity_id=doc.id,
+        action="generate_treatment",
+        actor=str(request.user),
+        metadata={"appointment_id": appointment.id, "patient_id": patient.id, "treatment_id": treatment.id},
+        severity="info",
+        notify=True
+    )
+
+    return Response(TreatmentSerializer(treatment).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    responses={201: MedicalReferralSerializer},
+    description="Genera una referencia médica en PDF y la registra como documento clínico."
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_referral_pdf(request, pk):
+    referral = get_object_or_404(MedicalReferral, pk=pk)
+    diagnosis = referral.diagnosis
+    appointment = referral.appointment
+    patient = appointment.patient
+
+    context = {
+        "referral": referral,
+        "diagnosis": diagnosis,
+        "appointment": appointment,
+        "patient": patient,
+        "doctor": request.user,
+        "institution": InstitutionSettings.objects.first(),
+    }
+
+    html_string = render_to_string("pdf/referral.html", context)
+    from weasyprint import HTML
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+
+    filename = f"referral_{referral.id}.pdf"
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes or b"")
+
+    from django.core.files import File
+    django_file = File(open(full_path, "rb"), name=filename)
+
+    import hashlib
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
+    doc = MedicalDocument.objects.create(
+        patient=patient,
+        appointment=appointment,
+        diagnosis=diagnosis,
+        description="Referencia médica generada automáticamente",
+        category="medical_referral",
+        source="system_generated",
+        origin_panel="referral_panel",
+        template_version="v1.1",
+        generated_by=request.user,
+        uploaded_by=request.user,
+        file=django_file,
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
+    )
+
+    Event.objects.create(
+        entity="MedicalDocument",
+        entity_id=doc.id,
+        action="generate_referral",
+        actor=str(request.user),
+        metadata={"appointment_id": appointment.id, "patient_id": patient.id, "referral_id": referral.id},
+        severity="info",
+        notify=True
+    )
+
+    return Response(MedicalReferralSerializer(referral).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    responses={201: ChargeOrderSerializer},
+    description="Genera un comprobante financiero en PDF y lo registra como documento clínico."
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_chargeorder_pdf(request, pk):
+    charge_order = get_object_or_404(ChargeOrder, pk=pk)
+    patient = charge_order.patient
+    appointment = charge_order.appointment
+
+    context = {
+        "charge_order": charge_order,
+        "items": charge_order.items.all(),
+        "payments": charge_order.payments.all(),
+        "patient": patient,
+        "appointment": appointment,
+        "doctor": request.user,
+        "institution": InstitutionSettings.objects.first(),
+    }
+
+    # Renderizar HTML → PDF
+    html_string = render_to_string("pdf/charge_order.html", context)
+    from weasyprint import HTML
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+
+    # Guardar PDF en storage
+    filename = f"chargeorder_{charge_order.id}.pdf"
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes or b"")
+
+    from django.core.files import File
+    django_file = File(open(full_path, "rb"), name=filename)
+
+    import hashlib
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
+    # Crear MedicalDocument blindado
+    doc = MedicalDocument.objects.create(
+        patient=patient,
+        appointment=appointment,
+        diagnosis=None,
+        description="Comprobante financiero generado automáticamente",
+        category="charge_order",
+        source="system_generated",
+        origin_panel="finance_panel",
+        template_version="v1.1",
+        generated_by=request.user,
+        uploaded_by=request.user,
+        file=django_file,
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
+    )
+
+    # Evento de auditoría
+    Event.objects.create(
+        entity="MedicalDocument",
+        entity_id=doc.id,
+        action="generate_chargeorder",
+        actor=str(request.user),
+        metadata={"charge_order_id": charge_order.id, "patient_id": patient.id},
+        severity="info",
+        notify=True
+    )
+
+    return Response(ChargeOrderSerializer(charge_order).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
@@ -2129,6 +2437,11 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
         )
 
 
+class SpecialtyViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Specialty.objects.all().order_by("name")
+    serializer_class = SpecialtySerializer
+
+
 # --- Endpoints para exponer choices al frontend ---
 
 @api_view(["GET"])
@@ -2164,3 +2477,21 @@ def medicalreferral_choices_api(request):
         "urgencies": [{"key": k, "label": v} for k, v in MedicalReferral.URGENCY_CHOICES],
         "statuses": [{"key": k, "label": v} for k, v in MedicalReferral.STATUS_CHOICES],
     })
+
+
+@api_view(["GET"])
+def specialty_choices_api(request):
+    """
+    Devuelve el catálogo institucional de especialidades médicas.
+    - Si se pasa ?q=, filtra por nombre o código.
+    - Ordenado por nombre.
+    - Incluye id, code y name.
+    """
+    q = request.GET.get("q", "").strip()
+    qs = Specialty.objects.all().order_by("name")
+
+    if q:
+        qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q))
+
+    serializer = SpecialtySerializer(qs, many=True)
+    return Response(serializer.data)

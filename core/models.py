@@ -783,7 +783,7 @@ class DoctorOperator(models.Model):
         max_length=100,
         verbose_name="Número de colegiado / ID de ejercicio"
     )
-    specialty = models.CharField(max_length=100, blank=True, null=True)
+    specialties = models.ManyToManyField("Specialty", related_name="doctors")  # 👈 blindado
     license = models.CharField(max_length=100, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=50, blank=True, null=True)
@@ -927,43 +927,6 @@ class MedicalTest(models.Model):
 
 
 class MedicalReferral(models.Model):
-    SPECIALTY_CHOICES = [
-        ("allergy_immunology", "Allergy and Immunology (Alergia e Inmunología)"),
-        ("anesthesiology", "Anesthesiology (Anestesiología)"),
-        ("cardiology", "Cardiology (Cardiología)"),
-        ("dermatology", "Dermatology (Dermatología)"),
-        ("diagnostic_radiology", "Diagnostic Radiology (Radiología Diagnóstica)"),
-        ("emergency_medicine", "Emergency Medicine (Medicina de Emergencia/Urgencias)"),
-        ("endocrinology", "Endocrinology (Endocrinología)"),
-        ("family_medicine", "Family Medicine (Medicina Familiar)"),
-        ("gastroenterology", "Gastroenterology (Gastroenterología)"),
-        ("general_surgery", "General Surgery (Cirugía General)"),
-        ("geriatrics", "Geriatric Medicine (Medicina Geriátrica/Geriatría)"),
-        ("hematology", "Hematology (Hematología)"),
-        ("infectious_disease", "Infectious Disease (Enfermedades Infecciosas)"),
-        ("internal_medicine", "Internal Medicine (Medicina Interna)"),
-        ("nephrology", "Nephrology (Nefrología)"),
-        ("neurology", "Neurology (Neurología)"),
-        ("neurosurgery", "Neurosurgery (Neurocirugía)"),
-        ("nuclear_medicine", "Nuclear Medicine (Medicina Nuclear)"),
-        ("obgyn", "Obstetrics and Gynecology (Obstetricia y Ginecología)"),
-        ("ophthalmology", "Ophthalmology (Oftalmología)"),
-        ("orthopedic_surgery", "Orthopedic Surgery (Cirugía Ortopédica/Traumatología)"),
-        ("otolaryngology", "Otolaryngology (Otorrinolaringología)"),
-        ("pathology", "Pathology (Patología)"),
-        ("pediatrics", "Pediatrics (Pediatría)"),
-        ("pmr", "Physical Medicine and Rehabilitation (Medicina Física y Rehabilitación)"),
-        ("plastic_surgery", "Plastic Surgery (Cirugía Plástica)"),
-        ("preventive_medicine", "Preventive Medicine (Medicina Preventiva)"),
-        ("psychiatry", "Psychiatry (Psiquiatría)"),
-        ("pulmonology", "Pulmonary Disease (Enfermedad Pulmonar/Neumología)"),
-        ("radiation_oncology", "Radiation Oncology (Oncología Radioterápica)"),
-        ("rheumatology", "Rheumatology (Reumatología)"),
-        ("urology", "Urology (Urología)"),
-        ("vascular_surgery", "Vascular Surgery (Cirugía Vascular)"),
-        ("other", "Other (Otro)"),
-    ]
-
     URGENCY_CHOICES = [
         ("routine", "Rutina"),
         ("priority", "Prioridad"),
@@ -978,11 +941,7 @@ class MedicalReferral(models.Model):
 
     appointment = models.ForeignKey("Appointment", on_delete=models.CASCADE, related_name="referrals")
     diagnosis = models.ForeignKey("Diagnosis", on_delete=models.SET_NULL, null=True, blank=True, related_name="referrals")
-    specialty = models.CharField(
-        max_length=50,
-        choices=SPECIALTY_CHOICES,
-        default="other"   # ✅ blindaje institucional
-    )
+    specialties = models.ManyToManyField("Specialty", related_name="referrals")  # 👈 blindado
     urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES, default="routine")
     reason = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
@@ -992,4 +951,54 @@ class MedicalReferral(models.Model):
         verbose_name_plural = "Medical Referrals"
 
     def __str__(self):
-        return f"{self.get_specialty_display()} — {self.get_status_display()}"
+        return f"Referencia — {self.get_status_display()}"
+
+
+SPECIALTY_CHOICES = [
+    ("allergy_immunology", "Allergy and Immunology (Alergia e Inmunología)"),
+    ("anesthesiology", "Anesthesiology (Anestesiología)"),
+    ("cardiology", "Cardiology (Cardiología)"),
+    ("dermatology", "Dermatology (Dermatología)"),
+    ("diagnostic_radiology", "Diagnostic Radiology (Radiología Diagnóstica)"),
+    ("emergency_medicine", "Emergency Medicine (Medicina de Emergencia/Urgencias)"),
+    ("endocrinology", "Endocrinology (Endocrinología)"),
+    ("family_medicine", "Family Medicine (Medicina Familiar)"),
+    ("gastroenterology", "Gastroenterology (Gastroenterología)"),
+    ("general_surgery", "General Surgery (Cirugía General)"),
+    ("geriatrics", "Geriatric Medicine (Medicina Geriátrica/Geriatría)"),
+    ("hematology", "Hematology (Hematología)"),
+    ("infectious_disease", "Infectious Disease (Enfermedades Infecciosas)"),
+    ("internal_medicine", "Internal Medicine (Medicina Interna)"),
+    ("nephrology", "Nephrology (Nefrología)"),
+    ("neurology", "Neurology (Neurología)"),
+    ("neurosurgery", "Neurosurgery (Neurocirugía)"),
+    ("nuclear_medicine", "Nuclear Medicine (Medicina Nuclear)"),
+    ("obgyn", "Obstetrics and Gynecology (Obstetricia y Ginecología)"),
+    ("ophthalmology", "Ophthalmology (Oftalmología)"),
+    ("orthopedic_surgery", "Orthopedic Surgery (Cirugía Ortopédica/Traumatología)"),
+    ("otolaryngology", "Otolaryngology (Otorrinolaringología)"),
+    ("pathology", "Pathology (Patología)"),
+    ("pediatrics", "Pediatrics (Pediatría)"),
+    ("pmr", "Physical Medicine and Rehabilitation (Medicina Física y Rehabilitación)"),
+    ("plastic_surgery", "Plastic Surgery (Cirugía Plástica)"),
+    ("preventive_medicine", "Preventive Medicine (Medicina Preventiva)"),
+    ("psychiatry", "Psychiatry (Psiquiatría)"),
+    ("pulmonology", "Pulmonary Disease (Enfermedad Pulmonar/Neumología)"),
+    ("radiation_oncology", "Radiation Oncology (Oncología Radioterápica)"),
+    ("rheumatology", "Rheumatology (Reumatología)"),
+    ("urology", "Urology (Urología)"),
+    ("vascular_surgery", "Vascular Surgery (Cirugía Vascular)"),
+    ("other", "Other (Otro)"),
+]
+
+class Specialty(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        verbose_name = "Specialty"
+        verbose_name_plural = "Specialties"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
