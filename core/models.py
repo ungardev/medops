@@ -929,22 +929,43 @@ class MedicalTest(models.Model):
 class MedicalReferral(models.Model):
     URGENCY_CHOICES = [
         ("routine", "Rutina"),
-        ("priority", "Prioridad"),
         ("urgent", "Urgente"),
+        ("stat", "Inmediato (STAT)"),   # 👈 añadido para coincidir con frontend
     ]
 
     STATUS_CHOICES = [
-        ("pending", "Pendiente"),
-        ("completed", "Completado"),
-        ("cancelled", "Cancelado"),
+        ("issued", "Emitida"),          # 👈 cambiado para coincidir con frontend
+        ("accepted", "Aceptada"),
+        ("rejected", "Rechazada"),
     ]
 
-    appointment = models.ForeignKey("Appointment", on_delete=models.CASCADE, related_name="referrals")
-    diagnosis = models.ForeignKey("Diagnosis", on_delete=models.SET_NULL, null=True, blank=True, related_name="referrals")
-    specialties = models.ManyToManyField("Specialty", related_name="referrals")  # 👈 blindado
-    urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES, default="routine")
+    appointment = models.ForeignKey(
+        "Appointment",
+        on_delete=models.CASCADE,
+        related_name="referrals"
+    )
+    diagnosis = models.ForeignKey(
+        "Diagnosis",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="referrals"
+    )
+    specialties = models.ManyToManyField(
+        "Specialty",
+        related_name="referrals"
+    )  # 👈 relación M2M blindada
+    urgency = models.CharField(
+        max_length=20,
+        choices=URGENCY_CHOICES,
+        default="routine"
+    )
     reason = models.TextField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="issued"
+    )
 
     class Meta:
         verbose_name = "Medical Referral"

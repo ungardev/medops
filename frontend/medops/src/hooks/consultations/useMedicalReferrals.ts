@@ -1,8 +1,9 @@
+// src/hooks/consultations/useMedicalReferrals.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { MedicalReferral } from "../../types/consultation";
 
-// 👇 endpoint relativo, sin /api
+// 🔹 Endpoint relativo, sin /api
 const API_URL = "medical-referrals/";
 
 export function useMedicalReferrals(appointmentId: number) {
@@ -21,13 +22,16 @@ export function useCreateMedicalReferral() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<MedicalReferral>) => {
-      // 🔹 aplicamos defaults si no vienen del formulario
+      // 🔹 Aplicamos defaults después del spread para evitar sobrescritura
       const finalPayload = {
-        specialty_ids: payload.specialty_ids ?? [], // 👈 ahora enviamos IDs
+        ...payload,
+        specialty_ids: payload.specialty_ids ?? [],
         urgency: payload.urgency ?? "routine",
         status: payload.status ?? "issued",
-        ...payload,
       };
+
+      console.log("📤 Payload final (create):", finalPayload);
+
       const { data } = await axios.post<MedicalReferral>(API_URL, finalPayload);
       return data;
     },
@@ -45,8 +49,11 @@ export function useUpdateMedicalReferral() {
     mutationFn: async ({ id, ...payload }: Partial<MedicalReferral> & { id: number }) => {
       const finalPayload = {
         ...payload,
-        specialty_ids: payload.specialty_ids ?? [], // 👈 aseguramos IDs en update
+        specialty_ids: payload.specialty_ids ?? [],
       };
+
+      console.log("📤 Payload final (update):", finalPayload);
+
       const { data } = await axios.patch<MedicalReferral>(`${API_URL}${id}/`, finalPayload);
       return data;
     },
