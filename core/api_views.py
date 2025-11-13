@@ -2395,11 +2395,11 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
-        # Unificamos para soportar specialty_ids (M2M) en escritura
+        # Usamos siempre el serializer que soporta specialty_ids (M2M)
         return MedicalReferralSerializer
 
     def perform_create(self, serializer):
-        referral = serializer.save(created_by=self.request.user)
+        referral = serializer.save()
         Event.objects.create(
             entity="MedicalReferral",
             entity_id=referral.id,
@@ -2411,22 +2411,28 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
                 "specialty_ids": [s.id for s in referral.specialties.all()],
                 "urgency": referral.urgency,
                 "status": referral.status,
+                "referred_to": getattr(referral, "referred_to", None),
+                "reason": referral.reason,
             },
             severity="info",
             notify=True,
         )
 
     def perform_update(self, serializer):
-        referral = serializer.save(updated_by=self.request.user)
+        referral = serializer.save()
         Event.objects.create(
             entity="MedicalReferral",
             entity_id=referral.id,
             action="update",
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
+                "appointment_id": referral.appointment_id,
+                "diagnosis_id": referral.diagnosis_id,
                 "specialty_ids": [s.id for s in referral.specialties.all()],
                 "urgency": referral.urgency,
                 "status": referral.status,
+                "referred_to": getattr(referral, "referred_to", None),
+                "reason": referral.reason,
             },
             severity="info",
             notify=True,

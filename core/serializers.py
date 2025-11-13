@@ -876,6 +876,7 @@ class MedicalTestWriteSerializer(serializers.ModelSerializer):
 
 # --- Referencias médicas ---
 class MedicalReferralSerializer(serializers.ModelSerializer):
+    # 🔹 Especialidades: lectura y escritura
     specialties = SpecialtySerializer(many=True, read_only=True)
     specialty_ids = serializers.PrimaryKeyRelatedField(
         queryset=Specialty.objects.all(),
@@ -884,6 +885,7 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
         source="specialties"
     )
 
+    # 🔹 Displays para choices
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
@@ -893,11 +895,12 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "diagnosis",
+            "referred_to",       # 👈 asegúrate de tener este campo en el modelo si lo usas
+            "reason",
             "specialties",       # lectura
             "specialty_ids",     # escritura
             "urgency",
             "urgency_display",
-            "reason",
             "status",
             "status_display",
         ]
