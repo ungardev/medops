@@ -930,11 +930,11 @@ class MedicalReferral(models.Model):
     URGENCY_CHOICES = [
         ("routine", "Rutina"),
         ("urgent", "Urgente"),
-        ("stat", "Inmediato (STAT)"),   # 👈 añadido para coincidir con frontend
+        ("stat", "Inmediato (STAT)"),
     ]
 
     STATUS_CHOICES = [
-        ("issued", "Emitida"),          # 👈 cambiado para coincidir con frontend
+        ("issued", "Emitida"),
         ("accepted", "Aceptada"),
         ("rejected", "Rechazada"),
     ]
@@ -954,7 +954,13 @@ class MedicalReferral(models.Model):
     specialties = models.ManyToManyField(
         "Specialty",
         related_name="referrals"
-    )  # 👈 relación M2M blindada
+    )
+    referred_to = models.CharField(   # 👈 nuevo campo
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Nombre del doctor o servicio al que se refiere"
+    )
     urgency = models.CharField(
         max_length=20,
         choices=URGENCY_CHOICES,
