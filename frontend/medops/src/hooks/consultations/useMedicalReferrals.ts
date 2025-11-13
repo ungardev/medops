@@ -23,7 +23,7 @@ export function useCreateMedicalReferral() {
     mutationFn: async (payload: Partial<MedicalReferral>) => {
       // 🔹 aplicamos defaults si no vienen del formulario
       const finalPayload = {
-        specialty: payload.specialty ?? "other",
+        specialty_ids: payload.specialty_ids ?? [], // 👈 ahora enviamos IDs
         urgency: payload.urgency ?? "routine",
         status: payload.status ?? "issued",
         ...payload,
@@ -43,7 +43,11 @@ export function useUpdateMedicalReferral() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...payload }: Partial<MedicalReferral> & { id: number }) => {
-      const { data } = await axios.patch<MedicalReferral>(`${API_URL}${id}/`, payload);
+      const finalPayload = {
+        ...payload,
+        specialty_ids: payload.specialty_ids ?? [], // 👈 aseguramos IDs en update
+      };
+      const { data } = await axios.patch<MedicalReferral>(`${API_URL}${id}/`, finalPayload);
       return data;
     },
     onSuccess: (_, variables: any) => {

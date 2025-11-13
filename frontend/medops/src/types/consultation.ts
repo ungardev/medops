@@ -99,6 +99,13 @@ export interface MedicalTest {
   updated_by?: number | null;
 }
 
+// --- Especialidad institucional ---
+export interface Specialty {
+  id: number;
+  code: string;   // ej: "cardiology"
+  name: string;   // ej: "Cardiología"
+}
+
 // --- Referencia médica ---
 export interface MedicalReferral {
   id: number;
@@ -107,9 +114,14 @@ export interface MedicalReferral {
   issued_by?: number | null;
   referred_to: string;
   reason?: string;
-  specialty: string; // 👈 añadido, con choices definidos en backend (ej: "cardiology", "neurology", "other")
-  urgency: "routine" | "urgent" | "stat"; // 👈 añadido
-  status: "issued" | "accepted" | "rejected"; // 👈 ya estaba, se mantiene
+
+  // 🔹 Nuevo modelo institucional
+  specialties: Specialty[];     // lectura: array de objetos completos
+  specialty_ids?: number[];     // escritura: array de IDs
+
+  urgency: "routine" | "urgent" | "stat";
+  status: "issued" | "accepted" | "rejected";
+
   issued_at: string;
   created_at: string;
   updated_at: string;

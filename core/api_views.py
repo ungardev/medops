@@ -2391,15 +2391,11 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
 
 
 class MedicalReferralViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint para gestionar referencias médicas (MedicalReferral).
-    """
     queryset = MedicalReferral.objects.all().select_related("appointment", "diagnosis").order_by("-id")
     permission_classes = [permissions.IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.action in ["create", "update", "partial_update"]:
-            return MedicalReferralWriteSerializer
+        # Unificamos para soportar specialty_ids (M2M) en escritura
         return MedicalReferralSerializer
 
     def perform_create(self, serializer):
@@ -2412,7 +2408,7 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
             metadata={
                 "appointment_id": referral.appointment_id,
                 "diagnosis_id": referral.diagnosis_id,
-                "specialty": referral.specialty,
+                "specialty_ids": [s.id for s in referral.specialties.all()],
                 "urgency": referral.urgency,
                 "status": referral.status,
             },
@@ -2428,7 +2424,7 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
             action="update",
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
-                "specialty": referral.specialty,
+                "specialty_ids": [s.id for s in referral.specialties.all()],
                 "urgency": referral.urgency,
                 "status": referral.status,
             },
