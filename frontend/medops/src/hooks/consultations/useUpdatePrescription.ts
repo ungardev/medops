@@ -1,17 +1,7 @@
 // src/hooks/consultations/useUpdatePrescription.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-import type { Prescription } from "../../types/consultation";
-
-export interface UpdatePrescriptionInput {
-  id: number;
-  medication?: string;
-  dosage?: string | null;
-  duration?: string | null;
-  frequency?: "daily" | "bid" | "tid" | "qid"; // 👈 añadido
-  route?: "oral" | "iv" | "im" | "sc";         // 👈 añadido
-  unit?: "mg" | "ml" | "g" | "tablet";         // 👈 añadido
-}
+import type { Prescription, UpdatePrescriptionInput } from "../../types/consultation";
 
 interface MutationContext {
   previous: unknown;
@@ -23,9 +13,15 @@ export function useUpdatePrescription() {
   return useMutation<Prescription, Error, UpdatePrescriptionInput, MutationContext>({
     mutationFn: async ({ id, ...data }) => {
       console.debug("Payload enviado a PATCH /api/prescriptions/:id", data);
+
+      // 🔹 filtramos undefined para no enviar campos vacíos
+      const body = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => v !== undefined)
+      );
+
       return apiFetch<Prescription>(`prescriptions/${id}/`, {
         method: "PATCH",
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),
       });
     },
     onMutate: async ({ id, ...data }) => {

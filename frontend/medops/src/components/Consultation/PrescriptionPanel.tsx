@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Diagnosis, Prescription } from "../../types/consultation";
+import { Diagnosis, Prescription, CreatePrescriptionInput, UpdatePrescriptionInput } from "../../types/consultation";
 import PrescriptionBadge from "./PrescriptionBadge";
 import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescription";
 import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescription";
+import MedicationSelector from "./MedicationSelector";
 
 // 🔹 Opciones institucionales
 const frequencyOptions = [
@@ -50,36 +51,30 @@ const unitOptions = [
 
 interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
-  onAdd: (data: {
-    diagnosis: number;
-    medication: string;
-    dosage?: string;
-    duration?: string;
-    frequency?: string;
-    route?: string;
-    unit?: string;
-  }) => void;
+  onAdd: (data: CreatePrescriptionInput) => void;
 }
 
 export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPanelProps) {
   const [diagnosisId, setDiagnosisId] = useState<number | "">("");
-  const [medication, setMedication] = useState("");
+  const [medicationCatalogId, setMedicationCatalogId] = useState<number | undefined>(undefined);
+  const [medicationText, setMedicationText] = useState<string | undefined>(undefined);
   const [dosage, setDosage] = useState("");
   const [duration, setDuration] = useState("");
-  const [frequency, setFrequency] = useState("once_daily");
-  const [route, setRoute] = useState("oral");
-  const [unit, setUnit] = useState("mg");
+  const [frequency, setFrequency] = useState<UpdatePrescriptionInput["frequency"]>("once_daily");
+  const [route, setRoute] = useState<UpdatePrescriptionInput["route"]>("oral");
+  const [unit, setUnit] = useState<UpdatePrescriptionInput["unit"]>("mg");
 
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!diagnosisId || !medication.trim()) return;
+    if (!diagnosisId || (!medicationCatalogId && !medicationText)) return;
 
     onAdd({
       diagnosis: Number(diagnosisId),
-      medication: medication.trim(),
+      medication_catalog: medicationCatalogId,
+      medication_text: medicationText?.trim() || undefined,
       dosage: dosage.trim() || undefined,
       duration: duration.trim() || undefined,
       frequency,
@@ -89,7 +84,8 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
 
     // reset form
     setDiagnosisId("");
-    setMedication("");
+    setMedicationCatalogId(undefined);
+    setMedicationText(undefined);
     setDosage("");
     setDuration("");
     setFrequency("once_daily");
@@ -113,22 +109,22 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
                 <li key={p.id}>
                   <PrescriptionBadge
                     id={p.id}
-                    medication={p.medication}
-                    dosage={p.dosage}
-                    duration={p.duration}
+                    medication={p.medication_catalog?.name || p.medication_text || "—"}
+                    dosage={p.dosage ?? undefined}
+                    duration={p.duration ?? undefined}
                     frequency={p.frequency}
                     route={p.route}
                     unit={p.unit}
                     onEdit={(id, med, dos, dur, freq, rt, un) =>
                       updatePrescription({
                         id,
-                        medication: med,
-                        dosage: dos,
-                        duration: dur,
+                        medication_text: med,
+                        dosage: dos ?? undefined,
+                        duration: dur ?? undefined,
                         frequency: freq,
                         route: rt,
                         unit: un,
-                      })
+                      } as UpdatePrescriptionInput)
                     }
                     onDelete={(id) => deletePrescription(id)}
                   />
@@ -156,13 +152,13 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           ))}
         </select>
 
-        <input
-          type="text"
-          placeholder="Medicamento"
-          value={medication}
-          onChange={(e) => setMedication(e.target.value)}
-          className="input"
-          required
+        <MedicationSelector
+          valueCatalogId={medicationCatalogId}
+          valueText={medicationText}
+          onChange={({ catalogId, text }) => {
+            setMedicationCatalogId(catalogId);
+            setMedicationText(text);
+          }}
         />
 
         <input
@@ -181,7 +177,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           className="input"
         />
 
-        <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="select">
+        <select value={frequency} onChange={(e) => setFrequency(e.target.value as UpdatePrescriptionInput["frequency"])} className="select">
           {frequencyOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -189,7 +185,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           ))}
         </select>
 
-        <select value={route} onChange={(e) => setRoute(e.target.value)} className="select">
+        <select value={route} onChange={(e) => setRoute(e.target.value as UpdatePrescriptionInput["route"])} className="select">
           {routeOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
@@ -197,7 +193,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           ))}
         </select>
 
-        <select value={unit} onChange={(e) => setUnit(e.target.value)} className="select">
+        <select value={unit} onChange={(e) => setUnit(e.target.value as UpdatePrescriptionInput["unit"])} className="select">
           {unitOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}

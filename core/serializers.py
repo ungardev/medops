@@ -4,7 +4,7 @@ from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
-    ICD11Entry, MedicalTest, MedicalReferral, Specialty
+    ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog
 )
 from datetime import date
 from typing import Optional
@@ -190,12 +190,17 @@ class PrescriptionSerializer(serializers.ModelSerializer):
     frequency_display = serializers.CharField(source="get_frequency_display", read_only=True)
     unit_display = serializers.CharField(source="get_unit_display", read_only=True)
 
+    # 🔹 Incluimos catálogo y texto libre
+    medication_catalog = serializers.StringRelatedField(read_only=True)
+    medication_text = serializers.CharField(read_only=True)
+
     class Meta:
         model = Prescription
         fields = [
             "id",
             "diagnosis",
-            "medication",
+            "medication_catalog",   # FK al catálogo institucional
+            "medication_text",      # texto libre
             "dosage",
             "unit",
             "unit_display",
@@ -208,12 +213,21 @@ class PrescriptionSerializer(serializers.ModelSerializer):
 
 
 class PrescriptionWriteSerializer(serializers.ModelSerializer):
+    # 🔹 Escritura híbrida: aceptamos catalogId o texto libre
+    medication_catalog = serializers.PrimaryKeyRelatedField(
+        queryset=MedicationCatalog.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    medication_text = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Prescription
         fields = [
             "id",
             "diagnosis",
-            "medication",
+            "medication_catalog",   # FK al catálogo institucional
+            "medication_text",      # texto libre
             "dosage",
             "unit",
             "route",

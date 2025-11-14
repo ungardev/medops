@@ -227,7 +227,7 @@ def bcv_rate_api(request):
     parameters=[
         OpenApiParameter("start_date", str, OpenApiParameter.QUERY),
         OpenApiParameter("end_date", str, OpenApiParameter.QUERY),
-        OpenApiParameter("status", str, OpenApiParameter.QUERY),
+        OpenApiParameter("status", str, OpenApiParameter.QUERY, description="Filtrar citas por estado"),
         OpenApiParameter("range", str, OpenApiParameter.QUERY, description="day|week|month"),
         OpenApiParameter("currency", str, OpenApiParameter.QUERY, description="USD|VES"),
     ],
@@ -243,6 +243,7 @@ def dashboard_summary_api(request):
         end_date = request.GET.get("end_date")
         range_param = request.GET.get("range")
         currency = request.GET.get("currency", "USD")
+        status_param = request.GET.get("status")  # 🔹 nuevo filtro
 
         def parse_d(d):
             try:
@@ -289,6 +290,9 @@ def dashboard_summary_api(request):
         # --- Clínico-operativo (blindado) ---
         try:
             appts_qs = Appointment.objects.filter(appointment_date__range=(start, end))
+            if status_param:  # 🔹 aplicar filtro si se pasa
+                appts_qs = appts_qs.filter(status=status_param)
+
             total_appointments = appts_qs.count()
             completed_appointments = appts_qs.filter(status="completed").count()
             pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
@@ -314,8 +318,7 @@ def dashboard_summary_api(request):
             ).count()
         except Exception:
             active_consultations = 0
-
-        # --- Tendencias (blindadas) ---
+                # --- Tendencias (blindadas) ---
         try:
             appt_trend_qs = (
                 Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
@@ -372,19 +375,7 @@ def dashboard_summary_api(request):
             bcv_rate = Decimal("1")
             is_fallback = True
 
-        # --- Normalización de decimales ---
-        try:
-            total_amount = Decimal(str(total_amount or "0"))
-            confirmed_amount = Decimal(str(confirmed_amount or "0"))
-            balance_due = Decimal(str(balance_due or "0"))
-            estimated_waived_amount = Decimal(str(estimated_waived_amount or "0"))
-        except Exception:
-            total_amount = Decimal("0")
-            confirmed_amount = Decimal("0")
-            balance_due = Decimal("0")
-            estimated_waived_amount = Decimal("0")
-
-        # --- Conversión de moneda (solo al final, con Decimal) ---
+        # --- Conversión de moneda ---
         try:
             if currency == "VES":
                 confirmed_amount = confirmed_amount * bcv_rate
@@ -398,10 +389,9 @@ def dashboard_summary_api(request):
                 for b in balance_trend:
                     b["value"] = (Decimal(str(b["value"])) * bcv_rate) if b else Decimal("0")
         except Exception:
-            # Si algo falla en conversión, mantenemos valores en USD
             pass
 
-        # --- Totales (blindados) ---
+        # --- Totales ---
         try:
             total_patients = Patient.objects.count()
         except Exception:
@@ -417,17 +407,17 @@ def dashboard_summary_api(request):
         except Exception:
             total_events = 0
 
-        # --- Auditoría institucional (alineada con actor) ---
+        # --- Auditoría institucional ---
         try:
             event_log_qs = Event.objects.order_by("-timestamp").values(
-                "id", "timestamp", "entity", "action", "actor",  # ✅ actor en vez de user
-                "severity", "notify", "metadata"                  # ✅ extendido
+                "id", "timestamp", "entity", "action", "actor",
+                "severity", "notify", "metadata"
             )[:10]
             event_log = list(event_log_qs)
         except Exception:
             event_log = []
 
-        # --- Payload blindado (convertir a float al final)
+        # --- Payload final ---
         data = {
             "total_patients": total_patients,
             "total_appointments": total_appointments,
@@ -457,9 +447,7 @@ def dashboard_summary_api(request):
         return Response(data, status=200)
 
     except Exception as e:
-        print("🔥 ERROR EN DASHBOARD SUMMARY 🔥")
         traceback.print_exc()
-        # En lugar de 500, devolvemos un payload mínimo para no romper el frontend
         return Response({
             "error": str(e),
             "total_patients": 0,
@@ -481,6 +469,7 @@ def dashboard_summary_api(request):
             "bcv_rate": {"value": 1.0, "unit": "VES_per_USD", "precision": 8, "is_fallback": True},
             "event_log": [],
         }, status=200)
+
 
 
 @extend_schema(parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)], responses={200: PatientReadSerializer(many=True)})
@@ -765,6 +754,163 @@ def audit_by_patient(request, patient_id):
     return Response(serializer.data)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter("prescription_id", int, OpenApiParameter.PATH, description="ID de la prescripción"),
+    ],
+    responses={200: EventSerializer(many=True)},
+    description="Historial de auditoría de una prescripción específica."
+)
+@api_view(["GET"])
+def audit_by_prescription(request, prescription_id):
+    events = Event.objects.filter(
+        entity="Prescription",
+        entity_id=prescription_id
+    ).order_by("-timestamp")
+
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data, status=200)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter("patient_id", int, OpenApiParameter.PATH, description="ID del paciente"),
+    ],
+    responses={200: OpenApiResponse(description="Eventos clínicos y financieros de un paciente")},
+    description="Auditoría completa de un paciente: prescripciones, tratamientos, pagos y órdenes."
+)
+@api_view(["GET"])
+def audit_full_by_patient(request, patient_id):
+    # 🔹 Eventos clínicos: prescripciones y tratamientos
+    clinical_events = Event.objects.filter(
+        entity__in=["Prescription", "Treatment"],
+        metadata__contains={"patient_id": patient_id}
+    ).order_by("-timestamp")
+
+    # 🔹 Eventos financieros: pagos y órdenes
+    financial_events = Event.objects.filter(
+        entity__in=["Payment", "ChargeOrder"],
+        metadata__contains={"patient_id": patient_id}
+    ).order_by("-timestamp")
+
+    # 🔹 Eventos generales del paciente
+    patient_events = Event.objects.filter(
+        entity="Patient",
+        entity_id=patient_id
+    ).order_by("-timestamp")
+
+    serializer = EventSerializer(list(clinical_events) + list(financial_events) + list(patient_events), many=True)
+    return Response(serializer.data, status=200)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter("patient_id", int, OpenApiParameter.PATH, description="ID del paciente"),
+    ],
+    responses={200: OpenApiResponse(description="Resumen de auditoría por paciente (últimos 10 eventos por categoría)")},
+    description="Devuelve los últimos eventos clínicos, financieros y generales de un paciente."
+)
+@api_view(["GET"])
+def audit_summary_by_patient(request, patient_id):
+    # 🔹 Últimos 10 eventos clínicos (prescripciones y tratamientos)
+    clinical_events = Event.objects.filter(
+        entity__in=["Prescription", "Treatment"],
+        metadata__contains={"patient_id": patient_id}
+    ).order_by("-timestamp")[:10]
+
+    # 🔹 Últimos 10 eventos financieros (pagos y órdenes)
+    financial_events = Event.objects.filter(
+        entity__in=["Payment", "ChargeOrder"],
+        metadata__contains={"patient_id": patient_id}
+    ).order_by("-timestamp")[:10]
+
+    # 🔹 Últimos 10 eventos generales del paciente
+    patient_events = Event.objects.filter(
+        entity="Patient",
+        entity_id=patient_id
+    ).order_by("-timestamp")[:10]
+
+    serializer = EventSerializer(list(clinical_events) + list(financial_events) + list(patient_events), many=True)
+
+    return Response({
+        "clinical_events": EventSerializer(clinical_events, many=True).data,
+        "financial_events": EventSerializer(financial_events, many=True).data,
+        "patient_events": EventSerializer(patient_events, many=True).data,
+        "all_events": serializer.data,  # 🔹 consolidado
+    }, status=200)
+
+
+@extend_schema(
+    responses={200: EventSerializer(many=True)},
+    description="Devuelve los últimos eventos globales de auditoría (clínicos y financieros) para todo el sistema."
+)
+@api_view(["GET"])
+def audit_global_summary(request):
+    # 🔹 Últimos 10 eventos clínicos (prescripciones y tratamientos)
+    clinical_events = Event.objects.filter(
+        entity__in=["Prescription", "Treatment"]
+    ).order_by("-timestamp")[:10]
+
+    # 🔹 Últimos 10 eventos financieros (pagos y órdenes)
+    financial_events = Event.objects.filter(
+        entity__in=["Payment", "ChargeOrder"]
+    ).order_by("-timestamp")[:10]
+
+    # 🔹 Últimos 10 eventos generales (pacientes, citas, sala de espera)
+    general_events = Event.objects.filter(
+        entity__in=["Patient", "Appointment", "WaitingRoomEntry"]
+    ).order_by("-timestamp")[:10]
+
+    return Response({
+        "clinical_events": EventSerializer(clinical_events, many=True).data,
+        "financial_events": EventSerializer(financial_events, many=True).data,
+        "general_events": EventSerializer(general_events, many=True).data,
+        "all_events": EventSerializer(
+            list(clinical_events) + list(financial_events) + list(general_events),
+            many=True
+        ).data,
+    }, status=200)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter("start_date", str, OpenApiParameter.QUERY, description="Fecha inicial (YYYY-MM-DD)"),
+        OpenApiParameter("end_date", str, OpenApiParameter.QUERY, description="Fecha final (YYYY-MM-DD)"),
+        OpenApiParameter("entity", str, OpenApiParameter.QUERY, description="Entidad: Prescription|Treatment|Payment|ChargeOrder|Appointment|Patient|WaitingRoomEntry"),
+        OpenApiParameter("severity", str, OpenApiParameter.QUERY, description="Severidad: info|warning|critical"),
+        OpenApiParameter("actor", str, OpenApiParameter.QUERY, description="Usuario/actor que ejecutó la acción"),
+    ],
+    responses={200: EventSerializer(many=True)},
+    description="Eventos de auditoría global filtrados por rango de fechas, entidad, severidad o actor."
+)
+@api_view(["GET"])
+def audit_global_filtered(request):
+    qs = Event.objects.all().order_by("-timestamp")
+
+    # --- Filtros dinámicos ---
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    entity = request.GET.get("entity")
+    severity = request.GET.get("severity")
+    actor = request.GET.get("actor")
+
+    if start_date:
+        qs = qs.filter(timestamp__date__gte=start_date)
+    if end_date:
+        qs = qs.filter(timestamp__date__lte=end_date)
+    if entity:
+        qs = qs.filter(entity=entity)
+    if severity:
+        qs = qs.filter(severity=severity)
+    if actor:
+        qs = qs.filter(actor__icontains=actor)
+
+    # 🔹 Limitamos a 100 eventos para no sobrecargar
+    events = qs[:100]
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data, status=200)
+
+
 # --- ViewSets ---
 class MedicalDocumentViewSet(viewsets.ModelViewSet):
     """
@@ -968,7 +1114,7 @@ def waitingroom_entries_today_api(request):
 
 @extend_schema(
     responses={200: AppointmentPendingSerializer(many=True)},
-    description="Devuelve citas con saldo pendiente (expected_amount > suma de pagos pagados), incluyendo estado financiero."
+    description="Devuelve citas con saldo pendiente (expected_amount > suma de pagos confirmados), incluyendo estado financiero."
 )
 @api_view(["GET"])
 def appointments_pending_api(request):
@@ -984,7 +1130,7 @@ def appointments_pending_api(request):
 
         total_paid = 0.0
         for p in appt.payments.all():
-            if p.status == "paid":
+            if p.status == "confirmed":  # 🔹 antes estaba "paid"
                 try:
                     total_paid += float(p.amount or 0)
                 except (TypeError, ValueError):
@@ -995,7 +1141,6 @@ def appointments_pending_api(request):
 
     serializer = AppointmentPendingSerializer(pending, many=True)
     return Response(serializer.data, status=200)
-
 
 
 def recalc_appointment_status(appointment: Appointment):
@@ -1183,6 +1328,7 @@ class TreatmentViewSet(viewsets.ModelViewSet):
         )
 
 
+# --- Prescripciones con auditoría completa ---
 class PrescriptionViewSet(viewsets.ModelViewSet):
     queryset = Prescription.objects.all().select_related("diagnosis")
 
@@ -1200,15 +1346,54 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
                 "diagnosis_id": prescription.diagnosis_id,
-                "medication": prescription.medication,
-                "dosage": str(prescription.dosage),
+                "medication_catalog": prescription.medication_catalog_id,
+                "medication_text": prescription.medication_text,
+                "dosage": str(prescription.dosage) if prescription.dosage else None,
                 "unit": prescription.unit,
                 "route": prescription.route,
                 "frequency": prescription.frequency,
+                "duration": prescription.duration,
             },
             severity="info",
             notify=True,
         )
+
+    def perform_update(self, serializer):
+        prescription = serializer.save()
+        Event.objects.create(
+            entity="Prescription",
+            entity_id=prescription.id,
+            action="update",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "diagnosis_id": prescription.diagnosis_id,
+                "medication_catalog": prescription.medication_catalog_id,
+                "medication_text": prescription.medication_text,
+                "dosage": str(prescription.dosage) if prescription.dosage else None,
+                "unit": prescription.unit,
+                "route": prescription.route,
+                "frequency": prescription.frequency,
+                "duration": prescription.duration,
+            },
+            severity="info",
+            notify=True,
+        )
+
+    def perform_destroy(self, instance):
+        Event.objects.create(
+            entity="Prescription",
+            entity_id=instance.id,
+            action="delete",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "diagnosis_id": instance.diagnosis_id,
+                "medication_catalog": instance.medication_catalog_id,
+                "medication_text": instance.medication_text,
+            },
+            severity="warning",
+            notify=True,
+        )
+        instance.delete()
 
 
 class ChargeOrderViewSet(viewsets.ModelViewSet):
@@ -2530,7 +2715,6 @@ def medicaltest_choices_api(request):
 @api_view(["GET"])
 def medicalreferral_choices_api(request):
     return Response({
-        "specialties": [{"key": k, "label": v} for k, v in MedicalReferral.SPECIALTY_CHOICES],
         "urgencies": [{"key": k, "label": v} for k, v in MedicalReferral.URGENCY_CHOICES],
         "statuses": [{"key": k, "label": v} for k, v in MedicalReferral.STATUS_CHOICES],
     })
@@ -2565,12 +2749,12 @@ def generate_used_documents(request, consultation_id):
     Generate clinical documents for the current consultation:
     - Treatment
     - Prescription
-    - Medical test orders
+    - Medical tests
     - Medical referrals
     Only if items exist in each panel.
     """
     from .models import (
-        Appointment, Treatment, Prescription, MedicalTestOrder,
+        Appointment, Treatment, Prescription, MedicalTest,
         MedicalReferral, MedicalDocument, Event
     )
     from .utils import generate_pdf_document  # make sure this utility is implemented
@@ -2612,7 +2796,7 @@ def generate_used_documents(request, consultation_id):
         )
 
     # Treatment
-    treatments = Treatment.objects.filter(appointment=appointment)
+    treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
     if treatments.exists():
         pdf = generate_pdf_document("treatment", treatments, appointment)
         first_item = treatments.first()
@@ -2623,7 +2807,7 @@ def generate_used_documents(request, consultation_id):
         skipped.append("treatment")
 
     # Prescription
-    prescriptions = Prescription.objects.filter(appointment=appointment)
+    prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
     if prescriptions.exists():
         pdf = generate_pdf_document("prescription", prescriptions, appointment)
         first_item = prescriptions.first()
@@ -2633,16 +2817,16 @@ def generate_used_documents(request, consultation_id):
     else:
         skipped.append("prescription")
 
-    # Medical test orders
-    orders = MedicalTestOrder.objects.filter(appointment=appointment)
+    # Medical tests
+    orders = MedicalTest.objects.filter(appointment=appointment)
     if orders.exists():
-        pdf = generate_pdf_document("medical_test_order", orders, appointment)
+        pdf = generate_pdf_document("medical_test", orders, appointment)
         first_item = orders.first()
         diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        register_document(pdf, "medical_test_order", diagnosis_obj)
-        generated.append("medical_test_order")
+        register_document(pdf, "medical_test", diagnosis_obj)
+        generated.append("medical_test")
     else:
-        skipped.append("medical_test_order")
+        skipped.append("medical_test")
 
     # Medical referrals
     referrals = MedicalReferral.objects.filter(appointment=appointment)

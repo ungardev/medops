@@ -15,19 +15,63 @@ export interface Treatment {
   plan: string;
   start_date?: string; // ISO date
   end_date?: string;   // ISO date
-  status: "active" | "completed" | "suspended";   // 👈 añadido
-  treatment_type: "pharmacological" | "surgical" | "therapeutic" | "other"; // 👈 añadido
+  status: "active" | "completed" | "cancelled";   // 👈 alineado con backend
+  treatment_type: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 alineado con backend
 }
 
 // --- Prescripción ---
 export interface Prescription {
   id: number;
-  medication: string;
+
+  // 🔹 Híbrido: catálogo o texto libre
+  medication_catalog?: {
+    id: number;
+    name: string;
+    presentation: string;
+    concentration: string;
+    route: string;
+    unit: string;
+  } | null;
+  medication_text?: string | null;
+
   dosage?: string;
   duration?: string;
-  frequency?: "daily" | "bid" | "tid" | "qid"; // 👈 añadido
-  route?: "oral" | "iv" | "im" | "sc";         // 👈 añadido
-  unit?: "mg" | "ml" | "g" | "tablet";         // 👈 añadido
+  frequency?: 
+    | "once_daily" | "bid" | "tid" | "qid"
+    | "q4h" | "q6h" | "q8h" | "q12h" | "q24h"
+    | "qod" | "stat" | "prn" | "hs"
+    | "ac" | "pc" | "achs";
+  route?: 
+    | "oral" | "iv" | "im" | "sc"
+    | "topical" | "sublingual" | "inhalation"
+    | "rectal" | "other";
+  unit?: 
+    | "mg" | "ml" | "g"
+    | "tablet" | "capsule" | "drop"
+    | "puff" | "unit" | "patch";
+}
+
+// --- Inputs para mutaciones de prescripciones ---
+export interface CreatePrescriptionInput {
+  diagnosis: number;
+  medication_catalog?: number;
+  medication_text?: string | null;
+  dosage?: string;
+  duration?: string;
+  frequency?: Prescription["frequency"];
+  route?: Prescription["route"];
+  unit?: Prescription["unit"];
+}
+
+export interface UpdatePrescriptionInput {
+  id: number;
+  medication_catalog?: number;
+  medication_text?: string | null;
+  dosage?: string;
+  duration?: string;
+  frequency?: Prescription["frequency"];
+  route?: Prescription["route"];
+  unit?: Prescription["unit"];
 }
 
 // --- Documento clínico ---
@@ -90,7 +134,7 @@ export interface MedicalTest {
   test_type_display?: string;
   description?: string;
   urgency: "routine" | "urgent" | "stat";   // 👈 añadido
-  status: "pending" | "completed" | "cancelled"; // 👈 ya estaba, pero lo confirmamos
+  status: "pending" | "completed" | "cancelled"; // 👈 confirmado
   requested_at: string;
   completed_at?: string | null;
   created_at: string;
