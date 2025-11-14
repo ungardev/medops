@@ -6,11 +6,12 @@ import {
 
 interface DocumentsPanelProps {
   patientId: number;
+  appointmentId?: number; // 👈 opcional
 }
 
-export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
-  const { data: documents, isLoading } = useDocuments(patientId);
-  const uploadDocument = useUploadDocument(patientId);
+export default function DocumentsPanel({ patientId, appointmentId }: DocumentsPanelProps) {
+  const { data: documents, isLoading } = useDocuments(patientId, appointmentId);
+  const uploadDocument = useUploadDocument(patientId, appointmentId);
 
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
@@ -20,10 +21,9 @@ export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
     e.preventDefault();
     if (!file) return;
     uploadDocument.mutate(
-      { patient: patientId, file, description, category },
+      { patient: patientId, appointment: appointmentId, file, description, category },
       {
         onSuccess: () => {
-          // 🔹 Limpieza de formulario tras subir
           setFile(null);
           setDescription("");
           setCategory("");
@@ -62,15 +62,12 @@ export default function DocumentsPanel({ patientId }: DocumentsPanelProps) {
       </ul>
 
       <form onSubmit={handleUpload} className="flex flex-col gap-2">
-        {/* Input oculto */}
         <input
           id="file-upload"
           type="file"
           className="input-file-hidden"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
         />
-
-        {/* Botón estilizado + nombre de archivo */}
         <label htmlFor="file-upload" className="input-file-trigger btn-outline">
           Elegir archivo
         </label>

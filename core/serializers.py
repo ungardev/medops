@@ -415,8 +415,16 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
 
 class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
     patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all())
-    appointment = serializers.PrimaryKeyRelatedField(queryset=Appointment.objects.all(), required=False, allow_null=True)
-    diagnosis = serializers.PrimaryKeyRelatedField(queryset=Diagnosis.objects.all(), required=False, allow_null=True)
+    appointment = serializers.PrimaryKeyRelatedField(
+        queryset=Appointment.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    diagnosis = serializers.PrimaryKeyRelatedField(
+        queryset=Diagnosis.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = MedicalDocument
@@ -430,6 +438,36 @@ class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
             "file",
         ]
         read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        """
+        Blindaje institucional:
+        - Categorías operativas requieren appointment.
+        - Prescription y Treatment requieren además diagnosis.
+        - Reportes generales y 'other' pueden omitirse.
+        """
+        category = attrs.get("category")
+        appointment = attrs.get("appointment")
+        diagnosis = attrs.get("diagnosis")
+
+        required_categories = {
+            "prescription",
+            "treatment",
+            "medical_test_order",
+            "medical_referral",
+        }
+
+        if category in required_categories and not appointment:
+            raise serializers.ValidationError({
+                "appointment": f"La categoría '{category}' requiere una cita (appointment)."
+            })
+
+        if category in {"prescription", "treatment"} and not diagnosis:
+            raise serializers.ValidationError({
+                "diagnosis": f"La categoría '{category}' requiere un diagnóstico asociado."
+            })
+
+        return attrs
 
     def create(self, validated_data):
         request = self.context.get("request")
@@ -448,9 +486,10 @@ class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
 
         # Setear metadatos institucionales
         validated_data["source"] = "user_uploaded"
-        validated_data["origin_panel"] = "admin_or_api"
+        validated_data["origin_panel"] = "consultation_or_patient"
         validated_data["template_version"] = "v1.0"
         validated_data["uploaded_by"] = user if user and user.is_authenticated else None
+        validated_data["generated_by"] = user if user and user.is_authenticated else None
 
         return super().create(validated_data)
 

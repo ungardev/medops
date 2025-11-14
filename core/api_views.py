@@ -769,13 +769,27 @@ def audit_by_patient(request, patient_id):
 class MedicalDocumentViewSet(viewsets.ModelViewSet):
     """
     CRUD de documentos clínicos.
-    - GET /documents/?patient={id} → lista documentos de un paciente
+    - GET /documents/?patient={id}&appointment={id}&category={code}
     - POST /documents/ (multipart) → subir documento clínico
     - Los PDFs institucionales se registran con metadatos blindados automáticamente.
     """
-    queryset = MedicalDocument.objects.all().order_by("-uploaded_at")
     permission_classes = [permissions.IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        qs = MedicalDocument.objects.select_related("patient", "appointment", "diagnosis")
+        patient_id = self.request.query_params.get("patient")
+        appointment_id = self.request.query_params.get("appointment")
+        category = self.request.query_params.get("category")
+
+        if patient_id:
+            qs = qs.filter(patient_id=patient_id)
+        if appointment_id:
+            qs = qs.filter(appointment_id=appointment_id)
+        if category:
+            qs = qs.filter(category=category)
+
+        return qs.order_by("-uploaded_at")
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -783,13 +797,6 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
         return MedicalDocumentReadSerializer
 
     def perform_create(self, serializer):
-        """
-        Al crear un documento:
-        - Calcula checksum SHA256
-        - Guarda tamaño y mime_type
-        - Setea source, origin_panel, template_version
-        - Asigna uploaded_by y generated_by
-        """
         user = self.request.user if self.request.user.is_authenticated else None
         file = self.request.FILES.get("file")
 
@@ -804,20 +811,36 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
                 sha256.update(chunk)
             extra_data["checksum_sha256"] = sha256.hexdigest()
 
+        # Metadatos institucionales
         extra_data["source"] = "user_uploaded"
-        extra_data["origin_panel"] = "admin_or_api"
+        extra_data["origin_panel"] = "consultation_or_patient"
         extra_data["template_version"] = "v1.0"
         extra_data["uploaded_by"] = user
         extra_data["generated_by"] = user
 
-        serializer.save(**extra_data)
+        # Guardar documento con patient y opcional appointment
+        document = serializer.save(**extra_data)
+
+        # 🔹 Auditoría
+        from core.models import Event
+        Event.objects.create(
+            entity="MedicalDocument",
+            entity_id=document.id,
+            action="create",
+            actor=str(user) if user else "system",
+            metadata={
+                "patient_id": document.patient_id,
+                "appointment_id": document.appointment_id,
+                "diagnosis_id": document.diagnosis_id,
+                "category": document.category,
+                "description": document.description,
+                "checksum": document.checksum_sha256,
+            },
+            severity="info",
+            notify=True,
+        )
 
     def perform_update(self, serializer):
-        """
-        Al actualizar un documento:
-        - Recalcula checksum si cambia el archivo
-        - Actualiza tamaño y mime_type
-        """
         file = self.request.FILES.get("file")
         extra_data = {}
         if file:
@@ -830,7 +853,26 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
                 sha256.update(chunk)
             extra_data["checksum_sha256"] = sha256.hexdigest()
 
-        serializer.save(**extra_data)
+        document = serializer.save(**extra_data)
+
+        # 🔹 Auditoría
+        from core.models import Event
+        Event.objects.create(
+            entity="MedicalDocument",
+            entity_id=document.id,
+            action="update",
+            actor=str(self.request.user) if self.request.user.is_authenticated else "system",
+            metadata={
+                "patient_id": document.patient_id,
+                "appointment_id": document.appointment_id,
+                "diagnosis_id": document.diagnosis_id,
+                "category": document.category,
+                "description": document.description,
+                "checksum": document.checksum_sha256,
+            },
+            severity="info",
+            notify=True,
+        )
 
 
 class PatientViewSet(viewsets.ModelViewSet):
@@ -2347,8 +2389,14 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
     """
     API endpoint para gestionar órdenes de exámenes médicos (MedicalTest).
     """
-    queryset = MedicalTest.objects.all().select_related("appointment", "diagnosis").order_by("-id")
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        qs = MedicalTest.objects.select_related("appointment", "diagnosis")
+        appt_id = self.request.query_params.get("appointment")
+        if appt_id:
+            qs = qs.filter(appointment_id=appt_id)
+        return qs.order_by("-id")
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -2381,6 +2429,8 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
             action="update",
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
+                "appointment_id": test.appointment_id,
+                "diagnosis_id": test.diagnosis_id,
                 "test_type": test.test_type,
                 "urgency": test.urgency,
                 "status": test.status,
@@ -2391,11 +2441,16 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
 
 
 class MedicalReferralViewSet(viewsets.ModelViewSet):
-    queryset = MedicalReferral.objects.all().select_related("appointment", "diagnosis").order_by("-id")
     permission_classes = [permissions.IsAuthenticated]
 
+    def get_queryset(self):
+        qs = MedicalReferral.objects.select_related("appointment", "diagnosis")
+        appt_id = self.request.query_params.get("appointment")
+        if appt_id:
+            qs = qs.filter(appointment_id=appt_id)
+        return qs.order_by("-id")
+
     def get_serializer_class(self):
-        # Usamos siempre el serializer que soporta specialty_ids (M2M)
         return MedicalReferralSerializer
 
     def perform_create(self, serializer):
@@ -2497,3 +2552,111 @@ def specialty_choices_api(request):
 
     serializer = SpecialtySerializer(qs, many=True)
     return Response(serializer.data)
+
+
+@extend_schema(
+    request=None,
+    responses={201: OpenApiResponse(description="Clinical documents generated for the consultation")}
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_used_documents(request, consultation_id):
+    """
+    Generate clinical documents for the current consultation:
+    - Treatment
+    - Prescription
+    - Medical test orders
+    - Medical referrals
+    Only if items exist in each panel.
+    """
+    from .models import (
+        Appointment, Treatment, Prescription, MedicalTestOrder,
+        MedicalReferral, MedicalDocument, Event
+    )
+    from .utils import generate_pdf_document  # make sure this utility is implemented
+
+    appointment = get_object_or_404(Appointment, pk=consultation_id)
+    patient = appointment.patient
+    user = request.user if request.user.is_authenticated else None
+
+    generated = []
+    skipped = []
+
+    def register_document(pdf_file, category, diagnosis_obj=None):
+        doc = MedicalDocument.objects.create(
+            patient=patient,
+            appointment=appointment,
+            diagnosis=diagnosis_obj,
+            category=category,
+            file=pdf_file,
+            source="system_generated",
+            origin_panel="consultation",
+            template_version="v1.0",
+            uploaded_by=user,
+            generated_by=user,
+        )
+        Event.objects.create(
+            entity="MedicalDocument",
+            entity_id=doc.id,
+            action="generate_pdf",
+            actor=str(user) if user else "system",
+            metadata={
+                "patient_id": patient.id,
+                "appointment_id": appointment.id,
+                "diagnosis_id": getattr(diagnosis_obj, "id", None),
+                "category": category,
+                "checksum": doc.checksum_sha256,
+            },
+            severity="info",
+            notify=True,
+        )
+
+    # Treatment
+    treatments = Treatment.objects.filter(appointment=appointment)
+    if treatments.exists():
+        pdf = generate_pdf_document("treatment", treatments, appointment)
+        first_item = treatments.first()
+        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+        register_document(pdf, "treatment", diagnosis_obj)
+        generated.append("treatment")
+    else:
+        skipped.append("treatment")
+
+    # Prescription
+    prescriptions = Prescription.objects.filter(appointment=appointment)
+    if prescriptions.exists():
+        pdf = generate_pdf_document("prescription", prescriptions, appointment)
+        first_item = prescriptions.first()
+        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+        register_document(pdf, "prescription", diagnosis_obj)
+        generated.append("prescription")
+    else:
+        skipped.append("prescription")
+
+    # Medical test orders
+    orders = MedicalTestOrder.objects.filter(appointment=appointment)
+    if orders.exists():
+        pdf = generate_pdf_document("medical_test_order", orders, appointment)
+        first_item = orders.first()
+        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+        register_document(pdf, "medical_test_order", diagnosis_obj)
+        generated.append("medical_test_order")
+    else:
+        skipped.append("medical_test_order")
+
+    # Medical referrals
+    referrals = MedicalReferral.objects.filter(appointment=appointment)
+    if referrals.exists():
+        pdf = generate_pdf_document("medical_referral", referrals, appointment)
+        first_item = referrals.first()
+        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+        register_document(pdf, "medical_referral", diagnosis_obj)
+        generated.append("medical_referral")
+    else:
+        skipped.append("medical_referral")
+
+    return Response({
+        "generated": generated,
+        "skipped": skipped,
+        "message": f"{len(generated)} clinical documents were generated.",
+    }, status=201)
