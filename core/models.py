@@ -363,6 +363,7 @@ class Prescription(models.Model):
         ("oral", "Oral"),
         ("iv", "Intravenosa"),
         ("im", "Intramuscular"),
+        ("sc", "Subcutánea"),
         ("topical", "Tópica"),
         ("sublingual", "Sublingual"),
         ("inhalation", "Inhalación"),
@@ -392,6 +393,7 @@ class Prescription(models.Model):
     UNIT_CHOICES = [
         ("mg", "Miligramos"),
         ("ml", "Mililitros"),
+        ("g", "Gramos"),
         ("tablet", "Tableta"),
         ("capsule", "Cápsula"),
         ("drop", "Gotas"),
@@ -401,7 +403,11 @@ class Prescription(models.Model):
     ]
 
     diagnosis = models.ForeignKey("Diagnosis", on_delete=models.CASCADE, related_name="prescriptions")
-    medication = models.CharField(max_length=200)
+
+    # 🔹 Híbrido: catálogo o texto libre
+    medication_catalog = models.ForeignKey("MedicationCatalog", on_delete=models.SET_NULL, blank=True, null=True, related_name="prescriptions")
+    medication_text = models.CharField(max_length=200, blank=True, null=True)
+
     dosage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default="mg")
     route = models.CharField(max_length=20, choices=ROUTE_CHOICES, default="oral")
@@ -413,7 +419,8 @@ class Prescription(models.Model):
         verbose_name_plural = "Prescriptions"
 
     def __str__(self):
-        return f"{self.medication} {self.dosage}{self.unit} — {self.get_frequency_display()}"
+        med = self.medication_catalog or self.medication_text or "Medicamento no especificado"
+        return f"{med} {self.dosage}{self.unit} — {self.get_frequency_display()}"
 
 
 class Payment(models.Model):
@@ -1046,3 +1053,36 @@ class Specialty(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class MedicationCatalog(models.Model):
+    PRESENTATION_CHOICES = [
+        ("tablet", "Tableta"),
+        ("capsule", "Cápsula"),
+        ("syrup", "Jarabe"),
+        ("drop", "Gotas"),
+        ("injection", "Inyectable"),
+        ("cream", "Crema"),
+        ("gel", "Gel"),
+        ("patch", "Parche"),
+        ("spray", "Spray"),
+        ("other", "Otro"),
+    ]
+
+    name = models.CharField(max_length=200)  # Ej: Acetaminofén
+    presentation = models.CharField(max_length=50, choices=PRESENTATION_CHOICES)
+    concentration = models.CharField(max_length=100)  # Ej: 500 mg, 250 mg/5 ml
+    route = models.CharField(max_length=20, choices=Prescription.ROUTE_CHOICES)
+    unit = models.CharField(max_length=20, choices=Prescription.UNIT_CHOICES)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Medicamento"
+        verbose_name_plural = "Catálogo de Medicamentos"
+        unique_together = ["name", "presentation", "concentration"]
+        ordering = ["name", "presentation"]
+
+    def __str__(self):
+        return f"{self.name} — {self.presentation} — {self.concentration}"

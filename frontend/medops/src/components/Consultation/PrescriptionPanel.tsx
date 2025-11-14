@@ -4,6 +4,50 @@ import PrescriptionBadge from "./PrescriptionBadge";
 import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescription";
 import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescription";
 
+// 🔹 Opciones institucionales
+const frequencyOptions = [
+  { value: "once_daily", label: "Una vez al día" },
+  { value: "bid", label: "2 veces al día (BID)" },
+  { value: "tid", label: "3 veces al día (TID)" },
+  { value: "qid", label: "4 veces al día (QID)" },
+  { value: "q4h", label: "Cada 4 horas" },
+  { value: "q6h", label: "Cada 6 horas" },
+  { value: "q8h", label: "Cada 8 horas" },
+  { value: "q12h", label: "Cada 12 horas" },
+  { value: "q24h", label: "Cada 24 horas" },
+  { value: "qod", label: "Día por medio" },
+  { value: "stat", label: "Una sola vez / Inmediato" },
+  { value: "prn", label: "Según necesidad" },
+  { value: "hs", label: "Al acostarse" },
+  { value: "ac", label: "Antes de las comidas" },
+  { value: "pc", label: "Después de las comidas" },
+  { value: "achs", label: "Antes de comidas y al acostarse" },
+];
+
+const routeOptions = [
+  { value: "oral", label: "Oral" },
+  { value: "iv", label: "Intravenosa (IV)" },
+  { value: "im", label: "Intramuscular (IM)" },
+  { value: "sc", label: "Subcutánea (SC)" },
+  { value: "sublingual", label: "Sublingual" },
+  { value: "inhalation", label: "Inhalación" },
+  { value: "rectal", label: "Rectal" },
+  { value: "topical", label: "Tópica" },
+  { value: "other", label: "Otro" },
+];
+
+const unitOptions = [
+  { value: "mg", label: "mg" },
+  { value: "ml", label: "ml" },
+  { value: "g", label: "g" },
+  { value: "tablet", label: "Tableta" },
+  { value: "capsule", label: "Cápsula" },
+  { value: "drop", label: "Gotas" },
+  { value: "puff", label: "Inhalación" },
+  { value: "unit", label: "Unidad" },
+  { value: "patch", label: "Parche" },
+];
+
 interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
   onAdd: (data: {
@@ -11,9 +55,9 @@ interface PrescriptionPanelProps {
     medication: string;
     dosage?: string;
     duration?: string;
-    frequency?: "daily" | "bid" | "tid" | "qid";
-    route?: "oral" | "iv" | "im" | "sc";
-    unit?: "mg" | "ml" | "g" | "tablet";
+    frequency?: string;
+    route?: string;
+    unit?: string;
   }) => void;
 }
 
@@ -22,9 +66,9 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
   const [medication, setMedication] = useState("");
   const [dosage, setDosage] = useState("");
   const [duration, setDuration] = useState("");
-  const [frequency, setFrequency] = useState<"daily" | "bid" | "tid" | "qid">("daily");
-  const [route, setRoute] = useState<"oral" | "iv" | "im" | "sc">("oral");
-  const [unit, setUnit] = useState<"mg" | "ml" | "g" | "tablet">("mg");
+  const [frequency, setFrequency] = useState("once_daily");
+  const [route, setRoute] = useState("oral");
+  const [unit, setUnit] = useState("mg");
 
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
@@ -48,7 +92,7 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
     setMedication("");
     setDosage("");
     setDuration("");
-    setFrequency("daily");
+    setFrequency("once_daily");
     setRoute("oral");
     setUnit("mg");
   };
@@ -137,25 +181,28 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
           className="input"
         />
 
-        <select value={frequency} onChange={(e) => setFrequency(e.target.value as any)} className="select">
-          <option value="daily">Diaria</option>
-          <option value="bid">2 veces al día (BID)</option>
-          <option value="tid">3 veces al día (TID)</option>
-          <option value="qid">4 veces al día (QID)</option>
+        <select value={frequency} onChange={(e) => setFrequency(e.target.value)} className="select">
+          {frequencyOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
 
-        <select value={route} onChange={(e) => setRoute(e.target.value as any)} className="select">
-          <option value="oral">Oral</option>
-          <option value="iv">Intravenosa (IV)</option>
-          <option value="im">Intramuscular (IM)</option>
-          <option value="sc">Subcutánea (SC)</option>
+        <select value={route} onChange={(e) => setRoute(e.target.value)} className="select">
+          {routeOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
 
-        <select value={unit} onChange={(e) => setUnit(e.target.value as any)} className="select">
-          <option value="mg">mg</option>
-          <option value="ml">ml</option>
-          <option value="g">g</option>
-          <option value="tablet">Tableta</option>
+        <select value={unit} onChange={(e) => setUnit(e.target.value)} className="select">
+          {unitOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
 
         <button type="submit" className="btn-primary self-start">

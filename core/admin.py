@@ -22,7 +22,8 @@ from .models import (
     MedicalTest,
     MedicalReferral,
     DoctorOperator,
-    Specialty
+    Specialty,
+    MedicationCatalog
 )
 
 logger = logging.getLogger("core")
@@ -180,12 +181,23 @@ class TreatmentAdmin(admin.ModelAdmin):
 
 @admin.register(Prescription)
 class PrescriptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'diagnosis', 'medication', 'dosage', 'unit', 'route', 'frequency', 'duration')
-    list_display_links = ('id', 'medication')
-    list_filter = ('route', 'frequency', 'unit')
-    search_fields = ('medication', 'diagnosis__appointment__patient__national_id')
-    ordering = ('medication',)
+    list_display = (
+        "id", "diagnosis", "get_medication_display", "dosage", "unit", "route", "frequency", "duration"
+    )
+    list_display_links = ("id", "get_medication_display")
+    list_filter = ("route", "frequency", "unit")
+    search_fields = (
+        "medication_text",
+        "medication_catalog__name",
+        "medication_catalog__concentration",
+        "diagnosis__appointment__patient__national_id"
+    )
+    ordering = ("id",)
     list_per_page = 25
+
+    @admin.display(description="Medicamento")
+    def get_medication_display(self, obj):
+        return obj.medication_catalog or obj.medication_text or "—"
 
 
 # -------------------------
@@ -353,6 +365,14 @@ class SpecialtyAdmin(admin.ModelAdmin):
     search_fields = ("code", "name")
     ordering = ("name",)
     list_per_page = 50
+
+
+@admin.register(MedicationCatalog)
+class MedicationCatalogAdmin(admin.ModelAdmin):
+    list_display = ["name", "presentation", "concentration", "route", "unit"]
+    search_fields = ["name", "concentration"]
+    list_filter = ["presentation", "route", "unit"]
+    ordering = ["name"]
 
 
 # Personalización del panel de administración
