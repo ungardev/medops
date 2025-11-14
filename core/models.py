@@ -364,15 +364,29 @@ class Prescription(models.Model):
         ("iv", "Intravenosa"),
         ("im", "Intramuscular"),
         ("topical", "Tópica"),
+        ("sublingual", "Sublingual"),
+        ("inhalation", "Inhalación"),
+        ("rectal", "Rectal"),
         ("other", "Otro"),
     ]
 
     FREQUENCY_CHOICES = [
-        ("daily", "Diaria"),
+        ("once_daily", "Una vez al día"),
         ("bid", "Dos veces al día"),
         ("tid", "Tres veces al día"),
-        ("qhs", "Antes de dormir"),
+        ("qid", "Cuatro veces al día"),
+        ("q4h", "Cada 4 horas"),
+        ("q6h", "Cada 6 horas"),
+        ("q8h", "Cada 8 horas"),
+        ("q12h", "Cada 12 horas"),
+        ("q24h", "Cada 24 horas"),
+        ("qod", "Día por medio"),
+        ("stat", "Una sola vez / Inmediato"),
         ("prn", "Según necesidad"),
+        ("hs", "Al acostarse"),
+        ("ac", "Antes de las comidas"),
+        ("pc", "Después de las comidas"),
+        ("achs", "Antes de comidas y al acostarse"),
     ]
 
     UNIT_CHOICES = [
@@ -381,6 +395,9 @@ class Prescription(models.Model):
         ("tablet", "Tableta"),
         ("capsule", "Cápsula"),
         ("drop", "Gotas"),
+        ("puff", "Inhalación"),
+        ("unit", "Unidad"),
+        ("patch", "Parche"),
     ]
 
     diagnosis = models.ForeignKey("Diagnosis", on_delete=models.CASCADE, related_name="prescriptions")
@@ -388,7 +405,7 @@ class Prescription(models.Model):
     dosage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default="mg")
     route = models.CharField(max_length=20, choices=ROUTE_CHOICES, default="oral")
-    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default="daily")
+    frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default="once_daily")
     duration = models.CharField(max_length=200, blank=True, null=True)
 
     class Meta:
