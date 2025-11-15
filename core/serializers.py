@@ -910,6 +910,7 @@ class MedicalReportSerializer(serializers.ModelSerializer):
             "full_name": doctor.full_name,
             "colegiado_id": doctor.colegiado_id,
             "specialties": list(specialties) if specialties else ["No especificadas"],
+            "signature": doctor.signature.url if doctor.signature else None,
         }
 
     def get_diagnoses(self, obj):
@@ -928,20 +929,17 @@ class MedicalReportSerializer(serializers.ModelSerializer):
         return [
             {
                 "medication": (
-                    p.medication_catalog.name if p.medication_catalog
-                    else p.medication_text if p.medication_text
-                    else "No especificado"
+                    f"{p.medication_catalog.name} — {p.medication_catalog.presentation} — {p.medication_catalog.concentration}"
+                    if p.medication_catalog
+                    else p.medication_text
+                    if p.medication_text
+                    else "Medicamento no especificado"
                 ),
-                "dosage": (
-                    f"{p.dosage}{p.unit}" if p.dosage
-                    else p.unit if p.unit
-                    else "No especificado"
-                ),
-                "frequency": (
-                    p.get_frequency_display() if p.frequency
-                    else "No especificada"
-                ),
-                "duration": p.duration or "No especificada",
+                "dosage": str(p.dosage) if p.dosage else "-",
+                "unit": p.get_unit_display() if p.unit else "-",
+                "route": p.get_route_display() if p.route else "-",
+                "frequency": p.get_frequency_display() if p.frequency else "-",
+                "duration": p.duration or "-",
             }
             for p in prescriptions
         ]

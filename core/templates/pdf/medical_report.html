@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    body { font-family: "DejaVu Sans", sans-serif; font-size: 12pt; }
-    header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px; }
-    h1 { font-size: 16pt; margin: 0; }
-    .section { margin-bottom: 15px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-    th, td { border: 1px solid #000; padding: 5px; text-align: left; }
-    footer { margin-top: 30px; font-size: 10pt; text-align: center; border-top: 1px solid #000; }
-    p { white-space: pre-wrap; }
+    body { font-family: "DejaVu Sans", sans-serif; font-size: 11pt; }
+    header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 15px; }
+    h1 { font-size: 14pt; margin: 0; }
+    h2 { font-size: 12pt; margin: 8px 0; }
+    .section { margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 10pt; }
+    th, td { border: 1px solid #000; padding: 4px; text-align: left; }
+    footer { margin-top: 20px; font-size: 9pt; text-align: center; border-top: 1px solid #000; }
+    p { white-space: pre-wrap; margin: 4px 0; }
   </style>
 </head>
 <body>
   <header>
     {% if institution.logo %}
-      <img src="{{ institution.logo.url }}" alt="Logo" style="height:80px; margin-bottom:10px;">
+      <img src="{{ institution.logo.path }}" alt="Logo"
+           style="max-width:120px; max-height:80px; object-fit:contain; margin-bottom:8px;">
     {% endif %}
     <h1>{{ institution.name }}</h1>
     <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
@@ -41,8 +43,8 @@
       {% endif %}
     </p>
     {% if doctor.signature %}
-      <div style="margin-top:10px;">
-        <img src="{{ doctor.signature.url }}" alt="Firma" style="height:60px;">
+      <div style="margin-top:8px;">
+        <img src="{{ doctor.signature.path }}" alt="Firma" style="height:50px;">
       </div>
     {% endif %}
   </div>
@@ -82,18 +84,33 @@
     <h2>Prescripciones</h2>
     <table>
       <thead>
-        <tr><th>Medicamento</th><th>Dosis</th><th>Frecuencia</th><th>Duración</th></tr>
+        <tr>
+          <th>Medicamento</th>
+          <th>Dosis</th>
+          <th>Unidad</th>
+          <th>Vía</th>
+          <th>Frecuencia</th>
+          <th>Duración</th>
+        </tr>
       </thead>
       <tbody>
         {% for p in prescriptions %}
         <tr>
-          <td>{{ p.medication }}</td>
-          <td>{{ p.dosage }}</td>
-          <td>{{ p.frequency }}</td>
-          <td>{{ p.duration }}</td>
+          <td>
+            {% if p.medication_catalog %}
+              {{ p.medication_catalog.name }} — {{ p.medication_catalog.presentation }} — {{ p.medication_catalog.concentration }}
+            {% else %}
+              {{ p.medication_text|default:"No especificado" }}
+            {% endif %}
+          </td>
+          <td>{{ p.dosage|default:"-" }}</td>
+          <td>{{ p.get_unit_display }}</td>
+          <td>{{ p.get_route_display }}</td>
+          <td>{{ p.get_frequency_display }}</td>
+          <td>{{ p.duration|default:"-" }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="4">Sin prescripciones</td></tr>
+        <tr><td colspan="6">Sin prescripciones</td></tr>
         {% endfor %}
       </tbody>
     </table>
