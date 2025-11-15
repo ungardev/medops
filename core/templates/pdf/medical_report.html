@@ -6,19 +6,19 @@
     body { font-family: "DejaVu Sans", sans-serif; font-size: 11pt; }
     header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 15px; }
     h1 { font-size: 14pt; margin: 0; }
-    h2 { font-size: 12pt; margin: 8px 0; }
-    .section { margin-bottom: 10px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 10pt; }
-    th, td { border: 1px solid #000; padding: 4px; text-align: left; }
-    footer { margin-top: 20px; font-size: 9pt; text-align: center; border-top: 1px solid #000; }
-    p { white-space: pre-wrap; margin: 4px 0; }
+    h2 { font-size: 12pt; margin: 6px 0; }
+    .section { margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10pt; }
+    th, td { border: 1px solid #000; padding: 3px; text-align: left; }
+    footer { margin-top: 15px; font-size: 9pt; text-align: center; border-top: 1px solid #000; }
+    p { white-space: pre-wrap; margin: 3px 0; }
   </style>
 </head>
 <body>
   <header>
     {% if institution.logo %}
       <img src="{{ institution.logo.path }}" alt="Logo"
-           style="max-width:120px; max-height:80px; object-fit:contain; margin-bottom:8px;">
+           style="max-width:120px; max-height:80px; object-fit:contain; margin-bottom:6px;">
     {% endif %}
     <h1>{{ institution.name }}</h1>
     <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
@@ -33,18 +33,16 @@
   <div class="section">
     <strong>Médico:</strong> {{ doctor.full_name }}<br>
     Nº Colegiado: {{ doctor.colegiado_id }}<br>
-    <p><strong>Especialidades:</strong>
+    <p style="margin:0;"><strong>Especialidades:</strong>
       {% if doctor.specialties %}
-        {% for s in doctor.specialties %}
-          {{ s }}{% if not forloop.last %}, {% endif %}
-        {% endfor %}
+        {{ doctor.specialties|join:", " }}
       {% else %}
         No especificadas
       {% endif %}
     </p>
     {% if doctor.signature %}
-      <div style="margin-top:8px;">
-        <img src="{{ doctor.signature.path }}" alt="Firma" style="height:50px;">
+      <div style="margin-top:6px;">
+        <img src="{{ doctor.signature.path }}" alt="Firma" style="height:45px;">
       </div>
     {% endif %}
   </div>
@@ -96,18 +94,12 @@
       <tbody>
         {% for p in prescriptions %}
         <tr>
-          <td>
-            {% if p.medication_catalog %}
-              {{ p.medication_catalog.name }} — {{ p.medication_catalog.presentation }} — {{ p.medication_catalog.concentration }}
-            {% else %}
-              {{ p.medication_text|default:"No especificado" }}
-            {% endif %}
-          </td>
-          <td>{{ p.dosage|default:"-" }}</td>
-          <td>{{ p.get_unit_display }}</td>
-          <td>{{ p.get_route_display }}</td>
-          <td>{{ p.get_frequency_display }}</td>
-          <td>{{ p.duration|default:"-" }}</td>
+          <td>{{ p.medication }}</td>
+          <td>{{ p.dosage }}</td>
+          <td>{{ p.unit }}</td>
+          <td>{{ p.route }}</td>
+          <td>{{ p.frequency }}</td>
+          <td>{{ p.duration }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="6">Sin prescripciones</td></tr>
