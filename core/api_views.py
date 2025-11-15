@@ -2795,7 +2795,7 @@ def specialty_choices_api(request):
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def generate_used_documents(request, consultation_id):
+def generate_used_documents(request, pk):
     """
     Generate clinical documents for the current consultation:
     - Treatment
@@ -2810,7 +2810,7 @@ def generate_used_documents(request, consultation_id):
     )
     from .utils import generate_pdf_document  # make sure this utility is implemented
 
-    appointment = get_object_or_404(Appointment, pk=consultation_id)
+    appointment = get_object_or_404(Appointment, pk=pk)
     patient = appointment.patient
     user = request.user if request.user.is_authenticated else None
 
@@ -2845,6 +2845,7 @@ def generate_used_documents(request, consultation_id):
             severity="info",
             notify=True,
         )
+        return doc  # 👈 devolver el documento creado
 
     # Treatment
     treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
@@ -2852,8 +2853,13 @@ def generate_used_documents(request, consultation_id):
         pdf = generate_pdf_document("treatment", treatments, appointment)
         first_item = treatments.first()
         diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        register_document(pdf, "treatment", diagnosis_obj)
-        generated.append("treatment")
+        doc = register_document(pdf, "treatment", diagnosis_obj)
+        generated.append({
+            "id": doc.id,
+            "category": doc.category,
+            "description": doc.description,
+            "file_url": doc.file.url,
+        })
     else:
         skipped.append("treatment")
 
@@ -2863,8 +2869,13 @@ def generate_used_documents(request, consultation_id):
         pdf = generate_pdf_document("prescription", prescriptions, appointment)
         first_item = prescriptions.first()
         diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        register_document(pdf, "prescription", diagnosis_obj)
-        generated.append("prescription")
+        doc = register_document(pdf, "prescription", diagnosis_obj)
+        generated.append({
+            "id": doc.id,
+            "category": doc.category,
+            "description": doc.description,
+            "file_url": doc.file.url,
+        })
     else:
         skipped.append("prescription")
 
@@ -2874,8 +2885,13 @@ def generate_used_documents(request, consultation_id):
         pdf = generate_pdf_document("medical_test", orders, appointment)
         first_item = orders.first()
         diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        register_document(pdf, "medical_test", diagnosis_obj)
-        generated.append("medical_test")
+        doc = register_document(pdf, "medical_test", diagnosis_obj)
+        generated.append({
+            "id": doc.id,
+            "category": doc.category,
+            "description": doc.description,
+            "file_url": doc.file.url,
+        })
     else:
         skipped.append("medical_test")
 
@@ -2885,8 +2901,13 @@ def generate_used_documents(request, consultation_id):
         pdf = generate_pdf_document("medical_referral", referrals, appointment)
         first_item = referrals.first()
         diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        register_document(pdf, "medical_referral", diagnosis_obj)
-        generated.append("medical_referral")
+        doc = register_document(pdf, "medical_referral", diagnosis_obj)
+        generated.append({
+            "id": doc.id,
+            "category": doc.category,
+            "description": doc.description,
+            "file_url": doc.file.url,
+        })
     else:
         skipped.append("medical_referral")
 
