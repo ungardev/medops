@@ -2134,43 +2134,25 @@ def generate_report(request, pk: int):
     if existing and existing.file_url:
         return Response(MedicalReportSerializer(existing).data, status=200)
 
-    # 🔹 Datos institucionales
-    institution = InstitutionSettings.objects.first()
-    doctor = DoctorOperator.objects.first()
-
-    # 🔹 Serializar doctor
-    doctor_data = None
-    if doctor:
-        specialties = doctor.specialties.values_list("name", flat=True)
-        doctor_data = {
-            "full_name": doctor.full_name,
-            "colegiado_id": doctor.colegiado_id,
-            "specialties": list(specialties) if specialties else ["No especificadas"],
-            "signature": doctor.signature,
+    # Crear/obtener reporte
+    report, _ = MedicalReport.objects.get_or_create(
+        appointment=appointment,
+        defaults={
+            "patient": appointment.patient,
+            "created_at": timezone.now(),
+            "status": "generated",
         }
+    )
 
-    # 🔹 Construcción del contenido clínico
-    diagnoses = appointment.diagnoses.all()
-    treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
-    prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
+    # Serializar datos completos
+    serializer = MedicalReportSerializer(report)
+    context = dict(serializer.data)   # 👈 convertir a dict
 
-    # 🔹 Renderizar PDF
-    html = render_to_string("pdf/medical_report.html", {
-        "appointment": appointment,
-        "patient": appointment.patient,
-        "institution": institution,
-        "doctor": doctor_data,   # 👈 dict serializado
-        "diagnoses": diagnoses,
-        "treatments": treatments,
-        "prescriptions": prescriptions,
-        "notes": appointment.notes,
-        "generated_at": timezone.now(),
-        "report": existing or None,
-    })
-
+    # Renderizar PDF con datos serializados
+    html = render_to_string("pdf/medical_report.html", context)
     pdf_file = generate_pdf_from_html(html)
 
-    # 🔹 Guardar como MedicalDocument
+    # Guardar como MedicalDocument
     doc = MedicalDocument.objects.create(
         patient=appointment.patient,
         appointment=appointment,
@@ -2180,19 +2162,11 @@ def generate_report(request, pk: int):
         uploaded_by=str(request.user),
     )
 
-    # 🔹 Crear MedicalReport y asociar file_url
-    report, _ = MedicalReport.objects.get_or_create(
-        appointment=appointment,
-        defaults={
-            "patient": appointment.patient,
-            "created_at": timezone.now(),
-            "status": "generated",
-        }
-    )
+    # Asociar file_url al reporte
     report.file_url = doc.file.url
     report.save(update_fields=["file_url"])
 
-    # 🔹 Auditoría
+    # Auditoría
     Event.objects.create(
         entity="MedicalReport",
         entity_id=report.id,
@@ -2203,7 +2177,7 @@ def generate_report(request, pk: int):
         notify=True
     )
 
-    return Response(MedicalReportSerializer(report).data, status=201)
+    return Response(serializer.data, status=201)
 
 
 @extend_schema(
@@ -2222,31 +2196,9 @@ def generate_medical_report(request, pk):
         status="generated"
     )
 
-    institution = InstitutionSettings.objects.first()
-    doctor = DoctorOperator.objects.first()
-
-    # 🔹 Serializar doctor para que el template reciba lista de strings en specialties
-    doctor_data = None
-    if doctor:
-        specialties = doctor.specialties.values_list("name", flat=True)
-        doctor_data = {
-            "full_name": doctor.full_name,
-            "colegiado_id": doctor.colegiado_id,
-            "specialties": list(specialties) if specialties else ["No especificadas"],
-            "signature": doctor.signature,
-        }
-
-    context = {
-        "appointment": appointment,
-        "patient": appointment.patient,
-        "diagnoses": appointment.diagnoses.all(),
-        "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
-        "prescriptions": Prescription.objects.filter(diagnosis__appointment=appointment),
-        "institution": institution,
-        "doctor": doctor_data,   # 👈 dict serializado
-        "report": report,
-        "generated_at": timezone.now(),
-    }
+    # Serializar datos completos para el template
+    serializer = MedicalReportSerializer(report)
+    context = dict(serializer.data)   # 👈 convertir ReturnDict en dict
 
     # Renderizar HTML → PDF
     html_string = render_to_string("pdf/medical_report.html", context)
@@ -2297,12 +2249,15 @@ def generate_medical_report(request, pk):
         entity_id=report.id,
         action="generated",
         actor=str(request.user),
-        metadata={"appointment_id": appointment.id, "patient_id": appointment.patient.id, "document_id": doc.id},
+        metadata={
+            "appointment_id": appointment.id,
+            "patient_id": appointment.patient.id,
+            "document_id": doc.id
+        },
         severity="info",
         notify=True
     )
 
-    serializer = MedicalReportSerializer(report)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
