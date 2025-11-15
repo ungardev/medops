@@ -2790,6 +2790,17 @@ def specialty_choices_api(request):
     return Response(data)
 
 
+def generate_pdf_document(category: str, queryset, appointment):
+    """
+    Genera un PDF simple para la categoría indicada.
+    Retorna un ContentFile listo para guardar en MedicalDocument.file.
+    """
+    # Aquí deberías usar tu motor real de PDF (WeasyPrint, ReportLab, etc.)
+    # Por ahora, un placeholder en bytes para que funcione:
+    content = f"PDF for {category} - Appointment {appointment.id}".encode("utf-8")
+    return ContentFile(content, name=f"{category}_{appointment.id}.pdf")
+
+
 @extend_schema(
     request=None,
     responses={201: OpenApiResponse(description="Clinical documents generated for the consultation")}
@@ -2797,12 +2808,6 @@ def specialty_choices_api(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def generate_used_documents(request, pk):
-    from .models import (
-        Appointment, Treatment, Prescription, MedicalTest,
-        MedicalReferral, MedicalDocument, Event
-    )
-    from .utils import generate_pdf_document
-
     try:
         appointment = get_object_or_404(Appointment, pk=pk)
         patient = appointment.patient
@@ -2815,7 +2820,6 @@ def generate_used_documents(request, pk):
             if not pdf_file:
                 raise ValueError(f"PDF generator returned empty file for category={category}")
 
-            from django.core.files.base import ContentFile
             django_file = pdf_file
             if isinstance(pdf_file, (bytes, bytearray)):
                 django_file = ContentFile(bytes(pdf_file), name=f"{category}_{appointment.id}.pdf")
