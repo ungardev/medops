@@ -2053,7 +2053,8 @@ def doctor_operator_settings_api(request):
     GET → devuelve la configuración del médico operador
     PUT/PATCH → actualiza la configuración del médico operador
     """
-    obj, _ = DoctorOperator.objects.get_or_create(id=1)
+    # ⚠️ Usa el primero existente, no crees uno vacío cada vez
+    obj = DoctorOperator.objects.first()
 
     if request.method == "GET":
         serializer = DoctorOperatorSerializer(obj)
@@ -2061,7 +2062,7 @@ def doctor_operator_settings_api(request):
 
     serializer = DoctorOperatorSerializer(obj, data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
-    serializer.save(updated_by=request.user)
+    serializer.save()  # 👈 sin campos extra, solo guarda lo que viene
     return Response(serializer.data)
 
 

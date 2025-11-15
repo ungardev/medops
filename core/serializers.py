@@ -783,8 +783,10 @@ class SpecialtySerializer(serializers.ModelSerializer):
 
 
 class DoctorOperatorSerializer(serializers.ModelSerializer):
+    # 🔹 Firma opcional con URL completa
     signature = serializers.ImageField(required=False, allow_null=True, use_url=True)
 
+    # 🔹 Especialidades: lectura y escritura
     specialties = SpecialtySerializer(many=True, read_only=True)
     specialty_ids = serializers.PrimaryKeyRelatedField(
         queryset=Specialty.objects.all(),
@@ -799,8 +801,8 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "id",
             "full_name",
             "colegiado_id",
-            "specialties",      # lectura
-            "specialty_ids",    # escritura
+            "specialties",      # lectura como objetos {id, code, name}
+            "specialty_ids",    # escritura como lista de IDs
             "license",
             "email",
             "phone",
@@ -808,19 +810,28 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         ]
 
     def to_representation(self, instance):
+        """
+        Extiende la representación para incluir también los IDs de especialidades
+        en la salida, de modo que el frontend pueda repoblar el <select multiple>.
+        """
         rep = super().to_representation(instance)
         rep["specialty_ids"] = list(instance.specialties.values_list("id", flat=True))
         return rep
 
     def update(self, instance, validated_data):
-        # Extraer M2M si viene en payload
-        specialties = validated_data.pop("specialties", None)
+        """
+        Actualiza campos simples y aplica el ManyToMany de especialidades
+        de forma explícita y auditable.
+        """
+        # Puede venir como specialties (por source) o specialty_ids (directo)
+        specialties = validated_data.pop("specialties", None) or validated_data.pop("specialty_ids", None)
+
         # Actualizar campos simples
         for attr, val in validated_data.items():
             setattr(instance, attr, val)
         instance.save()
 
-        # Aplicar M2M de forma explícita y auditable
+        # Aplicar ManyToMany explícitamente
         if specialties is not None:
             instance.specialties.set(specialties)
 
