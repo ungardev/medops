@@ -2589,7 +2589,7 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
         return MedicalTestSerializer
 
     def perform_create(self, serializer):
-        test = serializer.save(created_by=self.request.user)
+        test = serializer.save()  # ✅ quitamos created_by
         Event.objects.create(
             entity="MedicalTest",
             entity_id=test.id,
@@ -2597,9 +2597,9 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
                 "appointment_id": test.appointment_id,
-                "diagnosis_id": getattr(test, "diagnosis_id", None),   # 🔹 blindado
+                "diagnosis_id": getattr(test, "diagnosis_id", None),
                 "test_type": test.test_type,
-                "description": getattr(test, "description", None),    # 🔹 agregado
+                "description": getattr(test, "description", None),
                 "urgency": test.urgency,
                 "status": test.status,
             },
@@ -2608,7 +2608,7 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
-        test = serializer.save(updated_by=self.request.user)
+        test = serializer.save()  # ✅ quitamos updated_by
         Event.objects.create(
             entity="MedicalTest",
             entity_id=test.id,
@@ -2616,9 +2616,9 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
                 "appointment_id": test.appointment_id,
-                "diagnosis_id": getattr(test, "diagnosis_id", None),   # 🔹 blindado
+                "diagnosis_id": getattr(test, "diagnosis_id", None),
                 "test_type": test.test_type,
-                "description": getattr(test, "description", None),    # 🔹 agregado
+                "description": getattr(test, "description", None),
                 "urgency": test.urgency,
                 "status": test.status,
             },
