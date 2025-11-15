@@ -48,12 +48,11 @@ export default function ConfigPage() {
   // Sincronizar estado local cuando cambian los datos del backend (Doctor)
   useEffect(() => {
     if (doc) {
-      // El backend expone specialties como objetos; mapeamos a string[] para el <select>
       const ids =
-        Array.isArray((doc as any).specialties)
-          ? ((doc as any).specialties as Array<{ id: number }>).map(s => String(s.id))
-          : Array.isArray((doc as any).specialty_ids)
-            ? ((doc as any).specialty_ids as number[]).map(id => String(id))
+        Array.isArray((doc as any).specialty_ids)
+          ? (doc as any).specialty_ids.map((id: number) => String(id))
+          : Array.isArray((doc as any).specialties)
+            ? (doc as any).specialties.map((s: any) => String(s.id))
             : [];
 
       setDocForm({
@@ -101,7 +100,7 @@ export default function ConfigPage() {
       .filter(Boolean) as string[];
   };
 
-  return (
+    return (
     <main className="config-page">
       <h2>Configuración</h2>
 
@@ -144,7 +143,6 @@ export default function ConfigPage() {
                     onChange={(e) => setInstForm({ ...instForm, name: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Dirección</label>
                   <input
@@ -153,7 +151,6 @@ export default function ConfigPage() {
                     onChange={(e) => setInstForm({ ...instForm, address: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Teléfono</label>
                   <input
@@ -162,7 +159,6 @@ export default function ConfigPage() {
                     onChange={(e) => setInstForm({ ...instForm, phone: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>RIF / NIT</label>
                   <input
@@ -171,7 +167,6 @@ export default function ConfigPage() {
                     onChange={(e) => setInstForm({ ...instForm, tax_id: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Logo</label>
                   <input type="file" onChange={handleLogoChangeInput} />
@@ -181,7 +176,6 @@ export default function ConfigPage() {
                     </div>
                   )}
                 </div>
-
                 <div className="flex gap-2">
                   <button type="submit" className="btn btn-primary">Guardar</button>
                   <button type="button" className="btn btn-outline" onClick={() => setEditingInstitution(false)}>
@@ -193,7 +187,8 @@ export default function ConfigPage() {
           </>
         )}
       </section>
-            {/* Configuración Médico Operador */}
+
+      {/* Configuración Médico Operador */}
       <section className="config-section">
         <h3>Médico Operador</h3>
         {docLoading && <p>Cargando configuración del médico...</p>}
@@ -203,10 +198,7 @@ export default function ConfigPage() {
               <div className="config-view">
                 <p><strong>Nombre completo:</strong> {docForm.full_name}</p>
                 <p><strong>Número de colegiado:</strong> {docForm.colegiado_id}</p>
-                <p>
-                  <strong>Especialidades:</strong>{" "}
-                  {getSpecialtyNames(docForm.specialties || [])?.join(", ") || "No especificadas"}
-                </p>
+                <p><strong>Especialidades:</strong> {getSpecialtyNames(docForm.specialties)?.join(", ") || "No especificadas"}</p>
                 <p><strong>Licencia:</strong> {docForm.license}</p>
                 <p><strong>Email:</strong> {docForm.email}</p>
                 <p><strong>Teléfono:</strong> {docForm.phone}</p>
@@ -225,7 +217,6 @@ export default function ConfigPage() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  // Construir payload alineado con el serializer: specialty_ids como number[]
                   const payload: Partial<DoctorConfig> = {
                     id: docForm.id,
                     full_name: docForm.full_name,
@@ -248,7 +239,6 @@ export default function ConfigPage() {
                     onChange={(e) => setDocForm({ ...docForm, full_name: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Número de colegiado</label>
                   <input
@@ -257,7 +247,6 @@ export default function ConfigPage() {
                     onChange={(e) => setDocForm({ ...docForm, colegiado_id: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Especialidades</label>
                   {loadingSpecs ? (
@@ -265,10 +254,10 @@ export default function ConfigPage() {
                   ) : Array.isArray(specialties) ? (
                     <select
                       multiple
-                      value={docForm.specialties || []} // specialties como string[]
+                      value={docForm.specialties || []}
                       onChange={(e) => {
                         const selected = Array.from(e.target.selectedOptions, (opt) => opt.value);
-                        setDocForm({ ...docForm, specialties: selected }); // guardar como string[]
+                        setDocForm({ ...docForm, specialties: selected });
                       }}
                       className="select"
                     >
@@ -282,7 +271,6 @@ export default function ConfigPage() {
                     <p>No hay especialidades disponibles.</p>
                   )}
                 </div>
-
                 <div className="form-group">
                   <label>Licencia / Registro sanitario</label>
                   <input
@@ -291,7 +279,6 @@ export default function ConfigPage() {
                     onChange={(e) => setDocForm({ ...docForm, license: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Correo profesional</label>
                   <input
@@ -300,7 +287,6 @@ export default function ConfigPage() {
                     onChange={(e) => setDocForm({ ...docForm, email: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Teléfono</label>
                   <input
@@ -309,7 +295,6 @@ export default function ConfigPage() {
                     onChange={(e) => setDocForm({ ...docForm, phone: e.target.value })}
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Firma digital</label>
                   <input type="file" onChange={handleSignatureUpload} />
@@ -319,7 +304,6 @@ export default function ConfigPage() {
                     </div>
                   )}
                 </div>
-
                 <div className="flex gap-2">
                   <button type="submit" className="btn btn-primary">Guardar</button>
                   <button type="button" className="btn btn-outline" onClick={() => setEditingDoctor(false)}>

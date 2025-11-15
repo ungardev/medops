@@ -801,13 +801,22 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "id",
             "full_name",
             "colegiado_id",
-            "specialties",      # lectura
-            "specialty_ids",    # escritura
+            "specialties",      # lectura como objetos {id, code, name}
+            "specialty_ids",    # escritura como lista de IDs
             "license",
             "email",
             "phone",
             "signature",
         ]
+
+    def to_representation(self, instance):
+        """
+        Extiende la representación para incluir también los IDs de especialidades
+        en la salida, de modo que el frontend pueda repoblar el <select multiple>.
+        """
+        rep = super().to_representation(instance)
+        rep["specialty_ids"] = list(instance.specialties.values_list("id", flat=True))
+        return rep
 
 
 # --- Resumen ejecutivo del Dashboard ---
