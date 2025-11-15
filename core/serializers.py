@@ -325,6 +325,7 @@ class AppointmentDetailSerializer(AppointmentSerializer):
         fields = AppointmentSerializer.Meta.fields + [
             "diagnoses",
             "balance_due",
+            "notes",   # ✅ añadido para que el frontend reciba las notas
         ]
 
     def get_balance_due(self, obj):

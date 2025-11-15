@@ -1,4 +1,3 @@
-// src/components/Consultation/NotesPanel.tsx
 import { useState } from "react";
 import { useUpdateAppointmentNotes } from "../../hooks/appointments/useUpdateAppointmentNotes";
 
@@ -15,13 +14,20 @@ export default function NotesPanel({ appointmentId, notes }: NotesPanelProps) {
 
   const handleSave = () => {
     if (value.trim() === "") return;
-    updateNotes({ id: appointmentId, notes: value });
-    setIsEditing(false);
+    updateNotes(
+      { id: appointmentId, notes: value },
+      {
+        onSuccess: (_data, variables) => {
+          setValue(variables.notes);        // ✅ actualiza el estado local
+          setIsEditing(false);              // ✅ cierra el modo edición
+        },
+      }
+    );
   };
 
   return (
     <div className="notes-panel card">
-      <h3 className="text-lg font-bold mb-2">Notas de evolución</h3>
+      <h3 className="text-lg font-bold mb-2">Notas Adicionales</h3>
 
       {!isEditing ? (
         <div className="mb-2">
