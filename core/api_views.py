@@ -45,6 +45,8 @@ from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from rest_framework.decorators import parser_classes
 from rest_framework.authtoken.views import obtain_auth_token
 from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
@@ -2045,6 +2047,7 @@ def institution_settings_api(request):
 
 @api_view(["GET", "PUT", "PATCH"])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser, JSONParser])
 def doctor_operator_settings_api(request):
     """
     GET → devuelve la configuración del médico operador
@@ -2056,7 +2059,6 @@ def doctor_operator_settings_api(request):
         serializer = DoctorOperatorSerializer(obj)
         return Response(serializer.data)
 
-    # PUT o PATCH → actualización parcial
     serializer = DoctorOperatorSerializer(obj, data=request.data, partial=True)
     serializer.is_valid(raise_exception=True)
     serializer.save(updated_by=request.user)

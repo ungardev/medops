@@ -48,6 +48,7 @@ export default function ConfigPage() {
   // Sincronizar estado local cuando cambian los datos del backend (Doctor)
   useEffect(() => {
     if (doc) {
+      console.log("DOC RECIBIDO:", doc); // 👈 imprime el objeto completo
       const ids =
         Array.isArray((doc as any).specialty_ids)
           ? (doc as any).specialty_ids.map((id: number) => String(id))
