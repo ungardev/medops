@@ -759,7 +759,7 @@ class ChargeOrder(models.Model):
 class ChargeItem(models.Model):
     order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='items')
     code = models.CharField(max_length=50)
-    description = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True, null=True)  # ✅ ahora opcional
     qty = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)

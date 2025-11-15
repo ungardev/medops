@@ -23,7 +23,6 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
   const { data: order, isLoading, refetch } = useChargeOrder(appointmentId);
   const createPayment = useCreatePayment(order?.id, appointmentId);
 
-  // 🔹 Fallback automático si no existe orden
   useEffect(() => {
     if (order === null && appointmentId) {
       axios
@@ -35,47 +34,62 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
     }
   }, [order, appointmentId, refetch]);
 
-  // Estado local para ítems
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
   const [qty, setQty] = useState<string>("");
   const [unitPrice, setUnitPrice] = useState<string>("");
 
-  // Estado local para pagos
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<"cash" | "card" | "transfer" | "other">("cash");
   const [reference, setReference] = useState("");
   const [bank, setBank] = useState("");
   const [otherDetail, setOtherDetail] = useState("");
 
-  // Secciones plegables
   const [showItems, setShowItems] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
 
-  // Agregar ítem
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order) return;
+
+    const parsedQty = Number(qty);
+    const parsedPrice = Number(unitPrice);
+
+    if (!code.trim()) {
+      console.error("Código requerido");
+      return;
+    }
+    if (isNaN(parsedQty) || parsedQty <= 0) {
+      console.error("Cantidad inválida");
+      return;
+    }
+    if (isNaN(parsedPrice) || parsedPrice < 0) {
+      console.error("Precio inválido");
+      return;
+    }
+
     try {
       await axios.post("/charge-items/", {
         order: order.id,
-        code,
-        description,
-        qty: Number(qty) || 1,
-        unit_price: Number(unitPrice) || 0,
+        code: code.trim(),
+        description: description.trim(),
+        qty: parsedQty,
+        unit_price: parsedPrice,
       });
       setCode("");
       setDescription("");
       setQty("");
       setUnitPrice("");
       await refetch();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error agregando ítem:", err);
+      if (err.response?.data) {
+        console.error("Detalles del backend:", JSON.stringify(err.response.data, null, 2));
+      }
     }
   };
 
-    // Agregar pago
-  const handleAddPayment = (e: React.FormEvent) => {
+    const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
     const payload: PaymentPayload = {

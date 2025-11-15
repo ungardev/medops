@@ -628,6 +628,9 @@ class ChargeItemSerializer(serializers.ModelSerializer):
     unit_price = serializers.FloatField()
     subtotal = serializers.FloatField(read_only=True)
 
+    # 🔹 Ahora description es opcional y puede ser vacío
+    description = serializers.CharField(allow_blank=True, required=False)
+
     class Meta:
         model = ChargeItem
         fields = [
