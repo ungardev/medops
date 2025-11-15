@@ -2144,11 +2144,32 @@ def generate_report(request, pk: int):
         }
     )
 
-    # Serializar datos completos
-    serializer = MedicalReportSerializer(report)
-    context = dict(serializer.data)   # 👈 convertir a dict
+    # Datos institucionales y médico (objetos para .path en template)
+    institution = InstitutionSettings.objects.first()
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Renderizar PDF con datos serializados
+    # Serializar base (diagnoses y prescriptions con medication)
+    serializer = MedicalReportSerializer(report)
+    context = dict(serializer.data)  # ReturnDict → dict
+
+    # Reforzar contexto con objetos y campos necesarios por el template
+    context.update({
+        "appointment": appointment,                           # para notas y acceso directo
+        "patient": appointment.patient,                       # objeto completo (first_name, last_name, etc.)
+        "institution": institution,                           # objeto para logo.path
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,  # objeto FileField para .path
+        },
+        "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),  # restaurar tratamientos
+        "generated_at": timezone.now(),                      # para "Emitido el"
+        "report": report,                                    # objeto para report.id en footer
+    })
+
+    # Renderizar PDF con datos completos
     html = render_to_string("pdf/medical_report.html", context)
     pdf_file = generate_pdf_from_html(html)
 
@@ -2177,7 +2198,7 @@ def generate_report(request, pk: int):
         notify=True
     )
 
-    return Response(serializer.data, status=201)
+    return Response(MedicalReportSerializer(report).data, status=201)
 
 
 @extend_schema(
@@ -2196,9 +2217,30 @@ def generate_medical_report(request, pk):
         status="generated"
     )
 
-    # Serializar datos completos para el template
+    # Datos institucionales y médico (objetos para .path en template)
+    institution = InstitutionSettings.objects.first()
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+
+    # Serializar base (diagnoses y prescriptions con medication)
     serializer = MedicalReportSerializer(report)
-    context = dict(serializer.data)   # 👈 convertir ReturnDict en dict
+    context = dict(serializer.data)  # ReturnDict → dict
+
+    # Reforzar contexto con objetos y campos necesarios por el template
+    context.update({
+        "appointment": appointment,
+        "patient": appointment.patient,
+        "institution": institution,
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
+        },
+        "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
+        "generated_at": timezone.now(),
+        "report": report,
+    })
 
     # Renderizar HTML → PDF
     html_string = render_to_string("pdf/medical_report.html", context)
