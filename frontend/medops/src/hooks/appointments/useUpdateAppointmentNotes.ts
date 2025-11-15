@@ -13,7 +13,8 @@ export function useUpdateAppointmentNotes() {
 
   return useMutation({
     mutationFn: async ({ id, notes }: UpdateNotesInput) => {
-      const raw = await apiFetch<Appointment>(`/api/appointments/${id}/notes/`, {
+      // 🔹 quitamos el prefijo /api para evitar /api/api/...
+      const raw = await apiFetch<Appointment>(`appointments/${id}/notes/`, {
         method: "PATCH",
         body: JSON.stringify({ notes }),
       });

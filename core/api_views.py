@@ -566,13 +566,29 @@ def update_appointment_notes(request, pk):
         appointment = Appointment.objects.get(pk=pk)
     except Appointment.DoesNotExist:
         return Response({"error": "Appointment not found"}, status=404)
+
     notes = request.data.get("notes")
     if notes is None:
         return Response({"error": "Missing notes"}, status=400)
+
+    # 🔹 Guardar las notas en la cita
     appointment.notes = notes
     appointment.save(update_fields=["notes"])
-    Event.objects.create(entity="Appointment", action="update_notes", actor=str(request.user) if request.user.is_authenticated else "system", timestamp=now())
+
+    # 🔹 Registrar evento de auditoría (sin timestamp manual)
+    Event.objects.create(
+        entity="Appointment",
+        entity_id=appointment.id,
+        action="update_notes",
+        actor=str(request.user) if request.user.is_authenticated else "system",
+        metadata={"notes": notes},   # opcional: guardar el contenido
+        severity="info",
+        notify=True
+    )
+
+    # 🔹 Devolver cita actualizada
     return Response(AppointmentSerializer(appointment).data)
+
 
 @extend_schema(request=WaitingRoomStatusUpdateSerializer, responses={200: WaitingRoomEntrySerializer})
 @api_view(["PATCH"])
