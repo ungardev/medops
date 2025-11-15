@@ -926,6 +926,14 @@ class MedicalTestWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Estado inválido para el examen médico.")
         return value
 
+    def validate(self, data):
+        # 🔹 Blindaje: debe existir al menos appointment o diagnosis
+        if not data.get("appointment") and not data.get("diagnosis"):
+            raise serializers.ValidationError(
+                "Debe asociar el examen a una cita o a un diagnóstico."
+            )
+        return data
+
 
 # --- Referencias médicas ---
 class MedicalReferralSerializer(serializers.ModelSerializer):
