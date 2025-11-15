@@ -833,7 +833,14 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
 
         # Aplicar ManyToMany explícitamente
         if specialties is not None:
-            instance.specialties.set(specialties)
+            # Normalizar: si vienen IDs como strings o ints, convertirlos a queryset
+            if all(isinstance(s, (str, int)) for s in specialties):
+                ids = [int(s) for s in specialties]
+                qs = Specialty.objects.filter(id__in=ids)
+                instance.specialties.set(qs)
+            else:
+                # Si DRF ya resolvió a objetos Specialty
+                instance.specialties.set(specialties)
 
         return instance
 
