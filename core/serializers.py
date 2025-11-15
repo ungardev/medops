@@ -819,11 +819,7 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         return rep
 
     def update(self, instance, validated_data):
-        """
-        Actualiza campos simples y aplica el ManyToMany de especialidades
-        de forma explícita y auditable.
-        """
-        # Puede venir como specialties (por source) o specialty_ids (directo)
+    # Puede venir como specialties (por source) o specialty_ids (directo)
         specialties = validated_data.pop("specialties", None) or validated_data.pop("specialty_ids", None)
 
         # Actualizar campos simples
@@ -834,11 +830,11 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         # Aplicar ManyToMany explícitamente
         if specialties is not None:
             # Normalizar: si vienen IDs como strings o ints, convertirlos a queryset
-            if all(isinstance(s, (str, int)) for s in specialties):
+            try:
                 ids = [int(s) for s in specialties]
                 qs = Specialty.objects.filter(id__in=ids)
                 instance.specialties.set(qs)
-            else:
+            except Exception:
                 # Si DRF ya resolvió a objetos Specialty
                 instance.specialties.set(specialties)
 
