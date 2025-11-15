@@ -2834,8 +2834,8 @@ def generate_used_documents(request, pk):
                 source="system_generated",
                 origin_panel="consultation",
                 template_version="v1.0",
-                uploaded_by=str(user) if user else "system",
-                generated_by=str(user) if user else "system",
+                uploaded_by=user if user else None,   # 👈 ahora guarda User o NULL
+                generated_by=user if user else None,  # 👈 igual aquí
             )
 
             Event.objects.create(
@@ -2865,7 +2865,7 @@ def generate_used_documents(request, pk):
                 "description": doc.description,
                 "file_url": file_url,
             }
-
+        
         # Treatment
         treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
         if treatments.exists():
