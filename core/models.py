@@ -1034,7 +1034,7 @@ SPECIALTY_CHOICES = [
     ("plastic_surgery", "Plastic Surgery (Cirugía Plástica)"),
     ("preventive_medicine", "Preventive Medicine (Medicina Preventiva)"),
     ("psychiatry", "Psychiatry (Psiquiatría)"),
-    ("pulmonology", "Pulmonary Disease (Enfermedad Pulmonar/Neumología)"),
+    ("pulmonology", "Pulmonary Disease (Neumonología)"),
     ("radiation_oncology", "Radiation Oncology (Oncología Radioterápica)"),
     ("rheumatology", "Rheumatology (Reumatología)"),
     ("urology", "Urology (Urología)"),

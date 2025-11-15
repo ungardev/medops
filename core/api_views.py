@@ -2752,8 +2752,11 @@ def specialty_choices_api(request):
     if q:
         qs = qs.filter(Q(name__icontains=q) | Q(code__icontains=q))
 
-    serializer = SpecialtySerializer(qs, many=True)
-    return Response(serializer.data)
+    data = [
+        {"id": s.id, "code": s.code, "name": s.name}
+        for s in qs
+    ]
+    return Response(data)
 
 
 @extend_schema(
