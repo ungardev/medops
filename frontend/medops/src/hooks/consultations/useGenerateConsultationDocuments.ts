@@ -1,14 +1,22 @@
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 
-// 🔹 Response type for consultation documents generation
+// 🔹 Tipos de documentos generados
+export interface GeneratedDocument {
+  id: number;
+  category: string;
+  description: string;
+  file_url: string;
+}
+
+// 🔹 Respuesta del endpoint
 export interface GenerateDocumentsResponse {
-  generated: string[];
+  generated: GeneratedDocument[];
   skipped: string[];
   message: string;
 }
 
-// 🔹 Hook for generating consultation documents
+// 🔹 Hook para generar documentos de consulta
 export function useGenerateConsultationDocuments(): UseMutationResult<
   GenerateDocumentsResponse,
   Error,
@@ -25,3 +33,4 @@ export function useGenerateConsultationDocuments(): UseMutationResult<
     },
   });
 }
+

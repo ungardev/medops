@@ -1,3 +1,4 @@
+// src/pages/Consultation/Consultation.tsx
 import {
   PatientHeader,
   DocumentsPanel,
@@ -88,7 +89,7 @@ export default function Consultation() {
                 </a>
               )}
 
-              {/* 🔹 Generate Consultation Documents */}
+              {/* 🔹 Generate Consultation Documents (excluye Medical Report) */}
               <button
                 className="btn btn-accent ml-2"
                 disabled={generateDocuments.isPending}
@@ -112,12 +113,35 @@ export default function Consultation() {
         {/* 🔹 Feedback for consultation documents */}
         {generateDocuments.data && (
           <div className="consultation-documents mt-4">
-            <p className="text-sm text-gray-700">
-              Generated: {generateDocuments.data.generated.join(", ") || "None"}
-            </p>
-            <p className="text-sm text-gray-500">
-              Skipped: {generateDocuments.data.skipped.join(", ") || "None"}
-            </p>
+            <p className="text-sm text-gray-700 font-semibold">Generated Documents:</p>
+            <ul className="list-disc ml-6 text-sm text-gray-700">
+              {generateDocuments.data.generated.length > 0 ? (
+                generateDocuments.data.generated.map((doc) => (
+                  <li key={doc.id}>
+                    <span className="font-medium">{doc.category}</span>: {doc.description}{" "}
+                    <a
+                      href={doc.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline ml-1"
+                    >
+                      View
+                    </a>
+                  </li>
+                ))
+              ) : (
+                <li>None</li>
+              )}
+            </ul>
+
+            <p className="text-sm text-gray-500 mt-2 font-semibold">Skipped:</p>
+            <ul className="list-disc ml-6 text-sm text-gray-500">
+              {generateDocuments.data.skipped.length > 0 ? (
+                generateDocuments.data.skipped.map((s, idx) => <li key={idx}>{s}</li>)
+              ) : (
+                <li>None</li>
+              )}
+            </ul>
           </div>
         )}
       </div>

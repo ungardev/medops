@@ -37,6 +37,7 @@ from .api_views import (
     generate_treatment_pdf,        # 👈 NUEVO ENDPOINT DE TRATAMIENTO
     generate_referral_pdf,         # 👈 NUEVO ENDPOINT DE REFERENCIA MÉDICA
     generate_chargeorder_pdf,      # 👈 NUEVO ENDPOINT DE ORDEN FINANCIERA
+    generate_used_documents,       # 👈 NUEVO ENDPOINT DE DOCUMENTOS DE CONSULTA
     icd_search_api,                # 👈 ENDPOINT DE BÚSQUEDA ICD-11
     # --- Endpoints de choices ---
     treatment_choices_api,
@@ -96,6 +97,7 @@ urlpatterns = [
     # --- Consultas ---
     path("consultation/current/", api_views.current_consultation_api, name="current-consultation-api"),
     path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
+    path("consultations/<int:pk>/generate-used-documents/", generate_used_documents, name="generate-used-documents"),  # 👈 NUEVO
     path("prescriptions/<int:pk>/generate-pdf/", generate_prescription_pdf, name="generate-prescription-pdf"),
     path("treatments/<int:pk>/generate-pdf/", generate_treatment_pdf, name="generate-treatment-pdf"),
     path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
