@@ -9,17 +9,6 @@ import NewPatientModal from "../../components/Patients/NewPatientModal";
 import DeletePatientModal from "../../components/Patients/DeletePatientModal";
 
 import { Patient } from "../../types/patients"; // 👈 usamos el tipo global
-import { differenceInYears, parseISO } from "date-fns";
-
-// 🔹 Función auxiliar para calcular edad
-function getAge(birthdate?: string | null): number | null {
-  if (!birthdate) return null;
-  try {
-    return differenceInYears(new Date(), parseISO(birthdate));
-  } catch {
-    return null;
-  }
-}
 
 export default function Patients() {
   const [query, setQuery] = useState("");
@@ -163,7 +152,7 @@ export default function Patients() {
             <tr key={p.id}>
               <td>{p.id}</td>
               <td>{p.full_name}</td>
-              <td>{getAge(p.birthdate) ?? "-"}</td>
+              <td>{p.age ?? "-"}</td> {/* 👈 ahora usamos directamente el campo age del backend */}
               <td>{p.gender ?? "-"}</td>
               <td>{p.contact_info ?? "-"}</td>
               <td className="flex gap-2">

@@ -134,22 +134,38 @@ class PatientListSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
-        parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
-        return " ".join(filter(None, parts))
+        """
+        Construye el nombre completo, devolviendo 'SIN-NOMBRE' si no hay datos.
+        """
+        if not obj:
+            return "SIN-NOMBRE"
+        parts = [
+            getattr(obj, "first_name", None),
+            getattr(obj, "middle_name", None),
+            getattr(obj, "last_name", None),
+            getattr(obj, "second_last_name", None),
+        ]
+        full_name = " ".join(filter(None, parts)).strip()
+        return full_name if full_name else "SIN-NOMBRE"
 
     @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_age(self, obj) -> Optional[int]:
-        if not obj.birthdate:
+        """
+        Calcula la edad si hay fecha de nacimiento válida.
+        """
+        if not obj or not obj.birthdate:
             return None
         today = date.today()
-        return today.year - obj.birthdate.year - (
+        age = today.year - obj.birthdate.year - (
             (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
         )
+        return age if age >= 0 else None
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
     """Serializer completo para la vista detallada"""
     full_name = serializers.SerializerMethodField()
+    age = serializers.SerializerMethodField()
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
 
     class Meta:
@@ -157,6 +173,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "full_name",
+            "age",  # 👈 añadido
             "national_id",
             "first_name",
             "middle_name",
@@ -172,7 +189,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "blood_type",
             "allergies",
             "medical_history",
-            "genetic_predispositions",  # 👈 añadido
+            "genetic_predispositions",
             "active",
             "created_at",
             "updated_at",
@@ -181,7 +198,17 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
-        return " ".join(filter(None, parts))
+        return " ".join(filter(None, parts)) or "SIN-NOMBRE"
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_age(self, obj) -> Optional[int]:
+        if not obj or not obj.birthdate:
+            return None
+        today = date.today()
+        age = today.year - obj.birthdate.year - (
+            (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
+        )
+        return age if age >= 0 else None
 
 
 # --- Prescripciones ---
