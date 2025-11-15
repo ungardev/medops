@@ -2144,19 +2144,35 @@ def generate_report(request, pk: int):
         }
     )
 
-    # Datos institucionales y médico (objetos para .path en template)
+    # Datos institucionales y médico
     institution = InstitutionSettings.objects.first()
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar base (diagnoses y prescriptions con medication, patient con age)
+    # Serializar base
     serializer = MedicalReportSerializer(report)
-    context = dict(serializer.data)  # ReturnDict → dict
+    context = dict(serializer.data)
 
-    # Reforzar contexto con objetos y campos necesarios por el template
+    # Fusionar datos del paciente
+    patient_dict = context.get("patient", {}) or {}
+    patient_obj = appointment.patient
+    context["patient"] = {
+        "id": patient_obj.id,
+        "first_name": patient_obj.first_name,
+        "middle_name": patient_obj.middle_name,
+        "last_name": patient_obj.last_name,
+        "second_last_name": patient_obj.second_last_name,
+        "national_id": patient_obj.national_id,
+        "gender": patient_obj.gender,
+        "email": patient_obj.email,
+        "contact_info": patient_obj.contact_info,
+        "age": patient_dict.get("age"),
+    }
+
+    # Reforzar contexto
     context.update({
-        "appointment": appointment,                           # para notas
-        "institution": institution,                           # objeto para logo.path
+        "appointment": appointment,
+        "institution": institution,
         "doctor": {
             "full_name": doctor.full_name if doctor else "",
             "colegiado_id": doctor.colegiado_id if doctor else "",
@@ -2168,11 +2184,11 @@ def generate_report(request, pk: int):
         "report": report,
     })
 
-    # Renderizar PDF con datos completos
+    # Renderizar PDF
     html = render_to_string("pdf/medical_report.html", context)
     pdf_file = generate_pdf_from_html(html)
 
-    # Guardar como MedicalDocument
+    # Guardar documento
     doc = MedicalDocument.objects.create(
         patient=appointment.patient,
         appointment=appointment,
@@ -2182,7 +2198,6 @@ def generate_report(request, pk: int):
         uploaded_by=str(request.user),
     )
 
-    # Asociar file_url al reporte
     report.file_url = doc.file.url
     report.save(update_fields=["file_url"])
 
@@ -2209,23 +2224,39 @@ def generate_report(request, pk: int):
 def generate_medical_report(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
 
-    # Crear el informe médico institucional
+    # Crear informe
     report = MedicalReport.objects.create(
         appointment=appointment,
         patient=appointment.patient,
         status="generated"
     )
 
-    # Datos institucionales y médico (objetos para .path en template)
+    # Datos institucionales y médico
     institution = InstitutionSettings.objects.first()
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar base (diagnoses y prescriptions con medication, patient con age)
+    # Serializar base
     serializer = MedicalReportSerializer(report)
     context = dict(serializer.data)
 
-    # Reforzar contexto con objetos y campos necesarios por el template
+    # Fusionar datos del paciente
+    patient_dict = context.get("patient", {}) or {}
+    patient_obj = appointment.patient
+    context["patient"] = {
+        "id": patient_obj.id,
+        "first_name": patient_obj.first_name,
+        "middle_name": patient_obj.middle_name,
+        "last_name": patient_obj.last_name,
+        "second_last_name": patient_obj.second_last_name,
+        "national_id": patient_obj.national_id,
+        "gender": patient_obj.gender,
+        "email": patient_obj.email,
+        "contact_info": patient_obj.contact_info,
+        "age": patient_dict.get("age"),
+    }
+
+    # Reforzar contexto
     context.update({
         "appointment": appointment,
         "institution": institution,
@@ -2245,7 +2276,7 @@ def generate_medical_report(request, pk):
     from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    # Guardar PDF en storage
+    # Guardar PDF
     filename = f"medical_report_{report.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -2253,7 +2284,6 @@ def generate_medical_report(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    # Actualizar MedicalReport con URL del archivo
     report.file_url = file_path
     report.save(update_fields=["file_url"])
 
@@ -2283,7 +2313,7 @@ def generate_medical_report(request, pk):
         checksum_sha256=sha256.hexdigest(),
     )
 
-    # Evento de auditoría
+    # Auditoría
     Event.objects.create(
         entity="MedicalReport",
         entity_id=report.id,
