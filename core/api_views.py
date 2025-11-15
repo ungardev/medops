@@ -2109,6 +2109,7 @@ def generate_pdf_from_html(html: str, filename: str = "informe.pdf") -> File:
         # Retornar como File listo para guardar
         return File(tmp, name=filename)
 
+
 @extend_schema(
     request=None,
     responses={201: MedicalReportSerializer}
@@ -2135,27 +2136,39 @@ def generate_report(request, pk: int):
 
     # 🔹 Datos institucionales
     institution = InstitutionSettings.objects.first()
-    doctor = DoctorOperator.objects.first()  # luego filtrar por usuario si aplica
+    doctor = DoctorOperator.objects.first()
+
+    # 🔹 Serializar doctor
+    doctor_data = None
+    if doctor:
+        specialties = doctor.specialties.values_list("name", flat=True)
+        doctor_data = {
+            "full_name": doctor.full_name,
+            "colegiado_id": doctor.colegiado_id,
+            "specialties": list(specialties) if specialties else ["No especificadas"],
+            "signature": doctor.signature,
+        }
 
     # 🔹 Construcción del contenido clínico
     diagnoses = appointment.diagnoses.all()
     treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
     prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
 
-    # 🔹 Renderizar PDF (puedes usar WeasyPrint, xhtml2pdf, ReportLab, etc.)
+    # 🔹 Renderizar PDF
     html = render_to_string("pdf/medical_report.html", {
         "appointment": appointment,
         "patient": appointment.patient,
         "institution": institution,
-        "doctor": doctor,
+        "doctor": doctor_data,   # 👈 dict serializado
         "diagnoses": diagnoses,
         "treatments": treatments,
         "prescriptions": prescriptions,
         "notes": appointment.notes,
         "generated_at": timezone.now(),
+        "report": existing or None,
     })
 
-    pdf_file = generate_pdf_from_html(html)  # 👈 función utilitaria que retorna archivo
+    pdf_file = generate_pdf_from_html(html)
 
     # 🔹 Guardar como MedicalDocument
     doc = MedicalDocument.objects.create(
@@ -2266,12 +2279,12 @@ def generate_medical_report(request, pk):
         appointment=appointment,
         diagnosis=None,
         description="Informe Médico generado automáticamente",
-        category="medical_report",          # 🔹 ahora con choice institucional
-        source="system_generated",          # 🔹 origen blindado
-        origin_panel="consultation",        # 🔹 panel origen
-        template_version="v1.1",            # 🔹 versión de plantilla
-        generated_by=request.user,          # 🔹 usuario autenticado
-        uploaded_by=request.user,           # 🔹 también como uploader
+        category="medical_report",
+        source="system_generated",
+        origin_panel="consultation",
+        template_version="v1.1",
+        generated_by=request.user,
+        uploaded_by=request.user,
         file=django_file,
         mime_type="application/pdf",
         size_bytes=django_file.size,
