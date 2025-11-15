@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 from datetime import datetime, date, timedelta
 from django.conf import settings
 from django.core.files import File
+from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
@@ -2796,123 +2797,134 @@ def specialty_choices_api(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def generate_used_documents(request, pk):
-    """
-    Generate clinical documents for the current consultation:
-    - Treatment
-    - Prescription
-    - Medical tests
-    - Medical referrals
-    Only if items exist in each panel.
-    """
     from .models import (
         Appointment, Treatment, Prescription, MedicalTest,
         MedicalReferral, MedicalDocument, Event
     )
-    from .utils import generate_pdf_document  # make sure this utility is implemented
+    from .utils import generate_pdf_document
 
-    appointment = get_object_or_404(Appointment, pk=pk)
-    patient = appointment.patient
-    user = request.user if request.user.is_authenticated else None
+    try:
+        appointment = get_object_or_404(Appointment, pk=pk)
+        patient = appointment.patient
+        user = request.user if request.user.is_authenticated else None
 
-    generated = []
-    skipped = []
+        generated = []
+        skipped = []
 
-    def register_document(pdf_file, category, diagnosis_obj=None):
-        doc = MedicalDocument.objects.create(
-            patient=patient,
-            appointment=appointment,
-            diagnosis=diagnosis_obj,
-            category=category,
-            file=pdf_file,
-            source="system_generated",
-            origin_panel="consultation",
-            template_version="v1.0",
-            uploaded_by=user,
-            generated_by=user,
-        )
-        Event.objects.create(
-            entity="MedicalDocument",
-            entity_id=doc.id,
-            action="generate_pdf",
-            actor=str(user) if user else "system",
-            metadata={
-                "patient_id": patient.id,
-                "appointment_id": appointment.id,
-                "diagnosis_id": getattr(diagnosis_obj, "id", None),
-                "category": category,
-                "checksum": doc.checksum_sha256,
-            },
-            severity="info",
-            notify=True,
-        )
-        return doc  # 👈 devolver el documento creado
+        def register_document(pdf_file, category, diagnosis_obj=None, description=None):
+            if not pdf_file:
+                raise ValueError(f"PDF generator returned empty file for category={category}")
 
-    # Treatment
-    treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
-    if treatments.exists():
-        pdf = generate_pdf_document("treatment", treatments, appointment)
-        first_item = treatments.first()
-        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        doc = register_document(pdf, "treatment", diagnosis_obj)
-        generated.append({
-            "id": doc.id,
-            "category": doc.category,
-            "description": doc.description,
-            "file_url": doc.file.url,
-        })
-    else:
-        skipped.append("treatment")
+            from django.core.files.base import ContentFile
+            django_file = pdf_file
+            if isinstance(pdf_file, (bytes, bytearray)):
+                django_file = ContentFile(bytes(pdf_file), name=f"{category}_{appointment.id}.pdf")
 
-    # Prescription
-    prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
-    if prescriptions.exists():
-        pdf = generate_pdf_document("prescription", prescriptions, appointment)
-        first_item = prescriptions.first()
-        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        doc = register_document(pdf, "prescription", diagnosis_obj)
-        generated.append({
-            "id": doc.id,
-            "category": doc.category,
-            "description": doc.description,
-            "file_url": doc.file.url,
-        })
-    else:
-        skipped.append("prescription")
+            doc = MedicalDocument.objects.create(
+                patient=patient,
+                appointment=appointment,
+                diagnosis=diagnosis_obj,
+                category=category,
+                description=description or f"{category} document for appointment {appointment.id}",
+                file=django_file,
+                source="system_generated",
+                origin_panel="consultation",
+                template_version="v1.0",
+                uploaded_by=str(user) if user else "system",
+                generated_by=str(user) if user else "system",
+            )
 
-    # Medical tests
-    orders = MedicalTest.objects.filter(appointment=appointment)
-    if orders.exists():
-        pdf = generate_pdf_document("medical_test", orders, appointment)
-        first_item = orders.first()
-        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        doc = register_document(pdf, "medical_test", diagnosis_obj)
-        generated.append({
-            "id": doc.id,
-            "category": doc.category,
-            "description": doc.description,
-            "file_url": doc.file.url,
-        })
-    else:
-        skipped.append("medical_test")
+            Event.objects.create(
+                entity="MedicalDocument",
+                entity_id=doc.id,
+                action="generate_pdf",
+                actor=str(user) if user else "system",
+                metadata={
+                    "patient_id": patient.id,
+                    "appointment_id": appointment.id,
+                    "diagnosis_id": getattr(diagnosis_obj, "id", None),
+                    "category": category,
+                    "checksum": getattr(doc, "checksum_sha256", None),
+                },
+                severity="info",
+                notify=True,
+            )
 
-    # Medical referrals
-    referrals = MedicalReferral.objects.filter(appointment=appointment)
-    if referrals.exists():
-        pdf = generate_pdf_document("medical_referral", referrals, appointment)
-        first_item = referrals.first()
-        diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-        doc = register_document(pdf, "medical_referral", diagnosis_obj)
-        generated.append({
-            "id": doc.id,
-            "category": doc.category,
-            "description": doc.description,
-            "file_url": doc.file.url,
-        })
-    else:
-        skipped.append("medical_referral")
+            try:
+                file_url = doc.file.url
+            except Exception:
+                file_url = f"/media/{doc.file.name}" if getattr(doc.file, "name", None) else None
 
-    return Response({
-        "generated": generated,
-        "skipped": skipped,
-        "message": f"{len(generated)} clinical documents were generated.",
-    }, status=201)
+            return {
+                "id": doc.id,
+                "category": doc.category,
+                "description": doc.description,
+                "file_url": file_url,
+            }
+
+        # Treatment
+        treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
+        if treatments.exists():
+            pdf = generate_pdf_document("treatment", treatments, appointment)
+            first_item = treatments.first()
+            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            generated.append(register_document(pdf, "treatment", diagnosis_obj, "Documento de Tratamientos"))
+        else:
+            skipped.append("treatment")
+
+        # Prescription
+        prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
+        if prescriptions.exists():
+            pdf = generate_pdf_document("prescription", prescriptions, appointment)
+            first_item = prescriptions.first()
+            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            generated.append(register_document(pdf, "prescription", diagnosis_obj, "Documento de Prescripciones"))
+        else:
+            skipped.append("prescription")
+
+        # Medical tests
+        orders = MedicalTest.objects.filter(appointment=appointment)
+        if orders.exists():
+            pdf = generate_pdf_document("medical_test", orders, appointment)
+            first_item = orders.first()
+            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            generated.append(register_document(pdf, "medical_test", diagnosis_obj, "Ordenes de Exámenes"))
+        else:
+            skipped.append("medical_test")
+
+        # Medical referrals
+        referrals = MedicalReferral.objects.filter(appointment=appointment)
+        if referrals.exists():
+            pdf = generate_pdf_document("medical_referral", referrals, appointment)
+            first_item = referrals.first()
+            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            generated.append(register_document(pdf, "medical_referral", diagnosis_obj, "Referencia Médica"))
+        else:
+            skipped.append("medical_referral")
+
+        return Response({
+            "generated": generated,
+            "skipped": skipped,
+            "message": f"{len(generated)} clinical documents were generated.",
+        }, status=201)
+
+    except Exception as e:
+        try:
+            Event.objects.create(
+                entity="Consultation",
+                entity_id=pk,
+                action="generate_documents_error",
+                actor=str(request.user),
+                metadata={"error": str(e)},
+                severity="error",
+                notify=True,
+            )
+        except Exception:
+            pass
+
+        import traceback
+        return Response({
+            "detail": "Error generating consultation documents",
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+        }, status=500)
