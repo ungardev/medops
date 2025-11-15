@@ -18,14 +18,21 @@ export function useDoctorConfig() {
   const mutation = useMutation({
     mutationFn: async (newSettings: Partial<DoctorConfig>) => {
       const formData = new FormData();
+
       if (newSettings.full_name) formData.append("full_name", newSettings.full_name);
       if (newSettings.colegiado_id) formData.append("colegiado_id", newSettings.colegiado_id);
-      if (newSettings.specialty) formData.append("specialty", newSettings.specialty);
       if (newSettings.license) formData.append("license", newSettings.license);
       if (newSettings.email) formData.append("email", newSettings.email);
       if (newSettings.phone) formData.append("phone", newSettings.phone);
       if (newSettings.signature && newSettings.signature instanceof File) {
         formData.append("signature", newSettings.signature);
+      }
+
+      // 🔹 FIX: enviar specialty_ids como lista en multipart
+      if (newSettings.specialty_ids && Array.isArray(newSettings.specialty_ids)) {
+        newSettings.specialty_ids.forEach((id) => {
+          formData.append("specialty_ids", String(id));
+        });
       }
 
       const res = await axios.patch("config/doctor/", formData, {

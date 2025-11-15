@@ -31,12 +31,15 @@
   <div class="section">
     <strong>Médico:</strong> {{ doctor.full_name }}<br>
     Nº Colegiado: {{ doctor.colegiado_id }}<br>
-    Especialidades: 
-    {% if doctor.specialties %}
-      {{ doctor.specialties|join:", " }}
-    {% else %}
-      No especificadas
-    {% endif %}
+    <p><strong>Especialidades:</strong>
+      {% if doctor.specialties %}
+        {% for s in doctor.specialties %}
+          {{ s }}{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      {% else %}
+        No especificadas
+      {% endif %}
+    </p>
     {% if doctor.signature %}
       <div style="margin-top:10px;">
         <img src="{{ doctor.signature.url }}" alt="Firma" style="height:60px;">

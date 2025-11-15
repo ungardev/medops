@@ -2,22 +2,22 @@
 
 // 🔹 Configuración institucional
 export interface InstitutionSettings {
-  id?: number;
-  name: string;
-  address: string;
-  phone: string;
-  tax_id: string;
-  logo?: string | File;
+  id?: number;                 // opcional para evitar errores en estado inicial
+  name: string;                // nombre de la clínica/institución
+  address: string;             // dirección física
+  phone: string;               // teléfono de contacto
+  tax_id: string;              // RIF / identificación fiscal
+  logo?: string | File;        // puede ser URL (string) o archivo (File) para upload
 }
 
 // 🔹 Configuración del médico operador
 export interface DoctorConfig {
-  id?: number;
-  full_name?: string;
-  colegiado_id?: string;
-  specialty_ids?: number[];   // ✅ IDs numéricos que se envían al backend
-  license?: string;
-  email?: string;
-  phone?: string;
-  signature?: string | File;
+  id?: number;                 // opcional para evitar errores en estado inicial
+  full_name?: string;          // nombre completo del médico
+  colegiado_id?: string;       // número de colegiado
+  specialty_ids?: number[];    // ✅ arreglo de IDs numéricos que se envían al backend
+  license?: string;            // número de licencia
+  email?: string;              // correo electrónico
+  phone?: string;              // teléfono de contacto
+  signature?: string | File;   // puede ser URL (string) o archivo (File) para upload
 }
