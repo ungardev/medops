@@ -847,6 +847,8 @@ class DashboardSummarySerializer(serializers.Serializer):
 class MedicalReportSerializer(serializers.ModelSerializer):
     institution = serializers.SerializerMethodField()
     doctor = serializers.SerializerMethodField()
+    diagnoses = serializers.SerializerMethodField()
+    prescriptions = serializers.SerializerMethodField()
 
     class Meta:
         model = MedicalReport
@@ -857,8 +859,10 @@ class MedicalReportSerializer(serializers.ModelSerializer):
             "created_at",
             "status",
             "file_url",
-            "institution",  # 🔹 datos institucionales
-            "doctor",       # 🔹 datos del médico operador
+            "institution",     # 🔹 datos institucionales
+            "doctor",          # 🔹 datos del médico operador
+            "diagnoses",       # ✅ lista completa de diagnósticos
+            "prescriptions",   # ✅ lista completa de prescripciones
         ]
 
     def get_institution(self, obj):
@@ -867,7 +871,49 @@ class MedicalReportSerializer(serializers.ModelSerializer):
 
     def get_doctor(self, obj):
         doctor = DoctorOperator.objects.first()
-        return DoctorOperatorSerializer(doctor).data if doctor else None
+        if not doctor:
+            return None
+
+        specialties = doctor.specialties.values_list("name", flat=True)
+        return {
+            "full_name": doctor.full_name,
+            "colegiado_id": doctor.colegiado_id,
+            "specialties": list(specialties) if specialties else ["No especificadas"],
+        }
+
+    def get_diagnoses(self, obj):
+        diagnoses = obj.appointment.diagnoses.all()
+        return [
+            {
+                "icd_code": d.icd_code,
+                "title": d.title,
+                "description": d.description,
+            }
+            for d in diagnoses
+        ]
+
+    def get_prescriptions(self, obj):
+        prescriptions = Prescription.objects.filter(diagnosis__appointment=obj.appointment)
+        return [
+            {
+                "medication": (
+                    p.medication_catalog.name if p.medication_catalog
+                    else p.medication_text if p.medication_text
+                    else "No especificado"
+                ),
+                "dosage": (
+                    f"{p.dosage}{p.unit}" if p.dosage
+                    else p.unit if p.unit
+                    else "No especificado"
+                ),
+                "frequency": (
+                    p.get_frequency_display() if p.frequency
+                    else "No especificada"
+                ),
+                "duration": p.duration or "No especificada",
+            }
+            for p in prescriptions
+        ]
 
 
 class ICD11EntrySerializer(serializers.ModelSerializer):

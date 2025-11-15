@@ -800,7 +800,6 @@ class InstitutionSettings(models.Model):
         return self.name
 
 
-# src/core/models.py
 class DoctorOperator(models.Model):
     full_name = models.CharField(max_length=255)
     colegiado_id = models.CharField(

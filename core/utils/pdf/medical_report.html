@@ -30,7 +30,13 @@
 
   <div class="section">
     <strong>Médico:</strong> {{ doctor.full_name }}<br>
-    Especialidad: {{ doctor.specialty }} - Nº Colegiado: {{ doctor.colegiado_id }}
+    Nº Colegiado: {{ doctor.colegiado_id }}<br>
+    Especialidades: 
+    {% if doctor.specialties %}
+      {{ doctor.specialties|join:", " }}
+    {% else %}
+      No especificadas
+    {% endif %}
     {% if doctor.signature %}
       <div style="margin-top:10px;">
         <img src="{{ doctor.signature.url }}" alt="Firma" style="height:60px;">
@@ -41,12 +47,20 @@
   <div class="section">
     <h2>Diagnósticos</h2>
     <table>
-      <tr><th>Código</th><th>Descripción</th></tr>
-      {% for d in diagnoses %}
-      <tr><td>{{ d.code }}</td><td>{{ d.description }}</td></tr>
-      {% empty %}
-      <tr><td colspan="2">Sin diagnósticos</td></tr>
-      {% endfor %}
+      <thead>
+        <tr><th>Código</th><th>Nombre</th><th>Descripción</th></tr>
+      </thead>
+      <tbody>
+        {% for d in diagnoses %}
+        <tr>
+          <td>{{ d.icd_code }}</td>
+          <td>{{ d.title }}</td>
+          <td>{{ d.description }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">Sin diagnósticos</td></tr>
+        {% endfor %}
+      </tbody>
     </table>
   </div>
 
@@ -64,12 +78,21 @@
   <div class="section">
     <h2>Prescripciones</h2>
     <table>
-      <tr><th>Medicamento</th><th>Dosis</th><th>Duración</th></tr>
-      {% for p in prescriptions %}
-      <tr><td>{{ p.medication }}</td><td>{{ p.dosage }}</td><td>{{ p.duration }}</td></tr>
-      {% empty %}
-      <tr><td colspan="3">Sin prescripciones</td></tr>
-      {% endfor %}
+      <thead>
+        <tr><th>Medicamento</th><th>Dosis</th><th>Frecuencia</th><th>Duración</th></tr>
+      </thead>
+      <tbody>
+        {% for p in prescriptions %}
+        <tr>
+          <td>{{ p.medication }}</td>
+          <td>{{ p.dosage }}</td>
+          <td>{{ p.frequency }}</td>
+          <td>{{ p.duration }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">Sin prescripciones</td></tr>
+        {% endfor %}
+      </tbody>
     </table>
   </div>
 
