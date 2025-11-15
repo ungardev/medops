@@ -29,6 +29,8 @@ from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.drawing.image import Image as XLImage
 
 # PDF
+from weasyprint import HTML
+import hashlib
 import io
 import os
 import logging
@@ -81,6 +83,15 @@ class GeneticPredispositionViewSet(viewsets.ModelViewSet):
 
 def safe_json(value):
     return float(value) if isinstance(value, Decimal) else value
+
+
+def generate_audit_code(appointment, patient):
+    """
+    Genera un código de auditoría único y trazable para documentos clínicos.
+    Combina ID de consulta, ID de paciente y timestamp.
+    """
+    raw = f"{appointment.id}-{patient.id}-{timezone.now().isoformat()}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]  # 12 caracteres
 
 # --- Serializers auxiliares para PATCH/POST ---
 class AppointmentStatusUpdateSerializer(serializers.Serializer):
@@ -2791,14 +2802,22 @@ def specialty_choices_api(request):
 
 
 def generate_pdf_document(category: str, queryset, appointment):
-    """
-    Genera un PDF simple para la categoría indicada.
-    Retorna un ContentFile listo para guardar en MedicalDocument.file.
-    """
-    # Aquí deberías usar tu motor real de PDF (WeasyPrint, ReportLab, etc.)
-    # Por ahora, un placeholder en bytes para que funcione:
-    content = f"PDF for {category} - Appointment {appointment.id}".encode("utf-8")
-    return ContentFile(content, name=f"{category}_{appointment.id}.pdf")
+    patient = appointment.patient
+    audit_code = generate_audit_code(appointment, patient)
+
+    context = {
+        "appointment": appointment,
+        "patient": patient,
+        "items": queryset,
+        "category": category,
+        "generated_at": timezone.now(),
+        "audit_code": audit_code,
+    }
+
+    html_string = render_to_string(f"documents/{category}.html", context)
+    pdf_bytes = HTML(string=html_string).write_pdf()
+
+    return ContentFile(pdf_bytes or b"", name=f"{category}_{appointment.id}.pdf"), audit_code
 
 
 @extend_schema(
@@ -2820,10 +2839,15 @@ def generate_used_documents(request, pk):
             if not pdf_file:
                 raise ValueError(f"PDF generator returned empty file for category={category}")
 
+            # Si viene como bytes/bytearray, lo envolvemos en ContentFile
             django_file = pdf_file
             if isinstance(pdf_file, (bytes, bytearray)):
                 django_file = ContentFile(bytes(pdf_file), name=f"{category}_{appointment.id}.pdf")
 
+            # ⚔️ Generar código de auditoría único
+            audit_code = generate_audit_code(appointment, patient)
+
+            # Crear el documento clínico con metadata completa
             doc = MedicalDocument.objects.create(
                 patient=patient,
                 appointment=appointment,
@@ -2834,10 +2858,12 @@ def generate_used_documents(request, pk):
                 source="system_generated",
                 origin_panel="consultation",
                 template_version="v1.0",
-                uploaded_by=user if user else None,   # 👈 ahora guarda User o NULL
-                generated_by=user if user else None,  # 👈 igual aquí
+                uploaded_by=user if user else None,   # guarda User o NULL
+                generated_by=user if user else None,  # guarda User o NULL
+                audit_code=audit_code,                # 👈 nuevo campo persistido
             )
 
+            # Registrar evento de auditoría institucional
             Event.objects.create(
                 entity="MedicalDocument",
                 entity_id=doc.id,
@@ -2849,11 +2875,13 @@ def generate_used_documents(request, pk):
                     "diagnosis_id": getattr(diagnosis_obj, "id", None),
                     "category": category,
                     "checksum": getattr(doc, "checksum_sha256", None),
+                    "audit_code": audit_code,  # 👈 también en metadata del evento
                 },
                 severity="info",
                 notify=True,
             )
 
+            # URL defensiva del archivo
             try:
                 file_url = doc.file.url
             except Exception:
@@ -2864,6 +2892,7 @@ def generate_used_documents(request, pk):
                 "category": doc.category,
                 "description": doc.description,
                 "file_url": file_url,
+                "audit_code": audit_code,  # 👈 lo devolvemos en la respuesta
             }
         
         # Treatment

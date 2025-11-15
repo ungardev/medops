@@ -583,6 +583,7 @@ class DocumentSource(models.TextChoices):
     SYSTEM_GENERATED = "system_generated", "Generado por el sistema"
     USER_UPLOADED = "user_uploaded", "Subido por usuario"
 
+
 class MedicalDocument(models.Model):
     patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="documents")
     appointment = models.ForeignKey("Appointment", on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
@@ -612,6 +613,9 @@ class MedicalDocument(models.Model):
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="uploaded_documents")
     generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="generated_documents")
 
+    # ⚔️ Nuevo campo para trazabilidad
+    audit_code = models.CharField(max_length=64, blank=True, null=True)
+
     class Meta:
         verbose_name = "Medical Document"
         verbose_name_plural = "Medical Documents"
@@ -632,13 +636,10 @@ class MedicalDocument(models.Model):
                 pass
         super().save(*args, **kwargs)
 
-    # Reglas de negocio fuertes
     def clean(self):
         errors = {}
-        # Si es system_generated, debe ser PDF
         if self.source == DocumentSource.SYSTEM_GENERATED and self.mime_type != "application/pdf":
             errors["mime_type"] = "Documentos generados por el sistema deben ser PDF."
-        # Categorías operativas requieren appointment
         if self.category in {
             DocumentCategory.PRESCRIPTION,
             DocumentCategory.TREATMENT,

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tratamiento</title>
+  <style>
+    body { font-family: sans-serif; margin: 40px; }
+    header { text-align: center; margin-bottom: 30px; }
+    h1 { font-size: 22px; margin-bottom: 10px; }
+    .logo { height: 60px; margin-bottom: 10px; }
+    .section { margin-bottom: 20px; }
+    footer { margin-top: 40px; font-size: 12px; text-align: center; }
+    .audit { margin-top: 20px; font-size: 10px; color: #555; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="{{ appointment.institution.logo_url }}" class="logo" alt="Logo institucional">
+    <h1>Documento de Tratamientos</h1>
+    <p>{{ appointment.institution.name }}</p>
+  </header>
+
+  <div class="section">
+    <strong>Paciente:</strong> {{ patient.full_name }}<br>
+    <strong>Consulta #:</strong> {{ appointment.id }}<br>
+    <strong>Fecha:</strong> {{ generated_at|date:"d/m/Y H:i" }}
+  </div>
+
+  <div class="section">
+    <strong>Tratamientos indicados:</strong>
+    <ul>
+      {% for item in items %}
+        <li>{{ item.description }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <footer>
+    Documento generado automáticamente por MedOps<br>
+    Firma del médico: ______________________
+    <div class="audit">
+      Código de auditoría: {{ appointment.audit_code }}
+    </div>
+  </footer>
+</body>
+</html>
