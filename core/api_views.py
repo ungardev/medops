@@ -2597,8 +2597,9 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
                 "appointment_id": test.appointment_id,
-                "diagnosis_id": test.diagnosis_id,
+                "diagnosis_id": getattr(test, "diagnosis_id", None),   # 🔹 blindado
                 "test_type": test.test_type,
+                "description": getattr(test, "description", None),    # 🔹 agregado
                 "urgency": test.urgency,
                 "status": test.status,
             },
@@ -2615,8 +2616,9 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
             actor=str(self.request.user) if self.request.user.is_authenticated else "system",
             metadata={
                 "appointment_id": test.appointment_id,
-                "diagnosis_id": test.diagnosis_id,
+                "diagnosis_id": getattr(test, "diagnosis_id", None),   # 🔹 blindado
                 "test_type": test.test_type,
+                "description": getattr(test, "description", None),    # 🔹 agregado
                 "urgency": test.urgency,
                 "status": test.status,
             },
