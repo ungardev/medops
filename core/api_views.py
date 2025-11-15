@@ -2212,6 +2212,17 @@ def generate_medical_report(request, pk):
     institution = InstitutionSettings.objects.first()
     doctor = DoctorOperator.objects.first()
 
+    # 🔹 Serializar doctor para que el template reciba lista de strings en specialties
+    doctor_data = None
+    if doctor:
+        specialties = doctor.specialties.values_list("name", flat=True)
+        doctor_data = {
+            "full_name": doctor.full_name,
+            "colegiado_id": doctor.colegiado_id,
+            "specialties": list(specialties) if specialties else ["No especificadas"],
+            "signature": doctor.signature,
+        }
+
     context = {
         "appointment": appointment,
         "patient": appointment.patient,
@@ -2219,7 +2230,7 @@ def generate_medical_report(request, pk):
         "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
         "prescriptions": Prescription.objects.filter(diagnosis__appointment=appointment),
         "institution": institution,
-        "doctor": doctor,
+        "doctor": doctor_data,   # 👈 dict serializado
         "report": report,
         "generated_at": timezone.now(),
     }
