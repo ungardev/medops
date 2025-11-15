@@ -2149,25 +2149,14 @@ def generate_report(request, pk: int):
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar base
+    # Serializar base del reporte
     serializer = MedicalReportSerializer(report)
     context = dict(serializer.data)
 
-    # Fusionar datos del paciente
-    patient_dict = context.get("patient", {}) or {}
-    patient_obj = appointment.patient
-    context["patient"] = {
-        "id": patient_obj.id,
-        "first_name": patient_obj.first_name,
-        "middle_name": patient_obj.middle_name,
-        "last_name": patient_obj.last_name,
-        "second_last_name": patient_obj.second_last_name,
-        "national_id": patient_obj.national_id,
-        "gender": patient_obj.gender,
-        "email": patient_obj.email,
-        "contact_info": patient_obj.contact_info,
-        "age": patient_dict.get("age"),
-    }
+    # Serializar paciente completo (incluye age)
+    from .serializers import PatientDetailSerializer
+    patient_serialized = PatientDetailSerializer(appointment.patient).data
+    context["patient"] = patient_serialized
 
     # Reforzar contexto
     context.update({
@@ -2236,25 +2225,14 @@ def generate_medical_report(request, pk):
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar base
+    # Serializar base del reporte
     serializer = MedicalReportSerializer(report)
     context = dict(serializer.data)
 
-    # Fusionar datos del paciente
-    patient_dict = context.get("patient", {}) or {}
-    patient_obj = appointment.patient
-    context["patient"] = {
-        "id": patient_obj.id,
-        "first_name": patient_obj.first_name,
-        "middle_name": patient_obj.middle_name,
-        "last_name": patient_obj.last_name,
-        "second_last_name": patient_obj.second_last_name,
-        "national_id": patient_obj.national_id,
-        "gender": patient_obj.gender,
-        "email": patient_obj.email,
-        "contact_info": patient_obj.contact_info,
-        "age": patient_dict.get("age"),
-    }
+    # Serializar paciente completo (incluye age)
+    from .serializers import PatientDetailSerializer
+    patient_serialized = PatientDetailSerializer(appointment.patient).data
+    context["patient"] = patient_serialized
 
     # Reforzar contexto
     context.update({
