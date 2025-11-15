@@ -2149,24 +2149,23 @@ def generate_report(request, pk: int):
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar base (diagnoses y prescriptions con medication)
+    # Serializar base (diagnoses y prescriptions con medication, patient con age)
     serializer = MedicalReportSerializer(report)
     context = dict(serializer.data)  # ReturnDict → dict
 
     # Reforzar contexto con objetos y campos necesarios por el template
     context.update({
-        "appointment": appointment,                           # para notas y acceso directo
-        "patient": appointment.patient,                       # objeto completo (first_name, last_name, etc.)
+        "appointment": appointment,                           # para notas
         "institution": institution,                           # objeto para logo.path
         "doctor": {
             "full_name": doctor.full_name if doctor else "",
             "colegiado_id": doctor.colegiado_id if doctor else "",
             "specialties": specialties if specialties else ["No especificadas"],
-            "signature": doctor.signature if (doctor and doctor.signature) else None,  # objeto FileField para .path
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
         },
-        "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),  # restaurar tratamientos
-        "generated_at": timezone.now(),                      # para "Emitido el"
-        "report": report,                                    # objeto para report.id en footer
+        "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
+        "generated_at": timezone.now(),
+        "report": report,
     })
 
     # Renderizar PDF con datos completos
@@ -2222,14 +2221,13 @@ def generate_medical_report(request, pk):
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar base (diagnoses y prescriptions con medication)
+    # Serializar base (diagnoses y prescriptions con medication, patient con age)
     serializer = MedicalReportSerializer(report)
-    context = dict(serializer.data)  # ReturnDict → dict
+    context = dict(serializer.data)
 
     # Reforzar contexto con objetos y campos necesarios por el template
     context.update({
         "appointment": appointment,
-        "patient": appointment.patient,
         "institution": institution,
         "doctor": {
             "full_name": doctor.full_name if doctor else "",
