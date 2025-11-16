@@ -2400,6 +2400,27 @@ def generate_prescription_pdf(request, pk):
     diagnosis = prescription.diagnosis
     appointment = diagnosis.appointment
     patient = appointment.patient
+    institution = InstitutionSettings.objects.first()
+
+    # Items de la prescripción (ajusta el queryset según tu modelo)
+    # Suposición: Prescription tiene relación `items` con campos: medication, dosage, unit, route, frequency, duration, notes
+    items = getattr(prescription, "items", None)
+    if callable(items):
+        items = items.all()
+    elif items is None:
+        items = []
+
+    generated_at = timezone.now()
+    audit_code = prescription.id  # Puedes cambiar a doc.id si prefieres el ID del documento.
+
+    # QR institucional (compacto, sin dependencias de archivo)
+    import qrcode
+    qr_payload = f"Consulta:{appointment.id}|Audit:{audit_code}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
 
     context = {
         "prescription": prescription,
@@ -2407,10 +2428,16 @@ def generate_prescription_pdf(request, pk):
         "appointment": appointment,
         "patient": patient,
         "doctor": request.user,
-        "institution": InstitutionSettings.objects.first(),
+        "institution": institution,
+        "items": items,
+        "generated_at": generated_at,
+        "audit_code": audit_code,
+        "qr_code_url": qr_code_url,
     }
 
-    html_string = render_to_string("pdf/prescription.html", context)
+    # Usa la ruta correcta del template
+    html_string = render_to_string("documents/prescription.html", context)
+
     from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
@@ -2424,7 +2451,6 @@ def generate_prescription_pdf(request, pk):
     from django.core.files import File
     django_file = File(open(full_path, "rb"), name=filename)
 
-    import hashlib
     sha256 = hashlib.sha256()
     for chunk in django_file.chunks():
         sha256.update(chunk)
@@ -2437,13 +2463,14 @@ def generate_prescription_pdf(request, pk):
         category="prescription",
         source="system_generated",
         origin_panel="prescription_panel",
-        template_version="v1.1",
+        template_version="v1.2",
         generated_by=request.user,
         uploaded_by=request.user,
         file=django_file,
         mime_type="application/pdf",
         size_bytes=django_file.size,
         checksum_sha256=sha256.hexdigest(),
+        audit_code=str(audit_code),  # si tu modelo tiene el campo, guarda aquí el código
     )
 
     Event.objects.create(
@@ -2460,31 +2487,50 @@ def generate_prescription_pdf(request, pk):
 
 
 @extend_schema(
-    responses={201: TreatmentSerializer},
-    description="Genera un plan de tratamiento en PDF y lo registra como documento clínico."
+    responses={201: MedicalTestSerializer},
+    description="Genera una orden de examen médico en PDF y la registra como documento clínico."
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def generate_treatment_pdf(request, pk):
-    treatment = get_object_or_404(Treatment, pk=pk)
-    diagnosis = treatment.diagnosis
-    appointment = diagnosis.appointment
+def generate_medical_test_order_pdf(request, pk):
+    medical_test = get_object_or_404(MedicalTest, pk=pk)
+    appointment = medical_test.appointment
     patient = appointment.patient
+    diagnosis = medical_test.diagnosis
+    institution = InstitutionSettings.objects.first()
+
+    from django.utils import timezone
+    generated_at = timezone.now()
+    audit_code = medical_test.id
+
+    # QR institucional
+    import qrcode, base64
+    from io import BytesIO
+    qr_payload = f"Consulta:{appointment.id}|Test:{medical_test.id}|Audit:{audit_code}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
 
     context = {
-        "treatment": treatment,
-        "diagnosis": diagnosis,
+        "medical_test": medical_test,
         "appointment": appointment,
         "patient": patient,
+        "diagnosis": diagnosis,
         "doctor": request.user,
-        "institution": InstitutionSettings.objects.first(),
+        "institution": institution,
+        "generated_at": generated_at,
+        "audit_code": audit_code,
+        "qr_code_url": qr_code_url,
     }
 
-    html_string = render_to_string("pdf/treatment.html", context)
+    # Renderizar HTML → PDF
+    html_string = render_to_string("documents/medical_test_order.html", context)
     from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    filename = f"treatment_{treatment.id}.pdf"
+    filename = f"medical_test_order_{medical_test.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
     os.makedirs(os.path.dirname(full_path), exist_ok=True)
@@ -2503,17 +2549,118 @@ def generate_treatment_pdf(request, pk):
         patient=patient,
         appointment=appointment,
         diagnosis=diagnosis,
-        description="Plan de tratamiento generado automáticamente",
-        category="treatment_plan",
+        description="Orden de examen médico generada automáticamente",
+        category="medical_test_order",
         source="system_generated",
-        origin_panel="treatment_panel",
-        template_version="v1.1",
+        origin_panel="medical_tests_panel",
+        template_version="v1.0",
         generated_by=request.user,
         uploaded_by=request.user,
         file=django_file,
         mime_type="application/pdf",
         size_bytes=django_file.size,
         checksum_sha256=sha256.hexdigest(),
+        audit_code=str(audit_code),
+    )
+
+    Event.objects.create(
+        entity="MedicalDocument",
+        entity_id=doc.id,
+        action="generate_medical_test_order",
+        actor=str(request.user),
+        metadata={"appointment_id": appointment.id, "patient_id": patient.id, "medical_test_id": medical_test.id},
+        severity="info",
+        notify=True
+    )
+
+    return Response(MedicalTestSerializer(medical_test).data, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(
+    responses={201: TreatmentSerializer},
+    description="Genera un plan de tratamiento en PDF y lo registra como documento clínico."
+)
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_treatment_pdf(request, pk):
+    from django.utils import timezone
+    from django.template.loader import render_to_string
+    from django.shortcuts import get_object_or_404
+    from weasyprint import HTML
+    from django.core.files import File
+    import os, hashlib, base64
+    from io import BytesIO
+    import qrcode
+
+    treatment = get_object_or_404(Treatment, pk=pk)
+    diagnosis = treatment.diagnosis
+    appointment = diagnosis.appointment
+    patient = appointment.patient
+    institution = InstitutionSettings.objects.first()
+
+    # Items del plan (ajusta según tu modelo: treatment.items -> description, notes, etc.)
+    items = getattr(treatment, "items", None)
+    if callable(items):
+        items = items.all()
+    elif items is None:
+        items = []
+
+    generated_at = timezone.now()
+    audit_code = treatment.id  # Puedes cambiar a doc.id si prefieres el ID del documento.
+
+    # QR institucional embebido (data URI)
+    qr_payload = f"Consulta:{appointment.id}|Treatment:{treatment.id}|Audit:{audit_code}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
+
+    context = {
+        "treatment": treatment,
+        "diagnosis": diagnosis,
+        "appointment": appointment,
+        "patient": patient,
+        "doctor": request.user,
+        "institution": institution,
+        "items": items,
+        "generated_at": generated_at,
+        "audit_code": audit_code,
+        "qr_code_url": qr_code_url,
+    }
+
+    html_string = render_to_string("documents/treatment.html", context)
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+
+    filename = f"treatment_{treatment.id}.pdf"
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes or b"")
+
+    django_file = File(open(full_path, "rb"), name=filename)
+
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
+    doc = MedicalDocument.objects.create(
+        patient=patient,
+        appointment=appointment,
+        diagnosis=diagnosis,
+        description="Plan de tratamiento generado automáticamente",
+        category="treatment_plan",
+        source="system_generated",
+        origin_panel="treatment_panel",
+        template_version="v1.2",
+        generated_by=request.user,
+        uploaded_by=request.user,
+        file=django_file,
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
+        audit_code=str(audit_code),
     )
 
     Event.objects.create(
