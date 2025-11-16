@@ -2225,7 +2225,7 @@ def generate_report(request, pk: int):
 def generate_medical_report(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
 
-    # Crear informe
+    # Crear informe institucional
     report = MedicalReport.objects.create(
         appointment=appointment,
         patient=appointment.patient,
@@ -2246,7 +2246,7 @@ def generate_medical_report(request, pk):
     patient_serialized = PatientDetailSerializer(appointment.patient).data
     context["patient"] = patient_serialized
 
-    # Reforzar contexto
+    # Reforzar contexto clínico
     context.update({
         "appointment": appointment,
         "institution": institution,
@@ -2257,6 +2257,9 @@ def generate_medical_report(request, pk):
             "signature": doctor.signature if (doctor and doctor.signature) else None,
         },
         "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
+        "prescriptions": Prescription.objects.filter(diagnosis__appointment=appointment),
+        "tests": MedicalTest.objects.filter(appointment=appointment),
+        "referrals": MedicalReferral.objects.filter(appointment=appointment),
         "generated_at": timezone.now(),
         "report": report,
     })
@@ -2266,7 +2269,7 @@ def generate_medical_report(request, pk):
     from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    # Guardar PDF
+    # Guardar PDF en storage
     filename = f"medical_report_{report.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -2274,6 +2277,7 @@ def generate_medical_report(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
+    # Actualizar MedicalReport con URL del archivo
     report.file_url = file_path
     report.save(update_fields=["file_url"])
 
@@ -2303,7 +2307,7 @@ def generate_medical_report(request, pk):
         checksum_sha256=sha256.hexdigest(),
     )
 
-    # Auditoría
+    # Evento de auditoría institucional
     Event.objects.create(
         entity="MedicalReport",
         entity_id=report.id,

@@ -109,6 +109,32 @@
   </div>
 
   <div class="section">
+    <h2>Órdenes de Exámenes Médicos</h2>
+    {% if tests %}
+      <ul>
+        {% for test in tests %}
+        <li>{{ test.name }}{% if test.notes %} — {{ test.notes }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No hay órdenes de exámenes en esta consulta.</p>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2>Referencias Médicas</h2>
+    {% if referrals %}
+      <ul>
+        {% for ref in referrals %}
+        <li>{{ ref.notes }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No hay referencias médicas en esta consulta.</p>
+    {% endif %}
+  </div>
+
+  <div class="section">
     <h2>Notas</h2>
     <p>{{ appointment.notes|default:"Sin notas" }}</p>
   </div>
@@ -120,4 +146,3 @@
   </footer>
 </body>
 </html>
-
