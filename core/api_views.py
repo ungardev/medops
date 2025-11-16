@@ -3148,6 +3148,10 @@ def generate_pdf_document(category: str, queryset, appointment):
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
+    # Helper defensivo
+    def safe(val, default=""):
+        return val if val is not None else default
+
     # Normalización de items según categoría
     items = []
     lab_tests, image_tests = [], []
@@ -3161,22 +3165,22 @@ def generate_pdf_document(category: str, queryset, appointment):
             if getattr(p, "medication_catalog", None):
                 med_name = getattr(p.medication_catalog, "name", "") or getattr(p.medication_catalog, "title", "")
             if not med_name:
-                med_name = getattr(p, "medication_text", "") or getattr(p, "medication", "")
+                med_name = safe(getattr(p, "medication_text", None)) or safe(getattr(p, "medication", None))
             items.append({
                 "medication": med_name,
-                "dosage": p.dosage,
-                "unit": unit_label(p.unit),
-                "route": route_label(p.route),
-                "frequency": freq_label(p.frequency),
-                "duration": p.duration,
-                "notes": getattr(p, "notes", ""),
+                "dosage": safe(p.dosage),
+                "unit": unit_label(safe(p.unit)),
+                "route": route_label(safe(p.route)),
+                "frequency": freq_label(safe(p.frequency)),
+                "duration": safe(p.duration),
+                "notes": safe(getattr(p, "notes", None)),
             })
 
     elif category == "treatment":
         for t in queryset:
             items.append({
-                "description": getattr(t, "plan", "") or getattr(t, "description", ""),
-                "notes": getattr(t, "notes", ""),
+                "description": safe(getattr(t, "plan", None)) or safe(getattr(t, "description", None)),
+                "notes": safe(getattr(t, "notes", None)),
             })
 
     elif category == "medical_test":
@@ -3185,10 +3189,10 @@ def generate_pdf_document(category: str, queryset, appointment):
         def type_label(val): return dict(MedicalTest.TEST_TYPE_CHOICES).get(val, val)
         for t in queryset:
             row = {
-                "type": type_label(t.test_type),
-                "description": t.description or "Sin descripción",
-                "urgency": urgency_label(t.urgency),
-                "status": status_label(t.status),
+                "type": type_label(safe(t.test_type)),
+                "description": safe(t.description, "Sin descripción"),
+                "urgency": urgency_label(safe(t.urgency)),
+                "status": status_label(safe(t.status)),
             }
             if t.test_type in ["blood_test", "urine_test", "stool_test", "microbiology_culture", "biopsy", "genetic_test"]:
                 lab_tests.append(row)
@@ -3199,11 +3203,11 @@ def generate_pdf_document(category: str, queryset, appointment):
         for r in queryset:
             spec_names = [s.name for s in r.specialties.all()] if hasattr(r, "specialties") else []
             items.append({
-                "notes": r.reason or r.notes,
-                "referred_to": r.referred_to,
-                "urgency": getattr(r, "get_urgency_display", lambda: r.urgency)(),
-                "status": getattr(r, "get_status_display", lambda: r.status)(),
-                "specialties": spec_names,
+                "notes": safe(r.reason) or safe(r.notes),
+                "referred_to": safe(r.referred_to),
+                "urgency": getattr(r, "get_urgency_display", lambda: safe(r.urgency))(),
+                "status": getattr(r, "get_status_display", lambda: safe(r.status))(),
+                "specialties": spec_names or [],
             })
 
     # Mapear categoría a template real
@@ -3214,7 +3218,7 @@ def generate_pdf_document(category: str, queryset, appointment):
         "medical_referral": "documents/medical_referral.html",
     }
     tpl = template_map.get(category)
-    if tpl is None:
+    if not tpl:
         raise ValueError(f"No existe template para la categoría {category}")
 
     context = {
