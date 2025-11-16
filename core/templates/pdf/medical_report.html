@@ -3,15 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <style>
-    body { font-family: "DejaVu Sans", sans-serif; font-size: 11pt; }
+    body { font-family: "DejaVu Sans", sans-serif; font-size: 11pt; margin: 20px; }
     header { text-align: center; border-bottom: 1px solid #000; margin-bottom: 15px; }
     h1 { font-size: 14pt; margin: 0; }
-    h2 { font-size: 12pt; margin: 6px 0; }
-    .section { margin-bottom: 8px; }
+    h2 { font-size: 12pt; margin: 6px 0; border-bottom: 1px solid #ccc; }
+    .section { margin-bottom: 10px; }
     table { width: 100%; border-collapse: collapse; margin-top: 4px; font-size: 10pt; }
-    th, td { border: 1px solid #000; padding: 3px; text-align: left; }
-    footer { margin-top: 15px; font-size: 9pt; text-align: center; border-top: 1px solid #000; }
-    p { white-space: pre-wrap; margin: 3px 0; }
+    th, td { border: 1px solid #000; padding: 3px; }
+    th { background: #f0f0f0; }
+    td.num { text-align: right; }
+    ul { margin: 4px 0; padding-left: 18px; }
+    .empty { color: #666; font-style: italic; }
+    footer { margin-top: 20px; font-size: 9pt; text-align: center; border-top: 1px solid #000; padding-top: 6px; }
+    .qr { margin-top: 8px; }
   </style>
 </head>
 <body>
@@ -23,6 +27,7 @@
     <h1>{{ institution.name }}</h1>
     <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
     <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
+    <p><strong>Consulta #{{ appointment.id }} — Código de auditoría: {{ report.id }}</strong></p>
   </header>
 
   <div class="section">
@@ -61,7 +66,7 @@
           <td>{{ d.description }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="3">Sin diagnósticos</td></tr>
+        <tr><td colspan="3" class="empty">Sin diagnósticos</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -73,7 +78,7 @@
       {% for t in treatments %}
       <li>{{ t.plan }}</li>
       {% empty %}
-      <li>Sin tratamientos</li>
+      <li class="empty">Sin tratamientos</li>
       {% endfor %}
     </ul>
   </div>
@@ -95,14 +100,14 @@
         {% for p in prescriptions %}
         <tr>
           <td>{{ p.medication }}</td>
-          <td>{{ p.dosage }}</td>
+          <td class="num">{{ p.dosage }}</td>
           <td>{{ p.unit }}</td>
           <td>{{ p.route }}</td>
           <td>{{ p.frequency }}</td>
           <td>{{ p.duration }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="6">Sin prescripciones</td></tr>
+        <tr><td colspan="6" class="empty">Sin prescripciones</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -122,7 +127,7 @@
         {% endfor %}
       </ul>
     {% else %}
-      <p>No hay órdenes de exámenes en esta consulta.</p>
+      <p class="empty">No hay órdenes de exámenes en esta consulta.</p>
     {% endif %}
   </div>
 
@@ -141,7 +146,7 @@
         {% endfor %}
       </ul>
     {% else %}
-      <p>No hay referencias médicas en esta consulta.</p>
+      <p class="empty">No hay referencias médicas en esta consulta.</p>
     {% endif %}
   </div>
 
@@ -154,6 +159,10 @@
     Este informe médico forma parte del expediente clínico institucional.<br>
     Emitido por {{ doctor.full_name }} - {{ institution.name }}<br>
     Código de auditoría: {{ report.id }}
+    <div class="qr">
+      <!-- QR institucional: puedes renderizarlo con librería que genere QR a partir de audit_code+appointment.id -->
+      <img src="{{ qr_code_url }}" alt="QR Auditoría" style="height:80px;">
+    </div>
   </footer>
 </body>
 </html>

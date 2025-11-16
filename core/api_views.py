@@ -31,7 +31,10 @@ from openpyxl.drawing.image import Image as XLImage
 # PDF
 from weasyprint import HTML
 import hashlib
+import base64
+import qrcode
 import io
+from io import BytesIO
 import os
 import logging
 import tempfile
@@ -2298,6 +2301,14 @@ def generate_medical_report(request, pk):
             "specialties": spec_names,
         })
 
+    # Generar QR institucional
+    qr_payload = f"Consulta:{appointment.id}|Audit:{report.id}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")   # 👈 argumento posicional, no keyword
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
+
     # Contexto final
     serializer = MedicalReportSerializer(report)
     context = dict(serializer.data)
@@ -2318,6 +2329,7 @@ def generate_medical_report(request, pk):
         "referrals": referrals,
         "generated_at": timezone.now(),
         "report": report,
+        "qr_code_url": qr_code_url,  # 👈 QR embebido en contexto
     })
 
     # Renderizar HTML → PDF
@@ -2340,7 +2352,6 @@ def generate_medical_report(request, pk):
     from django.core.files import File
     django_file = File(open(full_path, "rb"), name=filename)
 
-    import hashlib
     sha256 = hashlib.sha256()
     for chunk in django_file.chunks():
         sha256.update(chunk)
