@@ -16,6 +16,7 @@
     .qr { margin-top: 8px; }
     .meta-small { font-size: 11px; }
     .note { margin-top: 6px; }
+    .signature { margin-top: 6px; }
     /* Evitar saltos de página innecesarios */
     .section, ul, p { page-break-inside: avoid; }
   </style>
@@ -43,6 +44,11 @@
     <div class="meta-small">
       {% if doctor.specialties %}<strong>Especialidades:</strong> {{ doctor.specialties|join:", " }}{% endif %}
     </div>
+    {% if doctor.signature %}
+      <div class="signature">
+        <img src="{{ doctor.signature.path }}" alt="Firma" style="height:45px;">
+      </div>
+    {% endif %}
   </div>
 
   <div class="section">
@@ -62,8 +68,9 @@
   </div>
 
   <footer>
-    Documento generado automáticamente por MedOps<br>
-    {{ institution.name }}
+    Este plan de tratamiento forma parte del expediente clínico institucional.<br>
+    Emitido por {{ doctor.full_name }} - {{ institution.name }}<br>
+    Código de auditoría: {{ audit_code }}
     <div class="qr">
       <img src="{{ qr_code_url }}" alt="QR Auditoría" style="height:80px;">
     </div>

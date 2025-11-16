@@ -2402,20 +2402,63 @@ def generate_prescription_pdf(request, pk):
     patient = appointment.patient
     institution = InstitutionSettings.objects.first()
 
-    # Items de la prescripción (ajusta el queryset según tu modelo)
-    # Suposición: Prescription tiene relación `items` con campos: medication, dosage, unit, route, frequency, duration, notes
-    items = getattr(prescription, "items", None)
-    if callable(items):
-        items = items.all()
-    elif items is None:
-        items = []
+    # Doctor institucional (alineado con el informe)
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+
+    # Serializar paciente al estilo del informe
+    patient_serialized = PatientDetailSerializer(patient).data
+
+    # Normalización de labels
+    def unit_label(val):
+        return dict(Prescription.UNIT_CHOICES).get(val, val)
+    def route_label(val):
+        return dict(Prescription.ROUTE_CHOICES).get(val, val)
+    def freq_label(val):
+        return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
+
+    # Construcción de items
+    items = []
+    rel_items = getattr(prescription, "items", None)
+    if callable(rel_items):
+        rel_items = rel_items.all()
+    if rel_items:
+        for it in rel_items:
+            med_name = ""
+            if getattr(it, "medication_catalog", None):
+                med_name = getattr(it.medication_catalog, "name", "") or getattr(it.medication_catalog, "title", "")
+            if not med_name:
+                med_name = getattr(it, "medication_text", "") or getattr(it, "medication", "")
+            items.append({
+                "medication": med_name,
+                "dosage": it.dosage,
+                "unit": unit_label(it.unit),
+                "route": route_label(it.route),
+                "frequency": freq_label(it.frequency),
+                "duration": it.duration,
+                "notes": getattr(it, "notes", ""),
+            })
+    else:
+        med_name = ""
+        if getattr(prescription, "medication_catalog", None):
+            med_name = getattr(prescription.medication_catalog, "name", "") or getattr(prescription.medication_catalog, "title", "")
+        if not med_name:
+            med_name = getattr(prescription, "medication_text", "") or getattr(prescription, "medication", "")
+        items.append({
+            "medication": med_name,
+            "dosage": prescription.dosage,
+            "unit": unit_label(prescription.unit),
+            "route": route_label(prescription.route),
+            "frequency": freq_label(prescription.frequency),
+            "duration": prescription.duration,
+            "notes": getattr(prescription, "notes", ""),
+        })
 
     generated_at = timezone.now()
-    audit_code = prescription.id  # Puedes cambiar a doc.id si prefieres el ID del documento.
+    audit_code = prescription.id
 
-    # QR institucional (compacto, sin dependencias de archivo)
-    import qrcode
-    qr_payload = f"Consulta:{appointment.id}|Audit:{audit_code}"
+    # QR embebido
+    qr_payload = f"Consulta:{appointment.id}|Prescription:{prescription.id}|Audit:{audit_code}"
     qr_img = qrcode.make(qr_payload)
     buffer = BytesIO()
     qr_img.save(buffer, "PNG")
@@ -2423,22 +2466,22 @@ def generate_prescription_pdf(request, pk):
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
     context = {
-        "prescription": prescription,
-        "diagnosis": diagnosis,
         "appointment": appointment,
-        "patient": patient,
-        "doctor": request.user,
+        "patient": patient_serialized,
         "institution": institution,
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
+        },
         "items": items,
         "generated_at": generated_at,
         "audit_code": audit_code,
         "qr_code_url": qr_code_url,
     }
 
-    # Usa la ruta correcta del template
     html_string = render_to_string("documents/prescription.html", context)
-
-    from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
     filename = f"prescription_{prescription.id}.pdf"
@@ -2448,7 +2491,6 @@ def generate_prescription_pdf(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    from django.core.files import File
     django_file = File(open(full_path, "rb"), name=filename)
 
     sha256 = hashlib.sha256()
@@ -2463,14 +2505,14 @@ def generate_prescription_pdf(request, pk):
         category="prescription",
         source="system_generated",
         origin_panel="prescription_panel",
-        template_version="v1.2",
+        template_version="v1.3",
         generated_by=request.user,
         uploaded_by=request.user,
         file=django_file,
         mime_type="application/pdf",
         size_bytes=django_file.size,
         checksum_sha256=sha256.hexdigest(),
-        audit_code=str(audit_code),  # si tu modelo tiene el campo, guarda aquí el código
+        audit_code=str(audit_code),
     )
 
     Event.objects.create(
@@ -2499,13 +2541,42 @@ def generate_medical_test_order_pdf(request, pk):
     diagnosis = medical_test.diagnosis
     institution = InstitutionSettings.objects.first()
 
-    from django.utils import timezone
+    # Doctor institucional
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+
+    # Paciente serializado
+    patient_serialized = PatientDetailSerializer(patient).data
+
+    # QuerySet completo de tests de la consulta
+    tests_qs = appointment.medical_tests.all().order_by("id")
+
+    # Adaptador de labels
+    def urgency_label(val):
+        return dict(MedicalTest.URGENCY_CHOICES).get(val, val)
+    def status_label(val):
+        return dict(MedicalTest.STATUS_CHOICES).get(val, val)
+    def type_label(val):
+        return dict(MedicalTest.TEST_TYPE_CHOICES).get(val, val)
+
+    # Separar en laboratorios e imágenes
+    lab_tests, image_tests = [], []
+    for t in tests_qs:
+        test_data = {
+            "type": type_label(t.test_type),
+            "description": t.description or "Sin descripción",
+            "urgency": urgency_label(t.urgency),
+            "status": status_label(t.status),
+        }
+        if t.test_type in ["blood_test", "urine_test", "stool_test", "microbiology_culture", "biopsy", "genetic_test"]:
+            lab_tests.append(test_data)
+        elif t.test_type in ["xray", "ultrasound", "ct_scan", "mri", "ecg"]:
+            image_tests.append(test_data)
+
     generated_at = timezone.now()
     audit_code = medical_test.id
 
     # QR institucional
-    import qrcode, base64
-    from io import BytesIO
     qr_payload = f"Consulta:{appointment.id}|Test:{medical_test.id}|Audit:{audit_code}"
     qr_img = qrcode.make(qr_payload)
     buffer = BytesIO()
@@ -2514,20 +2585,23 @@ def generate_medical_test_order_pdf(request, pk):
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
     context = {
-        "medical_test": medical_test,
         "appointment": appointment,
-        "patient": patient,
-        "diagnosis": diagnosis,
-        "doctor": request.user,
+        "patient": patient_serialized,
         "institution": institution,
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
+        },
+        "lab_tests": lab_tests,
+        "image_tests": image_tests,
         "generated_at": generated_at,
         "audit_code": audit_code,
         "qr_code_url": qr_code_url,
     }
 
-    # Renderizar HTML → PDF
     html_string = render_to_string("documents/medical_test_order.html", context)
-    from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
     filename = f"medical_test_order_{medical_test.id}.pdf"
@@ -2537,10 +2611,8 @@ def generate_medical_test_order_pdf(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    from django.core.files import File
     django_file = File(open(full_path, "rb"), name=filename)
 
-    import hashlib
     sha256 = hashlib.sha256()
     for chunk in django_file.chunks():
         sha256.update(chunk)
@@ -2553,7 +2625,7 @@ def generate_medical_test_order_pdf(request, pk):
         category="medical_test_order",
         source="system_generated",
         origin_panel="medical_tests_panel",
-        template_version="v1.0",
+        template_version="v1.1",
         generated_by=request.user,
         uploaded_by=request.user,
         file=django_file,
@@ -2583,32 +2655,38 @@ def generate_medical_test_order_pdf(request, pk):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def generate_treatment_pdf(request, pk):
-    from django.utils import timezone
-    from django.template.loader import render_to_string
-    from django.shortcuts import get_object_or_404
-    from weasyprint import HTML
-    from django.core.files import File
-    import os, hashlib, base64
-    from io import BytesIO
-    import qrcode
-
     treatment = get_object_or_404(Treatment, pk=pk)
     diagnosis = treatment.diagnosis
     appointment = diagnosis.appointment
     patient = appointment.patient
     institution = InstitutionSettings.objects.first()
 
-    # Items del plan (ajusta según tu modelo: treatment.items -> description, notes, etc.)
-    items = getattr(treatment, "items", None)
-    if callable(items):
-        items = items.all()
-    elif items is None:
-        items = []
+    # Doctor institucional
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+
+    # Paciente serializado
+    patient_serialized = PatientDetailSerializer(patient).data
+
+    # Items del plan
+    items = []
+    rel_items = getattr(treatment, "items", None)
+    if callable(rel_items):
+        rel_items = rel_items.all()
+    if rel_items:
+        for it in rel_items:
+            items.append({
+                "description": getattr(it, "description", ""),
+                "notes": getattr(it, "notes", ""),
+            })
+    else:
+        plan_text = getattr(treatment, "plan", "") or getattr(treatment, "description", "")
+        items = [{"description": plan_text, "notes": getattr(treatment, "notes", "")}]
 
     generated_at = timezone.now()
-    audit_code = treatment.id  # Puedes cambiar a doc.id si prefieres el ID del documento.
+    audit_code = treatment.id
 
-    # QR institucional embebido (data URI)
+    # QR institucional
     qr_payload = f"Consulta:{appointment.id}|Treatment:{treatment.id}|Audit:{audit_code}"
     qr_img = qrcode.make(qr_payload)
     buffer = BytesIO()
@@ -2617,12 +2695,15 @@ def generate_treatment_pdf(request, pk):
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
     context = {
-        "treatment": treatment,
-        "diagnosis": diagnosis,
         "appointment": appointment,
-        "patient": patient,
-        "doctor": request.user,
+        "patient": patient_serialized,
         "institution": institution,
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
+        },
         "items": items,
         "generated_at": generated_at,
         "audit_code": audit_code,
@@ -2653,7 +2734,7 @@ def generate_treatment_pdf(request, pk):
         category="treatment_plan",
         source="system_generated",
         origin_panel="treatment_panel",
-        template_version="v1.2",
+        template_version="v1.3",
         generated_by=request.user,
         uploaded_by=request.user,
         file=django_file,
