@@ -79,6 +79,26 @@ from .serializers import (
 login_view = obtain_auth_token
 
 
+def get_doctor_context() -> dict:
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+    return {
+        "full_name": doctor.full_name if doctor else "",
+        "colegiado_id": doctor.colegiado_id if doctor else "",
+        "specialties": specialties if specialties else ["No especificadas"],
+        "signature": doctor.signature if (doctor and doctor.signature) else None,
+    }
+
+def get_patient_serialized(patient) -> dict:
+    return dict(PatientDetailSerializer(patient).data)
+
+def make_qr_data_uri(payload: str) -> str:
+    img = qrcode.make(payload)
+    buf = BytesIO()
+    img.save(buf, "PNG")
+    return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('utf-8')}"
+
+
 # --- Utilidades ---
 class GeneticPredispositionViewSet(viewsets.ModelViewSet):
     queryset = GeneticPredisposition.objects.all().order_by("name")
@@ -2406,16 +2426,13 @@ def generate_prescription_pdf(request, pk):
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar paciente al estilo del informe
-    patient_serialized = PatientDetailSerializer(patient).data
+    # Serializar paciente al estilo del informe (dict para evitar warnings de tipado)
+    patient_serialized = dict(PatientDetailSerializer(patient).data)
 
     # Normalización de labels
-    def unit_label(val):
-        return dict(Prescription.UNIT_CHOICES).get(val, val)
-    def route_label(val):
-        return dict(Prescription.ROUTE_CHOICES).get(val, val)
-    def freq_label(val):
-        return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
+    def unit_label(val): return dict(Prescription.UNIT_CHOICES).get(val, val)
+    def route_label(val): return dict(Prescription.ROUTE_CHOICES).get(val, val)
+    def freq_label(val): return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
 
     # Construcción de items
     items = []
@@ -2541,23 +2558,20 @@ def generate_medical_test_order_pdf(request, pk):
     diagnosis = medical_test.diagnosis
     institution = InstitutionSettings.objects.first()
 
-    # Doctor institucional
+    # Doctor institucional (igual que en el informe)
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Paciente serializado
-    patient_serialized = PatientDetailSerializer(patient).data
+    # Paciente serializado (dict para evitar warnings de tipado)
+    patient_serialized = dict(PatientDetailSerializer(patient).data)
 
     # QuerySet completo de tests de la consulta
     tests_qs = appointment.medical_tests.all().order_by("id")
 
-    # Adaptador de labels
-    def urgency_label(val):
-        return dict(MedicalTest.URGENCY_CHOICES).get(val, val)
-    def status_label(val):
-        return dict(MedicalTest.STATUS_CHOICES).get(val, val)
-    def type_label(val):
-        return dict(MedicalTest.TEST_TYPE_CHOICES).get(val, val)
+    # Adaptadores de labels
+    def urgency_label(val): return dict(MedicalTest.URGENCY_CHOICES).get(val, val)
+    def status_label(val): return dict(MedicalTest.STATUS_CHOICES).get(val, val)
+    def type_label(val): return dict(MedicalTest.TEST_TYPE_CHOICES).get(val, val)
 
     # Separar en laboratorios e imágenes
     lab_tests, image_tests = [], []
@@ -2576,7 +2590,7 @@ def generate_medical_test_order_pdf(request, pk):
     generated_at = timezone.now()
     audit_code = medical_test.id
 
-    # QR institucional
+    # QR institucional embebido
     qr_payload = f"Consulta:{appointment.id}|Test:{medical_test.id}|Audit:{audit_code}"
     qr_img = qrcode.make(qr_payload)
     buffer = BytesIO()
@@ -2584,6 +2598,7 @@ def generate_medical_test_order_pdf(request, pk):
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
+    # Contexto final
     context = {
         "appointment": appointment,
         "patient": patient_serialized,
@@ -2601,9 +2616,11 @@ def generate_medical_test_order_pdf(request, pk):
         "qr_code_url": qr_code_url,
     }
 
+    # Renderizar HTML → PDF
     html_string = render_to_string("documents/medical_test_order.html", context)
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
+    # Guardar PDF en storage
     filename = f"medical_test_order_{medical_test.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -2611,6 +2628,7 @@ def generate_medical_test_order_pdf(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
+    # Crear MedicalDocument blindado
     django_file = File(open(full_path, "rb"), name=filename)
 
     sha256 = hashlib.sha256()
@@ -2625,7 +2643,7 @@ def generate_medical_test_order_pdf(request, pk):
         category="medical_test_order",
         source="system_generated",
         origin_panel="medical_tests_panel",
-        template_version="v1.1",
+        template_version="v1.2",
         generated_by=request.user,
         uploaded_by=request.user,
         file=django_file,
@@ -2635,12 +2653,18 @@ def generate_medical_test_order_pdf(request, pk):
         audit_code=str(audit_code),
     )
 
+    # Evento de auditoría
     Event.objects.create(
         entity="MedicalDocument",
         entity_id=doc.id,
         action="generate_medical_test_order",
         actor=str(request.user),
-        metadata={"appointment_id": appointment.id, "patient_id": patient.id, "medical_test_id": medical_test.id},
+        metadata={
+            "appointment_id": appointment.id,
+            "patient_id": patient.id,
+            "medical_test_id": medical_test.id,
+            "document_id": doc.id
+        },
         severity="info",
         notify=True
     )
@@ -2661,12 +2685,12 @@ def generate_treatment_pdf(request, pk):
     patient = appointment.patient
     institution = InstitutionSettings.objects.first()
 
-    # Doctor institucional
+    # Doctor institucional (igual que en el informe)
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Paciente serializado
-    patient_serialized = PatientDetailSerializer(patient).data
+    # Paciente serializado (dict para evitar warnings de tipado)
+    patient_serialized = dict(PatientDetailSerializer(patient).data)
 
     # Items del plan
     items = []
@@ -2686,7 +2710,7 @@ def generate_treatment_pdf(request, pk):
     generated_at = timezone.now()
     audit_code = treatment.id
 
-    # QR institucional
+    # QR institucional embebido
     qr_payload = f"Consulta:{appointment.id}|Treatment:{treatment.id}|Audit:{audit_code}"
     qr_img = qrcode.make(qr_payload)
     buffer = BytesIO()
@@ -2694,6 +2718,7 @@ def generate_treatment_pdf(request, pk):
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
+    # Contexto final
     context = {
         "appointment": appointment,
         "patient": patient_serialized,
@@ -2710,9 +2735,11 @@ def generate_treatment_pdf(request, pk):
         "qr_code_url": qr_code_url,
     }
 
+    # Renderizar HTML → PDF
     html_string = render_to_string("documents/treatment.html", context)
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
+    # Guardar PDF
     filename = f"treatment_{treatment.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -2744,12 +2771,18 @@ def generate_treatment_pdf(request, pk):
         audit_code=str(audit_code),
     )
 
+    # Evento de auditoría
     Event.objects.create(
         entity="MedicalDocument",
         entity_id=doc.id,
         action="generate_treatment",
         actor=str(request.user),
-        metadata={"appointment_id": appointment.id, "patient_id": patient.id, "treatment_id": treatment.id},
+        metadata={
+            "appointment_id": appointment.id,
+            "patient_id": patient.id,
+            "treatment_id": treatment.id,
+            "document_id": doc.id
+        },
         severity="info",
         notify=True
     )
