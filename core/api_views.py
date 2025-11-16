@@ -2237,18 +2237,73 @@ def generate_medical_report(request, pk):
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
-    # Serializar base del reporte
-    serializer = MedicalReportSerializer(report)
-    context = dict(serializer.data)
-
-    # Serializar paciente completo (incluye age)
+    # Serializar paciente completo
     from .serializers import PatientDetailSerializer
     patient_serialized = PatientDetailSerializer(appointment.patient).data
-    context["patient"] = patient_serialized
 
-    # Reforzar contexto clínico
+    # QuerySets
+    diagnoses_qs = Diagnosis.objects.filter(appointment=appointment).order_by("id")
+    treatments_qs = Treatment.objects.filter(diagnosis__appointment=appointment).order_by("id")
+    prescriptions_qs = Prescription.objects.filter(diagnosis__appointment=appointment).select_related("medication_catalog").order_by("id")
+    tests_qs = MedicalTest.objects.filter(appointment=appointment).order_by("id")
+    referrals_qs = MedicalReferral.objects.filter(appointment=appointment).prefetch_related("specialties").order_by("id")
+
+    # Adaptadores con labels amigables
+    def unit_label(val):
+        return dict(Prescription.UNIT_CHOICES).get(val, val)
+    def route_label(val):
+        return dict(Prescription.ROUTE_CHOICES).get(val, val)
+    def freq_label(val):
+        return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
+
+    diagnoses = [{
+        "icd_code": d.icd_code,
+        "title": d.title,
+        "description": d.description,
+    } for d in diagnoses_qs]
+
+    treatments = [{"plan": t.plan} for t in treatments_qs]
+
+    prescriptions = []
+    for p in prescriptions_qs:
+        med_name = ""
+        if p.medication_catalog:
+            med_name = getattr(p.medication_catalog, "name", "") or getattr(p.medication_catalog, "title", "")
+        if not med_name:
+            med_name = p.medication_text or ""
+        prescriptions.append({
+            "medication": med_name,
+            "dosage": p.dosage,
+            "unit": unit_label(p.unit),
+            "route": route_label(p.route),
+            "frequency": freq_label(p.frequency),
+            "duration": p.duration,
+        })
+
+    tests = [{
+        "name": t.test_type,
+        "notes": t.description,
+        "urgency": getattr(t, "get_urgency_display", lambda: t.urgency)(),
+        "status": getattr(t, "get_status_display", lambda: t.status)(),
+    } for t in tests_qs]
+
+    referrals = []
+    for r in referrals_qs:
+        spec_names = [s.name for s in r.specialties.all()] if hasattr(r, "specialties") else []
+        referrals.append({
+            "notes": r.reason or r.notes,
+            "referred_to": r.referred_to,
+            "urgency": getattr(r, "get_urgency_display", lambda: r.urgency)(),
+            "status": getattr(r, "get_status_display", lambda: r.status)(),
+            "specialties": spec_names,
+        })
+
+    # Contexto final
+    serializer = MedicalReportSerializer(report)
+    context = dict(serializer.data)
     context.update({
         "appointment": appointment,
+        "patient": patient_serialized,
         "institution": institution,
         "doctor": {
             "full_name": doctor.full_name if doctor else "",
@@ -2256,10 +2311,11 @@ def generate_medical_report(request, pk):
             "specialties": specialties if specialties else ["No especificadas"],
             "signature": doctor.signature if (doctor and doctor.signature) else None,
         },
-        "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
-        "prescriptions": Prescription.objects.filter(diagnosis__appointment=appointment),
-        "tests": MedicalTest.objects.filter(appointment=appointment),
-        "referrals": MedicalReferral.objects.filter(appointment=appointment),
+        "diagnoses": diagnoses,
+        "treatments": treatments,
+        "prescriptions": prescriptions,
+        "tests": tests,
+        "referrals": referrals,
         "generated_at": timezone.now(),
         "report": report,
     })
@@ -2269,7 +2325,7 @@ def generate_medical_report(request, pk):
     from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    # Guardar PDF en storage
+    # Guardar PDF
     filename = f"medical_report_{report.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -2277,11 +2333,10 @@ def generate_medical_report(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    # Actualizar MedicalReport con URL del archivo
     report.file_url = file_path
     report.save(update_fields=["file_url"])
 
-    # Crear MedicalDocument blindado
+    # Crear MedicalDocument
     from django.core.files import File
     django_file = File(open(full_path, "rb"), name=filename)
 
@@ -2307,7 +2362,7 @@ def generate_medical_report(request, pk):
         checksum_sha256=sha256.hexdigest(),
     )
 
-    # Evento de auditoría institucional
+    # Auditoría
     Event.objects.create(
         entity="MedicalReport",
         entity_id=report.id,

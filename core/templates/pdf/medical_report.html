@@ -113,7 +113,12 @@
     {% if tests %}
       <ul>
         {% for test in tests %}
-        <li>{{ test.name }}{% if test.notes %} — {{ test.notes }}{% endif %}</li>
+        <li>
+          {{ test.name }}
+          {% if test.notes %} — {{ test.notes }}{% endif %}
+          {% if test.status %} — Estado: {{ test.status }}{% endif %}
+          {% if test.urgency %} — Urgencia: {{ test.urgency }}{% endif %}
+        </li>
         {% endfor %}
       </ul>
     {% else %}
@@ -126,7 +131,13 @@
     {% if referrals %}
       <ul>
         {% for ref in referrals %}
-        <li>{{ ref.notes }}</li>
+        <li>
+          {% if ref.specialties %}Especialidades: {{ ref.specialties|join:", " }} — {% endif %}
+          {% if ref.referred_to %}Referido a: {{ ref.referred_to }} — {% endif %}
+          {% if ref.notes %}{{ ref.notes }}{% else %}Sin notas{% endif %}
+          {% if ref.status %} — Estado: {{ ref.status }}{% endif %}
+          {% if ref.urgency %} — Urgencia: {{ ref.urgency }}{% endif %}
+        </li>
         {% endfor %}
       </ul>
     {% else %}
