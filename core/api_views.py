@@ -3132,19 +3132,111 @@ def specialty_choices_api(request):
 
 def generate_pdf_document(category: str, queryset, appointment):
     patient = appointment.patient
+    institution = InstitutionSettings.objects.first()
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+
+    # Paciente serializado
+    patient_serialized = dict(PatientDetailSerializer(patient).data)
+
+    # Generar audit code y QR
     audit_code = generate_audit_code(appointment, patient)
+    qr_payload = f"Consulta:{appointment.id}|Category:{category}|Audit:{audit_code}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
+
+    # Normalización de items según categoría
+    items = []
+    lab_tests, image_tests = [], []
+
+    if category == "prescription":
+        def unit_label(val): return dict(Prescription.UNIT_CHOICES).get(val, val)
+        def route_label(val): return dict(Prescription.ROUTE_CHOICES).get(val, val)
+        def freq_label(val): return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
+        for p in queryset:
+            med_name = ""
+            if getattr(p, "medication_catalog", None):
+                med_name = getattr(p.medication_catalog, "name", "") or getattr(p.medication_catalog, "title", "")
+            if not med_name:
+                med_name = getattr(p, "medication_text", "") or getattr(p, "medication", "")
+            items.append({
+                "medication": med_name,
+                "dosage": p.dosage,
+                "unit": unit_label(p.unit),
+                "route": route_label(p.route),
+                "frequency": freq_label(p.frequency),
+                "duration": p.duration,
+                "notes": getattr(p, "notes", ""),
+            })
+
+    elif category == "treatment":
+        for t in queryset:
+            items.append({
+                "description": getattr(t, "plan", "") or getattr(t, "description", ""),
+                "notes": getattr(t, "notes", ""),
+            })
+
+    elif category == "medical_test":
+        def urgency_label(val): return dict(MedicalTest.URGENCY_CHOICES).get(val, val)
+        def status_label(val): return dict(MedicalTest.STATUS_CHOICES).get(val, val)
+        def type_label(val): return dict(MedicalTest.TEST_TYPE_CHOICES).get(val, val)
+        for t in queryset:
+            row = {
+                "type": type_label(t.test_type),
+                "description": t.description or "Sin descripción",
+                "urgency": urgency_label(t.urgency),
+                "status": status_label(t.status),
+            }
+            if t.test_type in ["blood_test", "urine_test", "stool_test", "microbiology_culture", "biopsy", "genetic_test"]:
+                lab_tests.append(row)
+            elif t.test_type in ["xray", "ultrasound", "ct_scan", "mri", "ecg"]:
+                image_tests.append(row)
+
+    elif category == "medical_referral":
+        for r in queryset:
+            spec_names = [s.name for s in r.specialties.all()] if hasattr(r, "specialties") else []
+            items.append({
+                "notes": r.reason or r.notes,
+                "referred_to": r.referred_to,
+                "urgency": getattr(r, "get_urgency_display", lambda: r.urgency)(),
+                "status": getattr(r, "get_status_display", lambda: r.status)(),
+                "specialties": spec_names,
+            })
+
+    # Mapear categoría a template real
+    template_map = {
+        "treatment": "documents/treatment.html",
+        "prescription": "documents/prescription.html",
+        "medical_test": "documents/medical_test_order.html",
+        "medical_referral": "documents/medical_referral.html",
+    }
+    tpl = template_map.get(category)
+    if tpl is None:
+        raise ValueError(f"No existe template para la categoría {category}")
 
     context = {
         "appointment": appointment,
-        "patient": patient,
-        "items": queryset,
-        "category": category,
+        "patient": patient_serialized,
+        "institution": institution,
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
+        },
+        "items": items,
+        "lab_tests": lab_tests,
+        "image_tests": image_tests,
         "generated_at": timezone.now(),
         "audit_code": audit_code,
+        "qr_code_url": qr_code_url,
     }
 
-    html_string = render_to_string(f"documents/{category}.html", context)
-    pdf_bytes = HTML(string=html_string).write_pdf()
+    html_string = render_to_string(tpl, context)
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
     return ContentFile(pdf_bytes or b"", name=f"{category}_{appointment.id}.pdf"), audit_code
 
