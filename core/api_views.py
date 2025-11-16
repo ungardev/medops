@@ -2334,7 +2334,6 @@ def generate_medical_report(request, pk):
 
     # Renderizar HTML → PDF
     html_string = render_to_string("pdf/medical_report.html", context)
-    from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
     # Guardar PDF
@@ -2349,7 +2348,6 @@ def generate_medical_report(request, pk):
     report.save(update_fields=["file_url"])
 
     # Crear MedicalDocument
-    from django.core.files import File
     django_file = File(open(full_path, "rb"), name=filename)
 
     sha256 = hashlib.sha256()
