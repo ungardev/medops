@@ -9,6 +9,7 @@ from .models import (
 from datetime import date
 from typing import Optional
 from decimal import Decimal, InvalidOperation
+from django.db import models
 
 # --- Pacientes ---
 class GeneticPredispositionSerializer(serializers.ModelSerializer):
@@ -342,24 +343,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "arrival_time",
             "notes",
         ]
-
-
-class AppointmentDetailSerializer(AppointmentSerializer):
-    diagnoses = DiagnosisSerializer(many=True, read_only=True)
-    balance_due = serializers.SerializerMethodField()
-
-    class Meta(AppointmentSerializer.Meta):
-        fields = AppointmentSerializer.Meta.fields + [
-            "diagnoses",
-            "balance_due",
-            "notes",   # ✅ añadido para que el frontend reciba las notas
-        ]
-
-    def get_balance_due(self, obj):
-        try:
-            return float(obj.balance_due())
-        except Exception:
-            return 0.0
 
 
 # --- Pagos ---
@@ -1116,3 +1099,60 @@ class MedicalReferralWriteSerializer(serializers.ModelSerializer):
 class ChoicesSerializer(serializers.Serializer):
     key = serializers.CharField()
     label = serializers.CharField()
+
+
+# serializers.py (o donde definas AppointmentDetailSerializer)
+class AppointmentDetailSerializer(AppointmentSerializer):
+    diagnoses = DiagnosisSerializer(many=True, read_only=True)
+    # 🔹 agregados
+    treatments = serializers.SerializerMethodField()
+    prescriptions = serializers.SerializerMethodField()
+    charge_order = serializers.SerializerMethodField()
+    medical_tests = MedicalTestSerializer(many=True, read_only=True)
+    referrals = MedicalReferralSerializer(many=True, read_only=True)
+    balance_due = serializers.SerializerMethodField()
+
+    class Meta(AppointmentSerializer.Meta):
+        fields = AppointmentSerializer.Meta.fields + [
+            "diagnoses",
+            "treatments",
+            "prescriptions",
+            "charge_order",
+            "medical_tests",
+            "referrals",
+            "balance_due",
+            "notes",
+        ]
+
+    def get_balance_due(self, obj):
+        try:
+            return float(obj.balance_due())
+        except Exception:
+            return 0.0
+
+    # 🔹 Treatments: todas las de los diagnósticos de esta cita
+    def get_treatments(self, obj):
+        qs = Treatment.objects.filter(diagnosis__appointment=obj).select_related("diagnosis")
+        return TreatmentSerializer(qs, many=True).data
+
+    # 🔹 Prescriptions: todas las de los diagnósticos de esta cita
+    def get_prescriptions(self, obj):
+        qs = Prescription.objects.filter(diagnosis__appointment=obj).select_related("diagnosis", "medication_catalog")
+        return PrescriptionSerializer(qs, many=True).data
+
+    # 🔹 Charge order: la orden activa más relevante (paid/partially_paid/open), ignorando void
+    def get_charge_order(self, obj):
+        order = (
+            obj.charge_orders.exclude(status="void")
+            .order_by(
+                models.Case(
+                    models.When(status="paid", then=0),
+                    models.When(status="partially_paid", then=1),
+                    default=2,
+                    output_field=models.IntegerField(),
+                ),
+                "-issued_at",
+            )
+            .first()
+        )
+        return ChargeOrderSerializer(order).data if order else None
