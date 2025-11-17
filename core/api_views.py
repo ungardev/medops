@@ -1219,7 +1219,11 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         qs = Appointment.objects.select_related("patient", "doctor")
         patient_id = self.request.query_params.get("patient")
         if patient_id:
-            qs = qs.filter(patient_id=patient_id)
+            try:
+                patient_id = int(patient_id)
+                qs = qs.filter(patient_id=patient_id)
+            except (ValueError, TypeError):
+                qs = Appointment.objects.none()
         return qs
 
     def get_serializer_class(self):
