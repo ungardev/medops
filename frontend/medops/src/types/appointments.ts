@@ -1,7 +1,13 @@
 // src/types/appointments.ts
 import { PatientRef } from "./patients";
-import { Payment, ChargeOrder } from "./payments"; // ✅ importamos ChargeOrder
-import { Diagnosis, Treatment, Prescription } from "./consultation";
+import { Payment, ChargeOrder } from "./payments";
+import {
+  Diagnosis,
+  Treatment,
+  Prescription,
+  MedicalTest,
+  MedicalReferral,
+} from "./consultation";
 
 // --- Estados posibles de una cita
 export type AppointmentStatus =
@@ -23,17 +29,21 @@ export interface Appointment {
   notes?: string | null;
 
   // 🔹 Bloques clínicos
-  diagnoses: Diagnosis[];        // siempre array
-  treatments: Treatment[];       // siempre array
-  prescriptions: Prescription[]; // siempre array
+  diagnoses: Diagnosis[];
+  treatments: Treatment[];
+  prescriptions: Prescription[];
 
   // 🔹 Documentos y pagos
-  documents?: any[];             // opcional, según serializer
-  payments: Payment[];           // siempre array
+  documents?: any[];
+  payments: Payment[];
 
   // 🔹 Campos adicionales del serializer de consulta
-  balance_due?: number;          // calculado en el serializer
-  charge_order?: ChargeOrder;    // ✅ tipado fuerte en vez de any
+  balance_due?: number;
+  charge_order?: ChargeOrder;
+
+  // 🔹 Nuevos campos del backend
+  medical_tests?: MedicalTest[];
+  referrals?: MedicalReferral[];
 
   // 🔹 Metadatos
   created_at?: string;
@@ -42,7 +52,7 @@ export interface Appointment {
 
 // --- Datos de entrada para crear/editar cita
 export interface AppointmentInput {
-  patient: number;              // id del paciente
+  patient: number;
   appointment_date: string;
   appointment_type: "general" | "specialized";
   expected_amount?: string;

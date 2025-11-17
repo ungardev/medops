@@ -1,3 +1,6 @@
+// src/types/consultation.ts
+import type { ChargeOrder } from "./payments";
+
 // --- Diagnóstico ---
 export interface Diagnosis {
   id: number;
@@ -13,10 +16,30 @@ export interface Diagnosis {
 export interface Treatment {
   id: number;
   plan: string;
-  start_date?: string; // ISO date
-  end_date?: string;   // ISO date
-  status: "active" | "completed" | "suspended";   // 👈 corregido
-  treatment_type: "pharmacological" | "surgical" | "therapeutic" | "other"; // 👈 corregido
+  start_date?: string;
+  end_date?: string;
+  status: "active" | "completed" | "cancelled";   // 👈 igual que backend
+  treatment_type: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 igual que backend
+}
+
+// --- Inputs para mutaciones de tratamientos ---
+export interface CreateTreatmentInput {
+  appointment: number;
+  diagnosis: number;
+  plan: string;
+  start_date?: string;
+  end_date?: string;
+  status?: "active" | "completed" | "cancelled";   // 👈 corregido
+  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 corregido
+}
+
+export interface UpdateTreatmentInput {
+  id: number;
+  plan?: string;
+  start_date?: string;
+  end_date?: string;
+  status?: "active" | "completed" | "cancelled";   // 👈 corregido
+  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 corregido
 }
 
 // --- Prescripción ---
@@ -36,16 +59,16 @@ export interface Prescription {
 
   dosage?: string;
   duration?: string;
-  frequency?: 
+  frequency?:
     | "once_daily" | "bid" | "tid" | "qid"
     | "q4h" | "q6h" | "q8h" | "q12h" | "q24h"
     | "qod" | "stat" | "prn" | "hs"
     | "ac" | "pc" | "achs";
-  route?: 
+  route?:
     | "oral" | "iv" | "im" | "sc"
     | "topical" | "sublingual" | "inhalation"
     | "rectal" | "other";
-  unit?: 
+  unit?:
     | "mg" | "ml" | "g"
     | "tablet" | "capsule" | "drop"
     | "puff" | "unit" | "patch";
@@ -54,8 +77,8 @@ export interface Prescription {
 // --- Inputs para mutaciones de prescripciones ---
 export interface CreatePrescriptionInput {
   diagnosis: number;
-  medication_catalog?: number;       // ID de medicamento en catálogo
-  medication_text?: string | null;   // Texto libre si no está en catálogo
+  medication_catalog?: number;
+  medication_text?: string | null;
   dosage?: string;
   duration?: string;
   frequency?: Prescription["frequency"];
@@ -78,27 +101,27 @@ export interface UpdatePrescriptionInput {
 export interface MedicalDocument {
   id: number;
   description?: string;
-  category?: string;     // Ej: "Laboratorio", "Imagenología"
-  uploaded_at: string;   // ISO timestamp
+  category?: string;
+  uploaded_at: string;
   uploaded_by?: string;
-  file: string;          // URL del archivo
+  file: string;
 }
 
 // --- Pago ---
 export interface Payment {
   id: number;
   amount: number;
-  currency: string;      // 👈 añadido
+  currency: string;
   method: string;
   status: string;
   reference_number?: string | null;
   bank_name?: string | null;
   received_by?: string | null;
   received_at?: string | null;
-  idempotency_key?: string | null; // 👈 añadido
+  idempotency_key?: string | null;
 }
 
-// --- Paciente (mínimo para cockpit) ---
+// --- Paciente mínimo ---
 export interface Patient {
   id: number;
   first_name: string;
@@ -111,15 +134,16 @@ export interface Patient {
 export interface Appointment {
   id: number;
   patient: Patient;
-  appointment_date?: string; // 👈 añadido
-  arrival_time?: string | null; // 👈 añadido
-  status: "pending" | "arrived" | "in_consultation" | "completed" | "canceled"; // 👈 corregido
+  appointment_date?: string;
+  arrival_time?: string | null;
+  status: "pending" | "arrived" | "in_consultation" | "completed" | "canceled";
   notes?: string | null;
   diagnoses: Diagnosis[];
   treatments: Treatment[];
   prescriptions: Prescription[];
   documents?: MedicalDocument[];
   payments?: Payment[];
+  charge_order?: ChargeOrder;
   created_at: string;
   updated_at: string;
 }
@@ -133,8 +157,8 @@ export interface MedicalTest {
   test_type: string;
   test_type_display?: string;
   description?: string;
-  urgency: "routine" | "urgent" | "stat";   // 👈 añadido
-  status: "pending" | "completed" | "cancelled"; // 👈 confirmado
+  urgency: "routine" | "urgent" | "stat";
+  status: "pending" | "completed" | "cancelled";
   requested_at: string;
   completed_at?: string | null;
   created_at: string;
@@ -146,8 +170,8 @@ export interface MedicalTest {
 // --- Especialidad institucional ---
 export interface Specialty {
   id: number;
-  code: string;   // ej: "cardiology"
-  name: string;   // ej: "Cardiología"
+  code: string;
+  name: string;
 }
 
 // --- Referencia médica ---
@@ -158,14 +182,10 @@ export interface MedicalReferral {
   issued_by?: number | null;
   referred_to: string;
   reason?: string;
-
-  // 🔹 Nuevo modelo institucional
-  specialties: Specialty[];     // lectura: array de objetos completos
-  specialty_ids?: number[];     // escritura: array de IDs
-
+  specialties: Specialty[];
+  specialty_ids?: number[];
   urgency: "routine" | "urgent" | "stat";
   status: "issued" | "accepted" | "rejected";
-
   issued_at: string;
   created_at: string;
   updated_at: string;

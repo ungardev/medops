@@ -1,7 +1,10 @@
 // src/components/Consultation/TreatmentPanel.tsx
 import React, { useState } from "react";
 import { Diagnosis, Treatment } from "../../types/consultation";
-import TreatmentBadge from "./TreatmentBadge";
+import TreatmentBadge, {
+  TreatmentStatus,
+  TreatmentType,
+} from "./TreatmentBadge";
 import { useUpdateTreatment } from "../../hooks/consultations/useUpdateTreatment";
 import { useDeleteTreatment } from "../../hooks/consultations/useDeleteTreatment";
 
@@ -17,9 +20,30 @@ export interface TreatmentPanelProps {
     plan: string;
     start_date?: string;
     end_date?: string;
-    status: "active" | "completed" | "suspended";
-    treatment_type: "pharmacological" | "surgical" | "therapeutic" | "other";
+    status: "active" | "completed" | "cancelled";
+    treatment_type:
+      | "pharmacological"
+      | "surgical"
+      | "rehabilitation"
+      | "lifestyle"
+      | "other";
   }) => void;
+}
+
+// 🔹 Normalización de valores provenientes del Badge (legacy → backend)
+function normalizeStatus(
+  status: TreatmentStatus | undefined
+): "active" | "completed" | "cancelled" | undefined {
+  if (!status) return undefined;
+  return status === "suspended" ? "cancelled" : status;
+}
+
+function normalizeType(
+  type: TreatmentType | undefined
+): "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other" | undefined {
+  if (!type) return undefined;
+  if (type === "therapeutic") return "rehabilitation"; // alias legacy
+  return type;
 }
 
 const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
@@ -33,9 +57,9 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
   const [plan, setPlan] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState<"active" | "completed" | "suspended">("active");
+  const [status, setStatus] = useState<"active" | "completed" | "cancelled">("active");
   const [treatmentType, setTreatmentType] = useState<
-    "pharmacological" | "surgical" | "therapeutic" | "other"
+    "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"
   >("pharmacological");
 
   const { mutate: updateTreatment } = useUpdateTreatment();
@@ -80,9 +104,8 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               plan={t.plan}
               start_date={t.start_date}
               end_date={t.end_date}
-              status={t.status}
-              treatment_type={t.treatment_type}
-              // en modo lectura no pasamos onEdit/onDelete
+              status={t.status as TreatmentStatus}
+              treatment_type={t.treatment_type as TreatmentType}
             />
           ))}
         </div>
@@ -106,16 +129,16 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                         plan={t.plan}
                         start_date={t.start_date}
                         end_date={t.end_date}
-                        status={t.status}
-                        treatment_type={t.treatment_type}
+                        status={t.status as TreatmentStatus}
+                        treatment_type={t.treatment_type as TreatmentType}
                         onEdit={(id, newPlan, start, end, newStatus, newType) =>
                           updateTreatment({
                             id,
                             plan: newPlan,
-                            start_date: start,
-                            end_date: end,
-                            status: newStatus,
-                            treatment_type: newType,
+                            start_date: start ?? undefined,
+                            end_date: end ?? undefined,
+                            status: normalizeStatus(newStatus),
+                            treatment_type: normalizeType(newType),
                           })
                         }
                         onDelete={(id) => deleteTreatment(id)}
@@ -175,7 +198,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
             >
               <option value="active">Activo</option>
               <option value="completed">Completado</option>
-              <option value="suspended">Suspendido</option>
+              <option value="cancelled">Cancelado</option>
             </select>
 
             <select
@@ -185,7 +208,8 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
             >
               <option value="pharmacological">Farmacológico</option>
               <option value="surgical">Quirúrgico</option>
-              <option value="therapeutic">Terapéutico</option>
+              <option value="rehabilitation">Rehabilitación</option>
+              <option value="lifestyle">Cambio de estilo de vida</option>
               <option value="other">Otro</option>
             </select>
 

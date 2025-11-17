@@ -1,7 +1,7 @@
 // src/hooks/consultations/useConsultationById.ts
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-import { Appointment } from "../../types/appointments";
+import { Appointment } from "../../types/consultation"; // ✅ tipado institucional corregido
 
 async function fetchConsultationById(id: number): Promise<Appointment | null> {
   if (!id || isNaN(id)) return null; // ✅ blindaje contra NaN o 0

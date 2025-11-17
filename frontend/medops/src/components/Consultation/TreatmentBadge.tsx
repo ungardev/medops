@@ -1,19 +1,33 @@
 import React, { useState } from "react";
 
+export type TreatmentStatus =
+  | "active"
+  | "completed"
+  | "cancelled"
+  | "suspended"; // aceptamos ambos dominios
+
+export type TreatmentType =
+  | "pharmacological"
+  | "surgical"
+  | "rehabilitation"
+  | "lifestyle"
+  | "therapeutic"
+  | "other";
+
 export interface TreatmentBadgeProps {
   id: number;
   plan: string;
   start_date?: string | null;
   end_date?: string | null;
-  status: "active" | "completed" | "suspended";
-  treatment_type: "pharmacological" | "surgical" | "therapeutic" | "other";
+  status: TreatmentStatus;
+  treatment_type: TreatmentType;
   onEdit?: (
     id: number,
     newPlan: string,
     start_date?: string | null,
     end_date?: string | null,
-    status?: "active" | "completed" | "suspended",
-    treatment_type?: "pharmacological" | "surgical" | "therapeutic" | "other"
+    status?: TreatmentStatus,
+    treatment_type?: TreatmentType
   ) => void;
   onDelete?: (id: number) => void;
 }
@@ -32,10 +46,8 @@ export default function TreatmentBadge({
   const [editedPlan, setEditedPlan] = useState(plan);
   const [editedStart, setEditedStart] = useState(start_date || "");
   const [editedEnd, setEditedEnd] = useState(end_date || "");
-  const [editedStatus, setEditedStatus] = useState<"active" | "completed" | "suspended">(status);
-  const [editedType, setEditedType] = useState<
-    "pharmacological" | "surgical" | "therapeutic" | "other"
-  >(treatment_type);
+  const [editedStatus, setEditedStatus] = useState<TreatmentStatus>(status);
+  const [editedType, setEditedType] = useState<TreatmentType>(treatment_type);
 
   const handleSave = () => {
     if (onEdit) {
@@ -111,27 +123,24 @@ export default function TreatmentBadge({
 
           <select
             value={editedStatus}
-            onChange={(e) =>
-              setEditedStatus(e.target.value as "active" | "completed" | "suspended")
-            }
+            onChange={(e) => setEditedStatus(e.target.value as TreatmentStatus)}
             className="select"
           >
             <option value="active">Activo</option>
             <option value="completed">Completado</option>
+            <option value="cancelled">Cancelado</option>
             <option value="suspended">Suspendido</option>
           </select>
 
           <select
             value={editedType}
-            onChange={(e) =>
-              setEditedType(
-                e.target.value as "pharmacological" | "surgical" | "therapeutic" | "other"
-              )
-            }
+            onChange={(e) => setEditedType(e.target.value as TreatmentType)}
             className="select"
           >
             <option value="pharmacological">Farmacológico</option>
             <option value="surgical">Quirúrgico</option>
+            <option value="rehabilitation">Rehabilitación</option>
+            <option value="lifestyle">Cambio de estilo de vida</option>
             <option value="therapeutic">Terapéutico</option>
             <option value="other">Otro</option>
           </select>

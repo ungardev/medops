@@ -327,24 +327,6 @@ class DiagnosisWriteSerializer(serializers.ModelSerializer):
         ]
 
 
-# --- Citas ---
-class AppointmentSerializer(serializers.ModelSerializer):
-    patient = PatientReadSerializer(read_only=True)
-
-    class Meta:
-        model = Appointment
-        fields = [
-            "id",
-            "patient",           # incluye id, full_name y email
-            "appointment_date",
-            "appointment_type",
-            "expected_amount",
-            "status",
-            "arrival_time",
-            "notes",
-        ]
-
-
 # --- Pagos ---
 class PaymentSerializer(serializers.ModelSerializer):
     appointment_date = serializers.DateField(
@@ -401,41 +383,6 @@ class PaymentSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
-
-
-# --- Documentos clínicos ---
-class MedicalDocumentReadSerializer(serializers.ModelSerializer):
-    patient = PatientReadSerializer(read_only=True)
-    appointment = AppointmentSerializer(read_only=True)
-    diagnosis = DiagnosisSerializer(read_only=True)
-    uploaded_by = serializers.StringRelatedField(read_only=True)
-    generated_by = serializers.StringRelatedField(read_only=True)
-
-    class Meta:
-        model = MedicalDocument
-        fields = [
-            "id",
-            "patient",
-            "appointment",
-            "diagnosis",
-            "description",
-            "category",
-            "source",
-            "origin_panel",
-            "template_version",
-            "is_signed",
-            "signer_name",
-            "signer_registration",
-            "uploaded_at",
-            "uploaded_by",
-            "generated_by",
-            "file",
-            "mime_type",
-            "size_bytes",
-            "checksum_sha256",
-            "storage_key",
-        ]
-        read_only_fields = fields  # todo es solo lectura en el serializer de salida
 
 
 class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
@@ -566,38 +513,6 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
         return obj.status
 
 
-# --- Sala de espera (detallado con cita completa) ---
-class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
-    patient = PatientReadSerializer(read_only=True)
-    appointment = AppointmentSerializer(read_only=True)
-    effective_status = serializers.SerializerMethodField()
-
-    class Meta:
-        model = WaitingRoomEntry
-        fields = [
-            "id",
-            "patient",
-            "appointment",
-            "arrival_time",
-            "status",
-            "priority",
-            "source_type",
-            "order",
-            "effective_status",  # 👈 añadido para consistencia
-        ]
-
-    def get_effective_status(self, obj):
-        """
-        Igual que en el serializer básico: arrived → waiting.
-        """
-        if obj.appointment:
-            status = obj.appointment.status
-            if status == "arrived":
-                return "waiting"
-            return status
-        return obj.status
-
-
 # --- Citas pendientes con pagos ---
 class AppointmentPendingSerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
@@ -698,6 +613,93 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         order.recalc_totals()
         order.save(update_fields=["total", "balance_due", "status"])
         return order
+
+
+# --- Citas ---
+class AppointmentSerializer(serializers.ModelSerializer):
+    patient = PatientReadSerializer(read_only=True)
+    charge_order = ChargeOrderSerializer(read_only=True)  # 👈 añadido
+
+    class Meta:
+        model = Appointment
+        fields = [
+            "id",
+            "patient",           # incluye id, full_name y email
+            "appointment_date",
+            "appointment_type",
+            "expected_amount",
+            "status",
+            "arrival_time",
+            "notes",
+            "charge_order",      # 👈 añadido
+        ]
+
+
+# --- Documentos clínicos ---
+class MedicalDocumentReadSerializer(serializers.ModelSerializer):
+    patient = PatientReadSerializer(read_only=True)
+    appointment = AppointmentSerializer(read_only=True)
+    diagnosis = DiagnosisSerializer(read_only=True)
+    uploaded_by = serializers.StringRelatedField(read_only=True)
+    generated_by = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = MedicalDocument
+        fields = [
+            "id",
+            "patient",
+            "appointment",
+            "diagnosis",
+            "description",
+            "category",
+            "source",
+            "origin_panel",
+            "template_version",
+            "is_signed",
+            "signer_name",
+            "signer_registration",
+            "uploaded_at",
+            "uploaded_by",
+            "generated_by",
+            "file",
+            "mime_type",
+            "size_bytes",
+            "checksum_sha256",
+            "storage_key",
+        ]
+        read_only_fields = fields  # todo es solo lectura en el serializer de salida
+
+
+# --- Sala de espera (detallado con cita completa) ---
+class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
+    patient = PatientReadSerializer(read_only=True)
+    appointment = AppointmentSerializer(read_only=True)
+    effective_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WaitingRoomEntry
+        fields = [
+            "id",
+            "patient",
+            "appointment",
+            "arrival_time",
+            "status",
+            "priority",
+            "source_type",
+            "order",
+            "effective_status",  # 👈 añadido para consistencia
+        ]
+
+    def get_effective_status(self, obj):
+        """
+        Igual que en el serializer básico: arrived → waiting.
+        """
+        if obj.appointment:
+            status = obj.appointment.status
+            if status == "arrived":
+                return "waiting"
+            return status
+        return obj.status
 
 
 class ChargeOrderPaymentSerializer(serializers.ModelSerializer):

@@ -1,17 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-import type { Treatment } from "../../types/consultation"; // 👈 asegúrate de tener este tipo
-
-// 👇 ahora incluye status y treatment_type
-export interface CreateTreatmentInput {
-  appointment: number;   // 👈 obligatorio
-  diagnosis: number;     // 👈 obligatorio
-  plan: string;          // 👈 obligatorio
-  start_date?: string;   // 👈 opcional
-  end_date?: string;     // 👈 opcional
-  status?: "active" | "completed" | "suspended";   // 👈 añadido
-  treatment_type?: "pharmacological" | "surgical" | "therapeutic" | "other"; // 👈 añadido
-}
+import type { Treatment, CreateTreatmentInput } from "../../types/consultation"; // 👈 usa el tipo institucional
 
 export function useCreateTreatment() {
   const queryClient = useQueryClient();
@@ -19,7 +8,7 @@ export function useCreateTreatment() {
   const mutation = useMutation<Treatment, Error, CreateTreatmentInput>({
     mutationFn: async (data) => {
       // 🔹 aplicamos defaults si no vienen del formulario
-      const payload = {
+      const payload: CreateTreatmentInput = {
         status: data.status ?? "active",
         treatment_type: data.treatment_type ?? "pharmacological",
         ...data,
