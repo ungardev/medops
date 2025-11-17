@@ -1,6 +1,6 @@
 // src/types/appointments.ts
 import { PatientRef } from "./patients";
-import { Payment } from "./payments";
+import { Payment, ChargeOrder } from "./payments"; // ✅ importamos ChargeOrder
 import { Diagnosis, Treatment, Prescription } from "./consultation";
 
 // --- Estados posibles de una cita
@@ -17,7 +17,7 @@ export interface Appointment {
   patient: PatientRef;
   appointment_date: string;     // YYYY-MM-DD
   appointment_type: "general" | "specialized";
-  expected_amount: string | number; // 👈 string en payload, number en UI
+  expected_amount: string | number; // string en payload, number en UI
   status: AppointmentStatus;
   arrival_time?: string | null;
   notes?: string | null;
@@ -32,8 +32,8 @@ export interface Appointment {
   payments: Payment[];           // siempre array
 
   // 🔹 Campos adicionales del serializer de consulta
-  doctor_name?: string | null;   // médico que atendió
-  charge_order?: any;            // orden de cobro asociada
+  balance_due?: number;          // calculado en el serializer
+  charge_order?: ChargeOrder;    // ✅ tipado fuerte en vez de any
 
   // 🔹 Metadatos
   created_at?: string;

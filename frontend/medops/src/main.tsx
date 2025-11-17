@@ -5,9 +5,10 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import App from "./App";
-import DashboardPage from "./pages/Dashboard"; // 👈 nuevo Dashboard
+import DashboardPage from "./pages/Dashboard";
 import Patients from "./pages/Patients/Patients";
 import PatientDetail from "./pages/Patients/PatientDetail";
+import PatientConsultationDetail from "./pages/Patients/PatientConsultationsDetail"; // ✅ nuevo import
 import Appointments from "./pages/Appointments/Appointments";
 import Payments from "./pages/Payments/Payments";
 import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail";
@@ -25,10 +26,7 @@ import { NotifyProvider } from "./context/NotifyContext";
 
 import axios from "axios";
 
-// 👇 nuevo import para Reportes
 import ReportsPage from "./pages/Reports/ReportsPage";
-
-// 👇 nuevo import para Configuración completa
 import ConfigPage from "./pages/Settings/ConfigPage";
 
 // Configuración global de axios usando Vite env
@@ -52,11 +50,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             {/* Rutas protegidas */}
             <Route element={<ProtectedRoute />}>
               <Route element={<App />}>
-                {/* 👇 Nuevo Dashboard en la raíz */}
                 <Route index element={<DashboardPage />} />
 
                 <Route path="patients" element={<Patients />} />
                 <Route path="patients/:id" element={<PatientDetail />} />
+                <Route path="patients/:patientId/consultations/:appointmentId" element={<PatientConsultationDetail />} /> {/* ✅ nueva ruta */}
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
@@ -64,11 +62,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="events" element={<Events />} />
                 <Route path="audit-dashboard" element={<AuditDashboard />} />
                 <Route path="consultation" element={<Consultation />} />
-
-                {/* 👇 Nueva ruta de Reportes */}
                 <Route path="reports" element={<ReportsPage />} />
-
-                {/* 👇 Nueva ruta de Configuración */}
                 <Route path="settings/config" element={<ConfigPage />} />
               </Route>
             </Route>

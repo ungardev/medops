@@ -3410,3 +3410,18 @@ def generate_used_documents(request, pk):
             "error": str(e),
             "traceback": traceback.format_exc(),
         }, status=500)
+
+
+@extend_schema(responses={200: AppointmentDetailSerializer})
+@api_view(["GET"])
+def appointment_detail_api(request, pk):
+    """
+    Devuelve los detalles completos de una cita por ID.
+    """
+    try:
+        appointment = Appointment.objects.get(pk=pk)
+    except Appointment.DoesNotExist:
+        return Response({"error": "Appointment not found"}, status=404)
+
+    serializer = AppointmentDetailSerializer(appointment)
+    return Response(serializer.data, status=200)

@@ -1,5 +1,6 @@
 // src/components/Consultation/ChargeOrderPanel.tsx
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { ChargeOrder, ChargeItem, Payment } from "../../types/payments";
 import {
   useChargeOrder,
   useCreatePayment,
@@ -7,42 +8,61 @@ import {
 } from "../../hooks/consultations/useChargeOrder";
 import axios from "axios";
 
-// 🔹 Exportamos la interfaz para index.ts
-export interface ChargeOrderPanelProps {
-  appointmentId: number;
-  readOnly?: boolean; // flag para modo lectura
+// 🔹 Props en modo dual: o recibes appointmentId (fetch interno) o el objeto chargeOrder
+export type ChargeOrderPanelProps =
+  | { appointmentId: number; readOnly?: boolean }
+  | { chargeOrder: ChargeOrder; readOnly?: boolean };
+
+function isAppointmentMode(
+  props: ChargeOrderPanelProps
+): props is { appointmentId: number; readOnly?: boolean } {
+  return (props as any).appointmentId !== undefined;
 }
 
-interface ChargeItem {
-  id: number;
-  code: string;
-  description: string;
-  qty: number;
-  unit_price: number;
-  subtotal: number;
-}
-const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = ({ appointmentId, readOnly }) => {
-  const { data: order, isLoading, refetch } = useChargeOrder(appointmentId);
-  const createPayment = useCreatePayment(order?.id, appointmentId);
+const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
+  const readOnly = props.readOnly ?? false;
+
+  // 🔹 Estado de orden: viene de props o se carga por appointmentId
+  const [order, setOrder] = useState<ChargeOrder | null>(null);
+
+  // Modo A: appointmentId → fetch interno y autocreación defensiva
+  const { data, isLoading, refetch } = isAppointmentMode(props)
+    ? useChargeOrder(props.appointmentId)
+    : { data: null, isLoading: false, refetch: async () => {} };
 
   useEffect(() => {
+    if (!isAppointmentMode(props)) {
+      // Modo B: chargeOrder directo
+      setOrder(props.chargeOrder ?? null);
+      return;
+    }
+    setOrder(data ?? null);
+  }, [props, data]);
+
+  useEffect(() => {
+    if (!isAppointmentMode(props)) return;
+    const appointmentId = props.appointmentId;
     if (!readOnly && order === null && appointmentId) {
       axios
         .post(`/appointments/${appointmentId}/charge-order/`)
-        .then(() => refetch())
+        .then(() => {
+          void refetch(); // ✅ ejecuta refetch, ignora el valor
+        })
         .catch((err) => {
           console.error("Error creando orden automáticamente:", err);
         });
     }
-  }, [order, appointmentId, refetch, readOnly]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order, readOnly]);
 
-  const [code, setCode] = useState("");
-  const [description, setDescription] = useState("");
-  const [qty, setQty] = useState<string>("");
-  const [unitPrice, setUnitPrice] = useState<string>("");
+  const createPayment = useCreatePayment(
+    order?.id ?? undefined,
+    isAppointmentMode(props) ? props.appointmentId : order?.appointment
+  );
 
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"cash" | "card" | "transfer" | "other">("cash");
+  const [method, setMethod] =
+    useState<"cash" | "card" | "transfer" | "other">("cash");
   const [reference, setReference] = useState("");
   const [bank, setBank] = useState("");
   const [otherDetail, setOtherDetail] = useState("");
@@ -54,35 +74,45 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = ({ appointmentId, read
     e.preventDefault();
     if (!order) return;
 
-    const parsedQty = Number(qty);
-    const parsedPrice = Number(unitPrice);
+    const codeEl = document.getElementById("charge-item-code") as HTMLInputElement | null;
+    const descEl = document.getElementById("charge-item-desc") as HTMLInputElement | null;
+    const qtyEl = document.getElementById("charge-item-qty") as HTMLInputElement | null;
+    const priceEl = document.getElementById("charge-item-price") as HTMLInputElement | null;
 
-    if (!code.trim()) return;
-    if (isNaN(parsedQty) || parsedQty <= 0) return;
-    if (isNaN(parsedPrice) || parsedPrice < 0) return;
+    const code = codeEl?.value?.trim() ?? "";
+    const description = descEl?.value?.trim() ?? "";
+    const qty = Number(qtyEl?.value ?? 0);
+    const unitPrice = Number(priceEl?.value ?? 0);
+
+    if (!code) return;
+    if (isNaN(qty) || qty <= 0) return;
+    if (isNaN(unitPrice) || unitPrice < 0) return;
 
     try {
       await axios.post("/charge-items/", {
         order: order.id,
-        code: code.trim(),
-        description: description.trim(),
-        qty: parsedQty,
-        unit_price: parsedPrice,
+        code,
+        description,
+        qty,
+        unit_price: unitPrice,
       });
-      setCode("");
-      setDescription("");
-      setQty("");
-      setUnitPrice("");
-      await refetch();
+      if (codeEl) codeEl.value = "";
+      if (descEl) descEl.value = "";
+      if (qtyEl) qtyEl.value = "";
+      if (priceEl) priceEl.value = "";
+      void refetch(); // ✅ refetch seguro
     } catch (err: any) {
       console.error("Error agregando ítem:", err);
       if (err.response?.data) {
-        console.error("Detalles del backend:", JSON.stringify(err.response.data, null, 2));
+        console.error(
+          "Detalles del backend:",
+          JSON.stringify(err.response.data, null, 2)
+        );
       }
     }
   };
 
-  const handleAddPayment = (e: React.FormEvent) => {
+    const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
     const payload: PaymentPayload = {
@@ -100,7 +130,9 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = ({ appointmentId, read
         setReference("");
         setBank("");
         setOtherDetail("");
-        refetch();
+        if (isAppointmentMode(props)) {
+          void refetch(); // ✅ refetch seguro
+        }
       },
       onError: (err) => {
         console.error("Error registrando pago:", err);
@@ -108,7 +140,9 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = ({ appointmentId, read
     });
   };
 
-  if (isLoading) return <p className="text-muted">Cargando orden...</p>;
+  if (isAppointmentMode(props) && isLoading) {
+    return <p className="text-muted">Cargando orden...</p>;
+  }
   if (!order) return null;
 
   return (
@@ -139,10 +173,10 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = ({ appointmentId, read
 
           {!readOnly && (
             <form onSubmit={handleAddItem} className="flex flex-col gap-2">
-              <input type="text" placeholder="Servicio / Procedimiento" value={code} onChange={(e) => setCode(e.target.value)} className="input" required />
-              <input type="text" placeholder="Detalle adicional (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} className="input" />
-              <input type="number" placeholder="Cantidad" value={qty} onChange={(e) => setQty(e.target.value)} className="input" required />
-              <input type="number" step="0.01" placeholder="Precio unitario" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="input" required />
+              <input id="charge-item-code" type="text" placeholder="Servicio / Procedimiento" className="input" required />
+              <input id="charge-item-desc" type="text" placeholder="Detalle adicional (opcional)" className="input" />
+              <input id="charge-item-qty" type="number" placeholder="Cantidad" className="input" required />
+              <input id="charge-item-price" type="number" step="0.01" placeholder="Precio unitario" className="input" required />
               <button type="submit" className="btn-secondary self-start">+ Agregar ítem</button>
             </form>
           )}
@@ -156,7 +190,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = ({ appointmentId, read
         <div>
           <ul className="mb-3">
             {order.payments?.length === 0 && <li className="text-muted">Sin pagos registrados</li>}
-            {order.payments?.map((p) => (
+            {order.payments?.map((p: Payment) => (
               <li key={p.id} className="border-b py-1">
                 <strong>${Number(p.amount ?? 0).toFixed(2)}</strong> — {p.method}
                 <span className="text-sm text-muted">

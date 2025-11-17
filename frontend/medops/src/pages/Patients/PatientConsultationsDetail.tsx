@@ -10,6 +10,7 @@ import {
   DocumentsPanel,
   ChargeOrderPanel,
 } from "../../components/Consultation";
+import { ChargeOrder } from "../../types/payments"; // ✅ tipado fuerte
 
 export default function PatientConsultationsDetail() {
   const { id, consultationId } = useParams<{ id: string; consultationId: string }>();
@@ -29,7 +30,6 @@ export default function PatientConsultationsDetail() {
 
   // 🔹 Log institucional de acciones
   const [actionsLog, setActionsLog] = useState<string[]>([]);
-
   const logAction = (msg: string) => {
     setActionsLog((prev) => [...prev, `${new Date().toLocaleTimeString()} — ${msg}`]);
   };
@@ -43,9 +43,12 @@ export default function PatientConsultationsDetail() {
     logAction(`Tratamiento agregado: ${data.plan}`);
     // Aquí llamas tu hook useCreateTreatment o mutación real
   };
-
   const handleAddPrescription = (data: any) => {
-    logAction(`Prescripción agregada: ${data.medication_text || "Medicamento catálogo #" + data.medication_catalog}`);
+    logAction(
+      `Prescripción agregada: ${
+        data.medication_text || "Medicamento catálogo #" + data.medication_catalog
+      }`
+    );
     // Aquí llamas tu hook useCreatePrescription o mutación real
   };
 
@@ -57,7 +60,9 @@ export default function PatientConsultationsDetail() {
           readOnly ? "bg-gray-200 text-gray-700" : "bg-yellow-100 text-yellow-800"
         }`}
       >
-        {readOnly ? "Modo lectura — Consulta bloqueada" : "⚠️ Modo edición activa — Cambios en curso"}
+        {readOnly
+          ? "Modo lectura — Consulta bloqueada"
+          : "⚠️ Modo edición activa — Cambios en curso"}
       </div>
 
       <div className="page-header flex justify-between items-center">
@@ -67,10 +72,7 @@ export default function PatientConsultationsDetail() {
             Paciente #{patientId} — Consulta #{consultation.id}
           </h3>
         </div>
-        <button
-          className="btn-secondary"
-          onClick={() => setReadOnly((prev) => !prev)}
-        >
+        <button className="btn-secondary" onClick={() => setReadOnly((prev) => !prev)}>
           {readOnly ? "Editar consulta" : "Cerrar edición"}
         </button>
       </div>
@@ -115,7 +117,14 @@ export default function PatientConsultationsDetail() {
         {/* 🔹 Columna derecha: orden de cobro */}
         <div className="consultation-column">
           <div className="consultation-card">
-            <ChargeOrderPanel appointmentId={consultation.id} readOnly={readOnly} />
+            {consultation.charge_order ? (
+              <ChargeOrderPanel
+                chargeOrder={consultation.charge_order as ChargeOrder} // ✅ tipado fuerte
+                readOnly={readOnly}
+              />
+            ) : (
+              <p className="text-muted">No hay orden de cobro asociada</p>
+            )}
           </div>
         </div>
       </div>

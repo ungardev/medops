@@ -45,6 +45,8 @@ from .api_views import (
     medicaltest_choices_api,
     medicalreferral_choices_api,
     specialty_choices_api,         # 👈 NUEVO ENDPOINT DE CHOICES DE ESPECIALIDADES
+    current_consultation_api,
+    appointment_detail_api,        # 👈 NUEVO ENDPOINT DE DETALLE DE CITA
 )
 
 # --- Swagger / OpenAPI ---
@@ -93,11 +95,12 @@ urlpatterns = [
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
     path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),
+    path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),  # ✅ NUEVO
 
     # --- Consultas ---
-    path("consultation/current/", api_views.current_consultation_api, name="current-consultation-api"),
+    path("consultation/current/", current_consultation_api, name="current-consultation-api"),
     path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
-    path("consultations/<int:pk>/generate-used-documents/", generate_used_documents, name="generate-used-documents"),  # 👈 NUEVO
+    path("consultations/<int:pk>/generate-used-documents/", generate_used_documents, name="generate-used-documents"),
     path("prescriptions/<int:pk>/generate-pdf/", generate_prescription_pdf, name="generate-prescription-pdf"),
     path("treatments/<int:pk>/generate-pdf/", generate_treatment_pdf, name="generate-treatment-pdf"),
     path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
@@ -132,7 +135,7 @@ urlpatterns = [
     path("choices/prescription/", prescription_choices_api, name="prescription-choices-api"),
     path("choices/medical-test/", medicaltest_choices_api, name="medicaltest-choices-api"),
     path("choices/medical-referral/", medicalreferral_choices_api, name="medicalreferral-choices-api"),
-    path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),  # 👈 NUEVO
+    path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
 ]
 
 # --- Documentación OpenAPI ---
@@ -140,7 +143,7 @@ urlpatterns += [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
 ]
 
-if settings.DEBUG:  # 👈 Swagger solo en desarrollo
+if settings.DEBUG:
     urlpatterns += [
         path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     ]

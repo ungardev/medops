@@ -1,3 +1,4 @@
+// src/types/payments.ts
 import { PatientRef } from "./patients";
 import { Appointment } from "./appointments";
 
@@ -33,18 +34,23 @@ export interface PaymentInput {
   bank_name?: string;
 
   // 🔹 Relaciones
-  charge_order: number;       // 👈 requerido para vincular el pago
+  charge_order: number;       // requerido para vincular el pago
   appointment?: number;       // opcional, si el backend lo admite
 }
 
 // --- Estados de ChargeOrder según el modelo Django ---
-export type ChargeOrderStatus = "open" | "partially_paid" | "paid" | "void";
+export type ChargeOrderStatus =
+  | "open"
+  | "partially_paid"
+  | "paid"
+  | "void"
+  | "waived"; // 👈 añadido porque tu modelo soporta exoneraciones
 
 export interface ChargeItem {
   id: number;
   order: number;
   code: string;
-  description: string;
+  description?: string | null; // ✅ opcional según tu modelo
   qty: number;
   unit_price: number;
   subtotal: number;

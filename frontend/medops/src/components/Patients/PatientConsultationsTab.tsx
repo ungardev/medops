@@ -26,7 +26,6 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
             <th>ID</th>
             <th>Fecha</th>
             <th>Estado</th>
-            <th>Médico</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -40,10 +39,8 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
                   : "—"}
               </td>
               <td>{c.status}</td>
-              <td>{c.doctor_name ?? "-"}</td>
               <td>
                 <div className="flex gap-2">
-                  {/* Botón Ver → lleva a PatientConsultationDetail */}
                   <button
                     className="btn btn-secondary btn-sm"
                     onClick={() =>

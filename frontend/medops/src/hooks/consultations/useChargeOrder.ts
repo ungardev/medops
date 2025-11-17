@@ -1,19 +1,11 @@
+// src/hooks/consultations/useChargeOrder.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetchOptional, apiFetch } from "../../api/client"; // 👈 apiFetchOptional para GET, apiFetch para POST
+import { apiFetchOptional, apiFetch } from "../../api/client";
+import { ChargeOrder, Payment } from "../../types/payments"; // ✅ usamos los tipos oficiales
 
 // -----------------------------
-// Tipos
+// Tipos locales
 // -----------------------------
-export interface Payment {
-  id: number;
-  amount: number;
-  method: string;
-  status: string;
-  reference_number?: string | null;
-  bank?: string | null;
-  detail?: string | null;
-}
-
 export interface PaymentPayload {
   charge_order: number;
   amount: number;
@@ -23,36 +15,17 @@ export interface PaymentPayload {
   detail?: string | null;
 }
 
-export interface ChargeItem {
-  id: number;
-  code: string;
-  description: string;
-  qty: number;
-  unit_price: number;
-  subtotal: number;
-}
-
-export interface ChargeOrder {
-  id: number;
-  appointment: number;
-  patient: number;
-  currency: string;
-  status: "open" | "partially_paid" | "paid" | "void" | "waived"; // 👈 añadido "waived"
-  total: number;
-  balance_due: number;
-  items: ChargeItem[];
-  payments: Payment[];
-}
-
 // -----------------------------
 // API helpers
 // -----------------------------
 async function fetchChargeOrder(appointmentId: number): Promise<ChargeOrder | null> {
+  if (!appointmentId || isNaN(appointmentId)) return null;
   // 👇 apiFetchOptional convierte 404 → null
   return apiFetchOptional<ChargeOrder>(`appointments/${appointmentId}/charge-order/`);
 }
 
 async function createPayment(orderId: number, payload: PaymentPayload): Promise<Payment> {
+  if (!orderId || isNaN(orderId)) throw new Error("OrderId inválido");
   // 👇 apiFetch asegura que siempre devuelva un Payment válido
   return apiFetch<Payment>(`charge-orders/${orderId}/payments/`, {
     method: "POST",
@@ -64,9 +37,10 @@ async function createPayment(orderId: number, payload: PaymentPayload): Promise<
 // Hooks
 // -----------------------------
 export function useChargeOrder(appointmentId: number) {
-  return useQuery<ChargeOrder | null>({
+  return useQuery<ChargeOrder | null, Error>({
     queryKey: ["chargeOrder", appointmentId],
     queryFn: () => fetchChargeOrder(appointmentId),
+    enabled: !!appointmentId && !isNaN(appointmentId), // ✅ blindaje contra NaN
     staleTime: 30_000,
   });
 }
@@ -81,6 +55,7 @@ export function useCreatePayment(orderId?: number, appointmentId?: number) {
     },
     onSuccess: () => {
       if (appointmentId != null) {
+        // ✅ invalidación defensiva
         queryClient.invalidateQueries({ queryKey: ["chargeOrder", appointmentId] });
       }
     },

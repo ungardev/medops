@@ -30,4 +30,4 @@ export { default as ConsultationActions } from "./ConsultationActions";
 
 // 🔹 Charge order
 export { default as ChargeOrderPanel } from "./ChargeOrderPanel";
-export type { ChargeOrderPanelProps } from "./ChargeOrderPanel";
+export type { ChargeOrderPanelProps } from "./ChargeOrderPanel"; // ✅ ahora incluye chargeOrder: ChargeOrder
