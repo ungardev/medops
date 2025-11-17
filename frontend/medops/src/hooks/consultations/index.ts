@@ -3,6 +3,7 @@
 // Consultas
 export * from "./useConsultation";
 export * from "./useCurrentConsultation";
+export * from "./useConsultationById";   // ✅ nuevo hook para detalle histórico por ID
 
 // Acciones clínicas
 export * from "./useCreateDiagnosis";

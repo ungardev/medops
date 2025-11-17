@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// src/components/Consultation/ChargeOrderPanel.tsx
+import React, { useState, useEffect } from "react";
 import {
   useChargeOrder,
   useCreatePayment,
@@ -6,8 +7,10 @@ import {
 } from "../../hooks/consultations/useChargeOrder";
 import axios from "axios";
 
-interface ChargeOrderPanelProps {
+// 🔹 Exportamos la interfaz para index.ts
+export interface ChargeOrderPanelProps {
   appointmentId: number;
+  readOnly?: boolean; // flag para modo lectura
 }
 
 interface ChargeItem {
@@ -18,13 +21,12 @@ interface ChargeItem {
   unit_price: number;
   subtotal: number;
 }
-
-export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProps) {
+const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = ({ appointmentId, readOnly }) => {
   const { data: order, isLoading, refetch } = useChargeOrder(appointmentId);
   const createPayment = useCreatePayment(order?.id, appointmentId);
 
   useEffect(() => {
-    if (order === null && appointmentId) {
+    if (!readOnly && order === null && appointmentId) {
       axios
         .post(`/appointments/${appointmentId}/charge-order/`)
         .then(() => refetch())
@@ -32,7 +34,7 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
           console.error("Error creando orden automáticamente:", err);
         });
     }
-  }, [order, appointmentId, refetch]);
+  }, [order, appointmentId, refetch, readOnly]);
 
   const [code, setCode] = useState("");
   const [description, setDescription] = useState("");
@@ -55,18 +57,9 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
     const parsedQty = Number(qty);
     const parsedPrice = Number(unitPrice);
 
-    if (!code.trim()) {
-      console.error("Código requerido");
-      return;
-    }
-    if (isNaN(parsedQty) || parsedQty <= 0) {
-      console.error("Cantidad inválida");
-      return;
-    }
-    if (isNaN(parsedPrice) || parsedPrice < 0) {
-      console.error("Precio inválido");
-      return;
-    }
+    if (!code.trim()) return;
+    if (isNaN(parsedQty) || parsedQty <= 0) return;
+    if (isNaN(parsedPrice) || parsedPrice < 0) return;
 
     try {
       await axios.post("/charge-items/", {
@@ -89,7 +82,7 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
     }
   };
 
-    const handleAddPayment = (e: React.FormEvent) => {
+  const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
     const payload: PaymentPayload = {
@@ -144,13 +137,15 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
             ))}
           </ul>
 
-          <form onSubmit={handleAddItem} className="flex flex-col gap-2">
-            <input type="text" placeholder="Servicio / Procedimiento" value={code} onChange={(e) => setCode(e.target.value)} className="input" required />
-            <input type="text" placeholder="Detalle adicional (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} className="input" />
-            <input type="number" placeholder="Cantidad" value={qty} onChange={(e) => setQty(e.target.value)} className="input" required />
-            <input type="number" step="0.01" placeholder="Precio unitario" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="input" required />
-            <button type="submit" className="btn-secondary self-start">+ Agregar ítem</button>
-          </form>
+          {!readOnly && (
+            <form onSubmit={handleAddItem} className="flex flex-col gap-2">
+              <input type="text" placeholder="Servicio / Procedimiento" value={code} onChange={(e) => setCode(e.target.value)} className="input" required />
+              <input type="text" placeholder="Detalle adicional (opcional)" value={description} onChange={(e) => setDescription(e.target.value)} className="input" />
+              <input type="number" placeholder="Cantidad" value={qty} onChange={(e) => setQty(e.target.value)} className="input" required />
+              <input type="number" step="0.01" placeholder="Precio unitario" value={unitPrice} onChange={(e) => setUnitPrice(e.target.value)} className="input" required />
+              <button type="submit" className="btn-secondary self-start">+ Agregar ítem</button>
+            </form>
+          )}
         </div>
       )}
 
@@ -171,37 +166,41 @@ export default function ChargeOrderPanel({ appointmentId }: ChargeOrderPanelProp
             ))}
           </ul>
 
-          <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
-            <input type="number" step="0.01" placeholder="Monto" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" required />
-            <select value={method} onChange={(e) => setMethod(e.target.value as "cash" | "card" | "transfer" | "other")} className="select">
-              <option value="cash">Efectivo</option>
-              <option value="card">Tarjeta</option>
-              <option value="transfer">Transferencia</option>
-              <option value="other">Otro</option>
-            </select>
+          {!readOnly && (
+            <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
+              <input type="number" step="0.01" placeholder="Monto" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" required />
+              <select value={method} onChange={(e) => setMethod(e.target.value as "cash" | "card" | "transfer" | "other")} className="select">
+                <option value="cash">Efectivo</option>
+                <option value="card">Tarjeta</option>
+                <option value="transfer">Transferencia</option>
+                <option value="other">Otro</option>
+              </select>
 
-            {method === "card" && (
-              <input type="text" placeholder="Referencia de tarjeta" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
-            )}
-            {method === "transfer" && (
-              <>
-                <input type="text" placeholder="Banco" value={bank} onChange={(e) => setBank(e.target.value)} className="input" required />
-                <input type="text" placeholder="Referencia de transferencia" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
-              </>
-            )}
-            {method === "other" && (
-              <input type="text" placeholder="Detalle del pago" value={otherDetail} onChange={(e) => setOtherDetail(e.target.value)} className="input" required />
-            )}
+              {method === "card" && (
+                <input type="text" placeholder="Referencia de tarjeta" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
+              )}
+              {method === "transfer" && (
+                <>
+                  <input type="text" placeholder="Banco" value={bank} onChange={(e) => setBank(e.target.value)} className="input" required />
+                  <input type="text" placeholder="Referencia de transferencia" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
+                </>
+              )}
+              {method === "other" && (
+                <input type="text" placeholder="Detalle del pago" value={otherDetail} onChange={(e) => setOtherDetail(e.target.value)} className="input" required />
+              )}
 
-            <button type="submit" className="btn-primary self-start" disabled={createPayment.isPending}>
-              {createPayment.isPending ? "Registrando..." : "+ Registrar pago"}
-            </button>
-            {createPayment.isError && (
-              <p className="text-red-500 text-sm">Error al registrar el pago. Intente de nuevo.</p>
-            )}
-          </form>
+              <button type="submit" className="btn-primary self-start" disabled={createPayment.isPending}>
+                {createPayment.isPending ? "Registrando..." : "+ Registrar pago"}
+              </button>
+              {createPayment.isError && (
+                <p className="text-red-500 text-sm">Error al registrar el pago. Intente de nuevo.</p>
+              )}
+            </form>
+          )}
         </div>
       )}
     </div>
   );
-}
+};
+
+export default ChargeOrderPanel;

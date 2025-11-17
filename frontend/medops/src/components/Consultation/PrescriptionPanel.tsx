@@ -1,12 +1,24 @@
-import { useState } from "react";
-import { Diagnosis, Prescription, CreatePrescriptionInput, UpdatePrescriptionInput } from "../../types/consultation";
+// src/components/Consultation/PrescriptionPanel.tsx
+import React, { useState } from "react";
+import {
+  Diagnosis,
+  Prescription,
+  CreatePrescriptionInput,
+  UpdatePrescriptionInput,
+} from "../../types/consultation";
 import PrescriptionBadge from "./PrescriptionBadge";
 import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescription";
 import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescription";
 import MedicationSelector from "./MedicationSelector";
 
+// 🔹 Tipo para opciones institucionales
+interface Option {
+  value: string;
+  label: string;
+}
+
 // 🔹 Opciones institucionales
-const frequencyOptions = [
+const frequencyOptions: Option[] = [
   { value: "once_daily", label: "Una vez al día" },
   { value: "bid", label: "2 veces al día (BID)" },
   { value: "tid", label: "3 veces al día (TID)" },
@@ -25,7 +37,7 @@ const frequencyOptions = [
   { value: "achs", label: "Antes de comidas y al acostarse" },
 ];
 
-const routeOptions = [
+const routeOptions: Option[] = [
   { value: "oral", label: "Oral" },
   { value: "iv", label: "Intravenosa (IV)" },
   { value: "im", label: "Intramuscular (IM)" },
@@ -37,7 +49,7 @@ const routeOptions = [
   { value: "other", label: "Otro" },
 ];
 
-const unitOptions = [
+const unitOptions: Option[] = [
   { value: "mg", label: "mg" },
   { value: "ml", label: "ml" },
   { value: "g", label: "g" },
@@ -49,12 +61,19 @@ const unitOptions = [
   { value: "patch", label: "Parche" },
 ];
 
-interface PrescriptionPanelProps {
+// 🔹 Exportamos la interfaz para que pueda ser usada en index.ts
+export interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
-  onAdd: (data: CreatePrescriptionInput) => void;
+  prescriptions?: Prescription[]; // para modo readOnly
+  readOnly?: boolean;             // flag para modo lectura
+  onAdd?: (data: CreatePrescriptionInput) => void; // opcional en modo readOnly
 }
-
-export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPanelProps) {
+const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
+  diagnoses,
+  prescriptions,
+  readOnly,
+  onAdd,
+}) => {
   const [diagnosisId, setDiagnosisId] = useState<number | "">("");
   const [medicationCatalogId, setMedicationCatalogId] = useState<number | undefined>(undefined);
   const [medicationText, setMedicationText] = useState<string | undefined>(undefined);
@@ -69,9 +88,9 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!diagnosisId || (!medicationCatalogId && !medicationText)) return;
+    if (!diagnosisId || (!medicationCatalogId && !medicationText) || !onAdd) return;
 
-    onAdd({
+    const payload: CreatePrescriptionInput = {
       diagnosis: Number(diagnosisId),
       medication_catalog: medicationCatalogId,
       medication_text: medicationText?.trim() || undefined,
@@ -80,7 +99,9 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
       frequency,
       route,
       unit,
-    });
+    };
+
+    onAdd(payload);
 
     // reset form
     setDiagnosisId("");
@@ -97,114 +118,156 @@ export default function PrescriptionPanel({ diagnoses, onAdd }: PrescriptionPane
     <div className="prescription-panel card">
       <h3 className="text-lg font-bold mb-2">Prescripciones</h3>
 
-      {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
-      {diagnoses.map((d) => (
-        <div key={d.id} className="mb-3">
-          <h4 className="font-semibold">
-            {d.icd_code} — {d.title || d.description || "Sin descripción"}
-          </h4>
-          <ul className="ml-4">
-            {d.prescriptions && d.prescriptions.length > 0 ? (
-              d.prescriptions.map((p: Prescription) => (
-                <li key={p.id}>
-                  <PrescriptionBadge
-                    id={p.id}
-                    medication={p.medication_catalog?.name || p.medication_text || "—"}
-                    dosage={p.dosage ?? undefined}
-                    duration={p.duration ?? undefined}
-                    frequency={p.frequency}
-                    route={p.route}
-                    unit={p.unit}
-                    onEdit={(id, med, dos, dur, freq, rt, un) =>
-                      updatePrescription({
-                        id,
-                        medication_text: med,
-                        dosage: dos ?? undefined,
-                        duration: dur ?? undefined,
-                        frequency: freq,
-                        route: rt,
-                        unit: un,
-                      } as UpdatePrescriptionInput)
-                    }
-                    onDelete={(id) => deletePrescription(id)}
-                  />
-                </li>
-              ))
-            ) : (
-              <li className="text-muted">Sin prescripciones</li>
-            )}
-          </ul>
+      {/* 🔹 Modo readOnly */}
+      {readOnly && (
+        <div>
+          {(!prescriptions || prescriptions.length === 0) && (
+            <p className="text-muted">Sin prescripciones</p>
+          )}
+          {prescriptions?.map((p) => (
+            <PrescriptionBadge
+              key={p.id}
+              id={p.id}
+              medication={p.medication_catalog?.name || p.medication_text || "—"}
+              dosage={p.dosage ?? undefined}
+              duration={p.duration ?? undefined}
+              frequency={p.frequency}
+              route={p.route}
+              unit={p.unit}
+            />
+          ))}
         </div>
-      ))}
+      )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
-        <select
-          value={diagnosisId}
-          onChange={(e) => setDiagnosisId(Number(e.target.value))}
-          className="select"
-          required
-        >
-          <option value="">Seleccionar diagnóstico</option>
+      {/* 🔹 Modo write */}
+      {!readOnly && (
+        <>
+          {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
           {diagnoses.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.icd_code} — {d.title || d.description}
-            </option>
+            <div key={d.id} className="mb-3">
+              <h4 className="font-semibold">
+                {d.icd_code} — {d.title || d.description || "Sin descripción"}
+              </h4>
+              <ul className="ml-4">
+                {d.prescriptions && d.prescriptions.length > 0 ? (
+                  d.prescriptions.map((p: Prescription) => (
+                    <li key={p.id}>
+                      <PrescriptionBadge
+                        id={p.id}
+                        medication={p.medication_catalog?.name || p.medication_text || "—"}
+                        dosage={p.dosage ?? undefined}
+                        duration={p.duration ?? undefined}
+                        frequency={p.frequency}
+                        route={p.route}
+                        unit={p.unit}
+                        onEdit={(id, med, dos, dur, freq, rt, un) =>
+                          updatePrescription({
+                            id,
+                            medication_text: med,
+                            dosage: dos ?? undefined,
+                            duration: dur ?? undefined,
+                            frequency: freq,
+                            route: rt,
+                            unit: un,
+                          } as UpdatePrescriptionInput)
+                        }
+                        onDelete={(id) => deletePrescription(id)}
+                      />
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-muted">Sin prescripciones</li>
+                )}
+              </ul>
+            </div>
           ))}
-        </select>
 
-        <MedicationSelector
-          valueCatalogId={medicationCatalogId}
-          valueText={medicationText}
-          onChange={({ catalogId, text }) => {
-            setMedicationCatalogId(catalogId);
-            setMedicationText(text);
-          }}
-        />
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
+            <select
+              value={diagnosisId}
+              onChange={(e) => setDiagnosisId(Number(e.target.value))}
+              className="select"
+              required
+            >
+              <option value="">Seleccionar diagnóstico</option>
+              {diagnoses.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.icd_code} — {d.title || d.description}
+                </option>
+              ))}
+            </select>
 
-        <input
-          type="text"
-          placeholder="Dosis (ej: 500)"
-          value={dosage}
-          onChange={(e) => setDosage(e.target.value)}
-          className="input"
-        />
+            <MedicationSelector
+              valueCatalogId={medicationCatalogId}
+              valueText={medicationText}
+              onChange={({ catalogId, text }) => {
+                setMedicationCatalogId(catalogId);
+                setMedicationText(text);
+              }}
+            />
 
-        <input
-          type="text"
-          placeholder="Duración (ej: 7 días)"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          className="input"
-        />
+            <input
+              type="text"
+              placeholder="Dosis (ej: 500)"
+              value={dosage}
+              onChange={(e) => setDosage(e.target.value)}
+              className="input"
+            />
 
-        <select value={frequency} onChange={(e) => setFrequency(e.target.value as UpdatePrescriptionInput["frequency"])} className="select">
-          {frequencyOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+            <input
+              type="text"
+              placeholder="Duración (ej: 7 días)"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              className="input"
+            />
 
-        <select value={route} onChange={(e) => setRoute(e.target.value as UpdatePrescriptionInput["route"])} className="select">
-          {routeOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+            <select
+              value={frequency}
+              onChange={(e) =>
+                setFrequency(e.target.value as UpdatePrescriptionInput["frequency"])
+              }
+              className="select"
+            >
+              {frequencyOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
 
-        <select value={unit} onChange={(e) => setUnit(e.target.value as UpdatePrescriptionInput["unit"])} className="select">
-          {unitOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+            <select
+              value={route}
+              onChange={(e) => setRoute(e.target.value as UpdatePrescriptionInput["route"])}
+              className="select"
+            >
+              {routeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
 
-        <button type="submit" className="btn-primary self-start">
-          + Agregar prescripción
-        </button>
-      </form>
+            <select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value as UpdatePrescriptionInput["unit"])}
+              className="select"
+            >
+              {unitOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+
+            <button type="submit" className="btn-primary self-start">
+              + Agregar prescripción
+            </button>
+          </form>
+        </>
+      )}
     </div>
   );
-}
+};
+
+export default PrescriptionPanel;

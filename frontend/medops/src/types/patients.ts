@@ -13,6 +13,14 @@ export interface GeneticPredisposition {
   description?: string | null;
 }
 
+// --- Resumen de consulta asociada al paciente
+export interface AppointmentSummary {
+  id: number;
+  date: string;   // ISO string
+  status: "scheduled" | "in_consultation" | "completed" | "canceled";
+  doctor_name?: string | null;
+}
+
 // --- Modelo completo de paciente
 export interface Patient extends PatientRef {
   first_name: string;
@@ -33,6 +41,9 @@ export interface Patient extends PatientRef {
 
   // 🔹 Predisposiciones genéticas (objetos completos en lectura)
   genetic_predispositions?: GeneticPredisposition[];
+
+  // 🔹 Consultas asociadas al paciente (resumen)
+  consultations?: AppointmentSummary[];
 
   // Operativos
   active?: boolean;

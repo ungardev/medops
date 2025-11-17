@@ -152,19 +152,21 @@ export default function Patients() {
             <tr key={p.id}>
               <td>{p.id}</td>
               <td>{p.full_name}</td>
-              <td>{p.age ?? "-"}</td> {/* 👈 ahora usamos directamente el campo age del backend */}
+              <td>{p.age ?? "-"}</td>
               <td>{p.gender ?? "-"}</td>
               <td>{p.contact_info ?? "-"}</td>
-              <td className="flex gap-2">
-                <button className="btn-ghost" onClick={() => viewPatient(p.id)}>
-                  <FaUser />
-                </button>
-                <button
-                  className="btn-ghost text-danger"
-                  onClick={() => confirmDeletePatient(p)}
-                >
-                  <FaTimes />
-                </button>
+              <td>
+                <div className="flex gap-2">
+                  <button className="btn-ghost" onClick={() => viewPatient(p.id)}>
+                    <FaUser />
+                  </button>
+                  <button
+                    className="btn-ghost text-danger"
+                    onClick={() => confirmDeletePatient(p)}
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
               </td>
             </tr>
           ))}

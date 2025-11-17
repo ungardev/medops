@@ -15,8 +15,8 @@ export interface Treatment {
   plan: string;
   start_date?: string; // ISO date
   end_date?: string;   // ISO date
-  status: "active" | "completed" | "cancelled";   // 👈 alineado con backend
-  treatment_type: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 alineado con backend
+  status: "active" | "completed" | "suspended";   // 👈 corregido
+  treatment_type: "pharmacological" | "surgical" | "therapeutic" | "other"; // 👈 corregido
 }
 
 // --- Prescripción ---
@@ -54,8 +54,8 @@ export interface Prescription {
 // --- Inputs para mutaciones de prescripciones ---
 export interface CreatePrescriptionInput {
   diagnosis: number;
-  medication_catalog?: number;
-  medication_text?: string | null;
+  medication_catalog?: number;       // ID de medicamento en catálogo
+  medication_text?: string | null;   // Texto libre si no está en catálogo
   dosage?: string;
   duration?: string;
   frequency?: Prescription["frequency"];

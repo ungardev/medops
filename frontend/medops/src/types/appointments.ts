@@ -1,7 +1,7 @@
 // src/types/appointments.ts
 import { PatientRef } from "./patients";
-import { Payment } from "./payments";              
-import { Diagnosis, Treatment, Prescription } from "./consultation"; 
+import { Payment } from "./payments";
+import { Diagnosis, Treatment, Prescription } from "./consultation";
 
 // --- Estados posibles de una cita
 export type AppointmentStatus =
@@ -21,13 +21,23 @@ export interface Appointment {
   status: AppointmentStatus;
   arrival_time?: string | null;
   notes?: string | null;
-  diagnoses: Diagnosis[];       // 👈 siempre array
-  treatments: Treatment[];      // 👈 siempre array
-  prescriptions: Prescription[];// 👈 siempre array
-  documents?: any[];            // opcional, según serializer
-  payments: Payment[];          // 👈 siempre array
-  created_at?: string;          // 👈 añadido
-  updated_at?: string;          // 👈 añadido
+
+  // 🔹 Bloques clínicos
+  diagnoses: Diagnosis[];        // siempre array
+  treatments: Treatment[];       // siempre array
+  prescriptions: Prescription[]; // siempre array
+
+  // 🔹 Documentos y pagos
+  documents?: any[];             // opcional, según serializer
+  payments: Payment[];           // siempre array
+
+  // 🔹 Campos adicionales del serializer de consulta
+  doctor_name?: string | null;   // médico que atendió
+  charge_order?: any;            // orden de cobro asociada
+
+  // 🔹 Metadatos
+  created_at?: string;
+  updated_at?: string;
 }
 
 // --- Datos de entrada para crear/editar cita

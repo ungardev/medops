@@ -1,7 +1,7 @@
-import { useMutation, UseMutationResult } from "@tanstack/react-query";
+// src/hooks/consultations/useGenerateConsultationDocuments.ts
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 
-// 🔹 Tipos de documentos generados
 export interface GeneratedDocument {
   id: number;
   category: string;
@@ -9,28 +9,26 @@ export interface GeneratedDocument {
   file_url: string;
 }
 
-// 🔹 Respuesta del endpoint
 export interface GenerateDocumentsResponse {
   generated: GeneratedDocument[];
   skipped: string[];
   message: string;
 }
 
-// 🔹 Hook para generar documentos de consulta
-export function useGenerateConsultationDocuments(): UseMutationResult<
-  GenerateDocumentsResponse,
-  Error,
-  number
-> {
+export function useGenerateConsultationDocuments() {
+  const queryClient = useQueryClient();
+
   return useMutation<GenerateDocumentsResponse, Error, number>({
-    mutationFn: async (consultationId: number): Promise<GenerateDocumentsResponse> => {
+    mutationFn: async (consultationId: number) => {
       return apiFetch<GenerateDocumentsResponse>(
         `consultations/${consultationId}/generate-used-documents/`,
-        {
-          method: "POST",
-        }
+        { method: "POST" }
       );
+    },
+    onSuccess: (_data, consultationId) => {
+      queryClient.invalidateQueries({
+        queryKey: ["documents", undefined, consultationId],
+      });
     },
   });
 }
-

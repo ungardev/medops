@@ -32,8 +32,10 @@ export default function TreatmentBadge({
   const [editedPlan, setEditedPlan] = useState(plan);
   const [editedStart, setEditedStart] = useState(start_date || "");
   const [editedEnd, setEditedEnd] = useState(end_date || "");
-  const [editedStatus, setEditedStatus] = useState(status);
-  const [editedType, setEditedType] = useState(treatment_type);
+  const [editedStatus, setEditedStatus] = useState<"active" | "completed" | "suspended">(status);
+  const [editedType, setEditedType] = useState<
+    "pharmacological" | "surgical" | "therapeutic" | "other"
+  >(treatment_type);
 
   const handleSave = () => {
     if (onEdit) {
@@ -109,7 +111,9 @@ export default function TreatmentBadge({
 
           <select
             value={editedStatus}
-            onChange={(e) => setEditedStatus(e.target.value as any)}
+            onChange={(e) =>
+              setEditedStatus(e.target.value as "active" | "completed" | "suspended")
+            }
             className="select"
           >
             <option value="active">Activo</option>
@@ -119,7 +123,11 @@ export default function TreatmentBadge({
 
           <select
             value={editedType}
-            onChange={(e) => setEditedType(e.target.value as any)}
+            onChange={(e) =>
+              setEditedType(
+                e.target.value as "pharmacological" | "surgical" | "therapeutic" | "other"
+              )
+            }
             className="select"
           >
             <option value="pharmacological">Farmacológico</option>

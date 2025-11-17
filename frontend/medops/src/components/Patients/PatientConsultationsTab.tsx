@@ -1,66 +1,67 @@
 // src/components/Patients/PatientConsultationsTab.tsx
-import React from "react";
-import { PatientTabProps } from "./types";
-import { useCompletedAppointments } from "../../hooks/patients/useCompletedAppointments";
+import { useNavigate } from "react-router-dom";
+import { Patient } from "../../types/patients";
 import { Appointment } from "../../types/appointments";
-import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
+import { useConsultationsByPatient } from "../../hooks/patients/useConsultationsByPatient";
 
-export default function PatientConsultationsTab({ patient }: PatientTabProps) {
-  const { data: consultations, isLoading, error } = useCompletedAppointments(patient.id);
-  const generateReport = useGenerateMedicalReport();
+interface PatientConsultationsTabProps {
+  patient: Patient;
+}
 
-  const isEmpty = !isLoading && !error && (consultations?.length ?? 0) === 0;
+export default function PatientConsultationsTab({ patient }: PatientConsultationsTabProps) {
+  const navigate = useNavigate();
+  const { data, isLoading, error } = useConsultationsByPatient(patient.id);
 
   if (isLoading) return <p>Cargando consultas...</p>;
-  if (error) return <p className="text-danger">Error: {(error as Error).message}</p>;
-  if (isEmpty) return <p>No tiene consultas registradas</p>;
+  if (error) return <p className="text-danger">Error cargando consultas</p>;
+  if (!data || data.list.length === 0) {
+    return <p className="text-muted">Este paciente no tiene consultas registradas.</p>;
+  }
 
   return (
-    <table className="table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>Estado</th>
-          <th>Notas</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {consultations?.map((c: Appointment) => (
-          <tr key={c.id}>
-            <td>
-              {c.appointment_date
-                ? new Date(c.appointment_date).toLocaleDateString("es-VE")
-                : "—"}
-            </td>
-            <td>{c.appointment_type ?? "—"}</td>
-            <td>{c.status ?? "—"}</td>
-            <td>{c.notes || "—"}</td>
-            <td>
-              <button
-                className="btn btn-primary btn-sm"
-                disabled={generateReport.isPending}
-                onClick={() => generateReport.mutate(c.id)}
-              >
-                {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
-              </button>
-
-              {/* Mostrar enlace directo al PDF recién generado */}
-              {generateReport.data?.file_url && generateReport.data.appointment === c.id && (
-                <a
-                  href={generateReport.data.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-secondary btn-sm ml-2"
-                >
-                  Ver Informe
-                </a>
-              )}
-            </td>
+    <div className="patient-consultations-tab">
+      <table className="table mt-4">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+            <th>Médico</th>
+            <th>Acciones</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {data.list.map((c: Appointment) => (
+            <tr key={c.id}>
+              <td>{c.id}</td>
+              <td>
+                {c.appointment_date
+                  ? new Date(c.appointment_date).toLocaleDateString("es-VE")
+                  : "—"}
+              </td>
+              <td>{c.status}</td>
+              <td>{c.doctor_name ?? "-"}</td>
+              <td>
+                <div className="flex gap-2">
+                  {/* Botón Ver → lleva a PatientConsultationDetail */}
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    onClick={() =>
+                      navigate(`/patients/${patient.id}/consultations/${c.id}`)
+                    }
+                  >
+                    Ver
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="mt-2 text-sm text-muted">
+        Total de consultas completadas: {data.totalCount}
+      </p>
+    </div>
   );
 }

@@ -1211,7 +1211,16 @@ def recalc_appointment_status(appointment: Appointment):
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
-    queryset = Appointment.objects.all()
+    """
+    API endpoint para gestionar citas médicas (Appointment).
+    Incluye acción custom para manejar órdenes de cobro asociadas.
+    """
+    def get_queryset(self):
+        qs = Appointment.objects.select_related("patient", "doctor")
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            qs = qs.filter(patient_id=patient_id)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:

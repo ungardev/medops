@@ -1,25 +1,27 @@
-import { useState } from "react";
+// src/components/Consultation/NotesPanel.tsx
+import React, { useState } from "react";
 import { useUpdateAppointmentNotes } from "../../hooks/appointments/useUpdateAppointmentNotes";
 
-interface NotesPanelProps {
-  appointmentId: number;
+// 🔹 Exportamos la interfaz para index.ts
+export interface NotesPanelProps {
+  appointmentId?: number;   // opcional en modo readOnly
   notes: string | null;
+  readOnly?: boolean;       // flag para modo lectura
 }
-
-export default function NotesPanel({ appointmentId, notes }: NotesPanelProps) {
+const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly }) => {
   const [value, setValue] = useState(notes || "");
   const [isEditing, setIsEditing] = useState(false);
 
   const { mutate: updateNotes, isPending } = useUpdateAppointmentNotes();
 
   const handleSave = () => {
-    if (value.trim() === "") return;
+    if (!appointmentId || value.trim() === "") return;
     updateNotes(
       { id: appointmentId, notes: value },
       {
         onSuccess: (_data, variables) => {
-          setValue(variables.notes);        // ✅ actualiza el estado local
-          setIsEditing(false);              // ✅ cierra el modo edición
+          setValue(variables.notes);
+          setIsEditing(false);
         },
       }
     );
@@ -29,7 +31,15 @@ export default function NotesPanel({ appointmentId, notes }: NotesPanelProps) {
     <div className="notes-panel card">
       <h3 className="text-lg font-bold mb-2">Notas Adicionales</h3>
 
-      {!isEditing ? (
+      {readOnly && (
+        <div className="mb-2">
+          <p className="whitespace-pre-line">
+            {notes || "Sin notas registradas"}
+          </p>
+        </div>
+      )}
+
+      {!readOnly && !isEditing && (
         <div className="mb-2">
           <p className="whitespace-pre-line">
             {value || "Sin notas registradas"}
@@ -41,7 +51,9 @@ export default function NotesPanel({ appointmentId, notes }: NotesPanelProps) {
             Editar notas
           </button>
         </div>
-      ) : (
+      )}
+
+      {!readOnly && isEditing && (
         <div className="flex flex-col gap-2">
           <textarea
             value={value}
@@ -71,4 +83,6 @@ export default function NotesPanel({ appointmentId, notes }: NotesPanelProps) {
       )}
     </div>
   );
-}
+};
+
+export default NotesPanel;
