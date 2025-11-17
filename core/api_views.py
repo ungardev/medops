@@ -1207,23 +1207,24 @@ def recalc_appointment_status(appointment: Appointment):
     else:
         appointment.status = "pending"
     appointment.save(update_fields=["status"])
-    
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     """
     API endpoint para gestionar citas médicas (Appointment).
     Incluye acción custom para manejar órdenes de cobro asociadas.
+    Adaptado para entorno mono-médico: sin relación directa con doctor.
     """
+
     def get_queryset(self):
-        qs = Appointment.objects.select_related("patient", "doctor")
+        qs = Appointment.objects.select_related("patient")  # ✅ solo patient, no doctor
         patient_id = self.request.query_params.get("patient")
         if patient_id:
             try:
                 patient_id = int(patient_id)
                 qs = qs.filter(patient_id=patient_id)
             except (ValueError, TypeError):
-                qs = Appointment.objects.none()
+                return Appointment.objects.none()
         return qs
 
     def get_serializer_class(self):
@@ -1264,7 +1265,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             order = ChargeOrder.objects.create(
                 appointment=appointment,
                 patient=appointment.patient,
-                currency="USD",   # ajusta según tu lógica
+                currency="USD",
                 status="open",
             )
             serializer = ChargeOrderSerializer(order)
