@@ -38,13 +38,21 @@
   </div>
 
   <div class="section">
-    <h2>Referencia Médica</h2>
-    {% if referral %}
-      <p><strong>Especialidad:</strong> {{ referral.specialty.name }}</p>
-      <p><strong>Referido a:</strong> {{ referral.referred_to|default:"No especificado" }}</p>
-      <p><strong>Razón:</strong> {{ referral.reason|default:"Sin razón" }}</p>
-      <p><strong>Estado:</strong> {{ referral.get_status_display }}</p>
-      <p><strong>Urgencia:</strong> {{ referral.get_urgency_display }}</p>
+    <h2>Referencias Médicas</h2>
+    {% if items %}
+      <ul>
+        {% for r in items %}
+          <li>
+            {% if r.specialties %}
+              <p><strong>Especialidades:</strong> {{ r.specialties|join:", " }}</p>
+            {% endif %}
+            <p><strong>Referido a:</strong> {{ r.referred_to|default:"No especificado" }}</p>
+            <p><strong>Razón:</strong> {{ r.notes|default:"Sin razón" }}</p>
+            <p><strong>Estado:</strong> {{ r.status }}</p>
+            <p><strong>Urgencia:</strong> {{ r.urgency }}</p>
+          </li>
+        {% endfor %}
+      </ul>
     {% else %}
       <p class="empty">No hay referencias médicas en esta consulta.</p>
     {% endif %}

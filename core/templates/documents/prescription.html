@@ -100,12 +100,7 @@
             </tbody>
           </table>
 
-          {% set has_notes = False %}
-          {% for p in items %}
-            {% if p.notes %}{% set has_notes = True %}{% endif %}
-          {% endfor %}
-
-          {% if has_notes %}
+          {% if items|dictsort:"notes" %}
             <ul style="margin-top:6px;">
               {% for p in items %}
                 {% if p.notes %}

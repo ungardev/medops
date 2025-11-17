@@ -45,50 +45,54 @@
 
   <div class="section">
     <h2>Órdenes de Exámenes Médicos</h2>
-    {% if appointment.medical_tests.all %}
+    {% if lab_tests or image_tests %}
       <div class="recipera">
         <!-- Columna izquierda: Laboratorios -->
         <div class="column">
           <h3>Laboratorios</h3>
+          {% if lab_tests %}
           <table class="table-compact">
             <thead>
               <tr><th>Tipo</th><th>Descripción</th><th>Urgencia</th><th>Estado</th></tr>
             </thead>
             <tbody>
-              {% for t in appointment.medical_tests.all %}
-                {% if t.test_type in "blood_test,urine_test,stool_test,microbiology_culture,biopsy,genetic_test" %}
-                <tr>
-                  <td>{{ t.get_test_type_display }}</td>
-                  <td>{{ t.description|default:"Sin descripción" }}</td>
-                  <td>{{ t.get_urgency_display }}</td>
-                  <td>{{ t.get_status_display }}</td>
-                </tr>
-                {% endif %}
+              {% for t in lab_tests %}
+              <tr>
+                <td>{{ t.type }}</td>
+                <td>{{ t.description|default:"Sin descripción" }}</td>
+                <td>{{ t.urgency }}</td>
+                <td>{{ t.status }}</td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>
+          {% else %}
+            <p class="empty">No hay exámenes de laboratorio.</p>
+          {% endif %}
         </div>
 
         <!-- Columna derecha: Imágenes/Estudios -->
         <div class="column">
           <h3>Imágenes / Estudios</h3>
+          {% if image_tests %}
           <table class="table-compact">
             <thead>
               <tr><th>Tipo</th><th>Descripción</th><th>Urgencia</th><th>Estado</th></tr>
             </thead>
             <tbody>
-              {% for t in appointment.medical_tests.all %}
-                {% if t.test_type in "xray,ultrasound,ct_scan,mri,ecg" %}
-                <tr>
-                  <td>{{ t.get_test_type_display }}</td>
-                  <td>{{ t.description|default:"Sin descripción" }}</td>
-                  <td>{{ t.get_urgency_display }}</td>
-                  <td>{{ t.get_status_display }}</td>
-                </tr>
-                {% endif %}
+              {% for t in image_tests %}
+              <tr>
+                <td>{{ t.type }}</td>
+                <td>{{ t.description|default:"Sin descripción" }}</td>
+                <td>{{ t.urgency }}</td>
+                <td>{{ t.status }}</td>
+              </tr>
               {% endfor %}
             </tbody>
           </table>
+          {% else %}
+            <p class="empty">No hay exámenes de imágenes.</p>
+          {% endif %}
         </div>
       </div>
     {% else %}
