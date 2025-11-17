@@ -23,12 +23,19 @@
 </head>
 <body>
   <header>
-    {% if institution.logo %}
+    {% if institution and institution.logo %}
       <img src="{{ institution.logo.path }}" alt="Logo institucional"
            style="max-width:120px; max-height:70px; object-fit:contain; margin-bottom:6px;">
     {% endif %}
     <h1>Orden de Examen Médico</h1>
     <p>{{ institution.name }}</p>
+    {% if institution.address or institution.phone or institution.tax_id %}
+      <p>
+        {% if institution.address %}{{ institution.address }}{% endif %}
+        {% if institution.phone %} - Tel: {{ institution.phone }}{% endif %}
+        {% if institution.tax_id %} - RIF: {{ institution.tax_id }}{% endif %}
+      </p>
+    {% endif %}
     <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
     <p><strong>Consulta #{{ appointment.id }} — Código de auditoría: {{ audit_code }}</strong></p>
   </header>

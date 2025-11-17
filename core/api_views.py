@@ -3282,7 +3282,7 @@ def generate_used_documents(request, pk):
                 template_version="v1.0",
                 uploaded_by=user if user else None,
                 generated_by=user if user else None,
-                audit_code=audit_code,   # 👈 nuevo campo persistido
+                audit_code=audit_code,
             )
 
             # Registrar evento de auditoría institucional
@@ -3297,7 +3297,7 @@ def generate_used_documents(request, pk):
                     "diagnosis_id": getattr(diagnosis_obj, "id", None),
                     "category": category,
                     "checksum": getattr(doc, "checksum_sha256", None),
-                    "audit_code": audit_code,  # 👈 también en metadata del evento
+                    "audit_code": audit_code,
                 },
                 severity="info",
                 notify=True,
@@ -3314,7 +3314,7 @@ def generate_used_documents(request, pk):
                 "category": doc.category,
                 "description": doc.description,
                 "file_url": file_url,
-                "audit_code": audit_code,  # 👈 lo devolvemos en la respuesta
+                "audit_code": audit_code,
             }
 
         # Treatment
@@ -3323,7 +3323,7 @@ def generate_used_documents(request, pk):
             pdf, audit_code = generate_pdf_document("treatment", treatments, appointment)
             first_item = treatments.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-            generated.append(register_document(pdf, audit_code, "treatment", appointment, patient, user, diagnosis_obj, "Documento de Tratamientos"))
+            generated.append(register_document(pdf, audit_code, "treatment", appointment, patient, user, diagnosis_obj, "Plan de Tratamiento"))
         else:
             skipped.append("treatment")
 
@@ -3343,7 +3343,7 @@ def generate_used_documents(request, pk):
             pdf, audit_code = generate_pdf_document("medical_test", orders, appointment)
             first_item = orders.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-            generated.append(register_document(pdf, audit_code, "medical_test", appointment, patient, user, diagnosis_obj, "Ordenes de Exámenes"))
+            generated.append(register_document(pdf, audit_code, "medical_test", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
         else:
             skipped.append("medical_test")
 
@@ -3357,10 +3357,23 @@ def generate_used_documents(request, pk):
         else:
             skipped.append("medical_referral")
 
+        # Construir wrapper consolidado
+        from django.utils.timezone import now
         return Response({
-            "generated": generated,
+            "consultation_id": appointment.id,
+            "audit_code": generated[0]["audit_code"] if generated else None,
+            "generated_at": now().isoformat(),
+            "documents": [
+                {
+                    "category": doc["category"],
+                    "title": doc["description"],
+                    "filename": doc["file_url"].split("/")[-1] if doc["file_url"] else None,
+                    "audit_code": doc["audit_code"],
+                    "url": doc["file_url"],
+                }
+                for doc in generated
+            ],
             "skipped": skipped,
-            "message": f"{len(generated)} clinical documents were generated.",
         }, status=201)
 
     except Exception as e:
