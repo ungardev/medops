@@ -46,7 +46,7 @@ from .api_views import (
     medicalreferral_choices_api,
     specialty_choices_api,         # 👈 NUEVO ENDPOINT DE CHOICES DE ESPECIALIDADES
     current_consultation_api,
-    appointment_detail_api,        # 👈 NUEVO ENDPOINT DE DETALLE DE CITA
+    appointment_detail_api,        # 👈 ENDPOINT DE DETALLE DE CITA
 )
 
 # --- Swagger / OpenAPI ---
@@ -95,7 +95,8 @@ urlpatterns = [
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
     path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),
-    path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),  # ✅ NUEVO
+    path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),  # ✅ ENDPOINT PRINCIPAL
+    path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),  # ✅ ALIAS PARA EL FRONTEND
 
     # --- Consultas ---
     path("consultation/current/", current_consultation_api, name="current-consultation-api"),
