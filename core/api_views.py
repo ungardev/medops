@@ -1771,12 +1771,14 @@ def reports_api(request):
     end_date = request.GET.get("end_date")
     report_type = request.GET.get("type", "financial")
 
+    # 🔹 Parse seguro de fechas
     start = parse_date(start_date) if start_date else None
     end = parse_date(end_date) if end_date else None
 
     data = []
 
     if report_type == "financial":
+        # 🔹 Solo pagos con fecha de confirmación registrada
         qs = Payment.objects.select_related("appointment__patient").filter(received_at__isnull=False)
 
         if start and end:
@@ -1789,7 +1791,7 @@ def reports_api(request):
         for p in qs:
             data.append({
                 "id": p.id,
-                "date": p.received_at.date().isoformat(),
+                "date": p.received_at.date().isoformat(),  # 🔹 Fecha real de confirmación
                 "type": "financial",
                 "entity": str(p.appointment.patient) if p.appointment else "—",
                 "status": p.status,
@@ -1833,7 +1835,7 @@ def reports_api(request):
         for p in payments:
             data.append({
                 "id": p.id,
-                "date": p.received_at.date().isoformat(),
+                "date": p.received_at.date().isoformat(),  # 🔹 Fecha real de confirmación
                 "type": "financial",
                 "entity": str(p.appointment.patient) if p.appointment else "—",
                 "status": p.status,
