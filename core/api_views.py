@@ -2887,7 +2887,7 @@ def generate_referral_pdf(request, pk):
 
 @extend_schema(
     responses={201: ChargeOrderSerializer},
-    description="Genera un comprobante financiero en PDF y lo registra como documento clínico."
+    description="Genera una orden de cobro en PDF y la registra como documento clínico."
 )
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
@@ -2896,19 +2896,49 @@ def generate_chargeorder_pdf(request, pk):
     patient = charge_order.patient
     appointment = charge_order.appointment
 
+    # Recalcular totales antes de exportar
+    charge_order.recalc_totals()
+    charge_order.save()
+
+    # Doctor institucional
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+
+    # Institution settings
+    institution = InstitutionSettings.objects.first()
+
+    # Generar audit_code institucional
+    audit_code = generate_audit_code(appointment, patient)
+
+    # Generar QR con payload trazable
+    qr_payload = f"Consulta:{appointment.id}|ChargeOrder:{charge_order.id}|Audit:{audit_code}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
+
+    # Contexto para plantilla
     context = {
         "charge_order": charge_order,
         "items": charge_order.items.all(),
         "payments": charge_order.payments.all(),
         "patient": patient,
         "appointment": appointment,
-        "doctor": request.user,
-        "institution": InstitutionSettings.objects.first(),
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
+        },
+        "institution": institution,
+        "audit_code": audit_code,
+        "qr_code_url": qr_code_url,
+        "generated_at": timezone.now(),
     }
 
     # Renderizar HTML → PDF
     html_string = render_to_string("pdf/charge_order.html", context)
-    from weasyprint import HTML
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
     # Guardar PDF en storage
@@ -2919,10 +2949,8 @@ def generate_chargeorder_pdf(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    from django.core.files import File
     django_file = File(open(full_path, "rb"), name=filename)
 
-    import hashlib
     sha256 = hashlib.sha256()
     for chunk in django_file.chunks():
         sha256.update(chunk)
@@ -2932,10 +2960,10 @@ def generate_chargeorder_pdf(request, pk):
         patient=patient,
         appointment=appointment,
         diagnosis=None,
-        description="Comprobante financiero generado automáticamente",
+        description="Orden de Cobro generada automáticamente",
         category="charge_order",
         source="system_generated",
-        origin_panel="finance_panel",
+        origin_panel="payments_panel",
         template_version="v1.1",
         generated_by=request.user,
         uploaded_by=request.user,
@@ -2943,15 +2971,21 @@ def generate_chargeorder_pdf(request, pk):
         mime_type="application/pdf",
         size_bytes=django_file.size,
         checksum_sha256=sha256.hexdigest(),
+        audit_code=audit_code,
     )
 
     # Evento de auditoría
     Event.objects.create(
-        entity="MedicalDocument",
-        entity_id=doc.id,
-        action="generate_chargeorder",
+        entity="ChargeOrder",
+        entity_id=charge_order.id,
+        action="export_pdf",
         actor=str(request.user),
-        metadata={"charge_order_id": charge_order.id, "patient_id": patient.id},
+        metadata={
+            "charge_order_id": charge_order.id,
+            "patient_id": patient.id,
+            "document_id": doc.id,
+            "audit_code": audit_code,
+        },
         severity="info",
         notify=True
     )

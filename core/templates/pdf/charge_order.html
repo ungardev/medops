@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page { size: A4; margin: 1.5cm; }
+    body {
+      font-family: "DejaVu Sans", sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0; padding: 0;
+    }
+    header {
+      text-align: center;
+      border-bottom: 1px solid #000;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+    }
+    h1 { font-size: 16px; margin: 0; }
+    h2 { font-size: 13px; margin: 8px 0 6px 0; border-bottom: 1px solid #ccc; }
+    .section { margin-bottom: 12px; }
+    table {
+      width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11px;
+    }
+    th, td { border: 1px solid #000; padding: 4px; text-align: left; }
+    th { background: #f0f0f0; }
+    td.num { text-align: right; }
+    .empty { color: #666; font-style: italic; }
+    footer {
+      margin-top: 12px; font-size: 10px; text-align: center;
+      border-top: 1px solid #000; padding-top: 6px;
+    }
+    .qr { margin-top: 8px; }
+    .section, table, ul, p { page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <header>
+    {% if institution.logo %}
+      <img src="{{ institution.logo.path }}" alt="Logo"
+           style="max-width:120px; max-height:70px; object-fit:contain; margin-bottom:6px;">
+    {% endif %}
+    <h1>{{ institution.name }}</h1>
+    <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
+    {% if institution.email %}<p>Email: {{ institution.email }}</p>{% endif %}
+    {% if institution.website %}<p>Web: {{ institution.website }}</p>{% endif %}
+    <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
+    <p><strong>Orden de Cobro #{{ charge_order.id }} — Estado: {{ charge_order.status|upper }}</strong></p>
+    <p><strong>Código de auditoría: {{ audit_code }}</strong></p>
+  </header>
+
+  <div class="section">
+    <strong>Paciente:</strong> {{ patient.first_name }} {{ patient.last_name }}<br>
+    C.I.: {{ patient.national_id }}{% if patient.age %} - Edad: {{ patient.age }}{% endif %}{% if patient.gender %} - Sexo: {{ patient.gender }}{% endif %}
+  </div>
+
+  <div class="section">
+    <strong>Consulta:</strong> #{{ appointment.id }} — Fecha: {{ appointment.appointment_date|date:"d/m/Y" }}
+  </div>
+
+  <div class="section">
+    <h2>Detalle de Cargos</h2>
+    <table>
+      <thead>
+        <tr><th>Código</th><th>Descripción</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.code }}</td>
+          <td>{{ item.description }}</td>
+          <td class="num">{{ item.quantity }}</td>
+          <td class="num">{{ item.price }}</td>
+          <td class="num">{{ item.subtotal }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty">Sin ítems</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Resumen Financiero</h2>
+    <table>
+      <tbody>
+        <tr><td>Subtotal</td><td class="num">{{ charge_order.subtotal }}</td></tr>
+        {% if charge_order.discount %}<tr><td>Descuento</td><td class="num">-{{ charge_order.discount }}</td></tr>{% endif %}
+        {% if charge_order.tax %}<tr><td>Impuestos</td><td class="num">{{ charge_order.tax }}</td></tr>{% endif %}
+        <tr><td><strong>Total</strong></td><td class="num"><strong>{{ charge_order.total }}</strong></td></tr>
+        <tr><td>Pagado</td><td class="num">{{ charge_order.paid_amount }}</td></tr>
+        <tr><td>Pendiente</td><td class="num">{{ charge_order.balance_due }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Pagos Registrados</h2>
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Método</th><th>Referencia</th><th>Monto</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        {% for pay in payments %}
+        <tr>
+          <td>{{ pay.received_at|date:"d/m/Y H:i" }}</td>
+          <td>{{ pay.method }}</td>
+          <td>{{ pay.reference }}</td>
+          <td class="num">{{ pay.amount }}</td>
+          <td>{{ pay.status }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty">Sin pagos</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Médico Responsable</h2>
+    <p><strong>{{ doctor.full_name }}</strong><br>
+       Nº Colegiado: {{ doctor.colegiado_id }}<br>
+       Especialidades: {{ doctor.specialties|join:", " }}</p>
+    {% if doctor.signature %}
+      <div style="margin-top:6px;">
+        <img src="{{ doctor.signature.path }}" alt="Firma" style="height:45px;">
+      </div>
+    {% endif %}
+  </div>
+
+  <footer>
+    Este comprobante financiero forma parte del expediente clínico institucional.<br>
+    Emitido por {{ doctor.full_name }} - {{ institution.name }}<br>
+    Código de auditoría: {{ audit_code }}
+    <div class="qr">
+      <img src="{{ qr_code_url }}" alt="QR Auditoría" style="height:80px;">
+    </div>
+  </footer>
+</body>
+</html>
