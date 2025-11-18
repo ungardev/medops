@@ -69,8 +69,8 @@
         <tr>
           <td>{{ item.code }}</td>
           <td>{{ item.description }}</td>
-          <td class="num">{{ item.quantity }}</td>
-          <td class="num">{{ item.price }}</td>
+          <td class="num">{{ item.qty }}</td>
+          <td class="num">{{ item.unit_price }}</td>
           <td class="num">{{ item.subtotal }}</td>
         </tr>
         {% empty %}
@@ -84,12 +84,12 @@
     <h2>Resumen Financiero</h2>
     <table>
       <tbody>
-        <tr><td>Subtotal</td><td class="num">{{ charge_order.subtotal }}</td></tr>
+        <tr><td>Subtotal</td><td class="num">{{ subtotal }}</td></tr>
         {% if charge_order.discount %}<tr><td>Descuento</td><td class="num">-{{ charge_order.discount }}</td></tr>{% endif %}
         {% if charge_order.tax %}<tr><td>Impuestos</td><td class="num">{{ charge_order.tax }}</td></tr>{% endif %}
-        <tr><td><strong>Total</strong></td><td class="num"><strong>{{ charge_order.total }}</strong></td></tr>
-        <tr><td>Pagado</td><td class="num">{{ charge_order.paid_amount }}</td></tr>
-        <tr><td>Pendiente</td><td class="num">{{ charge_order.balance_due }}</td></tr>
+        <tr><td><strong>Total</strong></td><td class="num"><strong>{{ total }}</strong></td></tr>
+        <tr><td>Pagado</td><td class="num">{{ paid_amount }}</td></tr>
+        <tr><td>Pendiente</td><td class="num">{{ balance_due }}</td></tr>
       </tbody>
     </table>
   </div>
