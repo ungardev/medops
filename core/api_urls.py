@@ -26,34 +26,34 @@ from .api_views import (
     register_arrival,
     waitingroom_entries_today_api,
     appointments_pending_api,
-    reports_api,                   # 👈 ENDPOINT DE REPORTES
-    reports_export_api,            # 👈 ENDPOINT DE EXPORTACIÓN
-    institution_settings_api,      # 👈 ENDPOINT DE CONFIGURACIÓN INSTITUCIONAL
-    doctor_operator_settings_api,  # 👈 NUEVO ENDPOINT DE CONFIGURACIÓN MÉDICO OPERADOR
-    bcv_rate_api,                  # 👈 NUEVO ENDPOINT DE TASA BCV
-    audit_log_api,                 # 👈 NUEVO ENDPOINT DE AUDITORÍA REAL
-    generate_medical_report,       # 👈 ENDPOINT DE INFORME MÉDICO
-    generate_prescription_pdf,     # 👈 NUEVO ENDPOINT DE PRESCRIPCIÓN
-    generate_treatment_pdf,        # 👈 NUEVO ENDPOINT DE TRATAMIENTO
-    generate_referral_pdf,         # 👈 NUEVO ENDPOINT DE REFERENCIA MÉDICA
-    generate_chargeorder_pdf,      # 👈 NUEVO ENDPOINT DE ORDEN FINANCIERA
-    generate_used_documents,       # 👈 NUEVO ENDPOINT DE DOCUMENTOS DE CONSULTA
-    icd_search_api,                # 👈 ENDPOINT DE BÚSQUEDA ICD-11
+    reports_api,
+    reports_export_api,
+    institution_settings_api,
+    doctor_operator_settings_api,
+    bcv_rate_api,
+    audit_log_api,
+    generate_medical_report,
+    generate_prescription_pdf,
+    generate_treatment_pdf,
+    generate_referral_pdf,
+    generate_chargeorder_pdf,      # 👈 ENDPOINT DE ORDEN FINANCIERA
+    generate_used_documents,
+    icd_search_api,
     # --- Endpoints de choices ---
     treatment_choices_api,
     prescription_choices_api,
     medicaltest_choices_api,
     medicalreferral_choices_api,
-    specialty_choices_api,         # 👈 NUEVO ENDPOINT DE CHOICES DE ESPECIALIDADES
+    specialty_choices_api,
     current_consultation_api,
-    appointment_detail_api,        # 👈 ENDPOINT DE DETALLE DE CITA
+    appointment_detail_api,
 )
 
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 
-# --- Router DRF (CRUD básicos + acciones personalizadas) ---
+# --- Router DRF ---
 router = routers.DefaultRouter()
 router.register(r"patients", PatientViewSet, basename="patient")
 router.register(r"appointments", AppointmentViewSet, basename="appointment")
@@ -64,11 +64,11 @@ router.register(r"documents", MedicalDocumentViewSet, basename="document")
 router.register(r"diagnoses", DiagnosisViewSet, basename="diagnosis")
 router.register(r"treatments", TreatmentViewSet, basename="treatment")
 router.register(r"prescriptions", PrescriptionViewSet, basename="prescription")
-router.register(r"charge-orders", ChargeOrderViewSet, basename="chargeorder")   # 👈 ordenes
-router.register(r"charge-items", ChargeItemViewSet, basename="chargeitem")      # 👈 ítems
-router.register(r"medical-tests", MedicalTestViewSet, basename="medicaltest")   # 👈 NUEVO
-router.register(r"medical-referrals", MedicalReferralViewSet, basename="medicalreferral")  # 👈 NUEVO
-router.register(r"specialties", SpecialtyViewSet, basename="specialty")         # 👈 NUEVO catálogo institucional
+router.register(r"charge-orders", ChargeOrderViewSet, basename="chargeorder")
+router.register(r"charge-items", ChargeItemViewSet, basename="chargeitem")
+router.register(r"medical-tests", MedicalTestViewSet, basename="medicaltest")
+router.register(r"medical-referrals", MedicalReferralViewSet, basename="medicalreferral")
+router.register(r"specialties", SpecialtyViewSet, basename="specialty")
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -95,8 +95,8 @@ urlpatterns = [
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
     path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),
-    path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),  # ✅ ENDPOINT PRINCIPAL
-    path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),  # ✅ ALIAS PARA EL FRONTEND
+    path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),
+    path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),
 
     # --- Consultas ---
     path("consultation/current/", current_consultation_api, name="current-consultation-api"),
@@ -106,6 +106,8 @@ urlpatterns = [
     path("treatments/<int:pk>/generate-pdf/", generate_treatment_pdf, name="generate-treatment-pdf"),
     path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
     path("chargeorders/<int:pk>/generate-pdf/", generate_chargeorder_pdf, name="generate-chargeorder-pdf"),
+    # --- Alias para compatibilidad con frontend actual ---
+    path("charge-orders/<int:pk>/export/", generate_chargeorder_pdf, name="chargeorder-export"),
 
     # --- Diagnósticos ICD-11 ---
     path("icd/search/", icd_search_api, name="icd-search-api"),
