@@ -2918,11 +2918,32 @@ def generate_chargeorder_pdf(request, pk):
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
+    # 🔹 Ítems con campos correctos
+    items = [{
+        "code": i.code,
+        "description": i.description or "",
+        "qty": i.qty,
+        "unit_price": getattr(i, "unit_price", Decimal("0.00")),
+        "subtotal": getattr(i, "subtotal", Decimal("0.00")),
+    } for i in charge_order.items.all()]
+
+    # 🔹 Pagos con campos relevantes
+    payments = [{
+        "received_at": p.received_at,
+        "method": p.method,
+        "reference": p.reference_number or "",
+        "amount": p.amount,
+        "status": p.status,
+    } for p in charge_order.payments.all()]
+
+    # 🔹 Calcular monto pagado confirmado
+    paid_amount = sum(p["amount"] for p in payments if p["status"] == "confirmed")
+
     # Contexto para plantilla
     context = {
         "charge_order": charge_order,
-        "items": charge_order.items.all(),
-        "payments": charge_order.payments.all(),
+        "items": items,
+        "payments": payments,
         "patient": patient,
         "appointment": appointment,
         "doctor": {
@@ -2935,6 +2956,11 @@ def generate_chargeorder_pdf(request, pk):
         "audit_code": audit_code,
         "qr_code_url": qr_code_url,
         "generated_at": timezone.now(),
+        # 🔹 Totales financieros
+        "subtotal": charge_order.total,
+        "total": charge_order.total,
+        "paid_amount": paid_amount,
+        "balance_due": charge_order.balance_due,
     }
 
     # Renderizar HTML → PDF
