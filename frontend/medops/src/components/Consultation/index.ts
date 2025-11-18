@@ -30,4 +30,15 @@ export { default as ConsultationActions } from "./ConsultationActions";
 
 // 🔹 Charge order
 export { default as ChargeOrderPanel } from "./ChargeOrderPanel";
-export type { ChargeOrderPanelProps } from "./ChargeOrderPanel"; // ✅ ahora incluye chargeOrder: ChargeOrder
+export type { ChargeOrderPanelProps } from "./ChargeOrderPanel";
+
+// 🔹 Medical tests
+export { default as MedicalTestsPanel } from "./MedicalTestsPanel";
+export type { MedicalTestsPanelProps } from "./MedicalTestsPanel";
+
+// 🔹 Medical referrals
+export { default as MedicalReferralsPanel } from "./MedicalReferralsPanel";
+export type { MedicalReferralsPanelProps } from "./MedicalReferralsPanel";
+
+// 🔹 Document generation actions
+export { default as ConsultationDocumentsActions } from "./ConsultationDocumentsActions";

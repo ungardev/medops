@@ -50,7 +50,8 @@ export default function Consultation() {
             <ConsultationWorkflow
               diagnoses={appointment.diagnoses}
               appointmentId={appointment.id}
-              notes={appointment.notes}
+              notes={appointment.notes ?? null}
+              readOnly={false}   // ✅ ahora se pasa explícitamente
             />
           </div>
         </div>

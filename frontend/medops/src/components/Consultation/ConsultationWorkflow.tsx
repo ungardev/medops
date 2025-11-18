@@ -2,24 +2,24 @@ import DiagnosisPanel from "./DiagnosisPanel";
 import TreatmentPanel from "./TreatmentPanel";
 import PrescriptionPanel from "./PrescriptionPanel";
 import NotesPanel from "./NotesPanel";
-import MedicalTestsPanel from "./MedicalTestsPanel";        // 👈 nuevo
-import MedicalReferralsPanel from "./MedicalReferralsPanel"; // 👈 nuevo
+import MedicalTestsPanel from "./MedicalTestsPanel";
+import MedicalReferralsPanel from "./MedicalReferralsPanel";
 import { Tabs, Tab } from "../ui/Tabs";
 import { Diagnosis } from "../../types/consultation";
-
-// 🔹 Hooks de creación para conectar directamente
 import { useCreateTreatment, useCreatePrescription } from "../../hooks/consultations";
 
 interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
   appointmentId: number;
   notes: string | null;
+  readOnly: boolean; // ✅ nuevo prop
 }
 
 export default function ConsultationWorkflow({
   diagnoses,
   appointmentId,
   notes,
+  readOnly,
 }: ConsultationWorkflowProps) {
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
@@ -27,19 +27,22 @@ export default function ConsultationWorkflow({
   return (
     <Tabs defaultTab="diagnosis" className="consultation-workflow">
       <Tab id="diagnosis" label="Diagnóstico">
-        {/* DiagnosisPanel maneja internamente la creación con useCreateDiagnosis */}
-        <DiagnosisPanel />
+        <DiagnosisPanel diagnoses={diagnoses} readOnly={readOnly} />
       </Tab>
 
       <Tab id="treatment" label="Tratamiento">
         <TreatmentPanel
           diagnoses={diagnoses}
-          appointmentId={appointmentId}   // 👈 añadido para cumplir con TreatmentPanelProps
-          onAdd={(data) =>
-            createTreatment.mutate({
-              ...data,
-              appointment: appointmentId, // ✅ se pasa appointment al backend
-            })
+          appointmentId={appointmentId}
+          readOnly={readOnly}
+          onAdd={
+            !readOnly
+              ? (data) =>
+                  createTreatment.mutate({
+                    ...data,
+                    appointment: appointmentId,
+                  })
+              : undefined
           }
         />
       </Tab>
@@ -47,27 +50,28 @@ export default function ConsultationWorkflow({
       <Tab id="prescription" label="Prescripción">
         <PrescriptionPanel
           diagnoses={diagnoses}
-          onAdd={(data) =>
-            createPrescription.mutate({
-              ...data, // 👈 solo diagnosis, medication, dosage, duration
-            })
+          readOnly={readOnly}
+          onAdd={
+            !readOnly
+              ? (data) =>
+                  createPrescription.mutate({
+                    ...data,
+                  })
+              : undefined
           }
         />
       </Tab>
 
       <Tab id="notes" label="Notas">
-        {/* NotesPanel maneja internamente la edición con useUpdateAppointmentNotes */}
-        <NotesPanel appointmentId={appointmentId} notes={notes} />
+        <NotesPanel appointmentId={appointmentId} notes={notes} readOnly={readOnly} />
       </Tab>
 
       <Tab id="tests" label="Exámenes Médicos">
-        {/* MedicalTestsPanel maneja internamente la creación con useCreateMedicalTest */}
-        <MedicalTestsPanel appointmentId={appointmentId} />
+        <MedicalTestsPanel appointmentId={appointmentId} readOnly={readOnly} />
       </Tab>
 
       <Tab id="referrals" label="Referencias Médicas">
-        {/* MedicalReferralsPanel maneja internamente la creación con useCreateMedicalReferral */}
-        <MedicalReferralsPanel appointmentId={appointmentId} />
+        <MedicalReferralsPanel appointmentId={appointmentId} readOnly={readOnly} />
       </Tab>
     </Tabs>
   );

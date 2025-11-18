@@ -11,13 +11,11 @@ import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescr
 import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescription";
 import MedicationSelector from "./MedicationSelector";
 
-// 🔹 Tipo para opciones institucionales
 interface Option {
   value: string;
   label: string;
 }
 
-// 🔹 Opciones institucionales
 const frequencyOptions: Option[] = [
   { value: "once_daily", label: "Una vez al día" },
   { value: "bid", label: "2 veces al día (BID)" },
@@ -61,13 +59,13 @@ const unitOptions: Option[] = [
   { value: "patch", label: "Parche" },
 ];
 
-// 🔹 Exportamos la interfaz para que pueda ser usada en index.ts
 export interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
-  prescriptions?: Prescription[]; // para modo readOnly
-  readOnly?: boolean;             // flag para modo lectura
-  onAdd?: (data: CreatePrescriptionInput) => void; // opcional en modo readOnly
+  prescriptions?: Prescription[];
+  readOnly?: boolean;
+  onAdd?: (data: CreatePrescriptionInput) => void;
 }
+
 const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   diagnoses,
   prescriptions,
@@ -86,7 +84,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
 
-  const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnosisId || (!medicationCatalogId && !medicationText) || !onAdd) return;
 
@@ -103,7 +101,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
 
     onAdd(payload);
 
-    // reset form
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
     setMedicationText(undefined);
@@ -118,28 +115,40 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     <div className="prescription-panel card">
       <h3 className="text-lg font-bold mb-2">Prescripciones</h3>
 
-      {/* 🔹 Modo readOnly */}
+      {/* 🔹 Modo lectura */}
       {readOnly && (
-        <div>
-          {(!prescriptions || prescriptions.length === 0) && (
-            <p className="text-muted">Sin prescripciones</p>
-          )}
-          {prescriptions?.map((p) => (
-            <PrescriptionBadge
-              key={p.id}
-              id={p.id}
-              medication={p.medication_catalog?.name || p.medication_text || "—"}
-              dosage={p.dosage ?? undefined}
-              duration={p.duration ?? undefined}
-              frequency={p.frequency}
-              route={p.route}
-              unit={p.unit}
-            />
+        <>
+          {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
+          {diagnoses.map((d) => (
+            <div key={d.id} className="mb-3">
+              <h4 className="font-semibold">
+                {d.icd_code} — {d.title || d.description || "Sin descripción"}
+              </h4>
+              <ul className="ml-4">
+                {d.prescriptions && d.prescriptions.length > 0 ? (
+                  d.prescriptions.map((p: Prescription) => (
+                    <li key={p.id}>
+                      <PrescriptionBadge
+                        id={p.id}
+                        medication={p.medication_catalog?.name || p.medication_text || "—"}
+                        dosage={p.dosage ?? undefined}
+                        duration={p.duration ?? undefined}
+                        frequency={p.frequency}
+                        route={p.route}
+                        unit={p.unit}
+                      />
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-muted">Sin prescripciones</li>
+                )}
+              </ul>
+            </div>
           ))}
-        </div>
+        </>
       )}
 
-      {/* 🔹 Modo write */}
+      {/* 🔹 Modo edición */}
       {!readOnly && (
         <>
           {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}

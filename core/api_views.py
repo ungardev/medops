@@ -2281,9 +2281,13 @@ def generate_medical_report(request, pk):
     # QuerySets
     diagnoses_qs = Diagnosis.objects.filter(appointment=appointment).order_by("id")
     treatments_qs = Treatment.objects.filter(diagnosis__appointment=appointment).order_by("id")
-    prescriptions_qs = Prescription.objects.filter(diagnosis__appointment=appointment).select_related("medication_catalog").order_by("id")
+    prescriptions_qs = Prescription.objects.filter(
+        diagnosis__appointment=appointment
+    ).select_related("medication_catalog").order_by("id")
     tests_qs = MedicalTest.objects.filter(appointment=appointment).order_by("id")
-    referrals_qs = MedicalReferral.objects.filter(appointment=appointment).prefetch_related("specialties").order_by("id")
+    referrals_qs = MedicalReferral.objects.filter(
+        appointment=appointment
+    ).prefetch_related("specialties").order_by("id")
 
     # Adaptadores con labels amigables
     def unit_label(val):
@@ -2335,11 +2339,15 @@ def generate_medical_report(request, pk):
             "specialties": spec_names,
         })
 
-    # Generar QR institucional
-    qr_payload = f"Consulta:{appointment.id}|Audit:{report.id}"
+    # Generar audit_code institucional
+    import secrets
+    audit_code = secrets.token_hex(12)
+
+    # Generar QR institucional con audit_code
+    qr_payload = f"Consulta:{appointment.id}|Audit:{audit_code}"
     qr_img = qrcode.make(qr_payload)
     buffer = BytesIO()
-    qr_img.save(buffer, "PNG")   # 👈 argumento posicional, no keyword
+    qr_img.save(buffer, "PNG")
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
     qr_code_url = f"data:image/png;base64,{qr_base64}"
 
@@ -2363,7 +2371,8 @@ def generate_medical_report(request, pk):
         "referrals": referrals,
         "generated_at": timezone.now(),
         "report": report,
-        "qr_code_url": qr_code_url,  # 👈 QR embebido en contexto
+        "audit_code": audit_code,   # ✅ nuevo código en contexto
+        "qr_code_url": qr_code_url,
     })
 
     # Renderizar HTML → PDF
@@ -2403,6 +2412,7 @@ def generate_medical_report(request, pk):
         mime_type="application/pdf",
         size_bytes=django_file.size,
         checksum_sha256=sha256.hexdigest(),
+        audit_code=audit_code,   # ✅ guardado en BD
     )
 
     # Auditoría
@@ -2414,7 +2424,8 @@ def generate_medical_report(request, pk):
         metadata={
             "appointment_id": appointment.id,
             "patient_id": appointment.patient.id,
-            "document_id": doc.id
+            "document_id": doc.id,
+            "audit_code": audit_code,   # ✅ audit_code en metadata
         },
         severity="info",
         notify=True

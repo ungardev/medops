@@ -8,12 +8,11 @@ import TreatmentBadge, {
 import { useUpdateTreatment } from "../../hooks/consultations/useUpdateTreatment";
 import { useDeleteTreatment } from "../../hooks/consultations/useDeleteTreatment";
 
-// 🔹 Exportamos la interfaz para que pueda ser usada en index.ts
 export interface TreatmentPanelProps {
   diagnoses: Diagnosis[];
-  appointmentId?: number; // opcional en modo readOnly
-  treatments?: Treatment[]; // para modo readOnly
-  readOnly?: boolean;       // flag para modo lectura
+  appointmentId?: number;
+  treatments?: Treatment[];
+  readOnly?: boolean;
   onAdd?: (data: {
     appointment: number;
     diagnosis: number;
@@ -30,7 +29,6 @@ export interface TreatmentPanelProps {
   }) => void;
 }
 
-// 🔹 Normalización de valores provenientes del Badge (legacy → backend)
 function normalizeStatus(
   status: TreatmentStatus | undefined
 ): "active" | "completed" | "cancelled" | undefined {
@@ -42,7 +40,7 @@ function normalizeType(
   type: TreatmentType | undefined
 ): "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other" | undefined {
   if (!type) return undefined;
-  if (type === "therapeutic") return "rehabilitation"; // alias legacy
+  if (type === "therapeutic") return "rehabilitation";
   return type;
 }
 
@@ -91,27 +89,39 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
     <div className="treatment-panel card">
       <h3 className="text-lg font-bold mb-2">Tratamientos</h3>
 
-      {/* 🔹 Modo readOnly */}
+      {/* 🔹 Modo lectura */}
       {readOnly && (
-        <div>
-          {(!treatments || treatments.length === 0) && (
-            <p className="text-muted">Sin tratamientos</p>
-          )}
-          {treatments?.map((t) => (
-            <TreatmentBadge
-              key={t.id}
-              id={t.id}
-              plan={t.plan}
-              start_date={t.start_date}
-              end_date={t.end_date}
-              status={t.status as TreatmentStatus}
-              treatment_type={t.treatment_type as TreatmentType}
-            />
+        <>
+          {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
+          {diagnoses.map((d) => (
+            <div key={d.id} className="mb-3">
+              <h4 className="font-semibold">
+                {d.icd_code} — {d.title || d.description || "Sin descripción"}
+              </h4>
+              <ul className="ml-4">
+                {d.treatments && d.treatments.length > 0 ? (
+                  d.treatments.map((t: Treatment) => (
+                    <li key={t.id}>
+                      <TreatmentBadge
+                        id={t.id}
+                        plan={t.plan}
+                        start_date={t.start_date}
+                        end_date={t.end_date}
+                        status={t.status as TreatmentStatus}
+                        treatment_type={t.treatment_type as TreatmentType}
+                      />
+                    </li>
+                  ))
+                ) : (
+                  <li className="text-muted">Sin tratamientos</li>
+                )}
+              </ul>
+            </div>
           ))}
-        </div>
+        </>
       )}
 
-      {/* 🔹 Modo write */}
+      {/* 🔹 Modo edición */}
       {!readOnly && (
         <>
           {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
