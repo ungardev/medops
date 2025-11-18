@@ -27,7 +27,11 @@ export default function ConsultationWorkflow({
   return (
     <Tabs defaultTab="diagnosis" className="consultation-workflow">
       <Tab id="diagnosis" label="Diagnóstico">
-        <DiagnosisPanel diagnoses={diagnoses} readOnly={readOnly} />
+        <DiagnosisPanel
+          diagnoses={diagnoses}
+          readOnly={readOnly}
+          appointmentId={appointmentId}   // 👈 ahora explícito
+        />
       </Tab>
 
       <Tab id="treatment" label="Tratamiento">

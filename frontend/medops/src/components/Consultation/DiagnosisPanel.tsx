@@ -5,25 +5,23 @@ import type { IcdResult } from "../../hooks/diagnosis/useIcdSearch";
 import { useCreateDiagnosis } from "../../hooks/consultations/useCreateDiagnosis";
 import { useUpdateDiagnosis } from "../../hooks/consultations/useUpdateDiagnosis";
 import { useDeleteDiagnosis } from "../../hooks/consultations/useDeleteDiagnosis";
-import { useCurrentConsultation } from "../../hooks/consultations/useCurrentConsultation";
 import DiagnosisBadge from "./DiagnosisBadge";
 import { Diagnosis } from "../../types/consultation";
 
 // 🔹 Exportamos la interfaz para que pueda ser usada en index.ts
 export interface DiagnosisPanelProps {
-  diagnoses?: Diagnosis[];   // para modo readOnly
+  diagnoses?: Diagnosis[];   // lista de diagnósticos (lectura y escritura)
   readOnly?: boolean;        // flag para modo lectura
+  appointmentId: number;     // 👈 ID de la consulta asociado
 }
 
-const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses, readOnly }) => {
-  // --- Estado interno solo para modo write
+const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnly, appointmentId }) => {
   const [query, setQuery] = useState("");
   const [description, setDescription] = useState("");
   const [highlightIndex, setHighlightIndex] = useState<number>(-1);
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<IcdResult | null>(null);
 
   const { data: results = [], isLoading } = useIcdSearch(query);
-  const { data: appointment } = useCurrentConsultation();
   const { mutate: createDiagnosis } = useCreateDiagnosis();
   const { mutate: updateDiagnosis } = useUpdateDiagnosis();
   const { mutate: deleteDiagnosis } = useDeleteDiagnosis();
@@ -35,16 +33,23 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses, readOnly }) 
     setHighlightIndex(-1);
   }, [results]);
 
+  useEffect(() => {
+    if (highlightIndex >= 0) {
+      const el = itemRefs.current[highlightIndex];
+      if (el) el.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIndex]);
+
   const handleSelect = (item: IcdResult) => {
     setSelectedDiagnosis(item);
     setDescription("");
   };
 
   const handleSave = () => {
-    if (!appointment || !selectedDiagnosis) return;
+    if (!selectedDiagnosis) return;
 
     const payload = {
-      appointment: appointment.id,
+      appointment: appointmentId,   // 👈 usamos el prop explícito
       icd_code: selectedDiagnosis.icd_code,
       title: selectedDiagnosis.title || "Sin título",
       description,
@@ -67,54 +72,30 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses, readOnly }) 
     deleteDiagnosis(id);
   };
 
-  useEffect(() => {
-    if (highlightIndex >= 0) {
-      const el = itemRefs.current[highlightIndex];
-      if (el) el.scrollIntoView({ block: "nearest" });
-    }
-  }, [highlightIndex]);
-
-  // --- Render
   return (
     <div className="diagnosis-panel card">
       <h3 className="text-lg font-bold mb-2">Diagnósticos</h3>
 
       <ul className="mb-4">
-        {/* 🔹 Modo readOnly */}
-        {readOnly && diagnoses && diagnoses.length === 0 && (
+        {diagnoses.length === 0 && (
           <li className="text-muted">Sin diagnósticos</li>
         )}
-        {readOnly && diagnoses?.map((d) => (
+        {diagnoses.map((d) => (
           <li key={d.id}>
             <DiagnosisBadge
               id={d.id}
               icd_code={d.icd_code}
               title={d.title || "Sin título"}
               description={d.description}
-              // en modo lectura no pasamos onEdit/onDelete
-            />
-          </li>
-        ))}
-
-        {/* 🔹 Modo write (default) */}
-        {!readOnly && (!appointment || appointment.diagnoses.length === 0) && (
-          <li className="text-muted">Sin diagnósticos</li>
-        )}
-        {!readOnly && appointment?.diagnoses.map((d) => (
-          <li key={d.id}>
-            <DiagnosisBadge
-              id={d.id}
-              icd_code={d.icd_code}
-              title={d.title || "Sin título"}
-              description={d.description}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
+              {...(!readOnly && {
+                onEdit: handleEdit,
+                onDelete: handleDelete,
+              })}
             />
           </li>
         ))}
       </ul>
 
-      {/* 🔹 Formulario solo en modo write */}
       {!readOnly && (
         <div className="flex flex-col gap-2">
           <input

@@ -1894,12 +1894,12 @@ def reports_export_api(request):
             for p in rows:
                 serialized.append({
                     "id": p.id,
-                    "date": p.received_at.date() if p.received_at else None,
+                    "date": p.received_at.date() if p.received_at else "",
                     "type": "financial",
                     "entity": f"Appt {p.appointment_id} / Order {p.charge_order_id}",
-                    "status": p.status,
-                    "amount": float(p.amount),
-                    "currency": p.currency,
+                    "status": p.status or "",
+                    "amount": float(p.amount or 0),
+                    "currency": p.currency or "VES",
                 })
 
         elif report_type == "clinical":
@@ -1908,11 +1908,11 @@ def reports_export_api(request):
             for a in rows:
                 serialized.append({
                     "id": a.id,
-                    "date": a.appointment_date,
+                    "date": a.appointment_date or "",
                     "type": "clinical",
-                    "entity": str(a.patient),
-                    "status": a.status,
-                    "amount": float(a.expected_amount),
+                    "entity": str(a.patient) if a.patient else "",
+                    "status": a.status or "",
+                    "amount": float(a.expected_amount or 0),
                     "currency": "USD",
                 })
 
@@ -1921,21 +1921,21 @@ def reports_export_api(request):
             for p in Payment.objects.all():
                 serialized.append({
                     "id": p.id,
-                    "date": p.received_at.date() if p.received_at else None,
+                    "date": p.received_at.date() if p.received_at else "",
                     "type": "financial",
                     "entity": f"Appt {p.appointment_id} / Order {p.charge_order_id}",
-                    "status": p.status,
-                    "amount": float(p.amount),
-                    "currency": p.currency,
+                    "status": p.status or "",
+                    "amount": float(p.amount or 0),
+                    "currency": p.currency or "VES",
                 })
             for a in Appointment.objects.all():
                 serialized.append({
                     "id": a.id,
-                    "date": a.appointment_date,
+                    "date": a.appointment_date or "",
                     "type": "clinical",
-                    "entity": str(a.patient),
-                    "status": a.status,
-                    "amount": float(a.expected_amount),
+                    "entity": str(a.patient) if a.patient else "",
+                    "status": a.status or "",
+                    "amount": float(a.expected_amount or 0),
                     "currency": "USD",
                 })
 
@@ -1948,13 +1948,13 @@ def reports_export_api(request):
 
             if inst:
                 elements.append(Paragraph(f"<b>{inst.name}</b>", styles["Title"]))
-                elements.append(Paragraph(f"Dirección: {inst.address}", styles["Normal"]))
-                elements.append(Paragraph(f"Tel: {inst.phone} • RIF: {inst.tax_id}", styles["Normal"]))
+                elements.append(Paragraph(f"Dirección: {inst.address or ''}", styles["Normal"]))
+                elements.append(Paragraph(f"Tel: {inst.phone or ''} • RIF: {inst.tax_id or ''}", styles["Normal"]))
                 elements.append(Spacer(1, 12))
 
             if doc_op:
                 elements.append(Paragraph(
-                    f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}",
+                    f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {doc_op.specialty or ''}",
                     styles["Normal"]
                 ))
                 elements.append(Spacer(1, 8))
@@ -1966,13 +1966,13 @@ def reports_export_api(request):
             data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
             for r in serialized:
                 data.append([
-                    r.get("id"),
-                    str(r.get("date")),
-                    r.get("type"),
-                    r.get("entity"),
-                    r.get("status"),
-                    f"{float(r.get('amount', 0) or 0):.2f}",
-                    r.get("currency", "VES")
+                    r.get("id") or "",
+                    str(r.get("date") or ""),
+                    r.get("type") or "",
+                    r.get("entity") or "",
+                    r.get("status") or "",
+                    f"{float(r.get('amount') or 0):.2f}",
+                    r.get("currency") or "VES"
                 ])
             table = Table(data, hAlign="LEFT")
             table.setStyle(TableStyle([
@@ -2006,12 +2006,12 @@ def reports_export_api(request):
             ws.title = "Reporte Institucional"
 
             if inst:
-                ws["C1"] = inst.name
+                ws["C1"] = inst.name or ""
                 ws["C1"].font = Font(bold=True, size=14)
-                ws["C2"] = f"Dirección: {inst.address}"
-                ws["C3"] = f"Tel: {inst.phone} • RIF: {inst.tax_id}"
+                ws["C2"] = f"Dirección: {inst.address or ''}"
+                ws["C3"] = f"Tel: {inst.phone or ''} • RIF: {inst.tax_id or ''}"
             if doc_op:
-                ws["C4"] = f"Médico operador: {doc_op.full_name} • Colegiado: {doc_op.colegiado_id} • {doc_op.specialty or ''}"
+                ws["C4"] = f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {doc_op.specialty or ''}"
             ws["C6"] = f"Filtros aplicados: {filters}"
 
             headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]
@@ -2020,13 +2020,13 @@ def reports_export_api(request):
 
             for r in serialized:
                 ws.append([
-                    r.get("id"),
-                    str(r.get("date")),
-                    r.get("type"),
-                    r.get("entity"),
-                    r.get("status"),
-                    float(r.get("amount", 0) or 0),
-                    r.get("currency", "VES")
+                    r.get("id") or "",
+                    str(r.get("date") or ""),
+                    r.get("type") or "",
+                    r.get("entity") or "",
+                    r.get("status") or "",
+                    float(r.get("amount") or 0),
+                    r.get("currency") or "VES"
                 ])
 
             header_row = ws.max_row - len(serialized)
