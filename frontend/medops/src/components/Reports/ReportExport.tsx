@@ -1,4 +1,3 @@
-// src/components/Reports/ReportExport.tsx
 import React from "react";
 import axios from "axios";
 import { ExportFormat, ReportFiltersInput, ReportRow } from "@/types/reports";
@@ -13,7 +12,11 @@ export default function ReportExport({ filters, data }: Props) {
     try {
       const response = await axios.post<Blob>(
         "/reports/export/",
-        { format, filters, data },
+        {
+          format,
+          filters: filters ?? {}, // ← blindaje: nunca enviamos null
+          data,
+        },
         { responseType: "blob" }
       );
 

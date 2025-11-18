@@ -498,15 +498,17 @@ class Payment(models.Model):
 
     # --- Confirmación blindada ---
     def confirm(self, actor: str = '', note: str = ''):
+        from django.utils import timezone
         with transaction.atomic():
             # Validar contra saldo pendiente
             self.charge_order.recalc_totals()
             if self.amount > self.charge_order.balance_due:
                 raise ValidationError("El monto excede el saldo pendiente de la orden.")
 
-            # Marcar como confirmado
+            # Marcar como confirmado y setear fecha real de confirmación
             self.status = 'confirmed'
-            self.save(update_fields=['status'])
+            self.received_at = timezone.now()   # 🔹 blindaje institucional
+            self.save(update_fields=['status', 'received_at'])
 
             # 🔹 Recalcular totales y estado de la orden
             self.charge_order.recalc_totals()

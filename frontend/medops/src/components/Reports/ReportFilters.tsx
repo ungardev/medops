@@ -1,4 +1,3 @@
-// src/components/Reports/ReportFilters.tsx
 import React, { useState } from "react";
 import { ReportFiltersInput } from "@/types/reports";
 
@@ -7,12 +6,16 @@ interface Props {
 }
 
 export default function ReportFilters({ onFilter }: Props) {
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [type, setType] = useState<ReportFiltersInput["type"]>("financial");
 
   const handleApply = () => {
-    onFilter({ dateFrom, dateTo, type });
+    onFilter({
+      start_date: startDate,
+      end_date: endDate,
+      type,
+    });
   };
 
   return (
@@ -23,8 +26,8 @@ export default function ReportFilters({ onFilter }: Props) {
         <label>Desde:</label>
         <input
           type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
         />
       </div>
 
@@ -32,8 +35,8 @@ export default function ReportFilters({ onFilter }: Props) {
         <label>Hasta:</label>
         <input
           type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
         />
       </div>
 

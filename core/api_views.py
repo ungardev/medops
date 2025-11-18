@@ -1771,14 +1771,14 @@ def reports_api(request):
     end_date = request.GET.get("end_date")
     report_type = request.GET.get("type", "financial")
 
-    # 🔹 Parse seguro de fechas
     start = parse_date(start_date) if start_date else None
     end = parse_date(end_date) if end_date else None
 
     data = []
 
     if report_type == "financial":
-        qs = Payment.objects.select_related("appointment__patient")
+        qs = Payment.objects.select_related("appointment__patient").filter(received_at__isnull=False)
+
         if start and end:
             qs = qs.filter(received_at__date__range=(start, end))
         elif start:
@@ -1789,7 +1789,7 @@ def reports_api(request):
         for p in qs:
             data.append({
                 "id": p.id,
-                "date": p.received_at.date().isoformat() if p.received_at else None,
+                "date": p.received_at.date().isoformat(),
                 "type": "financial",
                 "entity": str(p.appointment.patient) if p.appointment else "—",
                 "status": p.status,
@@ -1798,6 +1798,7 @@ def reports_api(request):
 
     elif report_type == "clinical":
         qs = Appointment.objects.select_related("patient")
+
         if start and end:
             qs = qs.filter(appointment_date__range=(start, end))
         elif start:
@@ -1816,7 +1817,7 @@ def reports_api(request):
             })
 
     else:  # combined
-        payments = Payment.objects.select_related("appointment__patient")
+        payments = Payment.objects.select_related("appointment__patient").filter(received_at__isnull=False)
         appointments = Appointment.objects.select_related("patient")
 
         if start and end:
@@ -1832,7 +1833,7 @@ def reports_api(request):
         for p in payments:
             data.append({
                 "id": p.id,
-                "date": p.received_at.date().isoformat() if p.received_at else None,
+                "date": p.received_at.date().isoformat(),
                 "type": "financial",
                 "entity": str(p.appointment.patient) if p.appointment else "—",
                 "status": p.status,
