@@ -2889,7 +2889,7 @@ def generate_referral_pdf(request, pk):
     responses={201: ChargeOrderSerializer},
     description="Genera una orden de cobro en PDF y la registra como documento clínico."
 )
-@api_view(["POST"])
+@api_view(["GET", "POST"])   # 👈 ahora acepta GET y POST
 @permission_classes([IsAuthenticated])
 def generate_chargeorder_pdf(request, pk):
     charge_order = get_object_or_404(ChargeOrder, pk=pk)
