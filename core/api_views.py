@@ -1709,13 +1709,11 @@ class ChargeItemViewSet(viewsets.ModelViewSet):
     request=ReportFiltersSerializer,
     responses={200: ReportRowSerializer(many=True)},
     examples=[
-        # Ejemplo de request
         OpenApiExample(
             "Ejemplo de filtros",
             value={"start_date": "2025-11-01", "end_date": "2025-11-07", "type": "financial"},
             request_only=True,
         ),
-        # Ejemplo de respuesta financiera
         OpenApiExample(
             "Reporte financiero",
             value=[
@@ -1738,7 +1736,6 @@ class ChargeItemViewSet(viewsets.ModelViewSet):
             ],
             response_only=True,
         ),
-        # Ejemplo de respuesta clínica
         OpenApiExample(
             "Reporte clínico",
             value=[
@@ -1781,11 +1778,14 @@ def reports_api(request):
     data = []
 
     if report_type == "financial":
-        qs = Payment.objects.all().select_related("appointment__patient")
-        if start:
+        qs = Payment.objects.select_related("appointment__patient")
+        if start and end:
+            qs = qs.filter(received_at__date__range=(start, end))
+        elif start:
             qs = qs.filter(received_at__date__gte=start)
-        if end:
+        elif end:
             qs = qs.filter(received_at__date__lte=end)
+
         for p in qs:
             data.append({
                 "id": p.id,
@@ -1797,11 +1797,14 @@ def reports_api(request):
             })
 
     elif report_type == "clinical":
-        qs = Appointment.objects.all().select_related("patient")
-        if start:
+        qs = Appointment.objects.select_related("patient")
+        if start and end:
+            qs = qs.filter(appointment_date__range=(start, end))
+        elif start:
             qs = qs.filter(appointment_date__gte=start)
-        if end:
+        elif end:
             qs = qs.filter(appointment_date__lte=end)
+
         for a in qs:
             data.append({
                 "id": a.id,
@@ -1813,12 +1816,16 @@ def reports_api(request):
             })
 
     else:  # combined
-        payments = Payment.objects.all().select_related("appointment__patient")
-        appointments = Appointment.objects.all().select_related("patient")
-        if start:
+        payments = Payment.objects.select_related("appointment__patient")
+        appointments = Appointment.objects.select_related("patient")
+
+        if start and end:
+            payments = payments.filter(received_at__date__range=(start, end))
+            appointments = appointments.filter(appointment_date__range=(start, end))
+        elif start:
             payments = payments.filter(received_at__date__gte=start)
             appointments = appointments.filter(appointment_date__gte=start)
-        if end:
+        elif end:
             payments = payments.filter(received_at__date__lte=end)
             appointments = appointments.filter(appointment_date__lte=end)
 

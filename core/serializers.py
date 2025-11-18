@@ -755,8 +755,16 @@ class ReportFiltersSerializer(serializers.Serializer):
     """
     Serializer para documentar los filtros de entrada en /reports.
     """
-    start_date = serializers.DateField(required=False, help_text="Fecha inicial (YYYY-MM-DD)")
-    end_date = serializers.DateField(required=False, help_text="Fecha final (YYYY-MM-DD)")
+    start_date = serializers.DateField(
+        required=False,
+        allow_null=True,
+        help_text="Fecha inicial (YYYY-MM-DD)"
+    )
+    end_date = serializers.DateField(
+        required=False,
+        allow_null=True,
+        help_text="Fecha final (YYYY-MM-DD)"
+    )
     type = serializers.ChoiceField(
         choices=["financial", "clinical", "combined"],
         default="financial",
