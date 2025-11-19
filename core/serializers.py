@@ -7,7 +7,7 @@ from .models import (
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog
 )
 from datetime import date
-from typing import Optional
+from typing import Optional, Any, cast
 from decimal import Decimal, InvalidOperation
 from django.db import models
 
@@ -742,13 +742,12 @@ class ReportRowSerializer(serializers.Serializer):
     Compatible con el frontend ReportRow.ts y usado en export PDF/Excel.
     """
     id = serializers.IntegerField()
-    date = serializers.DateField()        # por defecto ISO YYYY-MM-DD
+    date = serializers.DateField()        # ISO YYYY-MM-DD (acepta str y parsea a date)
     type = serializers.CharField()        # "financial" | "clinical" | "combined"
     entity = serializers.CharField()      # paciente, procedimiento o entidad
     status = serializers.CharField()
     amount = serializers.FloatField()
     currency = serializers.CharField(default="VES")  # campo adicional opcional
-
 
 # --- Filtros de reportes ---
 class ReportFiltersSerializer(serializers.Serializer):
@@ -758,17 +757,17 @@ class ReportFiltersSerializer(serializers.Serializer):
     start_date = serializers.DateField(
         required=False,
         allow_null=True,
-        help_text="Fecha inicial (YYYY-MM-DD)"
+        help_text="Fecha inicial (YYYY-MM-DD)",
     )
     end_date = serializers.DateField(
         required=False,
         allow_null=True,
-        help_text="Fecha final (YYYY-MM-DD)"
+        help_text="Fecha final (YYYY-MM-DD)",
     )
     type = serializers.ChoiceField(
         choices=["financial", "clinical", "combined"],
         default="financial",
-        help_text="Tipo de reporte"
+        help_text="Tipo de reporte",
     )
 
 
@@ -779,12 +778,17 @@ class ReportExportSerializer(serializers.Serializer):
     """
     format = serializers.ChoiceField(
         choices=["pdf", "excel"],
-        help_text="Formato de exportación"
+        help_text="Formato de exportación",
     )
     filters = ReportFiltersSerializer(
         required=False,
-        help_text="Filtros aplicados al reporte exportado"
+        help_text="Filtros aplicados al reporte exportado",
     )
+    # DRF: nested serializer con many=True es correcto.
+    # Pylance: requiere cast/ignore para evitar el falso positivo de 'property'.
+    data: Any = cast(Any, ReportRowSerializer(many=True))
+    # Alternativa:
+    # data = ReportRowSerializer(many=True)  # type: ignore[assignment]
 
 
 class InstitutionSettingsSerializer(serializers.ModelSerializer):

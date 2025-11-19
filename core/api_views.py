@@ -1889,65 +1889,15 @@ def reports_export_api(request):
         validated: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
         export_format = validated["format"]
         filters = validated.get("filters", {})
+        serialized = validated.get("data", [])
+
+        # 🔹 Blindaje: evitar exportaciones vacías
+        if not serialized:
+            return Response({"error": "No hay datos para exportar"}, status=400)
 
         # --- Configuración institucional y médico operador ---
         inst = InstitutionSettings.objects.first()
         doc_op = DoctorOperator.objects.first()
-
-        # --- Construcción de datos de reporte ---
-        report_type = filters.get("type")
-        serialized = []
-
-        if report_type == "financial":
-            from .models import Payment
-            rows = Payment.objects.all()
-            for p in rows:
-                serialized.append({
-                    "id": p.id,
-                    "date": p.received_at.date() if p.received_at else "",
-                    "type": "financial",
-                    "entity": f"Appt {p.appointment_id} / Order {p.charge_order_id}",
-                    "status": p.status or "",
-                    "amount": float(p.amount or 0),
-                    "currency": p.currency or "VES",
-                })
-
-        elif report_type == "clinical":
-            from .models import Appointment
-            rows = Appointment.objects.all()
-            for a in rows:
-                serialized.append({
-                    "id": a.id,
-                    "date": a.appointment_date or "",
-                    "type": "clinical",
-                    "entity": str(a.patient) if a.patient else "",
-                    "status": a.status or "",
-                    "amount": float(a.expected_amount or 0),
-                    "currency": "USD",
-                })
-
-        else:  # combinado
-            from .models import Payment, Appointment
-            for p in Payment.objects.all():
-                serialized.append({
-                    "id": p.id,
-                    "date": p.received_at.date() if p.received_at else "",
-                    "type": "financial",
-                    "entity": f"Appt {p.appointment_id} / Order {p.charge_order_id}",
-                    "status": p.status or "",
-                    "amount": float(p.amount or 0),
-                    "currency": p.currency or "VES",
-                })
-            for a in Appointment.objects.all():
-                serialized.append({
-                    "id": a.id,
-                    "date": a.appointment_date or "",
-                    "type": "clinical",
-                    "entity": str(a.patient) if a.patient else "",
-                    "status": a.status or "",
-                    "amount": float(a.expected_amount or 0),
-                    "currency": "USD",
-                })
 
         # --- Export PDF ---
         if export_format == "pdf":

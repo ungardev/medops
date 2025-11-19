@@ -4,13 +4,14 @@ import axios from "axios";
 import { ReportFiltersInput, ReportRow } from "@/types/reports";
 
 async function fetchReports(filters: ReportFiltersInput): Promise<ReportRow[]> {
-  const { dateFrom, dateTo, type } = filters;
+  const { start_date, end_date, type } = filters;
 
-  const response = await axios.get<ReportRow[]>("/reports", {
+  // 🔹 Usamos "/reports/" porque axios ya tiene baseURL con "/api"
+  const response = await axios.get<ReportRow[]>("/reports/", {
     params: {
-      date_from: dateFrom,
-      date_to: dateTo,
-      type,
+      type: type ?? "financial",
+      start_date: start_date || undefined,
+      end_date: end_date || undefined,
     },
   });
 
@@ -26,7 +27,7 @@ export function useReports(filters: ReportFiltersInput | null) {
       }
       return fetchReports(filters);
     },
-    enabled: !!filters, // solo consulta si hay filtros aplicados
+    enabled: !!filters, // ✅ solo consulta si hay filtros aplicados
     placeholderData: (prev) => prev, // ✅ mantiene datos previos mientras carga nuevos
     refetchOnWindowFocus: false, // ✅ evita recargas innecesarias al cambiar de pestaña
   });
