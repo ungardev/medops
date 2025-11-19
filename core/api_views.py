@@ -1947,7 +1947,7 @@ def reports_export_api(request):
                     str(r.get("entity") or ""),
                     str(r.get("status") or ""),
                     f"{float(r.get('amount') or 0):.2f}",
-                    str(r.get("currency") or "USD"),
+                    str(r.get("currency") or "VES"),
                 ])
 
             if len(data) == 1:  # solo encabezado
@@ -2012,7 +2012,7 @@ def reports_export_api(request):
                     str(r.get("entity") or ""),
                     str(r.get("status") or ""),
                     float(r.get("amount") or 0),
-                    str(r.get("currency") or "USD"),
+                    str(r.get("currency") or "VES"),
                 ])
                 excel_rows_count += 1
 
