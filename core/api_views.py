@@ -1899,6 +1899,14 @@ def reports_export_api(request):
         inst = InstitutionSettings.objects.first()
         doc_op = DoctorOperator.objects.first()
 
+        # Preparar especialidades del médico operador
+        specialty_str = ""
+        if doc_op and hasattr(doc_op, "specialties"):
+            try:
+                specialty_str = ", ".join([str(s) for s in doc_op.specialties.all()])
+            except Exception:
+                specialty_str = str(doc_op.specialties or "")
+
         # --- Export PDF ---
         if export_format == "pdf":
             buffer = io.BytesIO()
@@ -1914,7 +1922,7 @@ def reports_export_api(request):
 
             if doc_op:
                 elements.append(Paragraph(
-                    f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {doc_op.specialty or ''}",
+                    f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {specialty_str}",
                     styles["Normal"]
                 ))
                 elements.append(Spacer(1, 8))
@@ -1982,7 +1990,7 @@ def reports_export_api(request):
                 ws["C2"] = f"Dirección: {inst.address or ''}"
                 ws["C3"] = f"Tel: {inst.phone or ''} • RIF: {inst.tax_id or ''}"
             if doc_op:
-                ws["C4"] = f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {doc_op.specialty or ''}"
+                ws["C4"] = f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {specialty_str}"
             ws["C6"] = f"Filtros aplicados: {filters}"
 
             headers = ["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]
@@ -2051,7 +2059,6 @@ def reports_export_api(request):
             status=500,
             content_type="application/json"
         )
-
 
 
 @api_view(["GET", "PUT", "PATCH"])
