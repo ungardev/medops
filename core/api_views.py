@@ -1907,7 +1907,7 @@ def reports_export_api(request):
             styles = getSampleStyleSheet()
 
             if inst:
-                elements.append(Paragraph(f"<b>{inst.name}</b>", styles["Title"]))
+                elements.append(Paragraph(f"<b>{inst.name or ''}</b>", styles["Title"]))
                 elements.append(Paragraph(f"Dirección: {inst.address or ''}", styles["Normal"]))
                 elements.append(Paragraph(f"Tel: {inst.phone or ''} • RIF: {inst.tax_id or ''}", styles["Normal"]))
                 elements.append(Spacer(1, 12))
@@ -1923,17 +1923,28 @@ def reports_export_api(request):
             elements.append(Paragraph(f"Filtros aplicados: {filters}", styles["Normal"]))
             elements.append(Spacer(1, 12))
 
+            # 🔹 Construcción segura de la tabla
             data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
             for r in serialized:
+                safe_date = r.get("date")
+                try:
+                    safe_date_str = safe_date.strftime("%Y-%m-%d")
+                except Exception:
+                    safe_date_str = str(safe_date or "")
+
                 data.append([
-                    r.get("id") or "",
-                    str(r.get("date") or ""),
-                    r.get("type") or "",
-                    r.get("entity") or "",
-                    r.get("status") or "",
+                    str(r.get("id") or ""),
+                    safe_date_str,
+                    str(r.get("type") or ""),
+                    str(r.get("entity") or ""),
+                    str(r.get("status") or ""),
                     f"{float(r.get('amount') or 0):.2f}",
-                    r.get("currency") or "VES"
+                    str(r.get("currency") or "VES"),
                 ])
+
+            if len(data) == 1:  # solo encabezado
+                return Response({"error": "No hay filas para exportar"}, status=400)
+
             table = Table(data, hAlign="LEFT")
             table.setStyle(TableStyle([
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
@@ -1978,24 +1989,35 @@ def reports_export_api(request):
             ws.append([])
             ws.append(headers)
 
+            excel_rows_count = 0
             for r in serialized:
-                ws.append([
-                    r.get("id") or "",
-                    str(r.get("date") or ""),
-                    r.get("type") or "",
-                    r.get("entity") or "",
-                    r.get("status") or "",
-                    float(r.get("amount") or 0),
-                    r.get("currency") or "VES"
-                ])
+                safe_date = r.get("date")
+                try:
+                    safe_date_str = safe_date.strftime("%Y-%m-%d")
+                except Exception:
+                    safe_date_str = str(safe_date or "")
 
-            header_row = ws.max_row - len(serialized)
-            for cell in ws[header_row]:
+                ws.append([
+                    str(r.get("id") or ""),
+                    safe_date_str,
+                    str(r.get("type") or ""),
+                    str(r.get("entity") or ""),
+                    str(r.get("status") or ""),
+                    float(r.get("amount") or 0),
+                    str(r.get("currency") or "VES"),
+                ])
+                excel_rows_count += 1
+
+            if excel_rows_count == 0:
+                return Response({"error": "No hay filas para exportar"}, status=400)
+
+            header_row_index = ws.max_row - excel_rows_count
+            for cell in ws[header_row_index]:
                 cell.font = Font(bold=True, color="FFFFFF")
                 cell.alignment = Alignment(horizontal="center")
                 cell.fill = PatternFill(start_color="003366", end_color="003366", fill_type="solid")
 
-            for row_idx, row in enumerate(ws.iter_rows(min_row=header_row+1, max_row=ws.max_row), start=0):
+            for row_idx, row in enumerate(ws.iter_rows(min_row=header_row_index + 1, max_row=ws.max_row), start=0):
                 fill_color = "F2F2F2" if row_idx % 2 == 0 else "FFFFFF"
                 for cell in row:
                     cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
@@ -2005,9 +2027,9 @@ def reports_export_api(request):
                 col_letter = col[0].column_letter
                 for cell in col:
                     try:
-                        if cell.value:
+                        if cell.value is not None:
                             max_length = max(max_length, len(str(cell.value)))
-                    except:
+                    except Exception:
                         pass
                 ws.column_dimensions[col_letter].width = max_length + 2
 
@@ -2024,12 +2046,12 @@ def reports_export_api(request):
 
     except Exception as e:
         tb = traceback.format_exc()
-        logger.error(f"Export error: {e}\n{tb}")
         return Response(
             {"error": str(e), "traceback": tb},
             status=500,
             content_type="application/json"
         )
+
 
 
 @api_view(["GET", "PUT", "PATCH"])
