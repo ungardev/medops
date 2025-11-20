@@ -140,6 +140,9 @@ class Appointment(models.Model):
     )
     notes = models.TextField(blank=True, null=True)
 
+    # 👇 Nuevo campo para trazabilidad de finalización
+    completed_at = models.DateTimeField(blank=True, null=True)
+
     history = HistoricalRecords()
 
     class Meta:
@@ -184,7 +187,12 @@ class Appointment(models.Model):
     def update_status(self, new_status: str):
         if self.can_transition(new_status):
             self.status = new_status
-            self.save(update_fields=["status"])
+            # 👇 si pasa a completed, registramos fecha/hora
+            if new_status == "completed":
+                self.completed_at = timezone.now()
+                self.save(update_fields=["status", "completed_at"])
+            else:
+                self.save(update_fields=["status"])
         else:
             raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
 
@@ -206,7 +214,8 @@ class Appointment(models.Model):
 
     def mark_completed(self):
         self.status = 'completed'
-        self.save(update_fields=['status'])
+        self.completed_at = timezone.now()  # 👈 registramos fecha/hora real
+        self.save(update_fields=['status', 'completed_at'])
 
 
 # --- Señal para crear automáticamente la orden de cobro ---

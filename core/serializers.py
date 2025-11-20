@@ -630,6 +630,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "expected_amount",
             "status",
             "arrival_time",
+            "completed_at",      # 👈 nuevo campo expuesto
             "notes",
             "charge_order",      # 👈 añadido
         ]

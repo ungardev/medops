@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Appointment } from "../../types/appointments";
 
+// 👇 Import simplificado desde el índice
+import { useUpdateAppointmentNotes } from "hooks/appointments";
+
 interface Props {
   appointment: Appointment;
   onClose: () => void;
@@ -9,6 +12,15 @@ interface Props {
 
 export default function AppointmentDetail({ appointment, onClose, onEdit }: Props) {
   const [activeTab, setActiveTab] = useState<"info" | "notes" | "payments">("info");
+  const [notesDraft, setNotesDraft] = useState<string>(appointment.notes || "");
+
+  // Hook para actualizar notas
+  const notesMutation = useUpdateAppointmentNotes();
+
+  const handleSaveNotes = () => {
+    if (!window.confirm("¿Desea guardar las notas de esta cita?")) return;
+    notesMutation.mutate({ id: appointment.id, notes: notesDraft });
+  };
 
   return (
     <div className="modal-overlay">
@@ -89,7 +101,35 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
         {activeTab === "notes" && (
           <section>
             <h3>Notas</h3>
-            <p>{appointment.notes || "Sin notas registradas."}</p>
+            <textarea
+              value={notesDraft}
+              onChange={(e) => setNotesDraft(e.target.value)}
+              rows={4}
+              className="textarea textarea--md mb-4"
+            />
+            <div className="btn-row flex-between">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setNotesDraft(appointment.notes || "")}
+              >
+                Revertir
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleSaveNotes}
+                disabled={notesMutation.isPending}
+              >
+                Guardar notas
+              </button>
+            </div>
+            {notesMutation.isError && (
+              <p className="text-danger mt-2">Error al guardar notas.</p>
+            )}
+            {notesMutation.isSuccess && (
+              <p className="text-success mt-2">Notas actualizadas correctamente.</p>
+            )}
           </section>
         )}
 

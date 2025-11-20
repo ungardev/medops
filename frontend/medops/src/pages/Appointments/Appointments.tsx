@@ -1,11 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  getAppointments,
-  createAppointment,
-  updateAppointment,
-  deleteAppointment,
-  updateAppointmentStatus,
-} from "api/appointments";
+import { useState } from "react";
+import moment from "moment";
 import {
   Appointment,
   AppointmentInput,
@@ -19,66 +13,35 @@ import AppointmentCalendar from "components/Appointments/AppointmentCalendar";
 import AppointmentFilters from "components/Appointments/AppointmentFilters";
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
 
-import { useState } from "react";
-import moment from "moment";
+// 👇 Hooks centralizados desde index.ts
+import {
+  useAppointments,
+  useCreateAppointment,
+  useCancelAppointment,
+  useUpdateAppointment,
+  useUpdateAppointmentStatus,
+  useUpdateAppointmentNotes, // disponible si quieres usarlo en detalle
+  useAppointmentsPending,
+  useCurrentConsultation,
+} from "hooks/appointments";
 
 export default function Appointments() {
-  const queryClient = useQueryClient();
-
   // Estado para modales
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [viewingAppointment, setViewingAppointment] = useState<Appointment | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Estado para filtrar por fecha seleccionada en el calendario
+  // Estado para filtros
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
-  // Estado para filtro por estado
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
-
-  // Estado para buscador inteligente
   const [search, setSearch] = useState("");
 
-  // 🔎 Cargar citas
-  const {
-    data: appointments,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<Appointment[]>({
-    queryKey: ["appointments"],
-    queryFn: getAppointments,
-  });
-
-  // ✍️ Crear cita
-  const createMutation = useMutation({
-    mutationFn: createAppointment,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["appointments"] }),
-  });
-
-  // ✍️ Actualizar cita
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: AppointmentInput }) =>
-      updateAppointment(id, data),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["appointments"] }),
-  });
-
-  // 🗑 Eliminar cita
-  const deleteMutation = useMutation({
-    mutationFn: deleteAppointment,
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["appointments"] }),
-  });
-
-  // 🔄 Cambiar estado de cita
-  const statusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: AppointmentStatus }) =>
-      updateAppointmentStatus(id, status),
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: ["appointments"] }),
-  });
+  // 🔎 Hooks de citas
+  const { data: appointments, isLoading, isError, error } = useAppointments();
+  const createMutation = useCreateAppointment();
+  const updateMutation = useUpdateAppointment();
+  const cancelMutation = useCancelAppointment();
+  const statusMutation = useUpdateAppointmentStatus();
 
   // Guardar cita (crear o actualizar) con confirmación
   const saveAppointment = (data: AppointmentInput, id?: number) => {
@@ -92,10 +55,10 @@ export default function Appointments() {
     }
   };
 
-  // Eliminar cita con confirmación
+  // Eliminar/cancelar cita con confirmación
   const deleteAppointmentSafe = (id: number) => {
     if (window.confirm("¿Está seguro de eliminar esta cita?")) {
-      deleteMutation.mutate(id);
+      cancelMutation.mutate(id);
     }
   };
 

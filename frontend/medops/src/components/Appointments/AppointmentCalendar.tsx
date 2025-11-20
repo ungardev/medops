@@ -19,8 +19,14 @@ export default function AppointmentCalendar({ appointments, onSelect, onSelectDa
   const [currentView, setCurrentView] = useState<View>("month");
 
   const events: RBCEvent[] = appointments.map((appt) => {
-    const start = moment(appt.appointment_date, "YYYY-MM-DD").startOf("day").toDate();
-    const end = moment(appt.appointment_date, "YYYY-MM-DD").endOf("day").toDate();
+    // 👇 Usamos completed_at si existe y el estado es "completed"
+    const baseDate =
+      appt.status === "completed" && appt.completed_at
+        ? moment(appt.completed_at)
+        : moment(appt.appointment_date, "YYYY-MM-DD");
+
+    const start = baseDate.startOf("day").toDate();
+    const end = baseDate.endOf("day").toDate();
 
     return {
       id: appt.id,

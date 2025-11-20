@@ -1,7 +1,8 @@
+// src/components/Appointments/AppointmentEditForm.tsx
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Appointment, AppointmentInput } from "../../types/appointments";
-import { getPatients } from "../../api/patients"; // 👈 asegúrate de tener este endpoint
+import { Appointment, AppointmentInput } from "types/appointments"; // 👈 import simplificado
+import { getPatients } from "api/patients"; // 👈 import simplificado
 
 interface Props {
   appointment: Appointment;
@@ -14,8 +15,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
     patient: appointment.patient.id,
     appointment_date: appointment.appointment_date,
     appointment_type: appointment.appointment_type,
-    expected_amount: appointment.expected_amount,
-    status: appointment.status,
+    expected_amount: String(appointment.expected_amount ?? ""), // 👈 normalizamos a string
     notes: appointment.notes || "",
   });
 
@@ -34,7 +34,14 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) onSubmit(appointment.id, form);
+
+    // 👇 normalizamos expected_amount a string antes de enviar
+    const payload: AppointmentInput = {
+      ...form,
+      expected_amount: form.expected_amount ? String(form.expected_amount) : "",
+    };
+
+    if (onSubmit) onSubmit(appointment.id, payload);
     onClose();
   };
 
@@ -98,23 +105,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
             >
               <option value="general">General</option>
               <option value="specialized">Especializada</option>
-            </select>
-          </div>
-
-          {/* Estado */}
-          <div>
-            <label className="label">Estado:</label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              className="select"
-            >
-              <option value="pending">Pendiente</option>
-              <option value="arrived">Llegó</option>
-              <option value="in_consultation">En consulta</option>
-              <option value="completed">Completada</option>
-              <option value="canceled">Cancelada</option>
             </select>
           </div>
 

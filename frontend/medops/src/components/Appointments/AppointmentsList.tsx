@@ -72,30 +72,6 @@ export default function AppointmentsList({
               </td>
               <td className="text-right">
                 <div className="btn-row">
-                  {a.status === "pending" && (
-                    <button
-                      onClick={() => onStatusChange(a.id, "arrived")}
-                      className="btn btn-outline"
-                    >
-                      Marcar como llegado
-                    </button>
-                  )}
-                  {a.status === "arrived" && (
-                    <button
-                      onClick={() => onStatusChange(a.id, "in_consultation")}
-                      className="btn btn-outline"
-                    >
-                      Iniciar consulta
-                    </button>
-                  )}
-                  {a.status === "in_consultation" && (
-                    <button
-                      onClick={() => onStatusChange(a.id, "completed")}
-                      className="btn btn-outline"
-                    >
-                      Finalizar consulta
-                    </button>
-                  )}
                   {a.status !== "canceled" && (
                     <button
                       onClick={() => onStatusChange(a.id, "canceled")}

@@ -1,8 +1,8 @@
 // src/components/Appointments/AppointmentForm.tsx
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AppointmentInput } from "../../types/appointments";
-import { getPatients } from "../../api/patients";
+import { AppointmentInput } from "types/appointments"; // 👈 import simplificado
+import { getPatients } from "api/patients"; // 👈 import simplificado
 
 interface Props {
   date?: Date;
@@ -15,7 +15,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     patient: 0,
     appointment_date: date ? date.toISOString().slice(0, 10) : "",
     appointment_type: "general",
-    expected_amount: "",
+    expected_amount: "", // 👈 siempre string en el estado
     notes: "",
   });
 
@@ -36,7 +36,14 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form); // 👈 form ya es AppointmentInput
+
+    // 👇 normalizamos expected_amount a string antes de enviar
+    const payload: AppointmentInput = {
+      ...form,
+      expected_amount: form.expected_amount ? String(form.expected_amount) : "",
+    };
+
+    onSubmit(payload);
     onClose();
   };
 

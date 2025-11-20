@@ -10,7 +10,7 @@ export function useAppointments(params?: { date?: string }) {
     queryKey: ["appointments", params],
     queryFn: async () => {
       const query = params?.date ? `?date=${params.date}` : "";
-      const raw = await apiFetch<Appointment[]>(`/api/appointments/${query}`);
+      const raw = await apiFetch<Appointment[]>(`appointments/${query}`);
       return raw.map(mapAppointmentList); // 👈 normalización
     },
   });
@@ -21,7 +21,7 @@ export function useAppointment(id: number) {
   return useQuery<Appointment>({
     queryKey: ["appointments", id],
     queryFn: async () => {
-      const raw = await apiFetch<Appointment>(`/api/appointments/${id}/`);
+      const raw = await apiFetch<Appointment>(`appointments/${id}/`);
       return mapAppointmentList(raw); // 👈 normalización
     },
     enabled: !!id,
@@ -33,7 +33,7 @@ export function useCreateAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: AppointmentInput) => {
-      const raw = await apiFetch<Appointment>(`/api/appointments/`, {
+      const raw = await apiFetch<Appointment>(`appointments/`, {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -50,7 +50,7 @@ export function useCancelAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const raw = await apiFetch<Appointment>(`/api/appointments/${id}/status/`, {
+      const raw = await apiFetch<Appointment>(`appointments/${id}/status/`, {
         method: "PATCH",
         body: JSON.stringify({ status: "canceled" }), // 👈 payload correcto
       });

@@ -48,6 +48,9 @@ export interface Appointment {
   // 🔹 Metadatos
   created_at?: string;
   updated_at?: string;
+
+  // 🔹 Nuevo campo para trazabilidad de finalización
+  completed_at?: string | null;
 }
 
 // --- Datos de entrada para crear/editar cita
