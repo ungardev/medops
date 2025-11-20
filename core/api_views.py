@@ -1882,6 +1882,9 @@ logger = logging.getLogger(__name__)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def reports_export_api(request):
+    # Import local para evitar encabezados de import
+    from decimal import Decimal, ROUND_HALF_UP
+
     try:
         serializer = ReportExportSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -1907,6 +1910,19 @@ def reports_export_api(request):
             except Exception:
                 specialty_str = str(doc_op.specialties or "")
 
+        # --- Switch multimoneda (todo en Decimal) ---
+        target_currency = validated.get("currency", "USD")
+        rate: Decimal = Decimal("1.0")
+        if target_currency == "VES":
+            try:
+                # get_bcv_rate debe devolver Decimal
+                rate_val = get_bcv_rate()
+                rate = rate_val if isinstance(rate_val, Decimal) else Decimal(str(rate_val))
+            except Exception:
+                obj = BCVRateCache.objects.order_by("-date").first()
+                cache_val = (obj.value if obj else Decimal("1.0"))
+                rate = cache_val if isinstance(cache_val, Decimal) else Decimal(str(cache_val))
+
         # --- Export PDF ---
         if export_format == "pdf":
             buffer = io.BytesIO()
@@ -1931,7 +1947,6 @@ def reports_export_api(request):
             elements.append(Paragraph(f"Filtros aplicados: {filters}", styles["Normal"]))
             elements.append(Spacer(1, 12))
 
-            # 🔹 Construcción segura de la tabla
             data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
             for r in serialized:
                 safe_date = r.get("date")
@@ -1940,17 +1955,21 @@ def reports_export_api(request):
                 except Exception:
                     safe_date_str = str(safe_date or "")
 
+                amount_dec = Decimal(str(r.get("amount") or "0"))
+                amount_val = (amount_dec * rate).quantize(Decimal("0.01"), ROUND_HALF_UP)
+                currency_val = target_currency
+
                 data.append([
                     str(r.get("id") or ""),
                     safe_date_str,
                     str(r.get("type") or ""),
                     str(r.get("entity") or ""),
                     str(r.get("status") or ""),
-                    f"{float(r.get('amount') or 0):.2f}",
-                    str(r.get("currency") or "VES"),
+                    f"{float(amount_val):.2f}",
+                    currency_val,
                 ])
 
-            if len(data) == 1:  # solo encabezado
+            if len(data) == 1:
                 return Response({"error": "No hay filas para exportar"}, status=400)
 
             table = Table(data, hAlign="LEFT")
@@ -2005,14 +2024,18 @@ def reports_export_api(request):
                 except Exception:
                     safe_date_str = str(safe_date or "")
 
+                amount_dec = Decimal(str(r.get("amount") or "0"))
+                amount_val = (amount_dec * rate).quantize(Decimal("0.01"), ROUND_HALF_UP)
+                currency_val = target_currency
+
                 ws.append([
                     str(r.get("id") or ""),
                     safe_date_str,
                     str(r.get("type") or ""),
                     str(r.get("entity") or ""),
                     str(r.get("status") or ""),
-                    float(r.get("amount") or 0),
-                    str(r.get("currency") or "VES"),
+                    float(amount_val),  # Excel maneja float, ya cuantizado a 2 decimales
+                    currency_val,
                 ])
                 excel_rows_count += 1
 
