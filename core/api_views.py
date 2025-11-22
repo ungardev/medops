@@ -509,22 +509,33 @@ def dashboard_summary_api(request):
         }, status=200)
 
 
-
-@extend_schema(parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)], responses={200: PatientReadSerializer(many=True)})
+@extend_schema(
+    parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)],
+    responses={200: PatientReadSerializer(many=True)}
+)
 @api_view(["GET"])
 def patient_search_api(request):
     query = request.GET.get("q", "")
     if not query:
-        return Response([], status=200)
-    patients = Patient.objects.filter(
+        # ⚔️ devuelve estructura paginada vacía
+        return Response({"count": 0, "next": None, "previous": None, "results": []}, status=200)
+
+    qs = Patient.objects.filter(
         Q(first_name__icontains=query) |
         Q(last_name__icontains=query) |
         Q(middle_name__icontains=query) |
         Q(second_last_name__icontains=query) |
         Q(id__icontains=query)
-    )[:10]
-    serializer = PatientReadSerializer(patients, many=True)
-    return Response(serializer.data)
+    ).order_by("-created_at")
+
+    # 🔹 Paginador DRF
+    paginator = PageNumberPagination()
+    paginator.page_size = int(request.query_params.get("page_size", 10))
+    result_page = paginator.paginate_queryset(qs, request)
+
+    serializer = PatientReadSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
 
 @extend_schema(responses={200: AppointmentSerializer(many=True)})
 @api_view(["GET"])

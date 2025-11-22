@@ -11,11 +11,14 @@ interface PatientsSearchProps {
 export default function PatientsSearch({ onSelect, placeholder }: PatientsSearchProps) {
   const [query, setQuery] = useState("");
 
-  const { data: results = [] } = useQuery<PatientRef[]>({
+  // La API ahora devuelve { count, results }
+  const { data } = useQuery<{ count: number; results: PatientRef[] }>({
     queryKey: ["searchPatients", query],
     queryFn: () => searchPatients(query),
     enabled: query.length > 1,
   });
+
+  const results = data?.results ?? [];
 
   return (
     <div className="relative w-full">
@@ -30,7 +33,7 @@ export default function PatientsSearch({ onSelect, placeholder }: PatientsSearch
       />
       {results.length > 0 && (
         <ul className="absolute top-full left-0 w-full mt-1 z-20 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 shadow-lg">
-          {results.map((p) => (
+          {results.slice(0, 10).map((p) => (
             <li
               key={p.id}
               className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-100"

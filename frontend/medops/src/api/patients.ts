@@ -2,13 +2,12 @@
 import { apiFetch } from "./client";
 import { Patient, PatientInput, PatientRef } from "../types/patients";
 
-// 🔹 Obtener todos los pacientes
+// 🔹 Obtener todos los pacientes (lista completa, sin paginación)
 export const getPatients = (): Promise<Patient[]> =>
   apiFetch<Patient[]>("patients/");
 
 // 🔹 Crear un nuevo paciente (con limpieza de payload)
 export const createPatient = (data: PatientInput): Promise<Patient> => {
-  // limpiar payload: quitar campos vacíos o nulos
   const cleaned: any = {};
   Object.entries(data).forEach(([key, value]) => {
     if (value !== "" && value !== null && value !== undefined) {
@@ -25,7 +24,6 @@ export const createPatient = (data: PatientInput): Promise<Patient> => {
 
 // 🔹 Actualizar un paciente existente (usar PATCH en lugar de PUT)
 export const updatePatient = (id: number, data: PatientInput): Promise<Patient> => {
-  // limpiar payload también en update
   const cleaned: any = {};
   Object.entries(data).forEach(([key, value]) => {
     if (value !== "" && value !== null && value !== undefined) {
@@ -34,7 +32,7 @@ export const updatePatient = (id: number, data: PatientInput): Promise<Patient> 
   });
 
   return apiFetch<Patient>(`patients/${id}/`, {
-    method: "PATCH", // ✅ cambio clave
+    method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cleaned),
   });
@@ -46,11 +44,16 @@ export const deletePatient = (id: number): Promise<void> =>
     method: "DELETE",
   });
 
-// 🔹 Buscar pacientes (para autocomplete en Sala de Espera o buscador en portal)
-//    Permite buscar por nombre o por ID, con debounce en el frontend
-export const searchPatients = (q: string): Promise<PatientRef[]> => {
-  if (!q.trim()) return Promise.resolve([]);
-  return apiFetch<PatientRef[]>(`patients/search/?q=${encodeURIComponent(q)}`);
+// 🔹 Buscar pacientes (autocomplete / buscador)
+//    Ahora devuelve { count, results } para alinearse con la paginación DRF
+export interface PatientSearchResponse {
+  count: number;
+  results: PatientRef[];
+}
+
+export const searchPatients = (q: string): Promise<PatientSearchResponse> => {
+  if (!q.trim()) return Promise.resolve({ count: 0, results: [] });
+  return apiFetch<PatientSearchResponse>(`patients/search/?q=${encodeURIComponent(q)}`);
 };
 
 // 🔹 Obtener un paciente por ID
