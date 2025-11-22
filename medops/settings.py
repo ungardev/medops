@@ -65,13 +65,17 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",  # 👈 login normal de Django
-        "rest_framework.authentication.TokenAuthentication",    # 👈 si usas tokens DRF
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
+    # 🔹 Paginación global
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 10,
 }
+
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "MedOps API",

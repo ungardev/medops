@@ -1,5 +1,5 @@
 // src/pages/Patients/Patients.tsx
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FaUser, FaTimes } from "react-icons/fa";
 import { usePatients } from "../../hooks/patients/usePatients";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,9 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "../../components/Layout/PageHeader";
 import NewPatientModal from "../../components/Patients/NewPatientModal";
 import DeletePatientModal from "../../components/Patients/DeletePatientModal";
+
+import EmptyState from "../../components/Common/EmptyState";
+import { EmptyStateRegistry } from "../../components/Common/EmptyStateRegistry";
 
 import { Patient } from "../../types/patients";
 
@@ -20,23 +23,36 @@ export default function Patients() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const navigate = useNavigate();
-  const { data: patients, isLoading, error, refetch } = usePatients();
+  const { data: patients, isLoading, error, refetch } = usePatients(currentPage, pageSize);
 
   const searchRef = useRef<HTMLDivElement>(null);
 
+  // Buscador blindado
   useEffect(() => {
-    if (!patients) return;
-    if (query.length < 2) {
+    if (!patients || !Array.isArray(patients.results)) {
       setResults([]);
       setHighlightedIndex(-1);
       return;
     }
-    const filtered = patients.filter(
-      (p) =>
-        p.full_name.toLowerCase().includes(query.toLowerCase()) ||
-        String(p.id).includes(query)
-    );
+
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setResults([]);
+      setHighlightedIndex(-1);
+      return;
+    }
+
+    const q = trimmed.toLowerCase();
+    const filtered = patients.results.filter((p: Patient) => {
+      const name = (p.full_name ?? "").toLowerCase();
+      const idStr = String(p.id ?? "");
+      return name.includes(q) || idStr.includes(q);
+    });
+
     setResults(filtered);
     setHighlightedIndex(filtered.length > 0 ? 0 : -1);
   }, [query, patients]);
@@ -52,7 +68,7 @@ export default function Patients() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleKeyNavigation = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleKeyNavigation = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (results.length === 0) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -72,9 +88,7 @@ export default function Patients() {
     setResults([]);
   };
 
-  const viewPatient = (id: number) => {
-    navigate(`/patients/${id}`);
-  };
+  const viewPatient = (id: number) => navigate(`/patients/${id}`);
 
   const confirmDeletePatient = (patient: Patient) => {
     setPatientToDelete(patient);
@@ -92,9 +106,10 @@ export default function Patients() {
   if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando pacientes...</p>;
   if (error) return <p className="text-sm text-red-600">Error cargando pacientes</p>;
 
-  const list = patients ?? [];
+  const list: Patient[] = Array.isArray(patients?.results) ? patients!.results : [];
+  const totalPages = Math.ceil((patients?.total ?? 0) / pageSize);
 
-    return (
+  return (
     <div className="p-4">
       <PageHeader title="Pacientes" />
 
@@ -114,7 +129,7 @@ export default function Patients() {
           />
           {results.length > 0 && (
             <ul className="absolute top-full left-0 w-full mt-1 z-20 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 shadow-lg">
-              {results.map((p, index) => (
+              {results.map((p: Patient, index) => (
                 <li
                   key={p.id}
                   className={`px-3 py-2 text-sm cursor-pointer 
@@ -150,33 +165,68 @@ export default function Patients() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
-            {list.map((p) => (
-              <tr key={p.id}>
-                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.id}</td>
-                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.full_name}</td>
-                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.age ?? "-"}</td>
-                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.gender ?? "-"}</td>
-                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.contact_info ?? "-"}</td>
-                <td className="px-4 py-2">
-                  <div className="flex gap-2">
-                    <button
-                      className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
-                      onClick={() => viewPatient(p.id)}
-                    >
-                      <FaUser />
-                    </button>
-                    <button
-                      className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
-                      onClick={() => confirmDeletePatient(p)}
-                    >
-                      <FaTimes />
-                    </button>
-                  </div>
+            {list.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-4 py-6">
+                  <EmptyState
+                    icon={React.createElement(EmptyStateRegistry.pacientes.icon, EmptyStateRegistry.pacientes.iconProps)}
+                    title={EmptyStateRegistry.pacientes.title}
+                    message={EmptyStateRegistry.pacientes.message}
+                  />
                 </td>
               </tr>
-            ))}
+            ) : (
+              list.map((p: Patient) => (
+                <tr key={p.id}>
+                  <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.id}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.full_name}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.age ?? "-"}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.gender ?? "-"}</td>
+                  <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.contact_info ?? "-"}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex gap-2">
+                      <button
+                        className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                        onClick={() => viewPatient(p.id)}
+                      >
+                        <FaUser />
+                      </button>
+                      <button
+                        className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
+                        onClick={() => confirmDeletePatient(p)}
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
+      </div>
+
+      {/* Paginación */}
+      <div className="flex flex-wrap items-center justify-end gap-2 mt-4">
+        <button
+          className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-sm disabled:opacity-50"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+        >
+          ← Anterior
+        </button>
+
+        <span className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300">
+          Página {currentPage} de {Math.max(totalPages, 1)}
+        </span>
+
+        <button
+          className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-sm disabled:opacity-50"
+          disabled={currentPage >= totalPages}
+          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.max(totalPages, 1)))}
+        >
+          Siguiente →
+        </button>
       </div>
 
       {/* Modales */}
