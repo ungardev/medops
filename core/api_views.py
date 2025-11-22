@@ -1083,6 +1083,7 @@ class PatientPagination(PageNumberPagination):
 
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all().order_by("-created_at")
+    pagination_class = PatientPagination          # 👈 ahora sí con paginación
 
     def get_serializer_class(self):
         from .serializers import (
