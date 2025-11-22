@@ -1,4 +1,4 @@
-// src/components/RegisterWalkinModal.tsx
+// src/components/WaitingRoom/RegisterWalkinModal.tsx
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useForm } from "react-hook-form";
@@ -9,7 +9,7 @@ import type { WaitingRoomEntry } from "../../types/waitingRoom";
 interface Props {
   onClose: () => void;
   onSuccess: (patientId: number) => void;
-  existingEntries: WaitingRoomEntry[]; // 🔹 nueva prop
+  existingEntries: WaitingRoomEntry[];
 }
 
 interface FormValues {
@@ -34,11 +34,8 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PatientRef[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientRef | null>(null);
-
-  // índice resaltado con teclado
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
-  // Buscar pacientes existentes mientras se escribe
   useEffect(() => {
     const fetchResults = async () => {
       if (query.length < 2) {
@@ -57,23 +54,16 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     fetchResults();
   }, [query]);
 
-  // Cerrar con tecla Esc + navegación con teclado
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
+      if (e.key === "Escape") onClose();
       if (mode === "search" && results.length > 0 && !selectedPatient) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
-          setHighlightedIndex((prev) =>
-            prev < results.length - 1 ? prev + 1 : 0
-          );
+          setHighlightedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
-          setHighlightedIndex((prev) =>
-            prev > 0 ? prev - 1 : results.length - 1
-          );
+          setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
         } else if (e.key === "Enter" && highlightedIndex >= 0) {
           e.preventDefault();
           setSelectedPatient(results[highlightedIndex]);
@@ -94,9 +84,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
       } else {
         const payload: any = {};
         Object.entries(values).forEach(([key, value]) => {
-          if (value && value.trim() !== "") {
-            payload[key] = value.trim();
-          }
+          if (value && value.trim() !== "") payload[key] = value.trim();
         });
         const patient: Patient = await createPatient(payload);
         patientId = patient.id;
@@ -113,7 +101,6 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     }
   };
 
-  // 🔹 Validación: evitar duplicados en frontend
   const alreadyInWaitingRoom = selectedPatient
     ? existingEntries.some(
         (e) =>
@@ -123,16 +110,24 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
       )
     : false;
 
-  return ReactDOM.createPortal(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Registrar llegada</h2>
+      return ReactDOM.createPortal(
+    <div
+      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg p-6 animate-fade-slide"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+          Registrar llegada
+        </h2>
 
         {/* === MODO BÚSQUEDA === */}
         {mode === "search" && (
-          <div className="form">
+          <div className="space-y-4">
             <input
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
               placeholder="Buscar paciente por nombre o cédula..."
               value={query}
               onChange={(e) => {
@@ -142,11 +137,15 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
             />
 
             {results.length > 0 && !selectedPatient && (
-              <ul className="card results-list">
+              <ul className="border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700">
                 {results.map((p, index) => (
                   <li
                     key={p.id}
-                    className={index === highlightedIndex ? "highlighted" : ""}
+                    className={`px-3 py-2 cursor-pointer ${
+                      index === highlightedIndex
+                        ? "bg-blue-600 text-white"
+                        : "text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
                     onClick={() => {
                       setSelectedPatient(p);
                       setQuery("");
@@ -160,27 +159,25 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
             )}
 
             {selectedPatient && (
-              <div className="card mt-3 text-center">
-                <h3 className="mb-2">
+              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700 text-center">
+                <h3 className="text-gray-800 dark:text-gray-100 font-semibold mb-2">
                   {selectedPatient.full_name}
-                  {selectedPatient.national_id
-                    ? ` (${selectedPatient.national_id})`
-                    : ""}
+                  {selectedPatient.national_id ? ` (${selectedPatient.national_id})` : ""}
                 </h3>
                 {alreadyInWaitingRoom ? (
-                  <p className="text-danger">
+                  <p className="text-red-600 font-medium">
                     ⚠️ Este paciente ya está en la sala de espera
                   </p>
                 ) : (
-                  <div className="modal-actions">
+                  <div className="flex gap-2 justify-center mt-3">
                     <button
-                      className="btn btn-primary"
+                      className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                       onClick={() => onSubmit({} as FormValues)}
                     >
                       Registrar llegada
                     </button>
                     <button
-                      className="btn btn-outline"
+                      className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
                       onClick={() => setSelectedPatient(null)}
                     >
                       Cambiar
@@ -191,7 +188,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
             )}
 
             <button
-              className="btn btn-primary mt-3"
+              className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors w-full"
               onClick={() => setMode("create")}
             >
               Crear nuevo paciente
@@ -201,50 +198,54 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
 
         {/* === MODO CREACIÓN === */}
         {mode === "create" && (
-          <form className="form" onSubmit={handleSubmit(onSubmit)}>
+          <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
             <input
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
               placeholder="Nombre"
               {...register("first_name", { required: "El nombre es obligatorio" })}
             />
             {errors.first_name && (
-              <span className="text-danger">{errors.first_name.message}</span>
+              <span className="text-red-600 text-sm">{errors.first_name.message}</span>
             )}
 
             <input
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
               placeholder="Segundo nombre (opcional)"
               {...register("second_name")}
             />
 
             <input
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
               placeholder="Apellido"
               {...register("last_name", { required: "El apellido es obligatorio" })}
             />
             {errors.last_name && (
-              <span className="text-danger">{errors.last_name.message}</span>
+              <span className="text-red-600 text-sm">{errors.last_name.message}</span>
             )}
 
             <input
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
               placeholder="Segundo apellido (opcional)"
               {...register("second_last_name")}
             />
 
             <input
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
               placeholder="Documento (Cédula)"
               {...register("national_id", { required: "El documento es obligatorio" })}
             />
             {errors.national_id && (
-              <span className="text-danger">{errors.national_id.message}</span>
+              <span className="text-red-600 text-sm">{errors.national_id.message}</span>
             )}
 
-            <input className="input" placeholder="Teléfono" {...register("phone")} />
+            <input
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+              placeholder="Teléfono"
+              {...register("phone")}
+            />
 
             <input
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
               placeholder="Email"
               {...register("email", {
                 pattern: {
@@ -254,15 +255,19 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
               })}
             />
             {errors.email && (
-              <span className="text-danger">{errors.email.message}</span>
+              <span className="text-red-600 text-sm">{errors.email.message}</span>
             )}
 
-            <div className="modal-actions">
-              <button className="btn btn-primary" type="submit" disabled={isSubmitting}>
+            <div className="flex gap-2 justify-end mt-4">
+              <button
+                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                type="submit"
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? "Creando..." : "Crear y registrar llegada"}
               </button>
               <button
-                className="btn btn-outline"
+                className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
                 type="button"
                 onClick={() => setMode("search")}
               >

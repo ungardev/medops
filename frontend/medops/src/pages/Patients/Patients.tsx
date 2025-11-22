@@ -8,7 +8,7 @@ import PageHeader from "../../components/Layout/PageHeader";
 import NewPatientModal from "../../components/Patients/NewPatientModal";
 import DeletePatientModal from "../../components/Patients/DeletePatientModal";
 
-import { Patient } from "../../types/patients"; // 👈 usamos el tipo global
+import { Patient } from "../../types/patients";
 
 export default function Patients() {
   const [query, setQuery] = useState("");
@@ -25,7 +25,6 @@ export default function Patients() {
 
   const searchRef = useRef<HTMLDivElement>(null);
 
-  // Búsqueda
   useEffect(() => {
     if (!patients) return;
     if (query.length < 2) {
@@ -42,7 +41,6 @@ export default function Patients() {
     setHighlightedIndex(filtered.length > 0 ? 0 : -1);
   }, [query, patients]);
 
-  // 🔹 Cerrar resultados al hacer click fuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -91,33 +89,36 @@ export default function Patients() {
     setPatientToDelete(null);
   };
 
-  if (isLoading) return <p>Cargando pacientes...</p>;
-  if (error) return <p className="text-danger">Error cargando pacientes</p>;
+  if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando pacientes...</p>;
+  if (error) return <p className="text-sm text-red-600">Error cargando pacientes</p>;
 
   const list = patients ?? [];
 
-  return (
-    <div className="page">
-      {/* Encabezado unificado */}
+    return (
+    <div className="p-4">
       <PageHeader title="Pacientes" />
 
       {/* Buscador + Botón */}
       <div className="w-full flex items-start gap-3 mb-4">
-        <div ref={searchRef} className="search-bar relative flex-1">
+        <div ref={searchRef} className="relative flex-1">
           <input
             type="text"
-            className={`input w-full ${results.length > 0 ? "shadow-lg border-primary" : ""}`}
+            className={`px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                        focus:outline-none focus:ring-2 focus:ring-blue-600 w-full 
+                        ${results.length > 0 ? "shadow-lg border-blue-600" : ""}`}
             placeholder="Buscar por nombre o folio..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyNavigation}
           />
           {results.length > 0 && (
-            <ul className="card results-list absolute top-full left-0 w-full mt-1 z-20">
+            <ul className="absolute top-full left-0 w-full mt-1 z-20 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 shadow-lg">
               {results.map((p, index) => (
                 <li
                   key={p.id}
-                  className={index === highlightedIndex ? "highlighted" : ""}
+                  className={`px-3 py-2 text-sm cursor-pointer 
+                              ${index === highlightedIndex ? "bg-blue-600 text-white" : "hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-100"}`}
                   onClick={() => handleSelect(p)}
                 >
                   {p.full_name} — {p.id}
@@ -128,7 +129,7 @@ export default function Patients() {
         </div>
 
         <button
-          className="btn btn-primary"
+          className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           onClick={() => setShowCreateModal(true)}
         >
           + Nuevo paciente
@@ -136,42 +137,47 @@ export default function Patients() {
       </div>
 
       {/* Tabla */}
-      <table className="table mt-4">
-        <thead>
-          <tr>
-            <th>Folio</th>
-            <th>Nombre completo</th>
-            <th>Edad</th>
-            <th>Género</th>
-            <th>Contacto</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {list.map((p) => (
-            <tr key={p.id}>
-              <td>{p.id}</td>
-              <td>{p.full_name}</td>
-              <td>{p.age ?? "-"}</td>
-              <td>{p.gender ?? "-"}</td>
-              <td>{p.contact_info ?? "-"}</td>
-              <td>
-                <div className="flex gap-2">
-                  <button className="btn-ghost" onClick={() => viewPatient(p.id)}>
-                    <FaUser />
-                  </button>
-                  <button
-                    className="btn-ghost text-danger"
-                    onClick={() => confirmDeletePatient(p)}
-                  >
-                    <FaTimes />
-                  </button>
-                </div>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-100 dark:bg-gray-700">
+            <tr>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Folio</th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Nombre completo</th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Edad</th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Género</th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Contacto</th>
+              <th className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200">Acciones</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+            {list.map((p) => (
+              <tr key={p.id}>
+                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.id}</td>
+                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.full_name}</td>
+                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.age ?? "-"}</td>
+                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.gender ?? "-"}</td>
+                <td className="px-4 py-2 text-sm text-gray-800 dark:text-gray-100">{p.contact_info ?? "-"}</td>
+                <td className="px-4 py-2">
+                  <div className="flex gap-2">
+                    <button
+                      className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+                      onClick={() => viewPatient(p.id)}
+                    >
+                      <FaUser />
+                    </button>
+                    <button
+                      className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
+                      onClick={() => confirmDeletePatient(p)}
+                    >
+                      <FaTimes />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* Modales */}
       <NewPatientModal

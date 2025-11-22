@@ -9,7 +9,7 @@ import { useNotify } from "../../hooks/useNotify";
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
   const uploadDocument = useUploadDocument(patient.id);
-  const deleteDocument = useDeleteDocument(); // 👈 ya no recibe patientId
+  const deleteDocument = useDeleteDocument();
   const notify = useNotify();
 
   const [file, setFile] = useState<File | null>(null);
@@ -48,83 +48,106 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const isEmpty = !isLoading && !error && documents.length === 0;
 
   return (
-    <div>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Documentos clínicos</h3>
+
       {/* Uploader */}
-      <form onSubmit={handleUpload} className="mb-4 flex gap-2 items-center">
-        <input
-          type="file"
-          accept=".pdf,image/*"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="input"
-        />
-        <input
-          type="text"
-          placeholder="Descripción"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="input"
-        />
-        <input
-          type="text"
-          placeholder="Categoría"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="input"
-        />
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={uploadDocument.isPending}
-        >
-          {uploadDocument.isPending ? "Subiendo..." : "Subir"}
-        </button>
+      <form onSubmit={handleUpload} className="grid grid-cols-12 gap-4 mb-6">
+        <div className="col-span-3">
+          <input
+            type="file"
+            accept=".pdf,image/*"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
+        <div className="col-span-3">
+          <input
+            type="text"
+            placeholder="Descripción"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
+        <div className="col-span-3">
+          <input
+            type="text"
+            placeholder="Categoría"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
+        <div className="col-span-3 flex items-center">
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm w-full"
+            disabled={uploadDocument.isPending}
+          >
+            {uploadDocument.isPending ? "Subiendo..." : "Subir"}
+          </button>
+        </div>
       </form>
 
       {/* Estados */}
-      {isLoading && <p>Cargando documentos...</p>}
-      {error && <p className="text-danger">Error: {(error as Error).message}</p>}
-      {isEmpty && <p>No tiene documentos registrados</p>}
+      {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando documentos...</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>}
+      {isEmpty && <p className="text-sm text-gray-500 dark:text-gray-400">No tiene documentos registrados</p>}
 
       {/* Tabla */}
       {!isLoading && !error && documents.length > 0 && (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Descripción</th>
-              <th>Categoría</th>
-              <th>Archivo</th>
-              <th>Subido</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {documents.map((d: MedicalDocument) => (
-              <tr key={d.id}>
-                <td>{d.description || "Documento sin descripción"}</td>
-                <td>{d.category || "Sin categoría"}</td>
-                <td>
-                  <a href={d.file} target="_blank" rel="noopener noreferrer">
-                    Ver archivo
-                  </a>
-                </td>
-                <td>
-                  {d.uploaded_at
-                    ? new Date(d.uploaded_at).toLocaleDateString("es-VE")
-                    : "—"}
-                </td>
-                <td>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(d.id)}
-                    disabled={deleteDocument.isPending}
-                  >
-                    {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">
+            <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-gray-600 dark:text-gray-300">
+              <tr>
+                <th className="px-4 py-2 border-b">Descripción</th>
+                <th className="px-4 py-2 border-b">Categoría</th>
+                <th className="px-4 py-2 border-b">Archivo</th>
+                <th className="px-4 py-2 border-b">Subido</th>
+                <th className="px-4 py-2 border-b">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {documents.map((d: MedicalDocument) => (
+                <tr key={d.id} className="border-b border-gray-200 dark:border-gray-700">
+                  <td className="px-4 py-2">{d.description || "Documento sin descripción"}</td>
+                  <td className="px-4 py-2">{d.category || "Sin categoría"}</td>
+                  <td className="px-4 py-2">
+                    <a
+                      href={d.file}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      Ver archivo
+                    </a>
+                  </td>
+                  <td className="px-4 py-2">
+                    {d.uploaded_at
+                      ? new Date(d.uploaded_at).toLocaleDateString("es-VE")
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-2">
+                    <button
+                      className="px-3 py-1 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+                      onClick={() => handleDelete(d.id)}
+                      disabled={deleteDocument.isPending}
+                    >
+                      {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

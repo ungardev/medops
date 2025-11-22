@@ -1,3 +1,4 @@
+// src/components/Dashboard/TrendsChart.tsx
 import React, { useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
@@ -19,8 +20,23 @@ const TrendsChart: React.FC = () => {
 
   const { data, isLoading } = useDashboard({ range, currency });
 
-  if (isLoading) return <p>Cargando tendencias...</p>;
-  if (!data) return <p>No se pudo cargar la información de tendencias.</p>;
+  if (isLoading) {
+    return (
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">Cargando tendencias...</p>
+      </section>
+    );
+  }
+
+  if (!data) {
+    return (
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <p className="text-sm text-red-600 dark:text-red-400">
+          No se pudo cargar la información de tendencias.
+        </p>
+      </section>
+    );
+  }
 
   const appointmentsTrend = data.appointments_trend || [];
   const paymentsTrend = data.payments_trend || [];
@@ -31,8 +47,6 @@ const TrendsChart: React.FC = () => {
     appointmentsTrend.length > 0 ||
     paymentsTrend.length > 0 ||
     balanceTrend.length > 0;
-
-  if (!hasData) return <p>No hay datos disponibles para el rango seleccionado.</p>;
 
   const labels = appointmentsTrend.map((p) => p.date);
 
@@ -101,15 +115,20 @@ const TrendsChart: React.FC = () => {
   };
 
   return (
-    <section className="dashboard-widget">
-      <div className="widget-header">
-        <h3>Tendencias</h3>
-        <div className="widget-actions">
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Tendencias</h3>
+        <div className="flex gap-2">
           {["day", "week", "month"].map((r) => (
             <button
               key={r}
-              className={`btn ${range === r ? "btn-primary" : "btn-outline"}`}
               onClick={() => setRange(r as any)}
+              className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+                range === r
+                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+              }`}
             >
               {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
             </button>
@@ -117,20 +136,39 @@ const TrendsChart: React.FC = () => {
           {["USD", "VES"].map((c) => (
             <button
               key={c}
-              className={`btn ${currency === c ? "btn-primary" : "btn-outline"}`}
               onClick={() => setCurrency(c as any)}
+              className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+                currency === c
+                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+              }`}
             >
               {c}
             </button>
           ))}
         </div>
-        {currency === "VES" && bcvRate && (
-          <p className="text-xs text-gray-500 mt-1">
-            Tasa BCV aplicada: {bcvRate.toFixed(2)} Bs/USD
-          </p>
-        )}
       </div>
-      <Line data={chartData} options={chartOptions} />
+
+      {currency === "VES" && bcvRate && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Tasa BCV aplicada: {bcvRate.toFixed(2)} Bs/USD
+        </p>
+      )}
+
+      {/* Chart or message */}
+      {range === "day" && !hasData ? (
+        <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
+          <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos para hoy</p>
+        </div>
+      ) : !hasData ? (
+        <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No hay datos disponibles para el rango seleccionado
+          </p>
+        </div>
+      ) : (
+        <Line data={chartData} options={chartOptions} />
+      )}
     </section>
   );
 };

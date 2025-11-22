@@ -2,12 +2,12 @@
 import React, { useState } from "react";
 import { useUpdateAppointmentNotes } from "../../hooks/appointments/useUpdateAppointmentNotes";
 
-// 🔹 Exportamos la interfaz para index.ts
 export interface NotesPanelProps {
   appointmentId?: number;   // opcional en modo readOnly
   notes: string | null;
   readOnly?: boolean;       // flag para modo lectura
 }
+
 const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly }) => {
   const [value, setValue] = useState(notes || "");
   const [isEditing, setIsEditing] = useState(false);
@@ -26,14 +26,15 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
       }
     );
   };
-
-  return (
-    <div className="notes-panel card">
-      <h3 className="text-lg font-bold mb-2">Notas Adicionales</h3>
+    return (
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+        Notas Adicionales
+      </h3>
 
       {readOnly && (
         <div className="mb-2">
-          <p className="whitespace-pre-line">
+          <p className="whitespace-pre-line text-gray-700 dark:text-gray-300">
             {notes || "Sin notas registradas"}
           </p>
         </div>
@@ -41,11 +42,11 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
 
       {!readOnly && !isEditing && (
         <div className="mb-2">
-          <p className="whitespace-pre-line">
+          <p className="whitespace-pre-line text-gray-700 dark:text-gray-300">
             {value || "Sin notas registradas"}
           </p>
           <button
-            className="btn-secondary mt-2"
+            className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors mt-2"
             onClick={() => setIsEditing(true)}
           >
             Editar notas
@@ -58,23 +59,25 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
           <textarea
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            className="textarea"
             rows={6}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
           <div className="flex gap-2">
             <button
-              className="btn-primary"
               onClick={handleSave}
               disabled={isPending}
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               {isPending ? "Guardando..." : "Guardar"}
             </button>
             <button
-              className="btn-secondary"
               onClick={() => {
                 setValue(notes || "");
                 setIsEditing(false);
               }}
+              className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
             >
               Cancelar
             </button>

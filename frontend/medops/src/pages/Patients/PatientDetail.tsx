@@ -1,6 +1,6 @@
 // src/pages/PatientDetail.tsx
 import { useParams } from "react-router-dom";
-import { usePatient } from "../../hooks/patients/usePatient"; // ✅ usamos el hook con React Query
+import { usePatient } from "../../hooks/patients/usePatient";
 
 import { Tabs, Tab } from "../../components/ui/Tabs";
 
@@ -15,24 +15,24 @@ export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
 
-  // ✅ Hook React Query
   const { data: patient, isLoading, error } = usePatient(patientId);
 
-  if (isLoading) return <p>Cargando paciente...</p>;
-  if (error) return <p className="text-danger">Error al cargar paciente</p>;
-  if (!patient) return <p>No se encontró el paciente</p>;
+  if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando paciente...</p>;
+  if (error) return <p className="text-sm text-red-600">Error al cargar paciente</p>;
+  if (!patient) return <p className="text-sm text-gray-600 dark:text-gray-400">No se encontró el paciente</p>;
 
-    return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <h2>Detalle del Paciente</h2>
-          <h3 className="text-muted">{patient.full_name}</h3>
-        </div>
+  return (
+    <div className="p-4">
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Detalle del Paciente</h2>
+        <h3 className="text-sm text-gray-600 dark:text-gray-400">{patient.full_name}</h3>
       </div>
 
-      {/* Tabs con botones estilizados */}
-      <Tabs defaultTab="info" className="tabs">
+      {/* Tabs con estilo homogéneo */}
+      <Tabs
+        defaultTab="info"
+        className="border-b border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300"
+      >
         <Tab id="info" label="Información">
           <PatientInfoTab patient={patient} />
         </Tab>

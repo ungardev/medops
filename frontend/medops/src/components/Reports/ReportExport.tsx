@@ -1,3 +1,4 @@
+// src/components/Reports/ReportExport.tsx
 import React from "react";
 import axios from "axios";
 import { ExportFormat, ReportFiltersInput, ReportRow } from "@/types/reports";
@@ -14,7 +15,7 @@ export default function ReportExport({ filters, data }: Props) {
         "/reports/export/",
         {
           format,
-          filters: filters ?? {}, // ← blindaje: nunca enviamos null
+          filters: filters ?? {}, // nunca enviamos null
           data,
         },
         { responseType: "blob" }
@@ -37,11 +38,19 @@ export default function ReportExport({ filters, data }: Props) {
   };
 
   return (
-    <div className="export-actions">
-      <button className="btn btn-outline" onClick={() => handleExport("pdf")}>
+    <div className="flex gap-3">
+      <button
+        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+        onClick={() => handleExport("pdf")}
+      >
         Exportar PDF
       </button>
-      <button className="btn btn-outline" onClick={() => handleExport("excel")}>
+      <button
+        className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                   bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                   hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+        onClick={() => handleExport("excel")}
+      >
         Exportar Excel
       </button>
     </div>

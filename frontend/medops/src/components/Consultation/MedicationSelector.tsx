@@ -26,17 +26,19 @@ export default function MedicationSelector({ valueCatalogId, valueText, onChange
         placeholder="Buscar medicamento..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="input"
+        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                   bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                   focus:outline-none focus:ring-2 focus:ring-blue-600"
       />
 
-      {isLoading && <p className="text-muted">Buscando...</p>}
+      {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
 
       {medications.length > 0 ? (
-        <ul className="border rounded p-2 max-h-40 overflow-y-auto">
+        <ul className="border border-gray-300 dark:border-gray-600 rounded p-2 max-h-40 overflow-y-auto bg-white dark:bg-gray-800 text-sm">
           {medications.map((m) => (
             <li
               key={m.id}
-              className="cursor-pointer hover:bg-gray-100 p-1"
+              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 p-1 text-gray-800 dark:text-gray-100"
               onClick={() => handleSelect(m)}
             >
               {m.name} — {m.presentation} — {m.concentration}
@@ -49,7 +51,9 @@ export default function MedicationSelector({ valueCatalogId, valueText, onChange
           placeholder="Nombre del medicamento"
           value={valueText || ""}
           onChange={(e) => handleTextChange(e.target.value)}
-          className="input"
+          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                     bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                     focus:outline-none focus:ring-2 focus:ring-blue-600"
         />
       )}
     </div>

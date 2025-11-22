@@ -81,14 +81,14 @@ export default function PrescriptionBadge({
     setIsEditing(false);
   };
 
-  return (
-    <div className="border rounded px-3 py-2 mb-2 bg-white shadow-sm">
+    return (
+    <div className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm px-3 py-2 mb-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-700 font-semibold">Prescripción</span>
+        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Prescripción</span>
         <div className="flex gap-2">
           {onEdit && (
             <button
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               onClick={() => setIsEditing(true)}
             >
               Editar
@@ -96,7 +96,7 @@ export default function PrescriptionBadge({
           )}
           {onDelete && (
             <button
-              className="text-sm text-red-600 hover:underline"
+              className="text-sm text-red-600 dark:text-red-400 hover:underline"
               onClick={() => {
                 if (confirm("¿Eliminar prescripción? Esta acción no se puede deshacer.")) {
                   onDelete(id);
@@ -115,28 +115,36 @@ export default function PrescriptionBadge({
             type="text"
             value={editedMedication}
             onChange={(e) => setEditedMedication(e.target.value)}
-            className="input"
             placeholder="Medicamento"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
           <input
             type="text"
             value={editedDosage}
             onChange={(e) => setEditedDosage(e.target.value)}
-            className="input"
             placeholder="Dosis"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
           <input
             type="text"
             value={editedDuration}
             onChange={(e) => setEditedDuration(e.target.value)}
-            className="input"
             placeholder="Duración"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
 
           <select
             value={editedFrequency}
             onChange={(e) => setEditedFrequency(e.target.value as Frequency)}
-            className="select"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="once_daily">Una vez al día</option>
             <option value="bid">2 veces al día (BID)</option>
@@ -159,7 +167,9 @@ export default function PrescriptionBadge({
           <select
             value={editedRoute}
             onChange={(e) => setEditedRoute(e.target.value as Route)}
-            className="select"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="oral">Oral</option>
             <option value="iv">Intravenosa (IV)</option>
@@ -175,7 +185,9 @@ export default function PrescriptionBadge({
           <select
             value={editedUnit}
             onChange={(e) => setEditedUnit(e.target.value as Unit)}
-            className="select"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="mg">mg</option>
             <option value="ml">ml</option>
@@ -189,16 +201,23 @@ export default function PrescriptionBadge({
           </select>
 
           <div className="flex gap-2 mt-1">
-            <button className="btn btn-primary btn-sm" onClick={handleSave}>
+            <button
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              onClick={handleSave}
+            >
               Guardar
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={handleCancel}>
+            <button
+              className="px-4 py-2 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 
+                         dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
+              onClick={handleCancel}
+            >
               Cancelar
             </button>
           </div>
         </div>
       ) : (
-        <div className="mt-1 text-sm text-muted whitespace-pre-line">
+        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
           {medication}
           {dosage && <div>Dosis: {dosage} {unit}</div>}
           {duration && <div>Duración: {duration}</div>}

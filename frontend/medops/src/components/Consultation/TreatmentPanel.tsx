@@ -84,18 +84,21 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
     setStatus("active");
     setTreatmentType("pharmacological");
   };
+    return (
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+        Tratamientos
+      </h3>
 
-  return (
-    <div className="treatment-panel card">
-      <h3 className="text-lg font-bold mb-2">Tratamientos</h3>
-
-      {/* 🔹 Modo lectura */}
+      {/* Modo lectura */}
       {readOnly && (
         <>
-          {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
+          {diagnoses.length === 0 && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+          )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold">
+              <h4 className="font-semibold text-gray-800 dark:text-gray-100">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -113,7 +116,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-muted">Sin tratamientos</li>
+                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
                 )}
               </ul>
             </div>
@@ -121,13 +124,15 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
         </>
       )}
 
-      {/* 🔹 Modo edición */}
+      {/* Modo edición */}
       {!readOnly && (
         <>
-          {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
+          {diagnoses.length === 0 && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+          )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold">
+              <h4 className="font-semibold text-gray-800 dark:text-gray-100">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -156,7 +161,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-muted">Sin tratamientos</li>
+                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
                 )}
               </ul>
             </div>
@@ -166,8 +171,10 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
             <select
               value={diagnosisId}
               onChange={(e) => setDiagnosisId(Number(e.target.value))}
-              className="select"
               required
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                         focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="">Seleccionar diagnóstico</option>
               {diagnoses.map((d) => (
@@ -182,8 +189,10 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               placeholder="Plan de tratamiento"
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
-              className="input"
               required
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                         focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
 
             <div className="flex gap-2">
@@ -191,20 +200,23 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="input"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
               />
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="input"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
               />
             </div>
 
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
-              className="select"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
             >
               <option value="active">Activo</option>
               <option value="completed">Completado</option>
@@ -214,7 +226,8 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
             <select
               value={treatmentType}
               onChange={(e) => setTreatmentType(e.target.value as any)}
-              className="select"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
             >
               <option value="pharmacological">Farmacológico</option>
               <option value="surgical">Quirúrgico</option>
@@ -223,7 +236,10 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               <option value="other">Otro</option>
             </select>
 
-            <button type="submit" className="btn-primary self-start">
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+            >
               + Agregar tratamiento
             </button>
           </form>

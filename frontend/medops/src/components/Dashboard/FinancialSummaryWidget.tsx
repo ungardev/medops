@@ -1,4 +1,3 @@
-// src/components/Dashboard/FinancialSummaryWidget.tsx
 import React from "react";
 import type { DashboardSummary } from "@/types/dashboard";
 
@@ -7,36 +6,48 @@ export function FinancialSummaryWidget({ data }: { data?: DashboardSummary }) {
     n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
   if (!data) {
-    return <div className="card text-muted">Cargando resumen financiero...</div>;
+    return (
+      <section className="bg-white rounded-lg shadow p-6">
+        <p className="text-sm text-muted">Cargando resumen financiero...</p>
+      </section>
+    );
   }
 
   return (
-    <section className="card">
-      <h3>Resumen financiero</h3>
-      <div className="grid">
-        <div>
-          <div className="summary-label">Facturado total</div>
-          <div className="summary-value text-muted">
+    <section className="bg-white rounded-lg shadow p-6 space-y-6">
+      <h3 className="text-lg font-semibold text-gray-800">Resumen financiero</h3>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Facturado total */}
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-500">Facturado total</span>
+          <span className="text-lg font-bold text-gray-700">
             {currency(data.total_payments_amount + data.financial_balance)}
-          </div>
+          </span>
         </div>
-        <div>
-          <div className="summary-label">Confirmado</div>
-          <div className="summary-value text-success">
+
+        {/* Confirmado */}
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-500">Confirmado</span>
+          <span className="text-lg font-bold text-success">
             {currency(data.total_payments_amount)}
-          </div>
+          </span>
         </div>
-        <div>
-          <div className="summary-label">Pendiente</div>
-          <div className="summary-value text-warning">
+
+        {/* Pendiente */}
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-500">Pendiente</span>
+          <span className="text-lg font-bold text-warning">
             {currency(Math.max(data.financial_balance, 0))}
-          </div>
+          </span>
         </div>
-        <div>
-          <div className="summary-label">Exonerado</div>
-          <div className="summary-value text-danger">
+
+        {/* Exonerado */}
+        <div className="flex flex-col">
+          <span className="text-sm text-gray-500">Exonerado</span>
+          <span className="text-lg font-bold text-danger">
             {currency(data.estimated_waived_amount)}
-          </div>
+          </span>
         </div>
       </div>
     </section>

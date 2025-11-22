@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DashboardAPI } from "@/api/dashboard";
+import { apiFetch } from "@/api/client"; // tu wrapper institucional sobre fetch
 import type { DashboardSummary, EventLogEntry } from "@/types/dashboard";
 
 export type DashboardParams = {
@@ -20,19 +21,20 @@ export function useDashboard(params?: DashboardParams) {
       params?.currency ?? "USD",
     ],
     queryFn: () => DashboardAPI.summary(params),
-    staleTime: 60_000, // 1 minuto de cache para evitar llamadas excesivas
+    staleTime: 60_000,
   });
 }
 
-// 🔹 Hook específico para auditoría real (nuevo endpoint /api/audit/log/)
+// 🔹 Hook específico para auditoría real
 export function useAuditLogDirect(limit: number = 10) {
   return useQuery<EventLogEntry[]>({
     queryKey: ["audit-log-direct", limit],
     queryFn: async () => {
-      const resp = await fetch(`/api/audit/log/?limit=${limit}`);
-      if (!resp.ok) throw new Error("Error al cargar auditoría");
-      return (await resp.json()) as EventLogEntry[];
+      return await apiFetch<EventLogEntry[]>(
+        `audit/log/?limit=${limit}`,
+        { method: "GET" }
+      );
     },
-    staleTime: 30_000, // cache corto para auditoría en vivo
+    staleTime: 30_000,
   });
 }

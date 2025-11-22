@@ -47,6 +47,7 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet
 
 from rest_framework import viewsets, status, serializers, permissions
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -1072,6 +1073,12 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
             severity="info",
             notify=True,
         )
+
+
+class PatientPagination(PageNumberPagination):
+    page_size = 10                # tamaño por defecto
+    page_size_query_param = "page_size"  # permite override desde querystring
+    max_page_size = 100
 
 
 class PatientViewSet(viewsets.ModelViewSet):

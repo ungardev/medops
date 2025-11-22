@@ -28,6 +28,7 @@ import axios from "axios";
 
 import ReportsPage from "./pages/Reports/ReportsPage";
 import ConfigPage from "./pages/Settings/ConfigPage";
+import VisualAudit from "./pages/VisualAudit"; // ✅ nuevo import
 
 // Configuración global de axios usando Vite env
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
@@ -54,7 +55,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
                 <Route path="patients" element={<Patients />} />
                 <Route path="patients/:id" element={<PatientDetail />} />
-                <Route path="patients/:patientId/consultations/:appointmentId" element={<PatientConsultationDetail />} /> {/* ✅ nueva ruta */}
+                <Route
+                  path="patients/:patientId/consultations/:appointmentId"
+                  element={<PatientConsultationDetail />}
+                /> {/* ✅ nueva ruta */}
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
@@ -64,6 +68,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="consultation" element={<Consultation />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="settings/config" element={<ConfigPage />} />
+
+                {/* 🔹 Nueva ruta de validación visual */}
+                <Route path="visual-audit" element={<VisualAudit />} />
               </Route>
             </Route>
           </Routes>

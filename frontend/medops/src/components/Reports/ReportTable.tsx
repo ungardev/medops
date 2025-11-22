@@ -8,55 +8,83 @@ interface Props {
 
 export default function ReportTable({ data }: Props) {
   return (
-    <table className="table reports-table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>Entidad</th>
-          <th>Estado</th>
-          <th className="text-right">Monto</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.length === 0 ? (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
+      <table className="w-full text-sm text-left text-gray-800 dark:text-gray-100">
+        <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-gray-600 dark:text-gray-300">
           <tr>
-            <td colSpan={5} className="text-muted text-center">
-              No hay resultados para los filtros seleccionados
-            </td>
+            <th className="px-3 py-2 border-b">Fecha</th>
+            <th className="px-3 py-2 border-b">Tipo</th>
+            <th className="px-3 py-2 border-b">Entidad</th>
+            <th className="px-3 py-2 border-b">Estado</th>
+            <th className="px-3 py-2 border-b text-right">Monto</th>
           </tr>
-        ) : (
-          data.map((row) => (
-            <tr key={row.id}>
-              <td>{row.date}</td>
-              <td>
-                <span className="badge badge-muted">{row.type}</span>
-              </td>
-              <td>{row.entity}</td>
-              <td>
-                {row.status === "confirmed" && (
-                  <span className="badge badge-success">Confirmado</span>
-                )}
-                {row.status === "pending" && (
-                  <span className="badge badge-warning">Pendiente</span>
-                )}
-                {row.status === "cancelled" && (
-                  <span className="badge badge-danger">Cancelado</span>
-                )}
-                {["completed", "finalized"].includes(row.status) && (
-                  <span className="badge badge-muted">Completado</span>
-                )}
-              </td>
-              <td className="text-right">
-                {row.amount.toLocaleString("es-VE", {
-                  style: "currency",
-                  currency: "USD",
-                })}
+        </thead>
+        <tbody>
+          {data.length === 0 ? (
+            <tr>
+              <td
+                colSpan={5}
+                className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400 italic"
+              >
+                No hay resultados para los filtros seleccionados
               </td>
             </tr>
-          ))
-        )}
-      </tbody>
-    </table>
+          ) : (
+            data.map((row) => {
+              let statusLabel = "";
+              let statusClass = "";
+
+              if (row.status === "confirmed") {
+                statusLabel = "Confirmado";
+                statusClass =
+                  "bg-green-100 text-green-800 ring-green-200 dark:bg-green-800 dark:text-green-200";
+              } else if (row.status === "pending") {
+                statusLabel = "Pendiente";
+                statusClass =
+                  "bg-yellow-100 text-yellow-800 ring-yellow-200 dark:bg-yellow-700 dark:text-yellow-200";
+              } else if (row.status === "cancelled") {
+                statusLabel = "Cancelado";
+                statusClass =
+                  "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200";
+              } else if (["completed", "finalized"].includes(row.status)) {
+                statusLabel = "Completado";
+                statusClass =
+                  "bg-gray-100 text-gray-800 ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
+              }
+
+              return (
+                <tr key={row.id} className="border-b border-gray-200 dark:border-gray-700">
+                  <td className="px-3 py-2">{row.date}</td>
+                  <td className="px-3 py-2">
+                    <span
+                      className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset 
+                                 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
+                    >
+                      {row.type}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">{row.entity}</td>
+                  <td className="px-3 py-2">
+                    {statusLabel && (
+                      <span
+                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`}
+                      >
+                        {statusLabel}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {row.amount.toLocaleString("es-VE", {
+                      style: "currency",
+                      currency: "USD",
+                    })}
+                  </td>
+                </tr>
+              );
+            })
+          )}
+        </tbody>
+      </table>
+    </div>
   );
 }

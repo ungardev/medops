@@ -4,10 +4,9 @@ import { PatientTabProps } from "./types";
 import { useUpdatePatient } from "../../hooks/patients/useUpdatePatient";
 import { PatientInput } from "types/patients";
 import { useGeneticPredispositions } from "../../hooks/patients/useGeneticPredispositions";
-import CreatableSelect from "react-select/creatable";
 import { apiFetch } from "../../api/client";
+import ComboboxMultiElegante from "./ComboboxMultiElegante";
 
-// Helpers
 const normStr = (v: string | null | undefined): string => v ?? "";
 const safeNumber = (v: string | number | null | undefined): number | undefined => {
   if (v === null || v === undefined) return undefined;
@@ -25,6 +24,121 @@ interface GeneticPredisposition {
   description?: string | null;
 }
 
+function spanClass(span: 1 | 2 | 3 | 4 | 6 | 8 | 9 | 12): string {
+  switch (span) {
+    case 1: return "col-span-1";
+    case 2: return "col-span-2";
+    case 3: return "col-span-3";
+    case 4: return "col-span-4";
+    case 6: return "col-span-6";
+    case 8: return "col-span-8";
+    case 9: return "col-span-9";
+    case 12: return "col-span-12";
+    default: return "col-span-12";
+  }
+}
+
+interface FieldProps {
+  label: string;
+  value?: string | null;
+  type?: "text" | "date" | "email" | "number";
+  multiline?: boolean;
+  span?: 1 | 2 | 3 | 4 | 6 | 8 | 9 | 12;
+  editing: boolean;
+  onChange?: (v: string) => void;
+}
+
+function Field({
+  label,
+  value,
+  type = "text",
+  multiline = false,
+  span = 3,
+  editing,
+  onChange,
+}: FieldProps) {
+  const cls = spanClass(span);
+  const display = value && value !== "" ? value : "—";
+
+  return (
+    <div className={cls}>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {label}
+      </label>
+      {editing ? (
+        multiline ? (
+          <textarea
+            rows={4}
+            value={normStr(value ?? "")}
+            onChange={(e) => onChange?.(e.target.value)}
+            className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+        ) : (
+          <input
+            type={type}
+            value={normStr(value ?? "")}
+            onChange={(e) => onChange?.(e.target.value)}
+            className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+        )
+      ) : (
+        <p className="text-sm text-gray-800 dark:text-gray-100">{display}</p>
+      )}
+    </div>
+  );
+}
+
+interface SelectFieldProps<T = string> {
+  label: string;
+  value?: T | null;
+  options: Array<[T, string]>;
+  span?: 1 | 2 | 3 | 4 | 6 | 8 | 9 | 12;
+  editing: boolean;
+  onChange?: (v: T) => void;
+}
+
+function SelectField<T = string>({
+  label,
+  value,
+  options,
+  span = 3,
+  editing,
+  onChange,
+}: SelectFieldProps<T>) {
+  const cls = spanClass(span);
+  const displayLabel =
+    options.find(([val]) => val === value)?.[1] ?? "—";
+
+  return (
+    <div className={cls}>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        {label}
+      </label>
+      {editing ? (
+        <select
+          value={(value as any) ?? ""}
+          onChange={(e) => onChange?.((e.target.value as unknown) as T)}
+          className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                     bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                     focus:outline-none focus:ring-2 focus:ring-blue-600"
+        >
+          <option value="">{label === "Género" || label === "Grupo sanguíneo" ? "—" : ""}</option>
+          {options.map(([val, lab]) => (
+            <option key={String(val)} value={String(val)}>
+              {lab}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <p className="text-sm text-gray-800 dark:text-gray-100">{displayLabel}</p>
+      )}
+    </div>
+  );
+}
 export default function PatientInfoTab({ patient }: PatientTabProps) {
   const [editing, setEditing] = useState(false);
 
@@ -47,7 +161,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
     genetic_predispositions: patient.genetic_predispositions?.map((p: any) => p.id) ?? [],
   });
 
-    const { data: predisposiciones, isLoading, refetch } = useGeneticPredispositions();
+  const { data: predisposiciones, isLoading, refetch } = useGeneticPredispositions();
   const updatePatient = useUpdatePatient(patient.id);
 
   useEffect(() => {
@@ -68,15 +182,12 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
       blood_type: form.blood_type ?? undefined,
     } as PatientInput;
 
-    console.log("Payload enviado:", payload);
-
     updatePatient.mutate(payload, {
       onSuccess: () => setEditing(false),
       onError: (err) => console.error("Error al actualizar:", err),
     });
   };
 
-  // Crear predisposición nueva en backend
   const handleCreatePredisposition = async (inputValue: string) => {
     const newPred = await apiFetch<GeneticPredisposition>("genetic-predispositions/", {
       method: "POST",
@@ -89,186 +200,124 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
     ]);
   };
 
-    return (
-    <div>
-      {/* Header */}
-      <div className="flex-between mb-16">
-        <h3 className="title-20">Información del Paciente</h3>
+  return (
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Información del Paciente</h3>
         {editing ? (
-          <div className="btn-row">
-            <button type="button" className="btn btn-primary" onClick={handleSave}>Guardar</button>
-            <button type="button" className="btn btn-outline" onClick={() => setEditing(false)}>Cancelar</button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
+              onClick={handleSave}
+            >
+              Guardar
+            </button>
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                         bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                         hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+              onClick={() => setEditing(false)}
+            >
+              Cancelar
+            </button>
           </div>
         ) : (
-          <button type="button" className="btn btn-outline" onClick={() => setEditing(true)}>Editar</button>
+          <button
+            type="button"
+            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+            onClick={() => setEditing(true)}
+          >
+            Editar
+          </button>
         )}
       </div>
 
-      {/* Campos */}
-      <div className="grid-2col gap-16">
-        {editing ? (
-          <>
-            <div className="field"><label>Cédula</label>
-              <input className="input" value={normStr(form.national_id as string)} onChange={(e) => setField("national_id", e.target.value)} />
-            </div>
-            <div className="field"><label>Nombre</label>
-              <input className="input" value={normStr(form.first_name as string)} onChange={(e) => setField("first_name", e.target.value)} />
-            </div>
-            <div className="field"><label>Segundo nombre</label>
-              <input className="input" value={normStr(form.middle_name as string)} onChange={(e) => setField("middle_name", e.target.value)} />
-            </div>
-            <div className="field"><label>Apellido</label>
-              <input className="input" value={normStr(form.last_name as string)} onChange={(e) => setField("last_name", e.target.value)} />
-            </div>
-            <div className="field"><label>Segundo apellido</label>
-              <input className="input" value={normStr(form.second_last_name as string)} onChange={(e) => setField("second_last_name", e.target.value)} />
-            </div>
-            <div className="field"><label>Fecha de nacimiento</label>
-              <input className="input" type="date" value={normStr(form.birthdate as string)} onChange={(e) => setField("birthdate", e.target.value)} />
-            </div>
-            <div className="field"><label>Género</label>
-              <select className="select" value={form.gender ?? ""} onChange={(e) => setField("gender", e.target.value as GenderUnion)}>
-                <option value="">—</option><option value="M">Masculino</option><option value="F">Femenino</option><option value="Unknown">Desconocido</option>
-              </select>
-            </div>
-            <div className="field"><label>Email</label>
-              <input className="input" type="email" value={normStr(form.email as string)} onChange={(e) => setField("email", e.target.value)} />
-            </div>
-            <div className="field"><label>Teléfono / Contacto</label>
-              <input className="input" value={normStr(form.contact_info as string)} onChange={(e) => setField("contact_info", e.target.value)} />
-            </div>
-            <div className="field"><label>Dirección</label>
-              <input className="input" value={normStr(form.address as string)} onChange={(e) => setField("address", e.target.value)} />
-            </div>
-            <div className="field"><label>Altura (cm)</label>
-              <input className="input" type="number" step="0.01" value={form.height !== undefined ? String(form.height) : ""} onChange={(e) => setField("height", e.target.value === "" ? undefined : safeNumber(e.target.value))} />
-            </div>
-            <div className="field"><label>Peso (kg)</label>
-              <input className="input" type="number" step="0.01" value={form.weight !== undefined ? String(form.weight) : ""} onChange={(e) => setField("weight", e.target.value === "" ? undefined : safeNumber(e.target.value))} />
-            </div>
-            <div className="field"><label>Grupo sanguíneo</label>
-              <select className="select" value={form.blood_type ?? ""} onChange={(e) => setField("blood_type", e.target.value as BloodUnion)}>
-                <option value="">—</option>{["A+","A-","B+","B-","AB+","AB-","O+","O-"].map(bt => <option key={bt} value={bt}>{bt}</option>)}
-              </select>
-            </div>
-            <div className="field field--full"><label>Alergias</label>
-              <input className="input" value={normStr(form.allergies as string)} onChange={(e) => setField("allergies", e.target.value)} />
-            </div>
-            <div className="field field--full"><label>Historial médico</label>
-              <textarea className="textarea" rows={4} value={normStr(form.medical_history as string)} onChange={(e) => setField("medical_history", e.target.value)} />
-            </div>
-            <div className="field field--full"><label>Predisposiciones genéticas</label>
-              {isLoading ? (
-                <p>Cargando opciones...</p>
-              ) : (
-                <CreatableSelect
-                  classNamePrefix="react-select"   // 👈 añadido
-                  isMulti
-                  options={predisposiciones?.map(p => ({ value: p.id, label: p.name })) ?? []}
-                  value={form.genetic_predispositions?.map(id => {
-                    const found = predisposiciones?.find(p => p.id === id);
-                    return found ? { value: found.id, label: found.name } : null;
-                  }).filter(Boolean)}
-                  onChange={(selected) => {
-                    const ids = (selected ?? [])
-                      .filter((opt): opt is { value: number; label: string } => opt !== null)
-                      .map(opt => opt.value);
-                    setField("genetic_predispositions", ids);
-                  }}
-                  onCreateOption={handleCreatePredisposition}
-                  placeholder="Escribe o selecciona predisposiciones..."
-                />
-              )}
-            </div>
-          </>
-                ) : (
-          <>
-            <div className="field">
-              <label>Cédula</label>
-              <p>{patient.national_id || "—"}</p>
-            </div>
+      <div className="grid grid-cols-12 gap-x-6 gap-y-4">
+        {/* Identificación */}
+        <Field label="Cédula" span={3} value={form.national_id as string} editing={editing} onChange={(v) => setField("national_id", v)} />
+        <Field label="Nombre" span={3} value={form.first_name as string} editing={editing} onChange={(v) => setField("first_name", v)} />
+        <Field label="Segundo nombre" span={3} value={form.middle_name as string} editing={editing} onChange={(v) => setField("middle_name", v)} />
+        <Field label="Apellido" span={3} value={form.last_name as string} editing={editing} onChange={(v) => setField("last_name", v)} />
+        <Field label="Segundo apellido" span={3} value={form.second_last_name as string} editing={editing} onChange={(v) => setField("second_last_name", v)} />
+        <Field label="Fecha de nacimiento" span={3} value={form.birthdate as string} type="date" editing={editing} onChange={(v) => setField("birthdate", v)} />
+        <SelectField<GenderUnion>
+          label="Género"
+          span={3}
+          value={form.gender as GenderUnion}
+          editing={editing}
+          onChange={(v) => setField("gender", v)}
+          options={[["M", "Masculino"], ["F", "Femenino"], ["Unknown", "Desconocido"]]}
+        />
 
-            <div className="field field--full">
-              <label>Nombre</label>
-              <p>
-                {patient.first_name} {patient.middle_name || ""}{" "}
-                {patient.last_name} {patient.second_last_name || ""}
-              </p>
-            </div>
+        {/* Contacto */}
+        <Field label="Email" span={6} value={form.email as string} editing={editing} onChange={(v) => setField("email", v)} />
+        <Field label="Teléfono" span={6} value={form.contact_info as string} editing={editing} onChange={(v) => setField("contact_info", v)} />
+        <Field label="Dirección" span={12} value={form.address as string} editing={editing} onChange={(v) => setField("address", v)} />
 
-            <div className="field">
-              <label>Fecha de nacimiento</label>
-              <p>{patient.birthdate || "—"}</p>
-            </div>
+        {/* Clínico */}
+        <Field
+          label="Altura (m)"
+          span={3}
+          type="number"
+          value={form.height !== undefined ? String(form.height) : ""}
+          editing={editing}
+          onChange={(v) => setField("height", v === "" ? undefined : safeNumber(v))}
+        />
+        <Field
+          label="Peso (kg)"
+          span={3}
+          type="number"
+          value={form.weight !== undefined ? String(form.weight) : ""}
+          editing={editing}
+          onChange={(v) => setField("weight", v === "" ? undefined : safeNumber(v))}
+        />
+        <SelectField<BloodUnion>
+          label="Grupo sanguíneo"
+          span={3}
+          value={form.blood_type as BloodUnion}
+          editing={editing}
+          onChange={(v) => setField("blood_type", v)}
+          options={["A+","A-","B+","B-","AB+","AB-","O+","O-"].map(bt => [bt as BloodUnion, bt])}
+        />
+        <Field label="Alergias" span={3} value={form.allergies as string} editing={editing} onChange={(v) => setField("allergies", v)} />
+        <Field label="Historial médico" span={12} value={form.medical_history as string} editing={editing} onChange={(v) => setField("medical_history", v)} multiline />
 
-            <div className="field">
-              <label>Género</label>
-              <p>{patient.gender || "—"}</p>
-            </div>
-
-            <div className="field">
-              <label>Email</label>
-              <p>{patient.email || "—"}</p>
-            </div>
-
-            <div className="field">
-              <label>Teléfono / Contacto</label>
-              <p>{patient.contact_info || "—"}</p>
-            </div>
-
-            <div className="field field--full">
-              <label>Dirección</label>
-              <p>{patient.address || "—"}</p>
-            </div>
-
-            <div className="field">
-              <label>Altura</label>
-              <p>{patient.height ? `${patient.height} cm` : "—"}</p>
-            </div>
-
-            <div className="field">
-              <label>Peso</label>
-              <p>{patient.weight ? `${patient.weight} kg` : "—"}</p>
-            </div>
-
-            <div className="field">
-              <label>Grupo sanguíneo</label>
-              <p>{patient.blood_type || "—"}</p>
-            </div>
-
-            <div className="field field--full">
-              <label>Alergias</label>
-              <p>{patient.allergies || "—"}</p>
-            </div>
-
-            <div className="field field--full">
-              <label>Historial médico</label>
-              <p>{patient.medical_history || "—"}</p>
-            </div>
-
-            <div className="field field--full">
-              <label>Predisposiciones genéticas</label>
-              <p>
-                {patient.genetic_predispositions?.length
-                  ? patient.genetic_predispositions.map((p: any) => p.name).join(", ")
-                  : "—"}
-              </p>
-            </div>
-          </>
-        )}
+        {/* Predisposiciones genéticas */}
+        <div className="col-span-12">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Predisposiciones genéticas
+          </label>
+          {editing ? (
+            isLoading ? (
+              <p className="text-sm text-gray-600 dark:text-gray-400">Cargando opciones...</p>
+            ) : (
+              <ComboboxMultiElegante
+                options={predisposiciones ?? []}
+                value={form.genetic_predispositions ?? []}
+                onChange={(ids) => setField("genetic_predispositions", ids)}
+                onCreate={handleCreatePredisposition}
+                placeholder="Escribe o selecciona predisposiciones..."
+              />
+            )
+          ) : (
+            <p className="text-sm text-gray-800 dark:text-gray-100">
+              {patient.genetic_predispositions?.length
+                ? patient.genetic_predispositions.map((p: any) => p.name).join(", ")
+                : "—"}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Metadatos */}
-      <div className="mt-16">
-        <p>
-          <strong>Activo:</strong> {patient.active ? "Sí" : "No"}
-        </p>
-        <p>
-          <strong>Creado:</strong> {patient.created_at || "—"}
-        </p>
-        <p>
-          <strong>Actualizado:</strong> {patient.updated_at || "—"}
-        </p>
+      <div className="mt-6 text-sm text-gray-700 dark:text-gray-300">
+        <p><strong>Activo:</strong> {patient.active ? "Sí" : "No"}</p>
+        <p><strong>Creado:</strong> {patient.created_at || "—"}</p>
+        <p><strong>Actualizado:</strong> {patient.updated_at || "—"}</p>
       </div>
     </div>
   );

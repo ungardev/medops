@@ -1,3 +1,4 @@
+// src/components/Appointments/AppointmentTable.tsx
 import React, { useMemo, useState } from "react";
 import { Appointment, AppointmentStatus } from "../../types/appointments";
 
@@ -49,33 +50,46 @@ export default function AppointmentTable({
   }, [appointments, status, search, from, to]);
 
   return (
-    <div className="page">
+    <div className="p-6 space-y-6">
       {/* Header + acciones */}
-      <div className="flex-between mb-16">
-        <h2>Lista ejecutiva de citas</h2>
-        <button onClick={onCreate} className="btn btn-primary">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
+          Lista ejecutiva de citas
+        </h2>
+        <button
+          onClick={onCreate}
+          className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+        >
           + Crear cita
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="grid-2col gap-16 mb-16">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div>
-          <label className="label">Buscar paciente</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Buscar paciente
+          </label>
           <input
             type="text"
             placeholder="Nombre del paciente"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="input"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
         <div>
-          <label className="label">Estado</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Estado
+          </label>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as any)}
-            className="select"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="all">Todos</option>
             <option value="pending">Pendiente</option>
@@ -86,79 +100,100 @@ export default function AppointmentTable({
           </select>
         </div>
         <div>
-          <label className="label">Desde</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Desde
+          </label>
           <input
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="input"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
         <div>
-          <label className="label">Hasta</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Hasta
+          </label>
           <input
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="input"
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
         </div>
       </div>
 
-      {/* Tabla */}
-      <div className="card">
-        <table className="table">
-          <thead>
+            {/* Tabla */}
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
+        <table className="w-full text-sm text-left text-gray-800 dark:text-gray-100">
+          <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-gray-600 dark:text-gray-300">
             <tr>
-              <th>Paciente</th>
-              <th>Fecha</th>
-              <th>Tipo</th>
-              <th>Estado</th>
-              <th>Monto esperado</th>
-              <th className="text-right">Acciones</th>
+              <th className="px-4 py-2 border-b">Paciente</th>
+              <th className="px-4 py-2 border-b">Fecha</th>
+              <th className="px-4 py-2 border-b">Tipo</th>
+              <th className="px-4 py-2 border-b">Estado</th>
+              <th className="px-4 py-2 border-b">Monto esperado</th>
+              <th className="px-4 py-2 border-b text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center text-muted italic">
+                <td
+                  colSpan={6}
+                  className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400 italic"
+                >
                   No hay citas con los filtros actuales.
                 </td>
               </tr>
             )}
 
             {filtered.map((a) => (
-              <tr key={a.id}>
-                <td>
-                  <div className="flex-between">
+              <tr key={a.id} className="border-b border-gray-200 dark:border-gray-700">
+                <td className="px-4 py-2">
+                  <div className="flex justify-between items-center">
                     <span>{a.patient.full_name}</span>
-                    <a href={`/patients/${a.patient.id}`} className="text-muted">
+                    <a
+                      href={`/patients/${a.patient.id}`}
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    >
                       Ver ficha
                     </a>
                   </div>
                 </td>
-                <td>{formatDate(a.appointment_date)}</td>
-                <td>{a.appointment_type === "general" ? "General" : "Especializada"}</td>
-                <td>
+                <td className="px-4 py-2">{formatDate(a.appointment_date)}</td>
+                <td className="px-4 py-2">
+                  {a.appointment_type === "general" ? "General" : "Especializada"}
+                </td>
+                <td className="px-4 py-2">
                   <span
                     className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${STATUS_CLASS[a.status]}`}
                   >
                     {STATUS_LABEL[a.status]}
                   </span>
                 </td>
-                <td>{formatCurrency(a.expected_amount)}</td>
-                <td className="text-right">
-                  <div className="btn-row">
-                    <button onClick={() => onSelect(a)} className="btn btn-outline">
+                <td className="px-4 py-2">{formatCurrency(a.expected_amount)}</td>
+                <td className="px-4 py-2 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => onSelect(a)}
+                      className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                                 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                                 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                    >
                       Detalle
                     </button>
                     <button
                       disabled={a.status === "canceled" || a.status === "completed"}
                       onClick={() => onCancel?.(a.id)}
-                      className={`btn ${
+                      className={`px-3 py-1 rounded-md text-sm transition ${
                         a.status === "canceled" || a.status === "completed"
-                          ? "btn-outline text-muted"
-                          : "btn btn-primary text-danger"
+                          ? "border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                          : "bg-red-600 text-white hover:bg-red-700"
                       }`}
                     >
                       Cancelar

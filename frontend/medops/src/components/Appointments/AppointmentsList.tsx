@@ -3,12 +3,11 @@ import { Appointment, AppointmentStatus } from "types/appointments";
 
 interface AppointmentsListProps {
   appointments: Appointment[];
-  onEdit: (a: Appointment) => void;   // ahora abre el detalle
+  onEdit: (a: Appointment) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: AppointmentStatus) => void;
 }
 
-// 🔹 Mapa de estilos por estado (usando tokens globales)
 const STATUS_STYLES: Record<AppointmentStatus, string> = {
   pending: "bg-yellow-50 text-yellow-800 ring-yellow-600/20",
   arrived: "bg-blue-50 text-blue-800 ring-blue-600/20",
@@ -17,7 +16,6 @@ const STATUS_STYLES: Record<AppointmentStatus, string> = {
   canceled: "bg-red-50 text-red-800 ring-red-600/20",
 };
 
-// 🔹 Colores sólidos para el punto compacto
 const STATUS_COLORS: Record<AppointmentStatus, string> = {
   pending: "bg-yellow-500",
   arrived: "bg-blue-500",
@@ -33,33 +31,36 @@ export default function AppointmentsList({
   onStatusChange,
 }: AppointmentsListProps) {
   return (
-    <div className="card citas-list">
-      <table className="table text-sm">
-        <thead>
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
+      <table className="w-full text-sm text-left text-gray-800 dark:text-gray-100">
+        <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-gray-600 dark:text-gray-300">
           <tr>
-            <th>Paciente</th>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Estado</th>
-            <th className="text-right">Acciones</th>
+            <th className="px-4 py-2 border-b">Paciente</th>
+            <th className="px-4 py-2 border-b">Fecha</th>
+            <th className="px-4 py-2 border-b">Tipo</th>
+            <th className="px-4 py-2 border-b">Estado</th>
+            <th className="px-4 py-2 border-b text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {appointments.length === 0 && (
             <tr>
-              <td colSpan={5} className="text-center text-muted italic">
+              <td
+                colSpan={5}
+                className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400 italic"
+              >
                 No hay citas registradas.
               </td>
             </tr>
           )}
 
           {appointments.map((a) => (
-            <tr key={a.id}>
-              <td>{a.patient?.full_name ?? `ID: ${a.patient?.id}`}</td>
-              <td>{a.appointment_date}</td>
-              <td className="capitalize">{a.appointment_type}</td>
-              <td>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <tr key={a.id} className="border-b border-gray-200 dark:border-gray-700">
+              <td className="px-4 py-2">{a.patient?.full_name ?? `ID: ${a.patient?.id}`}</td>
+              <td className="px-4 py-2">{a.appointment_date}</td>
+              <td className="px-4 py-2 capitalize">{a.appointment_type}</td>
+              <td className="px-4 py-2">
+                <div className="flex items-center gap-2">
                   <span
                     className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_COLORS[a.status]}`}
                   ></span>
@@ -70,18 +71,24 @@ export default function AppointmentsList({
                   </span>
                 </div>
               </td>
-              <td className="text-right">
-                <div className="btn-row">
+              <td className="px-4 py-2 text-right">
+                <div className="flex justify-end gap-2">
                   {a.status !== "canceled" && (
                     <button
                       onClick={() => onStatusChange(a.id, "canceled")}
-                      className="btn btn-outline text-danger"
+                      className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                                 bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-400 
+                                 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
                     >
                       Cancelar
                     </button>
                   )}
-                  {/* Ahora este botón abre el detalle, no la edición directa */}
-                  <button onClick={() => onEdit(a)} className="btn btn-outline">
+                  <button
+                    onClick={() => onEdit(a)}
+                    className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                               bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                  >
                     Ver detalle
                   </button>
                   <button
@@ -90,7 +97,9 @@ export default function AppointmentsList({
                         onDelete(a.id);
                       }
                     }}
-                    className="btn btn-outline"
+                    className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                               bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
                   >
                     Eliminar
                   </button>

@@ -1,3 +1,4 @@
+// src/pages/Appointments.tsx
 import { useState } from "react";
 import moment from "moment";
 import {
@@ -13,37 +14,29 @@ import AppointmentCalendar from "components/Appointments/AppointmentCalendar";
 import AppointmentFilters from "components/Appointments/AppointmentFilters";
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
 
-// 👇 Hooks centralizados desde index.ts
 import {
   useAppointments,
   useCreateAppointment,
   useCancelAppointment,
   useUpdateAppointment,
   useUpdateAppointmentStatus,
-  useUpdateAppointmentNotes, // disponible si quieres usarlo en detalle
-  useAppointmentsPending,
-  useCurrentConsultation,
 } from "hooks/appointments";
 
 export default function Appointments() {
-  // Estado para modales
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [viewingAppointment, setViewingAppointment] = useState<Appointment | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  // Estado para filtros
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
   const [search, setSearch] = useState("");
 
-  // 🔎 Hooks de citas
   const { data: appointments, isLoading, isError, error } = useAppointments();
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
   const cancelMutation = useCancelAppointment();
   const statusMutation = useUpdateAppointmentStatus();
 
-  // Guardar cita (crear o actualizar) con confirmación
   const saveAppointment = (data: AppointmentInput, id?: number) => {
     if (!window.confirm("¿Desea guardar los cambios de esta cita?")) return;
     if (id) {
@@ -55,17 +48,15 @@ export default function Appointments() {
     }
   };
 
-  // Eliminar/cancelar cita con confirmación
   const deleteAppointmentSafe = (id: number) => {
     if (window.confirm("¿Está seguro de eliminar esta cita?")) {
       cancelMutation.mutate(id);
     }
   };
 
-  if (isLoading) return <p>Cargando citas...</p>;
-  if (isError) return <p>Error: {(error as Error).message}</p>;
+  if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando citas...</p>;
+  if (isError) return <p className="text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>;
 
-  // 🔎 Filtrar citas por fecha, estado y búsqueda + ordenar descendente
   const filteredAppointments = (appointments || [])
     .filter((appt) =>
       selectedDate
@@ -88,12 +79,14 @@ export default function Appointments() {
     .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold">Citas</h1>
-      {/* Header con fecha y hora actual */}
-      <p className="text-muted mb-4">
-        {moment().format("dddd, DD [de] MMMM YYYY - HH:mm")}
-      </p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Citas</h1>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {moment().format("dddd, DD [de] MMMM YYYY - HH:mm")}
+        </p>
+      </div>
 
       {/* Formulario de creación */}
       {showCreateForm && (
@@ -124,11 +117,11 @@ export default function Appointments() {
         />
       )}
 
-      {/* Vista combinada: Calendario arriba + Lista abajo */}
+      {/* Vista combinada */}
       <div className="flex flex-col gap-6 mt-6">
         {/* Calendario */}
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Calendario</h2>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Calendario</h2>
           <AppointmentCalendar
             appointments={appointments || []}
             onSelect={(appt) => setViewingAppointment(appt)}
@@ -137,9 +130,9 @@ export default function Appointments() {
         </div>
 
         {/* Lista ejecutiva */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold">
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
               {selectedDate
                 ? `Citas del ${moment(selectedDate).format("DD/MM/YYYY")}`
                 : "Todas las Citas"}
@@ -147,14 +140,16 @@ export default function Appointments() {
             {selectedDate && (
               <button
                 onClick={() => setSelectedDate(null)}
-                className="btn btn-outline"
+                className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                           bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                           hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
               >
                 Ver todas
               </button>
             )}
           </div>
 
-          {/* Filtros rápidos por estado + botón Nueva Cita */}
+          {/* Filtros + Nueva Cita */}
           <div className="flex flex-wrap gap-2 mb-4">
             <AppointmentFilters
               activeFilter={statusFilter}
@@ -162,20 +157,22 @@ export default function Appointments() {
             />
             <button
               onClick={() => setShowCreateForm(true)}
-              className="btn btn-primary"
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
             >
               + Nueva Cita
             </button>
           </div>
 
-          {/* Buscador inteligente */}
-          <div className="mt-3 mb-3">
+          {/* Buscador */}
+          <div className="mb-4">
             <input
               type="text"
               placeholder="Buscar por paciente, fecha, tipo o nota..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
           </div>
 

@@ -10,102 +10,119 @@ import { useCurrentConsultation } from "../../hooks/consultations";
 import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
 import { useGenerateConsultationDocuments } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
+import Toast from "../../components/Common/Toast";
+import { useState } from "react";
 
 export default function Consultation() {
-  // 🔹 Hooks siempre al inicio, sin condicionales
   const { data: appointment, isLoading } = useCurrentConsultation();
   const generateReport = useGenerateMedicalReport();
   const generateDocuments = useGenerateConsultationDocuments();
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
-  // 🔹 Render defensivo
-  if (isLoading) {
-    return <p>Loading consultation...</p>;
-  }
-  if (!appointment) {
-    return <p>No patient in consultation</p>;
-  }
+  if (isLoading) return <p className="text-gray-500">Cargando consulta...</p>;
+  if (!appointment) return <p className="text-red-600">No hay paciente en consulta</p>;
 
   const canGenerateReport =
     appointment.status === "in_consultation" || appointment.status === "completed";
 
+  const handleGenerateReport = async () => {
+    try {
+      await generateReport.mutateAsync(appointment.id);
+      setToast({ message: "Informe médico generado correctamente", type: "success" });
+    } catch (err: any) {
+      setToast({ message: err.message || "Error al generar informe médico", type: "error" });
+    }
+  };
+
+  const handleGenerateDocuments = async () => {
+    try {
+      await generateDocuments.mutateAsync(appointment.id);
+      setToast({ message: "Documentos de consulta generados correctamente", type: "success" });
+    } catch (err: any) {
+      setToast({ message: err.message || "Error al generar documentos", type: "error" });
+    }
+  };
+
   return (
-    <div className="consultation-page page">
-      {/* 🔹 Top panel: Patient identity */}
+    <div className="p-6 space-y-6">
+      {/* Identidad del paciente */}
       <PatientHeader patient={appointment.patient} />
 
-      <div className="consultation-container">
-        {/* 🔹 Left column: Documents */}
-        <div className="consultation-column">
-          <div className="consultation-card">
+      {/* Layout clínico jerárquico */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Columna izquierda: Documentos + Cobros */}
+        <div className="col-span-3 space-y-4">
+          <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
             <DocumentsPanel
               patientId={appointment.patient.id}
               appointmentId={appointment.id}
             />
           </div>
-        </div>
 
-        {/* 🔹 Center column: Clinical workflow */}
-        <div className="consultation-main">
-          <div className="consultation-tabs">
-            <ConsultationWorkflow
-              diagnoses={appointment.diagnoses}
-              appointmentId={appointment.id}
-              notes={appointment.notes ?? null}
-              readOnly={false}   // ✅ ahora se pasa explícitamente
-            />
-          </div>
-        </div>
-
-        {/* 🔹 Right column: Charge order + Payments */}
-        <div className="consultation-column">
-          <div className="consultation-card">
+          <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
             <ChargeOrderPanel appointmentId={appointment.id} />
           </div>
         </div>
+
+        {/* Columna derecha: Flujo clínico dominante */}
+        <div className="col-span-9">
+          <ConsultationWorkflow
+            diagnoses={appointment.diagnoses}
+            appointmentId={appointment.id}
+            notes={appointment.notes ?? null}
+            readOnly={false}
+          />
+        </div>
       </div>
 
-      {/* 🔹 Footer: Action buttons */}
-      <div className="consultation-footer flex flex-col gap-4 mt-4">
+      {/* Footer: Botones de acción */}
+      <div className="flex flex-col gap-4 mt-6">
         <div className="flex items-center justify-between">
           <ConsultationActions consultationId={appointment.id} />
 
           {canGenerateReport && (
-            <div className="flex items-center">
-              {/* 🔹 Generate Medical Report */}
+            <div className="flex items-center gap-2">
               <button
-                className="btn btn-primary"
+                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                 disabled={generateReport.isPending}
-                onClick={() => generateReport.mutate(appointment.id)}
+                onClick={handleGenerateReport}
               >
-                {generateReport.isPending ? "Generating..." : "Generate Medical Report"}
+                {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
               </button>
 
-              {/* 🔹 View Medical Report */}
               {generateReport.data?.file_url && (
                 <a
                   href={generateReport.data.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-secondary ml-2"
+                  className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
                 >
-                  View Medical Report
+                  Ver Informe Médico
                 </a>
               )}
 
-              {/* 🔹 Generate Consultation Documents */}
               <button
-                className="btn btn-accent ml-2"
+                className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
                 disabled={generateDocuments.isPending}
-                onClick={() => generateDocuments.mutate(appointment.id)}
+                onClick={handleGenerateDocuments}
               >
                 {generateDocuments.isPending
-                  ? "Generating..."
-                  : "Generate Consultation Documents"}
+                  ? "Generando..."
+                  : "Generar Documentos de Consulta"}
               </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* Toast feedback */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

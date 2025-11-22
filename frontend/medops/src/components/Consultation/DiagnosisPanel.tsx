@@ -8,11 +8,10 @@ import { useDeleteDiagnosis } from "../../hooks/consultations/useDeleteDiagnosis
 import DiagnosisBadge from "./DiagnosisBadge";
 import { Diagnosis } from "../../types/consultation";
 
-// 🔹 Exportamos la interfaz para que pueda ser usada en index.ts
 export interface DiagnosisPanelProps {
-  diagnoses?: Diagnosis[];   // lista de diagnósticos (lectura y escritura)
-  readOnly?: boolean;        // flag para modo lectura
-  appointmentId: number;     // 👈 ID de la consulta asociado
+  diagnoses?: Diagnosis[];
+  readOnly?: boolean;
+  appointmentId: number;
 }
 
 const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnly, appointmentId }) => {
@@ -49,7 +48,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
     if (!selectedDiagnosis) return;
 
     const payload = {
-      appointment: appointmentId,   // 👈 usamos el prop explícito
+      appointment: appointmentId,
       icd_code: selectedDiagnosis.icd_code,
       title: selectedDiagnosis.title || "Sin título",
       description,
@@ -71,14 +70,15 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
   const handleDelete = (id: number) => {
     deleteDiagnosis(id);
   };
-
-  return (
-    <div className="diagnosis-panel card">
-      <h3 className="text-lg font-bold mb-2">Diagnósticos</h3>
+    return (
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+        Diagnósticos
+      </h3>
 
       <ul className="mb-4">
         {diagnoses.length === 0 && (
-          <li className="text-muted">Sin diagnósticos</li>
+          <li className="text-sm text-gray-600 dark:text-gray-400">Sin diagnósticos</li>
         )}
         {diagnoses.map((d) => (
           <li key={d.id}>
@@ -121,12 +121,14 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 setHighlightIndex(-1);
               }
             }}
-            className="input"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
 
-          {isLoading && <p className="text-sm text-muted">Buscando...</p>}
+          {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
           {!isLoading && query.length >= 2 && results.length === 0 && (
-            <p className="text-sm text-warning">Sin resultados para "{query}"</p>
+            <p className="text-sm text-yellow-600 dark:text-yellow-400">Sin resultados para "{query}"</p>
           )}
 
           {results.length > 0 && (
@@ -138,7 +140,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                     itemRefs.current[idx] = el;
                   }}
                   className={`cursor-pointer p-1 ${
-                    idx === highlightIndex ? "bg-blue-100" : "hover:bg-gray-100"
+                    idx === highlightIndex ? "bg-blue-100 dark:bg-blue-900" : "hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                   onMouseEnter={() => setHighlightIndex(idx)}
                   onClick={() => handleSelect(r)}
@@ -150,7 +152,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
           )}
 
           {selectedDiagnosis && (
-            <div className="p-2 border rounded bg-gray-50">
+            <div className="p-2 border rounded bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
               <strong>{selectedDiagnosis.icd_code}</strong> — {selectedDiagnosis.title}
             </div>
           )}
@@ -161,9 +163,14 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 placeholder="Notas clínicas para este diagnóstico"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="textarea"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                           focus:outline-none focus:ring-2 focus:ring-blue-600"
               />
-              <button onClick={handleSave} className="btn btn-primary">
+              <button
+                onClick={handleSave}
+                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+              >
                 Guardar diagnóstico
               </button>
             </>

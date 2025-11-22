@@ -8,7 +8,6 @@ import {
 } from "../../hooks/consultations/useChargeOrder";
 import axios from "axios";
 
-// 🔹 Props en modo dual: o recibes appointmentId (fetch interno) o el objeto chargeOrder
 export type ChargeOrderPanelProps =
   | { appointmentId: number; readOnly?: boolean }
   | { chargeOrder: ChargeOrder; readOnly?: boolean };
@@ -21,18 +20,14 @@ function isAppointmentMode(
 
 const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const readOnly = props.readOnly ?? false;
-
-  // 🔹 Estado de orden: viene de props o se carga por appointmentId
   const [order, setOrder] = useState<ChargeOrder | null>(null);
 
-  // Modo A: appointmentId → fetch interno y autocreación defensiva
   const { data, isLoading, refetch } = isAppointmentMode(props)
     ? useChargeOrder(props.appointmentId)
     : { data: null, isLoading: false, refetch: async () => {} };
 
   useEffect(() => {
     if (!isAppointmentMode(props)) {
-      // Modo B: chargeOrder directo
       setOrder(props.chargeOrder ?? null);
       return;
     }
@@ -46,13 +41,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       axios
         .post(`/appointments/${appointmentId}/charge-order/`)
         .then(() => {
-          void refetch(); // ✅ ejecuta refetch, ignora el valor
+          void refetch();
         })
         .catch((err) => {
           console.error("Error creando orden automáticamente:", err);
         });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order, readOnly]);
 
   const createPayment = useCreatePayment(
@@ -70,7 +64,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const [showItems, setShowItems] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
 
-  const handleAddItem = async (e: React.FormEvent) => {
+    const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order) return;
 
@@ -84,9 +78,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     const qty = Number(qtyEl?.value ?? 0);
     const unitPrice = Number(priceEl?.value ?? 0);
 
-    if (!code) return;
-    if (isNaN(qty) || qty <= 0) return;
-    if (isNaN(unitPrice) || unitPrice < 0) return;
+    if (!code || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) return;
 
     try {
       await axios.post("/charge-items/", {
@@ -100,19 +92,13 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       if (descEl) descEl.value = "";
       if (qtyEl) qtyEl.value = "";
       if (priceEl) priceEl.value = "";
-      void refetch(); // ✅ refetch seguro
+      void refetch();
     } catch (err: any) {
       console.error("Error agregando ítem:", err);
-      if (err.response?.data) {
-        console.error(
-          "Detalles del backend:",
-          JSON.stringify(err.response.data, null, 2)
-        );
-      }
     }
   };
 
-    const handleAddPayment = (e: React.FormEvent) => {
+  const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
     const payload: PaymentPayload = {
@@ -131,7 +117,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
         setBank("");
         setOtherDetail("");
         if (isAppointmentMode(props)) {
-          void refetch(); // ✅ refetch seguro
+          void refetch();
         }
       },
       onError: (err) => {
@@ -141,59 +127,89 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   };
 
   if (isAppointmentMode(props) && isLoading) {
-    return <p className="text-muted">Cargando orden...</p>;
+    return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando orden...</p>;
   }
   if (!order) return null;
 
-  return (
-    <div className="chargeorder-panel card">
-      <h3 className="text-lg font-bold mb-2">Orden de Cobro</h3>
+    return (
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+        Orden de Cobro
+      </h3>
 
-      <div className="mb-3 text-sm bg-gray-50 p-2 rounded">
+      <div className="mb-3 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-gray-800 dark:text-gray-100">
         <p><strong>Total:</strong> ${Number(order.total ?? 0).toFixed(2)}</p>
         <p><strong>Pagado:</strong> ${(Number(order.total ?? 0) - Number(order.balance_due ?? 0)).toFixed(2)}</p>
         <p><strong>Saldo pendiente:</strong> ${Number(order.balance_due ?? 0).toFixed(2)}</p>
         <p><strong>Estado:</strong> {order.status}</p>
       </div>
 
-      <button onClick={() => setShowItems(!showItems)} className="btn-toggle mb-2">
+      {/* Ítems */}
+      <button
+        onClick={() => setShowItems(!showItems)}
+        className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
+                   dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
+      >
         {showItems ? "▼ Ítems" : "▶ Ítems"}
       </button>
       {showItems && (
         <div className="mb-4">
           <ul className="mb-3">
-            {order.items?.length === 0 && <li className="text-muted">Sin ítems</li>}
+            {order.items?.length === 0 && (
+              <li className="text-sm text-gray-600 dark:text-gray-400">Sin ítems</li>
+            )}
             {order.items?.map((it: ChargeItem) => (
-              <li key={it.id} className="border-b py-1">
+              <li key={it.id} className="border-b border-gray-200 dark:border-gray-700 py-1">
                 {it.code} — {it.description} ({it.qty} × ${Number(it.unit_price).toFixed(2)})
-                <span className="ml-2 text-sm text-muted">= ${Number(it.subtotal).toFixed(2)}</span>
+                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                  = ${Number(it.subtotal).toFixed(2)}
+                </span>
               </li>
             ))}
           </ul>
 
           {!readOnly && (
             <form onSubmit={handleAddItem} className="flex flex-col gap-2">
-              <input id="charge-item-code" type="text" placeholder="Servicio / Procedimiento" className="input" required />
-              <input id="charge-item-desc" type="text" placeholder="Detalle adicional (opcional)" className="input" />
-              <input id="charge-item-qty" type="number" placeholder="Cantidad" className="input" required />
-              <input id="charge-item-price" type="number" step="0.01" placeholder="Precio unitario" className="input" required />
-              <button type="submit" className="btn-secondary self-start">+ Agregar ítem</button>
+              <input id="charge-item-code" type="text" placeholder="Servicio / Procedimiento"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+              <input id="charge-item-desc" type="text" placeholder="Detalle adicional (opcional)"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" />
+              <input id="charge-item-qty" type="number" placeholder="Cantidad"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
+              <input id="charge-item-price" type="number" step="0.01" placeholder="Precio unitario"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
+              <button type="submit"
+                className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
+                           dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors self-start">
+                + Agregar ítem
+              </button>
             </form>
           )}
         </div>
       )}
 
-      <button onClick={() => setShowPayments(!showPayments)} className="btn-toggle mb-2">
+      {/* Pagos */}
+      <button
+        onClick={() => setShowPayments(!showPayments)}
+        className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
+                   dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
+      >
         {showPayments ? "▼ Pagos" : "▶ Pagos"}
       </button>
       {showPayments && (
         <div>
           <ul className="mb-3">
-            {order.payments?.length === 0 && <li className="text-muted">Sin pagos registrados</li>}
+            {order.payments?.length === 0 && (
+              <li className="text-sm text-gray-600 dark:text-gray-400">Sin pagos registrados</li>
+            )}
             {order.payments?.map((p: Payment) => (
-              <li key={p.id} className="border-b py-1">
+              <li key={p.id} className="border-b border-gray-200 dark:border-gray-700 py-1">
                 <strong>${Number(p.amount ?? 0).toFixed(2)}</strong> — {p.method}
-                <span className="text-sm text-muted">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   {" "}{p.status} {p.reference_number && `| Ref: ${p.reference_number}`}
                 </span>
               </li>
@@ -202,8 +218,14 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
 
           {!readOnly && (
             <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
-              <input type="number" step="0.01" placeholder="Monto" value={amount} onChange={(e) => setAmount(e.target.value)} className="input" required />
-              <select value={method} onChange={(e) => setMethod(e.target.value as "cash" | "card" | "transfer" | "other")} className="select">
+              <input type="number" step="0.01" placeholder="Monto" value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600" required />
+              <select value={method}
+                onChange={(e) => setMethod(e.target.value as "cash" | "card" | "transfer" | "other")}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100">
                 <option value="cash">Efectivo</option>
                 <option value="card">Tarjeta</option>
                 <option value="transfer">Transferencia</option>
@@ -211,19 +233,33 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
               </select>
 
               {method === "card" && (
-                <input type="text" placeholder="Referencia de tarjeta" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
+                <input type="text" placeholder="Referencia de tarjeta" value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                             bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
               )}
               {method === "transfer" && (
                 <>
-                  <input type="text" placeholder="Banco" value={bank} onChange={(e) => setBank(e.target.value)} className="input" required />
-                  <input type="text" placeholder="Referencia de transferencia" value={reference} onChange={(e) => setReference(e.target.value)} className="input" required />
+                  <input type="text" placeholder="Banco" value={bank}
+                    onChange={(e) => setBank(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                               bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
+                  <input type="text" placeholder="Referencia de transferencia" value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                               bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
                 </>
               )}
               {method === "other" && (
-                <input type="text" placeholder="Detalle del pago" value={otherDetail} onChange={(e) => setOtherDetail(e.target.value)} className="input" required />
+                <input type="text" placeholder="Detalle del pago" value={otherDetail}
+                  onChange={(e) => setOtherDetail(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                             bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
               )}
 
-              <button type="submit" className="btn-primary self-start" disabled={createPayment.isPending}>
+              <button type="submit"
+                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+                disabled={createPayment.isPending}>
                 {createPayment.isPending ? "Registrando..." : "+ Registrar pago"}
               </button>
               {createPayment.isError && (

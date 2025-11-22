@@ -4,7 +4,7 @@ export type TreatmentStatus =
   | "active"
   | "completed"
   | "cancelled"
-  | "suspended"; // aceptamos ambos dominios
+  | "suspended";
 
 export type TreatmentType =
   | "pharmacological"
@@ -73,13 +73,13 @@ export default function TreatmentBadge({
   };
 
   return (
-    <div className="border rounded px-3 py-2 mb-2 bg-white shadow-sm">
+    <div className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm px-3 py-2 mb-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-700 font-semibold">Tratamiento</span>
+        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Tratamiento</span>
         <div className="flex gap-2">
           {onEdit && (
             <button
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               onClick={() => setIsEditing(true)}
             >
               Editar
@@ -87,7 +87,7 @@ export default function TreatmentBadge({
           )}
           {onDelete && (
             <button
-              className="text-sm text-red-600 hover:underline"
+              className="text-sm text-red-600 dark:text-red-400 hover:underline"
               onClick={() => {
                 if (confirm("¿Eliminar tratamiento? Esta acción no se puede deshacer.")) {
                   onDelete(id);
@@ -105,26 +105,34 @@ export default function TreatmentBadge({
           <textarea
             value={editedPlan}
             onChange={(e) => setEditedPlan(e.target.value)}
-            className="textarea"
             placeholder="Plan de tratamiento"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
           <input
             type="date"
             value={editedStart}
             onChange={(e) => setEditedStart(e.target.value)}
-            className="input"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
           <input
             type="date"
             value={editedEnd}
             onChange={(e) => setEditedEnd(e.target.value)}
-            className="input"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
 
           <select
             value={editedStatus}
             onChange={(e) => setEditedStatus(e.target.value as TreatmentStatus)}
-            className="select"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="active">Activo</option>
             <option value="completed">Completado</option>
@@ -135,7 +143,9 @@ export default function TreatmentBadge({
           <select
             value={editedType}
             onChange={(e) => setEditedType(e.target.value as TreatmentType)}
-            className="select"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="pharmacological">Farmacológico</option>
             <option value="surgical">Quirúrgico</option>
@@ -146,16 +156,23 @@ export default function TreatmentBadge({
           </select>
 
           <div className="flex gap-2 mt-1">
-            <button className="btn btn-primary btn-sm" onClick={handleSave}>
+            <button
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              onClick={handleSave}
+            >
               Guardar
             </button>
-            <button className="btn btn-secondary btn-sm" onClick={handleCancel}>
+            <button
+              className="px-4 py-2 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 
+                         dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
+              onClick={handleCancel}
+            >
               Cancelar
             </button>
           </div>
         </div>
       ) : (
-        <div className="mt-1 text-sm text-muted whitespace-pre-line">
+        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
           {plan}
           {start_date && <div>Inicio: {start_date}</div>}
           {end_date && <div>Fin: {end_date}</div>}

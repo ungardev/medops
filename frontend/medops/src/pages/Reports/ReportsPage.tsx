@@ -9,7 +9,6 @@ import { useReports } from "@/hooks/reports/useReports";
 export default function ReportsPage() {
   const [filters, setFilters] = useState<ReportFiltersInput | null>(null);
 
-  // Hook React Query para consultar la API
   const { data = [], isLoading, isError } = useReports(filters);
 
   const handleFilter = (newFilters: ReportFiltersInput) => {
@@ -17,26 +16,32 @@ export default function ReportsPage() {
   };
 
   return (
-    <main className="reports-page">
-      <header className="page-header">
-        <h2>Reportes Institucionales</h2>
+    <main className="p-6 space-y-6">
+      {/* Header institucional */}
+      <header className="mb-6">
+        <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+          Reportes Institucionales
+        </h2>
       </header>
 
       {/* Filtros */}
-      <section className="card reports-filters">
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
         <ReportFilters onFilter={handleFilter} />
       </section>
 
       {/* Tabla */}
-      <section className="card">
-        {isLoading && <p>Cargando reportes...</p>}
-        {isError && <p className="text-danger">Error cargando reportes</p>}
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+        {isLoading && (
+          <p className="text-sm text-gray-600 dark:text-gray-400">Cargando reportes...</p>
+        )}
+        {isError && (
+          <p className="text-sm text-red-600 dark:text-red-400">Error cargando reportes</p>
+        )}
         <ReportTable data={data} />
       </section>
 
       {/* Exportación */}
-      <section className="card reports-actions">
-        {/* ✅ ahora pasamos filters y data */}
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
         <ReportExport filters={filters} data={data} />
       </section>
     </main>

@@ -84,7 +84,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
 
-    const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnosisId || (!medicationCatalogId && !medicationText) || !onAdd) return;
 
@@ -111,17 +111,19 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     setUnit("mg");
   };
 
-  return (
-    <div className="prescription-panel card">
-      <h3 className="text-lg font-bold mb-2">Prescripciones</h3>
+    return (
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Prescripciones</h3>
 
       {/* 🔹 Modo lectura */}
       {readOnly && (
         <>
-          {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
+          {diagnoses.length === 0 && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+          )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold">
+              <h4 className="font-semibold text-gray-700 dark:text-gray-200">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -140,7 +142,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-muted">Sin prescripciones</li>
+                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
                 )}
               </ul>
             </div>
@@ -151,10 +153,12 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       {/* 🔹 Modo edición */}
       {!readOnly && (
         <>
-          {diagnoses.length === 0 && <p className="text-muted">No hay diagnósticos registrados</p>}
+          {diagnoses.length === 0 && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+          )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold">
+              <h4 className="font-semibold text-gray-700 dark:text-gray-200">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -185,7 +189,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-muted">Sin prescripciones</li>
+                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
                 )}
               </ul>
             </div>
@@ -195,7 +199,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             <select
               value={diagnosisId}
               onChange={(e) => setDiagnosisId(Number(e.target.value))}
-              className="select"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
               required
             >
               <option value="">Seleccionar diagnóstico</option>
@@ -220,7 +225,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               placeholder="Dosis (ej: 500)"
               value={dosage}
               onChange={(e) => setDosage(e.target.value)}
-              className="input"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
 
             <input
@@ -228,7 +234,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               placeholder="Duración (ej: 7 días)"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              className="input"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
 
             <select
@@ -236,7 +243,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               onChange={(e) =>
                 setFrequency(e.target.value as UpdatePrescriptionInput["frequency"])
               }
-              className="select"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {frequencyOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -248,7 +256,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             <select
               value={route}
               onChange={(e) => setRoute(e.target.value as UpdatePrescriptionInput["route"])}
-              className="select"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {routeOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -260,7 +269,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value as UpdatePrescriptionInput["unit"])}
-              className="select"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {unitOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -269,7 +279,10 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               ))}
             </select>
 
-            <button type="submit" className="btn-primary self-start">
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+            >
               + Agregar prescripción
             </button>
           </form>

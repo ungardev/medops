@@ -12,7 +12,10 @@ interface Props {
 export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onClose }: Props) {
   const queryClient = useQueryClient();
 
+  // 👇 Incluimos charge_order y appointment en el estado inicial
   const [form, setForm] = useState<Omit<PaymentInput, "status">>({
+    charge_order: chargeOrderId,
+    appointment: appointmentId,
     amount: "",
     method: "cash",
     reference_number: "",
@@ -31,7 +34,6 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
       return res.data as Payment;
     },
     onSuccess: () => {
-      // Refresca lista, detalle y eventos
       queryClient.invalidateQueries({ queryKey: ["charge-orders"] });
       queryClient.invalidateQueries({ queryKey: ["charge-order", String(chargeOrderId)] });
       queryClient.invalidateQueries({ queryKey: ["charge-order-events", String(chargeOrderId)] });
@@ -50,29 +52,35 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h3>Registrar nuevo pago</h3>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="max-w-md w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+          Registrar nuevo pago
+        </h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label>Monto</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Monto</label>
             <input
               type="number"
               name="amount"
               value={form.amount}
               onChange={handleChange}
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-blue-600"
               required
             />
           </div>
 
           <div>
-            <label>Método</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Método</label>
             <select
               name="method"
               value={form.method}
               onChange={handleChange}
-              className="select"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               <option value="cash">Efectivo</option>
               <option value="card">Tarjeta</option>
@@ -81,35 +89,47 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
             </select>
           </div>
 
-          {/* 👇 Eliminamos el selector de estado, ya no se expone al usuario */}
-
           <div>
-            <label>Referencia</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Referencia</label>
             <input
               type="text"
               name="reference_number"
               value={form.reference_number}
               onChange={handleChange}
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
           </div>
 
           <div>
-            <label>Banco</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Banco</label>
             <input
               type="text"
               name="bank_name"
               value={form.bank_name}
               onChange={handleChange}
-              className="input"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-blue-600"
             />
           </div>
 
-          <div className="flex justify-between mt-4">
-            <button type="button" className="btn btn-outline" onClick={onClose}>
+          <div className="flex justify-between mt-6">
+            <button
+              type="button"
+              className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                         bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                         hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+              onClick={onClose}
+            >
               Cancelar
             </button>
-            <button type="submit" className="btn btn-primary" disabled={mutation.isPending}>
+            <button
+              type="submit"
+              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+              disabled={mutation.isPending}
+            >
               {mutation.isPending ? "Guardando..." : "Registrar"}
             </button>
           </div>

@@ -10,25 +10,44 @@ export default function NotificationsFeed() {
   const [selectedChargeOrder, setSelectedChargeOrder] = useState<number | null>(null);
   const [filter, setFilter] = useState<"all" | "info" | "warning" | "critical">("all");
 
-  if (isLoading) return <p>Cargando notificaciones...</p>;
-  if (!notifications?.length) return <p>No hay notificaciones recientes.</p>;
+  if (isLoading) {
+    return (
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">Cargando notificaciones...</p>
+      </section>
+    );
+  }
 
-  // 🔹 Filtrar notificaciones según severidad
+  if (!notifications?.length) {
+    return (
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">No hay notificaciones recientes.</p>
+      </section>
+    );
+  }
+
   const filteredNotifications =
     filter === "all"
       ? notifications
       : notifications.filter((n) => n.severity === filter);
 
   return (
-    <section className="dashboard-widget">
-      <div className="widget-header">
-        <h3>Notificaciones y eventos</h3>
-        <div className="widget-actions">
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+          Notificaciones y eventos
+        </h3>
+        <div className="flex gap-2">
           {["all", "info", "warning", "critical"].map((level) => (
             <button
               key={level}
-              className={`btn ${filter === level ? "btn-primary" : "btn-outline"}`}
               onClick={() => setFilter(level as any)}
+              className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+                filter === level
+                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+              }`}
             >
               {level === "all"
                 ? "Todo"
@@ -38,28 +57,33 @@ export default function NotificationsFeed() {
         </div>
       </div>
 
-      <ul className="notifications-feed">
+      {/* Feed */}
+      <ul className="space-y-3">
         {filteredNotifications.map((n: NotificationEvent) => (
           <li
             key={n.id}
-            className={`notification-item ${
-              n.severity ? `notification-${n.severity}` : "notification-info"
-            }`}
+            className="p-4 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex justify-between items-center"
           >
-            <div>
-              <p className="notification-message">
+            <div className="flex flex-col">
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-100 flex items-center gap-2">
                 {n.entity === "Payment" && (
-                  <span className="badge badge-success">Pago</span>
+                  <span className="px-2 py-0.5 text-xs rounded bg-blue-600 text-white">
+                    Pago
+                  </span>
                 )}
                 {n.entity === "Appointment" && (
-                  <span className="badge badge-warning">Cita</span>
+                  <span className="px-2 py-0.5 text-xs rounded bg-yellow-500 text-white">
+                    Cita
+                  </span>
                 )}
                 {n.entity === "WaitingRoom" && (
-                  <span className="badge badge-danger">Sala</span>
+                  <span className="px-2 py-0.5 text-xs rounded bg-red-600 text-white">
+                    Sala
+                  </span>
                 )}
                 {n.message}
               </p>
-              <span className="notification-timestamp">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 {moment(n.timestamp).fromNow()}
                 {n.actor ? ` • ${n.actor}` : ""}
               </span>
@@ -68,14 +92,17 @@ export default function NotificationsFeed() {
             {/* Acción dinámica */}
             {n.entity === "Payment" && n.action?.label === "Registrar Pago" ? (
               <button
-                className="btn btn-primary text-sm"
+                className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white border border-blue-600 hover:bg-blue-700 transition-colors"
                 onClick={() => setSelectedChargeOrder(n.entity_id)}
               >
                 {n.action.label}
               </button>
             ) : (
               n.action && (
-                <Link to={n.action.href} className="btn btn-outline text-sm">
+                <Link
+                  to={n.action.href}
+                  className="px-3 py-1.5 text-xs rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
                   {n.action.label}
                 </Link>
               )

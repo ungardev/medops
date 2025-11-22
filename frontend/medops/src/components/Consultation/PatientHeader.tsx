@@ -4,46 +4,46 @@ import type { Patient } from "../../types/patients";
 interface PatientHeaderProps {
   patient: Patient & {
     balance_due?: number; // inyectado desde mapAppointment
-    age?: number | null;  // ahora lo recibimos directo del backend
+    age?: number | null;  // recibido directo del backend
   };
 }
 
 export default function PatientHeader({ patient }: PatientHeaderProps) {
   return (
-    <div className="patient-header card">
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
       <div className="flex justify-between items-center">
         {/* Identidad */}
         <div>
-          <h2 className="patient-name text-xl font-bold">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
             {patient.full_name}
           </h2>
-          <p className="text-muted">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             C.I.: {patient.national_id || "N/A"} | Edad: {patient.age ?? "-"}
           </p>
         </div>
 
         {/* Estado financiero */}
         <div className="text-right">
-          <p className="font-semibold">
+          <p className="font-semibold text-gray-800 dark:text-gray-100">
             Saldo pendiente:{" "}
             {patient.balance_due && patient.balance_due > 0 ? (
-              <span className="text-danger">
+              <span className="text-red-600">
                 ${patient.balance_due.toFixed(2)}
               </span>
             ) : (
-              <span className="text-success">✔ Al día</span>
+              <span className="text-green-600">Al día</span>
             )}
           </p>
         </div>
       </div>
 
       {/* Datos clínicos clave */}
-      <div className="mt-2 flex gap-4 text-sm">
+      <div className="mt-2 flex gap-4 text-sm text-gray-700 dark:text-gray-300">
         <span>
-          <strong>Sexo:</strong> {patient.gender ?? "Unknown"}
+          <strong>Sexo:</strong> {patient.gender ?? "Desconocido"}
         </span>
         {patient.allergies && (
-          <span className="text-warning">
+          <span className="text-yellow-600 dark:text-yellow-400">
             <strong>Alergias:</strong> {patient.allergies}
           </span>
         )}

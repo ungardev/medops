@@ -1,0 +1,90 @@
+import { Combobox } from "@headlessui/react";
+import { useState } from "react";
+import type { Specialty } from "../../types/consultation";
+
+interface Props {
+  value: Specialty[];
+  onChange: (next: Specialty[]) => void;
+  options: Specialty[];
+}
+
+export default function SpecialtyComboboxElegante({ value, onChange, options }: Props) {
+  const [search, setSearch] = useState("");
+
+  const filtered = search.length
+    ? options.filter(o =>
+        `${o.name} ${o.code}`.toLowerCase().includes(search.toLowerCase())
+      )
+    : options;
+
+  const addSpecialty = (s: Specialty | null) => {
+    if (s && !value.some(v => v.id === s.id)) {
+      onChange([...value, s]);
+    }
+    setSearch("");
+  };
+
+  const removeSpecialty = (id: number) => {
+    onChange(value.filter(v => v.id !== id));
+  };
+
+  return (
+    <>
+      <Combobox<Specialty> onChange={addSpecialty}>
+        <div className="relative">
+          <Combobox.Input
+            value={search}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+            placeholder="Buscar especialidad..."
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+          <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md
+                                       border border-gray-300 dark:border-gray-600
+                                       bg-white dark:bg-gray-800 shadow-lg z-10">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">Sin resultados</div>
+            ) : (
+              filtered.map(s => (
+                <Combobox.Option
+                  key={s.id}
+                  value={s}
+                  className={({ active }) =>
+                    `cursor-pointer px-3 py-2 text-sm ${
+                      active ? "bg-blue-600 text-white" : "text-gray-800 dark:text-gray-100"
+                    }`
+                  }
+                >
+                  {s.name} ({s.code})
+                </Combobox.Option>
+              ))
+            )}
+          </Combobox.Options>
+        </div>
+      </Combobox>
+
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-2 pt-2">
+          {value.map(s => (
+            <span
+              key={s.id}
+              className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700
+                         text-sm text-gray-800 dark:text-gray-100"
+            >
+              {s.name} ({s.code})
+              <button
+                type="button"
+                onClick={() => removeSpecialty(s.id)}
+                className="px-2 py-0.5 rounded bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100
+                           hover:bg-gray-400 dark:hover:bg-gray-500 text-xs"
+              >
+                Quitar
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}

@@ -1,30 +1,54 @@
+// src/pages/Dashboard/FinancialMetrics.tsx
 import React, { useState } from "react";
-import { useDashboard } from "@/hooks/dashboard/useDashboard"; // ✅ usar useDashboard
+import { useDashboard } from "@/hooks/dashboard/useDashboard";
 import MetricCard from "./MetricCard";
 
 const FinancialMetrics: React.FC = () => {
   const [currency, setCurrency] = useState<"USD" | "VES">("USD");
-  const { data, isLoading } = useDashboard({ currency }); // ✅ pasar currency al hook
+  const { data, isLoading } = useDashboard({ currency });
 
-  if (isLoading) return <p>Cargando métricas financieras...</p>;
-  if (!data) return <p>No se pudo cargar la información financiera.</p>;
+  if (isLoading) {
+    return (
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Cargando métricas financieras...
+        </p>
+      </section>
+    );
+  }
 
-  // 🔹 El backend ya devuelve los montos convertidos según currency
+  if (!data) {
+    return (
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <p className="text-sm text-red-600 dark:text-red-400">
+          No se pudo cargar la información financiera.
+        </p>
+      </section>
+    );
+  }
+
   const formatAmount = (amount: number) =>
     currency === "USD"
       ? `$${amount.toLocaleString()}`
       : `${amount.toLocaleString()} Bs`;
 
   return (
-    <section className="dashboard-widget">
-      <div className="widget-header">
-        <h3>Indicadores financieros</h3>
-        <div className="widget-actions">
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+          Indicadores financieros
+        </h3>
+        <div className="flex gap-2">
           {["USD", "VES"].map((c) => (
             <button
               key={c}
-              className={`btn ${currency === c ? "btn-primary" : "btn-outline"}`}
               onClick={() => setCurrency(c as "USD" | "VES")}
+              className={`px-3 py-1.5 text-sm rounded border transition-colors ${
+                currency === c
+                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+              }`}
             >
               {c}
             </button>
@@ -32,7 +56,8 @@ const FinancialMetrics: React.FC = () => {
         </div>
       </div>
 
-      <div className="metric-grid">
+      {/* Metrics grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total transacciones"
           value={formatAmount(data.total_payments_amount)}
@@ -41,7 +66,7 @@ const FinancialMetrics: React.FC = () => {
         <MetricCard
           title="Pagos confirmados"
           value={data.total_payments}
-          variant="ok"
+          subtitle="Procesados"
         />
         <MetricCard
           title="Exoneraciones"
@@ -51,7 +76,7 @@ const FinancialMetrics: React.FC = () => {
         <MetricCard
           title="Órdenes anuladas"
           value={data.total_events}
-          variant={data.total_events > 0 ? "critical" : "ok"}
+          subtitle="Últimos 30 días"
         />
       </div>
     </section>

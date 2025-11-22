@@ -1,4 +1,3 @@
-// src/components/DeletePatientModal.tsx
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 
@@ -22,35 +21,49 @@ export default function DeletePatientModal({ open, patientName, onConfirm, onClo
   };
 
   return ReactDOM.createPortal(
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h3 className="text-danger">⚠️ Eliminar paciente</h3>
-        <p>
-          Estás a punto de eliminar al paciente{" "}
-          <strong>{patientName}</strong>.  
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+          ⚠️ Eliminar paciente
+        </h3>
+        <p className="text-sm text-gray-700 dark:text-gray-300">
+          Estás a punto de eliminar al paciente <strong>{patientName}</strong>.
           <br />
           Esta acción es irreversible.
         </p>
-        <p className="mt-2">
+        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
           Para confirmar, escribe <strong>ELIMINAR</strong> en el campo de abajo:
         </p>
 
         <input
-          className="input mt-2"
+          className="mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                     bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                     focus:outline-none focus:ring-2 focus:ring-red-600 w-full"
           placeholder="Escribe ELIMINAR para confirmar"
           value={confirmation}
           onChange={(e) => setConfirmation(e.target.value)}
         />
 
-        <div className="modal-actions mt-3">
+        <div className="flex gap-2 mt-4">
           <button
-            className="btn btn-danger"
+            className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
             onClick={handleDelete}
             disabled={confirmation !== "ELIMINAR"}
           >
             Eliminar definitivamente
           </button>
-          <button className="btn btn-outline" onClick={onClose}>
+          <button
+            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            onClick={onClose}
+          >
             Cancelar
           </button>
         </div>

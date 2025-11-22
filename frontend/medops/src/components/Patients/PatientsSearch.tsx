@@ -18,19 +18,22 @@ export default function PatientsSearch({ onSelect, placeholder }: PatientsSearch
   });
 
   return (
-    <div className="search-container">
+    <div className="relative w-full">
       <input
-        className="input"
         type="text"
         placeholder={placeholder || "Buscar paciente..."}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                   bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                   focus:outline-none focus:ring-2 focus:ring-blue-600"
       />
       {results.length > 0 && (
-        <ul className="results-list card">
+        <ul className="absolute top-full left-0 w-full mt-1 z-20 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 shadow-lg">
           {results.map((p) => (
             <li
               key={p.id}
+              className="px-3 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-100"
               onClick={() => {
                 onSelect(p);
                 setQuery(p.full_name);

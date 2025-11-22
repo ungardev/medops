@@ -9,7 +9,7 @@ import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateCha
 interface Props {
   order: ChargeOrder;
   isSelected?: boolean;
-  onRegisterPayment?: () => void; // 👈 añadida para integración con ChargeOrderList
+  onRegisterPayment?: () => void;
 }
 
 export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }: Props) {
@@ -18,7 +18,6 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
   const navigate = useNavigate();
   const invalidateChargeOrders = useInvalidateChargeOrders();
 
-  // 🔹 Exportar usando siempre order.id real y tipando correctamente el Blob
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -26,17 +25,14 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
         `http://127.0.0.1/api/charge-orders/${order.id}/export/`,
         { responseType: "blob" }
       );
-
       const blob = res.data as Blob;
       const url = window.URL.createObjectURL(blob);
-
       const link = document.createElement("a");
       link.href = url;
       link.download = `orden-${order.id}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Error exportando orden", err);
@@ -52,10 +48,8 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
   const handleRegisterPaymentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRegisterPayment) {
-      // 👉 si viene del padre, delega la acción
       onRegisterPayment();
     } else {
-      // 👉 si no, abre su propio modal
       setShowModal(true);
     }
   };
@@ -76,56 +70,78 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
   const patientName =
     order.patient_detail?.full_name ?? `Paciente #${order.patient}`;
 
+  const statusLabel =
+    order.status === "paid"
+      ? "Pagada"
+      : order.status === "open"
+      ? "Abierta"
+      : order.status === "partially_paid"
+      ? "Parcialmente pagada"
+      : order.status === "void"
+      ? "Anulada"
+      : "—";
+
+  const statusClass =
+    order.status === "paid"
+      ? "bg-green-100 text-green-800 ring-green-200 dark:bg-green-800 dark:text-green-200"
+      : order.status === "open"
+      ? "bg-yellow-100 text-yellow-800 ring-yellow-200 dark:bg-yellow-700 dark:text-yellow-200"
+      : order.status === "partially_paid"
+      ? "bg-blue-100 text-blue-800 ring-blue-200 dark:bg-blue-700 dark:text-blue-200"
+      : order.status === "void"
+      ? "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200"
+      : "bg-gray-100 text-gray-800 ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
+
   return (
     <div
-      className={`charge-order-row card ${
-        isSelected ? "ring-2 ring-blue-500 bg-blue-50" : ""
-      }`}
+      className={`rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 mb-3 cursor-pointer 
+        ${isSelected ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : "bg-white dark:bg-gray-900"}`}
+      onClick={() => setExpanded(!expanded)}
     >
-      <div
-        className="charge-order-header flex justify-between items-center"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <div className="flex gap-4 items-center">
+      <div className="flex justify-between items-center">
+        <div className="flex gap-4 items-center text-sm text-gray-800 dark:text-gray-100">
           <span className="font-semibold">{patientName}</span>
           <span>{formattedDate}</span>
           <span>${formattedAmount}</span>
           <span
-            className={`badge ${
-              order.status === "paid"
-                ? "badge-success"
-                : order.status === "open"
-                ? "badge-warning"
-                : order.status === "partially_paid"
-                ? "badge-info"
-                : order.status === "void"
-                ? "badge-danger"
-                : "badge-muted"
-            }`}
+            className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`}
           >
-            {order.status === "paid" && "Pagada"}
-            {order.status === "open" && "Abierta"}
-            {order.status === "partially_paid" && "Parcialmente pagada"}
-            {order.status === "void" && "Anulada"}
+            {statusLabel}
           </span>
         </div>
 
-        <div className="actions flex gap-2">
-          <button className="btn btn-primary" onClick={handleRegisterPaymentClick}>
+        <div className="flex gap-2">
+          <button
+            className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+            onClick={handleRegisterPaymentClick}
+          >
             Registrar pago
           </button>
-          <button className="btn btn-outline" onClick={handleExport}>
+          <button
+            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+            onClick={handleExport}
+          >
             Exportar
           </button>
-          <button className="btn btn-outline" onClick={handleViewDetail}>
+          <button
+            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+            onClick={handleViewDetail}
+          >
             Ver detalle
           </button>
         </div>
       </div>
 
-      {expanded && <PaymentList payments={order.payments || []} />}
+      {expanded && (
+        <div className="mt-3">
+          <PaymentList payments={order.payments || []} />
+        </div>
+      )}
 
-      {/* Modal local solo si no se delega al padre */}
       {showModal && !onRegisterPayment && (
         <RegisterPaymentModal
           appointmentId={order.appointment}

@@ -6,7 +6,6 @@ import {
   useDeleteMedicalTest,
 } from "../../hooks/consultations/useMedicalTest";
 
-// 👇 Exportamos la interfaz para que pueda ser usada en index.ts
 export interface MedicalTestsPanelProps {
   appointmentId: number;
   readOnly?: boolean;
@@ -39,24 +38,26 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
   };
 
   return (
-    <div className="card">
-      <h3 className="text-lg font-bold mb-2">Órdenes de Exámenes Médicos</h3>
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Órdenes de Exámenes Médicos</h3>
 
-      {isLoading && <p>Cargando exámenes...</p>}
+      {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando exámenes...</p>}
 
       <ul className="mb-4">
-        {tests.length === 0 && <li className="text-muted">Sin exámenes registrados</li>}
+        {tests.length === 0 && (
+          <li className="text-sm text-gray-600 dark:text-gray-400">Sin exámenes registrados</li>
+        )}
         {tests.map((t: any) => (
-          <li key={t.id} className="flex justify-between items-center border-b py-1">
+          <li key={t.id} className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2">
             <div>
               <strong>{t.test_type_display}</strong> — {t.description || "Sin descripción"}
-              <span className="ml-2 text-sm text-muted">
+              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                 ({t.urgency} / {t.status})
               </span>
             </div>
             {!readOnly && (
               <button
-                className="btn-danger btn-sm"
+                className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
                 onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
               >
                 Eliminar
@@ -71,7 +72,9 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
           <select
             value={testType}
             onChange={(e) => setTestType(e.target.value)}
-            className="input"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           >
             <option value="">-- Seleccionar tipo de examen --</option>
             <option value="blood_test">Análisis de sangre</option>
@@ -98,22 +101,39 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
             placeholder="Notas clínicas para este examen"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="textarea"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
 
-          <select value={urgency} onChange={(e) => setUrgency(e.target.value as any)} className="select">
+          <select
+            value={urgency}
+            onChange={(e) => setUrgency(e.target.value as any)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          >
             <option value="routine">Rutina</option>
             <option value="urgent">Urgente</option>
             <option value="stat">Inmediato (STAT)</option>
           </select>
 
-          <select value={status} onChange={(e) => setStatus(e.target.value as any)} className="select">
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as any)}
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+          >
             <option value="pending">Pendiente</option>
             <option value="completed">Completado</option>
             <option value="cancelled">Cancelado</option>
           </select>
 
-          <button onClick={handleAdd} className="btn-primary self-start">
+          <button
+            onClick={handleAdd}
+            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+          >
             + Agregar examen
           </button>
         </div>

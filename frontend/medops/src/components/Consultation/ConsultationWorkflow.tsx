@@ -12,7 +12,7 @@ interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
   appointmentId: number;
   notes: string | null;
-  readOnly: boolean; // ✅ nuevo prop
+  readOnly: boolean;
 }
 
 export default function ConsultationWorkflow({
@@ -25,12 +25,12 @@ export default function ConsultationWorkflow({
   const createPrescription = useCreatePrescription();
 
   return (
-    <Tabs defaultTab="diagnosis" className="consultation-workflow">
+    <Tabs defaultTab="diagnosis" className="space-y-4">
       <Tab id="diagnosis" label="Diagnóstico">
         <DiagnosisPanel
           diagnoses={diagnoses}
           readOnly={readOnly}
-          appointmentId={appointmentId}   // 👈 ahora explícito
+          appointmentId={appointmentId}
         />
       </Tab>
 
