@@ -1,6 +1,4 @@
 const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
-
-// ⚠️ Aquí deberías obtener el token desde localStorage o contexto
 const token = localStorage.getItem("authToken");
 
 async function get<T>(path: string, init?: RequestInit): Promise<T> {
@@ -14,6 +12,15 @@ async function get<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
+}
+
+// 🔹 Util institucional para blindar respuestas
+function toArray<T>(raw: unknown): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  if (raw && typeof raw === "object" && Array.isArray((raw as any).results)) {
+    return (raw as any).results as T[];
+  }
+  return [];
 }
 
 type DashboardParams = {
@@ -35,17 +42,21 @@ export const DashboardAPI = {
   notifications: () =>
     get<import("@/types/dashboard").NotificationEvent[]>(`/notifications/`),
 
-  waitingRoomToday: () =>
-    get<import("@/types/dashboard").AppointmentSummary[]>(
-      `/waitingroom/today/entries/`
-    ),
+  waitingRoomToday: async () => {
+    const raw = await get<any>(`/waitingroom/today/entries/`);
+    return toArray<import("@/types/dashboard").AppointmentSummary>(raw);
+  },
 
-  appointmentsToday: () =>
-    get<import("@/types/dashboard").AppointmentSummary[]>(`/appointments/today/`),
+  appointmentsToday: async () => {
+    const raw = await get<any>(`/appointments/today/`);
+    return toArray<import("@/types/dashboard").AppointmentSummary>(raw);
+  },
+
+  payments: async () => {
+    const raw = await get<any>(`/payments/`);
+    return toArray<import("@/types/dashboard").PaymentSummary>(raw);
+  },
 
   eventLog: () =>
     get<import("@/types/dashboard").EventLogEntry[]>(`/event_log/`),
-
-  payments: () =>
-    get<import("@/types/dashboard").PaymentSummary[]>(`/payments/`),
 };

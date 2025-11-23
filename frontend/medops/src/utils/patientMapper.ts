@@ -10,7 +10,7 @@ export interface ClinicalPatient {
   full_name?: string;
   national_id?: string | null;
   allergies?: string | null;
-  age?: number | null;   // 👈 ahora lo aceptamos porque el backend lo manda
+  age?: number | null;   // 👈 aceptamos porque el backend lo manda
 }
 
 /**
@@ -33,10 +33,11 @@ export function mapPatient(clinical: ClinicalPatient): PatientAdmin {
     birthdate: clinical.birth_date ?? null,
     gender,
 
-    // 🔹 ahora sí pasamos la edad
     age: clinical.age ?? null,
+    allergies: clinical.allergies ?? null,
+    national_id: clinical.national_id ?? "N/A",
 
-    // Campos del modelo administrativo
+    // Campos administrativos inicializados
     middle_name: null,
     second_last_name: null,
     contact_info: null,
@@ -44,13 +45,11 @@ export function mapPatient(clinical: ClinicalPatient): PatientAdmin {
     weight: null,
     height: null,
     blood_type: null,
-    allergies: clinical.allergies ?? null,
     medical_history: null,
     genetic_predispositions: [],
     active: true,
     created_at: null,
     updated_at: null,
     email: null,
-    national_id: clinical.national_id ?? "N/A",
   };
 }

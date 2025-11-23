@@ -12,15 +12,39 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
   const navigate = useNavigate();
   const { data, isLoading, error } = useConsultationsByPatient(patient.id);
 
-  if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando consultas...</p>;
-  if (error) return <p className="text-sm text-red-600 dark:text-red-400">Error cargando consultas</p>;
-  if (!data || data.list.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">Este paciente no tiene consultas registradas.</p>;
+  if (isLoading) {
+    return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando consultas...</p>;
+  }
+
+  if (error && !data) {
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400">
+        Error cargando consultas. Intenta recargar o verificar conexión.
+      </p>
+    );
+  }
+
+  if (!data || !Array.isArray(data.list)) {
+    return (
+      <p className="text-sm text-red-600 dark:text-red-400">
+        Datos de consulta malformados. Verifica el backend o el tipado.
+      </p>
+    );
+  }
+
+  if (data.list.length === 0) {
+    return (
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Este paciente no tiene consultas registradas.
+      </p>
+    );
   }
 
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Consultas registradas</h3>
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        Consultas registradas
+      </h3>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-800 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">

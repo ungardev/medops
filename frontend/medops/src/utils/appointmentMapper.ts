@@ -1,4 +1,3 @@
-// src/utils/appointmentMapper.ts
 import type { Appointment as ClinicalAppointment } from "../types/consultation";
 import type { Patient as PatientAdmin } from "../types/patients";
 import { mapPatient } from "./patientMapper";
@@ -8,15 +7,15 @@ type ClinicalPayment = NonNullable<ClinicalAppointment["payments"]>[number];
 
 interface PaymentUI extends Omit<ClinicalPayment, "amount"> {
   amount: number;
-  currency: string;                // 👈 obligatorio, siempre presente en backend
-  idempotency_key?: string | null; // 👈 opcional
+  currency: string;
+  idempotency_key?: string | null;
 }
 
 export interface AppointmentUI {
   id: number;
   status: AppointmentStatus;
-  appointment_date?: string;       // 👈 fecha de la cita
-  arrival_time?: string | null;    // 👈 hora de llegada
+  appointment_date?: string;
+  arrival_time?: string | null;
   created_at: string;
   updated_at: string;
 
@@ -29,8 +28,8 @@ export interface AppointmentUI {
   payments: PaymentUI[];
 }
 
-// 🔹 Normalización defensiva de estados legacy y fallback seguro
-function normalizeStatus(status: string | null | undefined): AppointmentStatus {
+// 🔹 Exportado para uso externo
+export function normalizeStatus(status: string | null | undefined): AppointmentStatus {
   switch (status) {
     case "in_progress":
       return "in_consultation";
@@ -43,7 +42,7 @@ function normalizeStatus(status: string | null | undefined): AppointmentStatus {
     case "canceled":
       return status;
     default:
-      return "pending"; // fallback seguro
+      return "pending";
   }
 }
 
@@ -65,7 +64,7 @@ export function mapAppointment(clinical: ClinicalAppointment): AppointmentUI {
     payments: (clinical.payments ?? []).map((p) => ({
       ...p,
       amount: typeof p.amount === "number" ? p.amount : Number(p.amount) || 0,
-      currency: p.currency, // siempre string
+      currency: p.currency,
       idempotency_key: p.idempotency_key ?? null,
     })),
   };

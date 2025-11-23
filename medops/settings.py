@@ -74,6 +74,9 @@ REST_FRAMEWORK = {
     # 🔹 Paginación global
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+
+    # 🔹 Formato global de fechas (ISO con zona horaria)
+    "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
 }
 
 

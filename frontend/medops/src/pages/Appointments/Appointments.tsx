@@ -1,4 +1,3 @@
-// src/pages/Appointments.tsx
 import { useState } from "react";
 import moment from "moment";
 import {
@@ -10,17 +9,18 @@ import {
 import AppointmentsList from "components/Appointments/AppointmentsList";
 import AppointmentForm from "components/Appointments/AppointmentForm";
 import AppointmentEditForm from "components/Appointments/AppointmentEditForm";
-import AppointmentCalendar from "components/Appointments/AppointmentCalendar";
+import CalendarGrid from "components/Appointments/CalendarGrid";
 import AppointmentFilters from "components/Appointments/AppointmentFilters";
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
 
 import {
-  useAppointments,
   useCreateAppointment,
   useCancelAppointment,
   useUpdateAppointment,
   useUpdateAppointmentStatus,
 } from "hooks/appointments";
+import { useAllAppointments } from "hooks/appointments/useAllAppointments";
+import Pagination from "components/Common/Pagination";
 
 export default function Appointments() {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
@@ -31,7 +31,14 @@ export default function Appointments() {
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
   const [search, setSearch] = useState("");
 
-  const { data: appointments, isLoading, isError, error } = useAppointments();
+  // 🔹 Estado de paginación institucional (solo para controlar scroll)
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // 🔹 Hook global para calendario y lista ejecutiva
+  const { data: allData } = useAllAppointments();
+  const allAppointments = allData?.list ?? [];
+
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
   const cancelMutation = useCancelAppointment();
@@ -54,10 +61,8 @@ export default function Appointments() {
     }
   };
 
-  if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando citas...</p>;
-  if (isError) return <p className="text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>;
-
-  const filteredAppointments = (appointments || [])
+  // 🔹 Filtro local sobre todas las citas (lista ejecutiva)
+  const filteredAppointments = allAppointments
     .filter((appt) =>
       selectedDate
         ? moment(appt.appointment_date, "YYYY-MM-DD").isSame(selectedDate, "day")
@@ -77,6 +82,13 @@ export default function Appointments() {
       );
     })
     .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
+
+  // 🔹 Paginación visual (scroll controlado)
+  const totalItems = filteredAppointments.length;
+  const paginatedAppointments = filteredAppointments.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -122,10 +134,10 @@ export default function Appointments() {
         {/* Calendario */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Calendario</h2>
-          <AppointmentCalendar
-            appointments={appointments || []}
-            onSelect={(appt) => setViewingAppointment(appt)}
+          <CalendarGrid
+            appointments={allAppointments} // 🔹 universo completo
             onSelectDate={(date) => setSelectedDate(date)}
+            onSelectAppointment={(appt) => setViewingAppointment(appt)}
           />
         </div>
 
@@ -177,13 +189,23 @@ export default function Appointments() {
           </div>
 
           <AppointmentsList
-            appointments={filteredAppointments}
+            appointments={paginatedAppointments} // 🔹 slice visual
             onEdit={(a) => setViewingAppointment(a)}
             onDelete={(id) => deleteAppointmentSafe(id)}
-            onStatusChange={(id, status) =>
-              statusMutation.mutate({ id, status })
-            }
+            onStatusChange={(id, status) => statusMutation.mutate({ id, status })}
           />
+
+          {/* Paginación */}
+          {totalItems > 0 && (
+            <div className="flex justify-end mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={totalItems}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

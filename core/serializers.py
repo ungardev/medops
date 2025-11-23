@@ -580,13 +580,13 @@ class ChargeItemSerializer(serializers.ModelSerializer):
 
 
 class ChargeOrderSerializer(serializers.ModelSerializer):
-    # 👇 Forzamos a que se serialicen como float en vez de string
+    # 🔹 Totales como float homogéneo
     total = serializers.FloatField(read_only=True)
     balance_due = serializers.FloatField(read_only=True)
-    items = ChargeItemSerializer(many=True, read_only=True)  # solo lectura
-    payments = PaymentSerializer(many=True, read_only=True)  # 👈 añadido
+    items = ChargeItemSerializer(many=True, read_only=True)
+    payments = PaymentSerializer(many=True, read_only=True)
 
-    # 🔹 Campos de auditoría
+    # 🔹 Auditoría (fechas ya formateadas globalmente por DATETIME_FORMAT en settings.py)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     created_by = serializers.CharField(read_only=True)
@@ -596,10 +596,9 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         model = ChargeOrder
         fields = (
             "id", "appointment", "patient", "currency",
-            "total", "balance_due", "status",   # 👈 incluye 'waived'
+            "total", "balance_due", "status",
             "issued_at", "issued_by", "items",
-            "payments",   # 👈 ahora se incluyen los pagos
-            # Auditoría
+            "payments",
             "created_at", "updated_at", "created_by", "updated_by",
         )
         read_only_fields = (
@@ -608,7 +607,6 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        # Normalmente no se crean ítems aquí, se agregan después
         order = ChargeOrder.objects.create(**validated_data)
         order.recalc_totals()
         order.save(update_fields=["total", "balance_due", "status"])
@@ -704,14 +702,14 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
 
 
 class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
-    # Aliases para Pagos
+    # 🔹 Aliases para Pagos
     appointment_date = serializers.DateTimeField(source="issued_at", read_only=True)
-    total_amount = serializers.DecimalField(source="total", max_digits=10, decimal_places=2, read_only=True)
+    total_amount = serializers.FloatField(source="total", read_only=True)  # 🔹 homogéneo con FloatField
     patient_detail = PatientReadSerializer(source="patient", read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)
-    payments = PaymentSerializer(many=True, read_only=True)  # 👈 añadido
+    payments = PaymentSerializer(many=True, read_only=True)
 
-    # 🔹 Campos de auditoría
+    # 🔹 Auditoría (fechas ya formateadas globalmente por DATETIME_FORMAT en settings.py)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     created_by = serializers.CharField(read_only=True)
@@ -720,14 +718,11 @@ class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChargeOrder
         fields = (
-            # Campos originales (compatibilidad)
             "id", "appointment", "patient", "currency",
-            "total", "balance_due", "status",   # 👈 incluye 'waived'
+            "total", "balance_due", "status",
             "issued_at", "issued_by", "items",
-            # Aliases nuevos para Pagos
             "appointment_date", "total_amount", "patient_detail",
-            "payments",   # 👈 ahora también en la lista
-            # Auditoría
+            "payments",
             "created_at", "updated_at", "created_by", "updated_by",
         )
         read_only_fields = (

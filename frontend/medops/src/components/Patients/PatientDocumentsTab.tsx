@@ -1,3 +1,4 @@
+// src/components/Patients/PatientDocumentsTab.tsx
 import React, { useState, useEffect } from "react";
 import { PatientTabProps } from "./types";
 import { useDocumentsByPatient } from "../../hooks/patients/useDocumentsByPatient";
@@ -44,7 +45,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
     await refetch();
   };
 
-  const documents = data?.list ?? [];
+  const documents = Array.isArray(data?.list) ? data.list : [];
   const isEmpty = !isLoading && !error && documents.length === 0;
 
   return (

@@ -1,38 +1,54 @@
 // src/components/Payments/ChargeOrderList.tsx
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { useState, useMemo, useCallback } from "react";
+import axios from "axios";
+import { useQuery } from "@tanstack/react-query";
 import ChargeOrderRow from "./ChargeOrderRow";
 import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
 import { ChargeOrder } from "../../types/payments";
+import { useChargeOrdersPaginated } from "../../hooks/payments/useChargeOrdersPaginated";
 
 export default function ChargeOrderList() {
-  const { data: orders, isLoading, error } = useQuery<ChargeOrder[]>({
-    queryKey: ["charge-orders"],
-    queryFn: async () => {
-      const res = await axios.get("/charge-orders/");
-      return res.data as ChargeOrder[];
-    },
-  });
-
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [selectedOrder, setSelectedOrder] = useState<ChargeOrder | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
+  // 🔹 Paginación normal
+  const {
+    data: paginatedData,
+    isLoading,
+    error,
+  } = useChargeOrdersPaginated(currentPage, pageSize);
+
+  // 🔹 Búsqueda global (cuando query no está vacío)
+  const { data: searchResults, isLoading: searchLoading } = useQuery<ChargeOrder[]>({
+    queryKey: ["charge-orders-search", query],
+    queryFn: async (): Promise<ChargeOrder[]> => {
+      type SearchResponse = ChargeOrder[] | { results: ChargeOrder[] };
+      const res = await axios.get<SearchResponse>("/charge-orders/", {
+        params: {
+          search: query,
+          ordering: "-appointment_date,-issued_at,-id", // 🔹 mismo orden que paginación
+        },
+      });
+      const payload = res.data;
+      return Array.isArray(payload) ? payload : payload.results ?? [];
+    },
+    enabled: query.trim().length > 0,
+  });
+
+  const orders = query.trim().length > 0 ? searchResults ?? [] : paginatedData?.results ?? [];
+
+  // 🔹 Solo filtramos por query, no reordenamos (el backend ya ordena)
   const filteredOrders = useMemo(() => {
-    if (!orders) return [];
+    if (!Array.isArray(orders)) return [];
     const q = query.toLowerCase().trim();
-    let result = orders.filter((o) => {
+    return orders.filter((o) => {
       const patientName = o.patient_detail?.full_name?.toLowerCase() ?? "";
       const orderId = String(o.id);
       return patientName.includes(q) || orderId.includes(q);
     });
-    result.sort((a, b) => {
-      const dateA = new Date(a.appointment_date || a.issued_at || "").getTime();
-      const dateB = new Date(b.appointment_date || b.issued_at || "").getTime();
-      return dateB - dateA;
-    });
-    return result;
   }, [orders, query]);
 
   const handleKeyDown = useCallback(
@@ -57,24 +73,30 @@ export default function ChargeOrderList() {
     [filteredOrders, selectedIndex]
   );
 
-  if (isLoading)
+  if (isLoading || searchLoading)
     return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando órdenes de cobro...</p>;
   if (error)
     return <p className="text-sm text-red-600 dark:text-red-400">Error cargando órdenes</p>;
 
-  const totals = orders?.reduce(
-    (acc, order) => {
-      const raw = order.total_amount ?? order.total ?? 0;
-      const amt =
-        typeof raw === "string" ? parseFloat(raw || "0") : Number(raw || 0);
-      acc.total += amt;
-      if (order.status === "paid") acc.confirmed += amt;
-      if (order.status === "open" || order.status === "partially_paid") acc.pending += amt;
-      if (order.status === "void") acc.failed += amt;
-      return acc;
-    },
-    { total: 0, confirmed: 0, pending: 0, failed: 0 }
-  );
+  const totals = Array.isArray(orders)
+    ? orders.reduce(
+        (acc, order) => {
+          const raw = order.total_amount ?? order.total ?? 0;
+          const amt =
+            typeof raw === "string" ? parseFloat(raw || "0") : Number(raw || 0);
+          acc.total += amt;
+          if (order.status === "paid") acc.confirmed += amt;
+          if (order.status === "open" || order.status === "partially_paid") acc.pending += amt;
+          if (order.status === "void") acc.failed += amt;
+          return acc;
+        },
+        { total: 0, confirmed: 0, pending: 0, failed: 0 }
+      )
+    : null;
+
+  const totalCount = query.trim().length > 0 ? orders.length : paginatedData?.count ?? 0;
+  const startIdx = (currentPage - 1) * pageSize + 1;
+  const endIdx = Math.min(currentPage * pageSize, totalCount);
 
   return (
     <div className="space-y-6">
@@ -94,6 +116,7 @@ export default function ChargeOrderList() {
           onChange={(e) => {
             setQuery(e.target.value);
             setSelectedIndex(-1);
+            setCurrentPage(1);
           }}
           onKeyDown={handleKeyDown}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
@@ -103,7 +126,7 @@ export default function ChargeOrderList() {
       </div>
 
       {/* Resumen de Totales */}
-      {totals && orders && orders.length > 0 && (
+      {totals && Array.isArray(orders) && orders.length > 0 && (
         <div className="flex flex-wrap gap-4 text-sm">
           <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800">
             <strong>Total:</strong> ${totals.total.toFixed(2)}
@@ -137,6 +160,29 @@ export default function ChargeOrderList() {
           </div>
         )}
       </div>
+
+      {/* Paginación */}
+      {query.trim().length === 0 && totalCount > pageSize && (
+        <div className="flex items-center justify-between text-sm mt-4">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+            className="px-3 py-1 rounded-md border bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
+          >
+            Anterior
+          </button>
+          <span>
+            Mostrando {startIdx}–{endIdx} de {totalCount}
+          </span>
+          <button
+            disabled={endIdx >= totalCount}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            className="px-3 py-1 rounded-md border bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
 
       {/* Modal de Registrar Pago */}
       {selectedOrder && (

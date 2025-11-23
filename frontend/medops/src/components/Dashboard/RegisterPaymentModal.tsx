@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { createPayment } from "@/api/payments";
 import { PaymentMethod, PaymentStatus } from "@/types/payments";
-import { useInvalidatePayments } from "@/hooks/payments/useInvalidatePayments"; // 👈 nuevo hook
-import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders"; // 👈 ya existente
+import { useInvalidatePayments } from "@/hooks/payments/useInvalidatePayments";
+import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface RegisterPaymentModalProps {
   chargeOrderId: number;
@@ -27,6 +28,7 @@ export default function RegisterPaymentModal({
 
   const invalidatePayments = useInvalidatePayments();
   const invalidateChargeOrders = useInvalidateChargeOrders();
+  const queryClient = useQueryClient(); // 🔹 acceso al cache global
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,13 +42,14 @@ export default function RegisterPaymentModal({
         status,
         reference_number: reference || undefined,
         bank_name: bankName || undefined,
-        charge_order: chargeOrderId, // 👈 requerido
-        appointment: appointmentId,  // opcional
+        charge_order: chargeOrderId,
+        appointment: appointmentId,
       });
 
       // 🔹 Invalidar queries relacionadas
       invalidatePayments(newPayment.id);
       invalidateChargeOrders(chargeOrderId);
+      queryClient.invalidateQueries({ queryKey: ["notifications"] }); // ⚔️ refresca el feed
 
       onSuccess();
       onClose();

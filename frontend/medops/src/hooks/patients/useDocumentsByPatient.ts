@@ -1,26 +1,11 @@
-// src/hooks/useDocumentsByPatient.ts
-import { useQuery } from "@tanstack/react-query";
+// src/hooks/patients/useDocumentsByPatient.ts
 import { apiFetch } from "../../api/client";
 import { MedicalDocument } from "../../types/documents";
-
-interface DocumentsResult {
-  list: MedicalDocument[];
-  totalCount: number;
-}
-
-// 🔹 Ahora usamos el endpoint /documents/?patient={id}
-async function fetchDocumentsByPatient(patientId: number): Promise<MedicalDocument[]> {
-  return apiFetch<MedicalDocument[]>(`documents/?patient=${patientId}`);
-}
+import { useInstitutionalList } from "../core/useInstitutionalList";
 
 export function useDocumentsByPatient(patientId: number) {
-  return useQuery<MedicalDocument[], Error, DocumentsResult>({
-    queryKey: ["documents", patientId],
-    queryFn: () => fetchDocumentsByPatient(patientId),
-    enabled: !!patientId,
-    select: (data) => ({
-      list: data,
-      totalCount: data.length,
-    }),
-  });
+  return useInstitutionalList<MedicalDocument>(
+    ["documents", patientId],
+    () => apiFetch(`documents/?patient=${patientId}`)
+  );
 }

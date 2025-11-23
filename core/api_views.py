@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Count, Sum, Q
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
+from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
@@ -46,7 +47,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet
 
-from rest_framework import viewsets, status, serializers, permissions
+from rest_framework import viewsets, status, serializers, permissions, filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -1483,16 +1484,26 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
 
 
 class ChargeOrderViewSet(viewsets.ModelViewSet):
-    queryset = ChargeOrder.objects.select_related("appointment", "patient").prefetch_related("items", "payments")
     permission_classes = [IsAuthenticated]
+
+    # Queryset base sin side effects
+    queryset = (
+        ChargeOrder.objects
+        .select_related("appointment", "patient")
+        .prefetch_related("items", "payments")
+    )
+
+    # Filtros, búsqueda y orden institucional
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["patient__full_name", "id"]
+    ordering_fields = ["appointment_date", "issued_at", "id", "status", "total", "balance_due"]
+    ordering = ["-appointment_date", "-issued_at", "-id"]  # por defecto: más recientes primero
 
     def get_queryset(self):
         qs = super().get_queryset()
-        # 🔹 Forzar recálculo de cada orden antes de serializar
-        for order in qs:
-            order.recalc_totals()
-            order.save(update_fields=["total", "balance_due", "status"])
-        return qs
+        # No modificar datos aquí. Blindaje de orden estable con fecha compuesta y desempate por id.
+        qs = qs.annotate(order_date=Coalesce(F("appointment_date"), F("issued_at")))
+        return qs.order_by(F("order_date").desc(nulls_last=True), F("id").desc())
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
@@ -1524,7 +1535,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         data = []
         for e in Event.objects.filter(entity="ChargeOrder", entity_id=order.id).order_by("-timestamp"):
             notes = e.metadata or {}
-            # 🔹 Formateo elegante de notas
+            # Formateo elegante de notas
             if isinstance(notes, dict):
                 if e.action == "payment_registered":
                     notes_str = f"Pago #{notes.get('payment_id')} registrado por ${notes.get('amount')}"
@@ -1561,10 +1572,10 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         payment = serializer.save(
             charge_order=order,
             appointment=order.appointment,
-            status="confirmed"  # 👈 blindamos aquí
+            status="confirmed"  # blindaje
         )
 
-        # 🔹 Recalcular totales y estado de la orden
+        # Recalcular totales y estado de la orden (solo en mutaciones)
         order.recalc_totals()
         if order.balance_due <= 0:
             order.status = "paid"
@@ -1574,7 +1585,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             order.status = "open"
         order.save(update_fields=["total", "balance_due", "status"])
 
-        # 🔹 Registrar evento de auditoría (notificación crítica)
+        # Registrar evento de auditoría
         Event.objects.create(
             entity="ChargeOrder",
             entity_id=order.id,
@@ -1596,7 +1607,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         styles = getSampleStyleSheet()
 
         try:
-            # 🔹 Logo institucional con proporción sobria
+            # Logo institucional
             logo_path = os.path.join(settings.BASE_DIR, "core", "static", "core", "img", "medops-logo.png")
             if os.path.exists(logo_path):
                 try:
@@ -1609,7 +1620,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
                 elements.append(Paragraph("MedOps", styles["Title"]))
             elements.append(Spacer(1, 12))
 
-            # 🔹 Encabezado
+            # Encabezado
             paciente = str(order.patient) if order.patient else f"Paciente #{order.patient_id or '—'}"
             fecha = order.created_at.strftime("%d/%m/%Y %H:%M") if order.created_at else "—"
 
@@ -1618,7 +1629,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             elements.append(Paragraph(f"Fecha: {fecha}", styles["Normal"]))
             elements.append(Spacer(1, 12))
 
-            # 🔹 Tabla de cargos
+            # Tabla de cargos
             data = [["Código", "Descripción", "Cant.", "Precio", "Subtotal"]]
             for item in order.items.all():
                 code = item.code or "—"
@@ -1639,7 +1650,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             elements.append(table)
             elements.append(Spacer(1, 12))
 
-            # 🔹 Totales
+            # Totales
             total = order.total or Decimal("0")
             paid = order.payments.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
             pending = total - paid
@@ -1649,7 +1660,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             elements.append(Paragraph(f"<b>Pendiente:</b> ${pending:.2f}", styles["Normal"]))
             elements.append(Spacer(1, 24))
 
-            # 🔹 Estado y firma
+            # Estado y firma
             estado = order.status.upper() if order.status else "—"
             elements.append(Paragraph(f"Estado de la orden: <b>{estado}</b>", styles["Normal"]))
             elements.append(Spacer(1, 36))
