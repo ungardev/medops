@@ -13,6 +13,7 @@ from .models import (
     Diagnosis,
     Treatment,
     Prescription,
+    PrescriptionComponent,
     Payment,
     MedicalDocument,
     WaitingRoomEntry,
@@ -27,7 +28,6 @@ from .models import (
 )
 
 logger = logging.getLogger("core")
-
 
 # -------------------------
 # Waiting Room
@@ -45,11 +45,7 @@ class WaitingRoomEntryAdmin(admin.ModelAdmin):
 class MedicalDocumentInlineForPatient(admin.TabularInline):
     model = MedicalDocument
     extra = 0
-    fields = (
-        "file", "description", "category",
-        "source", "template_version", "is_signed",
-        "preview_file"
-    )
+    fields = ("file", "description", "category", "source", "template_version", "is_signed", "preview_file")
     readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
@@ -66,11 +62,7 @@ class MedicalDocumentInlineForPatient(admin.TabularInline):
 class MedicalDocumentInlineForAppointment(admin.TabularInline):
     model = MedicalDocument
     extra = 0
-    fields = (
-        "file", "description", "category",
-        "source", "template_version", "is_signed",
-        "preview_file"
-    )
+    fields = ("file", "description", "category", "source", "template_version", "is_signed", "preview_file")
     readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
@@ -87,11 +79,7 @@ class MedicalDocumentInlineForAppointment(admin.TabularInline):
 class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
     model = MedicalDocument
     extra = 0
-    fields = (
-        "file", "description", "category",
-        "source", "template_version", "is_signed",
-        "preview_file"
-    )
+    fields = ("file", "description", "category", "source", "template_version", "is_signed", "preview_file")
     readonly_fields = ("source", "template_version", "is_signed", "preview_file")
 
     @admin.display(description="Archivo")
@@ -103,6 +91,7 @@ class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
         elif obj.file:
             return format_html('<a href="{}" target="_blank">Descargar</a>', obj.file.url)
         return "-"
+
 
 # -------------------------
 # Patient
@@ -156,7 +145,6 @@ class AppointmentAdmin(admin.ModelAdmin):
     def balance_due_display(self, obj): return f"{obj.balance_due():.2f}"
     balance_due_display.short_description = "Saldo Pendiente"
 
-
 # -------------------------
 # Diagnosis / Treatment / Prescription
 # -------------------------
@@ -179,13 +167,16 @@ class TreatmentAdmin(admin.ModelAdmin):
     list_per_page = 25
 
 
+class PrescriptionComponentInline(admin.TabularInline):
+    model = PrescriptionComponent
+    extra = 1
+
+
 @admin.register(Prescription)
 class PrescriptionAdmin(admin.ModelAdmin):
-    list_display = (
-        "id", "diagnosis", "get_medication_display", "dosage", "unit", "route", "frequency", "duration"
-    )
+    list_display = ("id", "diagnosis", "get_medication_display", "route", "frequency", "duration")
     list_display_links = ("id", "get_medication_display")
-    list_filter = ("route", "frequency", "unit")
+    list_filter = ("route", "frequency")
     search_fields = (
         "medication_text",
         "medication_catalog__name",
@@ -194,11 +185,11 @@ class PrescriptionAdmin(admin.ModelAdmin):
     )
     ordering = ("id",)
     list_per_page = 25
+    inlines = [PrescriptionComponentInline]
 
     @admin.display(description="Medicamento")
     def get_medication_display(self, obj):
         return obj.medication_catalog or obj.medication_text or "—"
-
 
 # -------------------------
 # MedicalTest
@@ -217,11 +208,7 @@ class MedicalTestAdmin(admin.ModelAdmin):
 # -------------------------
 @admin.register(MedicalReferral)
 class MedicalReferralAdmin(admin.ModelAdmin):
-    list_display = (
-        "id", "appointment", "diagnosis",
-        "get_specialties_display",  # 👈 nuevo método
-        "urgency", "status", "reason"
-    )
+    list_display = ("id", "appointment", "diagnosis", "get_specialties_display", "urgency", "status", "reason")
     list_filter = ("urgency", "status")
     search_fields = (
         "appointment__patient__first_name",
@@ -236,6 +223,7 @@ class MedicalReferralAdmin(admin.ModelAdmin):
     @admin.display(description="Especialidades referidas")
     def get_specialties_display(self, obj):
         return ", ".join([s.name for s in obj.specialties.all()])
+
 
 # -------------------------
 # ChargeOrder (centro financiero)
@@ -333,10 +321,7 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
     @admin.display(description="Archivo")
     def preview_file(self, obj):
         if obj.file and obj.mime_type.startswith("image/"):
-            return format_html(
-                '<img src="{}" width="60" height="60" style="object-fit:cover;" />',
-                obj.file.url
-            )
+            return format_html('<img src="{}" width="60" height="60" style="object-fit:cover;" />', obj.file.url)
         elif obj.file and obj.mime_type == "application/pdf":
             return format_html('<a href="{}" target="_blank">Descargar PDF</a>', obj.file.url)
         elif obj.file:
@@ -344,8 +329,9 @@ class MedicalDocumentAdmin(admin.ModelAdmin):
         return "-"
 
 
-from .models import DoctorOperator
-
+# -------------------------
+# DoctorOperator / Specialty / MedicationCatalog
+# -------------------------
 @admin.register(DoctorOperator)
 class DoctorOperatorAdmin(admin.ModelAdmin):
     list_display = ("full_name", "colegiado_id", "get_specialties_display", "email", "phone")

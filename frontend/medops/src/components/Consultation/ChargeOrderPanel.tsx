@@ -34,20 +34,8 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     setOrder(data ?? null);
   }, [props, data]);
 
-  useEffect(() => {
-    if (!isAppointmentMode(props)) return;
-    const appointmentId = props.appointmentId;
-    if (!readOnly && order === null && appointmentId) {
-      axios
-        .post(`/appointments/${appointmentId}/charge-order/`)
-        .then(() => {
-          void refetch();
-        })
-        .catch((err) => {
-          console.error("Error creando orden automáticamente:", err);
-        });
-    }
-  }, [order, readOnly]);
+  // ⚠️ Eliminada la creación automática de órdenes vacías
+  // Ahora se ofrece un botón explícito para crear la orden
 
   const createPayment = useCreatePayment(
     order?.id ?? undefined,
@@ -129,7 +117,25 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   if (isAppointmentMode(props) && isLoading) {
     return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando orden...</p>;
   }
-  if (!order) return null;
+
+  // ⚠️ Si no hay orden, mostramos botón explícito para crearla
+  if (!order) {
+    return !readOnly && isAppointmentMode(props) ? (
+      <button
+        onClick={async () => {
+          try {
+            await axios.post(`/appointments/${props.appointmentId}/charge-order/`);
+            void refetch();
+          } catch (err) {
+            console.error("Error creando orden:", err);
+          }
+        }}
+        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+      >
+        + Crear orden de cobro
+      </button>
+    ) : null;
+  }
 
     return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">

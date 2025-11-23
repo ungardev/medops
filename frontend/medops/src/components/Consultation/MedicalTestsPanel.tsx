@@ -1,3 +1,4 @@
+// src/components/Consultation/MedicalTestsPanel.tsx
 import { useState } from "react";
 import {
   useMedicalTest,
@@ -12,10 +13,13 @@ export interface MedicalTestsPanelProps {
 }
 
 export default function MedicalTestsPanel({ appointmentId, readOnly = false }: MedicalTestsPanelProps) {
-  const { data: tests = [], isLoading } = useMedicalTest(appointmentId);
+  const { data, isLoading } = useMedicalTest(appointmentId);
   const { mutate: createTest } = useCreateMedicalTest();
   const { mutate: updateTest } = useUpdateMedicalTest();
   const { mutate: deleteTest } = useDeleteMedicalTest();
+
+  // ✅ Blindaje: si data no es array, usamos []
+  const tests = Array.isArray(data) ? data : [];
 
   const [testType, setTestType] = useState("");
   const [description, setDescription] = useState("");
@@ -39,16 +43,25 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
 
   return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Órdenes de Exámenes Médicos</h3>
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+        Órdenes de Exámenes Médicos
+      </h3>
 
-      {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando exámenes...</p>}
+      {isLoading && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">Cargando exámenes...</p>
+      )}
 
       <ul className="mb-4">
         {tests.length === 0 && (
-          <li className="text-sm text-gray-600 dark:text-gray-400">Sin exámenes registrados</li>
+          <li className="text-sm text-gray-600 dark:text-gray-400">
+            Sin exámenes registrados
+          </li>
         )}
         {tests.map((t: any) => (
-          <li key={t.id} className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2">
+          <li
+            key={t.id}
+            className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2"
+          >
             <div>
               <strong>{t.test_type_display}</strong> — {t.description || "Sin descripción"}
               <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">

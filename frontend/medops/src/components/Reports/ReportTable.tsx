@@ -10,13 +10,13 @@ export default function ReportTable({ data }: Props) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
       <table className="w-full text-sm text-left text-gray-800 dark:text-gray-100">
-        <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-gray-600 dark:text-gray-300">
+        <thead className="bg-gray-50 dark:bg-gray-700 text-sm font-semibold text-gray-700 dark:text-gray-200">
           <tr>
-            <th className="px-3 py-2 border-b">Fecha</th>
-            <th className="px-3 py-2 border-b">Tipo</th>
-            <th className="px-3 py-2 border-b">Entidad</th>
-            <th className="px-3 py-2 border-b">Estado</th>
-            <th className="px-3 py-2 border-b text-right">Monto</th>
+            <th className="px-4 py-2 border-b">Fecha</th>
+            <th className="px-4 py-2 border-b">Tipo</th>
+            <th className="px-4 py-2 border-b">Entidad</th>
+            <th className="px-4 py-2 border-b">Estado</th>
+            <th className="px-4 py-2 border-b text-right">Monto</th>
           </tr>
         </thead>
         <tbody>
@@ -24,7 +24,7 @@ export default function ReportTable({ data }: Props) {
             <tr>
               <td
                 colSpan={5}
-                className="px-4 py-4 text-center text-sm text-gray-500 dark:text-gray-400 italic"
+                className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400 italic"
               >
                 No hay resultados para los filtros seleccionados
               </td>
@@ -54,8 +54,8 @@ export default function ReportTable({ data }: Props) {
 
               return (
                 <tr key={row.id} className="border-b border-gray-200 dark:border-gray-700">
-                  <td className="px-3 py-2">{row.date}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-2">{row.date}</td>
+                  <td className="px-4 py-2">
                     <span
                       className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset 
                                  bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
@@ -63,8 +63,8 @@ export default function ReportTable({ data }: Props) {
                       {row.type}
                     </span>
                   </td>
-                  <td className="px-3 py-2">{row.entity}</td>
-                  <td className="px-3 py-2">
+                  <td className="px-4 py-2">{row.entity}</td>
+                  <td className="px-4 py-2">
                     {statusLabel && (
                       <span
                         className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`}
@@ -73,7 +73,7 @@ export default function ReportTable({ data }: Props) {
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-4 py-2 text-right">
                     {row.amount.toLocaleString("es-VE", {
                       style: "currency",
                       currency: "USD",

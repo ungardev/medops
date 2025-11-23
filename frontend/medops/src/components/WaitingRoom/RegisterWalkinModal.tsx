@@ -44,9 +44,9 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         return;
       }
       try {
-        const found: PatientRef[] = await searchPatients(query);
-        setResults(found);
-        setHighlightedIndex(found.length > 0 ? 0 : -1);
+        const response = await searchPatients(query); // devuelve PatientSearchResponse
+        setResults(response.results);                 // usamos el array interno
+        setHighlightedIndex(response.results.length > 0 ? 0 : -1);
       } catch (e) {
         console.error("Error buscando pacientes:", e);
       }
@@ -76,7 +76,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     return () => document.removeEventListener("keydown", handleKey);
   }, [mode, results, highlightedIndex, selectedPatient, onClose]);
 
-  const onSubmit = async (values: FormValues) => {
+    const onSubmit = async (values: FormValues) => {
     try {
       let patientId: number;
       if (selectedPatient) {
@@ -110,7 +110,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
       )
     : false;
 
-      return ReactDOM.createPortal(
+  return ReactDOM.createPortal(
     <div
       className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
       onClick={onClose}

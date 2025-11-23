@@ -45,9 +45,20 @@ export default function ChargeOrderDetail() {
     },
   });
 
+  // ✅ Mutación para anular orden
   const voidMutation = useMutation({
     mutationFn: async () => {
-      await axios.post(`http://127.0.0.1/api/charge-orders/${id}/mark_void/`);
+      await axios.post(`http://127.0.0.1/api/charge-orders/${id}/void/`);
+    },
+    onSuccess: () => {
+      invalidateChargeOrders(id);
+    },
+  });
+
+  // ✅ Mutación para exonerar orden
+  const waiveMutation = useMutation({
+    mutationFn: async () => {
+      await axios.post(`http://127.0.0.1/api/charge-orders/${id}/waive/`);
     },
     onSuccess: () => {
       invalidateChargeOrders(id);
@@ -153,8 +164,10 @@ export default function ChargeOrderDetail() {
                         ? "bg-blue-500"
                         : ev.action === "payment_registered"
                         ? "bg-green-500"
-                        : ev.action === "voided"
+                        : ev.action === "void"
                         ? "bg-red-500"
+                        : ev.action === "waived"
+                        ? "bg-yellow-500"
                         : "bg-gray-400"
                     }`}
                   >
@@ -206,6 +219,13 @@ export default function ChargeOrderDetail() {
           disabled={voidMutation.isPending}
         >
           {voidMutation.isPending ? "Anulando..." : "Anular orden"}
+        </button>
+        <button
+          className="px-4 py-2 rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition text-sm"
+          onClick={() => waiveMutation.mutate()}
+          disabled={waiveMutation.isPending}
+        >
+          {waiveMutation.isPending ? "Exonerando..." : "Exonerar orden"}
         </button>
         <button
           className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 

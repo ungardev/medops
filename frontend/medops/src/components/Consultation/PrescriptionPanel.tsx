@@ -86,11 +86,15 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!diagnosisId || (!medicationCatalogId && !medicationText) || !onAdd) return;
+
+    if (!diagnosisId || (!medicationCatalogId && !medicationText)) {
+      alert("Debes seleccionar un diagnóstico y un medicamento válido.");
+      return;
+    }
 
     const payload: CreatePrescriptionInput = {
       diagnosis: Number(diagnosisId),
-      medication_catalog: medicationCatalogId,
+      medication_catalog: medicationCatalogId || undefined,
       medication_text: medicationText?.trim() || undefined,
       dosage: dosage.trim() || undefined,
       duration: duration.trim() || undefined,
@@ -99,8 +103,9 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       unit,
     };
 
-    onAdd(payload);
+    onAdd?.(payload);
 
+    // reset
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
     setMedicationText(undefined);
@@ -177,8 +182,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                           updatePrescription({
                             id,
                             medication_text: med,
-                            dosage: dos ?? undefined,
-                            duration: dur ?? undefined,
+                            dosage: dos?.trim() || undefined,
+                            duration: dur?.trim() || undefined,
                             frequency: freq,
                             route: rt,
                             unit: un,

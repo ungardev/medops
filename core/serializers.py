@@ -4,7 +4,7 @@ from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
-    ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog
+    ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent
 )
 from datetime import date
 from typing import Optional, Any, cast
@@ -212,36 +212,47 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         return age if age >= 0 else None
 
 
+class PrescriptionComponentSerializer(serializers.ModelSerializer):
+    unit_display = serializers.CharField(source="get_unit_display", read_only=True)
+
+    class Meta:
+        model = PrescriptionComponent
+        fields = ["id", "substance", "dosage", "unit", "unit_display"]
+
+
 # --- Prescripciones ---
 class PrescriptionSerializer(serializers.ModelSerializer):
     route_display = serializers.CharField(source="get_route_display", read_only=True)
     frequency_display = serializers.CharField(source="get_frequency_display", read_only=True)
-    unit_display = serializers.CharField(source="get_unit_display", read_only=True)
 
-    # 🔹 Incluimos catálogo y texto libre
     medication_catalog = serializers.StringRelatedField(read_only=True)
     medication_text = serializers.CharField(read_only=True)
+
+    components = PrescriptionComponentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Prescription
         fields = [
             "id",
             "diagnosis",
-            "medication_catalog",   # FK al catálogo institucional
-            "medication_text",      # texto libre
-            "dosage",
-            "unit",
-            "unit_display",
+            "medication_catalog",
+            "medication_text",
             "route",
             "route_display",
             "frequency",
             "frequency_display",
             "duration",
+            "components",   # 🔹 lista de sustancias activas
         ]
 
 
+class PrescriptionComponentWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrescriptionComponent
+        fields = ["substance", "dosage", "unit"]
+
+
 class PrescriptionWriteSerializer(serializers.ModelSerializer):
-    # 🔹 Escritura híbrida: aceptamos catalogId o texto libre
     medication_catalog = serializers.PrimaryKeyRelatedField(
         queryset=MedicationCatalog.objects.all(),
         required=False,
@@ -249,19 +260,38 @@ class PrescriptionWriteSerializer(serializers.ModelSerializer):
     )
     medication_text = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
+    components = PrescriptionComponentWriteSerializer(many=True)
+
     class Meta:
         model = Prescription
         fields = [
             "id",
             "diagnosis",
-            "medication_catalog",   # FK al catálogo institucional
-            "medication_text",      # texto libre
-            "dosage",
-            "unit",
+            "medication_catalog",
+            "medication_text",
             "route",
             "frequency",
             "duration",
+            "components",   # 🔹 escritura múltiple
         ]
+
+    def create(self, validated_data):
+        components_data = validated_data.pop("components", [])
+        prescription = Prescription.objects.create(**validated_data)
+        for comp in components_data:
+            PrescriptionComponent.objects.create(prescription=prescription, **comp)
+        return prescription
+
+    def update(self, instance, validated_data):
+        components_data = validated_data.pop("components", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if components_data is not None:
+            instance.components.all().delete()
+            for comp in components_data:
+                PrescriptionComponent.objects.create(prescription=instance, **comp)
+        return instance
 
 
 class TreatmentSerializer(serializers.ModelSerializer):

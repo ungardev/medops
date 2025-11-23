@@ -16,7 +16,9 @@ export interface MedicalReferralsPanelProps {
 }
 
 export default function MedicalReferralsPanel({ appointmentId, readOnly = false }: MedicalReferralsPanelProps) {
-  const { data: referrals = [], isLoading } = useMedicalReferrals(appointmentId);
+  const { data, isLoading } = useMedicalReferrals(appointmentId);
+  const referrals = Array.isArray(data) ? data : []; // ✅ blindaje
+
   const { mutate: createReferral } = useCreateMedicalReferral();
   const { mutate: updateReferral } = useUpdateMedicalReferral();
   const { mutate: deleteReferral } = useDeleteMedicalReferral();
@@ -160,7 +162,8 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
           </li>
         ))}
       </ul>
-            {!readOnly && (
+
+      {!readOnly && (
         <div className="flex flex-col gap-2">
           <input
             type="text"

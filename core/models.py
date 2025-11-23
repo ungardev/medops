@@ -11,6 +11,7 @@ from django.db.models import Sum
 from decimal import Decimal
 from django.utils import timezone
 from django.conf import settings
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES
 
 # Create your models here.
 class GeneticPredisposition(models.Model):
@@ -367,58 +368,33 @@ class Treatment(models.Model):
         return f"{self.get_treatment_type_display()} — {self.diagnosis.icd_code}"
 
 
+class PrescriptionComponent(models.Model):
+    prescription = models.ForeignKey(
+        "Prescription",
+        on_delete=models.CASCADE,
+        related_name="components"
+    )
+    substance = models.CharField(max_length=100)  # Ej: "Trimetoprim"
+    dosage = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default="mg")
+
+    def __str__(self):
+        return f"{self.substance} {self.dosage}{self.unit}"
+
+
 class Prescription(models.Model):
-    ROUTE_CHOICES = [
-        ("oral", "Oral"),
-        ("iv", "Intravenosa"),
-        ("im", "Intramuscular"),
-        ("sc", "Subcutánea"),
-        ("topical", "Tópica"),
-        ("sublingual", "Sublingual"),
-        ("inhalation", "Inhalación"),
-        ("rectal", "Rectal"),
-        ("other", "Otro"),
-    ]
-
-    FREQUENCY_CHOICES = [
-        ("once_daily", "Una vez al día"),
-        ("bid", "Dos veces al día"),
-        ("tid", "Tres veces al día"),
-        ("qid", "Cuatro veces al día"),
-        ("q4h", "Cada 4 horas"),
-        ("q6h", "Cada 6 horas"),
-        ("q8h", "Cada 8 horas"),
-        ("q12h", "Cada 12 horas"),
-        ("q24h", "Cada 24 horas"),
-        ("qod", "Día por medio"),
-        ("stat", "Una sola vez / Inmediato"),
-        ("prn", "Según necesidad"),
-        ("hs", "Al acostarse"),
-        ("ac", "Antes de las comidas"),
-        ("pc", "Después de las comidas"),
-        ("achs", "Antes de comidas y al acostarse"),
-    ]
-
-    UNIT_CHOICES = [
-        ("mg", "Miligramos"),
-        ("ml", "Mililitros"),
-        ("g", "Gramos"),
-        ("tablet", "Tableta"),
-        ("capsule", "Cápsula"),
-        ("drop", "Gotas"),
-        ("puff", "Inhalación"),
-        ("unit", "Unidad"),
-        ("patch", "Parche"),
-    ]
-
     diagnosis = models.ForeignKey("Diagnosis", on_delete=models.CASCADE, related_name="prescriptions")
 
     # 🔹 Híbrido: catálogo o texto libre
-    medication_catalog = models.ForeignKey("MedicationCatalog", on_delete=models.SET_NULL, blank=True, null=True, related_name="prescriptions")
+    medication_catalog = models.ForeignKey(
+        "MedicationCatalog",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="prescriptions"
+    )
     medication_text = models.CharField(max_length=200, blank=True, null=True)
 
-    dosage = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    unit = models.CharField(max_length=20, choices=UNIT_CHOICES, default="mg")
     route = models.CharField(max_length=20, choices=ROUTE_CHOICES, default="oral")
     frequency = models.CharField(max_length=20, choices=FREQUENCY_CHOICES, default="once_daily")
     duration = models.CharField(max_length=200, blank=True, null=True)
@@ -429,7 +405,8 @@ class Prescription(models.Model):
 
     def __str__(self):
         med = self.medication_catalog or self.medication_text or "Medicamento no especificado"
-        return f"{med} {self.dosage}{self.unit} — {self.get_frequency_display()}"
+        comps = ", ".join([str(c) for c in self.components.all()])
+        return f"{med} [{comps}] — {self.get_frequency_display()}"
 
 
 class Payment(models.Model):
@@ -1067,24 +1044,11 @@ class Specialty(models.Model):
 
 
 class MedicationCatalog(models.Model):
-    PRESENTATION_CHOICES = [
-        ("tablet", "Tableta"),
-        ("capsule", "Cápsula"),
-        ("syrup", "Jarabe"),
-        ("drop", "Gotas"),
-        ("injection", "Inyectable"),
-        ("cream", "Crema"),
-        ("gel", "Gel"),
-        ("patch", "Parche"),
-        ("spray", "Spray"),
-        ("other", "Otro"),
-    ]
-
     name = models.CharField(max_length=200)  # Ej: Acetaminofén
     presentation = models.CharField(max_length=50, choices=PRESENTATION_CHOICES)
     concentration = models.CharField(max_length=100)  # Ej: 500 mg, 250 mg/5 ml
-    route = models.CharField(max_length=20, choices=Prescription.ROUTE_CHOICES)
-    unit = models.CharField(max_length=20, choices=Prescription.UNIT_CHOICES)
+    route = models.CharField(max_length=20, choices=ROUTE_CHOICES)
+    unit = models.CharField(max_length=20, choices=UNIT_CHOICES)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
