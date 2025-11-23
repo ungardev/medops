@@ -3109,12 +3109,14 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
         return qs.order_by("-id")
 
     def get_serializer_class(self):
+        # 🔹 Usamos el serializer de escritura para create/update,
+        # pero devolvemos el de lectura en la respuesta para incluir los *_display
         if self.action in ["create", "update", "partial_update"]:
             return MedicalTestWriteSerializer
         return MedicalTestSerializer
 
     def perform_create(self, serializer):
-        test = serializer.save()  # ✅ quitamos created_by
+        test = serializer.save()
         Event.objects.create(
             entity="MedicalTest",
             entity_id=test.id,
@@ -3124,16 +3126,19 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
                 "appointment_id": test.appointment_id,
                 "diagnosis_id": getattr(test, "diagnosis_id", None),
                 "test_type": test.test_type,
+                "test_type_display": test.get_test_type_display(),
                 "description": getattr(test, "description", None),
                 "urgency": test.urgency,
+                "urgency_display": test.get_urgency_display(),
                 "status": test.status,
+                "status_display": test.get_status_display(),
             },
             severity="info",
             notify=True,
         )
 
     def perform_update(self, serializer):
-        test = serializer.save()  # ✅ quitamos updated_by
+        test = serializer.save()
         Event.objects.create(
             entity="MedicalTest",
             entity_id=test.id,
@@ -3143,9 +3148,12 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
                 "appointment_id": test.appointment_id,
                 "diagnosis_id": getattr(test, "diagnosis_id", None),
                 "test_type": test.test_type,
+                "test_type_display": test.get_test_type_display(),
                 "description": getattr(test, "description", None),
                 "urgency": test.urgency,
+                "urgency_display": test.get_urgency_display(),
                 "status": test.status,
+                "status_display": test.get_status_display(),
             },
             severity="info",
             notify=True,

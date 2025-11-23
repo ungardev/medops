@@ -1001,7 +1001,7 @@ class ICD11EntrySerializer(serializers.ModelSerializer):
         fields = ["icd_code", "title", "definition", "synonyms", "parent_code"]
 
 
-# --- Exámenes médicos ---
+# --- Exámenes médicos (lectura) ---
 class MedicalTestSerializer(serializers.ModelSerializer):
     test_type_display = serializers.CharField(source="get_test_type_display", read_only=True)
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
@@ -1031,6 +1031,21 @@ class MedicalTestSerializer(serializers.ModelSerializer):
 
 # --- Exámenes médicos (escritura) ---
 class MedicalTestWriteSerializer(serializers.ModelSerializer):
+    appointment = serializers.PrimaryKeyRelatedField(
+        queryset=Appointment.objects.all(),
+        required=True
+    )
+    diagnosis = serializers.PrimaryKeyRelatedField(
+        queryset=Diagnosis.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
+    # 🔹 Incluimos displays para que la respuesta al POST sea usable directamente en la UI
+    test_type_display = serializers.CharField(source="get_test_type_display", read_only=True)
+    urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
     class Meta:
         model = MedicalTest
         fields = [
@@ -1038,8 +1053,11 @@ class MedicalTestWriteSerializer(serializers.ModelSerializer):
             "appointment",
             "diagnosis",
             "test_type",
+            "test_type_display",
             "urgency",
+            "urgency_display",
             "status",
+            "status_display",
             "description",
         ]
 
@@ -1062,6 +1080,18 @@ class MedicalTestWriteSerializer(serializers.ModelSerializer):
                 "Debe asociar el examen a una cita o a un diagnóstico."
             )
         return data
+
+    def create(self, validated_data):
+        # 🔹 Garantizamos que appointment se setee correctamente
+        test = MedicalTest.objects.create(**validated_data)
+        return test
+
+    def update(self, instance, validated_data):
+        # 🔹 Actualizamos campos simples
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 # --- Referencias médicas ---

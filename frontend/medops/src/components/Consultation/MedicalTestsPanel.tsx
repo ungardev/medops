@@ -28,13 +28,21 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
 
   const handleAdd = () => {
     if (!testType || readOnly) return;
-    createTest({
+
+    const payload = {
       appointment: appointmentId,
       test_type: testType,
       description,
       urgency,
       status,
-    });
+    };
+
+    // 🔹 Debug institucional para validar que appointmentId y test_type llegan bien
+    console.debug("📤 Creando examen médico:", payload);
+
+    createTest(payload);
+
+    // reset
     setTestType("");
     setDescription("");
     setUrgency("routine");
