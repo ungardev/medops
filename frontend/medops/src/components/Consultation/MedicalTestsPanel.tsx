@@ -92,6 +92,7 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
             <option value="">-- Seleccionar tipo de examen --</option>
             <option value="blood_test">Análisis de sangre</option>
             <option value="urine_test">Análisis de orina</option>
+            <option value="stool_test">Análisis de heces</option> {/* ✅ agregado */}
             <option value="biopsy">Biopsia</option>
             <option value="genetic_test">Prueba genética</option>
             <option value="microbiology_culture">Cultivo microbiológico</option>

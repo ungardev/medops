@@ -880,6 +880,7 @@ class MedicalTest(models.Model):
     TEST_TYPE_CHOICES = [
         ("blood_test", "Análisis de sangre"),
         ("urine_test", "Análisis de orina"),
+        ("stool_test", "Análisis de heces"),  # ✅ agregado
         ("biopsy", "Biopsia"),
         ("genetic_test", "Prueba genética"),
         ("microbiology_culture", "Cultivo microbiológico"),
