@@ -3115,6 +3115,11 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
             return MedicalTestWriteSerializer
         return MedicalTestSerializer
 
+    # ✅ Blindaje institucional: forzamos que list() siempre use el serializer de lectura
+    def list(self, request, *args, **kwargs):
+        self.serializer_class = MedicalTestSerializer
+        return super().list(request, *args, **kwargs)
+
     def perform_create(self, serializer):
         test = serializer.save()
 

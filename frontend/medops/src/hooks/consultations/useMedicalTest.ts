@@ -9,11 +9,13 @@ export function useMedicalTest(appointmentId: number) {
   return useQuery<MedicalTest[], Error>({
     queryKey: ["medical-test", appointmentId],
     queryFn: async (): Promise<MedicalTest[]> => {
+      console.debug("📡 Fetching medical tests for appointment:", appointmentId);
       const { data } = await axios.get<MedicalTest[]>(API_URL, {
         params: { appointment: appointmentId },
       });
       return data;
     },
+    enabled: !!appointmentId, // ✅ solo dispara si el ID existe
   });
 }
 
@@ -21,7 +23,6 @@ export function useCreateMedicalTest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<MedicalTest>) => {
-      // 🔹 aplicamos defaults si no vienen del formulario
       const finalPayload = {
         urgency: payload.urgency ?? "routine",
         status: payload.status ?? "pending",
