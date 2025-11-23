@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, F
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse, FileResponse
@@ -1500,8 +1500,13 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     ordering = ["-appointment_date", "-issued_at", "-id"]  # por defecto: más recientes primero
 
     def get_queryset(self):
-        # 🔹 Versión estable: sin annotate, sin Coalesce
-        return super().get_queryset().order_by("-appointment_date", "-issued_at", "-id")
+        # 🔹 Anotamos appointment_date desde la relación Appointment
+        return (
+            super()
+            .get_queryset()
+            .annotate(appointment_date=F("appointment__appointment_date"))
+            .order_by("-appointment_date", "-issued_at", "-id")
+        )
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
