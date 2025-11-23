@@ -1500,10 +1500,8 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     ordering = ["-appointment_date", "-issued_at", "-id"]  # por defecto: más recientes primero
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        # Blindaje de orden estable con fecha compuesta y desempate por id
-        qs = qs.annotate(order_date=Coalesce(F("appointment_date"), F("issued_at")))
-        return qs.order_by("-order_date", "-id")
+        # 🔹 Versión estable: sin annotate, sin Coalesce
+        return super().get_queryset().order_by("-appointment_date", "-issued_at", "-id")
 
     def get_serializer_class(self):
         if self.action in ["list", "retrieve"]:
