@@ -3117,6 +3117,10 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         test = serializer.save()
+
+        # 🔍 Trazabilidad institucional: confirmamos que appointment se asoció correctamente
+        print(f"🧪 Examen creado → ID: {test.id} | appointment_id: {test.appointment_id} | tipo: {test.test_type}")
+
         Event.objects.create(
             entity="MedicalTest",
             entity_id=test.id,
@@ -3139,6 +3143,10 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         test = serializer.save()
+
+        # 🔍 Trazabilidad institucional: confirmamos que appointment sigue asociado
+        print(f"🧪 Examen actualizado → ID: {test.id} | appointment_id: {test.appointment_id} | tipo: {test.test_type}")
+
         Event.objects.create(
             entity="MedicalTest",
             entity_id=test.id,
