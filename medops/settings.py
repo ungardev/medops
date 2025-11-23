@@ -45,7 +45,8 @@ INSTALLED_APPS = [
     'simple_history',
     "corsheaders",
     "drf_spectacular",
-    "drf_spectacular_sidecar"
+    "drf_spectacular_sidecar",
+    "django_filters",
 ]
 
 # === Middleware ===
