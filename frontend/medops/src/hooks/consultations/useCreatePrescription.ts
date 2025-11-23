@@ -12,8 +12,7 @@ export function useCreatePrescription() {
       const payload: CreatePrescriptionInput = {
         frequency: data.frequency ?? "once_daily",
         route: data.route ?? "oral",
-        unit: data.unit ?? "mg",
-        ...data,
+        ...data, // ✅ ya no incluimos unit, porque cada componente tiene su propio unit
       };
 
       console.debug("Payload enviado a POST /api/prescriptions/", payload);
@@ -23,6 +22,7 @@ export function useCreatePrescription() {
       });
     },
     onSuccess: () => {
+      // 🔹 Refresca automáticamente la consulta actual para que aparezca la nueva prescripción sin refrescar la página
       queryClient.invalidateQueries({ queryKey: ["consultation", "current"] });
     },
   });

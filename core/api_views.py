@@ -1435,11 +1435,18 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
                 "diagnosis_id": prescription.diagnosis_id,
                 "medication_catalog": prescription.medication_catalog_id,
                 "medication_text": prescription.medication_text,
-                "dosage": str(prescription.dosage) if prescription.dosage else None,
-                "unit": prescription.unit,
                 "route": prescription.route,
                 "frequency": prescription.frequency,
                 "duration": prescription.duration,
+                # 🔹 ahora auditamos los componentes
+                "components": [
+                    {
+                        "substance": c.substance,
+                        "dosage": str(c.dosage),
+                        "unit": c.unit,
+                    }
+                    for c in prescription.components.all()
+                ],
             },
             severity="info",
             notify=True,
@@ -1456,11 +1463,17 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
                 "diagnosis_id": prescription.diagnosis_id,
                 "medication_catalog": prescription.medication_catalog_id,
                 "medication_text": prescription.medication_text,
-                "dosage": str(prescription.dosage) if prescription.dosage else None,
-                "unit": prescription.unit,
                 "route": prescription.route,
                 "frequency": prescription.frequency,
                 "duration": prescription.duration,
+                "components": [
+                    {
+                        "substance": c.substance,
+                        "dosage": str(c.dosage),
+                        "unit": c.unit,
+                    }
+                    for c in prescription.components.all()
+                ],
             },
             severity="info",
             notify=True,

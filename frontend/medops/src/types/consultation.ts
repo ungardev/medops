@@ -42,6 +42,17 @@ export interface UpdateTreatmentInput {
   treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 corregido
 }
 
+// --- Componente de prescripción ---
+export interface PrescriptionComponent {
+  id?: number;
+  substance: string;
+  dosage: number;
+  unit:
+    | "mg" | "ml" | "g"
+    | "tablet" | "capsule" | "drop"
+    | "puff" | "unit" | "patch";
+}
+
 // --- Prescripción ---
 export interface Prescription {
   id: number;
@@ -57,8 +68,7 @@ export interface Prescription {
   } | null;
   medication_text?: string | null;
 
-  dosage?: string;
-  duration?: string;
+  duration?: string | null;
   frequency?:
     | "once_daily" | "bid" | "tid" | "qid"
     | "q4h" | "q6h" | "q8h" | "q12h" | "q24h"
@@ -68,10 +78,8 @@ export interface Prescription {
     | "oral" | "iv" | "im" | "sc"
     | "topical" | "sublingual" | "inhalation"
     | "rectal" | "other";
-  unit?:
-    | "mg" | "ml" | "g"
-    | "tablet" | "capsule" | "drop"
-    | "puff" | "unit" | "patch";
+
+  components: PrescriptionComponent[];   // ✅ nuevo
 }
 
 // --- Inputs para mutaciones de prescripciones ---
@@ -79,22 +87,20 @@ export interface CreatePrescriptionInput {
   diagnosis: number;
   medication_catalog?: number;
   medication_text?: string | null;
-  dosage?: string;
   duration?: string;
   frequency?: Prescription["frequency"];
   route?: Prescription["route"];
-  unit?: Prescription["unit"];
+  components: PrescriptionComponent[];   // ✅ nuevo
 }
 
 export interface UpdatePrescriptionInput {
   id: number;
   medication_catalog?: number;
   medication_text?: string | null;
-  dosage?: string;
   duration?: string;
   frequency?: Prescription["frequency"];
   route?: Prescription["route"];
-  unit?: Prescription["unit"];
+  components?: PrescriptionComponent[];  // ✅ nuevo
 }
 
 // --- Documento clínico ---

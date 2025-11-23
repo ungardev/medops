@@ -17,22 +17,27 @@ type Unit =
   | "tablet" | "capsule" | "drop"
   | "puff" | "unit" | "patch";
 
+export interface PrescriptionComponent {
+  id?: number;
+  substance: string;
+  dosage: number;
+  unit: Unit;
+}
+
 export interface PrescriptionBadgeProps {
   id: number;
   medication: string;
-  dosage?: string | null;
   duration?: string | null;
   frequency?: Frequency;
   route?: Route;
-  unit?: Unit;
+  components: PrescriptionComponent[];
   onEdit?: (
     id: number,
     medication: string,
-    dosage?: string | null,
     duration?: string | null,
     frequency?: Frequency,
     route?: Route,
-    unit?: Unit
+    components?: PrescriptionComponent[]
   ) => void;
   onDelete?: (id: number) => void;
 }
@@ -40,32 +45,29 @@ export interface PrescriptionBadgeProps {
 export default function PrescriptionBadge({
   id,
   medication,
-  dosage,
   duration,
   frequency = "once_daily",
   route = "oral",
-  unit = "mg",
+  components,
   onEdit,
   onDelete,
 }: PrescriptionBadgeProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedMedication, setEditedMedication] = useState(medication);
-  const [editedDosage, setEditedDosage] = useState(dosage || "");
   const [editedDuration, setEditedDuration] = useState(duration || "");
   const [editedFrequency, setEditedFrequency] = useState<Frequency>(frequency);
   const [editedRoute, setEditedRoute] = useState<Route>(route);
-  const [editedUnit, setEditedUnit] = useState<Unit>(unit);
+  const [editedComponents, setEditedComponents] = useState<PrescriptionComponent[]>(components);
 
   const handleSave = () => {
     if (onEdit) {
       onEdit(
         id,
         editedMedication.trim(),
-        editedDosage || null,
         editedDuration || null,
         editedFrequency,
         editedRoute,
-        editedUnit
+        editedComponents
       );
     }
     setIsEditing(false);
@@ -73,11 +75,10 @@ export default function PrescriptionBadge({
 
   const handleCancel = () => {
     setEditedMedication(medication);
-    setEditedDosage(dosage || "");
     setEditedDuration(duration || "");
     setEditedFrequency(frequency);
     setEditedRoute(route);
-    setEditedUnit(unit);
+    setEditedComponents(components);
     setIsEditing(false);
   };
 
@@ -120,15 +121,72 @@ export default function PrescriptionBadge({
                        bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-blue-600"
           />
-          <input
-            type="text"
-            value={editedDosage}
-            onChange={(e) => setEditedDosage(e.target.value)}
-            placeholder="Dosis"
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
-          />
+
+          {editedComponents.map((comp, index) => (
+            <div key={index} className="flex gap-2 items-center">
+              <input
+                type="text"
+                value={comp.substance}
+                onChange={(e) => {
+                  const newComps = [...editedComponents];
+                  newComps[index].substance = e.target.value;
+                  setEditedComponents(newComps);
+                }}
+                placeholder="Sustancia"
+                className="px-2 py-1 border rounded"
+              />
+              <input
+                type="number"
+                value={comp.dosage}
+                onChange={(e) => {
+                  const newComps = [...editedComponents];
+                  newComps[index].dosage = Number(e.target.value);
+                  setEditedComponents(newComps);
+                }}
+                placeholder="Dosis"
+                className="px-2 py-1 border rounded"
+              />
+              <select
+                value={comp.unit}
+                onChange={(e) => {
+                  const newComps = [...editedComponents];
+                  newComps[index].unit = e.target.value as Unit;
+                  setEditedComponents(newComps);
+                }}
+                className="px-2 py-1 border rounded"
+              >
+                <option value="mg">mg</option>
+                <option value="ml">ml</option>
+                <option value="g">g</option>
+                <option value="tablet">Tableta</option>
+                <option value="capsule">Cápsula</option>
+                <option value="drop">Gotas</option>
+                <option value="puff">Inhalación</option>
+                <option value="unit">Unidad</option>
+                <option value="patch">Parche</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditedComponents(editedComponents.filter((_, i) => i !== index));
+                }}
+                className="text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+
+          <button
+            type="button"
+            onClick={() =>
+              setEditedComponents([...editedComponents, { substance: "", dosage: 0, unit: "mg" }])
+            }
+            className="mt-2 px-3 py-1 bg-green-600 text-white rounded"
+          >
+            + Agregar componente
+          </button>
+
           <input
             type="text"
             value={editedDuration}
@@ -182,24 +240,6 @@ export default function PrescriptionBadge({
             <option value="other">Otro</option>
           </select>
 
-          <select
-            value={editedUnit}
-            onChange={(e) => setEditedUnit(e.target.value as Unit)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
-          >
-            <option value="mg">mg</option>
-            <option value="ml">ml</option>
-            <option value="g">g</option>
-            <option value="tablet">Tableta</option>
-            <option value="capsule">Cápsula</option>
-            <option value="drop">Gotas</option>
-            <option value="puff">Inhalación</option>
-            <option value="unit">Unidad</option>
-            <option value="patch">Parche</option>
-          </select>
-
           <div className="flex gap-2 mt-1">
             <button
               className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
@@ -219,7 +259,13 @@ export default function PrescriptionBadge({
       ) : (
         <div className="mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
           {medication}
-          {dosage && <div>Dosis: {dosage} {unit}</div>}
+          <ul className="ml-4 list-disc">
+            {components.map((c, i) => (
+              <li key={i}>
+                {c.substance} {c.dosage}{c.unit}
+              </li>
+            ))}
+          </ul>
           {duration && <div>Duración: {duration}</div>}
           <div>Frecuencia: {frequency}</div>
           <div>Vía: {route}</div>

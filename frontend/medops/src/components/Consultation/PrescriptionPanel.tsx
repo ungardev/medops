@@ -5,6 +5,7 @@ import {
   Prescription,
   CreatePrescriptionInput,
   UpdatePrescriptionInput,
+  PrescriptionComponent,
 } from "../../types/consultation";
 import PrescriptionBadge from "./PrescriptionBadge";
 import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescription";
@@ -47,18 +48,6 @@ const routeOptions: Option[] = [
   { value: "other", label: "Otro" },
 ];
 
-const unitOptions: Option[] = [
-  { value: "mg", label: "mg" },
-  { value: "ml", label: "ml" },
-  { value: "g", label: "g" },
-  { value: "tablet", label: "Tableta" },
-  { value: "capsule", label: "Cápsula" },
-  { value: "drop", label: "Gotas" },
-  { value: "puff", label: "Inhalación" },
-  { value: "unit", label: "Unidad" },
-  { value: "patch", label: "Parche" },
-];
-
 export interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
   prescriptions?: Prescription[];
@@ -75,11 +64,10 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   const [diagnosisId, setDiagnosisId] = useState<number | "">("");
   const [medicationCatalogId, setMedicationCatalogId] = useState<number | undefined>(undefined);
   const [medicationText, setMedicationText] = useState<string | undefined>(undefined);
-  const [dosage, setDosage] = useState("");
   const [duration, setDuration] = useState("");
   const [frequency, setFrequency] = useState<UpdatePrescriptionInput["frequency"]>("once_daily");
   const [route, setRoute] = useState<UpdatePrescriptionInput["route"]>("oral");
-  const [unit, setUnit] = useState<UpdatePrescriptionInput["unit"]>("mg");
+  const [components, setComponents] = useState<PrescriptionComponent[]>([]);
 
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
@@ -96,11 +84,14 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       diagnosis: Number(diagnosisId),
       medication_catalog: medicationCatalogId || undefined,
       medication_text: medicationText?.trim() || undefined,
-      dosage: dosage.trim() || undefined,
       duration: duration.trim() || undefined,
       frequency,
       route,
-      unit,
+      components: components.map((c) => ({
+        substance: c.substance.trim(),
+        dosage: Number(c.dosage),
+        unit: c.unit,
+      })),
     };
 
     onAdd?.(payload);
@@ -109,14 +100,13 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
     setMedicationText(undefined);
-    setDosage("");
     setDuration("");
     setFrequency("once_daily");
     setRoute("oral");
-    setUnit("mg");
+    setComponents([]);
   };
 
-    return (
+  return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
       <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Prescripciones</h3>
 
@@ -138,11 +128,10 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                       <PrescriptionBadge
                         id={p.id}
                         medication={p.medication_catalog?.name || p.medication_text || "—"}
-                        dosage={p.dosage ?? undefined}
                         duration={p.duration ?? undefined}
                         frequency={p.frequency}
                         route={p.route}
-                        unit={p.unit}
+                        components={p.components}
                       />
                     </li>
                   ))
@@ -155,7 +144,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
         </>
       )}
 
-      {/* 🔹 Modo edición */}
+            {/* 🔹 Modo edición */}
       {!readOnly && (
         <>
           {diagnoses.length === 0 && (
@@ -173,20 +162,25 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                       <PrescriptionBadge
                         id={p.id}
                         medication={p.medication_catalog?.name || p.medication_text || "—"}
-                        dosage={p.dosage ?? undefined}
                         duration={p.duration ?? undefined}
                         frequency={p.frequency}
                         route={p.route}
-                        unit={p.unit}
-                        onEdit={(id, med, dos, dur, freq, rt, un) =>
+                        components={p.components}
+                        onEdit={(
+                          id: number,
+                          med: string,
+                          dur?: string | null,   // ✅ corregido
+                          freq?: UpdatePrescriptionInput["frequency"],
+                          rt?: UpdatePrescriptionInput["route"],
+                          comps?: PrescriptionComponent[]
+                        ) =>
                           updatePrescription({
                             id,
                             medication_text: med,
-                            dosage: dos?.trim() || undefined,
-                            duration: dur?.trim() || undefined,
+                            duration: (dur ?? undefined)?.trim() || undefined, // ✅ normaliza null
                             frequency: freq,
                             route: rt,
-                            unit: un,
+                            components: comps || [],
                           } as UpdatePrescriptionInput)
                         }
                         onDelete={(id) => deletePrescription(id)}
@@ -225,14 +219,69 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               }}
             />
 
-            <input
-              type="text"
-              placeholder="Dosis (ej: 500)"
-              value={dosage}
-              onChange={(e) => setDosage(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            />
+            {/* 🔹 Subform dinámico para componentes */}
+            {components.map((comp, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="Sustancia"
+                  value={comp.substance}
+                  onChange={(e) => {
+                    const newComps = [...components];
+                    newComps[index].substance = e.target.value;
+                    setComponents(newComps);
+                  }}
+                  className="px-2 py-1 border rounded"
+                />
+                <input
+                  type="number"
+                  placeholder="Dosis"
+                  value={comp.dosage}
+                  onChange={(e) => {
+                    const newComps = [...components];
+                    newComps[index].dosage = Number(e.target.value);
+                    setComponents(newComps);
+                  }}
+                  className="px-2 py-1 border rounded"
+                />
+                <select
+                  value={comp.unit}
+                  onChange={(e) => {
+                    const newComps = [...components];
+                    newComps[index].unit = e.target.value as PrescriptionComponent["unit"];
+                    setComponents(newComps);
+                  }}
+                  className="px-2 py-1 border rounded"
+                >
+                  <option value="mg">mg</option>
+                  <option value="ml">ml</option>
+                  <option value="g">g</option>
+                  <option value="tablet">Tableta</option>
+                  <option value="capsule">Cápsula</option>
+                  <option value="drop">Gotas</option>
+                  <option value="puff">Inhalación</option>
+                  <option value="unit">Unidad</option>
+                  <option value="patch">Parche</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setComponents(components.filter((_, i) => i !== index))}
+                  className="text-red-600"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+
+            <button
+              type="button"
+              onClick={() =>
+                setComponents([...components, { substance: "", dosage: 0, unit: "mg" }])
+              }
+              className="mt-2 px-3 py-1 bg-green-600 text-white rounded"
+            >
+              + Agregar componente
+            </button>
 
             <input
               type="text"
@@ -265,19 +314,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                          bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
             >
               {routeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value as UpdatePrescriptionInput["unit"])}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            >
-              {unitOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
