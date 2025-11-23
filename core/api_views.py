@@ -1496,8 +1496,18 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     # Filtros, búsqueda y orden institucional
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["patient__full_name", "id"]
-    ordering_fields = ["appointment_date", "issued_at", "id", "status", "total", "balance_due"]
-    ordering = ["-appointment_date", "-issued_at", "-id"]  # por defecto: más recientes primero
+
+    # 🔹 Mapeo explícito de campos de ordenamiento
+    ordering_fields = {
+        "appointment_date": "appointment__appointment_date",
+        "issued_at": "issued_at",
+        "id": "id",
+        "status": "status",
+        "total": "total",
+        "balance_due": "balance_due",
+    }
+
+    ordering = ["-appointment__appointment_date", "-issued_at", "-id"]  # por defecto: más recientes primero
 
     def get_queryset(self):
         # 🔹 Anotamos appointment_date desde la relación Appointment
@@ -1505,7 +1515,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             super()
             .get_queryset()
             .annotate(appointment_date=F("appointment__appointment_date"))
-            .order_by("-appointment_date", "-issued_at", "-id")
+            .order_by("-appointment__appointment_date", "-issued_at", "-id")
         )
 
     def get_serializer_class(self):
