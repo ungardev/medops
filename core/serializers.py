@@ -703,8 +703,8 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
 
 class ChargeOrderPaymentSerializer(serializers.ModelSerializer):
     # 🔹 Aliases para Pagos
-    appointment_date = serializers.DateTimeField(source="issued_at", read_only=True)
-    total_amount = serializers.FloatField(source="total", read_only=True)  # 🔹 homogéneo con FloatField
+    appointment_date = serializers.DateTimeField(read_only=True)  # ahora toma el campo anotado en el queryset
+    total_amount = serializers.FloatField(source="total", read_only=True)  # homogéneo con FloatField
     patient_detail = PatientReadSerializer(source="patient", read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
