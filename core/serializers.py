@@ -6,6 +6,7 @@ from .models import (
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent
 )
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
 from typing import Optional, Any, cast
 from decimal import Decimal, InvalidOperation
@@ -975,7 +976,7 @@ class MedicalReportSerializer(serializers.ModelSerializer):
         ]
 
     def get_prescriptions(self, obj):
-        prescriptions = Prescription.objects.filter(diagnosis__appointment=obj.appointment)
+        prescriptions = Prescription.objects.filter(diagnosis__appointment=obj.appointment).prefetch_related("components")
         return [
             {
                 "medication": (
@@ -985,11 +986,17 @@ class MedicalReportSerializer(serializers.ModelSerializer):
                     if p.medication_text
                     else "Medicamento no especificado"
                 ),
-                "dosage": str(p.dosage) if p.dosage else "-",
-                "unit": p.get_unit_display() if p.unit else "-",
                 "route": p.get_route_display() if p.route else "-",
                 "frequency": p.get_frequency_display() if p.frequency else "-",
                 "duration": p.duration or "-",
+                "components": [
+                    {
+                        "substance": comp.substance,
+                        "dosage": str(comp.dosage),
+                        "unit": dict(UNIT_CHOICES).get(comp.unit, comp.unit),
+                    }
+                    for comp in p.components.all()
+                ],
             }
             for p in prescriptions
         ]
