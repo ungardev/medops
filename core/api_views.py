@@ -3603,7 +3603,7 @@ def documents_api(request):
     payload = []
     for doc in qs:
         try:
-            file_url = doc.file.url if doc.file else None
+            file_url = request.build_absolute_uri(doc.file.url) if doc.file else None
         except Exception:
             file_url = None
 
@@ -3617,3 +3617,4 @@ def documents_api(request):
         })
 
     return Response({"documents": payload, "skipped": []}, status=200)
+

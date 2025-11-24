@@ -7,7 +7,7 @@ export interface DocumentItem {
   title: string;
   filename: string | null;
   audit_code: string;
-  url: string;
+  file_url: string | null;   // 👈 corregido: antes era url
 }
 
 export interface DocumentsResponse {
@@ -52,7 +52,7 @@ export function useDocuments(patientId: number, appointmentId?: number) {
             title: d.description ?? "Documento",
             filename,
             audit_code: d.audit_code ?? String(d.id ?? "") ?? "N/A",
-            url: fileUrl ?? "",
+            file_url: fileUrl,   // 👈 corregido
           };
         });
 

@@ -57,16 +57,21 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
             key={doc.filename || doc.audit_code}
             className="border-b border-gray-200 dark:border-gray-700 py-1"
           >
-            <a
-              href={doc.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-              title={doc.filename || ""}
-            >
-              {doc.title}
-            </a>{" "}
+            {doc.file_url ? (
+              <a
+                href={doc.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 dark:text-blue-400 hover:underline"
+                title={doc.filename || ""}
+              >
+                {doc.title}
+              </a>
+            ) : (
+              <span className="text-gray-500 dark:text-gray-400">{doc.title}</span>
+            )}
             <span className="text-sm text-gray-600 dark:text-gray-400">
+              {" "}
               ({doc.category}) — Código: {doc.audit_code}
             </span>
           </li>
