@@ -28,7 +28,7 @@
            style="max-width:120px; max-height:70px; object-fit:contain; margin-bottom:6px;">
     {% endif %}
     <h1>Orden de Examen Médico</h1>
-    <p>{{ institution.name }}</p>
+    <p>{{ institution.name|default:"Centro clínico" }}</p>
     {% if institution.address or institution.phone or institution.tax_id %}
       <p>
         {% if institution.address %}{{ institution.address }}{% endif %}
@@ -60,7 +60,12 @@
           {% if lab_tests %}
           <table class="table-compact">
             <thead>
-              <tr><th>Tipo</th><th>Descripción</th><th>Urgencia</th><th>Estado</th></tr>
+              <tr>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Urgencia</th>
+                <th>Estado</th>
+              </tr>
             </thead>
             <tbody>
               {% for t in lab_tests %}
@@ -84,7 +89,12 @@
           {% if image_tests %}
           <table class="table-compact">
             <thead>
-              <tr><th>Tipo</th><th>Descripción</th><th>Urgencia</th><th>Estado</th></tr>
+              <tr>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Urgencia</th>
+                <th>Estado</th>
+              </tr>
             </thead>
             <tbody>
               {% for t in image_tests %}

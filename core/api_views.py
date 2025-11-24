@@ -1097,7 +1097,7 @@ class PatientPagination(PageNumberPagination):
 
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all().order_by("-created_at")
-    pagination_class = PatientPagination          # 👈 ahora sí con paginación
+    pagination_class = PatientPagination  # 👈 ahora sí con paginación
 
     def get_serializer_class(self):
         from .serializers import (
@@ -1124,19 +1124,61 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get", "post"])
     def documents(self, request, pk=None):
+        """
+        GET → Lista auditable de documentos clínicos del paciente.
+        POST → Permite subir un documento manualmente.
+        """
         patient = self.get_object()
-        from .serializers import MedicalDocumentSerializer
 
         if request.method == "GET":
-            docs = patient.documents.all().order_by("-uploaded_at")
-            serializer = MedicalDocumentSerializer(docs, many=True)
-            return Response(serializer.data)
+            docs = patient.documents.all().order_by("-uploaded_at", "-id")
+            data = []
+            for doc in docs:
+                try:
+                    file_url = doc.file.url
+                except Exception:
+                    file_url = f"/media/{doc.file.name}" if getattr(doc.file, "name", None) else None
+
+                data.append({
+                    "id": doc.id,
+                    "category": doc.category,
+                    "description": doc.description,
+                    "audit_code": doc.audit_code,
+                    "file_url": file_url,  # 👈 clave homogénea
+                    "appointment_id": getattr(doc.appointment, "id", None),
+                    "uploaded_at": doc.uploaded_at,
+                    "source": doc.source,
+                    "origin_panel": doc.origin_panel,
+                    "is_signed": doc.is_signed,
+                    "mime_type": doc.mime_type,
+                    "size_bytes": doc.size_bytes,
+                })
+            return Response(data, status=200)
 
         if request.method == "POST":
-            serializer = MedicalDocumentSerializer(data=request.data)
+            from .serializers import MedicalDocumentWriteSerializer
+            serializer = MedicalDocumentWriteSerializer(data=request.data, context={"request": request})
             if serializer.is_valid():
-                serializer.save(patient=patient, uploaded_by=str(request.user))
-                return Response(serializer.data, status=201)
+                doc = serializer.save(patient=patient)
+                try:
+                    file_url = doc.file.url
+                except Exception:
+                    file_url = f"/media/{doc.file.name}" if getattr(doc.file, "name", None) else None
+
+                return Response({
+                    "id": doc.id,
+                    "category": doc.category,
+                    "description": doc.description,
+                    "audit_code": doc.audit_code,
+                    "file_url": file_url,
+                    "appointment_id": getattr(doc.appointment, "id", None),
+                    "uploaded_at": doc.uploaded_at,
+                    "source": doc.source,
+                    "origin_panel": doc.origin_panel,
+                    "is_signed": doc.is_signed,
+                    "mime_type": doc.mime_type,
+                    "size_bytes": doc.size_bytes,
+                }, status=201)
             return Response(serializer.errors, status=400)
 
     @action(detail=True, methods=["get"])
@@ -3441,12 +3483,10 @@ def generate_used_documents(request, pk):
             if not pdf_file:
                 raise ValueError(f"PDF generator returned empty file for category={category}")
 
-            # Si viene como bytes/bytearray, lo envolvemos en ContentFile
             django_file = pdf_file
             if isinstance(pdf_file, (bytes, bytearray)):
                 django_file = ContentFile(bytes(pdf_file), name=f"{category}_{appointment.id}.pdf")
 
-            # Crear el documento clínico con metadata completa
             doc = MedicalDocument.objects.create(
                 patient=patient,
                 appointment=appointment,
@@ -3462,7 +3502,6 @@ def generate_used_documents(request, pk):
                 audit_code=audit_code,
             )
 
-            # Registrar evento de auditoría institucional
             Event.objects.create(
                 entity="MedicalDocument",
                 entity_id=doc.id,
@@ -3480,7 +3519,6 @@ def generate_used_documents(request, pk):
                 notify=True,
             )
 
-            # URL defensiva del archivo
             try:
                 file_url = doc.file.url
             except Exception:
@@ -3499,7 +3537,7 @@ def generate_used_documents(request, pk):
         if treatments.exists():
             pdf, audit_code = generate_pdf_document("treatment", treatments, appointment)
             first_item = treatments.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "treatment", appointment, patient, user, diagnosis_obj, "Plan de Tratamiento"))
         else:
             skipped.append("treatment")
@@ -3509,7 +3547,7 @@ def generate_used_documents(request, pk):
         if prescriptions.exists():
             pdf, audit_code = generate_pdf_document("prescription", prescriptions, appointment)
             first_item = prescriptions.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "prescription", appointment, patient, user, diagnosis_obj, "Documento de Prescripciones"))
         else:
             skipped.append("prescription")
@@ -3519,7 +3557,7 @@ def generate_used_documents(request, pk):
         if orders.exists():
             pdf, audit_code = generate_pdf_document("medical_test_order", orders, appointment)
             first_item = orders.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "medical_test_order", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
         else:
             skipped.append("medical_test_order")
@@ -3529,12 +3567,11 @@ def generate_used_documents(request, pk):
         if referrals.exists():
             pdf, audit_code = generate_pdf_document("medical_referral", referrals, appointment)
             first_item = referrals.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
+            diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "medical_referral", appointment, patient, user, diagnosis_obj, "Referencia Médica"))
         else:
             skipped.append("medical_referral")
 
-        # Construir wrapper consolidado
         from django.utils.timezone import now
         return Response({
             "consultation_id": appointment.id,
@@ -3546,7 +3583,7 @@ def generate_used_documents(request, pk):
                     "title": doc["description"],
                     "filename": doc["file_url"].split("/")[-1] if doc["file_url"] else None,
                     "audit_code": doc["audit_code"],
-                    "url": doc["file_url"],
+                    "file_url": doc["file_url"],  # ✅ clave homogénea
                 }
                 for doc in generated
             ],

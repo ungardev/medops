@@ -64,29 +64,40 @@
 
     {% if items %}
       <div class="recipera">
-        <!-- Columna izquierda: Medicamento, Dosis, Unidad -->
+        <!-- Columna izquierda: Medicamento + Componentes -->
         <div class="column">
           <table>
             <thead>
               <tr>
                 <th>Medicamento</th>
+                <th>Sustancia</th>
                 <th>Dosis</th>
                 <th>Unidad</th>
               </tr>
             </thead>
             <tbody>
               {% for p in items %}
-              <tr>
-                <td>{{ p.medication }}</td>
-                <td class="num">{{ p.dosage }}</td>
-                <td>{{ p.unit }}</td>
-              </tr>
+                {% if p.components %}
+                  {% for c in p.components %}
+                  <tr>
+                    <td>{{ p.medication }}</td>
+                    <td>{{ c.substance }}</td>
+                    <td class="num">{{ c.dosage }}</td>
+                    <td>{{ c.unit }}</td>
+                  </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr>
+                    <td>{{ p.medication }}</td>
+                    <td colspan="3" class="empty">Sin componentes</td>
+                  </tr>
+                {% endif %}
               {% endfor %}
             </tbody>
           </table>
         </div>
 
-        <!-- Columna derecha: Vía, Frecuencia, Duración + Notas -->
+        <!-- Columna derecha: Vía, Frecuencia, Duración -->
         <div class="column">
           <table>
             <thead>
@@ -107,15 +118,13 @@
             </tbody>
           </table>
 
-          {% if items|dictsort:"notes" %}
+          {% for p in items %}
+            {% if p.notes %}
             <ul style="margin-top:6px;">
-              {% for p in items %}
-                {% if p.notes %}
-                <li><strong>{{ p.medication }}:</strong> {{ p.notes }}</li>
-                {% endif %}
-              {% endfor %}
+              <li><strong>{{ p.medication }}:</strong> {{ p.notes }}</li>
             </ul>
-          {% endif %}
+            {% endif %}
+          {% endfor %}
         </div>
       </div>
     {% else %}

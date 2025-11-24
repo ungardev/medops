@@ -47,7 +47,7 @@ from .api_views import (
     specialty_choices_api,
     current_consultation_api,
     appointment_detail_api,
-    documents_api,                 # 👈 nuevo endpoint de documentos clínicos
+    documents_api,                 # 👈 endpoint global de documentos clínicos
 )
 
 # --- Swagger / OpenAPI ---
@@ -90,6 +90,8 @@ urlpatterns = [
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
+    # 👇 Nuevo endpoint explícito para documentos del paciente
+    path("patients/<int:pk>/documents/", PatientViewSet.as_view({"get": "documents", "post": "documents"}), name="patient-documents-api"),
 
     # --- Citas ---
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
@@ -111,7 +113,7 @@ urlpatterns = [
     path("charge-orders/<int:pk>/export/", generate_chargeorder_pdf, name="chargeorder-export"),
 
     # --- Documentos clínicos ---
-    path("documents/", documents_api, name="documents-api"),   # 👈 añadido aquí
+    path("documents/", documents_api, name="documents-api"),
 
     # --- Diagnósticos ICD-11 ---
     path("icd/search/", icd_search_api, name="icd-search-api"),

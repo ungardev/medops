@@ -22,7 +22,7 @@
            style="max-width:120px; max-height:70px; object-fit:contain; margin-bottom:6px;">
     {% endif %}
     <h1>Referencia Médica</h1>
-    <p>{{ institution.name }}</p>
+    <p>{{ institution.name|default:"Centro clínico" }}</p>
     {% if institution.address or institution.phone or institution.tax_id %}
       <p>
         {% if institution.address %}{{ institution.address }}{% endif %}
@@ -42,6 +42,14 @@
   <div class="section">
     <strong>Médico:</strong> {{ doctor.full_name }}
     {% if doctor.colegiado_id %} — Nº Colegiado: {{ doctor.colegiado_id }}{% endif %}
+    {% if doctor.specialties %}
+      <div><strong>Especialidades:</strong> {{ doctor.specialties|join:", " }}</div>
+    {% endif %}
+    {% if doctor.signature %}
+      <div style="margin-top:6px;">
+        <img src="{{ doctor.signature.path }}" alt="Firma" style="height:45px;">
+      </div>
+    {% endif %}
   </div>
 
   <div class="section">
