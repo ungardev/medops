@@ -2498,6 +2498,7 @@ def generate_medical_report(request, pk):
     return Response(MedicalReportSerializer(report).data, status=status.HTTP_201_CREATED)
 
 
+
 @extend_schema(
     responses={201: PrescriptionSerializer},
     description="Genera una prescripción en PDF y la registra como documento clínico."
