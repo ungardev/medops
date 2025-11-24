@@ -985,6 +985,7 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
     CRUD de documentos clínicos.
     - GET /documents/?patient={id}&appointment={id}&category={code}
     - POST /documents/ (multipart) → subir documento clínico
+    - DELETE /documents/{id}/ → eliminar documento clínico
     - Los PDFs institucionales se registran con metadatos blindados automáticamente.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -1032,7 +1033,7 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
         extra_data["uploaded_by"] = user
         extra_data["generated_by"] = user
 
-        # Guardar documento con patient y opcional appointment
+        # Guardar documento
         document = serializer.save(**extra_data)
 
         # 🔹 Auditoría
@@ -1087,6 +1088,34 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
             severity="info",
             notify=True,
         )
+
+    def perform_destroy(self, instance):
+        """
+        DELETE → elimina documento clínico con auditoría.
+        """
+        user = self.request.user if self.request.user.is_authenticated else None
+        doc_id = instance.id
+        patient_id = instance.patient_id
+        appointment_id = instance.appointment_id
+
+        # 🔹 Auditoría antes de borrar
+        from core.models import Event
+        Event.objects.create(
+            entity="MedicalDocument",
+            entity_id=doc_id,
+            action="delete",
+            actor=str(user) if user else "system",
+            metadata={
+                "patient_id": patient_id,
+                "appointment_id": appointment_id,
+                "category": instance.category,
+                "description": instance.description,
+            },
+            severity="warning",
+            notify=True,
+        )
+
+        instance.delete()
 
 
 class PatientPagination(PageNumberPagination):

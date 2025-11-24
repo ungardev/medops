@@ -10,7 +10,7 @@ import { useNotify } from "../../hooks/useNotify";
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
   const uploadDocument = useUploadDocument(patient.id);
-  const deleteDocument = useDeleteDocument(patient.id); // ✅ ahora recibe patient.id
+  const deleteDocument = useDeleteDocument(); // ✅ ahora sin argumentos
   const notify = useNotify();
 
   const [file, setFile] = useState<File | null>(null);
