@@ -3577,7 +3577,8 @@ def generate_used_documents(request, pk):
         # Treatment
         treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
         if treatments.exists():
-            pdf, audit_code = generate_pdf_document("treatment", treatments, appointment)
+            pdf = generate_pdf_document("treatment", treatments, appointment)
+            audit_code = generate_audit_code(appointment, patient)
             first_item = treatments.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "treatment", appointment, patient, user, diagnosis_obj, "Plan de Tratamiento"))
@@ -3587,7 +3588,8 @@ def generate_used_documents(request, pk):
         # Prescription
         prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
         if prescriptions.exists():
-            pdf, audit_code = generate_pdf_document("prescription", prescriptions, appointment)
+            pdf = generate_pdf_document("prescription", prescriptions, appointment)
+            audit_code = generate_audit_code(appointment, patient)
             first_item = prescriptions.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "prescription", appointment, patient, user, diagnosis_obj, "Documento de Prescripciones"))
@@ -3597,7 +3599,8 @@ def generate_used_documents(request, pk):
         # Medical tests
         orders = MedicalTest.objects.filter(appointment=appointment)
         if orders.exists():
-            pdf, audit_code = generate_pdf_document("medical_test_order", orders, appointment)
+            pdf = generate_pdf_document("medical_test_order", orders, appointment)
+            audit_code = generate_audit_code(appointment, patient)
             first_item = orders.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "medical_test_order", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
@@ -3607,7 +3610,8 @@ def generate_used_documents(request, pk):
         # Medical referrals
         referrals = MedicalReferral.objects.filter(appointment=appointment)
         if referrals.exists():
-            pdf, audit_code = generate_pdf_document("medical_referral", referrals, appointment)
+            pdf = generate_pdf_document("medical_referral", referrals, appointment)
+            audit_code = generate_audit_code(appointment, patient)
             first_item = referrals.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
             generated.append(register_document(pdf, audit_code, "medical_referral", appointment, patient, user, diagnosis_obj, "Referencia Médica"))
@@ -3625,7 +3629,7 @@ def generate_used_documents(request, pk):
                     "title": doc["description"],
                     "filename": doc["file_url"].split("/")[-1] if doc["file_url"] else None,
                     "audit_code": doc["audit_code"],
-                    "file_url": doc["file_url"],  # ✅ clave homogénea
+                    "file_url": doc["file_url"],
                 }
                 for doc in generated
             ],
