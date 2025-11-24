@@ -12,10 +12,15 @@ export function useGenerateMedicalReport(): UseMutationResult<MedicalReport, Err
       });
     },
     onSuccess: (data) => {
-      // 🔹 Invalidate patient documents cache
-      if (data.patient) {
+      if (data.patient && data.appointment) {
+        // 🔹 Invalida cache de documentos del paciente
         queryClient.invalidateQueries({
           queryKey: ["documents", data.patient],
+        });
+
+        // 🔹 Invalida cache de documentos de la consulta
+        queryClient.invalidateQueries({
+          queryKey: ["documents", data.patient, data.appointment],
         });
       }
     },

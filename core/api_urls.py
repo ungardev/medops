@@ -47,6 +47,7 @@ from .api_views import (
     specialty_choices_api,
     current_consultation_api,
     appointment_detail_api,
+    documents_api,                 # 👈 nuevo endpoint de documentos clínicos
 )
 
 # --- Swagger / OpenAPI ---
@@ -108,6 +109,9 @@ urlpatterns = [
     path("chargeorders/<int:pk>/generate-pdf/", generate_chargeorder_pdf, name="generate-chargeorder-pdf"),
     # --- Alias para compatibilidad con frontend actual ---
     path("charge-orders/<int:pk>/export/", generate_chargeorder_pdf, name="chargeorder-export"),
+
+    # --- Documentos clínicos ---
+    path("documents/", documents_api, name="documents-api"),   # 👈 añadido aquí
 
     # --- Diagnósticos ICD-11 ---
     path("icd/search/", icd_search_api, name="icd-search-api"),

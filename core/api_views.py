@@ -3582,3 +3582,41 @@ def appointment_detail_api(request, pk):
 
     serializer = AppointmentDetailSerializer(appointment)
     return Response(serializer.data, status=200)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter("patient", int, OpenApiParameter.QUERY, required=True),
+        OpenApiParameter("appointment", int, OpenApiParameter.QUERY, required=False),
+    ],
+    responses={200: MedicalDocumentReadSerializer(many=True)}
+)
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def documents_api(request):
+    patient_id = request.GET.get("patient")
+    appointment_id = request.GET.get("appointment")
+
+    if not patient_id:
+        return Response({"error": "Missing patient ID"}, status=400)
+
+    docs_qs = MedicalDocument.objects.filter(patient_id=patient_id)
+
+    if appointment_id:
+        docs_qs = docs_qs.filter(appointment_id=appointment_id)
+
+    docs_qs = docs_qs.order_by("-created_at")
+
+    payload = [
+        {
+            "id": doc.id,
+            "category": doc.category,
+            "description": doc.description,
+            "file_url": doc.file.url if doc.file else None,
+            "audit_code": doc.audit_code,
+            "created_at": doc.created_at,
+        }
+        for doc in docs_qs
+    ]
+
+    return Response(payload, status=200)

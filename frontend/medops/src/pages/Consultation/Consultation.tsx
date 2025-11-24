@@ -12,11 +12,14 @@ import { useGenerateConsultationDocuments } from "../../hooks/consultations/useG
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
 import Toast from "../../components/Common/Toast";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function Consultation() {
   const { data: appointment, isLoading } = useCurrentConsultation();
   const generateReport = useGenerateMedicalReport();
   const generateDocuments = useGenerateConsultationDocuments();
+  const queryClient = useQueryClient();
+
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   if (isLoading) return <p className="text-gray-500">Cargando consulta...</p>;
@@ -27,7 +30,13 @@ export default function Consultation() {
 
   const handleGenerateReport = async () => {
     try {
-      await generateReport.mutateAsync(appointment.id);
+      const report = await generateReport.mutateAsync(appointment.id);
+
+      // 🔹 Fuerza refetch de documentos de la consulta
+      queryClient.invalidateQueries({
+        queryKey: ["documents", appointment.patient.id, appointment.id],
+      });
+
       setToast({ message: "Informe médico generado correctamente", type: "success" });
     } catch (err: any) {
       setToast({ message: err.message || "Error al generar informe médico", type: "error" });
@@ -37,6 +46,12 @@ export default function Consultation() {
   const handleGenerateDocuments = async () => {
     try {
       await generateDocuments.mutateAsync(appointment.id);
+
+      // 🔹 Fuerza refetch de documentos de la consulta
+      queryClient.invalidateQueries({
+        queryKey: ["documents", appointment.patient.id, appointment.id],
+      });
+
       setToast({ message: "Documentos de consulta generados correctamente", type: "success" });
     } catch (err: any) {
       setToast({ message: err.message || "Error al generar documentos", type: "error" });
