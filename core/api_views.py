@@ -3597,12 +3597,13 @@ def documents_api(request):
     if appointment_id:
         qs = qs.filter(appointment_id=appointment_id)
 
-    qs = qs.order_by("-created_at")
+    # 🔹 Ordenar por fecha de subida, no por created_at
+    qs = qs.order_by("-uploaded_at")
 
     payload = []
     for doc in qs:
         try:
-            file_url = doc.file.url if doc.file else doc.file_url if hasattr(doc, "file_url") else None
+            file_url = doc.file.url if doc.file else None
         except Exception:
             file_url = None
 
@@ -3612,8 +3613,7 @@ def documents_api(request):
             "description": getattr(doc, "description", "Documento"),
             "file_url": file_url,
             "audit_code": getattr(doc, "audit_code", "N/A"),
-            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+            "uploaded_at": doc.uploaded_at.isoformat() if doc.uploaded_at else None,
         })
 
     return Response({"documents": payload, "skipped": []}, status=200)
-
