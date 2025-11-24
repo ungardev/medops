@@ -90,8 +90,17 @@ urlpatterns = [
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
-    # 👇 Nuevo endpoint explícito para documentos del paciente
-    path("patients/<int:pk>/documents/", PatientViewSet.as_view({"get": "documents", "post": "documents"}), name="patient-documents-api"),
+    # Documentos del paciente: GET/POST y DELETE anidado
+    path(
+        "patients/<int:pk>/documents/",
+        PatientViewSet.as_view({"get": "documents", "post": "documents"}),
+        name="patient-documents-api",
+    ),
+    path(
+        "patients/<int:pk>/documents/<int:document_id>/",
+        PatientViewSet.as_view({"delete": "delete_document"}),
+        name="patient-document-delete-api",
+    ),
 
     # --- Citas ---
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
