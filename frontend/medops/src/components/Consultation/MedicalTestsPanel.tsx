@@ -1,5 +1,5 @@
 // src/components/Consultation/MedicalTestsPanel.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useMedicalTest,
   useCreateMedicalTest,
@@ -9,10 +9,11 @@ import {
 
 export interface MedicalTestsPanelProps {
   appointmentId: number;
+  diagnosisId?: number;   // ✅ diagnosis opcional
   readOnly?: boolean;
 }
 
-export default function MedicalTestsPanel({ appointmentId, readOnly = false }: MedicalTestsPanelProps) {
+export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly = false }: MedicalTestsPanelProps) {
   const { data, isLoading } = useMedicalTest(appointmentId);
   const { mutate: createTest } = useCreateMedicalTest();
   const { mutate: updateTest } = useUpdateMedicalTest();
@@ -20,6 +21,12 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
 
   // ✅ Blindaje: si data no es array, usamos []
   const tests = Array.isArray(data) ? data : [];
+
+  // 🧠 Debug institucional
+  useEffect(() => {
+    console.debug("🧠 appointmentId recibido en MedicalTestsPanel:", appointmentId);
+    console.debug("📦 Datos recibidos en useMedicalTest:", data);
+  }, [appointmentId, data]);
 
   const [testType, setTestType] = useState("");
   const [description, setDescription] = useState("");
@@ -29,7 +36,7 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
   const handleAdd = () => {
     if (!testType || readOnly) return;
 
-    const payload = {
+    const payload: any = {
       appointment: appointmentId,
       test_type: testType,
       description,
@@ -37,12 +44,13 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
       status,
     };
 
-    // 🔹 Debug institucional para validar que appointmentId y test_type llegan bien
-    console.debug("📤 Creando examen médico:", payload);
+    if (diagnosisId) {
+      payload.diagnosis = diagnosisId; // ✅ se envía diagnosis cuando existe
+    }
 
+    console.debug("📤 Creando examen médico:", payload);
     createTest(payload);
 
-    // reset
     setTestType("");
     setDescription("");
     setUrgency("routine");
@@ -60,32 +68,36 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
       )}
 
       <ul className="mb-4">
-        {tests.length === 0 && (
+        {tests.length === 0 ? (
           <li className="text-sm text-gray-600 dark:text-gray-400">
             Sin exámenes registrados
           </li>
+        ) : (
+          tests.map((t: any, index: number) => (
+            <li
+              key={t.id ?? index}
+              className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2"
+            >
+              <div>
+                <strong>{t.test_type_display || t.test_type || "—"}</strong> — {t.description || "Sin descripción"}
+                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                  ({t.urgency_display || t.urgency || "—"} / {t.status_display || t.status || "—"})
+                </span>
+                <span className="ml-2 text-sm text-blue-600 dark:text-blue-400">
+                  {t.diagnosis ? `Dx: ${t.diagnosis}` : "Sin diagnóstico"}
+                </span>
+              </div>
+              {!readOnly && (
+                <button
+                  className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
+                >
+                  Eliminar
+                </button>
+              )}
+            </li>
+          ))
         )}
-        {tests.map((t: any) => (
-          <li
-            key={t.id}
-            className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2"
-          >
-            <div>
-              <strong>{t.test_type_display}</strong> — {t.description || "Sin descripción"}
-              <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                ({t.urgency} / {t.status})
-              </span>
-            </div>
-            {!readOnly && (
-              <button
-                className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
-                onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
-              >
-                Eliminar
-              </button>
-            )}
-          </li>
-        ))}
       </ul>
 
       {!readOnly && (
@@ -100,7 +112,7 @@ export default function MedicalTestsPanel({ appointmentId, readOnly = false }: M
             <option value="">-- Seleccionar tipo de examen --</option>
             <option value="blood_test">Análisis de sangre</option>
             <option value="urine_test">Análisis de orina</option>
-            <option value="stool_test">Análisis de heces</option> {/* ✅ agregado */}
+            <option value="stool_test">Análisis de heces</option>
             <option value="biopsy">Biopsia</option>
             <option value="genetic_test">Prueba genética</option>
             <option value="microbiology_culture">Cultivo microbiológico</option>

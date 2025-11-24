@@ -2264,10 +2264,10 @@ def generate_report(request, pk: int):
         "appointment": appointment,
         "institution": institution,
         "doctor": {
-            "full_name": doctor.full_name if doctor else "",
-            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "full_name": getattr(doctor, "full_name", ""),
+            "colegiado_id": getattr(doctor, "colegiado_id", ""),
             "specialties": specialties if specialties else ["No especificadas"],
-            "signature": doctor.signature if (doctor and doctor.signature) else None,
+            "signature": getattr(doctor, "signature", None),
         },
         "treatments": Treatment.objects.filter(diagnosis__appointment=appointment),
         "generated_at": timezone.now(),
@@ -2342,19 +2342,11 @@ def generate_medical_report(request, pk):
     ).prefetch_related("specialties").order_by("id")
 
     # Adaptadores con labels amigables
-    def unit_label(val):
-        return dict(Prescription.UNIT_CHOICES).get(val, val)
-    def route_label(val):
-        return dict(Prescription.ROUTE_CHOICES).get(val, val)
-    def freq_label(val):
-        return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
+    def unit_label(val): return dict(Prescription.UNIT_CHOICES).get(val, val)
+    def route_label(val): return dict(Prescription.ROUTE_CHOICES).get(val, val)
+    def freq_label(val): return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
 
-    diagnoses = [{
-        "icd_code": d.icd_code,
-        "title": d.title,
-        "description": d.description,
-    } for d in diagnoses_qs]
-
+    diagnoses = [{"icd_code": d.icd_code, "title": d.title, "description": d.description} for d in diagnoses_qs]
     treatments = [{"plan": t.plan} for t in treatments_qs]
 
     prescriptions = []
@@ -2411,10 +2403,10 @@ def generate_medical_report(request, pk):
         "patient": patient_serialized,
         "institution": institution,
         "doctor": {
-            "full_name": doctor.full_name if doctor else "",
-            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "full_name": getattr(doctor, "full_name", ""),
+            "colegiado_id": getattr(doctor, "colegiado_id", ""),
             "specialties": specialties if specialties else ["No especificadas"],
-            "signature": doctor.signature if (doctor and doctor.signature) else None,
+            "signature": getattr(doctor, "signature", None),
         },
         "diagnoses": diagnoses,
         "treatments": treatments,
@@ -2423,7 +2415,7 @@ def generate_medical_report(request, pk):
         "referrals": referrals,
         "generated_at": timezone.now(),
         "report": report,
-        "audit_code": audit_code,   # ✅ nuevo código en contexto
+        "audit_code": audit_code,
         "qr_code_url": qr_code_url,
     })
 
@@ -2444,7 +2436,6 @@ def generate_medical_report(request, pk):
 
     # Crear MedicalDocument
     django_file = File(open(full_path, "rb"), name=filename)
-
     sha256 = hashlib.sha256()
     for chunk in django_file.chunks():
         sha256.update(chunk)
@@ -2464,7 +2455,7 @@ def generate_medical_report(request, pk):
         mime_type="application/pdf",
         size_bytes=django_file.size,
         checksum_sha256=sha256.hexdigest(),
-        audit_code=audit_code,   # ✅ guardado en BD
+        audit_code=audit_code,
     )
 
     # Auditoría
@@ -2477,7 +2468,7 @@ def generate_medical_report(request, pk):
             "appointment_id": appointment.id,
             "patient_id": appointment.patient.id,
             "document_id": doc.id,
-            "audit_code": audit_code,   # ✅ audit_code en metadata
+            "audit_code": audit_code,
         },
         severity="info",
         notify=True

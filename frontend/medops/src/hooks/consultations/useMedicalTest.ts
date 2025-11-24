@@ -1,8 +1,9 @@
+// src/hooks/consultations/useMedicalTest.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { MedicalTest } from "../../types/consultation";
 
-// 👇 endpoint relativo, sin /api
+// ✅ Endpoint relativo para evitar doble /api cuando baseURL ya es "/api/"
 const API_URL = "medical-tests/";
 
 export function useMedicalTest(appointmentId: number) {
@@ -10,12 +11,12 @@ export function useMedicalTest(appointmentId: number) {
     queryKey: ["medical-test", appointmentId],
     queryFn: async (): Promise<MedicalTest[]> => {
       console.debug("📡 Fetching medical tests for appointment:", appointmentId);
-      const { data } = await axios.get<MedicalTest[]>(API_URL, {
+      const { data } = await axios.get<{ count: number; results: MedicalTest[] }>(API_URL, {
         params: { appointment: appointmentId },
       });
-      return data;
+      return data.results;
     },
-    enabled: !!appointmentId, // ✅ solo dispara si el ID existe
+    enabled: !!appointmentId,
   });
 }
 

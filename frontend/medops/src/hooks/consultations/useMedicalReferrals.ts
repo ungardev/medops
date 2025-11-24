@@ -3,18 +3,20 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import type { MedicalReferral } from "../../types/consultation";
 
-// 🔹 Endpoint relativo, sin /api
+// ✅ Endpoint relativo para evitar doble /api cuando baseURL ya es "/api/"
 const API_URL = "medical-referrals/";
 
 export function useMedicalReferrals(appointmentId: number) {
   return useQuery<MedicalReferral[], Error>({
     queryKey: ["medical-referrals", appointmentId],
     queryFn: async (): Promise<MedicalReferral[]> => {
-      const { data } = await axios.get<MedicalReferral[]>(API_URL, {
+      console.debug("📡 Fetching medical referrals for appointment:", appointmentId);
+      const { data } = await axios.get<{ count: number; results: MedicalReferral[] }>(API_URL, {
         params: { appointment: appointmentId },
       });
-      return data;
+      return data.results;
     },
+    enabled: !!appointmentId,
   });
 }
 
@@ -22,7 +24,6 @@ export function useCreateMedicalReferral() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (payload: Partial<MedicalReferral>) => {
-      // 🔹 Aplicamos defaults después del spread para evitar sobrescritura
       const finalPayload = {
         ...payload,
         specialty_ids: payload.specialty_ids ?? [],
@@ -30,7 +31,7 @@ export function useCreateMedicalReferral() {
         status: payload.status ?? "issued",
       };
 
-      console.log("📤 Payload final (create):", finalPayload);
+      console.debug("📤 Payload final (create):", finalPayload);
 
       const { data } = await axios.post<MedicalReferral>(API_URL, finalPayload);
       return data;
@@ -52,7 +53,7 @@ export function useUpdateMedicalReferral() {
         specialty_ids: payload.specialty_ids ?? [],
       };
 
-      console.log("📤 Payload final (update):", finalPayload);
+      console.debug("📤 Payload final (update):", finalPayload);
 
       const { data } = await axios.patch<MedicalReferral>(`${API_URL}${id}/`, finalPayload);
       return data;
