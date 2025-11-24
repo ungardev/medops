@@ -77,6 +77,8 @@ from .serializers import (
     MedicalTestWriteSerializer, MedicalReferralWriteSerializer, SpecialtySerializer
 )
 
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
+
 
 login_view = obtain_auth_token
 
@@ -2343,12 +2345,9 @@ def generate_medical_report(request, pk):
         status="generated"
     )
 
-    # Datos institucionales y médico
     institution = InstitutionSettings.objects.first()
     doctor = DoctorOperator.objects.first()
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
-
-    # Serializar paciente completo
     patient_serialized = PatientDetailSerializer(appointment.patient).data
 
     # QuerySets
@@ -2362,10 +2361,10 @@ def generate_medical_report(request, pk):
         appointment=appointment
     ).prefetch_related("specialties").order_by("id")
 
-    # Adaptadores con labels amigables
-    def unit_label(val): return dict(Prescription.UNIT_CHOICES).get(val, val)
-    def route_label(val): return dict(Prescription.ROUTE_CHOICES).get(val, val)
-    def freq_label(val): return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
+    # Adaptadores con labels amigables (usando core/choices.py)
+    def unit_label(val): return dict(UNIT_CHOICES).get(val, val)
+    def route_label(val): return dict(ROUTE_CHOICES).get(val, val)
+    def freq_label(val): return dict(FREQUENCY_CHOICES).get(val, val)
 
     diagnoses = [{"icd_code": d.icd_code, "title": d.title, "description": d.description} for d in diagnoses_qs]
     treatments = [{"plan": t.plan} for t in treatments_qs]
@@ -2404,7 +2403,7 @@ def generate_medical_report(request, pk):
             "specialties": spec_names,
         })
 
-    # Generar audit_code institucional
+    # Audit code + QR
     audit_code = generate_audit_code(appointment, appointment.patient)
     qr_payload = f"Consulta:{appointment.id}|Audit:{audit_code}"
     qr_code_url = make_qr_data_uri(qr_payload)
