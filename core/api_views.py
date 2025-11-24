@@ -2355,7 +2355,7 @@ def generate_medical_report(request, pk):
     treatments_qs = Treatment.objects.filter(diagnosis__appointment=appointment).order_by("id")
     prescriptions_qs = Prescription.objects.filter(
         diagnosis__appointment=appointment
-    ).select_related("medication_catalog").order_by("id")
+    ).select_related("medication_catalog").prefetch_related("components").order_by("id")
     tests_qs = MedicalTest.objects.filter(appointment=appointment).order_by("id")
     referrals_qs = MedicalReferral.objects.filter(
         appointment=appointment
@@ -2376,13 +2376,21 @@ def generate_medical_report(request, pk):
             med_name = getattr(p.medication_catalog, "name", "") or getattr(p.medication_catalog, "title", "")
         if not med_name:
             med_name = p.medication_text or ""
+
+        comps = []
+        for comp in p.components.all():
+            comps.append({
+                "substance": comp.substance,
+                "dosage": comp.dosage,
+                "unit": unit_label(comp.unit),
+            })
+
         prescriptions.append({
             "medication": med_name,
-            "dosage": getattr(p, "dosage", None),
-            "unit": unit_label(getattr(p, "unit", None)),
-            "route": route_label(getattr(p, "route", None)),
-            "frequency": freq_label(getattr(p, "frequency", None)),
-            "duration": getattr(p, "duration", None),
+            "route": route_label(p.route),
+            "frequency": freq_label(p.frequency),
+            "duration": p.duration,
+            "components": comps,
         })
 
     tests = [{
