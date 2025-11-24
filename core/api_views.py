@@ -3584,13 +3584,6 @@ def appointment_detail_api(request, pk):
     return Response(serializer.data, status=200)
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter("patient", int, OpenApiParameter.QUERY, required=True),
-        OpenApiParameter("appointment", int, OpenApiParameter.QUERY, required=False),
-    ],
-    responses={200: MedicalDocumentReadSerializer(many=True)}
-)
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def documents_api(request):
@@ -3600,23 +3593,27 @@ def documents_api(request):
     if not patient_id:
         return Response({"error": "Missing patient ID"}, status=400)
 
-    docs_qs = MedicalDocument.objects.filter(patient_id=patient_id)
-
+    qs = MedicalDocument.objects.filter(patient_id=patient_id)
     if appointment_id:
-        docs_qs = docs_qs.filter(appointment_id=appointment_id)
+        qs = qs.filter(appointment_id=appointment_id)
 
-    docs_qs = docs_qs.order_by("-created_at")
+    qs = qs.order_by("-created_at")
 
-    payload = [
-        {
+    payload = []
+    for doc in qs:
+        try:
+            file_url = doc.file.url if doc.file else doc.file_url if hasattr(doc, "file_url") else None
+        except Exception:
+            file_url = None
+
+        payload.append({
             "id": doc.id,
-            "category": doc.category,
-            "description": doc.description,
-            "file_url": doc.file.url if doc.file else None,
-            "audit_code": doc.audit_code,
-            "created_at": doc.created_at,
-        }
-        for doc in docs_qs
-    ]
+            "category": getattr(doc, "category", "unknown"),
+            "description": getattr(doc, "description", "Documento"),
+            "file_url": file_url,
+            "audit_code": getattr(doc, "audit_code", "N/A"),
+            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+        })
 
-    return Response(payload, status=200)
+    return Response({"documents": payload, "skipped": []}, status=200)
+
