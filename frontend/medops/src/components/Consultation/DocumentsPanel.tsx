@@ -39,7 +39,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
   const skipped: string[] = data?.skipped || [];
 
   return (
-    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800 relative z-50 pointer-events-auto">
       <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
         Documentos clínicos
       </h3>
@@ -54,26 +54,24 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
         )}
         {documents.map((doc: DocumentItem) => (
           <li
-            key={doc.filename || doc.audit_code}
-            className="border-b border-gray-200 dark:border-gray-700 py-1"
+            key={doc.audit_code}
+            className="border-b border-gray-200 dark:border-gray-700 py-1 relative z-[9999] pointer-events-auto"
           >
-            {doc.file_url ? (
+            {doc.file_url && doc.file_url.startsWith("http") ? (
               <a
                 href={doc.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:underline"
-                title={doc.filename || ""}
+                className="inline-block text-blue-600 dark:text-blue-400 hover:underline pointer-events-auto focus:outline-none"
+                title={`Documento ${doc.category} — ${doc.audit_code}`}
               >
-                {doc.title}
+                ({doc.category}) — Código: {doc.audit_code}
               </a>
             ) : (
-              <span className="text-gray-500 dark:text-gray-400">{doc.title}</span>
+              <span className="text-gray-500 dark:text-gray-400">
+                ({doc.category}) — Código: {doc.audit_code}
+              </span>
             )}
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {" "}
-              ({doc.category}) — Código: {doc.audit_code}
-            </span>
           </li>
         ))}
       </ul>

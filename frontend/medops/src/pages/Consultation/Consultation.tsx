@@ -66,7 +66,7 @@ export default function Consultation() {
       {/* Layout clínico jerárquico */}
       <div className="grid grid-cols-12 gap-6">
         {/* Columna izquierda: Documentos + Cobros */}
-        <div className="col-span-3 space-y-4">
+        <div className="col-span-3 space-y-4 relative z-50 pointer-events-auto">
           <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
             <DocumentsPanel
               patientId={appointment.patient.id}
@@ -80,7 +80,7 @@ export default function Consultation() {
         </div>
 
         {/* Columna derecha: Flujo clínico dominante */}
-        <div className="col-span-9">
+        <div className="col-span-9 relative z-0">
           <ConsultationWorkflow
             diagnoses={appointment.diagnoses}
             appointmentId={appointment.id}

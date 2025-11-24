@@ -3328,7 +3328,6 @@ def generate_pdf_document(category: str, queryset, appointment):
     lab_tests, image_tests = [], []
 
     if category == "prescription":
-        def unit_label(val): return dict(Prescription.UNIT_CHOICES).get(val, val)
         def route_label(val): return dict(Prescription.ROUTE_CHOICES).get(val, val)
         def freq_label(val): return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
         for p in queryset:
@@ -3336,15 +3335,22 @@ def generate_pdf_document(category: str, queryset, appointment):
             if getattr(p, "medication_catalog", None):
                 med_name = getattr(p.medication_catalog, "name", "") or getattr(p.medication_catalog, "title", "")
             if not med_name:
-                med_name = safe(getattr(p, "medication_text", None)) or safe(getattr(p, "medication", None))
+                med_name = safe(getattr(p, "medication_text", None))
+
+            components = []
+            for c in p.components.all():
+                components.append({
+                    "substance": c.substance,
+                    "dosage": c.dosage,
+                    "unit": c.unit,
+                })
+
             items.append({
                 "medication": med_name,
-                "dosage": safe(p.dosage),
-                "unit": unit_label(safe(p.unit)),
+                "components": components,
                 "route": route_label(safe(p.route)),
                 "frequency": freq_label(safe(p.frequency)),
                 "duration": safe(p.duration),
-                "notes": safe(getattr(p, "notes", None)),
             })
 
     elif category == "treatment":
@@ -3354,7 +3360,7 @@ def generate_pdf_document(category: str, queryset, appointment):
                 "notes": safe(getattr(t, "notes", None)),
             })
 
-    elif category == "medical_test":
+    elif category == "medical_test_order":
         def urgency_label(val): return dict(MedicalTest.URGENCY_CHOICES).get(val, val)
         def status_label(val): return dict(MedicalTest.STATUS_CHOICES).get(val, val)
         def type_label(val): return dict(MedicalTest.TEST_TYPE_CHOICES).get(val, val)
@@ -3374,7 +3380,7 @@ def generate_pdf_document(category: str, queryset, appointment):
         for r in queryset:
             spec_names = [s.name for s in r.specialties.all()] if hasattr(r, "specialties") else []
             items.append({
-                "notes": safe(r.reason) or safe(r.notes),
+                "notes": safe(r.reason) or safe(getattr(r, "notes", None)),
                 "referred_to": safe(r.referred_to),
                 "urgency": getattr(r, "get_urgency_display", lambda: safe(r.urgency))(),
                 "status": getattr(r, "get_status_display", lambda: safe(r.status))(),
@@ -3385,7 +3391,7 @@ def generate_pdf_document(category: str, queryset, appointment):
     template_map = {
         "treatment": "documents/treatment.html",
         "prescription": "documents/prescription.html",
-        "medical_test": "documents/medical_test_order.html",
+        "medical_test_order": "documents/medical_test_order.html",
         "medical_referral": "documents/medical_referral.html",
     }
     tpl = template_map.get(category)
@@ -3511,12 +3517,12 @@ def generate_used_documents(request, pk):
         # Medical tests
         orders = MedicalTest.objects.filter(appointment=appointment)
         if orders.exists():
-            pdf, audit_code = generate_pdf_document("medical_test", orders, appointment)
+            pdf, audit_code = generate_pdf_document("medical_test_order", orders, appointment)
             first_item = orders.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None) if first_item else None
-            generated.append(register_document(pdf, audit_code, "medical_test", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
+            generated.append(register_document(pdf, audit_code, "medical_test_order", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
         else:
-            skipped.append("medical_test")
+            skipped.append("medical_test_order")
 
         # Medical referrals
         referrals = MedicalReferral.objects.filter(appointment=appointment)
