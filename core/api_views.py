@@ -60,7 +60,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty
+from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource
 )
 
 from .serializers import (
@@ -2220,7 +2220,7 @@ def generate_pdf_from_html(html: str, filename: str = "informe.pdf") -> File:
 def generate_report(request, pk: int):
     """
     Genera un informe médico oficial en PDF para la consulta indicada.
-    Devuelve el objeto MedicalReport con file_url.
+    Devuelve el objeto MedicalReport con file_url (idempotente si ya existe).
     """
     appointment = get_object_or_404(Appointment, pk=pk)
 
@@ -2255,7 +2255,6 @@ def generate_report(request, pk: int):
     context = dict(serializer.data)
 
     # Serializar paciente completo (incluye age)
-    from .serializers import PatientDetailSerializer
     patient_serialized = PatientDetailSerializer(appointment.patient).data
     context["patient"] = patient_serialized
 
@@ -2274,21 +2273,42 @@ def generate_report(request, pk: int):
         "report": report,
     })
 
-    # Renderizar PDF
+    # Renderizar PDF con base_url defensivo
     html = render_to_string("pdf/medical_report.html", context)
-    pdf_file = generate_pdf_from_html(html)
+    pdf_bytes = HTML(string=html, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    # Guardar documento
+    # Guardar PDF a storage y registrar documento institucional
+    filename = f"medical_report_{report.id}.pdf"
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes or b"")
+
+    # Construir File y checksum
+    django_file = File(open(full_path, "rb"), name=filename)
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
     doc = MedicalDocument.objects.create(
         patient=appointment.patient,
         appointment=appointment,
-        file=pdf_file,
+        file=django_file,
         description=f"Informe de consulta del {appointment.appointment_date}",
-        category="Informe Médico",
-        uploaded_by=str(request.user),
+        category=DocumentCategory.MEDICAL_REPORT,    # ⚔️ valor correcto
+        source=DocumentSource.SYSTEM_GENERATED,
+        origin_panel="consultation",
+        template_version="v1.1",
+        uploaded_by=request.user,                    # ⚔️ FK User
+        generated_by=request.user,                   # ⚔️ FK User
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
     )
 
-    report.file_url = doc.file.url
+    # Actualizar file_url del reporte con path relativo del storage
+    report.file_url = doc.file.name  # o doc.file.url si prefieres URL absoluta
     report.save(update_fields=["file_url"])
 
     # Auditoría
@@ -2302,6 +2322,7 @@ def generate_report(request, pk: int):
         notify=True
     )
 
+    # Re-serializar para incluir file_url actualizado
     return Response(MedicalReportSerializer(report).data, status=201)
 
 
