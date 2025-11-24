@@ -1,13 +1,14 @@
 // src/hooks/patients/useDeleteDocument.ts
 import { useMutation } from "@tanstack/react-query";
-import { apiFetch } from "../../api/client";
 
-export function useDeleteDocument() {
+export function useDeleteDocument(patientId: number) {
   return useMutation({
     mutationFn: async (documentId: number) => {
-      return apiFetch<void>(`documents/${documentId}/`, {
+      const res = await fetch(`/api/patients/${patientId}/documents/${documentId}/`, {
         method: "DELETE",
       });
+      if (!res.ok) throw new Error("Error al eliminar el documento");
+      return true;
     },
   });
 }

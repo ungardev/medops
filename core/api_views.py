@@ -1181,6 +1181,19 @@ class PatientViewSet(viewsets.ModelViewSet):
                 }, status=201)
             return Response(serializer.errors, status=400)
 
+    @action(detail=True, methods=["delete"], url_path=r"documents/(?P<document_id>\d+)")
+    def delete_document(self, request, pk=None, document_id=None):
+        """
+        DELETE → Elimina un documento del paciente validando pertenencia.
+        Ruta: /patients/{pk}/documents/{document_id}/
+        """
+        from django.shortcuts import get_object_or_404
+        from .models import MedicalDocument
+
+        doc = get_object_or_404(MedicalDocument, id=document_id, patient_id=pk)
+        doc.delete()
+        return Response(status=204)
+
     @action(detail=True, methods=["get"])
     def completed_appointments(self, request, pk=None):
         patient = self.get_object()

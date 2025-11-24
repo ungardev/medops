@@ -3,11 +3,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 
 export interface DocumentItem {
-  category: string;
-  title: string;
-  filename: string | null;
-  audit_code: string;
-  file_url: string | null;   // 👈 corregido: antes era url
+  audit_code: string;          // Código de auditoría institucional
+  category: string;            // Categoría del documento (ej: treatment, report)
+  title: string;               // Descripción o título del documento
+  filename: string | null;     // Nombre del archivo
+  file_url: string | null;     // URL homogénea al archivo
 }
 
 export interface DocumentsResponse {
@@ -48,11 +48,11 @@ export function useDocuments(patientId: number, appointmentId?: number) {
             fileUrl ? fileUrl.split("/").filter(Boolean).pop() ?? null : null;
 
           return {
+            audit_code: d.audit_code ?? String(d.id ?? "") ?? "N/A",
             category: d.category ?? "unknown",
             title: d.description ?? "Documento",
             filename,
-            audit_code: d.audit_code ?? String(d.id ?? "") ?? "N/A",
-            file_url: fileUrl,   // 👈 corregido
+            file_url: fileUrl,
           };
         });
 

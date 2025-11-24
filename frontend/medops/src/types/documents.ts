@@ -3,7 +3,14 @@ export interface MedicalDocument {
   id: number;
   description: string | null;
   category: string | null;
-  uploaded_at: string;   // ISO date string
+  audit_code?: string;          // 👈 añadido para auditoría
+  uploaded_at: string;          // ISO date string
   uploaded_by: string | null;
-  file: string;          // URL al archivo
+  file_url: string | null;      // 👈 clave homogénea del backend
+  appointment_id?: number | null;
+  source?: string | null;
+  origin_panel?: string | null;
+  is_signed?: boolean;
+  mime_type?: string | null;
+  size_bytes?: number | null;
 }

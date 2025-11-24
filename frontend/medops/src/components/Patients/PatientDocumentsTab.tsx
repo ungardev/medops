@@ -10,7 +10,7 @@ import { useNotify } from "../../hooks/useNotify";
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
   const uploadDocument = useUploadDocument(patient.id);
-  const deleteDocument = useDeleteDocument();
+  const deleteDocument = useDeleteDocument(patient.id); // ✅ ahora recibe patient.id
   const notify = useNotify();
 
   const [file, setFile] = useState<File | null>(null);
@@ -50,7 +50,9 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
 
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
-      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">Documentos clínicos</h3>
+      <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        Documentos clínicos
+      </h3>
 
       {/* Uploader */}
       <form onSubmit={handleUpload} className="grid grid-cols-12 gap-4 mb-6">
@@ -98,9 +100,19 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
       </form>
 
       {/* Estados */}
-      {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando documentos...</p>}
-      {error && <p className="text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>}
-      {isEmpty && <p className="text-sm text-gray-500 dark:text-gray-400">No tiene documentos registrados</p>}
+      {isLoading && (
+        <p className="text-sm text-gray-600 dark:text-gray-400">Cargando documentos...</p>
+      )}
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400">
+          Error: {(error as Error).message}
+        </p>
+      )}
+      {isEmpty && (
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          No tiene documentos registrados
+        </p>
+      )}
 
       {/* Tabla */}
       {!isLoading && !error && documents.length > 0 && (
@@ -118,17 +130,23 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
             <tbody>
               {documents.map((d: MedicalDocument) => (
                 <tr key={d.id} className="border-b border-gray-200 dark:border-gray-700">
-                  <td className="px-4 py-2">{d.description || "Documento sin descripción"}</td>
+                  <td className="px-4 py-2">
+                    {d.description || "Documento sin descripción"}
+                  </td>
                   <td className="px-4 py-2">{d.category || "Sin categoría"}</td>
                   <td className="px-4 py-2">
-                    <a
-                      href={d.file}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 hover:underline"
-                    >
-                      Ver archivo
-                    </a>
+                    {d.file_url ? (
+                      <a
+                        href={d.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Ver archivo
+                      </a>
+                    ) : (
+                      <span className="text-gray-500 dark:text-gray-400">Sin archivo</span>
+                    )}
                   </td>
                   <td className="px-4 py-2">
                     {d.uploaded_at

@@ -5,7 +5,7 @@ import { useInstitutionalList } from "../core/useInstitutionalList";
 
 export function useDocumentsByPatient(patientId: number) {
   return useInstitutionalList<MedicalDocument>(
-    ["documents", patientId],
-    () => apiFetch(`documents/?patient=${patientId}`)
+    ["patient-documents", patientId],
+    () => apiFetch(`patients/${patientId}/documents/`)
   );
 }

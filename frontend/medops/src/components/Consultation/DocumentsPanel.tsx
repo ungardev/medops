@@ -54,10 +54,10 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
         )}
         {documents.map((doc: DocumentItem) => (
           <li
-            key={doc.audit_code}
+            key={doc.audit_code} // ✅ usamos audit_code como clave
             className="border-b border-gray-200 dark:border-gray-700 py-1 relative z-[9999] pointer-events-auto"
           >
-            {doc.file_url && doc.file_url.startsWith("http") ? (
+            {doc.file_url ? (
               <a
                 href={doc.file_url}
                 target="_blank"
@@ -65,11 +65,11 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 className="inline-block text-blue-600 dark:text-blue-400 hover:underline pointer-events-auto focus:outline-none"
                 title={`Documento ${doc.category} — ${doc.audit_code}`}
               >
-                ({doc.category}) — Código: {doc.audit_code}
+                {doc.title || "Documento sin descripción"} ({doc.category}) — Código: {doc.audit_code}
               </a>
             ) : (
               <span className="text-gray-500 dark:text-gray-400">
-                ({doc.category}) — Código: {doc.audit_code}
+                {doc.title || "Documento sin descripción"} ({doc.category}) — Código: {doc.audit_code}
               </span>
             )}
           </li>
