@@ -2254,7 +2254,7 @@ def generate_report(request, pk: int):
     serializer = MedicalReportSerializer(report)
     context = dict(serializer.data)
 
-    # Serializar paciente completo (incluye age)
+    # Serializar paciente completo
     patient_serialized = PatientDetailSerializer(appointment.patient).data
     context["patient"] = patient_serialized
 
@@ -2277,7 +2277,7 @@ def generate_report(request, pk: int):
     html = render_to_string("pdf/medical_report.html", context)
     pdf_bytes = HTML(string=html, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    # Guardar PDF a storage y registrar documento institucional
+    # Guardar PDF
     filename = f"medical_report_{report.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -2285,7 +2285,6 @@ def generate_report(request, pk: int):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    # Construir File y checksum
     django_file = File(open(full_path, "rb"), name=filename)
     sha256 = hashlib.sha256()
     for chunk in django_file.chunks():
@@ -2296,22 +2295,20 @@ def generate_report(request, pk: int):
         appointment=appointment,
         file=django_file,
         description=f"Informe de consulta del {appointment.appointment_date}",
-        category=DocumentCategory.MEDICAL_REPORT,    # ⚔️ valor correcto
+        category=DocumentCategory.MEDICAL_REPORT,
         source=DocumentSource.SYSTEM_GENERATED,
         origin_panel="consultation",
-        template_version="v1.1",
-        uploaded_by=request.user,                    # ⚔️ FK User
-        generated_by=request.user,                   # ⚔️ FK User
+        template_version="v1.0",
+        uploaded_by=request.user,
+        generated_by=request.user,
         mime_type="application/pdf",
         size_bytes=django_file.size,
         checksum_sha256=sha256.hexdigest(),
     )
 
-    # Actualizar file_url del reporte con path relativo del storage
-    report.file_url = doc.file.name  # o doc.file.url si prefieres URL absoluta
+    report.file_url = doc.file.name
     report.save(update_fields=["file_url"])
 
-    # Auditoría
     Event.objects.create(
         entity="MedicalReport",
         entity_id=report.id,
@@ -2322,7 +2319,6 @@ def generate_report(request, pk: int):
         notify=True
     )
 
-    # Re-serializar para incluir file_url actualizado
     return Response(MedicalReportSerializer(report).data, status=201)
 
 
@@ -2334,6 +2330,11 @@ def generate_report(request, pk: int):
 @permission_classes([IsAuthenticated])
 def generate_medical_report(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
+
+    # Idempotencia: si ya existe informe con archivo, devolverlo
+    existing = MedicalReport.objects.filter(appointment=appointment).first()
+    if existing and existing.file_url:
+        return Response(MedicalReportSerializer(existing).data, status=200)
 
     # Crear informe institucional
     report = MedicalReport.objects.create(
@@ -2348,7 +2349,6 @@ def generate_medical_report(request, pk):
     specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
 
     # Serializar paciente completo
-    from .serializers import PatientDetailSerializer
     patient_serialized = PatientDetailSerializer(appointment.patient).data
 
     # QuerySets
@@ -2379,11 +2379,11 @@ def generate_medical_report(request, pk):
             med_name = p.medication_text or ""
         prescriptions.append({
             "medication": med_name,
-            "dosage": p.dosage,
-            "unit": unit_label(p.unit),
-            "route": route_label(p.route),
-            "frequency": freq_label(p.frequency),
-            "duration": p.duration,
+            "dosage": getattr(p, "dosage", None),
+            "unit": unit_label(getattr(p, "unit", None)),
+            "route": route_label(getattr(p, "route", None)),
+            "frequency": freq_label(getattr(p, "frequency", None)),
+            "duration": getattr(p, "duration", None),
         })
 
     tests = [{
@@ -2405,20 +2405,12 @@ def generate_medical_report(request, pk):
         })
 
     # Generar audit_code institucional
-    import secrets
-    audit_code = secrets.token_hex(12)
-
-    # Generar QR institucional con audit_code
+    audit_code = generate_audit_code(appointment, appointment.patient)
     qr_payload = f"Consulta:{appointment.id}|Audit:{audit_code}"
-    qr_img = qrcode.make(qr_payload)
-    buffer = BytesIO()
-    qr_img.save(buffer, "PNG")
-    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-    qr_code_url = f"data:image/png;base64,{qr_base64}"
+    qr_code_url = make_qr_data_uri(qr_payload)
 
     # Contexto final
-    serializer = MedicalReportSerializer(report)
-    context = dict(serializer.data)
+    context = dict(MedicalReportSerializer(report).data)
     context.update({
         "appointment": appointment,
         "patient": patient_serialized,
@@ -2452,22 +2444,19 @@ def generate_medical_report(request, pk):
     with open(full_path, "wb") as f:
         f.write(pdf_bytes or b"")
 
-    report.file_url = file_path
-    report.save(update_fields=["file_url"])
-
-    # Crear MedicalDocument
     django_file = File(open(full_path, "rb"), name=filename)
     sha256 = hashlib.sha256()
     for chunk in django_file.chunks():
         sha256.update(chunk)
 
+    # Crear MedicalDocument
     doc = MedicalDocument.objects.create(
         patient=appointment.patient,
         appointment=appointment,
         diagnosis=None,
         description="Informe Médico generado automáticamente",
-        category="medical_report",
-        source="system_generated",
+        category=DocumentCategory.MEDICAL_REPORT,
+        source=DocumentSource.SYSTEM_GENERATED,
         origin_panel="consultation",
         template_version="v1.1",
         generated_by=request.user,
@@ -2478,6 +2467,10 @@ def generate_medical_report(request, pk):
         checksum_sha256=sha256.hexdigest(),
         audit_code=audit_code,
     )
+
+    # Actualizar reporte con file_url
+    report.file_url = doc.file.name
+    report.save(update_fields=["file_url"])
 
     # Auditoría
     Event.objects.create(
@@ -2495,7 +2488,7 @@ def generate_medical_report(request, pk):
         notify=True
     )
 
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(MedicalReportSerializer(report).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
