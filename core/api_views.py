@@ -3503,6 +3503,7 @@ def generate_pdf_document(category: str, queryset, appointment):
     html_string = render_to_string(tpl, context)
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
+    # ✅ Devuelve siempre un tuple (pdf_file, audit_code)
     return ContentFile(pdf_bytes or b"", name=f"{category}_{appointment.id}.pdf"), audit_code
 
 
