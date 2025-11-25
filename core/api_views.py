@@ -3527,15 +3527,42 @@ def generate_used_documents(request, pk):
 
         generated = []
         skipped = []
+        errors = []
 
-        def register_document(pdf_file, audit_code, category, appointment, patient, user=None, diagnosis_obj=None, description=None):
+        def safe_content_file(pdf_bytes, name):
+            # Nombre estable y único por categoría-cita, con timestamp para evitar colisiones.
+            ts = timezone.now().strftime("%Y%m%d%H%M%S")
+            fname = f"{name}_{appointment.id}_{ts}.pdf"
+            return ContentFile(bytes(pdf_bytes), name=fname)
+
+        def compute_sha256(django_file_field):
+            try:
+                fh = django_file_field.open("rb")
+                h = hashlib.sha256()
+                for chunk in iter(lambda: fh.read(8192), b""):
+                    h.update(chunk)
+                fh.close()
+                return h.hexdigest()
+            except Exception:
+                return None
+
+        def normalize_pdf_input(pdf_file, category):
+            # Acepta bytes, ContentFile, o File; devuelve un objeto apto para FileField.
+            if isinstance(pdf_file, (bytes, bytearray)):
+                return safe_content_file(pdf_file, category)
+            return pdf_file  # ya debería ser ContentFile o File
+
+        def resolve_file_url(doc):
+            try:
+                return doc.file.url
+            except Exception:
+                return f"/media/{doc.file.name}" if getattr(doc.file, "name", None) else None
+
+        def register_document(pdf_file, audit_code, category, diagnosis_obj=None, description=None):
             if not pdf_file:
                 raise ValueError(f"PDF generator returned empty file for category={category}")
 
-            django_file = pdf_file
-            if isinstance(pdf_file, (bytes, bytearray)):
-                django_file = ContentFile(bytes(pdf_file), name=f"{category}_{appointment.id}.pdf")
-
+            django_file = normalize_pdf_input(pdf_file, category)
             doc = MedicalDocument.objects.create(
                 patient=patient,
                 appointment=appointment,
@@ -3545,11 +3572,21 @@ def generate_used_documents(request, pk):
                 file=django_file,
                 source="system_generated",
                 origin_panel="consultation",
-                template_version="v1.0",
+                template_version="v1.1",
                 uploaded_by=user if user else None,
                 generated_by=user if user else None,
                 audit_code=audit_code,
+                mime_type="application/pdf",
             )
+
+            # Post-procesos: tamaño y checksum
+            try:
+                doc.size_bytes = doc.file.size
+            except Exception:
+                doc.size_bytes = None
+
+            doc.checksum_sha256 = compute_sha256(doc.file)
+            doc.save(update_fields=["size_bytes", "checksum_sha256"])
 
             Event.objects.create(
                 entity="MedicalDocument",
@@ -3561,65 +3598,86 @@ def generate_used_documents(request, pk):
                     "appointment_id": appointment.id,
                     "diagnosis_id": getattr(diagnosis_obj, "id", None),
                     "category": category,
-                    "checksum": getattr(doc, "checksum_sha256", None),
+                    "checksum_sha256": doc.checksum_sha256,
                     "audit_code": audit_code,
                 },
                 severity="info",
                 notify=True,
             )
 
-            try:
-                file_url = doc.file.url
-            except Exception:
-                file_url = f"/media/{doc.file.name}" if getattr(doc.file, "name", None) else None
-
             return {
                 "id": doc.id,
                 "category": doc.category,
                 "description": doc.description,
-                "file_url": file_url,
+                "file_url": resolve_file_url(doc),
                 "audit_code": audit_code,
             }
 
         # Treatment
-        treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
-        if treatments.exists():
-            pdf_file, audit_code = generate_pdf_document("treatment", treatments, appointment)
-            first_item = treatments.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf_file, audit_code, "treatment", appointment, patient, user, diagnosis_obj, "Plan de Tratamiento"))
-        else:
+        try:
+            treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
+            if treatments.exists():
+                pdf_file, audit_code = generate_pdf_document("treatment", treatments, appointment)
+                first_item = treatments.first()
+                diagnosis_obj = getattr(first_item, "diagnosis", None)
+                generated.append(
+                    register_document(pdf_file, audit_code, "treatment", diagnosis_obj, "Plan de Tratamiento")
+                )
+            else:
+                skipped.append("treatment")
+        except Exception as e:
             skipped.append("treatment")
+            errors.append({"category": "treatment", "error": str(e)})
 
         # Prescription
-        prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
-        if prescriptions.exists():
-            pdf_file, audit_code = generate_pdf_document("prescription", prescriptions, appointment)
-            first_item = prescriptions.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf_file, audit_code, "prescription", appointment, patient, user, diagnosis_obj, "Documento de Prescripciones"))
-        else:
+        try:
+            prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
+            if prescriptions.exists():
+                pdf_file, audit_code = generate_pdf_document("prescription", prescriptions, appointment)
+                first_item = prescriptions.first()
+                diagnosis_obj = getattr(first_item, "diagnosis", None)
+                generated.append(
+                    register_document(pdf_file, audit_code, "prescription", diagnosis_obj, "Documento de Prescripciones")
+                )
+            else:
+                skipped.append("prescription")
+        except Exception as e:
             skipped.append("prescription")
+            errors.append({"category": "prescription", "error": str(e)})
 
-        # Medical tests
-        orders = MedicalTest.objects.filter(appointment=appointment)
-        if orders.exists():
-            pdf_file, audit_code = generate_pdf_document("medical_test_order", orders, appointment)
-            first_item = orders.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf_file, audit_code, "medical_test_order", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
-        else:
+        # Medical test orders
+        try:
+            orders = MedicalTest.objects.filter(appointment=appointment)
+            if orders.exists():
+                pdf_file, audit_code = generate_pdf_document("medical_test_order", orders, appointment)
+                first_item = orders.first()
+                diagnosis_obj = getattr(first_item, "diagnosis", None)
+                generated.append(
+                    register_document(pdf_file, audit_code, "medical_test_order", diagnosis_obj, "Orden de Examen Médico")
+                )
+            else:
+                skipped.append("medical_test_order")
+        except Exception as e:
             skipped.append("medical_test_order")
+            errors.append({"category": "medical_test_order", "error": str(e)})
 
         # Medical referrals
-        referrals = MedicalReferral.objects.filter(appointment=appointment)
-        if referrals.exists():
-            pdf_file, audit_code = generate_pdf_document("medical_referral", referrals, appointment)
-            first_item = referrals.first()
-            diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf_file, audit_code, "medical_referral", appointment, patient, user, diagnosis_obj, "Referencia Médica"))
-        else:
+        try:
+            referrals = MedicalReferral.objects.filter(appointment=appointment)
+            if referrals.exists():
+                pdf_file, audit_code = generate_pdf_document("medical_referral", referrals, appointment)
+                first_item = referrals.first()
+                diagnosis_obj = getattr(first_item, "diagnosis", None)
+                generated.append(
+                    register_document(pdf_file, audit_code, "medical_referral", diagnosis_obj, "Referencia Médica")
+                )
+            else:
+                skipped.append("medical_referral")
+        except Exception as e:
             skipped.append("medical_referral")
+            errors.append({"category": "medical_referral", "error": str(e)})
+
+        # Importante: medical_report NO se genera aquí; se genera en /consultations/<id>/generate-report/
 
         from django.utils.timezone import now
         return Response({
@@ -3630,16 +3688,18 @@ def generate_used_documents(request, pk):
                 {
                     "category": doc["category"],
                     "title": doc["description"],
-                    "filename": doc["file_url"].split("/")[-1] if doc["file_url"] else None,
+                    "filename": (doc["file_url"].split("/")[-1] if doc["file_url"] else None),
                     "audit_code": doc["audit_code"],
                     "file_url": doc["file_url"],
                 }
                 for doc in generated
             ],
             "skipped": skipped,
+            "errors": errors,  # diagnóstico visible para cerrar circuitos
         }, status=201)
 
     except Exception as e:
+        # Auditoría de error del endpoint completo
         try:
             Event.objects.create(
                 entity="Consultation",
