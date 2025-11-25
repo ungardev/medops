@@ -2560,7 +2560,7 @@ def generate_medical_report(request, pk):
     )
 
     # Actualizar reporte con file_url accesible
-    report.file_url = doc.file.url if hasattr(doc.file, "url") else doc.file.name
+    report.file_url = doc.file.url if hasattr(doc.file, "url") else f"/media/{doc.file.name}"
     report.save(update_fields=["file_url"])
 
     # Auditoría
