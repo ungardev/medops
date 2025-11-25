@@ -3724,6 +3724,7 @@ def generate_used_documents(request, pk):
         }, status=500)
 
 
+
 @extend_schema(responses={200: AppointmentDetailSerializer})
 @api_view(["GET"])
 def appointment_detail_api(request, pk):
