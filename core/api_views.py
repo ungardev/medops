@@ -2445,7 +2445,7 @@ def generate_medical_report(request, pk):
         appointment=appointment
     ).prefetch_related("specialties").order_by("id")
 
-    # Adaptadores con labels amigables (usando core/choices.py)
+    # Adaptadores con labels amigables
     def unit_label(val): return dict(UNIT_CHOICES).get(val, val)
     def route_label(val): return dict(ROUTE_CHOICES).get(val, val)
     def freq_label(val): return dict(FREQUENCY_CHOICES).get(val, val)
@@ -2527,7 +2527,7 @@ def generate_medical_report(request, pk):
     html_string = render_to_string("pdf/medical_report.html", context)
     pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
 
-    # Guardar PDF
+    # Guardar PDF en storage
     filename = f"medical_report_{report.id}.pdf"
     file_path = os.path.join("medical_documents", filename)
     full_path = os.path.join(settings.MEDIA_ROOT, file_path)
@@ -2540,14 +2540,14 @@ def generate_medical_report(request, pk):
     for chunk in django_file.chunks():
         sha256.update(chunk)
 
-    # Crear MedicalDocument
+    # Crear MedicalDocument blindado
     doc = MedicalDocument.objects.create(
         patient=appointment.patient,
         appointment=appointment,
         diagnosis=None,
         description="Informe Médico generado automáticamente",
         category="medical_report",  # ✅ homogéneo con frontend
-        source=DocumentSource.SYSTEM_GENERATED,
+        source="system_generated",  # homogéneo con otros documentos
         origin_panel="consultation",
         template_version="v1.1",
         generated_by=request.user,
@@ -2559,11 +2559,11 @@ def generate_medical_report(request, pk):
         audit_code=audit_code,
     )
 
-    # Actualizar reporte con file_url accesible
+    # Actualizar MedicalReport con file_url accesible
     report.file_url = doc.file.url if hasattr(doc.file, "url") else f"/media/{doc.file.name}"
     report.save(update_fields=["file_url"])
 
-    # Auditoría
+    # Evento de auditoría
     Event.objects.create(
         entity="MedicalReport",
         entity_id=report.id,
