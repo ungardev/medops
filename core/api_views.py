@@ -3418,8 +3418,11 @@ def generate_pdf_document(category: str, queryset, appointment):
     lab_tests, image_tests = [], []
 
     if category == "prescription":
-        def route_label(val): return dict(Prescription.ROUTE_CHOICES).get(val, val)
-        def freq_label(val): return dict(Prescription.FREQUENCY_CHOICES).get(val, val)
+        # Usar constantes globales, no atributos inexistentes en Prescription
+        def route_label(val): return dict(ROUTE_CHOICES).get(val, val)
+        def freq_label(val): return dict(FREQUENCY_CHOICES).get(val, val)
+        def unit_label(val): return dict(UNIT_CHOICES).get(val, val)
+
         for p in queryset:
             med_name = ""
             if getattr(p, "medication_catalog", None):
@@ -3432,11 +3435,11 @@ def generate_pdf_document(category: str, queryset, appointment):
                 components.append({
                     "substance": c.substance,
                     "dosage": c.dosage,
-                    "unit": c.unit,
+                    "unit": unit_label(safe(c.unit)),
                 })
 
             items.append({
-                "medication": med_name,
+                "medication": med_name or "Medicamento no especificado",
                 "components": components,
                 "route": route_label(safe(p.route)),
                 "frequency": freq_label(safe(p.frequency)),
