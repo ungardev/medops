@@ -2564,11 +2564,11 @@ def generate_medical_report(request, pk):
         audit_code=audit_code,
     )
 
-    # ✅ Actualizar MedicalReport con file_url absoluto
+    # ✅ Actualizar MedicalReport con file_url absoluto bajo /api/media/
     try:
-        report.file_url = request.build_absolute_uri(doc.file.url)
+        report.file_url = request.build_absolute_uri(f"/api{doc.file.url}")
     except Exception:
-        report.file_url = request.build_absolute_uri(f"/media/{doc.file.name}")
+        report.file_url = request.build_absolute_uri(f"/api/media/{doc.file.name}")
     report.save(update_fields=["file_url"])
 
     # Evento de auditoría
