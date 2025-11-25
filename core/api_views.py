@@ -2420,7 +2420,6 @@ def generate_medical_report(request, pk):
     # Idempotencia: si ya existe informe con archivo y MedicalDocument, devolverlo
     existing = MedicalReport.objects.filter(appointment=appointment).first()
     if existing and existing.file_url:
-        # Verificar que exista también el MedicalDocument
         doc_exists = MedicalDocument.objects.filter(
             appointment=appointment,
             category="medical_report"
@@ -2552,7 +2551,7 @@ def generate_medical_report(request, pk):
         appointment=appointment,
         diagnosis=None,
         description="Informe Médico generado automáticamente",
-        category="medical_report",  # homogéneo con frontend
+        category="medical_report",
         source="system_generated",
         origin_panel="consultation",
         template_version="v1.1",
@@ -2565,8 +2564,11 @@ def generate_medical_report(request, pk):
         audit_code=audit_code,
     )
 
-    # Actualizar MedicalReport con file_url accesible
-    report.file_url = doc.file.url if hasattr(doc.file, "url") else f"/media/{doc.file.name}"
+    # ✅ Actualizar MedicalReport con file_url absoluto
+    try:
+        report.file_url = request.build_absolute_uri(doc.file.url)
+    except Exception:
+        report.file_url = request.build_absolute_uri(f"/media/{doc.file.name}")
     report.save(update_fields=["file_url"])
 
     # Evento de auditoría
@@ -3555,11 +3557,14 @@ def generate_used_documents(request, pk):
                 return safe_content_file(pdf_file, category)
             return pdf_file  # ya debería ser ContentFile o File
 
-        def resolve_file_url(doc):
+        def resolve_file_url(doc, request):
             try:
-                return doc.file.url
+                # Construir URL absoluta usando el request
+                return request.build_absolute_uri(doc.file.url)
             except Exception:
-                return f"/media/{doc.file.name}" if getattr(doc.file, "name", None) else None
+                if getattr(doc.file, "name", None):
+                    return request.build_absolute_uri(f"/media/{doc.file.name}")
+                return None
 
         def register_document(pdf_file, audit_code, category, diagnosis_obj=None, description=None):
             if not pdf_file:
@@ -3612,7 +3617,7 @@ def generate_used_documents(request, pk):
                 "id": doc.id,
                 "category": doc.category,
                 "description": doc.description,
-                "file_url": resolve_file_url(doc),
+                "file_url": resolve_file_url(doc, request),
                 "audit_code": audit_code,
             }
 
@@ -3722,7 +3727,6 @@ def generate_used_documents(request, pk):
             "error": str(e),
             "traceback": traceback.format_exc(),
         }, status=500)
-
 
 
 @extend_schema(responses={200: AppointmentDetailSerializer})
