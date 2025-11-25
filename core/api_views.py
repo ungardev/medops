@@ -2546,7 +2546,7 @@ def generate_medical_report(request, pk):
         appointment=appointment,
         diagnosis=None,
         description="Informe Médico generado automáticamente",
-        category=DocumentCategory.MEDICAL_REPORT,
+        category="medical_report",  # ✅ homogéneo con frontend
         source=DocumentSource.SYSTEM_GENERATED,
         origin_panel="consultation",
         template_version="v1.1",
@@ -2559,8 +2559,8 @@ def generate_medical_report(request, pk):
         audit_code=audit_code,
     )
 
-    # Actualizar reporte con file_url
-    report.file_url = doc.file.name
+    # Actualizar reporte con file_url accesible
+    report.file_url = doc.file.url if hasattr(doc.file, "url") else doc.file.name
     report.save(update_fields=["file_url"])
 
     # Auditoría
