@@ -7,6 +7,8 @@ import { useDeleteDocument } from "../../hooks/patients/useDeleteDocument";
 import { MedicalDocument } from "../../types/documents";
 import { useNotify } from "../../hooks/useNotify";
 
+const API_ROOT = import.meta.env.VITE_API_ROOT || "http://127.0.0.1/api";
+
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
   const uploadDocument = useUploadDocument(patient.id);
@@ -137,7 +139,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                   <td className="px-4 py-2">
                     {d.file_url ? (
                       <a
-                        href={d.file_url}
+                        href={`${API_ROOT}${d.file_url}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 dark:text-blue-400 hover:underline"
