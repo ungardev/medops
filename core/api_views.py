@@ -3559,11 +3559,11 @@ def generate_used_documents(request, pk):
 
         def resolve_file_url(doc, request):
             try:
-                # Construir URL absoluta usando el request
-                return request.build_absolute_uri(doc.file.url)
+                # Construir URL absoluta bajo /api/media/
+                return request.build_absolute_uri(f"/api{doc.file.url}")
             except Exception:
                 if getattr(doc.file, "name", None):
-                    return request.build_absolute_uri(f"/media/{doc.file.name}")
+                    return request.build_absolute_uri(f"/api/media/{doc.file.name}")
                 return None
 
         def register_document(pdf_file, audit_code, category, diagnosis_obj=None, description=None):
