@@ -3577,51 +3577,47 @@ def generate_used_documents(request, pk):
         # Treatment
         treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
         if treatments.exists():
-            pdf = generate_pdf_document("treatment", treatments, appointment)
-            audit_code = generate_audit_code(appointment, patient)
+            pdf_file, audit_code = generate_pdf_document("treatment", treatments, appointment)
             first_item = treatments.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf, audit_code, "treatment", appointment, patient, user, diagnosis_obj, "Plan de Tratamiento"))
+            generated.append(register_document(pdf_file, audit_code, "treatment", appointment, patient, user, diagnosis_obj, "Plan de Tratamiento"))
         else:
             skipped.append("treatment")
 
         # Prescription
         prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
         if prescriptions.exists():
-            pdf = generate_pdf_document("prescription", prescriptions, appointment)
-            audit_code = generate_audit_code(appointment, patient)
+            pdf_file, audit_code = generate_pdf_document("prescription", prescriptions, appointment)
             first_item = prescriptions.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf, audit_code, "prescription", appointment, patient, user, diagnosis_obj, "Documento de Prescripciones"))
+            generated.append(register_document(pdf_file, audit_code, "prescription", appointment, patient, user, diagnosis_obj, "Documento de Prescripciones"))
         else:
             skipped.append("prescription")
 
         # Medical tests
         orders = MedicalTest.objects.filter(appointment=appointment)
         if orders.exists():
-            pdf = generate_pdf_document("medical_test_order", orders, appointment)
-            audit_code = generate_audit_code(appointment, patient)
+            pdf_file, audit_code = generate_pdf_document("medical_test_order", orders, appointment)
             first_item = orders.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf, audit_code, "medical_test_order", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
+            generated.append(register_document(pdf_file, audit_code, "medical_test_order", appointment, patient, user, diagnosis_obj, "Orden de Examen Médico"))
         else:
             skipped.append("medical_test_order")
 
         # Medical referrals
         referrals = MedicalReferral.objects.filter(appointment=appointment)
         if referrals.exists():
-            pdf = generate_pdf_document("medical_referral", referrals, appointment)
-            audit_code = generate_audit_code(appointment, patient)
+            pdf_file, audit_code = generate_pdf_document("medical_referral", referrals, appointment)
             first_item = referrals.first()
             diagnosis_obj = getattr(first_item, "diagnosis", None)
-            generated.append(register_document(pdf, audit_code, "medical_referral", appointment, patient, user, diagnosis_obj, "Referencia Médica"))
+            generated.append(register_document(pdf_file, audit_code, "medical_referral", appointment, patient, user, diagnosis_obj, "Referencia Médica"))
         else:
             skipped.append("medical_referral")
 
         from django.utils.timezone import now
         return Response({
             "consultation_id": appointment.id,
-            "audit_code": generated[0]["audit_code"] if generated else None,
+            "audit_code": generated[-1]["audit_code"] if generated else None,
             "generated_at": now().isoformat(),
             "documents": [
                 {
