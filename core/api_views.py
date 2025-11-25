@@ -2417,10 +2417,16 @@ def generate_report(request, pk: int):
 def generate_medical_report(request, pk):
     appointment = get_object_or_404(Appointment, pk=pk)
 
-    # Idempotencia: si ya existe informe con archivo, devolverlo
+    # Idempotencia: si ya existe informe con archivo y MedicalDocument, devolverlo
     existing = MedicalReport.objects.filter(appointment=appointment).first()
     if existing and existing.file_url:
-        return Response(MedicalReportSerializer(existing).data, status=200)
+        # Verificar que exista también el MedicalDocument
+        doc_exists = MedicalDocument.objects.filter(
+            appointment=appointment,
+            category="medical_report"
+        ).exists()
+        if doc_exists:
+            return Response(MedicalReportSerializer(existing).data, status=200)
 
     # Crear informe institucional
     report = MedicalReport.objects.create(
@@ -2546,8 +2552,8 @@ def generate_medical_report(request, pk):
         appointment=appointment,
         diagnosis=None,
         description="Informe Médico generado automáticamente",
-        category="medical_report",  # ✅ homogéneo con frontend
-        source="system_generated",  # homogéneo con otros documentos
+        category="medical_report",  # homogéneo con frontend
+        source="system_generated",
         origin_panel="consultation",
         template_version="v1.1",
         generated_by=request.user,
