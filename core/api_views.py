@@ -352,6 +352,11 @@ def dashboard_summary_api(request):
                 status="canceled"
             ).count()
 
+            arrived_appointments = Appointment.objects.filter(
+                appointment_date__range=(start, end),
+                status="arrived"
+            ).count()
+
             waiting_room_count = WaitingRoomEntry.objects.filter(
                 arrival_time__date__range=(start, end),
                 status="waiting"
@@ -362,6 +367,7 @@ def dashboard_summary_api(request):
             completed_appointments = 0
             active_consultations = 0
             canceled_appointments = 0
+            arrived_appointments = 0
             waiting_room_count = 0
                 # --- Tendencias ---
         try:
@@ -462,6 +468,7 @@ def dashboard_summary_api(request):
             "pending_appointments": pending_appointments,
             "active_consultations": active_consultations,
             "canceled_appointments": canceled_appointments,
+            "arrived_appointments": arrived_appointments,
             "waiting_room_count": waiting_room_count,
             "total_payments": total_payments,
             "total_events": total_events,
@@ -492,6 +499,7 @@ def dashboard_summary_api(request):
             "pending_appointments": 0,
             "active_consultations": 0,
             "canceled_appointments": 0,
+            "arrived_appointments": 0,
             "waiting_room_count": 0,
             "total_payments": 0,
             "total_events": 0,
