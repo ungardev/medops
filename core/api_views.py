@@ -328,30 +328,30 @@ def dashboard_summary_api(request):
 
         # --- Clínico-operativo (simple y exacto) ---
         try:
-            # Todas las citas en el rango
+            # Todas las citas agendadas en el rango (por fecha de cita)
             total_appointments = Appointment.objects.filter(
                 appointment_date__range=(start, end)
             ).count()
 
-            # Citas pendientes
+            # Citas pendientes (no iniciadas)
             pending_appointments = Appointment.objects.filter(
                 appointment_date__range=(start, end),
                 status="pending"
             ).count()
 
-            # Consultas finalizadas
+            # Consultas finalizadas (fecha real de finalización en el rango)
             completed_appointments = Appointment.objects.filter(
                 completed_at__date__range=(start, end),
                 status="completed"
             ).count()
 
-            # En consulta
+            # En consulta (turnos activos)
             active_consultations = Appointment.objects.filter(
                 appointment_date__range=(start, end),
                 status="in_consultation"
             ).count()
 
-            # Sala de espera
+            # En sala de espera (entradas esperando)
             waiting_room_count = WaitingRoomEntry.objects.filter(
                 arrival_time__date__range=(start, end),
                 status="waiting"
