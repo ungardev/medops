@@ -7,7 +7,11 @@ import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
 import { ChargeOrder } from "../../types/payments";
 import { useChargeOrdersPaginated } from "../../hooks/payments/useChargeOrdersPaginated";
 
-export default function ChargeOrderList() {
+export interface ChargeOrderListProps {
+  onRegisterPayment?: (orderId: number, appointmentId: number) => void;
+}
+
+export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [selectedOrder, setSelectedOrder] = useState<ChargeOrder | null>(null);
@@ -151,7 +155,10 @@ export default function ChargeOrderList() {
               key={order.id}
               order={order}
               isSelected={idx === selectedIndex}
-              onRegisterPayment={() => setSelectedOrder(order)}
+              onRegisterPayment={() => {
+                setSelectedOrder(order);
+                onRegisterPayment?.(order.id, order.appointment);
+              }}
             />
           ))
         ) : (

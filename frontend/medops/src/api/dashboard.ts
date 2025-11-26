@@ -1,3 +1,4 @@
+// src/api/dashboard.ts
 const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
 const token = localStorage.getItem("authToken");
 
@@ -23,7 +24,7 @@ function toArray<T>(raw: unknown): T[] {
   return [];
 }
 
-type DashboardParams = {
+export type DashboardParams = {
   start_date?: string;
   end_date?: string;
   range?: "day" | "week" | "month";
@@ -32,8 +33,16 @@ type DashboardParams = {
 
 export const DashboardAPI = {
   summary: (params?: DashboardParams) => {
-    const query = params ? new URLSearchParams(params as any).toString() : "";
+    // 🔹 Limpiar parámetros para evitar undefined/null en el query string
+    const cleanParams: Record<string, string> = {};
+    if (params?.start_date) cleanParams.start_date = params.start_date;
+    if (params?.end_date) cleanParams.end_date = params.end_date;
+    if (params?.range) cleanParams.range = params.range;
+    if (params?.currency) cleanParams.currency = params.currency;
+
+    const query = new URLSearchParams(cleanParams).toString();
     const qp = query ? `?${query}` : "";
+
     return get<import("@/types/dashboard").DashboardSummary>(
       `/dashboard/summary${qp}`
     );

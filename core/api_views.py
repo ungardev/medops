@@ -284,7 +284,7 @@ def dashboard_summary_api(request):
         end_date = request.GET.get("end_date")
         range_param = request.GET.get("range")
         currency = request.GET.get("currency", "USD")
-        status_param = request.GET.get("status")  # 🔹 nuevo filtro
+        status_param = request.GET.get("status")
 
         def parse_d(d):
             try:
@@ -307,11 +307,9 @@ def dashboard_summary_api(request):
                 start = parse_d(start_date) or (today - timedelta(days=6))
                 end = parse_d(end_date) or today
         except Exception:
-            # Fallback defensivo de rango
             start = today - timedelta(days=6)
             end = today
-
-        # --- Finanzas (blindadas) ---
+                # --- Finanzas ---
         try:
             orders_qs = ChargeOrder.objects.exclude(status="void")
             total_amount = orders_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
@@ -328,14 +326,18 @@ def dashboard_summary_api(request):
             total_waived = 0
             estimated_waived_amount = Decimal("0")
 
-        # --- Clínico-operativo (blindado) ---
+        # --- Clínico-operativo ---
         try:
             appts_qs = Appointment.objects.filter(appointment_date__range=(start, end))
-            if status_param:  # 🔹 aplicar filtro si se pasa
+            if status_param:
                 appts_qs = appts_qs.filter(status=status_param)
 
             total_appointments = appts_qs.count()
-            completed_appointments = appts_qs.filter(status="completed").count()
+            # 🔹 ahora usamos completed_at para contar finalizadas
+            completed_appointments = Appointment.objects.filter(
+                completed_at__date__range=(start, end),
+                status="completed"
+            ).count()
             pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
             active_appointments = appts_qs.filter(status__in=["arrived", "in_consultation", "completed"]).count()
         except Exception:
@@ -359,11 +361,11 @@ def dashboard_summary_api(request):
             ).count()
         except Exception:
             active_consultations = 0
-                # --- Tendencias (blindadas) ---
+                # --- Tendencias ---
         try:
             appt_trend_qs = (
-                Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
-                .annotate(date=TruncDate("appointment_date"))
+                Appointment.objects.filter(completed_at__date__range=(start, end), status="completed")
+                .annotate(date=TruncDate("completed_at"))
                 .values("date")
                 .annotate(value=Count("id"))
                 .order_by("date")
@@ -389,10 +391,7 @@ def dashboard_summary_api(request):
                 ChargeOrder.objects.filter(issued_at__date__range=(start, end))
                 .annotate(date=TruncDate("issued_at"))
                 .values("date")
-                .annotate(
-                    total=Sum("total"),
-                    balance=Sum("balance_due"),
-                )
+                .annotate(total=Sum("total"), balance=Sum("balance_due"))
                 .order_by("date")
             )
             balance_trend = []
@@ -404,7 +403,7 @@ def dashboard_summary_api(request):
         except Exception:
             balance_trend = []
 
-        # --- Tasa BCV con cache diario (blindado) ---
+        # --- Tasa BCV ---
         try:
             cache = BCVRateCache.objects.get(date=today)
             bcv_rate = Decimal(str(cache.value))
@@ -415,20 +414,18 @@ def dashboard_summary_api(request):
         except Exception:
             bcv_rate = Decimal("1")
             is_fallback = True
-
-        # --- Conversión de moneda ---
+                # --- Conversión ---
         try:
             if currency == "VES":
-                confirmed_amount = confirmed_amount * bcv_rate
-                estimated_waived_amount = estimated_waived_amount * bcv_rate
-                total_amount = total_amount * bcv_rate
-                balance_due = balance_due * bcv_rate
+                confirmed_amount *= bcv_rate
+                estimated_waived_amount *= bcv_rate
+                total_amount *= bcv_rate
+                balance_due *= bcv_rate
 
                 for p in pay_trend:
-                    p["value"] = (Decimal(str(p["value"])) * bcv_rate) if p else Decimal("0")
-
+                    p["value"] = Decimal(str(p["value"])) * bcv_rate if p else Decimal("0")
                 for b in balance_trend:
-                    b["value"] = (Decimal(str(b["value"])) * bcv_rate) if b else Decimal("0")
+                    b["value"] = Decimal(str(b["value"])) * bcv_rate if b else Decimal("0")
         except Exception:
             pass
 
@@ -437,28 +434,25 @@ def dashboard_summary_api(request):
             total_patients = Patient.objects.count()
         except Exception:
             total_patients = 0
-
         try:
             total_payments = Payment.objects.count()
         except Exception:
             total_payments = 0
-
         try:
             total_events = Event.objects.count()
         except Exception:
             total_events = 0
 
-        # --- Auditoría institucional ---
+        # --- Auditoría ---
         try:
             event_log_qs = Event.objects.order_by("-timestamp").values(
-                "id", "timestamp", "entity", "action", "actor",
-                "severity", "notify", "metadata"
+                "id","timestamp","entity","action","actor","severity","notify","metadata"
             )[:10]
             event_log = list(event_log_qs)
         except Exception:
             event_log = []
 
-        # --- Payload final ---
+        # --- Payload ---
         data = {
             "total_patients": total_patients,
             "total_appointments": total_appointments,
@@ -484,7 +478,6 @@ def dashboard_summary_api(request):
             },
             "event_log": event_log,
         }
-
         return Response(data, status=200)
 
     except Exception as e:
@@ -510,6 +503,7 @@ def dashboard_summary_api(request):
             "bcv_rate": {"value": 1.0, "unit": "VES_per_USD", "precision": 8, "is_fallback": True},
             "event_log": [],
         }, status=200)
+
 
 
 @extend_schema(

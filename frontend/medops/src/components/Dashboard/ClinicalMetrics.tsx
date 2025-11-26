@@ -7,6 +7,12 @@ const ClinicalMetrics: React.FC = () => {
   const [range, setRange] = useState<"day" | "week" | "month">("day");
   const { data, isLoading } = useDashboard({ range });
 
+  const subtitleByRange: Record<"day" | "week" | "month", string> = {
+    day: "Hoy",
+    week: "Esta semana",
+    month: "Este mes",
+  };
+
   if (isLoading) {
     return (
       <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -35,10 +41,10 @@ const ClinicalMetrics: React.FC = () => {
           Indicadores clínicos
         </h3>
         <div className="flex gap-2">
-          {["day", "week", "month"].map((r) => (
+          {(["day", "week", "month"] as const).map((r) => (
             <button
               key={r}
-              onClick={() => setRange(r as any)}
+              onClick={() => setRange(r)}
               className={`px-3 py-1.5 text-sm rounded border transition-colors ${
                 range === r
                   ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
@@ -56,23 +62,23 @@ const ClinicalMetrics: React.FC = () => {
         <MetricCard
           title="Citas agendadas"
           value={data.total_appointments}
-          subtitle={`Pendientes: ${data.pending_appointments}`}
+          subtitle={`Pendientes: ${data.pending_appointments} — ${subtitleByRange[range]}`}
           variant={data.pending_appointments > 0 ? "warning" : "ok"}
         />
         <MetricCard
           title="Citas en espera"
           value={data.waiting_room_count ?? 0}
-          subtitle="Tiempo medio: 09m"
+          subtitle={`Tiempo medio de espera — ${subtitleByRange[range]}`}
         />
         <MetricCard
           title="En consulta"
           value={data.active_consultations ?? 0}
-          subtitle="Turnos activos"
+          subtitle={`Turnos activos — ${subtitleByRange[range]}`}
         />
         <MetricCard
           title="Consultas finalizadas"
           value={data.completed_appointments}
-          subtitle="Últimas 24h"
+          subtitle={`Finalizadas — ${subtitleByRange[range]}`}
           variant="ok"
         />
       </div>
