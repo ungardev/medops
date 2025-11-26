@@ -326,32 +326,32 @@ def dashboard_summary_api(request):
             total_waived = 0
             estimated_waived_amount = Decimal("0")
 
-        # --- Clínico-operativo (simple y exacto) ---
+        # --- Clínico-operativo (status neto en rango) ---
         try:
-            # Todas las citas agendadas en el rango (por fecha de cita)
             total_appointments = Appointment.objects.filter(
                 appointment_date__range=(start, end)
             ).count()
 
-            # Citas pendientes (no iniciadas)
             pending_appointments = Appointment.objects.filter(
                 appointment_date__range=(start, end),
                 status="pending"
             ).count()
 
-            # Consultas finalizadas (fecha real de finalización en el rango)
             completed_appointments = Appointment.objects.filter(
-                completed_at__date__range=(start, end),
+                appointment_date__range=(start, end),
                 status="completed"
             ).count()
 
-            # En consulta (turnos activos)
             active_consultations = Appointment.objects.filter(
                 appointment_date__range=(start, end),
                 status="in_consultation"
             ).count()
 
-            # En sala de espera (entradas esperando)
+            canceled_appointments = Appointment.objects.filter(
+                appointment_date__range=(start, end),
+                status="canceled"
+            ).count()
+
             waiting_room_count = WaitingRoomEntry.objects.filter(
                 arrival_time__date__range=(start, end),
                 status="waiting"
@@ -361,12 +361,13 @@ def dashboard_summary_api(request):
             pending_appointments = 0
             completed_appointments = 0
             active_consultations = 0
+            canceled_appointments = 0
             waiting_room_count = 0
                 # --- Tendencias ---
         try:
             appt_trend_qs = (
-                Appointment.objects.filter(completed_at__date__range=(start, end), status="completed")
-                .annotate(date=TruncDate("completed_at"))
+                Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
+                .annotate(date=TruncDate("appointment_date"))
                 .values("date")
                 .annotate(value=Count("id"))
                 .order_by("date")
@@ -460,6 +461,7 @@ def dashboard_summary_api(request):
             "completed_appointments": completed_appointments,
             "pending_appointments": pending_appointments,
             "active_consultations": active_consultations,
+            "canceled_appointments": canceled_appointments,
             "waiting_room_count": waiting_room_count,
             "total_payments": total_payments,
             "total_events": total_events,
@@ -489,6 +491,7 @@ def dashboard_summary_api(request):
             "completed_appointments": 0,
             "pending_appointments": 0,
             "active_consultations": 0,
+            "canceled_appointments": 0,
             "waiting_room_count": 0,
             "total_payments": 0,
             "total_events": 0,
