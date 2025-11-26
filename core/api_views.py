@@ -326,41 +326,42 @@ def dashboard_summary_api(request):
             total_waived = 0
             estimated_waived_amount = Decimal("0")
 
-        # --- Clínico-operativo ---
+        # --- Clínico-operativo (simple y exacto) ---
         try:
-            appts_qs = Appointment.objects.filter(appointment_date__range=(start, end))
-            if status_param:
-                appts_qs = appts_qs.filter(status=status_param)
+            # Todas las citas en el rango
+            total_appointments = Appointment.objects.filter(
+                appointment_date__range=(start, end)
+            ).count()
 
-            total_appointments = appts_qs.count()
-            # 🔹 ahora usamos completed_at para contar finalizadas
+            # Citas pendientes
+            pending_appointments = Appointment.objects.filter(
+                appointment_date__range=(start, end),
+                status="pending"
+            ).count()
+
+            # Consultas finalizadas
             completed_appointments = Appointment.objects.filter(
                 completed_at__date__range=(start, end),
                 status="completed"
             ).count()
-            pending_appointments = appts_qs.exclude(status__in=["completed", "canceled"]).count()
-            active_appointments = appts_qs.filter(status__in=["arrived", "in_consultation", "completed"]).count()
-        except Exception:
-            total_appointments = 0
-            completed_appointments = 0
-            pending_appointments = 0
-            active_appointments = 0
 
-        try:
-            waiting_room_count = WaitingRoomEntry.objects.filter(
-                arrival_time__date__range=(start, end),
-                status__in=["waiting", "in_consultation"]
-            ).count()
-        except Exception:
-            waiting_room_count = 0
-
-        try:
+            # En consulta
             active_consultations = Appointment.objects.filter(
                 appointment_date__range=(start, end),
                 status="in_consultation"
             ).count()
+
+            # Sala de espera
+            waiting_room_count = WaitingRoomEntry.objects.filter(
+                arrival_time__date__range=(start, end),
+                status="waiting"
+            ).count()
         except Exception:
+            total_appointments = 0
+            pending_appointments = 0
+            completed_appointments = 0
             active_consultations = 0
+            waiting_room_count = 0
                 # --- Tendencias ---
         try:
             appt_trend_qs = (
@@ -456,11 +457,10 @@ def dashboard_summary_api(request):
         data = {
             "total_patients": total_patients,
             "total_appointments": total_appointments,
-            "active_appointments": active_appointments,
             "completed_appointments": completed_appointments,
             "pending_appointments": pending_appointments,
-            "waiting_room_count": waiting_room_count,
             "active_consultations": active_consultations,
+            "waiting_room_count": waiting_room_count,
             "total_payments": total_payments,
             "total_events": total_events,
             "total_waived": total_waived,
@@ -486,11 +486,10 @@ def dashboard_summary_api(request):
             "error": str(e),
             "total_patients": 0,
             "total_appointments": 0,
-            "active_appointments": 0,
             "completed_appointments": 0,
             "pending_appointments": 0,
-            "waiting_room_count": 0,
             "active_consultations": 0,
+            "waiting_room_count": 0,
             "total_payments": 0,
             "total_events": 0,
             "total_waived": 0,
@@ -503,7 +502,6 @@ def dashboard_summary_api(request):
             "bcv_rate": {"value": 1.0, "unit": "VES_per_USD", "precision": 8, "is_fallback": True},
             "event_log": [],
         }, status=200)
-
 
 
 @extend_schema(
