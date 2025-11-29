@@ -339,6 +339,48 @@ def dashboard_summary_api(request):
             total_appointments = pending_appointments = completed_appointments = active_consultations = 0
             canceled_appointments = arrived_appointments = waiting_room_count = 0
 
+        # --- Tendencias ---
+        try:
+            appt_trend_qs = (
+                Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
+                .annotate(date=TruncDate("appointment_date"))
+                .values("date")
+                .annotate(value=Count("id"))
+                .order_by("date")
+            )
+            appt_trend = [{"date": str(row["date"]), "value": int(row["value"] or 0)} for row in appt_trend_qs]
+        except Exception:
+            appt_trend = []
+
+        try:
+            pay_trend_qs = (
+                Payment.objects.filter(status="confirmed", received_at__date__range=(start, end))
+                .annotate(date=TruncDate("received_at"))
+                .values("date")
+                .annotate(value=Sum("amount"))
+                .order_by("date")
+            )
+            pay_trend = [{"date": str(row["date"]), "value": float(row["value"] or 0)} for row in pay_trend_qs]
+        except Exception:
+            pay_trend = []
+
+        try:
+            balance_trend_qs = (
+                ChargeOrder.objects.filter(issued_at__date__range=(start, end))
+                .annotate(date=TruncDate("issued_at"))
+                .values("date")
+                .annotate(total=Sum("total"), balance=Sum("balance_due"))
+                .order_by("date")
+            )
+            balance_trend = []
+            for row in balance_trend_qs:
+                total_v = float(row.get("total") or 0)
+                bal_v = float(row.get("balance") or 0)
+                val = max(total_v - bal_v, 0)
+                balance_trend.append({"date": str(row["date"]), "value": val})
+        except Exception:
+            balance_trend = []
+
         # --- Totales ---
         try:
             total_patients = Patient.objects.count()
@@ -353,7 +395,6 @@ def dashboard_summary_api(request):
         except Exception:
             total_events = 0
         try:
-            # ✅ ahora usamos status="void" para órdenes anuladas
             total_canceled_orders = ChargeOrder.objects.filter(
                 issued_at__date__range=(start, end),
                 status="void"
@@ -378,9 +419,9 @@ def dashboard_summary_api(request):
             "total_payments_amount": float(confirmed_amount),
             "estimated_waived_amount": float(estimated_waived_amount),
             "financial_balance": float(max(total_amount - balance_due, Decimal("0"))),
-            "appointments_trend": [],
-            "payments_trend": [],
-            "balance_trend": [],
+            "appointments_trend": appt_trend,
+            "payments_trend": pay_trend,
+            "balance_trend": balance_trend,
             "bcv_rate": {
                 "value": float(Decimal("1")),
                 "unit": "VES_per_USD",
@@ -416,7 +457,6 @@ def dashboard_summary_api(request):
             "bcv_rate": {"value": 1.0, "unit": "VES_per_USD", "precision": 8, "is_fallback": True},
             "event_log": [],
         }, status=200)
-
 
 
 @extend_schema(
