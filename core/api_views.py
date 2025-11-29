@@ -327,12 +327,11 @@ def dashboard_summary_api(request):
             total_waived = 0
             estimated_waived_amount = Decimal("0")
 
-        # --- Clínico-operativo ---
+        # --- Clínico-operativo (RESTABLECIDO: filtros por appointment_date + status) ---
         try:
             total_appointments = Appointment.objects.filter(appointment_date__range=(start, end)).count()
             pending_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="pending").count()
-            # ⚔️ FIX: usamos completed_at en vez de appointment_date
-            completed_appointments = Appointment.objects.filter(completed_at__date__range=(start, end), status="completed").count()
+            completed_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="completed").count()
             active_consultations = Appointment.objects.filter(appointment_date__range=(start, end), status="in_consultation").count()
             canceled_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="canceled").count()
             arrived_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="arrived").count()
@@ -341,12 +340,11 @@ def dashboard_summary_api(request):
             total_appointments = pending_appointments = completed_appointments = active_consultations = 0
             canceled_appointments = arrived_appointments = waiting_room_count = 0
 
-        # --- Tendencias ---
+        # --- Tendencias (RESTABLECIDO: por appointment_date) ---
         try:
-            # ⚔️ FIX: tendencias por completed_at
             appt_trend_qs = (
-                Appointment.objects.filter(completed_at__date__range=(start, end), status="completed")
-                .annotate(date=TruncDate("completed_at"))
+                Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
+                .annotate(date=TruncDate("appointment_date"))
                 .values("date")
                 .annotate(value=Count("id"))
                 .order_by("date")

@@ -2,19 +2,24 @@ import React, { useState } from "react";
 import { useDashboard } from "@/hooks/dashboard/useDashboard";
 import MetricCard from "./MetricCard";
 
-const ClinicalMetrics: React.FC = () => {
-  const [range, setRange] = useState<"day" | "week" | "month">("day");
-  const { data, isLoading } = useDashboard({ range });
+type Range = "day" | "week" | "month";
 
-  const subtitleByRange: Record<"day" | "week" | "month", string> = {
-    day: "Hoy",
-    week: "Esta semana",
-    month: "Este mes",
-  };
+const subtitleByRange: Record<Range, string> = {
+  day: "Hoy",
+  week: "Esta semana",
+  month: "Este mes",
+};
+
+export default function ClinicalMetrics() {
+  // ⚔️ Mantener rango inicial en "month" como la versión que funcionaba
+  const [range, setRange] = useState<Range>("month");
+
+  // ⚔️ Consumimos el API exactamente igual: datos ya vienen agregados por appointment_date + status
+  const { data, isLoading, error } = useDashboard({ range });
 
   if (isLoading) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Cargando métricas clínicas...
         </p>
@@ -22,9 +27,9 @@ const ClinicalMetrics: React.FC = () => {
     );
   }
 
-  if (!data) {
+  if (error || !data) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6">
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6">
         <p className="text-sm text-red-600 dark:text-red-400">
           No se pudo cargar la información clínica.
         </p>
@@ -33,13 +38,15 @@ const ClinicalMetrics: React.FC = () => {
   }
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 space-y-6">
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">
           Indicadores Clínicos
         </h3>
-        <div className="flex gap-2">
+
+        {/* Filtros de rango: responsive */}
+        <div className="flex flex-wrap gap-2">
           {(["day", "week", "month"] as const).map((r) => (
             <button
               key={r}
@@ -56,23 +63,26 @@ const ClinicalMetrics: React.FC = () => {
         </div>
       </div>
 
-      {/* Metrics grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 overflow-x-auto min-w-0">
+      {/* Grid de métricas: responsive sin alterar semántica */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard
           title="Citas agendadas"
           value={data.total_appointments}
           subtitle={`Pendientes: ${data.pending_appointments} — ${subtitleByRange[range]}`}
         />
+
         <MetricCard
           title="En espera"
           value={data.waiting_room_count ?? 0}
           subtitle={`Status 'waiting' — ${subtitleByRange[range]}`}
         />
+
         <MetricCard
           title="En consulta"
           value={data.active_consultations ?? 0}
           subtitle={`Status 'in_consultation' — ${subtitleByRange[range]}`}
         />
+
         <MetricCard
           title="Consultas finalizadas"
           value={data.completed_appointments}
@@ -81,6 +91,4 @@ const ClinicalMetrics: React.FC = () => {
       </div>
     </section>
   );
-};
-
-export default ClinicalMetrics;
+}
