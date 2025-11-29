@@ -30,18 +30,18 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
     try {
       // Cargar logo desde /public/logo.png
       const logoBase64 = await getBase64FromUrl("/logo.png");
-      doc.addImage(logoBase64, "PNG", 160, 10, 30, 30); // x, y, width, height
+      doc.addImage(logoBase64, "PNG", 160, 10, 30, 30);
     } catch (err) {
       console.warn("No se pudo cargar el logo:", err);
     }
 
     // --- Cabecera ---
     doc.setFontSize(18);
-    doc.setTextColor(40, 40, 40);
+    doc.setTextColor(13, 44, 83); // Azul zafiro institucional
     doc.text("Centro Médico MedOps", 20, 20);
 
     doc.setFontSize(12);
-    doc.setTextColor(100);
+    doc.setTextColor(80);
     doc.text("Comprobante de Pago", 20, 30);
 
     // --- Línea separadora ---
@@ -68,7 +68,7 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
         ],
       ],
       theme: "grid",
-      headStyles: { fillColor: [37, 99, 235], textColor: 255, halign: "center" },
+      headStyles: { fillColor: [13, 44, 83], textColor: 255, halign: "center" }, // Azul zafiro
       bodyStyles: { textColor: 50 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       styles: { fontSize: 11, cellPadding: 4 },
@@ -77,7 +77,7 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
     // --- Pie de página ---
     const pageHeight = doc.internal.pageSize.height;
     doc.setFontSize(10);
-    doc.setTextColor(150);
+    doc.setTextColor(120);
     doc.text(
       "Este comprobante ha sido generado electrónicamente por MedOps.",
       20,
@@ -85,17 +85,18 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
     );
     doc.text("© 2025 MedOps - Todos los derechos reservados", 20, pageHeight - 12);
 
-    // --- Guardar archivo ---
     doc.save(`comprobante_pago_${payment.id}.pdf`);
     setLoading(false);
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h3>Comprobante de Pago</h3>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="max-w-md w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
+        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-4">
+          Comprobante de Pago
+        </h3>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 text-sm text-[#0d2c53] dark:text-gray-200">
           <div><strong>Paciente:</strong> {payment.patient.full_name}</div>
           <div><strong>Monto:</strong> ${Number(payment.amount).toFixed(2)}</div>
           <div><strong>Método:</strong> {payment.method}</div>
@@ -111,12 +112,17 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
           </div>
         </div>
 
-        <div className="flex justify-between mt-4">
-          <button className="btn btn-outline" onClick={onClose}>
+        <div className="flex justify-between mt-6">
+          <button
+            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+            onClick={onClose}
+          >
             Cerrar
           </button>
           <button
-            className="btn btn-primary"
+            className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
             onClick={handleDownloadPDF}
             disabled={loading}
           >

@@ -4,7 +4,7 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import ChargeOrderRow from "./ChargeOrderRow";
 import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
-import { ChargeOrder } from "../../types/payments";
+import { ChargeOrder, ChargeOrderStatus } from "../../types/payments";
 import { useChargeOrdersPaginated } from "../../hooks/payments/useChargeOrdersPaginated";
 
 export interface ChargeOrderListProps {
@@ -25,7 +25,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
     error,
   } = useChargeOrdersPaginated(currentPage, pageSize);
 
-  // 🔹 Búsqueda global (cuando query no está vacío)
+  // 🔹 Búsqueda global
   const { data: searchResults, isLoading: searchLoading } = useQuery<ChargeOrder[]>({
     queryKey: ["charge-orders-search", query],
     queryFn: async (): Promise<ChargeOrder[]> => {
@@ -33,7 +33,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
       const res = await axios.get<SearchResponse>("/charge-orders/", {
         params: {
           search: query,
-          ordering: "-appointment_date,-issued_at,-id", // 🔹 mismo orden que paginación
+          ordering: "-appointment_date,-issued_at,-id",
         },
       });
       const payload = res.data;
@@ -44,7 +44,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
 
   const orders = query.trim().length > 0 ? searchResults ?? [] : paginatedData?.results ?? [];
 
-  // 🔹 Solo filtramos por query, no reordenamos (el backend ya ordena)
+  // 🔹 Filtrado local
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
     const q = query.toLowerCase().trim();
@@ -78,10 +78,11 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
   );
 
   if (isLoading || searchLoading)
-    return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando órdenes de cobro...</p>;
+    return <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando órdenes de cobro...</p>;
   if (error)
     return <p className="text-sm text-red-600 dark:text-red-400">Error cargando órdenes</p>;
 
+  // 🔹 Totales institucionales con enums
   const totals = Array.isArray(orders)
     ? orders.reduce(
         (acc, order) => {
@@ -89,9 +90,21 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
           const amt =
             typeof raw === "string" ? parseFloat(raw || "0") : Number(raw || 0);
           acc.total += amt;
-          if (order.status === "paid") acc.confirmed += amt;
-          if (order.status === "open" || order.status === "partially_paid") acc.pending += amt;
-          if (order.status === "void") acc.failed += amt;
+
+          switch (order.status) {
+            case ChargeOrderStatus.PAID:
+              acc.confirmed += amt;
+              break;
+            case ChargeOrderStatus.OPEN:
+            case ChargeOrderStatus.PARTIALLY_PAID:
+              acc.pending += amt;
+              break;
+            case ChargeOrderStatus.VOID:
+            case ChargeOrderStatus.WAIVED:
+              acc.failed += amt;
+              break;
+          }
+
           return acc;
         },
         { total: 0, confirmed: 0, pending: 0, failed: 0 }
@@ -102,13 +115,13 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
   const startIdx = (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(currentPage * pageSize, totalCount);
 
-  return (
+    return (
     <div className="space-y-6">
       {/* Buscador */}
       <div>
         <label
           htmlFor="orderSearch"
-          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1"
         >
           Buscar órdenes
         </label>
@@ -124,15 +137,15 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
           }}
           onKeyDown={handleKeyDown}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                     bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                     focus:outline-none focus:ring-2 focus:ring-blue-600"
+                     bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                     focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
         />
       </div>
 
       {/* Resumen de Totales */}
       {totals && Array.isArray(orders) && orders.length > 0 && (
         <div className="flex flex-wrap gap-4 text-sm">
-          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800">
+          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800 text-[#0d2c53] dark:text-gray-100">
             <strong>Total:</strong> ${totals.total.toFixed(2)}
           </span>
           <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">
@@ -162,7 +175,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
             />
           ))
         ) : (
-          <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-6 italic">
+          <div className="text-center text-sm text-[#0d2c53] dark:text-gray-400 py-6 italic">
             No se encontraron órdenes
           </div>
         )}
@@ -174,17 +187,19 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            className="px-3 py-1 rounded-md border bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
+            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 disabled:opacity-50"
           >
             Anterior
           </button>
-          <span>
+          <span className="text-[#0d2c53] dark:text-gray-100">
             Mostrando {startIdx}–{endIdx} de {totalCount}
           </span>
           <button
             disabled={endIdx >= totalCount}
             onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-3 py-1 rounded-md border bg-gray-100 dark:bg-gray-700 disabled:opacity-50"
+            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 disabled:opacity-50"
           >
             Siguiente
           </button>

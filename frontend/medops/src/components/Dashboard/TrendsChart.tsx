@@ -1,4 +1,3 @@
-// src/components/Dashboard/TrendsChart.tsx
 import React, { useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
@@ -50,14 +49,19 @@ const TrendsChart: React.FC = () => {
 
   const labels = appointmentsTrend.map((p) => p.date);
 
+  // 🔹 Color adaptativo para modo claro/oscuro
+  const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const citasColor = isDarkMode ? "#3b82f6" : "#0d2c53";
+  const citasBg = isDarkMode ? "rgba(59, 130, 246, 0.2)" : "rgba(13, 44, 83, 0.2)";
+
   const chartData = {
     labels,
     datasets: [
       {
         label: "Citas completadas",
         data: appointmentsTrend.map((p) => p.value ?? 0),
-        borderColor: "#3b82f6",
-        backgroundColor: "rgba(59, 130, 246, 0.2)",
+        borderColor: citasColor,
+        backgroundColor: citasBg,
         tension: 0.3,
       },
       {
@@ -118,7 +122,7 @@ const TrendsChart: React.FC = () => {
     <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Tendencias</h3>
+        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Tendencias</h3>
         <div className="flex gap-2">
           {["day", "week", "month"].map((r) => (
             <button
@@ -126,8 +130,8 @@ const TrendsChart: React.FC = () => {
               onClick={() => setRange(r as any)}
               className={`px-3 py-1.5 text-sm rounded border transition-colors ${
                 range === r
-                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
               }`}
             >
               {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
@@ -139,8 +143,8 @@ const TrendsChart: React.FC = () => {
               onClick={() => setCurrency(c as any)}
               className={`px-3 py-1.5 text-sm rounded border transition-colors ${
                 currency === c
-                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
               }`}
             >
               {c}

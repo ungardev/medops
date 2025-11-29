@@ -1,4 +1,3 @@
-// src/pages/Patients/PatientConsultationsDetail.tsx
 import { useParams } from "react-router-dom";
 import { useConsultationById } from "../../hooks/consultations/useConsultationById";
 import {
@@ -14,7 +13,6 @@ import Toast from "../../components/Common/Toast";
 import { useState, useEffect } from "react";
 import type { Patient as PatientsPatient } from "../../types/patients";
 
-// Adaptador: normaliza el paciente de consulta al tipo esperado por PatientHeader
 function toPatientHeaderPatient(p: any): PatientsPatient & { balance_due?: number; age?: number | null } {
   const full_name =
     p.full_name ??
@@ -68,9 +66,9 @@ export default function PatientConsultationsDetail() {
     return <p className="text-sm text-red-600 dark:text-red-400">Ruta inválida: parámetros incorrectos</p>;
   }
 
-  if (isLoading) return <p className="text-gray-500">Cargando consulta...</p>;
-  if (error) return <p className="text-red-600">Error cargando consulta</p>;
-  if (!appointment) return <p className="text-red-600">No se encontró la consulta</p>;
+  if (isLoading) return <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando consulta...</p>;
+  if (error) return <p className="text-sm text-red-600">Error cargando consulta</p>;
+  if (!appointment) return <p className="text-sm text-red-600">No se encontró la consulta</p>;
 
   const canGenerateReport =
     appointment.status === "in_consultation" || appointment.status === "completed";
@@ -95,11 +93,10 @@ export default function PatientConsultationsDetail() {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Banner de modo lectura */}
       <div
         className={`p-3 rounded-md text-center font-semibold shadow-sm ${
           readOnly
-            ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            ? "bg-gray-100 text-[#0d2c53] dark:bg-gray-800 dark:text-gray-300"
             : "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200"
         }`}
       >
@@ -108,12 +105,9 @@ export default function PatientConsultationsDetail() {
           : "⚠️ Modo edición activa — Cambios en curso"}
       </div>
 
-      {/* Identidad del paciente */}
       <PatientHeader patient={toPatientHeaderPatient(appointment.patient)} />
 
-      {/* Layout clínico jerárquico */}
       <div className="grid grid-cols-12 gap-6">
-        {/* Columna izquierda: Documentos + Cobros */}
         <div className="col-span-3 space-y-4">
           <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
             <DocumentsPanel
@@ -132,7 +126,6 @@ export default function PatientConsultationsDetail() {
           </div>
         </div>
 
-        {/* Columna derecha: Flujo clínico dominante */}
         <div className="col-span-9">
           <ConsultationWorkflow
             diagnoses={appointment.diagnoses}
@@ -143,7 +136,6 @@ export default function PatientConsultationsDetail() {
         </div>
       </div>
 
-      {/* Footer: Botones de acción */}
       <div className="flex flex-col gap-4 mt-6">
         <div className="flex items-center justify-between">
           <ConsultationActions consultationId={appointment.id} />
@@ -151,7 +143,7 @@ export default function PatientConsultationsDetail() {
           {canGenerateReport && (
             <div className="flex items-center gap-2">
               <button
-                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
                 disabled={generateReport.isPending}
                 onClick={handleGenerateReport}
               >
@@ -163,7 +155,7 @@ export default function PatientConsultationsDetail() {
                   href={generateReport.data.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors"
                 >
                   Ver Informe Médico
                 </a>
@@ -182,7 +174,6 @@ export default function PatientConsultationsDetail() {
           )}
         </div>
 
-        {/* Botón de modo edición */}
         <div className="flex justify-end">
           <button
             className="px-4 py-2 rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-sm"
@@ -193,7 +184,6 @@ export default function PatientConsultationsDetail() {
         </div>
       </div>
 
-      {/* Toast feedback */}
       {toast && (
         <Toast
           message={toast.message}

@@ -25,7 +25,10 @@ export default function ConsultationWorkflow({
   const createPrescription = useCreatePrescription();
 
   return (
-    <Tabs defaultTab="diagnosis" className="space-y-4">
+    <Tabs
+      defaultTab="diagnosis"
+      className="space-y-4 [&_.tab-label]:text-[#0d2c53] dark:[&_.tab-label]:text-white"
+    >
       <Tab id="diagnosis" label="Diagnóstico">
         <DiagnosisPanel
           diagnoses={diagnoses}

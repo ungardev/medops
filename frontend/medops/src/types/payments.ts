@@ -1,12 +1,21 @@
-// src/types/payments.ts
 import { PatientRef } from "./patients";
 import { Appointment } from "./appointments";
 
-// --- Estados de pago según el modelo Django ---
-export type PaymentStatus = "pending" | "confirmed" | "rejected" | "void";
+// --- Estados de pago institucionales ---
+export enum PaymentStatus {
+  PENDING = "pending",
+  CONFIRMED = "confirmed",
+  REJECTED = "rejected",
+  VOID = "void",
+}
 
-// --- Métodos de pago según el modelo Django ---
-export type PaymentMethod = "cash" | "card" | "transfer" | "other";
+// --- Métodos de pago institucionales ---
+export enum PaymentMethod {
+  CASH = "cash",
+  CARD = "card",
+  TRANSFER = "transfer",
+  OTHER = "other",
+}
 
 export interface Payment {
   id: number;
@@ -17,7 +26,8 @@ export interface Payment {
   method: PaymentMethod;
   status: PaymentStatus;
   reference_number?: string | null;
-  bank_name?: string | null;
+  bank_name?: string | null;   // ✅ ya lo tenías
+  detail?: string | null;      // ✅ añadido para método "other"
   received_by?: string | null;
   received_at?: string | null; // ISO string
 
@@ -32,19 +42,21 @@ export interface PaymentInput {
   status?: PaymentStatus;
   reference_number?: string;
   bank_name?: string;
+  detail?: string;             // ✅ añadido para método "other"
 
   // 🔹 Relaciones
   charge_order: number;       // requerido para vincular el pago
   appointment?: number;       // opcional, si el backend lo admite
 }
 
-// --- Estados de ChargeOrder según el modelo Django ---
-export type ChargeOrderStatus =
-  | "open"
-  | "partially_paid"
-  | "paid"
-  | "void"
-  | "waived"; // 👈 añadido porque tu modelo soporta exoneraciones
+// --- Estados de ChargeOrder institucionales ---
+export enum ChargeOrderStatus {
+  OPEN = "open",
+  PARTIALLY_PAID = "partially_paid",
+  PAID = "paid",
+  VOID = "void",
+  WAIVED = "waived", // 👈 añadido porque tu modelo soporta exoneraciones
+}
 
 export interface ChargeItem {
   id: number;

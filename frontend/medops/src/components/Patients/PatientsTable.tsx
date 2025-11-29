@@ -21,7 +21,7 @@ export default function PatientsTable({
             {headers.map((h, idx) => (
               <th
                 key={idx}
-                className="px-4 py-2 text-left text-sm font-semibold text-gray-700 dark:text-gray-200"
+                className="px-4 py-2 text-left text-sm font-semibold text-[#0d2c53] dark:text-gray-200"
               >
                 {h}
               </th>
@@ -33,7 +33,7 @@ export default function PatientsTable({
             <tr>
               <td
                 colSpan={headers.length}
-                className="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400"
+                className="px-4 py-3 text-center text-sm text-[#0d2c53] dark:text-gray-400"
               >
                 Cargando pacientes...
               </td>
@@ -48,13 +48,12 @@ export default function PatientsTable({
               </td>
             </tr>
           ) : (
-            // Aplicamos alternancia de filas
             React.Children.map(children, (child, idx) => (
               <tr
                 className={
                   idx % 2 === 0
                     ? "bg-white dark:bg-gray-800"
-                    : "bg-gray-50 dark:bg-gray-900"
+                    : "bg-[#0d2c53]/5 dark:bg-gray-900"
                 }
               >
                 {child}

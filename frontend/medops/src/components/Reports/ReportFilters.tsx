@@ -1,6 +1,5 @@
-// src/components/Reports/ReportFilters.tsx
 import React, { useState } from "react";
-import { ReportFiltersInput } from "@/types/reports";
+import { ReportFiltersInput, ReportType } from "@/types/reports";
 
 interface Props {
   onFilter: (filters: ReportFiltersInput) => void;
@@ -9,7 +8,7 @@ interface Props {
 export default function ReportFilters({ onFilter }: Props) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [type, setType] = useState<ReportFiltersInput["type"]>("financial");
+  const [type, setType] = useState<ReportType>(ReportType.FINANCIAL);
 
   const handleApply = () => {
     onFilter({
@@ -21,14 +20,14 @@ export default function ReportFilters({ onFilter }: Props) {
 
   return (
     <div className="mb-6">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-4">
         Filtros
       </h3>
 
       <div className="flex flex-wrap items-end gap-4">
         {/* Fecha desde */}
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
             Desde
           </label>
           <input
@@ -36,14 +35,14 @@ export default function ReportFilters({ onFilter }: Props) {
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
         </div>
 
         {/* Fecha hasta */}
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
             Hasta
           </label>
           <input
@@ -51,32 +50,32 @@ export default function ReportFilters({ onFilter }: Props) {
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
         </div>
 
         {/* Tipo de reporte */}
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
             Tipo de reporte
           </label>
           <select
             value={type}
-            onChange={(e) => setType(e.target.value as ReportFiltersInput["type"])}
+            onChange={(e) => setType(e.target.value as ReportType)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
-            <option value="financial">Financiero</option>
-            <option value="clinical">Clínico</option>
-            <option value="combined">Combinado</option>
+            <option value={ReportType.FINANCIAL}>Financiero</option>
+            <option value={ReportType.CLINICAL}>Clínico</option>
+            <option value={ReportType.COMBINED}>Combinado</option>
           </select>
         </div>
 
         {/* Botón aplicar */}
         <button
-          className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+          className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
           onClick={handleApply}
         >
           Aplicar filtros

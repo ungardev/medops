@@ -1,4 +1,3 @@
-// src/pages/PatientDetail.tsx
 import { useParams } from "react-router-dom";
 import { usePatient } from "../../hooks/patients/usePatient";
 
@@ -17,21 +16,27 @@ export default function PatientDetail() {
 
   const { data: patient, isLoading, error } = usePatient(patientId);
 
-  if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando paciente...</p>;
-  if (error) return <p className="text-sm text-red-600">Error al cargar paciente</p>;
-  if (!patient) return <p className="text-sm text-gray-600 dark:text-gray-400">No se encontró el paciente</p>;
+  if (isLoading)
+    return <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando paciente...</p>;
+  if (error)
+    return <p className="text-sm text-red-600">Error al cargar paciente</p>;
+  if (!patient)
+    return <p className="text-sm text-[#0d2c53] dark:text-gray-400">No se encontró el paciente</p>;
 
   return (
     <div className="p-4">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Detalle del Paciente</h2>
-        <h3 className="text-sm text-gray-600 dark:text-gray-400">{patient.full_name}</h3>
+        <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-white">
+          Detalle del Paciente
+        </h2>
+        <h3 className="text-sm text-[#0d2c53] dark:text-gray-400">
+          {patient.full_name}
+        </h3>
       </div>
 
-      {/* Tabs con estilo homogéneo */}
       <Tabs
         defaultTab="info"
-        className="border-b border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300"
+        className="border-b border-gray-200 dark:border-gray-700 text-sm font-medium text-[#0d2c53] dark:text-gray-300"
       >
         <Tab id="info" label="Información">
           <PatientInfoTab patient={patient} />

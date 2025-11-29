@@ -1,4 +1,3 @@
-// src/components/Consultation/DiagnosisPanel.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { useIcdSearch } from "../../hooks/diagnosis/useIcdSearch";
 import type { IcdResult } from "../../hooks/diagnosis/useIcdSearch";
@@ -70,9 +69,10 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
   const handleDelete = (id: number) => {
     deleteDiagnosis(id);
   };
-    return (
+
+  return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Diagnósticos
       </h3>
 
@@ -122,8 +122,8 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
               }
             }}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
 
           {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
@@ -140,7 +140,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                     itemRefs.current[idx] = el;
                   }}
                   className={`cursor-pointer p-1 ${
-                    idx === highlightIndex ? "bg-blue-100 dark:bg-blue-900" : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                    idx === highlightIndex ? "bg-[#0d2c53] text-white" : "hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                   onMouseEnter={() => setHighlightIndex(idx)}
                   onClick={() => handleSelect(r)}
@@ -152,7 +152,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
           )}
 
           {selectedDiagnosis && (
-            <div className="p-2 border rounded bg-gray-50 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+            <div className="p-2 border rounded bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100">
               <strong>{selectedDiagnosis.icd_code}</strong> — {selectedDiagnosis.title}
             </div>
           )}
@@ -164,12 +164,12 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                           focus:outline-none focus:ring-2 focus:ring-blue-600"
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                           focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               />
               <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
               >
                 Guardar diagnóstico
               </button>

@@ -1,4 +1,3 @@
-// src/components/Consultation/DocumentsPanel.tsx
 import React, { useState } from "react";
 import {
   useDocuments,
@@ -40,7 +39,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
 
   return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800 relative z-50 pointer-events-auto">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Documentos clínicos
       </h3>
 
@@ -54,7 +53,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
         )}
         {documents.map((doc: DocumentItem) => (
           <li
-            key={doc.audit_code} // ✅ usamos audit_code como clave
+            key={doc.audit_code}
             className="border-b border-gray-200 dark:border-gray-700 py-1 relative z-[9999] pointer-events-auto"
           >
             {doc.file_url ? (
@@ -62,7 +61,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 href={doc.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block text-blue-600 dark:text-blue-400 hover:underline pointer-events-auto focus:outline-none"
+                className="inline-block text-[#0d2c53] dark:text-blue-400 hover:underline pointer-events-auto focus:outline-none"
                 title={`Documento ${doc.category} — ${doc.audit_code}`}
               >
                 {doc.title || "Documento sin descripción"} ({doc.category}) — Código: {doc.audit_code}
@@ -93,7 +92,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
           <label
             htmlFor="file-upload"
             className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600
-                       text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700
+                       text-[#0d2c53] dark:text-gray-200 bg-gray-100 dark:bg-gray-700
                        hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer transition-colors"
           >
             Elegir archivo
@@ -108,8 +107,8 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
           <input
             type="text"
@@ -117,12 +116,12 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+            className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
             disabled={uploadDocument.isPending}
           >
             {uploadDocument.isPending ? "Subiendo..." : "+ Subir documento"}

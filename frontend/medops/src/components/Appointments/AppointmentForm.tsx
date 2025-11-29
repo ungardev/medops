@@ -1,4 +1,3 @@
-// src/components/Appointments/AppointmentForm.tsx
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppointmentInput } from "types/appointments";
@@ -46,11 +45,11 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       <div className="max-w-lg w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Nueva Cita</h2>
+          <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100">Nueva Cita</h2>
           <button
             type="button"
             className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                        hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
             onClick={onClose}
           >
@@ -62,11 +61,11 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Paciente */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Paciente
             </label>
             {isLoading ? (
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cargando pacientes...</p>
+              <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando pacientes...</p>
             ) : (
               <select
                 name="patient"
@@ -74,8 +73,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
                 onChange={handleChange}
                 required
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                           focus:outline-none focus:ring-2 focus:ring-blue-600"
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                           focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               >
                 <option value="">Seleccione un paciente</option>
                 {patients?.map((p: any) => (
@@ -89,7 +88,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
 
           {/* Fecha */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Fecha
             </label>
             <input
@@ -99,14 +98,14 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
           </div>
 
           {/* Tipo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Tipo
             </label>
             <select
@@ -114,8 +113,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               value={form.appointment_type}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
               <option value="general">General</option>
               <option value="specialized">Especializada</option>
@@ -124,7 +123,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
 
           {/* Monto esperado */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Monto esperado
             </label>
             <input
@@ -133,14 +132,14 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               value={form.expected_amount}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
           </div>
 
           {/* Notas */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Notas
             </label>
             <textarea
@@ -149,8 +148,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               onChange={handleChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
           </div>
 
@@ -160,14 +159,14 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                         bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                          hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition text-sm"
             >
               Guardar
             </button>

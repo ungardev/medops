@@ -47,7 +47,6 @@ const routeOptions: Option[] = [
   { value: "topical", label: "Tópica" },
   { value: "other", label: "Otro" },
 ];
-
 export interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
   prescriptions?: Prescription[];
@@ -105,10 +104,9 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     setRoute("oral");
     setComponents([]);
   };
-
-  return (
+    return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Prescripciones</h3>
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Prescripciones</h3>
 
       {/* 🔹 Modo lectura */}
       {readOnly && (
@@ -118,7 +116,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
           )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-gray-700 dark:text-gray-200">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -144,15 +142,15 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
         </>
       )}
 
-            {/* 🔹 Modo edición */}
+      {/* 🔹 Modo edición */}
       {!readOnly && (
         <>
           {diagnoses.length === 0 && (
             <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
           )}
-          {diagnoses.map((d) => (
+                    {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-gray-700 dark:text-gray-200">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -166,18 +164,11 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                         frequency={p.frequency}
                         route={p.route}
                         components={p.components}
-                        onEdit={(
-                          id: number,
-                          med: string,
-                          dur?: string | null,   // ✅ corregido
-                          freq?: UpdatePrescriptionInput["frequency"],
-                          rt?: UpdatePrescriptionInput["route"],
-                          comps?: PrescriptionComponent[]
-                        ) =>
+                        onEdit={(id, med, dur, freq, rt, comps) =>
                           updatePrescription({
                             id,
                             medication_text: med,
-                            duration: (dur ?? undefined)?.trim() || undefined, // ✅ normaliza null
+                            duration: (dur ?? undefined)?.trim() || undefined,
                             frequency: freq,
                             route: rt,
                             components: comps || [],
@@ -194,12 +185,13 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             </div>
           ))}
 
+          {/* Formulario de nueva prescripción */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
             <select
               value={diagnosisId}
               onChange={(e) => setDiagnosisId(Number(e.target.value))}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               required
             >
               <option value="">Seleccionar diagnóstico</option>
@@ -231,7 +223,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     newComps[index].substance = e.target.value;
                     setComponents(newComps);
                   }}
-                  className="px-2 py-1 border rounded"
+                  className="px-2 py-1 border rounded text-[#0d2c53] dark:text-gray-100"
                 />
                 <input
                   type="number"
@@ -242,7 +234,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     newComps[index].dosage = Number(e.target.value);
                     setComponents(newComps);
                   }}
-                  className="px-2 py-1 border rounded"
+                  className="px-2 py-1 border rounded text-[#0d2c53] dark:text-gray-100"
                 />
                 <select
                   value={comp.unit}
@@ -251,7 +243,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     newComps[index].unit = e.target.value as PrescriptionComponent["unit"];
                     setComponents(newComps);
                   }}
-                  className="px-2 py-1 border rounded"
+                  className="px-2 py-1 border rounded text-[#0d2c53] dark:text-gray-100"
                 >
                   <option value="mg">mg</option>
                   <option value="ml">ml</option>
@@ -278,7 +270,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               onClick={() =>
                 setComponents([...components, { substance: "", dosage: 0, unit: "mg" }])
               }
-              className="mt-2 px-3 py-1 bg-green-600 text-white rounded"
+              className="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
             >
               + Agregar componente
             </button>
@@ -289,7 +281,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
 
             <select
@@ -298,7 +290,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 setFrequency(e.target.value as UpdatePrescriptionInput["frequency"])
               }
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
               {frequencyOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -311,7 +303,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               value={route}
               onChange={(e) => setRoute(e.target.value as UpdatePrescriptionInput["route"])}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
               {routeOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -322,7 +314,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
 
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
             >
               + Agregar prescripción
             </button>

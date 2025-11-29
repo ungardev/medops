@@ -17,11 +17,11 @@ export function useDashboard(params?: DashboardParams) {
       "dashboard-summary",
       params?.start_date ?? null,
       params?.end_date ?? null,
-      params?.range ?? "month",
+      params?.range ?? "month", // por defecto mes, para evitar confusión
       params?.currency ?? "USD",
     ],
     queryFn: () => DashboardAPI.summary(params),
-    staleTime: 60_000,
+    staleTime: 60_000, // cache de 1 minuto
   });
 }
 
@@ -35,6 +35,6 @@ export function useAuditLogDirect(limit: number = 10) {
         { method: "GET" }
       );
     },
-    staleTime: 30_000,
+    staleTime: 30_000, // cache corto para auditoría en vivo
   });
 }

@@ -8,11 +8,11 @@ import { ChargeOrder, Payment } from "../../types/payments"; // ✅ usamos los t
 // -----------------------------
 export interface PaymentPayload {
   charge_order: number;
-  amount: number;
+  amount: number; // si tu backend espera string, cámbialo a string
   method: "cash" | "card" | "transfer" | "other";
   reference_number?: string | null;
-  bank?: string | null;
-  detail?: string | null;
+  bank_name?: string | null;   // ✅ alineado con Payment
+  detail?: string | null;      // ✅ añadido para método "other"
 }
 
 // -----------------------------
@@ -20,13 +20,11 @@ export interface PaymentPayload {
 // -----------------------------
 async function fetchChargeOrder(appointmentId: number): Promise<ChargeOrder | null> {
   if (!appointmentId || isNaN(appointmentId)) return null;
-  // 👇 apiFetchOptional convierte 404 → null
   return apiFetchOptional<ChargeOrder>(`appointments/${appointmentId}/charge-order/`);
 }
 
 async function createPayment(orderId: number, payload: PaymentPayload): Promise<Payment> {
   if (!orderId || isNaN(orderId)) throw new Error("OrderId inválido");
-  // 👇 apiFetch asegura que siempre devuelva un Payment válido
   return apiFetch<Payment>(`charge-orders/${orderId}/payments/`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -40,7 +38,7 @@ export function useChargeOrder(appointmentId: number) {
   return useQuery<ChargeOrder | null, Error>({
     queryKey: ["chargeOrder", appointmentId],
     queryFn: () => fetchChargeOrder(appointmentId),
-    enabled: !!appointmentId && !isNaN(appointmentId), // ✅ blindaje contra NaN
+    enabled: !!appointmentId && !isNaN(appointmentId),
     staleTime: 30_000,
   });
 }
@@ -55,7 +53,6 @@ export function useCreatePayment(orderId?: number, appointmentId?: number) {
     },
     onSuccess: () => {
       if (appointmentId != null) {
-        // ✅ invalidación defensiva
         queryClient.invalidateQueries({ queryKey: ["chargeOrder", appointmentId] });
       }
     },

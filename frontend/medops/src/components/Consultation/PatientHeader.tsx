@@ -1,4 +1,3 @@
-// src/components/Consultation/PatientHeader.tsx
 import type { Patient } from "../../types/patients";
 
 interface PatientHeaderProps {
@@ -14,7 +13,7 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
       <div className="flex justify-between items-center">
         {/* Identidad */}
         <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+          <h2 className="text-xl font-bold text-[#0d2c53] dark:text-white">
             {patient.full_name}
           </h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -24,7 +23,7 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
 
         {/* Estado financiero */}
         <div className="text-right">
-          <p className="font-semibold text-gray-800 dark:text-gray-100">
+          <p className="font-semibold text-[#0d2c53] dark:text-white">
             Saldo pendiente:{" "}
             {patient.balance_due && patient.balance_due > 0 ? (
               <span className="text-red-600">
@@ -38,7 +37,7 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
       </div>
 
       {/* Datos clínicos clave */}
-      <div className="mt-2 flex gap-4 text-sm text-gray-700 dark:text-gray-300">
+      <div className="mt-2 flex gap-4 text-sm text-[#0d2c53] dark:text-gray-300">
         <span>
           <strong>Sexo:</strong> {patient.gender ?? "Desconocido"}
         </span>

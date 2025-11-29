@@ -1,4 +1,3 @@
-// src/pages/Dashboard/FinancialMetrics.tsx
 import React, { useState } from "react";
 import { useDashboard } from "@/hooks/dashboard/useDashboard";
 import MetricCard from "./MetricCard";
@@ -36,8 +35,8 @@ const FinancialMetrics: React.FC = () => {
     <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-          Indicadores financieros
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+          Indicadores Financieros
         </h3>
         <div className="flex gap-2">
           {["USD", "VES"].map((c) => (
@@ -46,8 +45,8 @@ const FinancialMetrics: React.FC = () => {
               onClick={() => setCurrency(c as "USD" | "VES")}
               className={`px-3 py-1.5 text-sm rounded border transition-colors ${
                 currency === c
-                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
-                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+                  ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-gray-200 dark:hover:text-black"
+                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
               }`}
             >
               {c}

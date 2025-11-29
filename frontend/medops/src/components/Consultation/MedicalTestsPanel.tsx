@@ -56,10 +56,9 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
     setUrgency("routine");
     setStatus("pending");
   };
-
-  return (
+    return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Órdenes de Exámenes Médicos
       </h3>
 
@@ -79,11 +78,13 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
               className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2"
             >
               <div>
-                <strong>{t.test_type_display || t.test_type || "—"}</strong> — {t.description || "Sin descripción"}
+                <strong className="text-[#0d2c53] dark:text-white">
+                  {t.test_type_display || t.test_type || "—"}
+                </strong> — {t.description || "Sin descripción"}
                 <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                   ({t.urgency_display || t.urgency || "—"} / {t.status_display || t.status || "—"})
                 </span>
-                <span className="ml-2 text-sm text-blue-600 dark:text-blue-400">
+                <span className="ml-2 text-sm text-[#0d2c53] dark:text-blue-400">
                   {t.diagnosis ? `Dx: ${t.diagnosis}` : "Sin diagnóstico"}
                 </span>
               </div>
@@ -106,8 +107,8 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
             value={testType}
             onChange={(e) => setTestType(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="">-- Seleccionar tipo de examen --</option>
             <option value="blood_test">Análisis de sangre</option>
@@ -136,16 +137,16 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
 
           <select
             value={urgency}
             onChange={(e) => setUrgency(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="routine">Rutina</option>
             <option value="urgent">Urgente</option>
@@ -156,8 +157,8 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
             value={status}
             onChange={(e) => setStatus(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="pending">Pendiente</option>
             <option value="completed">Completado</option>
@@ -166,7 +167,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
 
           <button
             onClick={handleAdd}
-            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+            className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
           >
             + Agregar examen
           </button>

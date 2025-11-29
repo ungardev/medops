@@ -32,18 +32,18 @@ export default function DeletePatientModal({ open, patientName, onConfirm, onClo
         <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
           ⚠️ Eliminar paciente
         </h3>
-        <p className="text-sm text-gray-700 dark:text-gray-300">
+        <p className="text-sm text-[#0d2c53] dark:text-gray-300">
           Estás a punto de eliminar al paciente <strong>{patientName}</strong>.
           <br />
           Esta acción es irreversible.
         </p>
-        <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">
+        <p className="mt-2 text-sm text-[#0d2c53] dark:text-gray-300">
           Para confirmar, escribe <strong>ELIMINAR</strong> en el campo de abajo:
         </p>
 
         <input
-          className="mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                     bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
+          className="mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                     bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                      focus:outline-none focus:ring-2 focus:ring-red-600 w-full"
           placeholder="Escribe ELIMINAR para confirmar"
           value={confirmation}
@@ -59,8 +59,8 @@ export default function DeletePatientModal({ open, patientName, onConfirm, onClo
             Eliminar definitivamente
           </button>
           <button
-            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200
                        hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
             onClick={onClose}
           >

@@ -1,4 +1,3 @@
-// src/components/Appointments/CalendarDayDetail.tsx
 import moment from "moment";
 import { Appointment } from "../../types/appointments";
 
@@ -6,7 +5,7 @@ interface Props {
   date: Date;
   appointments: Appointment[];
   onClose: () => void;
-  onSelectAppointment: (appt: Appointment) => void; // 🔹 ahora es obligatorio
+  onSelectAppointment: (appt: Appointment) => void;
 }
 
 export default function CalendarDayDetail({ date, appointments, onClose, onSelectAppointment }: Props) {
@@ -19,13 +18,14 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-2xl p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+          <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100">
             Citas del {moment(date).format("DD/MM/YYYY")}
           </h2>
           <button
             onClick={onClose}
-            className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
-                       hover:bg-gray-300 dark:hover:bg-gray-600 transition text-sm"
+            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
           >
             Cerrar
           </button>
@@ -33,7 +33,7 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
 
         {/* Lista de citas */}
         {dayAppointments.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-[#0d2c53] dark:text-gray-400">
             No hay citas registradas para este día.
           </p>
         ) : (
@@ -41,15 +41,15 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
             {dayAppointments.map((appt) => (
               <li
                 key={appt.id}
-                className="py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 px-2 rounded-md"
-                onClick={() => onSelectAppointment(appt)} // 🔹 abre directamente AppointmentDetail
+                className="py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-800 px-2 rounded-md"
+                onClick={() => onSelectAppointment(appt)}
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                    <p className="text-sm font-medium text-[#0d2c53] dark:text-gray-100">
                       {appt.patient.full_name}
                     </p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-[#0d2c53] dark:text-gray-400">
                       {appt.appointment_type} — {appt.status}
                     </p>
                   </div>
@@ -66,7 +66,7 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
                           ? "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
                           : appt.status === "canceled"
                           ? "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
-                          : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-100"
+                          : "bg-gray-100 text-[#0d2c53] dark:bg-gray-700 dark:text-gray-100"
                       }`}
                   >
                     {moment(appt.appointment_date).format("HH:mm")}

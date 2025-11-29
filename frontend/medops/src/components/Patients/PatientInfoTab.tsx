@@ -62,7 +62,7 @@ function Field({
 
   return (
     <div className={cls}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
         {label}
       </label>
       {editing ? (
@@ -72,8 +72,8 @@ function Field({
             value={normStr(value ?? "")}
             onChange={(e) => onChange?.(e.target.value)}
             className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
         ) : (
           <input
@@ -81,17 +81,16 @@ function Field({
             value={normStr(value ?? "")}
             onChange={(e) => onChange?.(e.target.value)}
             className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
         )
       ) : (
-        <p className="text-sm text-gray-800 dark:text-gray-100">{display}</p>
+        <p className="text-sm text-[#0d2c53] dark:text-gray-100">{display}</p>
       )}
     </div>
   );
 }
-
 interface SelectFieldProps<T = string> {
   label: string;
   value?: T | null;
@@ -115,7 +114,7 @@ function SelectField<T = string>({
 
   return (
     <div className={cls}>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
         {label}
       </label>
       {editing ? (
@@ -123,8 +122,8 @@ function SelectField<T = string>({
           value={(value as any) ?? ""}
           onChange={(e) => onChange?.((e.target.value as unknown) as T)}
           className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                     bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                     focus:outline-none focus:ring-2 focus:ring-blue-600"
+                     bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                     focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
         >
           <option value="">{label === "Género" || label === "Grupo sanguíneo" ? "—" : ""}</option>
           {options.map(([val, lab]) => (
@@ -134,11 +133,12 @@ function SelectField<T = string>({
           ))}
         </select>
       ) : (
-        <p className="text-sm text-gray-800 dark:text-gray-100">{displayLabel}</p>
+        <p className="text-sm text-[#0d2c53] dark:text-gray-100">{displayLabel}</p>
       )}
     </div>
   );
 }
+
 export default function PatientInfoTab({ patient }: PatientTabProps) {
   const [editing, setEditing] = useState(false);
 
@@ -199,16 +199,15 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
       newPred.id,
     ]);
   };
-
-  return (
+    return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Información del Paciente</h3>
+        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Información del Paciente</h3>
         {editing ? (
           <div className="flex gap-2">
             <button
               type="button"
-              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition"
+              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition"
               onClick={handleSave}
             >
               Guardar
@@ -216,7 +215,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
             <button
               type="button"
               className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                         bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                          hover:bg-gray-200 dark:hover:bg-gray-600 transition"
               onClick={() => setEditing(false)}
             >
@@ -227,7 +226,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
           <button
             type="button"
             className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                        hover:bg-gray-200 dark:hover:bg-gray-600 transition"
             onClick={() => setEditing(true)}
           >
@@ -288,7 +287,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
 
         {/* Predisposiciones genéticas */}
         <div className="col-span-12">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
             Predisposiciones genéticas
           </label>
           {editing ? (
@@ -296,7 +295,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
               <p className="text-sm text-gray-600 dark:text-gray-400">Cargando opciones...</p>
             ) : (
               <ComboboxMultiElegante
-                options={predisposiciones ?? []}
+                options={Array.isArray(predisposiciones) ? predisposiciones : []}
                 value={form.genetic_predispositions ?? []}
                 onChange={(ids) => setField("genetic_predispositions", ids)}
                 onCreate={handleCreatePredisposition}
@@ -304,7 +303,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
               />
             )
           ) : (
-            <p className="text-sm text-gray-800 dark:text-gray-100">
+            <p className="text-sm text-[#0d2c53] dark:text-gray-100">
               {patient.genetic_predispositions?.length
                 ? patient.genetic_predispositions.map((p: any) => p.name).join(", ")
                 : "—"}
@@ -314,7 +313,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
       </div>
 
       {/* Metadatos */}
-      <div className="mt-6 text-sm text-gray-700 dark:text-gray-300">
+      <div className="mt-6 text-sm text-[#0d2c53] dark:text-gray-300">
         <p><strong>Activo:</strong> {patient.active ? "Sí" : "No"}</p>
         <p><strong>Creado:</strong> {patient.created_at || "—"}</p>
         <p><strong>Actualizado:</strong> {patient.updated_at || "—"}</p>

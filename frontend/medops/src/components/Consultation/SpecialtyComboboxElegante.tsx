@@ -12,20 +12,20 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
   const [search, setSearch] = useState("");
 
   const filtered = search.length
-    ? options.filter(o =>
+    ? options.filter((o) =>
         `${o.name} ${o.code}`.toLowerCase().includes(search.toLowerCase())
       )
     : options;
 
   const addSpecialty = (s: Specialty | null) => {
-    if (s && !value.some(v => v.id === s.id)) {
+    if (s && !value.some((v) => v.id === s.id)) {
       onChange([...value, s]);
     }
     setSearch("");
   };
 
   const removeSpecialty = (id: number) => {
-    onChange(value.filter(v => v.id !== id));
+    onChange(value.filter((v) => v.id !== id));
   };
 
   return (
@@ -37,22 +37,26 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             placeholder="Buscar especialidad..."
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
-          <Combobox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md
-                                       border border-gray-300 dark:border-gray-600
-                                       bg-white dark:bg-gray-800 shadow-lg z-10">
+          <Combobox.Options
+            className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md
+                       border border-gray-300 dark:border-gray-600
+                       bg-white dark:bg-gray-800 shadow-lg z-10"
+          >
             {filtered.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">Sin resultados</div>
             ) : (
-              filtered.map(s => (
+              filtered.map((s) => (
                 <Combobox.Option
                   key={s.id}
                   value={s}
                   className={({ active }) =>
                     `cursor-pointer px-3 py-2 text-sm ${
-                      active ? "bg-blue-600 text-white" : "text-gray-800 dark:text-gray-100"
+                      active
+                        ? "bg-[#0d2c53] text-white"
+                        : "text-[#0d2c53] dark:text-gray-100"
                     }`
                   }
                 >
@@ -66,18 +70,17 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
 
       {value.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2">
-          {value.map(s => (
+          {value.map((s) => (
             <span
               key={s.id}
-              className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-gray-200 dark:bg-gray-700
-                         text-sm text-gray-800 dark:text-gray-100"
+              className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-[#0d2c53]/10 dark:bg-gray-700
+                         text-sm text-[#0d2c53] dark:text-gray-100"
             >
               {s.name} ({s.code})
               <button
                 type="button"
                 onClick={() => removeSpecialty(s.id)}
-                className="px-2 py-0.5 rounded bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100
-                           hover:bg-gray-400 dark:hover:bg-gray-500 text-xs"
+                className="px-2 py-0.5 rounded bg-[#0d2c53] text-white hover:bg-[#0b2444] text-xs"
               >
                 Quitar
               </button>

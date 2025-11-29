@@ -8,20 +8,18 @@ interface Props {
 }
 
 export default function AppointmentEditForm({ appointment, onClose, onSubmit }: Props) {
-  // 🔹 Form inicial con valores seguros y paciente bloqueado
   const [form, setForm] = useState<AppointmentInput>({
-    patient: appointment?.patient?.id ?? 0, // se envía igual pero no editable
+    patient: appointment?.patient?.id ?? 0,
     appointment_date: appointment?.appointment_date ?? "",
     appointment_type: appointment?.appointment_type ?? "general",
     expected_amount: String(appointment?.expected_amount ?? ""),
-    // notas fuera por ahora
   });
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    if (name === "patient") return; // protección extra: no permitir cambios en paciente
+    if (name === "patient") return;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -42,11 +40,11 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
       <div className="max-w-lg w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Editar Cita</h2>
+          <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100">Editar Cita</h2>
           <button
             type="button"
             className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                        hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
             onClick={onClose}
           >
@@ -58,7 +56,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Paciente (readonly) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Paciente
             </label>
             <input
@@ -66,15 +64,13 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               value={`${appointment?.patient?.full_name ?? "Sin nombre"} (ID: ${appointment?.patient?.id ?? "—"})`}
               disabled
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200"
+                         bg-gray-100 dark:bg-gray-800 text-[#0d2c53] dark:text-gray-200"
             />
-            {/* Si se necesita acción separada en el futuro: botón discreto */}
-            {/* <button type="button" className="mt-2 text-xs text-blue-600">Reasignar paciente</button> */}
           </div>
 
           {/* Fecha */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Fecha
             </label>
             <input
@@ -84,14 +80,14 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
           </div>
 
           {/* Tipo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Tipo
             </label>
             <select
@@ -99,8 +95,8 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               value={form.appointment_type}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
               <option value="general">General</option>
               <option value="specialized">Especializada</option>
@@ -109,7 +105,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
 
           {/* Monto esperado */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Monto esperado
             </label>
             <input
@@ -118,8 +114,8 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               value={form.expected_amount}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
           </div>
 
@@ -129,14 +125,14 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                         bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                          hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition text-sm"
             >
               Guardar cambios
             </button>

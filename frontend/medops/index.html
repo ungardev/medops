@@ -1,14 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <!-- 🔹 Favicon institucional -->
+    <link rel="icon" type="image/svg+xml" href="/logo-medops.svg" />
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>medops</title>
+    <title>MedOps</title>
+
+    <!-- 🔹 Fuente institucional Manrope (ExtraLight como base, con pesos hasta 600) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
   </head>
-  <body>
+  <body class="font-sans bg-bgLight text-textLight dark:bg-bgDark dark:text-textDark">
+    <!-- 🔹 Root principal -->
     <div id="root"></div>
-    <div id="modal-root"></div> <!-- 👈 Aquí se montarán los modales -->
+
+    <!-- 🔹 Portal para modales -->
+    <div id="modal-root"></div>
+
+    <!-- 🔹 Entry point Vite -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

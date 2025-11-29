@@ -1,7 +1,6 @@
-// src/hooks/reports/useReports.ts
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { ReportFiltersInput, ReportRow } from "@/types/reports";
+import { ReportFiltersInput, ReportRow, ReportType } from "@/types/reports";
 
 // 🔹 Función de consulta a la API de reportes
 async function fetchReports(filters: ReportFiltersInput): Promise<ReportRow[]> {
@@ -9,7 +8,7 @@ async function fetchReports(filters: ReportFiltersInput): Promise<ReportRow[]> {
 
   const response = await axios.get<ReportRow[]>("/reports/", {
     params: {
-      type: type ?? "financial", // ✅ default institucional
+      type: type ?? ReportType.FINANCIAL, // ✅ default institucional con enum
       start_date: start_date || undefined,
       end_date: endDateOrUndefined(end_date),
     },
@@ -37,5 +36,12 @@ export function useReports(filters: ReportFiltersInput | null) {
     enabled: !!filters, // ✅ solo consulta si hay filtros
     placeholderData: (prev) => prev, // ✅ mantiene datos previos mientras carga nuevos
     refetchOnWindowFocus: false, // ✅ evita recargas innecesarias
+    meta: {
+      // 🔹 Mensajes institucionales para UI
+      loadingMessage: "Cargando reportes institucionales...",
+      errorMessage: "Error cargando reportes institucionales",
+      emptyMessage: "No hay resultados para los filtros seleccionados",
+      color: "#0d2c53", // Azul zafiro institucional
+    },
   });
 }

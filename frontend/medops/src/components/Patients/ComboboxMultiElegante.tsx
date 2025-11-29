@@ -1,4 +1,3 @@
-// src/components/Patients/ComboboxMultiElegante.tsx
 import React, { useState } from "react";
 
 interface Option {
@@ -7,7 +6,7 @@ interface Option {
 }
 
 interface Props {
-  options: Option[];
+  options: Option[] | undefined | null;
   value: number[];
   onChange: (ids: number[]) => void;
   onCreate?: (name: string) => void;
@@ -23,8 +22,10 @@ export default function ComboboxMultiElegante({
 }: Props) {
   const [input, setInput] = useState("");
 
-  const selectedOptions = options.filter((opt) => value.includes(opt.id));
-  const filteredOptions = options.filter(
+  const safeOptions: Option[] = Array.isArray(options) ? options : [];
+
+  const selectedOptions = safeOptions.filter((opt) => value.includes(opt.id));
+  const filteredOptions = safeOptions.filter(
     (opt) =>
       !value.includes(opt.id) &&
       opt.name.toLowerCase().includes(input.toLowerCase())
@@ -46,15 +47,15 @@ export default function ComboboxMultiElegante({
     }
   };
 
-    return (
+  return (
     <div className="w-full text-sm">
       {/* Chips seleccionados */}
       <div className="flex flex-wrap gap-2 mb-2">
         {selectedOptions.map((opt) => (
           <span
             key={opt.id}
-            className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-800 
-                       text-blue-800 dark:text-blue-100 text-xs font-medium"
+            className="inline-flex items-center px-2 py-1 rounded-md bg-[#0d2c53]/10 dark:bg-[#0d2c53]/40 
+                       text-[#0d2c53] dark:text-gray-100 text-xs font-medium"
           >
             {opt.name}
             <button
@@ -74,8 +75,8 @@ export default function ComboboxMultiElegante({
         onChange={(e) => setInput(e.target.value)}
         placeholder={placeholder}
         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-                   bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
-                   focus:outline-none focus:ring-2 focus:ring-blue-600"
+                   bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                   focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
       />
 
       {/* Dropdown de opciones */}
@@ -86,7 +87,7 @@ export default function ComboboxMultiElegante({
             <div
               key={opt.id}
               onClick={() => handleAdd(opt.id)}
-              className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="px-3 py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
             >
               {opt.name}
             </div>
@@ -94,7 +95,7 @@ export default function ComboboxMultiElegante({
           {onCreate && (
             <div
               onClick={handleCreate}
-              className="px-3 py-2 cursor-pointer text-blue-600 dark:text-blue-400 hover:underline"
+              className="px-3 py-2 cursor-pointer text-[#0d2c53] dark:text-blue-400 hover:underline"
             >
               Crear: <strong>{input}</strong>
             </div>

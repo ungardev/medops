@@ -12,9 +12,8 @@ interface Props {
 export default function AppointmentDetail({ appointment, onClose, onEdit }: Props) {
   const [activeTab, setActiveTab] = useState<"info" | "payments">("info");
 
-  // 🔹 Fetch del detalle completo
   const { data: detail, isLoading, isError, error } = useAppointment(appointment.id);
-  const appt = detail ?? appointment; // fallback mientras carga
+  const appt = detail ?? appointment;
 
   const co = appt?.charge_order ?? null;
   const payments = Array.isArray(co?.payments) ? co.payments : [];
@@ -24,16 +23,16 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
       <div className="max-w-lg w-full max-h-[80vh] overflow-y-auto rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Detalle de Cita</h2>
+          <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100">Detalle de Cita</h2>
           <div className="flex gap-2">
             <button
               type="button"
               className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                         bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                          hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
               onClick={() => {
                 if (window.confirm("¿Desea editar esta cita?")) {
-                  onEdit(appt); // 🔹 pasa el objeto completo
+                  onEdit(appt);
                 }
               }}
             >
@@ -42,7 +41,7 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
             <button
               type="button"
               className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                         bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                          hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
               onClick={onClose}
             >
@@ -52,7 +51,7 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
         </div>
 
         {/* Estado de carga */}
-        {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando detalle...</p>}
+        {isLoading && <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando detalle...</p>}
         {isError && (
           <p className="text-sm text-red-600 dark:text-red-400">
             Error: {(error as Error)?.message ?? "No se pudo cargar el detalle"}
@@ -67,8 +66,8 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
               type="button"
               className={`px-3 py-1 rounded-md text-sm font-medium transition ${
                 activeTab === tab
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
+                  : "border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
               }`}
               onClick={() => setActiveTab(tab as "info" | "payments")}
             >
@@ -79,7 +78,7 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
 
         {/* Contenido dinámico */}
         {activeTab === "info" && (
-          <section className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+          <section className="space-y-2 text-sm text-[#0d2c53] dark:text-gray-300">
             <h3 className="font-semibold mb-2">Información básica</h3>
             <p><strong>Paciente:</strong> {appt.patient?.full_name}</p>
             <p><strong>Fecha:</strong> {moment(appt.appointment_date).format("DD/MM/YYYY")}</p>
@@ -90,7 +89,7 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
         )}
 
         {activeTab === "payments" && (
-          <section className="text-sm text-gray-700 dark:text-gray-300">
+          <section className="text-sm text-[#0d2c53] dark:text-gray-300">
             <h3 className="font-semibold mb-2">Pagos</h3>
             {payments.length > 0 ? (
               <ul className="list-disc pl-5 space-y-1">

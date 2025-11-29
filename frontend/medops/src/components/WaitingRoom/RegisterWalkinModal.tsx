@@ -44,8 +44,8 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         return;
       }
       try {
-        const response = await searchPatients(query); // devuelve PatientSearchResponse
-        setResults(response.results);                 // usamos el array interno
+        const response = await searchPatients(query);
+        setResults(response.results);
         setHighlightedIndex(response.results.length > 0 ? 0 : -1);
       } catch (e) {
         console.error("Error buscando pacientes:", e);
@@ -75,7 +75,6 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [mode, results, highlightedIndex, selectedPatient, onClose]);
-
     const onSubmit = async (values: FormValues) => {
     try {
       let patientId: number;
@@ -119,7 +118,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg p-6 animate-fade-slide"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
+        <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-4">
           Registrar llegada
         </h2>
 
@@ -127,7 +126,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         {mode === "search" && (
           <div className="space-y-4">
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               placeholder="Buscar paciente por nombre o cédula..."
               value={query}
               onChange={(e) => {
@@ -143,8 +142,8 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
                     key={p.id}
                     className={`px-3 py-2 cursor-pointer ${
                       index === highlightedIndex
-                        ? "bg-blue-600 text-white"
-                        : "text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        ? "bg-[#0d2c53] text-white"
+                        : "text-[#0d2c53] dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
                     }`}
                     onClick={() => {
                       setSelectedPatient(p);
@@ -157,10 +156,9 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
                 ))}
               </ul>
             )}
-
-            {selectedPatient && (
+                        {selectedPatient && (
               <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700 text-center">
-                <h3 className="text-gray-800 dark:text-gray-100 font-semibold mb-2">
+                <h3 className="text-[#0d2c53] dark:text-white font-semibold mb-2">
                   {selectedPatient.full_name}
                   {selectedPatient.national_id ? ` (${selectedPatient.national_id})` : ""}
                 </h3>
@@ -171,7 +169,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
                 ) : (
                   <div className="flex gap-2 justify-center mt-3">
                     <button
-                      className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
                       onClick={() => onSubmit({} as FormValues)}
                     >
                       Registrar llegada
@@ -200,7 +198,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         {mode === "create" && (
           <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               placeholder="Nombre"
               {...register("first_name", { required: "El nombre es obligatorio" })}
             />
@@ -209,13 +207,13 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
             )}
 
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               placeholder="Segundo nombre (opcional)"
               {...register("second_name")}
             />
 
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               placeholder="Apellido"
               {...register("last_name", { required: "El apellido es obligatorio" })}
             />
@@ -224,13 +222,13 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
             )}
 
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               placeholder="Segundo apellido (opcional)"
               {...register("second_last_name")}
             />
 
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               placeholder="Documento (Cédula)"
               {...register("national_id", { required: "El documento es obligatorio" })}
             />
@@ -239,13 +237,13 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
             )}
 
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               placeholder="Teléfono"
               {...register("phone")}
             />
 
             <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               placeholder="Email"
               {...register("email", {
                 pattern: {
@@ -260,7 +258,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
 
             <div className="flex gap-2 justify-end mt-4">
               <button
-                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
                 type="submit"
                 disabled={isSubmitting}
               >

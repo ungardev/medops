@@ -10,7 +10,7 @@ interface TabsProps {
   children: ReactNode[];
   defaultTab?: string;
   className?: string;
-  layout?: "vertical" | "horizontal"; // 🔹 nueva prop
+  layout?: "vertical" | "horizontal";
 }
 
 export function Tab({ children }: TabProps) {
@@ -23,15 +23,14 @@ export function Tabs({ children, defaultTab, className, layout = "vertical" }: T
 
   return (
     <div className={className ?? "space-y-4"}>
-      {/* Header de pestañas */}
       <div className="flex flex-wrap gap-2 border-b pb-2">
         {tabs.map((tab) => (
           <button
             key={tab.props.id}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               active === tab.props.id
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+                ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
+                : "bg-gray-100 text-[#0d2c53] hover:bg-gray-200 border border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
             }`}
             onClick={() => setActive(tab.props.id)}
           >
@@ -40,7 +39,6 @@ export function Tabs({ children, defaultTab, className, layout = "vertical" }: T
         ))}
       </div>
 
-      {/* Contenido */}
       {layout === "vertical" ? (
         <div>
           {tabs.map((tab) =>

@@ -1,4 +1,3 @@
-// src/components/Appointments/CalendarLegend.tsx
 import { AppointmentStatus } from "../../types/appointments";
 
 const LEGEND: { key: AppointmentStatus; label: string; color: string }[] = [
@@ -15,7 +14,7 @@ export default function CalendarLegend() {
       {LEGEND.map((item) => (
         <div key={item.key} className="flex items-center gap-2 text-sm">
           <span className={`w-4 h-4 rounded ${item.color}`}></span>
-          <span className="text-gray-700 dark:text-gray-300">{item.label}</span>
+          <span className="text-[#0d2c53] dark:text-gray-300">{item.label}</span>
         </div>
       ))}
     </div>

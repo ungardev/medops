@@ -90,16 +90,16 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
       ? "bg-blue-100 text-blue-800 ring-blue-200 dark:bg-blue-700 dark:text-blue-200"
       : order.status === "void"
       ? "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200"
-      : "bg-gray-100 text-gray-800 ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
+      : "bg-gray-100 text-[#0d2c53] ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
 
   return (
     <div
       className={`rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 mb-3 cursor-pointer 
-        ${isSelected ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" : "bg-white dark:bg-gray-900"}`}
+        ${isSelected ? "ring-2 ring-[#0d2c53] bg-[#0d2c53]/10 dark:bg-[#0d2c53]/30" : "bg-white dark:bg-gray-900"}`}
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex justify-between items-center">
-        <div className="flex gap-4 items-center text-sm text-gray-800 dark:text-gray-100">
+        <div className="flex gap-4 items-center text-sm text-[#0d2c53] dark:text-gray-100">
           <span className="font-semibold">{patientName}</span>
           <span>{formattedDate}</span>
           <span>${formattedAmount}</span>
@@ -112,14 +112,14 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
 
         <div className="flex gap-2">
           <button
-            className="px-3 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
+            className="px-3 py-1 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
             onClick={handleRegisterPaymentClick}
           >
             Registrar pago
           </button>
           <button
             className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                        hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
             onClick={handleExport}
           >
@@ -127,7 +127,7 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
           </button>
           <button
             className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                        hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
             onClick={handleViewDetail}
           >

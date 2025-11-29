@@ -64,9 +64,9 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
     setEditingReferral(null);
   };
 
-    return (
+  return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Referencias Médicas</h3>
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Referencias Médicas</h3>
 
       {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando referencias...</p>}
 
@@ -78,7 +78,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
             <li key={r.id ?? index} className="flex flex-col border-b border-gray-200 dark:border-gray-700 py-2">
               <div className="flex justify-between items-center">
                 <div>
-                  <strong>{r.referred_to || "Sin destino"}</strong> — {r.reason || "Sin motivo"}
+                  <strong className="text-[#0d2c53] dark:text-white">{r.referred_to || "Sin destino"}</strong> — {r.reason || "Sin motivo"}
                   <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     ({r.specialties?.map((s) => s.name).join(", ") || "Sin especialidad"} / {r.urgency || "—"} / {r.status || "—"})
                   </span>
@@ -86,7 +86,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                 {!readOnly && (
                   <div className="flex gap-2">
                     <button
-                      className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
+                      className="px-3 py-1 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
                                  dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
                       onClick={() => setEditingReferral(r)}
                     >
@@ -101,21 +101,20 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                   </div>
                 )}
               </div>
-
-              {!readOnly && editingReferral?.id === r.id && (
+                              {!readOnly && editingReferral?.id === r.id && (
                 <div className="mt-2 flex flex-col gap-2">
                   <input
                     type="text"
                     value={editingReferral.referred_to}
                     onChange={(e) => setEditingReferral({ ...editingReferral, referred_to: e.target.value })}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                               bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                               bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
                   />
                   <textarea
                     value={editingReferral.reason || ""}
                     onChange={(e) => setEditingReferral({ ...editingReferral, reason: e.target.value })}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                               bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                               bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
                   />
                   <SpecialtyComboboxElegante
                     value={editingReferral.specialties || []}
@@ -126,7 +125,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                     value={editingReferral.urgency}
                     onChange={(e) => setEditingReferral({ ...editingReferral, urgency: e.target.value as any })}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                               bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                               bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
                   >
                     <option value="routine">Rutina</option>
                     <option value="urgent">Urgente</option>
@@ -136,7 +135,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                     value={editingReferral.status}
                     onChange={(e) => setEditingReferral({ ...editingReferral, status: e.target.value as any })}
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                               bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                               bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
                   >
                     <option value="issued">Emitida</option>
                     <option value="accepted">Aceptada</option>
@@ -144,13 +143,13 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                   </select>
                   <div className="flex gap-2">
                     <button
-                      className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
                       onClick={handleUpdate}
                     >
                       Guardar cambios
                     </button>
                     <button
-                      className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
+                      className="px-3 py-1 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
                                  dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
                       onClick={() => setEditingReferral(null)}
                     >
@@ -172,14 +171,14 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
             value={referredTo}
             onChange={(e) => setReferredTo(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
           <textarea
             placeholder="Motivo clínico de la referencia"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
           <SpecialtyComboboxElegante
             value={selectedSpecialties}
@@ -190,7 +189,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
             value={urgency}
             onChange={(e) => setUrgency(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="routine">Rutina</option>
             <option value="urgent">Urgente</option>
@@ -200,7 +199,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
             value={status}
             onChange={(e) => setStatus(e.target.value as any)}
             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="issued">Emitida</option>
             <option value="accepted">Aceptada</option>
@@ -208,7 +207,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
           </select>
           <button
             onClick={handleAdd}
-            className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+            className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
           >
             + Agregar referencia
           </button>

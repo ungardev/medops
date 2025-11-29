@@ -98,7 +98,7 @@ export default function Consultation() {
           {canGenerateReport && (
             <div className="flex items-center gap-2">
               <button
-                className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
                 disabled={generateReport.isPending}
                 onClick={handleGenerateReport}
               >

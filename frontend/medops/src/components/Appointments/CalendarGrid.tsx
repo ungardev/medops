@@ -1,4 +1,3 @@
-// src/components/Appointments/CalendarGrid.tsx
 import moment from "moment";
 import { useState } from "react";
 import { Appointment } from "../../types/appointments";
@@ -33,7 +32,6 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
     appointmentsByDate[key].push(appt);
   }
 
-  // 🔒 Fallback institucional: siempre proveer una función
   const handleSelectAppointment = (appt: Appointment) => {
     if (onSelectAppointment) onSelectAppointment(appt);
   };
@@ -44,7 +42,7 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
       <CalendarHeader currentMonth={currentMonth} onChangeMonth={setCurrentMonth} />
 
       {/* Grid mensual */}
-      <div className="grid grid-cols-7 gap-px bg-gray-300 dark:bg-gray-700 rounded-md overflow-hidden">
+      <div className="grid grid-cols-7 gap-px bg-[#0d2c53] dark:bg-gray-700 rounded-md overflow-hidden">
         {days.map((day) => {
           const key = day.format("YYYY-MM-DD");
           const isToday = day.isSame(moment(), "day");
@@ -56,13 +54,17 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
               key={key}
               className={`p-2 min-h-[100px] bg-white dark:bg-gray-900 text-sm 
                           ${isCurrentMonth ? "" : "opacity-50"} 
-                          ${isToday ? "border-2 border-blue-600" : "border border-gray-200 dark:border-gray-700"}`}
+                          ${
+                            isToday
+                              ? "border-2 border-[#0d2c53]"
+                              : "border border-gray-200 dark:border-gray-700"
+                          }`}
               onClick={() => {
                 setSelectedDay(day.toDate());
                 onSelectDate?.(day.toDate());
               }}
             >
-              <div className="font-semibold text-gray-800 dark:text-gray-100 mb-1">
+              <div className="font-semibold text-[#0d2c53] dark:text-gray-100 mb-1">
                 {day.date()}
               </div>
 
@@ -86,7 +88,7 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
                           ? "bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-100"
                           : appt.status === "canceled"
                           ? "bg-red-100 dark:bg-red-700 text-red-800 dark:text-red-100"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                          : "bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                       }`}
                   >
                     {appt.patient.full_name} ({appt.appointment_type})

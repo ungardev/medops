@@ -6,12 +6,14 @@ export type DashboardSummary = {
   total_patients: number;
   total_appointments: number;
   active_appointments: number;          // ✅ citas con actividad clínica real
-  completed_appointments: number;
-  pending_appointments: number;
+  completed_appointments: number;       // ✅ status=completed en rango
+  pending_appointments: number;         // ✅ status=pending en rango
+  active_consultations: number;         // ✅ status=in_consultation en rango
+  canceled_appointments: number;        // ✅ status=canceled en rango
+  arrived_appointments: number;         // ✅ status=arrived en rango
 
   // 🔹 Estado clínico en tiempo real
-  waiting_room_count?: number;          // pacientes en sala de espera
-  active_consultations?: number;        // pacientes actualmente en consulta
+  waiting_room_count: number;           // pacientes en sala de espera
 
   // 🔹 Pagos y finanzas
   total_payments: number;               // número de pagos confirmados

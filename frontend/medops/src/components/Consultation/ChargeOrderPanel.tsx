@@ -49,13 +49,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const [showItems, setShowItems] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
 
-  // Estados para edición de ítems
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [editDescription, setEditDescription] = useState("");
   const [editQty, setEditQty] = useState(1);
   const [editPrice, setEditPrice] = useState(0);
 
-  const handleAddItem = async (e: React.FormEvent) => {
+    const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order) return;
 
@@ -117,14 +116,16 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
+
     const payload: PaymentPayload = {
       charge_order: order.id,
       amount: parseFloat(amount),
       method,
       reference_number: reference || null,
-      bank: method === "transfer" ? bank : null,
+      bank_name: method === "transfer" ? bank : null,
       detail: method === "other" ? otherDetail : null,
     };
+
     createPayment.mutate(payload, {
       onSuccess: () => {
         setAmount("");
@@ -132,17 +133,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
         setReference("");
         setBank("");
         setOtherDetail("");
-        if (isAppointmentMode(props)) {
-          void refetch();
-        }
+        if (isAppointmentMode(props)) void refetch();
       },
-      onError: (err) => {
-        console.error("Error registrando pago:", err);
-      },
+      onError: (err) => console.error("Error registrando pago:", err),
     });
   };
-
-  if (isAppointmentMode(props) && isLoading) {
+      if (isAppointmentMode(props) && isLoading) {
     return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando orden...</p>;
   }
 
@@ -157,20 +153,18 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
             console.error("Error creando orden:", err);
           }
         }}
-        className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+        className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
       >
         + Crear orden de cobro
       </button>
     ) : null;
   }
 
-    return (
+  return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
-        Orden de Cobro
-      </h3>
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Orden de Cobro</h3>
 
-      <div className="mb-3 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-gray-800 dark:text-gray-100">
+      <div className="mb-3 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-[#0d2c53] dark:text-gray-100">
         <p><strong>Total:</strong> ${Number(order.total ?? 0).toFixed(2)}</p>
         <p><strong>Pagado:</strong> ${(Number(order.total ?? 0) - Number(order.balance_due ?? 0)).toFixed(2)}</p>
         <p><strong>Saldo pendiente:</strong> ${Number(order.balance_due ?? 0).toFixed(2)}</p>
@@ -180,55 +174,107 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       {/* Ítems */}
       <button
         onClick={() => setShowItems(!showItems)}
-        className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
-                   dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
+        className="px-3 py-1 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
+               dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
       >
         {showItems ? "▼ Ítems" : "▶ Ítems"}
       </button>
+
       {showItems && (
-        <div className="mb-4">
-          <ul className="mb-3">
+        <div className="mb-4 space-y-3">
+          {!readOnly && (
+            <form onSubmit={handleAddItem} className="flex flex-col gap-2">
+              <input
+                id="charge-item-code"
+                type="text"
+                placeholder="Código"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                required
+              />
+              <input
+                id="charge-item-desc"
+                type="text"
+                placeholder="Descripción del ítem"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                required
+              />
+              <input
+                id="charge-item-qty"
+                type="number"
+                min={1}
+                step={1}
+                placeholder="Cantidad"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                required
+              />
+              <input
+                id="charge-item-price"
+                type="number"
+                min={0}
+                step={0.01}
+                placeholder="Precio unitario"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                required
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition-colors self-start"
+              >
+                + Agregar ítem
+              </button>
+            </form>
+          )}
+
+          <ul className="mt-2">
             {order.items?.length === 0 && (
               <li className="text-sm text-gray-600 dark:text-gray-400">Sin ítems</li>
             )}
             {order.items?.map((it: ChargeItem) => (
-              <li key={it.id} className="border-b border-gray-200 dark:border-gray-700 py-1">
+              <li key={it.id} className="border-b border-gray-200 dark:border-gray-700 py-1 text-sm text-[#0d2c53] dark:text-gray-100">
                 {editItemId === it.id ? (
                   <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       void handleUpdateItem(it.id);
                     }}
-                    className="flex gap-2"
+                    className="flex flex-col gap-2"
                   >
                     <input
                       type="text"
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
-                      className="px-2 py-1 border rounded"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                     />
                     <input
                       type="number"
                       value={editQty}
                       onChange={(e) => setEditQty(Number(e.target.value))}
-                      className="px-2 py-1 border rounded w-16"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                     />
                     <input
                       type="number"
                       step="0.01"
                       value={editPrice}
                       onChange={(e) => setEditPrice(Number(e.target.value))}
-                      className="px-2 py-1 border rounded w-24"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                     />
-                    <button type="submit" className="bg-blue-600 text-white px-2 py-1 rounded">Guardar</button>
-                    <button type="button" onClick={() => setEditItemId(null)} className="bg-gray-400 text-white px-2 py-1 rounded">Cancelar</button>
+                    <div className="flex gap-2">
+                      <button type="submit" className="px-3 py-2 bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] rounded text-sm">
+                        Guardar
+                      </button>
+                      <button type="button" onClick={() => setEditItemId(null)} className="px-3 py-2 bg-gray-400 text-white rounded text-sm">
+                        Cancelar
+                      </button>
+                    </div>
                   </form>
                 ) : (
                   <>
                     {it.code} — {it.description ?? "Sin descripción"} ({it.qty} × ${Number(it.unit_price).toFixed(2)})
-                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
-                      = ${Number(it.subtotal).toFixed(2)}
-                    </span>
+                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">= ${Number(it.subtotal).toFixed(2)}</span>
                     {!readOnly && (
                       <>
                         <button
@@ -255,60 +301,97 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
               </li>
             ))}
           </ul>
-
-          {!readOnly && (
-            <form onSubmit={handleAddItem} className="flex flex-col gap-2">
-              <input id="charge-item-code" type="text" placeholder="Servicio / Procedimiento"
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600" required />
-              <input id="charge-item-desc" type="text" placeholder="Detalle adicional (opcional)"
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" />
-              <input id="charge-item-qty" type="number" placeholder="Cantidad"
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
-              <input id="charge-item-price" type="number" step="0.01" placeholder="Precio unitario"
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
-              <button type="submit"
-                className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
-                           dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors self-start">
-                + Agregar ítem
-              </button>
-            </form>
-          )}
         </div>
       )}
-
-      {/* Pagos */}
+            {/* Pagos */}
       <button
         onClick={() => setShowPayments(!showPayments)}
-        className="px-3 py-1 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 
+        className="px-3 py-1 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
                    dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
       >
         {showPayments ? "▼ Pagos" : "▶ Pagos"}
       </button>
+
       {showPayments && (
-        <div>
-          <ul className="mb-3">
+        <div className="mb-4 space-y-3">
+          {!readOnly && (
+            <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Monto"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+                required
+              />
+              <select
+                value={method}
+                onChange={(e) => setMethod(e.target.value as any)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+              >
+                <option value="cash">Efectivo</option>
+                <option value="card">Tarjeta</option>
+                <option value="transfer">Transferencia</option>
+                <option value="other">Otro</option>
+              </select>
+              <input
+                type="text"
+                placeholder="Referencia"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+              />
+              {method === "transfer" && (
+                <input
+                  type="text"
+                  placeholder="Banco"
+                  value={bank}
+                  onChange={(e) => setBank(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                             bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                />
+              )}
+              {method === "other" && (
+                <input
+                  type="text"
+                  placeholder="Detalle"
+                  value={otherDetail}
+                  onChange={(e) => setOtherDetail(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                             bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                />
+              )}
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors self-start"
+                disabled={createPayment.isPending}
+              >
+                {createPayment.isPending ? "Registrando..." : "+ Registrar pago"}
+              </button>
+            </form>
+          )}
+
+          {/* Lista de pagos */}
+          <ul className="mt-2">
             {order.payments?.length === 0 && (
               <li className="text-sm text-gray-600 dark:text-gray-400">Sin pagos registrados</li>
             )}
             {order.payments?.map((p: Payment) => (
-              <li key={p.id} className="border-b border-gray-200 dark:border-gray-700 py-1">
-                <strong>${Number(p.amount ?? 0).toFixed(2)}</strong> — {p.method}
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {" "}{p.status} {p.reference_number && `| Ref: ${p.reference_number}`}
-                </span>
+              <li
+                key={p.id}
+                className="border-b border-gray-200 dark:border-gray-700 py-1 text-sm text-[#0d2c53] dark:text-gray-100"
+              >
+                {p.method} — ${Number(p.amount).toFixed(2)}
+                {p.reference_number && <span className="ml-2">Ref: {p.reference_number}</span>}
+                {p.bank_name && <span className="ml-2">Banco: {p.bank_name}</span>}
+                {p.detail && <span className="ml-2">Detalle: {p.detail}</span>}
               </li>
             ))}
           </ul>
-
-          {!readOnly && (
-            <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
-              {/* ... resto del formulario de pagos igual que antes ... */}
-            </form>
-          )}
         </div>
       )}
     </div>

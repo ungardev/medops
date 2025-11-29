@@ -60,7 +60,7 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource
+from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, User
 )
 
 from .serializers import (
@@ -3781,3 +3781,42 @@ def documents_api(request):
 
     return Response({"documents": payload, "skipped": []}, status=200)
 
+
+@api_view(["GET"])
+def search(request):
+    query = request.GET.get("query", "").strip()
+
+    if not query:
+        return Response({
+            "patients": [],
+            "appointments": [],
+            "orders": [],
+            "users": []
+        })
+
+    # 🔹 Pacientes
+    patients = Patient.objects.filter(
+        Q(name__icontains=query) | Q(document__icontains=query)
+    ).values("id", "name", "document")[:10]
+
+    # 🔹 Citas
+    appointments = Appointment.objects.filter(
+        Q(patient__name__icontains=query) | Q(status__icontains=query)
+    ).values("id", "date", "status")[:10]
+
+    # 🔹 Órdenes / Pagos
+    orders = ChargeOrder.objects.filter(
+        Q(id__icontains=query) | Q(patient__name__icontains=query)
+    ).values("id", "amount", "status")[:10]
+
+    # 🔹 Usuarios / Médicos
+    users = User.objects.filter(
+        Q(name__icontains=query) | Q(role__icontains=query)
+    ).values("id", "name", "role")[:10]
+
+    return Response({
+        "patients": list(patients),
+        "appointments": list(appointments),
+        "orders": list(orders),
+        "users": list(users),
+    })

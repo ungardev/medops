@@ -84,13 +84,13 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
     setStatus("active");
     setTreatmentType("pharmacological");
   };
-    return (
+
+  return (
     <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Tratamientos
       </h3>
-
-      {/* Modo lectura */}
+            {/* Modo lectura */}
       {readOnly && (
         <>
           {diagnoses.length === 0 && (
@@ -98,7 +98,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
           )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-gray-800 dark:text-gray-100">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-white">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -132,7 +132,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
           )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-gray-800 dark:text-gray-100">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-white">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
               <ul className="ml-4">
@@ -173,8 +173,8 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               onChange={(e) => setDiagnosisId(Number(e.target.value))}
               required
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
               <option value="">Seleccionar diagnóstico</option>
               {diagnoses.map((d) => (
@@ -191,8 +191,8 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               onChange={(e) => setPlan(e.target.value)}
               required
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100
-                         focus:outline-none focus:ring-2 focus:ring-blue-600"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
 
             <div className="flex gap-2">
@@ -201,14 +201,14 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               />
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                           bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               />
             </div>
 
@@ -216,7 +216,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
             >
               <option value="active">Activo</option>
               <option value="completed">Completado</option>
@@ -227,7 +227,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               value={treatmentType}
               onChange={(e) => setTreatmentType(e.target.value as any)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
-                         bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
             >
               <option value="pharmacological">Farmacológico</option>
               <option value="surgical">Quirúrgico</option>
@@ -238,7 +238,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
 
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors self-start"
+              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
             >
               + Agregar tratamiento
             </button>

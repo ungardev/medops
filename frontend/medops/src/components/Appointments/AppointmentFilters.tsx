@@ -1,4 +1,3 @@
-// src/components/Appointments/AppointmentFilters.tsx
 import { AppointmentStatus } from "types/appointments";
 
 interface Props {
@@ -26,8 +25,8 @@ export default function AppointmentFilters({ activeFilter, onFilterChange }: Pro
             onClick={() => onFilterChange(f.key)}
             className={`px-3 py-1 rounded-md text-sm font-medium transition ${
               isActive
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
+                ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
+                : "border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
             }`}
           >
             {f.label}
