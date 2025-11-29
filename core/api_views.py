@@ -3793,20 +3793,26 @@ def search(request):
             "orders": []
         })
 
-    # 🔹 Pacientes
+    # 🔹 Pacientes: buscar por nombres y cédula
     patients = Patient.objects.filter(
-        Q(name__icontains=query) | Q(document__icontains=query)
-    ).values("id", "name", "document")[:10]
+        Q(first_name__icontains=query) |
+        Q(last_name__icontains=query) |
+        Q(national_id__icontains=query)
+    ).values("id", "first_name", "last_name", "national_id")[:10]
 
-    # 🔹 Citas
+    # 🔹 Citas: buscar por nombre del paciente y estado
     appointments = Appointment.objects.filter(
-        Q(patient__name__icontains=query) | Q(status__icontains=query)
-    ).values("id", "date", "status")[:10]
+        Q(patient__first_name__icontains=query) |
+        Q(patient__last_name__icontains=query) |
+        Q(status__icontains=query)
+    ).values("id", "appointment_date", "status")[:10]
 
-    # 🔹 Órdenes / Pagos
+    # 🔹 Órdenes / Pagos: buscar por paciente y estado
     orders = ChargeOrder.objects.filter(
-        Q(id__icontains=query) | Q(patient__name__icontains=query)
-    ).values("id", "amount", "status")[:10]
+        Q(patient__first_name__icontains=query) |
+        Q(patient__last_name__icontains=query) |
+        Q(status__icontains=query)
+    ).values("id", "total", "balance_due", "status")[:10]
 
     return Response({
         "patients": list(patients),
