@@ -27,8 +27,9 @@ export default function Patients() {
   const { data: paged, isLoading: isLoadingPaged, error, refetch } = usePatients(currentPage, pageSize);
   const { data: searchResults = [], isLoading: isSearching } = usePatientsSearch(query);
 
+  // 🔹 Ahora permite buscar desde 1 carácter o más
   const list: Patient[] =
-    query.trim().length >= 2 ? searchResults : Array.isArray(paged?.results) ? paged.results : [];
+    query.trim().length > 0 ? searchResults : Array.isArray(paged?.results) ? paged.results : [];
 
   const totalPages = Math.ceil((paged?.total ?? 0) / pageSize);
 
@@ -47,7 +48,7 @@ export default function Patients() {
     setPatientToDelete(null);
   };
 
-  if (isLoadingPaged && query.trim().length < 2)
+  if (isLoadingPaged && query.trim().length === 0)
     return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando pacientes...</p>;
   if (error) return <p className="text-sm text-red-600">Error cargando pacientes</p>;
 
@@ -72,7 +73,7 @@ export default function Patients() {
       </div>
 
       <div className="flex items-center gap-3 mb-4">
-        {query.trim().length >= 2 && (
+        {query.trim().length > 0 && (
           <p className="text-sm text-[#0d2c53] dark:text-gray-400">
             Mostrando resultados para “{query.trim()}”
           </p>
@@ -105,7 +106,7 @@ export default function Patients() {
                     )}
                     title={EmptyStateRegistry.pacientes.title}
                     message={
-                      query.trim().length >= 2
+                      query.trim().length > 0
                         ? "No se encontraron pacientes. Intenta ajustar la búsqueda o registrar un nuevo paciente."
                         : EmptyStateRegistry.pacientes.message
                     }
@@ -143,7 +144,7 @@ export default function Patients() {
         </table>
       </div>
 
-      {query.trim().length < 2 && (
+      {query.trim().length === 0 && (
         <div className="flex flex-wrap items-center justify-end gap-2 mt-4">
           <button
             className="px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 text-sm disabled:opacity-50"

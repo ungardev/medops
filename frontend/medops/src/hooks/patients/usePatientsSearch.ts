@@ -25,7 +25,8 @@ export function usePatientsSearch(query: string) {
     let timer: ReturnType<typeof setTimeout>;
 
     const run = async () => {
-      if (!query || query.length < 2) {
+      // 🔹 Ahora permitimos búsqueda desde 1 carácter
+      if (!query || query.trim().length === 0) {
         setData([]);
         setLoading(false);
         setExhausted(false);
@@ -38,7 +39,7 @@ export function usePatientsSearch(query: string) {
       try {
         const aggregated: Patient[] = [];
         let page: number = 1;
-        let next: string | null = `/patients/search/?q=${encodeURIComponent(query)}&page_size=${PAGE_SIZE}&page=${page}`;
+        let next: string | null = `/patients/search/?q=${encodeURIComponent(query.trim())}&page_size=${PAGE_SIZE}&page=${page}`;
 
         while (next && aggregated.length < MAX_RESULTS && !stop) {
           const pageData: Paged<Patient> = await apiFetch<Paged<Patient>>(next);
@@ -47,7 +48,7 @@ export function usePatientsSearch(query: string) {
 
           if (pageData.next) {
             page += 1;
-            next = `/patients/search/?q=${encodeURIComponent(query)}&page_size=${PAGE_SIZE}&page=${page}`;
+            next = `/patients/search/?q=${encodeURIComponent(query.trim())}&page_size=${PAGE_SIZE}&page=${page}`;
           } else {
             next = null;
           }

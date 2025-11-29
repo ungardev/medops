@@ -1,23 +1,25 @@
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
-import axios from "axios"; // 👈 usamos axios con baseURL y token ya configurados en main.tsx
+import axios from "axios";
 
 interface Patient {
-  id: string;
-  name: string;
-  document: string;
+  id: number;
+  first_name: string;
+  last_name: string;
+  national_id: string;
 }
 
 interface Appointment {
-  id: string;
-  date: string;
+  id: number;
+  appointment_date: string;
   status: string;
 }
 
 interface Order {
-  id: string;
-  amount: number;
+  id: number;
+  total: number;
+  balance_due: number;
   status: string;
 }
 
@@ -33,7 +35,6 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Extraer query de la URL
   const params = new URLSearchParams(location.search);
   const query = params.get("query") || "";
 
@@ -47,14 +48,13 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
 
-    // 🔹 Llamada real al backend institucional usando axios
     axios
-      .get("/search/", { params: { query: query.trim() } }) // 👈 axios ya tiene baseURL=/api y Authorization configurado
+      .get("/search/", { params: { query: query.trim() } })
       .then((res) => {
         setResults(res.data as SearchResponse);
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(() => {
         setError("No se pudo consultar el buscador institucional.");
         setLoading(false);
       });
@@ -97,16 +97,18 @@ export default function SearchPage() {
               </h2>
               <ul className="space-y-2">
                 {results.patients.map((p) => (
-                  <li
-                    key={p.id}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm"
-                  >
-                    <p className="font-medium text-[#0d2c53] dark:text-white">
-                      {p.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Documento: {p.document}
-                    </p>
+                  <li key={p.id}>
+                    <Link
+                      to={`/patients/${p.id}`}
+                      className="block p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                    >
+                      <p className="font-medium text-[#0d2c53] dark:text-white">
+                        {p.first_name} {p.last_name}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Cédula: {p.national_id}
+                      </p>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -121,16 +123,18 @@ export default function SearchPage() {
               </h2>
               <ul className="space-y-2">
                 {results.appointments.map((c) => (
-                  <li
-                    key={c.id}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm"
-                  >
-                    <p className="font-medium text-[#0d2c53] dark:text-white">
-                      Fecha: {c.date}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Estado: {c.status}
-                    </p>
+                  <li key={c.id}>
+                    <Link
+                      to={`/appointments`}
+                      className="block p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                    >
+                      <p className="font-medium text-[#0d2c53] dark:text-white">
+                        Fecha: {c.appointment_date}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Estado: {c.status}
+                      </p>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -145,16 +149,18 @@ export default function SearchPage() {
               </h2>
               <ul className="space-y-2">
                 {results.orders.map((o) => (
-                  <li
-                    key={o.id}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm"
-                  >
-                    <p className="font-medium text-[#0d2c53] dark:text-white">
-                      Orden #{o.id}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Monto: ${o.amount} — Estado: {o.status}
-                    </p>
+                  <li key={o.id}>
+                    <Link
+                      to={`/charge-orders/${o.id}`}
+                      className="block p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                    >
+                      <p className="font-medium text-[#0d2c53] dark:text-white">
+                        Orden #{o.id}
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Monto: ${o.total} — Estado: {o.status}
+                      </p>
+                    </Link>
                   </li>
                 ))}
               </ul>
