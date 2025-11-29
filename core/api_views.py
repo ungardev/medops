@@ -353,9 +353,10 @@ def dashboard_summary_api(request):
         except Exception:
             total_events = 0
         try:
+            # ✅ ahora usamos status="void" para órdenes anuladas
             total_canceled_orders = ChargeOrder.objects.filter(
                 issued_at__date__range=(start, end),
-                status="canceled"
+                status="void"
             ).count()
         except Exception:
             total_canceled_orders = 0
@@ -372,7 +373,7 @@ def dashboard_summary_api(request):
             "waiting_room_count": waiting_room_count,
             "total_payments": total_payments,
             "total_events": total_events,
-            "total_canceled_orders": total_canceled_orders,  # ✅ nuevo campo
+            "total_canceled_orders": total_canceled_orders,
             "total_waived": total_waived,
             "total_payments_amount": float(confirmed_amount),
             "estimated_waived_amount": float(estimated_waived_amount),
@@ -415,6 +416,7 @@ def dashboard_summary_api(request):
             "bcv_rate": {"value": 1.0, "unit": "VES_per_USD", "precision": 8, "is_fallback": True},
             "event_log": [],
         }, status=200)
+
 
 
 @extend_schema(
