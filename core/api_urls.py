@@ -1,4 +1,3 @@
-# src/core/api_urls.py
 from django.urls import path
 from rest_framework import routers
 from . import api_views
@@ -156,7 +155,7 @@ urlpatterns = [
     path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
 
     # --- Búsqueda institucional ---
-    path("api/search/", search, name="search-api"),  # 👈 FIX: ahora bajo /api/
+    path("search/", search, name="search-api"),  # 👈 FIX: ahora bajo /api/search/
 ]
 
 # --- Documentación OpenAPI ---

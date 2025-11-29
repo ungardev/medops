@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
+import axios from "axios"; // 👈 usamos axios con baseURL y token ya configurados en main.tsx
 
 interface Patient {
   id: string;
@@ -20,17 +21,10 @@ interface Order {
   status: string;
 }
 
-interface User {
-  id: string;
-  name: string;
-  role: string;
-}
-
 interface SearchResponse {
   patients: Patient[];
   appointments: Appointment[];
   orders: Order[];
-  users: User[];
 }
 
 export default function SearchPage() {
@@ -53,20 +47,15 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
 
-    // 🔹 Llamada real al backend institucional
-    fetch(`/api/search?query=${encodeURIComponent(query.trim())}`)
+    // 🔹 Llamada real al backend institucional usando axios
+    axios
+      .get("/search/", { params: { query: query.trim() } }) // 👈 axios ya tiene baseURL=/api y Authorization configurado
       .then((res) => {
-        if (!res.ok) {
-          throw new Error("Error al consultar el buscador institucional");
-        }
-        return res.json();
-      })
-      .then((data: SearchResponse) => {
-        setResults(data);
+        setResults(res.data as SearchResponse);
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message);
+        setError("No se pudo consultar el buscador institucional.");
         setLoading(false);
       });
   }, [query]);
@@ -77,7 +66,17 @@ export default function SearchPage() {
         Resultados de búsqueda
       </h1>
 
-      {loading ? (
+      {!query.trim() ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Search className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">
+            Escriba un término en el buscador institucional para comenzar.
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            Puede buscar pacientes, citas u órdenes/pagos.
+          </p>
+        </div>
+      ) : loading ? (
         <p className="text-gray-500 dark:text-gray-400">
           Buscando “{query}”...
         </p>
@@ -88,8 +87,7 @@ export default function SearchPage() {
       ) : results &&
         (results.patients.length > 0 ||
           results.appointments.length > 0 ||
-          results.orders.length > 0 ||
-          results.users.length > 0) ? (
+          results.orders.length > 0) ? (
         <div className="space-y-8">
           {/* Pacientes */}
           {results.patients.length > 0 && (
@@ -156,30 +154,6 @@ export default function SearchPage() {
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Monto: ${o.amount} — Estado: {o.status}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* Usuarios */}
-          {results.users.length > 0 && (
-            <section>
-              <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-3">
-                Usuarios
-              </h2>
-              <ul className="space-y-2">
-                {results.users.map((u) => (
-                  <li
-                    key={u.id}
-                    className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm"
-                  >
-                    <p className="font-medium text-[#0d2c53] dark:text-white">
-                      {u.name}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Rol: {u.role}
                     </p>
                   </li>
                 ))}
