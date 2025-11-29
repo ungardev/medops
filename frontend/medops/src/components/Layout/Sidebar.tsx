@@ -17,6 +17,8 @@ import { useState } from "react";
 interface SidebarProps {
   collapsed: boolean;
   setCollapsed: (value: boolean) => void;
+  mobileOpen: boolean;
+  setMobileOpen: (value: boolean) => void;
 }
 
 const navItems = [
@@ -50,7 +52,12 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
+export default function Sidebar({
+  collapsed,
+  setCollapsed,
+  mobileOpen,
+  setMobileOpen,
+}: SidebarProps) {
   const location = useLocation();
 
   const itemBase =
@@ -63,18 +70,19 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   return (
     <>
       {/* Overlay en móviles */}
-      <div
-        className={`md:hidden fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity ${
-          collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-        }`}
-        onClick={() => setCollapsed(true)}
-      />
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
       {/* Sidebar institucional */}
       <aside
-        className={`h-screen bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 flex flex-col pt-2 pb-4 px-4 shadow-sm z-50 transition-all duration-300
+        className={`h-screen bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 flex flex-col pt-2 pb-4 px-4 shadow-sm transition-all duration-300
           ${collapsed ? "w-20" : "w-64"}
-          fixed md:static top-0 left-0 md:translate-x-0
+          ${mobileOpen ? "fixed z-30 top-0 left-0 translate-x-0" : "hidden"}
+          md:relative md:block md:z-10 md:translate-x-0 md:top-auto md:left-auto
         `}
       >
         {/* Toggle (desktop) */}
@@ -91,14 +99,19 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
 
         {/* Cierre en móviles */}
         <button
-          onClick={() => setCollapsed(true)}
+          onClick={() => setMobileOpen(false)}
           className="md:hidden self-end mb-2 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white"
         >
           <X className="w-5 h-5" />
         </button>
 
         {/* Branding institucional */}
-        <Link to="/" className={`mb-4 flex justify-center items-center ${collapsed ? "h-10" : "h-16"}`}>
+        <Link
+          to="/"
+          className={`mb-4 flex justify-center items-center ${
+            collapsed ? "h-10" : "h-16"
+          }`}
+        >
           {!collapsed ? (
             <>
               <img
