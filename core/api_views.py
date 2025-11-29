@@ -523,22 +523,22 @@ def dashboard_summary_api(request):
 def patient_search_api(request):
     query = request.GET.get("q", "").strip()
     if not query:
-        # ⚔️ devuelve estructura paginada vacía
         return Response({"count": 0, "next": None, "previous": None, "results": []}, status=200)
 
-    # 🔹 dividir query en términos (ej: "ungar mifsud")
     terms = query.split()
     qs_filter = Q()
+
     for term in terms:
+        if term.isdigit():
+            qs_filter |= Q(id=int(term))  # ⚔️ búsqueda exacta por folio
         qs_filter |= Q(first_name__icontains=term)
         qs_filter |= Q(last_name__icontains=term)
         qs_filter |= Q(middle_name__icontains=term)
         qs_filter |= Q(second_last_name__icontains=term)
-        qs_filter |= Q(national_id__icontains=term)  # 👈 usar campo real de cédula
+        qs_filter |= Q(national_id__icontains=term)
 
     qs = Patient.objects.filter(qs_filter).order_by("-created_at")
 
-    # 🔹 Paginador DRF
     paginator = PageNumberPagination()
     paginator.page_size = int(request.query_params.get("page_size", 10))
     result_page = paginator.paginate_queryset(qs, request)
