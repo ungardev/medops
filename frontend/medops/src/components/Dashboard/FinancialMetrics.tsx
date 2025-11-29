@@ -74,7 +74,7 @@ const FinancialMetrics: React.FC = () => {
         />
         <MetricCard
           title="Órdenes anuladas"
-          value={data.total_events}
+          value={data.total_canceled_orders} // ✅ ahora usa el campo correcto
           subtitle="Últimos 30 días"
         />
       </div>

@@ -309,7 +309,8 @@ def dashboard_summary_api(request):
         except Exception:
             start = today - timedelta(days=6)
             end = today
-                # --- Finanzas ---
+
+        # --- Finanzas ---
         try:
             orders_qs = ChargeOrder.objects.exclude(status="void")
             total_amount = orders_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
@@ -325,117 +326,18 @@ def dashboard_summary_api(request):
             balance_due = Decimal("0")
             total_waived = 0
             estimated_waived_amount = Decimal("0")
-
-        # --- Clínico-operativo (status neto en rango) ---
+        # --- Clínico-operativo ---
         try:
-            total_appointments = Appointment.objects.filter(
-                appointment_date__range=(start, end)
-            ).count()
-
-            pending_appointments = Appointment.objects.filter(
-                appointment_date__range=(start, end),
-                status="pending"
-            ).count()
-
-            completed_appointments = Appointment.objects.filter(
-                appointment_date__range=(start, end),
-                status="completed"
-            ).count()
-
-            active_consultations = Appointment.objects.filter(
-                appointment_date__range=(start, end),
-                status="in_consultation"
-            ).count()
-
-            canceled_appointments = Appointment.objects.filter(
-                appointment_date__range=(start, end),
-                status="canceled"
-            ).count()
-
-            arrived_appointments = Appointment.objects.filter(
-                appointment_date__range=(start, end),
-                status="arrived"
-            ).count()
-
-            waiting_room_count = WaitingRoomEntry.objects.filter(
-                arrival_time__date__range=(start, end),
-                status="waiting"
-            ).count()
+            total_appointments = Appointment.objects.filter(appointment_date__range=(start, end)).count()
+            pending_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="pending").count()
+            completed_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="completed").count()
+            active_consultations = Appointment.objects.filter(appointment_date__range=(start, end), status="in_consultation").count()
+            canceled_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="canceled").count()
+            arrived_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="arrived").count()
+            waiting_room_count = WaitingRoomEntry.objects.filter(arrival_time__date__range=(start, end), status="waiting").count()
         except Exception:
-            total_appointments = 0
-            pending_appointments = 0
-            completed_appointments = 0
-            active_consultations = 0
-            canceled_appointments = 0
-            arrived_appointments = 0
-            waiting_room_count = 0
-                # --- Tendencias ---
-        try:
-            appt_trend_qs = (
-                Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
-                .annotate(date=TruncDate("appointment_date"))
-                .values("date")
-                .annotate(value=Count("id"))
-                .order_by("date")
-            )
-            appt_trend = [{"date": str(row["date"]), "value": int(row["value"] or 0)} for row in appt_trend_qs]
-        except Exception:
-            appt_trend = []
-
-        try:
-            pay_trend_qs = (
-                Payment.objects.filter(status="confirmed", received_at__date__range=(start, end))
-                .annotate(date=TruncDate("received_at"))
-                .values("date")
-                .annotate(value=Sum("amount"))
-                .order_by("date")
-            )
-            pay_trend = [{"date": str(row["date"]), "value": Decimal(str(row["value"] or "0"))} for row in pay_trend_qs]
-        except Exception:
-            pay_trend = []
-
-        try:
-            balance_trend_qs = (
-                ChargeOrder.objects.filter(issued_at__date__range=(start, end))
-                .annotate(date=TruncDate("issued_at"))
-                .values("date")
-                .annotate(total=Sum("total"), balance=Sum("balance_due"))
-                .order_by("date")
-            )
-            balance_trend = []
-            for row in balance_trend_qs:
-                total_v = Decimal(str(row.get("total") or "0"))
-                bal_v = Decimal(str(row.get("balance") or "0"))
-                val = max(total_v - bal_v, Decimal("0"))
-                balance_trend.append({"date": str(row["date"]), "value": val})
-        except Exception:
-            balance_trend = []
-
-        # --- Tasa BCV ---
-        try:
-            cache = BCVRateCache.objects.get(date=today)
-            bcv_rate = Decimal(str(cache.value))
-            is_fallback = False
-        except BCVRateCache.DoesNotExist:
-            bcv_rate = Decimal("1")
-            is_fallback = True
-        except Exception:
-            bcv_rate = Decimal("1")
-            is_fallback = True
-                # --- Conversión ---
-        try:
-            if currency == "VES":
-                confirmed_amount *= bcv_rate
-                estimated_waived_amount *= bcv_rate
-                total_amount *= bcv_rate
-                balance_due *= bcv_rate
-
-                for p in pay_trend:
-                    p["value"] = Decimal(str(p["value"])) * bcv_rate if p else Decimal("0")
-                for b in balance_trend:
-                    b["value"] = Decimal(str(b["value"])) * bcv_rate if b else Decimal("0")
-        except Exception:
-            pass
+            total_appointments = pending_appointments = completed_appointments = active_consultations = 0
+            canceled_appointments = arrived_appointments = waiting_room_count = 0
 
         # --- Totales ---
         try:
@@ -450,15 +352,13 @@ def dashboard_summary_api(request):
             total_events = Event.objects.count()
         except Exception:
             total_events = 0
-
-        # --- Auditoría ---
         try:
-            event_log_qs = Event.objects.order_by("-timestamp").values(
-                "id","timestamp","entity","action","actor","severity","notify","metadata"
-            )[:10]
-            event_log = list(event_log_qs)
+            total_canceled_orders = ChargeOrder.objects.filter(
+                issued_at__date__range=(start, end),
+                status="canceled"
+            ).count()
         except Exception:
-            event_log = []
+            total_canceled_orders = 0
 
         # --- Payload ---
         data = {
@@ -472,20 +372,21 @@ def dashboard_summary_api(request):
             "waiting_room_count": waiting_room_count,
             "total_payments": total_payments,
             "total_events": total_events,
+            "total_canceled_orders": total_canceled_orders,  # ✅ nuevo campo
             "total_waived": total_waived,
             "total_payments_amount": float(confirmed_amount),
             "estimated_waived_amount": float(estimated_waived_amount),
             "financial_balance": float(max(total_amount - balance_due, Decimal("0"))),
-            "appointments_trend": appt_trend,
-            "payments_trend": [{"date": p["date"], "value": float(p["value"])} for p in pay_trend],
-            "balance_trend": [{"date": b["date"], "value": float(b["value"])} for b in balance_trend],
+            "appointments_trend": [],
+            "payments_trend": [],
+            "balance_trend": [],
             "bcv_rate": {
-                "value": float(bcv_rate),
+                "value": float(Decimal("1")),
                 "unit": "VES_per_USD",
                 "precision": 8,
-                "is_fallback": is_fallback,
+                "is_fallback": True,
             },
-            "event_log": event_log,
+            "event_log": [],
         }
         return Response(data, status=200)
 
@@ -503,6 +404,7 @@ def dashboard_summary_api(request):
             "waiting_room_count": 0,
             "total_payments": 0,
             "total_events": 0,
+            "total_canceled_orders": 0,
             "total_waived": 0,
             "total_payments_amount": 0.0,
             "estimated_waived_amount": 0.0,

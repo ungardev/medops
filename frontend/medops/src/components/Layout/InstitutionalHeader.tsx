@@ -1,12 +1,67 @@
 import { Bell, UserCircle, Search, LogOut, Settings, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 
+// Tipos institucionales
+interface Notification {
+  id: number;
+  timestamp: string;
+  actor: string;
+  entity: string;
+  entity_id: number;
+  action: string;
+  metadata: Record<string, any>;
+  severity: string;
+  notify: boolean;
+}
+
+// 🔹 Formateador institucional de notificaciones
+function formatNotification(n: Notification): string {
+  const { action, entity, metadata } = n;
+
+  if (action === "patient_arrived" && entity === "WaitingRoomEntry") {
+    return `Paciente llegó a la sala (ID ${metadata.patient_id})`;
+  }
+  if (action === "payment_registered" && entity === "ChargeOrder") {
+    return `Pago registrado de $${metadata.amount} USD`;
+  }
+  if (action === "generated" && entity === "MedicalReport") {
+    return `Informe médico generado (Código ${metadata.audit_code})`;
+  }
+  if (action === "generate_pdf" && entity === "MedicalDocument") {
+    const tipo = metadata.category?.replace(/_/g, " ") ?? "documento";
+    return `PDF generado: ${tipo}`;
+  }
+  return `${action} en ${entity}`;
+}
+
+// 🔹 Enlace institucional por entidad
+function getNotificationLink(n: Notification): string | undefined {
+  const { entity, entity_id, metadata } = n;
+
+  if (entity === "ChargeOrder") return `/charge-orders/${entity_id}`; // detalle ChargeOrder
+  if (entity === "WaitingRoomEntry") return `/waitingroom`;           // vista general
+  if (entity === "MedicalReport" || entity === "MedicalDocument") {
+    const patientId = metadata?.patient_id;
+    if (patientId) {
+      return `/patients/${patientId}?tab=documents`;                  // PatientDocumentsTab
+    }
+  }
+
+  return undefined;
+}
 export default function InstitutionalHeader() {
   const navigate = useNavigate();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [query, setQuery] = useState("");
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const notifRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -16,35 +71,54 @@ export default function InstitutionalHeader() {
     }
   }, []);
 
+  useEffect(() => {
+    setLoadingNotifications(true);
+    axios
+      .get<Notification[]>("/notifications/")
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : [];
+        setNotifications(raw.slice(0, 5));
+      })
+      .catch(() => setNotifications([]))
+      .then(() => {
+        setLoadingNotifications(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
   const toggleTheme = () => {
-    if (darkMode) {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    } else {
+    const next = !darkMode;
+    if (next) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
-    setDarkMode(!darkMode);
+    setDarkMode(next);
   };
 
   const handleSearch = () => {
-    if (query.trim() !== "") {
-      navigate(`/search?query=${encodeURIComponent(query.trim())}`);
-    }
+    const q = query.trim();
+    if (q) navigate(`/search?query=${encodeURIComponent(q)}`);
   };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSearch();
-    }
+    if (e.key === "Enter") handleSearch();
   };
 
   return (
-    <header
-      className="bg-white dark:bg-gray-900 text-gray-700 dark:text-white border-b border-gray-200 dark:border-gray-700 px-6 py-3 flex items-center justify-between shadow-sm transition-all duration-300"
-    >
-      {/* Search */}
-      <div className="hidden md:flex flex-1 mx-6">
+    <div className="w-full h-16 px-6 flex items-center">
+      {/* Izquierda: búsqueda */}
+      <div className="flex-1">
         <div className="relative w-full max-w-md">
           <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
           <input
@@ -53,11 +127,8 @@ export default function InstitutionalHeader() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full pl-10 pr-12 py-2 rounded-md text-sm
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53] dark:focus:ring-white
-                       bg-white dark:bg-gray-800 text-[#0d2c53] dark:text-white border border-gray-200 dark:border-gray-700"
+            className="w-full pl-10 pr-12 py-2 rounded-md text-sm bg-white dark:bg-gray-800 text-[#0d2c53] dark:text-white border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
-          {/* Botón de búsqueda */}
           <button
             onClick={handleSearch}
             className="absolute right-2 top-2 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors"
@@ -67,46 +138,84 @@ export default function InstitutionalHeader() {
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-6 relative">
-        {/* Theme toggle */}
+      {/* Derecha: acciones */}
+      <div className="ml-auto flex items-center gap-2">
+        {/* Tema */}
         <button
           onClick={toggleTheme}
-          className="text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white"
+          aria-label="Cambiar tema"
         >
           {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
         </button>
 
-        {/* Notifications */}
-        <button className="relative text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors">
-          <Bell className="w-6 h-6" />
-          <span className="absolute -top-1 -right-1 bg-[#0d2c53] text-white text-xs rounded-full px-1 animate-pulse">
-            3
-          </span>
-        </button>
+        {/* Notificaciones */}
+        <div className="relative" ref={notifRef}>
+          <button
+            onClick={() => setShowNotifications((v) => !v)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white"
+            aria-label="Notificaciones"
+          >
+            <Bell className="w-6 h-6" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-[#0d2c53] text-white text-[10px] rounded-full px-1 leading-none">
+                {notifications.length}
+              </span>
+            )}
+          </button>
 
-        {/* Profile dropdown */}
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+              <ul className="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">
+                {loadingNotifications ? (
+                  <li className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Cargando…</li>
+                ) : notifications.length === 0 ? (
+                  <li className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No hay notificaciones.</li>
+                ) : (
+                  notifications.map((n) => {
+                    const label = formatNotification(n);
+                    const link = getNotificationLink(n);
+                    return (
+                      <li
+                        key={n.id}
+                        className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                        onClick={() => {
+                          if (link) navigate(link);
+                          setShowNotifications(false);
+                        }}
+                      >
+                        {label}
+                      </li>
+                    );
+                  })
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        {/* Perfil */}
         <div className="relative">
           <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white"
+            aria-label="Perfil"
           >
-            <UserCircle className="w-7 h-7" />
-            <span className="hidden md:inline">Perfil</span>
+            <UserCircle className="w-6 h-6" />
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg animate-fade-slide z-50">
+            <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
               <button
                 onClick={() => navigate("/settings/config")}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#0d2c53] dark:hover:text-white transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <Settings className="w-4 h-4" />
                 Configuración
               </button>
               <button
                 onClick={() => navigate("/login")}
-                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#0d2c53] dark:hover:text-white transition-colors"
+                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
                 <LogOut className="w-4 h-4" />
                 Cerrar sesión
@@ -115,6 +224,6 @@ export default function InstitutionalHeader() {
           )}
         </div>
       </div>
-    </header>
+    </div>
   );
 }

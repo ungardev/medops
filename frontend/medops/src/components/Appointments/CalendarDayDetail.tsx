@@ -13,6 +13,12 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
     moment(appt.appointment_date, "YYYY-MM-DD").isSame(date, "day")
   );
 
+  const handleClickAppointment = (appt: Appointment) => {
+    // ⚔️ cerrar el modal del día y abrir el detalle de cita
+    onClose();
+    onSelectAppointment(appt);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-2xl p-6">
@@ -42,7 +48,7 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
               <li
                 key={appt.id}
                 className="py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-800 px-2 rounded-md"
-                onClick={() => onSelectAppointment(appt)}
+                onClick={() => handleClickAppointment(appt)}
               >
                 <div className="flex justify-between items-center">
                   <div>

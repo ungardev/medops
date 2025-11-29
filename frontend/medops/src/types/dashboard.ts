@@ -21,7 +21,10 @@ export type DashboardSummary = {
   total_waived: number;                 // número de exoneraciones
   estimated_waived_amount: number;      // monto estimado exonerado
   financial_balance: number;            // balance acumulado
-  total_events: number;                 // anulaciones / eventos críticos
+
+  // 🔹 Eventos críticos
+  total_events: number;                 // eventos críticos genéricos (auditoría)
+  total_canceled_orders: number;        // ✅ nuevo: solo órdenes anuladas en el rango
 
   // 🔹 Tendencias
   appointments_trend: TrendPoint[];

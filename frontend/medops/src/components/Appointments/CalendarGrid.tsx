@@ -33,6 +33,8 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
   }
 
   const handleSelectAppointment = (appt: Appointment) => {
+    // ⚔️ cerrar el CalendarDayDetail al seleccionar cita
+    setSelectedDay(null);
     if (onSelectAppointment) onSelectAppointment(appt);
   };
 

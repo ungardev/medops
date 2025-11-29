@@ -897,7 +897,7 @@ class DashboardSummarySerializer(serializers.Serializer):
     # 🔹 Clínico
     total_patients = serializers.IntegerField()
     total_appointments = serializers.IntegerField()
-    active_appointments = serializers.IntegerField()     # ✅ nuevo campo
+    active_appointments = serializers.IntegerField()     # ✅ citas con actividad clínica real
     completed_appointments = serializers.IntegerField()
     pending_appointments = serializers.IntegerField()
     waiting_room_count = serializers.IntegerField()
@@ -905,7 +905,8 @@ class DashboardSummarySerializer(serializers.Serializer):
 
     # 🔹 Financiero
     total_payments = serializers.IntegerField()
-    total_events = serializers.IntegerField()
+    total_events = serializers.IntegerField()            # eventos críticos genéricos (mantener para auditoría)
+    total_canceled_orders = serializers.IntegerField()   # ✅ nuevo: solo órdenes anuladas en el rango
     total_waived = serializers.IntegerField()
     total_payments_amount = serializers.FloatField()
     estimated_waived_amount = serializers.FloatField()

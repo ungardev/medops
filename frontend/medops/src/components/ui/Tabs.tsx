@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 
 interface TabProps {
   id: string;
@@ -19,7 +19,33 @@ export function Tab({ children }: TabProps) {
 
 export function Tabs({ children, defaultTab, className, layout = "vertical" }: TabsProps) {
   const tabs = (children as any[]).filter((c) => c.type === Tab);
-  const [active, setActive] = useState(defaultTab ?? tabs[0].props.id);
+
+  // 🔹 Normalización de ids para tolerar inglés/español
+  const normalize = (id: string | undefined): string | undefined => {
+    if (!id) return undefined;
+    const map: Record<string, string> = {
+      info: "info",
+      consultas: "consultas",
+      documents: "documentos",   // 👈 mapea inglés a español
+      documentos: "documentos",
+      pagos: "pagos",
+      citas: "citas",
+      events: "eventos",
+      eventos: "eventos",
+    };
+    return map[id.toLowerCase()] ?? id;
+  };
+
+  const initial = normalize(defaultTab) ?? tabs[0].props.id;
+  const [active, setActive] = useState(initial);
+
+  // 🔹 Si cambia el defaultTab (ej. por query param), actualiza el estado
+  useEffect(() => {
+    const normalized = normalize(defaultTab);
+    if (normalized && normalized !== active) {
+      setActive(normalized);
+    }
+  }, [defaultTab]);
 
   return (
     <div className={className ?? "space-y-4"}>

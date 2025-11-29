@@ -60,20 +60,37 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   path="patients/:patientId/consultations/:appointmentId"
                   element={<PatientConsultationDetail />}
                 />
-                <Route path="waitingroom" element={<WaitingRoom />} />
-                <Route path="appointments" element={<Appointments />} />
-                <Route path="payments" element={<Payments />} />
-                <Route path="charge-orders/:id" element={<ChargeOrderDetail />} />
-                <Route path="events" element={<Events />} />
-                <Route path="audit-dashboard" element={<AuditDashboard />} />
-                <Route path="consultation" element={<Consultation />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="settings/config" element={<ConfigPage />} />
 
-                {/* 🔹 Nueva ruta de validación visual */}
+                {/* Sala de espera */}
+                <Route path="waitingroom" element={<WaitingRoom />} /> {/* 🔹 solo general */}
+
+                {/* Citas */}
+                <Route path="appointments" element={<Appointments />} />
+
+                {/* Pagos */}
+                <Route path="payments" element={<Payments />} />
+                <Route path="payments/:id" element={<Payments />} /> {/* 🔹 dinámica */}
+                <Route path="charge-orders/:id" element={<ChargeOrderDetail />} />
+
+                {/* Eventos */}
+                <Route path="events" element={<Events />} />
+
+                {/* Auditoría */}
+                <Route path="audit-dashboard" element={<AuditDashboard />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
 
-                {/* 🔹 Nueva ruta de búsqueda institucional */}
+                {/* Consulta */}
+                <Route path="consultation" element={<Consultation />} />
+
+                {/* Reportes */}
+                <Route path="reports" element={<ReportsPage />} />
+                <Route path="reports/:id" element={<ReportsPage />} /> {/* 🔹 dinámica */}
+                <Route path="documents/:id" element={<ReportsPage />} /> {/* 🔹 opcional */}
+
+                {/* Configuración */}
+                <Route path="settings/config" element={<ConfigPage />} />
+
+                {/* Búsqueda */}
                 <Route path="search" element={<SearchPage />} /> {/* 👈 FIX */}
               </Route>
             </Route>

@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { usePatient } from "../../hooks/patients/usePatient";
 
 import { Tabs, Tab } from "../../components/ui/Tabs";
@@ -15,6 +15,8 @@ export default function PatientDetail() {
   const patientId = Number(id);
 
   const { data: patient, isLoading, error } = usePatient(patientId);
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get("tab") ?? "info"; // 🔹 interpreta ?tab=documents
 
   if (isLoading)
     return <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando paciente...</p>;
@@ -35,7 +37,7 @@ export default function PatientDetail() {
       </div>
 
       <Tabs
-        defaultTab="info"
+        defaultTab={defaultTab}
         className="border-b border-gray-200 dark:border-gray-700 text-sm font-medium text-[#0d2c53] dark:text-gray-300"
       >
         <Tab id="info" label="Información">
