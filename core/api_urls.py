@@ -48,6 +48,7 @@ from .api_views import (
     current_consultation_api,
     appointment_detail_api,
     documents_api,                 # 👈 endpoint global de documentos clínicos
+    search,                        # 👈 NUEVO endpoint de búsqueda institucional
 )
 
 # --- Swagger / OpenAPI ---
@@ -155,6 +156,9 @@ urlpatterns = [
     path("choices/medical-test/", medicaltest_choices_api, name="medicaltest-choices-api"),
     path("choices/medical-referral/", medicalreferral_choices_api, name="medicalreferral-choices-api"),
     path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
+
+    # --- Búsqueda institucional ---
+    path("search/", search, name="search-api"),
 ]
 
 # --- Documentación OpenAPI ---

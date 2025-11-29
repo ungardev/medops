@@ -3781,3 +3781,35 @@ def documents_api(request):
 
     return Response({"documents": payload, "skipped": []}, status=200)
 
+
+@api_view(["GET"])
+def search(request):
+    query = request.GET.get("query", "").strip()
+
+    if not query:
+        return Response({
+            "patients": [],
+            "appointments": [],
+            "orders": []
+        })
+
+    # 🔹 Pacientes
+    patients = Patient.objects.filter(
+        Q(name__icontains=query) | Q(document__icontains=query)
+    ).values("id", "name", "document")[:10]
+
+    # 🔹 Citas
+    appointments = Appointment.objects.filter(
+        Q(patient__name__icontains=query) | Q(status__icontains=query)
+    ).values("id", "date", "status")[:10]
+
+    # 🔹 Órdenes / Pagos
+    orders = ChargeOrder.objects.filter(
+        Q(id__icontains=query) | Q(patient__name__icontains=query)
+    ).values("id", "amount", "status")[:10]
+
+    return Response({
+        "patients": list(patients),
+        "appointments": list(appointments),
+        "orders": list(orders),
+    })
