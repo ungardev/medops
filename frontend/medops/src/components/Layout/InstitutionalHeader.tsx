@@ -27,9 +27,15 @@ export default function InstitutionalHeader() {
     setDarkMode(!darkMode);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && query.trim() !== "") {
+  const handleSearch = () => {
+    if (query.trim() !== "") {
       navigate(`/search?query=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
     }
   };
 
@@ -47,10 +53,17 @@ export default function InstitutionalHeader() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="w-full pl-10 pr-4 py-2 rounded-md text-sm
+            className="w-full pl-10 pr-12 py-2 rounded-md text-sm
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53] dark:focus:ring-white
                        bg-white dark:bg-gray-800 text-[#0d2c53] dark:text-white border border-gray-200 dark:border-gray-700"
           />
+          {/* Botón de búsqueda */}
+          <button
+            onClick={handleSearch}
+            className="absolute right-2 top-2 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors"
+          >
+            <Search className="w-5 h-5" />
+          </button>
         </div>
       </div>
 

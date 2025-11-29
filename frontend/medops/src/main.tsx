@@ -8,7 +8,7 @@ import App from "./App";
 import DashboardPage from "./pages/Dashboard";
 import Patients from "./pages/Patients/Patients";
 import PatientDetail from "./pages/Patients/PatientDetail";
-import PatientConsultationDetail from "./pages/Patients/PatientConsultationsDetail"; // ✅ nuevo import
+import PatientConsultationDetail from "./pages/Patients/PatientConsultationsDetail"; 
 import Appointments from "./pages/Appointments/Appointments";
 import Payments from "./pages/Payments/Payments";
 import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail";
@@ -28,7 +28,8 @@ import axios from "axios";
 
 import ReportsPage from "./pages/Reports/ReportsPage";
 import ConfigPage from "./pages/Settings/ConfigPage";
-import VisualAudit from "./pages/VisualAudit"; // ✅ nuevo import
+import VisualAudit from "./pages/VisualAudit"; 
+import SearchPage from "./pages/Search/Search"; // 👈 NUEVO IMPORT
 
 // Configuración global de axios usando Vite env
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
@@ -58,7 +59,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route
                   path="patients/:patientId/consultations/:appointmentId"
                   element={<PatientConsultationDetail />}
-                /> {/* ✅ nueva ruta */}
+                />
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
@@ -71,6 +72,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 
                 {/* 🔹 Nueva ruta de validación visual */}
                 <Route path="visual-audit" element={<VisualAudit />} />
+
+                {/* 🔹 Nueva ruta de búsqueda institucional */}
+                <Route path="search" element={<SearchPage />} /> {/* 👈 FIX */}
               </Route>
             </Route>
           </Routes>

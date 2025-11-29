@@ -92,7 +92,6 @@ urlpatterns = [
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
-    # Documentos del paciente: GET/POST y DELETE anidado
     path(
         "patients/<int:pk>/documents/",
         PatientViewSet.as_view({"get": "documents", "post": "documents"}),
@@ -120,7 +119,6 @@ urlpatterns = [
     path("treatments/<int:pk>/generate-pdf/", generate_treatment_pdf, name="generate-treatment-pdf"),
     path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
     path("chargeorders/<int:pk>/generate-pdf/", generate_chargeorder_pdf, name="generate-chargeorder-pdf"),
-    # --- Alias para compatibilidad con frontend actual ---
     path("charge-orders/<int:pk>/export/", generate_chargeorder_pdf, name="chargeorder-export"),
 
     # --- Documentos clínicos ---
@@ -158,7 +156,7 @@ urlpatterns = [
     path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
 
     # --- Búsqueda institucional ---
-    path("search/", search, name="search-api"),
+    path("api/search/", search, name="search-api"),  # 👈 FIX: ahora bajo /api/
 ]
 
 # --- Documentación OpenAPI ---
@@ -171,9 +169,7 @@ if settings.DEBUG:
         path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     ]
 
-# --- Unir ambos ---
 urlpatterns += router.urls
 
-# --- Servir archivos de media en desarrollo ---
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
