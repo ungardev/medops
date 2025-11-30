@@ -326,7 +326,6 @@ def dashboard_summary_api(request):
             balance_due = Decimal("0")
             total_waived = 0
             estimated_waived_amount = Decimal("0")
-
         # --- Clínico-operativo ---
         try:
             total_appointments = Appointment.objects.filter(appointment_date__range=(start, end)).count()
@@ -402,31 +401,41 @@ def dashboard_summary_api(request):
             ).count()
         except Exception:
             total_canceled_orders = 0
-
         # --- BCV Rate ---
         try:
             latest_rate = BCVRateCache.objects.order_by("-created_at").first()
             if latest_rate:
+                rate_value = float(latest_rate.value)
                 bcv_rate = {
-                    "value": float(latest_rate.value),
+                    "value": rate_value,
                     "unit": "VES_per_USD",
                     "precision": 8,
                     "is_fallback": False,
                 }
             else:
+                rate_value = 1.0
                 bcv_rate = {
-                    "value": 1.0,
+                    "value": rate_value,
                     "unit": "VES_per_USD",
                     "precision": 8,
                     "is_fallback": True,
                 }
         except Exception:
+            rate_value = 1.0
             bcv_rate = {
-                "value": 1.0,
+                "value": rate_value,
                 "unit": "VES_per_USD",
                 "precision": 8,
                 "is_fallback": True,
             }
+
+        def convert_amount(amount, rate, currency):
+            try:
+                if currency == "VES":
+                    return float(amount) * rate
+                return float(amount)
+            except Exception:
+                return float(amount)
 
         # --- Payload ---
         data = {
@@ -442,9 +451,9 @@ def dashboard_summary_api(request):
             "total_events": total_events,
             "total_canceled_orders": total_canceled_orders,
             "total_waived": total_waived,
-            "total_payments_amount": float(confirmed_amount),
-            "estimated_waived_amount": float(estimated_waived_amount),
-            "financial_balance": float(max(total_amount - balance_due, Decimal("0"))),
+            "total_payments_amount": convert_amount(confirmed_amount, rate_value, currency),
+            "estimated_waived_amount": convert_amount(estimated_waived_amount, rate_value, currency),
+            "financial_balance": convert_amount(max(total_amount - balance_due, Decimal("0")), rate_value, currency),
             "appointments_trend": appt_trend,
             "payments_trend": pay_trend,
             "balance_trend": balance_trend,
