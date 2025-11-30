@@ -59,6 +59,7 @@ export default function Sidebar({
   setMobileOpen,
 }: SidebarProps) {
   const location = useLocation();
+  const effectiveCollapsed = mobileOpen ? false : collapsed;
 
   const itemBase =
     "group flex items-center px-2 py-2 rounded-md font-medium transition-colors";
@@ -68,29 +69,21 @@ export default function Sidebar({
     "text-gray-600 hover:bg-gray-100 hover:text-[#0d2c53] dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white";
 
   return (
-    <>
-      {/* Overlay en móviles */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40 transition-opacity md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar institucional */}
-      <aside
-        className={`h-screen bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 border-r border-gray-200 dark:border-gray-700 flex flex-col pt-2 pb-4 px-4 shadow-sm transition-all duration-300
-          ${collapsed ? "w-20" : "w-64"}
-          ${mobileOpen ? "fixed z-30 top-0 left-0 translate-x-0" : "hidden"}
-          md:relative md:block md:z-10 md:translate-x-0 md:top-auto md:left-auto
-        `}
-      >
+    <aside
+      className={`border-r border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300
+        ${effectiveCollapsed ? "w-20" : "w-64"}
+        fixed z-50 top-0 left-0 h-screen bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200
+        ${mobileOpen ? "" : "md:opacity-100 md:pointer-events-auto opacity-0 pointer-events-none"}
+        md:sticky md:top-0 md:block md:z-10 md:h-screen md:max-h-screen md:overflow-y-auto md:left-auto md:translate-x-0 md:flex-shrink-0 md:bg-white md:dark:bg-gray-900 md:text-gray-700 md:dark:text-gray-200
+      `}
+    >
+      <div className="flex flex-col justify-between h-full pt-2 pb-4 px-4">
         {/* Toggle (desktop) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="mb-3 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors self-end md:block hidden"
         >
-          {collapsed ? (
+          {effectiveCollapsed ? (
             <ChevronRight className="w-5 h-5 transition-transform duration-300" />
           ) : (
             <ChevronLeft className="w-5 h-5 transition-transform duration-300 rotate-180" />
@@ -108,11 +101,9 @@ export default function Sidebar({
         {/* Branding institucional */}
         <Link
           to="/"
-          className={`mb-4 flex justify-center items-center ${
-            collapsed ? "h-10" : "h-16"
-          }`}
+          className={`mb-4 flex justify-center items-center ${effectiveCollapsed ? "h-10" : "h-16"}`}
         >
-          {!collapsed ? (
+          {!effectiveCollapsed ? (
             <>
               <img
                 src="/logo-medops-light.svg"
@@ -142,18 +133,18 @@ export default function Sidebar({
         </Link>
 
         {/* Label MENU */}
-        {!collapsed && (
+        {!effectiveCollapsed && (
           <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 px-2">
             MENU
           </div>
         )}
 
         {/* Navigation */}
-        <nav className="flex-1">
+        <nav className="flex-1 overflow-y-auto">
           <ul className="flex flex-col gap-2">
             {navItems.map(({ path, label, icon: Icon }) => (
               <li key={path}>
-                {collapsed ? (
+                {effectiveCollapsed ? (
                   <Tooltip label={label}>
                     <Link
                       to={path}
@@ -185,7 +176,7 @@ export default function Sidebar({
             ))}
           </ul>
         </nav>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 }

@@ -121,7 +121,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
   };
 
   return (
-    <header className="sticky top-0 z-[50] w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+    <header className="sticky top-0 z-[40] w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="max-w-7xl mx-auto w-full h-16 flex items-center justify-between gap-4 px-4 sm:px-6">
         {/* 🔹 Bloque izquierdo: hamburguesa + buscador */}
         <div className="flex items-center gap-2 min-w-0 flex-1">

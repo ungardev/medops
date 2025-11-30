@@ -327,7 +327,7 @@ def dashboard_summary_api(request):
             total_waived = 0
             estimated_waived_amount = Decimal("0")
 
-        # --- Clínico-operativo (RESTABLECIDO: filtros por appointment_date + status) ---
+        # --- Clínico-operativo ---
         try:
             total_appointments = Appointment.objects.filter(appointment_date__range=(start, end)).count()
             pending_appointments = Appointment.objects.filter(appointment_date__range=(start, end), status="pending").count()
@@ -340,7 +340,7 @@ def dashboard_summary_api(request):
             total_appointments = pending_appointments = completed_appointments = active_consultations = 0
             canceled_appointments = arrived_appointments = waiting_room_count = 0
 
-        # --- Tendencias (RESTABLECIDO: por appointment_date) ---
+        # --- Tendencias ---
         try:
             appt_trend_qs = (
                 Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
@@ -403,6 +403,31 @@ def dashboard_summary_api(request):
         except Exception:
             total_canceled_orders = 0
 
+        # --- BCV Rate ---
+        try:
+            latest_rate = BCVRateCache.objects.order_by("-created_at").first()
+            if latest_rate:
+                bcv_rate = {
+                    "value": float(latest_rate.value),
+                    "unit": "VES_per_USD",
+                    "precision": 8,
+                    "is_fallback": False,
+                }
+            else:
+                bcv_rate = {
+                    "value": 1.0,
+                    "unit": "VES_per_USD",
+                    "precision": 8,
+                    "is_fallback": True,
+                }
+        except Exception:
+            bcv_rate = {
+                "value": 1.0,
+                "unit": "VES_per_USD",
+                "precision": 8,
+                "is_fallback": True,
+            }
+
         # --- Payload ---
         data = {
             "total_patients": total_patients,
@@ -423,12 +448,7 @@ def dashboard_summary_api(request):
             "appointments_trend": appt_trend,
             "payments_trend": pay_trend,
             "balance_trend": balance_trend,
-            "bcv_rate": {
-                "value": float(Decimal("1")),
-                "unit": "VES_per_USD",
-                "precision": 8,
-                "is_fallback": True,
-            },
+            "bcv_rate": bcv_rate,
             "event_log": [],
         }
         return Response(data, status=200)
