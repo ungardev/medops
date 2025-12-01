@@ -8,7 +8,7 @@ const FinancialMetrics: React.FC = () => {
 
   if (isLoading) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6">
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6 min-h-[260px] sm:min-h-[300px]">
         <p className="text-sm text-gray-500 dark:text-gray-400">
           Cargando métricas financieras...
         </p>
@@ -18,7 +18,7 @@ const FinancialMetrics: React.FC = () => {
 
   if (!data) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6">
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6 min-h-[260px] sm:min-h-[300px]">
         <p className="text-sm text-red-600 dark:text-red-400">
           No se pudo cargar la información financiera.
         </p>
@@ -32,7 +32,7 @@ const FinancialMetrics: React.FC = () => {
       : `${amount.toLocaleString()} Bs`;
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 min-h-[260px] sm:min-h-[300px]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="text-lg font-semibold text-gray-800 dark:text-white">

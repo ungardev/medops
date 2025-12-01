@@ -1,3 +1,4 @@
+// src/components/Appointments/CalendarGrid.tsx
 import moment from "moment";
 import { useState } from "react";
 import { Appointment } from "../../types/appointments";
@@ -54,7 +55,7 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
           return (
             <div
               key={key}
-              className={`p-2 min-h-[100px] bg-white dark:bg-gray-900 text-sm 
+              className={`p-1.5 sm:p-2 min-h-[80px] sm:min-h-[100px] bg-white dark:bg-gray-900 text-xs sm:text-sm 
                           ${isCurrentMonth ? "" : "opacity-50"} 
                           ${
                             isToday
@@ -70,7 +71,7 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
                 {day.date()}
               </div>
 
-              <div className="space-y-1 overflow-y-auto max-h-[80px]">
+              <div className="space-y-1 overflow-y-auto max-h-[60px] sm:max-h-[80px]">
                 {appts.map((appt) => (
                   <button
                     key={appt.id}
@@ -78,7 +79,7 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
                       e.stopPropagation();
                       handleSelectAppointment(appt);
                     }}
-                    className={`block w-full text-left px-2 py-1 rounded-md text-xs font-medium truncate
+                    className={`block w-full text-left px-1.5 sm:px-2 py-1 rounded-md text-[10px] sm:text-xs font-medium truncate
                       ${
                         appt.status === "pending"
                           ? "bg-yellow-100 dark:bg-yellow-700 text-yellow-800 dark:text-yellow-100"

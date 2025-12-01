@@ -1,6 +1,5 @@
 // src/pages/WaitingRoom.tsx
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
 import RegisterWalkinModal from "../../components/WaitingRoom/RegisterWalkinModal";
 import ConfirmGenericModal from "../../components/Common/ConfirmGenericModal";
 import Toast from "../../components/Common/Toast";
@@ -17,7 +16,7 @@ import PageHeader from "../../components/Layout/PageHeader";
  * Badges de estado — institucional
  */
 const renderStatusBadge = (status: WaitingRoomStatus | string) => {
-  const base = "px-2 py-0.5 text-xs rounded font-semibold";
+  const base = "px-1.5 py-0.5 text-[10px] sm:text-xs rounded font-semibold whitespace-nowrap";
   switch (status) {
     case "waiting":
       return <span className={`${base} bg-yellow-500 text-white`}>En espera</span>;
@@ -46,7 +45,6 @@ const renderWaitTime = (arrival_time: string | null) => {
   const hours = Math.floor(minutes / 60);
   return `~${hours} h`;
 };
-
 /**
  * Botones de acción por estado
  */
@@ -60,18 +58,19 @@ const renderActionButton = (
     (e) => (e.appointment_status ?? e.status ?? "waiting") === "in_consultation"
   );
 
-  const baseBtn = "px-3 py-1.5 text-xs rounded font-medium transition-colors border";
+  const baseBtn = "px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs rounded font-medium transition-colors border whitespace-nowrap";
 
   switch (effectiveStatus) {
     case "waiting":
       return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             className={`${baseBtn} bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444]`}
             disabled={hasActiveConsultation}
             onClick={() => onChange(entry, "in_consultation")}
           >
-            Iniciar consulta
+            <span className="sm:inline hidden">Iniciar consulta</span>
+            <span className="sm:hidden inline">Iniciar</span>
           </button>
           <button
             className={`${baseBtn} bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200`}
@@ -83,12 +82,12 @@ const renderActionButton = (
       );
     case "in_consultation":
       return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             className={`${baseBtn} bg-green-600 text-white border-green-600 hover:bg-green-700`}
             onClick={() => onChange(entry, "completed")}
           >
-            Finalizar consulta
+            Finalizar
           </button>
           <button
             className={`${baseBtn} bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200`}
@@ -100,7 +99,7 @@ const renderActionButton = (
       );
     case "pending":
       return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             className={`${baseBtn} bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444]`}
             onClick={() => onChange(entry, "waiting")}
@@ -116,9 +115,9 @@ const renderActionButton = (
         </div>
       );
     case "completed":
-      return <span className="text-green-600 font-semibold">Consulta finalizada</span>;
+      return <span className="text-green-600 font-semibold text-xs sm:text-sm whitespace-nowrap">Consulta finalizada</span>;
     case "canceled":
-      return <span className="text-red-600 font-semibold">Cancelado</span>;
+      return <span className="text-red-600 font-semibold text-xs sm:text-sm whitespace-nowrap">Cancelado</span>;
     default:
       return null;
   }
@@ -180,7 +179,7 @@ export default function WaitingRoom() {
     setToast({ message: "✅ Paciente registrado en sala de espera", type: "success" });
   };
 
-  const handleCloseDay = async () => {
+    const handleCloseDay = async () => {
     try {
       const token = localStorage.getItem("authToken");
       const res = await fetch("http://127.0.0.1/api/waitingroom/close-day/", {
@@ -214,21 +213,21 @@ export default function WaitingRoom() {
       return ["pending", "canceled"].includes(status);
     }) ?? [];
 
-      return (
-    <div className="p-6 space-y-6">
+  return (
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <PageHeader title="Sala de Espera" />
         <div className="flex gap-2">
           <button
-            className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
             onClick={() => setShowModal(true)}
             aria-label="Registrar llegada"
           >
             Registrar llegada
           </button>
           <button
-            className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
             onClick={() => setShowConfirm(true)}
             aria-label="Cerrar jornada"
           >
@@ -238,14 +237,14 @@ export default function WaitingRoom() {
       </div>
 
       {/* Lista Orden */}
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Lista Orden</h3>
-      <table className="min-w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+      <h3 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-white">Lista Orden</h3>
+      <table className="min-w-full text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
         <thead className="bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200">
           <tr>
-            <th className="px-4 py-2 border-b text-left">Paciente</th>
-            <th className="px-4 py-2 border-b text-left">Estado</th>
-            <th className="px-4 py-2 border-b text-left">Tiempo de espera</th>
-            <th className="px-4 py-2 border-b text-left">Acción</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Paciente</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Estado</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Tiempo</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -253,12 +252,10 @@ export default function WaitingRoom() {
             const status = entry.appointment_status ?? entry.status ?? "waiting";
             return (
               <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-4 py-2 border-b">{entry.patient?.full_name ?? "SIN-NOMBRE"}</td>
-                <td className="px-4 py-2 border-b">{renderStatusBadge(status)}</td>
-                <td className="px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
-                <td className="px-4 py-2 border-b">
-                  {renderActionButton(entry, handleStatusChange, entries ?? [])}
-                </td>
+                <td className="px-2 sm:px-4 py-2 border-b whitespace-nowrap">{entry.patient?.full_name ?? "SIN-NOMBRE"}</td>
+                <td className="px-2 sm:px-4 py-2 border-b">{renderStatusBadge(status)}</td>
+                <td className="px-2 sm:px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
+                <td className="px-2 sm:px-4 py-2 border-b">{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
               </tr>
             );
           })}
@@ -266,14 +263,14 @@ export default function WaitingRoom() {
       </table>
 
       {/* Por Confirmar */}
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Por Confirmar</h3>
-      <table className="min-w-full text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
+      <h3 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-white">Por Confirmar</h3>
+      <table className="min-w-full text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
         <thead className="bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200">
           <tr>
-            <th className="px-4 py-2 border-b text-left">Paciente</th>
-            <th className="px-4 py-2 border-b text-left">Estado</th>
-            <th className="px-4 py-2 border-b text-left">Tiempo de espera</th>
-            <th className="px-4 py-2 border-b text-left">Acción</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Paciente</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Estado</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Tiempo</th>
+            <th className="px-2 sm:px-4 py-2 border-b text-left whitespace-nowrap">Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -281,12 +278,10 @@ export default function WaitingRoom() {
             const status = entry.appointment_status ?? entry.status ?? "waiting";
             return (
               <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-4 py-2 border-b">{entry.patient?.full_name ?? "SIN-NOMBRE"}</td>
-                <td className="px-4 py-2 border-b">{renderStatusBadge(status)}</td>
-                <td className="px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
-                <td className="px-4 py-2 border-b">
-                  {renderActionButton(entry, handleStatusChange, entries ?? [])}
-                </td>
+                <td className="px-2 sm:px-4 py-2 border-b whitespace-nowrap">{entry.patient?.full_name ?? "SIN-NOMBRE"}</td>
+                <td className="px-2 sm:px-4 py-2 border-b">{renderStatusBadge(status)}</td>
+                <td className="px-2 sm:px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
+                <td className="px-2 sm:px-4 py-2 border-b">{renderActionButton(entry, handleStatusChange, entries ?? [])}</td>
               </tr>
             );
           })}

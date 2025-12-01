@@ -73,13 +73,13 @@ export default function TreatmentBadge({
   };
 
   return (
-    <div className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm px-3 py-2 mb-2">
+    <div className="rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm px-2 sm:px-3 py-1.5 sm:py-2 mb-2">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-[#0d2c53] dark:text-white">Tratamiento</span>
+        <span className="text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-white">Tratamiento</span>
         <div className="flex gap-2">
           {onEdit && (
             <button
-              className="text-sm text-[#0d2c53] dark:text-blue-400 hover:underline"
+              className="text-xs sm:text-sm text-[#0d2c53] dark:text-blue-400 hover:underline"
               onClick={() => setIsEditing(true)}
             >
               Editar
@@ -87,7 +87,7 @@ export default function TreatmentBadge({
           )}
           {onDelete && (
             <button
-              className="text-sm text-red-600 dark:text-red-400 hover:underline"
+              className="text-xs sm:text-sm text-red-600 dark:text-red-400 hover:underline"
               onClick={() => {
                 if (confirm("¿Eliminar tratamiento? Esta acción no se puede deshacer.")) {
                   onDelete(id);
@@ -106,7 +106,7 @@ export default function TreatmentBadge({
             value={editedPlan}
             onChange={(e) => setEditedPlan(e.target.value)}
             placeholder="Plan de tratamiento"
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
@@ -114,7 +114,7 @@ export default function TreatmentBadge({
             type="date"
             value={editedStart}
             onChange={(e) => setEditedStart(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
@@ -122,7 +122,7 @@ export default function TreatmentBadge({
             type="date"
             value={editedEnd}
             onChange={(e) => setEditedEnd(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
@@ -130,7 +130,7 @@ export default function TreatmentBadge({
           <select
             value={editedStatus}
             onChange={(e) => setEditedStatus(e.target.value as TreatmentStatus)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
@@ -143,7 +143,7 @@ export default function TreatmentBadge({
           <select
             value={editedType}
             onChange={(e) => setEditedType(e.target.value as TreatmentType)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
@@ -157,13 +157,13 @@ export default function TreatmentBadge({
 
           <div className="flex gap-2 mt-1">
             <button
-              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
               onClick={handleSave}
             >
               Guardar
             </button>
             <button
-              className="px-4 py-2 rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 
+              className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md bg-gray-100 text-gray-800 border border-gray-300 hover:bg-gray-200 
                          dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
               onClick={handleCancel}
             >
@@ -172,7 +172,7 @@ export default function TreatmentBadge({
           </div>
         </div>
       ) : (
-        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+        <div className="mt-1 text-xs sm:text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
           {plan}
           {start_date && <div>Inicio: {start_date}</div>}
           {end_date && <div>Fin: {end_date}</div>}

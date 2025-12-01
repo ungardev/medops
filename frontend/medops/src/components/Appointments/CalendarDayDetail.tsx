@@ -1,3 +1,4 @@
+// src/components/Appointments/CalendarDayDetail.tsx
 import moment from "moment";
 import { Appointment } from "../../types/appointments";
 
@@ -20,18 +21,18 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-2xl p-6">
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-2 sm:px-0">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-lg sm:max-w-2xl p-4 sm:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100">
             Citas del {moment(date).format("DD/MM/YYYY")}
           </h2>
           <button
             onClick={onClose}
-            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+            className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
                        bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-xs sm:text-sm"
           >
             Cerrar
           </button>
@@ -39,7 +40,7 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
 
         {/* Lista de citas */}
         {dayAppointments.length === 0 ? (
-          <p className="text-sm text-[#0d2c53] dark:text-gray-400">
+          <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">
             No hay citas registradas para este día.
           </p>
         ) : (
@@ -47,20 +48,20 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
             {dayAppointments.map((appt) => (
               <li
                 key={appt.id}
-                className="py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-800 px-2 rounded-md"
+                className="py-1.5 sm:py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-800 px-2 rounded-md"
                 onClick={() => handleClickAppointment(appt)}
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm font-medium text-[#0d2c53] dark:text-gray-100">
+                    <p className="text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-100">
                       {appt.patient.full_name}
                     </p>
-                    <p className="text-xs text-[#0d2c53] dark:text-gray-400">
+                    <p className="text-[11px] sm:text-xs text-[#0d2c53] dark:text-gray-400">
                       {appt.appointment_type} — {appt.status}
                     </p>
                   </div>
                   <span
-                    className={`px-2 py-1 rounded-md text-xs font-semibold
+                    className={`px-2 py-0.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-semibold
                       ${
                         appt.status === "pending"
                           ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100"

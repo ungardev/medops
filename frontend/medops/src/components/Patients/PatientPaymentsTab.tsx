@@ -1,3 +1,4 @@
+// src/components/Patients/PatientPaymentsTab.tsx
 import React from "react";
 import { PatientTabProps } from "./types";
 import { usePaymentsByPatient } from "../../hooks/patients/usePaymentsByPatient";
@@ -10,19 +11,25 @@ export default function PatientPaymentsTab({ patient }: PatientTabProps) {
   const totalAmount = data?.totalAmount ?? 0;
   const isEmpty = !isLoading && !error && payments.length === 0;
 
-  if (isLoading) return <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando pagos...</p>;
-  if (error) return <p className="text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>;
-  if (isEmpty) return <p className="text-sm text-[#0d2c53] dark:text-gray-400">No tiene pagos registrados</p>;
+  if (isLoading)
+    return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">Cargando pagos...</p>;
+  if (error)
+    return <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>;
+  if (isEmpty)
+    return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">No tiene pagos registrados</p>;
 
-  return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
-      <h3 className="text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-4">Pagos registrados</h3>
+    return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
+      <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
+        Pagos registrados
+      </h3>
 
-      <p className="text-sm font-medium text-[#0d2c53] dark:text-blue-400 mb-4">
+      <p className="text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-blue-400 mb-3 sm:mb-4">
         Total pagado: <span className="font-semibold">{totalAmount}</span>
       </p>
 
-      <div className="overflow-x-auto">
+      {/* 🔹 Vista desktop: tabla */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">
           <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
             <tr>
@@ -47,6 +54,23 @@ export default function PatientPaymentsTab({ patient }: PatientTabProps) {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* 🔹 Vista mobile: tarjetas */}
+      <div className="sm:hidden space-y-3">
+        {payments.map((p: Payment) => (
+          <div key={p.id} className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3">
+            <p className="text-sm font-semibold text-[#0d2c53] dark:text-gray-100 mb-2">
+              Pago #{p.id}
+            </p>
+            <div className="text-xs text-[#0d2c53] dark:text-gray-300 space-y-1">
+              <div><strong>Fecha:</strong> {p.received_at ? new Date(p.received_at).toLocaleDateString("es-VE") : "—"}</div>
+              <div><strong>Monto:</strong> {p.amount}</div>
+              <div><strong>Método:</strong> {p.method}</div>
+              <div><strong>Estado:</strong> {p.status}</div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

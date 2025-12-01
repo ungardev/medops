@@ -86,22 +86,22 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
   };
 
   return (
-    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
+    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Tratamientos
       </h3>
             {/* Modo lectura */}
       {readOnly && (
         <>
           {diagnoses.length === 0 && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
           )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-white">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-white text-xs sm:text-sm">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
-              <ul className="ml-4">
+              <ul className="ml-3 sm:ml-4">
                 {d.treatments && d.treatments.length > 0 ? (
                   d.treatments.map((t: Treatment) => (
                     <li key={t.id}>
@@ -116,7 +116,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
+                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
                 )}
               </ul>
             </div>
@@ -128,14 +128,14 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
       {!readOnly && (
         <>
           {diagnoses.length === 0 && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
           )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-white">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-white text-xs sm:text-sm">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
-              <ul className="ml-4">
+              <ul className="ml-3 sm:ml-4">
                 {d.treatments && d.treatments.length > 0 ? (
                   d.treatments.map((t: Treatment) => (
                     <li key={t.id}>
@@ -161,7 +161,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
+                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
                 )}
               </ul>
             </div>
@@ -172,7 +172,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               value={diagnosisId}
               onChange={(e) => setDiagnosisId(Number(e.target.value))}
               required
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                          focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
@@ -190,7 +190,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
               required
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                          focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
@@ -200,14 +200,14 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               />
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               />
             </div>
@@ -215,7 +215,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
             >
               <option value="active">Activo</option>
@@ -226,7 +226,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
             <select
               value={treatmentType}
               onChange={(e) => setTreatmentType(e.target.value as any)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
             >
               <option value="pharmacological">Farmacológico</option>
@@ -238,7 +238,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
 
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
+              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
             >
               + Agregar tratamiento
             </button>

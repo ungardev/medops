@@ -1613,6 +1613,23 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         actor = getattr(request.user, "username", "")
         order.mark_waived(reason=reason, actor=actor)
         return Response({"status": "waived"}, status=status.HTTP_200_OK)
+    
+
+    @action(detail=False, methods=["get"])
+    def summary(self, request):
+        qs = self.get_queryset()
+        total = qs.aggregate(total=Sum("total"))["total"] or 0
+        confirmed = qs.filter(status="paid").aggregate(s=Sum("total"))["s"] or 0
+        pending = qs.filter(status__in=["open", "partially_paid"]).aggregate(s=Sum("total"))["s"] or 0
+        failed = qs.filter(status__in=["void", "waived"]).aggregate(s=Sum("total"))["s"] or 0
+
+        return Response({
+            "total": float(total),
+            "confirmed": float(confirmed),
+            "pending": float(pending),
+            "failed": float(failed),
+        })
+        
 
     @action(detail=True, methods=["get"])
     def events(self, request, pk=None):

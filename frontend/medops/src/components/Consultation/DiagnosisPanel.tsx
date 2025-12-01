@@ -71,14 +71,14 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
   };
 
   return (
-    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
+    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Diagnósticos
       </h3>
 
       <ul className="mb-4">
         {diagnoses.length === 0 && (
-          <li className="text-sm text-gray-600 dark:text-gray-400">Sin diagnósticos</li>
+          <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin diagnósticos</li>
         )}
         {diagnoses.map((d) => (
           <li key={d.id}>
@@ -121,18 +121,18 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 setHighlightIndex(-1);
               }
             }}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
 
-          {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
+          {isLoading && <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
           {!isLoading && query.length >= 2 && results.length === 0 && (
-            <p className="text-sm text-yellow-600 dark:text-yellow-400">Sin resultados para "{query}"</p>
+            <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">Sin resultados para "{query}"</p>
           )}
 
           {results.length > 0 && (
-            <ul className="border rounded p-2 max-h-40 overflow-y-auto">
+            <ul className="border rounded p-2 max-h-40 overflow-y-auto text-xs sm:text-sm">
               {results.map((r, idx) => (
                 <li
                   key={r.icd_code}
@@ -152,7 +152,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
           )}
 
           {selectedDiagnosis && (
-            <div className="p-2 border rounded bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100">
+            <div className="p-2 border rounded bg-gray-50 dark:bg-gray-700 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
               <strong>{selectedDiagnosis.icd_code}</strong> — {selectedDiagnosis.title}
             </div>
           )}
@@ -163,13 +163,13 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 placeholder="Notas clínicas para este diagnóstico"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+                className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                            focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               />
               <button
                 onClick={handleSave}
-                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
               >
                 Guardar diagnóstico
               </button>

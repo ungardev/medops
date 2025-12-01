@@ -20,13 +20,12 @@ export function Tab({ children }: TabProps) {
 export function Tabs({ children, defaultTab, className, layout = "vertical" }: TabsProps) {
   const tabs = (children as any[]).filter((c) => c.type === Tab);
 
-  // 🔹 Normalización de ids para tolerar inglés/español
   const normalize = (id: string | undefined): string | undefined => {
     if (!id) return undefined;
     const map: Record<string, string> = {
       info: "info",
       consultas: "consultas",
-      documents: "documentos",   // 👈 mapea inglés a español
+      documents: "documentos",
       documentos: "documentos",
       pagos: "pagos",
       citas: "citas",
@@ -39,7 +38,6 @@ export function Tabs({ children, defaultTab, className, layout = "vertical" }: T
   const initial = normalize(defaultTab) ?? tabs[0].props.id;
   const [active, setActive] = useState(initial);
 
-  // 🔹 Si cambia el defaultTab (ej. por query param), actualiza el estado
   useEffect(() => {
     const normalized = normalize(defaultTab);
     if (normalized && normalized !== active) {
@@ -48,12 +46,12 @@ export function Tabs({ children, defaultTab, className, layout = "vertical" }: T
   }, [defaultTab]);
 
   return (
-    <div className={className ?? "space-y-4"}>
-      <div className="flex flex-wrap gap-2 border-b pb-2">
+    <div className={className ?? "space-y-3 sm:space-y-4"}>
+      <div className="flex flex-wrap gap-1 sm:gap-2 border-b pb-2">
         {tabs.map((tab) => (
           <button
             key={tab.props.id}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
               active === tab.props.id
                 ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
                 : "bg-gray-100 text-[#0d2c53] hover:bg-gray-200 border border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
@@ -71,7 +69,7 @@ export function Tabs({ children, defaultTab, className, layout = "vertical" }: T
             tab.props.id === active ? (
               <div
                 key={tab.props.id}
-                className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800"
+                className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800"
               >
                 {tab.props.children}
               </div>
@@ -84,7 +82,7 @@ export function Tabs({ children, defaultTab, className, layout = "vertical" }: T
             tab.props.id === active ? (
               <div
                 key={tab.props.id}
-                className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800"
+                className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800"
               >
                 {tab.props.children}
               </div>

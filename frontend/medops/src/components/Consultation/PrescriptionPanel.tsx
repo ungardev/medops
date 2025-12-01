@@ -47,13 +47,13 @@ const routeOptions: Option[] = [
   { value: "topical", label: "Tópica" },
   { value: "other", label: "Otro" },
 ];
+
 export interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
   prescriptions?: Prescription[];
   readOnly?: boolean;
   onAdd?: (data: CreatePrescriptionInput) => void;
 }
-
 const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   diagnoses,
   prescriptions,
@@ -104,22 +104,23 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     setRoute("oral");
     setComponents([]);
   };
-    return (
-    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Prescripciones</h3>
+
+  return (
+    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Prescripciones</h3>
 
       {/* 🔹 Modo lectura */}
       {readOnly && (
         <>
           {diagnoses.length === 0 && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
           )}
           {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200 text-xs sm:text-sm">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
-              <ul className="ml-4">
+              <ul className="ml-4 space-y-1">
                 {d.prescriptions && d.prescriptions.length > 0 ? (
                   d.prescriptions.map((p: Prescription) => (
                     <li key={p.id}>
@@ -134,7 +135,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
+                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
                 )}
               </ul>
             </div>
@@ -142,18 +143,18 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
         </>
       )}
 
-      {/* 🔹 Modo edición */}
+            {/* 🔹 Modo edición */}
       {!readOnly && (
         <>
           {diagnoses.length === 0 && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
           )}
-                    {diagnoses.map((d) => (
+          {diagnoses.map((d) => (
             <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200">
+              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200 text-xs sm:text-sm">
                 {d.icd_code} — {d.title || d.description || "Sin descripción"}
               </h4>
-              <ul className="ml-4">
+              <ul className="ml-4 space-y-1">
                 {d.prescriptions && d.prescriptions.length > 0 ? (
                   d.prescriptions.map((p: Prescription) => (
                     <li key={p.id}>
@@ -179,7 +180,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     </li>
                   ))
                 ) : (
-                  <li className="text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
+                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
                 )}
               </ul>
             </div>
@@ -190,7 +191,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             <select
               value={diagnosisId}
               onChange={(e) => setDiagnosisId(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               required
             >
@@ -213,7 +214,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
 
             {/* 🔹 Subform dinámico para componentes */}
             {components.map((comp, index) => (
-              <div key={index} className="flex gap-2 items-center">
+              <div key={index} className="flex flex-wrap gap-2 items-center">
                 <input
                   type="text"
                   placeholder="Sustancia"
@@ -223,7 +224,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     newComps[index].substance = e.target.value;
                     setComponents(newComps);
                   }}
-                  className="px-2 py-1 border rounded text-[#0d2c53] dark:text-gray-100"
+                  className="px-2 py-1 border rounded text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
                 />
                 <input
                   type="number"
@@ -234,7 +235,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     newComps[index].dosage = Number(e.target.value);
                     setComponents(newComps);
                   }}
-                  className="px-2 py-1 border rounded text-[#0d2c53] dark:text-gray-100"
+                  className="px-2 py-1 border rounded text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
                 />
                 <select
                   value={comp.unit}
@@ -243,7 +244,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     newComps[index].unit = e.target.value as PrescriptionComponent["unit"];
                     setComponents(newComps);
                   }}
-                  className="px-2 py-1 border rounded text-[#0d2c53] dark:text-gray-100"
+                  className="px-2 py-1 border rounded text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
                 >
                   <option value="mg">mg</option>
                   <option value="ml">ml</option>
@@ -258,7 +259,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 <button
                   type="button"
                   onClick={() => setComponents(components.filter((_, i) => i !== index))}
-                  className="text-red-600"
+                  className="text-red-600 text-xs sm:text-sm"
                 >
                   ✕
                 </button>
@@ -270,7 +271,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               onClick={() =>
                 setComponents([...components, { substance: "", dosage: 0, unit: "mg" }])
               }
-              className="mt-2 px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+              className="mt-2 px-3 py-1 text-xs sm:text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
             >
               + Agregar componente
             </button>
@@ -280,7 +281,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               placeholder="Duración (ej: 7 días)"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
 
@@ -289,7 +290,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
               onChange={(e) =>
                 setFrequency(e.target.value as UpdatePrescriptionInput["frequency"])
               }
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
               {frequencyOptions.map((opt) => (
@@ -302,7 +303,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
             <select
               value={route}
               onChange={(e) => setRoute(e.target.value as UpdatePrescriptionInput["route"])}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
               {routeOptions.map((opt) => (
@@ -314,7 +315,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
 
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
+              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
             >
               + Agregar prescripción
             </button>

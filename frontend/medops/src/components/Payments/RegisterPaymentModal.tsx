@@ -1,3 +1,4 @@
+// src/components/Payments/RegisterPaymentModal.tsx
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -12,12 +13,11 @@ interface Props {
 export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onClose }: Props) {
   const queryClient = useQueryClient();
 
-  // 👇 Incluimos charge_order y appointment en el estado inicial
   const [form, setForm] = useState<Omit<PaymentInput, "status">>({
     charge_order: chargeOrderId,
     appointment: appointmentId,
     amount: "",
-    method: PaymentMethod.CASH, // ✅ enum en vez de string
+    method: PaymentMethod.CASH,
     reference_number: "",
     bank_name: "",
   });
@@ -28,7 +28,7 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
         `http://127.0.0.1/api/charge-orders/${chargeOrderId}/payments/`,
         {
           ...data,
-          status: PaymentStatus.CONFIRMED, // ✅ enum en vez de string
+          status: PaymentStatus.CONFIRMED,
         }
       );
       return res.data as Payment;
@@ -45,10 +45,7 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]:
-        name === "method"
-          ? (value as PaymentMethod) // ✅ castear correctamente
-          : value,
+      [name]: name === "method" ? (value as PaymentMethod) : value,
     }));
   };
 
@@ -58,14 +55,14 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="max-w-md w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2 sm:px-0">
+      <div className="max-w-md w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
           Registrar nuevo pago
         </h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Monto
             </label>
             <input
@@ -73,22 +70,22 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
               name="amount"
               value={form.amount}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              required
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                          focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Método
             </label>
             <select
               name="method"
               value={form.method}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                          focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             >
@@ -100,7 +97,7 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Referencia
             </label>
             <input
@@ -108,14 +105,14 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
               name="reference_number"
               value={form.reference_number}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                          focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
               Banco
             </label>
             <input
@@ -123,28 +120,29 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
               name="bank_name"
               value={form.bank_name}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                          focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
           </div>
 
-          <div className="flex justify-between mt-6">
-            <button
-              type="button"
-              className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                         hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
-              onClick={onClose}
-            >
-              Cancelar
-            </button>
+          {/* Botones verticales */}
+          <div className="flex flex-col gap-2 mt-3 sm:mt-4">
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
               disabled={mutation.isPending}
+              className="w-full px-3 py-1.5 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-xs sm:text-sm"
             >
               {mutation.isPending ? "Guardando..." : "Registrar"}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 
+                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
+                         hover:bg-gray-200 dark:hover:bg-gray-600 transition text-xs sm:text-sm"
+            >
+              Cancelar
             </button>
           </div>
         </form>

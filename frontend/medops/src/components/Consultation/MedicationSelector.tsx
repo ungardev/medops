@@ -18,23 +18,22 @@ export default function MedicationSelector({ valueCatalogId, valueText, onChange
   const handleTextChange = (text: string) => {
     onChange({ catalogId: undefined, text });
   };
-
-  return (
+    return (
     <div className="flex flex-col gap-2">
       <input
         type="text"
         placeholder="Buscar medicamento..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+        className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                    bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
                    focus:outline-none focus:ring-2 focus:ring-blue-600"
       />
 
-      {isLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
+      {isLoading && <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
 
       {medications.length > 0 ? (
-        <ul className="border border-gray-300 dark:border-gray-600 rounded p-2 max-h-40 overflow-y-auto bg-white dark:bg-gray-800 text-sm">
+        <ul className="border border-gray-300 dark:border-gray-600 rounded p-2 max-h-40 overflow-y-auto bg-white dark:bg-gray-800 text-xs sm:text-sm">
           {medications.map((m) => (
             <li
               key={m.id}
@@ -51,7 +50,7 @@ export default function MedicationSelector({ valueCatalogId, valueText, onChange
           placeholder="Nombre del medicamento"
           value={valueText || ""}
           onChange={(e) => handleTextChange(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+          className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                      bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 
                      focus:outline-none focus:ring-2 focus:ring-blue-600"
         />

@@ -21,7 +21,7 @@ const TrendsChart: React.FC = () => {
 
   if (isLoading) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6">
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 min-h-[280px] sm:min-h-[300px]">
         <p className="text-sm text-gray-500 dark:text-gray-400">Cargando tendencias...</p>
       </section>
     );
@@ -29,7 +29,7 @@ const TrendsChart: React.FC = () => {
 
   if (!data) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6">
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 min-h-[280px] sm:min-h-[300px]">
         <p className="text-sm text-red-600 dark:text-red-400">
           No se pudo cargar la información de tendencias.
         </p>
@@ -84,6 +84,7 @@ const TrendsChart: React.FC = () => {
 
   const chartOptions = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "bottom" as const,
@@ -118,15 +119,15 @@ const TrendsChart: React.FC = () => {
   };
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 min-h-[280px] sm:min-h-[300px]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Tendencias</h3>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {["day", "week", "month"].map((r) => (
+          {(["day", "week", "month"] as const).map((r) => (
             <button
               key={r}
-              onClick={() => setRange(r as any)}
+              onClick={() => setRange(r)}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-sm rounded border transition-colors ${
                 range === r
                   ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
@@ -136,10 +137,10 @@ const TrendsChart: React.FC = () => {
               {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
             </button>
           ))}
-          {["USD", "VES"].map((c) => (
+          {(["USD", "VES"] as const).map((c) => (
             <button
               key={c}
-              onClick={() => setCurrency(c as any)}
+              onClick={() => setCurrency(c)}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-sm rounded border transition-colors ${
                 currency === c
                   ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
@@ -152,28 +153,28 @@ const TrendsChart: React.FC = () => {
         </div>
       </div>
 
-      {currency === "VES" && bcvRate && (
+      {currency === "VES" && typeof bcvRate === "number" && (
         <p className="text-xs text-gray-500 dark:text-gray-400">
           Tasa BCV aplicada: {bcvRate.toFixed(2)} Bs/USD
         </p>
       )}
 
       {/* Chart or message */}
-      <div className="min-w-0 overflow-x-auto">
-        {range === "day" && !hasData ? (
-          <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
-            <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos para hoy</p>
-          </div>
-        ) : !hasData ? (
-          <div className="h-64 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              No hay datos disponibles para el rango seleccionado
-            </p>
-          </div>
-        ) : (
+      {range === "day" && !hasData ? (
+        <div className="h-40 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
+          <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos para hoy</p>
+        </div>
+      ) : !hasData ? (
+        <div className="h-40 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            No hay datos disponibles para el rango seleccionado
+          </p>
+        </div>
+      ) : (
+        <div className="relative w-full min-w-0 h-[240px] sm:h-[240px]">
           <Line data={chartData} options={chartOptions} />
-        )}
-      </div>
+        </div>
+      )}
     </section>
   );
 };

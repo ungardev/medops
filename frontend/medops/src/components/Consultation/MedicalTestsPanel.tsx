@@ -57,40 +57,40 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
     setStatus("pending");
   };
     return (
-    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
+    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Órdenes de Exámenes Médicos
       </h3>
 
       {isLoading && (
-        <p className="text-sm text-gray-600 dark:text-gray-400">Cargando exámenes...</p>
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando exámenes...</p>
       )}
 
-      <ul className="mb-4">
+      <ul className="mb-4 space-y-1">
         {tests.length === 0 ? (
-          <li className="text-sm text-gray-600 dark:text-gray-400">
+          <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Sin exámenes registrados
           </li>
         ) : (
           tests.map((t: any, index: number) => (
             <li
               key={t.id ?? index}
-              className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2"
+              className="flex flex-col sm:flex-row justify-between sm:items-center border-b border-gray-200 dark:border-gray-700 py-2 text-xs sm:text-sm"
             >
               <div>
                 <strong className="text-[#0d2c53] dark:text-white">
                   {t.test_type_display || t.test_type || "—"}
                 </strong> — {t.description || "Sin descripción"}
-                <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">
+                <span className="ml-0 sm:ml-2 text-gray-600 dark:text-gray-400">
                   ({t.urgency_display || t.urgency || "—"} / {t.status_display || t.status || "—"})
                 </span>
-                <span className="ml-2 text-sm text-[#0d2c53] dark:text-blue-400">
+                <span className="ml-0 sm:ml-2 text-[#0d2c53] dark:text-blue-400">
                   {t.diagnosis ? `Dx: ${t.diagnosis}` : "Sin diagnóstico"}
                 </span>
               </div>
               {!readOnly && (
                 <button
-                  className="px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  className="mt-2 sm:mt-0 px-2 sm:px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors text-xs sm:text-sm"
                   onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
                 >
                   Eliminar
@@ -106,9 +106,8 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
           <select
             value={testType}
             onChange={(e) => setTestType(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="">-- Seleccionar tipo de examen --</option>
             <option value="blood_test">Análisis de sangre</option>
@@ -136,17 +135,15 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
             placeholder="Notas clínicas para este examen"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
 
           <select
             value={urgency}
             onChange={(e) => setUrgency(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="routine">Rutina</option>
             <option value="urgent">Urgente</option>
@@ -156,9 +153,8 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as any)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
+                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
             <option value="pending">Pendiente</option>
             <option value="completed">Completado</option>
@@ -167,7 +163,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
 
           <button
             onClick={handleAdd}
-            className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
           >
             + Agregar examen
           </button>

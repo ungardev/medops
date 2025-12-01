@@ -28,25 +28,25 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
   };
 
   return (
-    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
+    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Notas Adicionales
       </h3>
-
-      {readOnly && (
+            {readOnly && (
         <div className="mb-2">
-          <p className="whitespace-pre-line text-[#0d2c53] dark:text-gray-300">
+          <p className="whitespace-pre-line text-xs sm:text-sm text-[#0d2c53] dark:text-gray-300">
             {notes || "Sin notas registradas"}
           </p>
         </div>
       )}
-            {!readOnly && !isEditing && (
+
+      {!readOnly && !isEditing && (
         <div className="mb-2">
-          <p className="whitespace-pre-line text-[#0d2c53] dark:text-gray-300">
+          <p className="whitespace-pre-line text-xs sm:text-sm text-[#0d2c53] dark:text-gray-300">
             {value || "Sin notas registradas"}
           </p>
           <button
-            className="px-4 py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors mt-2"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors mt-2 text-xs sm:text-sm"
             onClick={() => setIsEditing(true)}
           >
             Editar notas
@@ -60,7 +60,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
             value={value}
             onChange={(e) => setValue(e.target.value)}
             rows={6}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
@@ -68,7 +68,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
             <button
               onClick={handleSave}
               disabled={isPending}
-              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
             >
               {isPending ? "Guardando..." : "Guardar"}
             </button>
@@ -77,7 +77,7 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
                 setValue(notes || "");
                 setIsEditing(false);
               }}
-              className="px-4 py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
             >
               Cancelar
             </button>

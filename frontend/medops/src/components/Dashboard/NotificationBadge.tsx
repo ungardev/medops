@@ -8,24 +8,25 @@ interface NotificationBadgeProps {
 
 const NotificationBadge: React.FC<NotificationBadgeProps> = ({ action }) => {
   let label = "";
-  let className = "badge ";
+  let className =
+    "inline-block px-2 py-0.5 text-xs rounded font-semibold text-white";
 
   switch (action) {
     case "create":
       label = "CREACIÓN";
-      className += "badge-success";
+      className += " bg-green-600";
       break;
     case "update":
       label = "ACTUALIZACIÓN";
-      className += "badge-warning";
+      className += " bg-yellow-500";
       break;
     case "delete":
       label = "ELIMINACIÓN";
-      className += "badge-danger";
+      className += " bg-red-600";
       break;
     default:
       label = "EVENTO";
-      className += "badge-info";
+      className += " bg-[#0d2c53]";
       break;
   }
 

@@ -62,7 +62,7 @@ function Field({
 
   return (
     <div className={cls}>
-      <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+      <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
         {label}
       </label>
       {editing ? (
@@ -71,7 +71,7 @@ function Field({
             rows={4}
             value={normStr(value ?? "")}
             onChange={(e) => onChange?.(e.target.value)}
-            className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
@@ -80,17 +80,18 @@ function Field({
             type={type}
             value={normStr(value ?? "")}
             onChange={(e) => onChange?.(e.target.value)}
-            className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+            className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
         )
       ) : (
-        <p className="text-sm text-[#0d2c53] dark:text-gray-100">{display}</p>
+        <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">{display}</p>
       )}
     </div>
   );
 }
+
 interface SelectFieldProps<T = string> {
   label: string;
   value?: T | null;
@@ -109,19 +110,18 @@ function SelectField<T = string>({
   onChange,
 }: SelectFieldProps<T>) {
   const cls = spanClass(span);
-  const displayLabel =
-    options.find(([val]) => val === value)?.[1] ?? "—";
+  const displayLabel = options.find(([val]) => val === value)?.[1] ?? "—";
 
   return (
     <div className={cls}>
-      <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+      <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
         {label}
       </label>
       {editing ? (
         <select
           value={(value as any) ?? ""}
           onChange={(e) => onChange?.((e.target.value as unknown) as T)}
-          className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm
+          className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                      bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                      focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
         >
@@ -133,7 +133,7 @@ function SelectField<T = string>({
           ))}
         </select>
       ) : (
-        <p className="text-sm text-[#0d2c53] dark:text-gray-100">{displayLabel}</p>
+        <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">{displayLabel}</p>
       )}
     </div>
   );
@@ -199,24 +199,28 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
       newPred.id,
     ]);
   };
+
     return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Información del Paciente</h3>
+    <div className="p-3 sm:p-4">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
+        <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white">
+          Información del Paciente
+        </h3>
         {editing ? (
           <div className="flex gap-2">
             <button
               type="button"
-              className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] 
+                         hover:bg-[#0b2444] transition text-xs sm:text-sm"
               onClick={handleSave}
             >
               Guardar
             </button>
             <button
               type="button"
-              className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md border border-gray-300 dark:border-gray-600 
                          bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                         hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                         hover:bg-gray-200 dark:hover:bg-gray-600 transition text-xs sm:text-sm"
               onClick={() => setEditing(false)}
             >
               Cancelar
@@ -225,9 +229,9 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
         ) : (
           <button
             type="button"
-            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md border border-gray-300 dark:border-gray-600 
                        bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-xs sm:text-sm"
             onClick={() => setEditing(true)}
           >
             Editar
@@ -235,7 +239,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-12 gap-x-6 gap-y-4">
+      <div className="grid grid-cols-12 gap-x-4 sm:gap-x-6 gap-y-3 sm:gap-y-4">
         {/* Identificación */}
         <Field label="Cédula" span={3} value={form.national_id as string} editing={editing} onChange={(v) => setField("national_id", v)} />
         <Field label="Nombre" span={3} value={form.first_name as string} editing={editing} onChange={(v) => setField("first_name", v)} />
@@ -287,12 +291,12 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
 
         {/* Predisposiciones genéticas */}
         <div className="col-span-12">
-          <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+          <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
             Predisposiciones genéticas
           </label>
           {editing ? (
             isLoading ? (
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cargando opciones...</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando opciones...</p>
             ) : (
               <ComboboxMultiElegante
                 options={Array.isArray(predisposiciones) ? predisposiciones : []}
@@ -303,7 +307,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
               />
             )
           ) : (
-            <p className="text-sm text-[#0d2c53] dark:text-gray-100">
+            <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
               {patient.genetic_predispositions?.length
                 ? patient.genetic_predispositions.map((p: any) => p.name).join(", ")
                 : "—"}
@@ -313,7 +317,7 @@ export default function PatientInfoTab({ patient }: PatientTabProps) {
       </div>
 
       {/* Metadatos */}
-      <div className="mt-6 text-sm text-[#0d2c53] dark:text-gray-300">
+      <div className="mt-4 sm:mt-6 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-300">
         <p><strong>Activo:</strong> {patient.active ? "Sí" : "No"}</p>
         <p><strong>Creado:</strong> {patient.created_at || "—"}</p>
         <p><strong>Actualizado:</strong> {patient.updated_at || "—"}</p>

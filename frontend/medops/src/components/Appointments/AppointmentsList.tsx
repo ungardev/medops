@@ -1,3 +1,4 @@
+// src/components/Appointments/AppointmentsList.tsx
 import React from "react";
 import { Appointment, AppointmentStatus } from "types/appointments";
 
@@ -32,14 +33,14 @@ export default function AppointmentsList({
 }: AppointmentsListProps) {
   return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
-      <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100">
-        <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
+      <table className="w-full text-xs sm:text-sm text-left text-[#0d2c53] dark:text-gray-100">
+        <thead className="bg-gray-100 dark:bg-gray-700 text-[11px] sm:text-xs uppercase text-[#0d2c53] dark:text-gray-300">
           <tr>
-            <th className="px-4 py-2 border-b">Paciente</th>
-            <th className="px-4 py-2 border-b">Fecha</th>
-            <th className="px-4 py-2 border-b">Tipo</th>
-            <th className="px-4 py-2 border-b">Estado</th>
-            <th className="px-4 py-2 border-b text-right">Acciones</th>
+            <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b">Paciente</th>
+            <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b">Fecha</th>
+            <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b">Tipo</th>
+            <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b">Estado</th>
+            <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -47,7 +48,7 @@ export default function AppointmentsList({
             <tr>
               <td
                 colSpan={5}
-                className="px-4 py-4 text-center text-sm text-[#0d2c53] dark:text-gray-400 italic"
+                className="px-2 sm:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400 italic"
               >
                 No hay citas registradas.
               </td>
@@ -56,38 +57,38 @@ export default function AppointmentsList({
 
           {appointments.map((a) => (
             <tr key={a.id} className="border-b border-gray-200 dark:border-gray-700">
-              <td className="px-4 py-2">{a.patient?.full_name ?? `ID: ${a.patient?.id}`}</td>
-              <td className="px-4 py-2">{a.appointment_date}</td>
-              <td className="px-4 py-2 capitalize">{a.appointment_type}</td>
-              <td className="px-4 py-2">
-                <div className="flex items-center gap-2">
+              <td className="px-2 sm:px-4 py-1.5 sm:py-2">{a.patient?.full_name ?? `ID: ${a.patient?.id}`}</td>
+              <td className="px-2 sm:px-4 py-1.5 sm:py-2">{a.appointment_date}</td>
+              <td className="px-2 sm:px-4 py-1.5 sm:py-2 capitalize">{a.appointment_type}</td>
+              <td className="px-2 sm:px-4 py-1.5 sm:py-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <span
-                    className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_COLORS[a.status]}`}
+                    className={`inline-block h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full ${STATUS_COLORS[a.status]}`}
                   ></span>
                   <span
-                    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${STATUS_STYLES[a.status]}`}
+                    className={`inline-flex items-center rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs font-medium ring-1 ring-inset ${STATUS_STYLES[a.status]}`}
                   >
                     {a.status}
                   </span>
                 </div>
               </td>
-              <td className="px-4 py-2 text-right">
-                <div className="flex justify-end gap-2">
+              <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right">
+                <div className="flex justify-end gap-1.5 sm:gap-2">
                   {a.status !== "canceled" && (
                     <button
                       onClick={() => onStatusChange(a.id, "canceled")}
-                      className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                      className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
                                  bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-400 
-                                 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                                 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
                     >
                       Cancelar
                     </button>
                   )}
                   <button
                     onClick={() => onEdit(a)}
-                    className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
                                bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
                   >
                     Ver detalle
                   </button>
@@ -97,9 +98,9 @@ export default function AppointmentsList({
                         onDelete(a.id);
                       }
                     }}
-                    className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
                                bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
                   >
                     Eliminar
                   </button>

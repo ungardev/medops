@@ -138,8 +138,9 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       onError: (err) => console.error("Error registrando pago:", err),
     });
   };
-      if (isAppointmentMode(props) && isLoading) {
-    return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando orden...</p>;
+
+    if (isAppointmentMode(props) && isLoading) {
+    return <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando orden...</p>;
   }
 
   if (!order) {
@@ -153,7 +154,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
             console.error("Error creando orden:", err);
           }
         }}
-        className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
+        className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
       >
         + Crear orden de cobro
       </button>
@@ -161,10 +162,10 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   }
 
   return (
-    <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Orden de Cobro</h3>
+    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Orden de Cobro</h3>
 
-      <div className="mb-3 text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-[#0d2c53] dark:text-gray-100">
+      <div className="mb-3 text-xs sm:text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-[#0d2c53] dark:text-gray-100">
         <p><strong>Total:</strong> ${Number(order.total ?? 0).toFixed(2)}</p>
         <p><strong>Pagado:</strong> ${(Number(order.total ?? 0) - Number(order.balance_due ?? 0)).toFixed(2)}</p>
         <p><strong>Saldo pendiente:</strong> ${Number(order.balance_due ?? 0).toFixed(2)}</p>
@@ -174,13 +175,13 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       {/* Ítems */}
       <button
         onClick={() => setShowItems(!showItems)}
-        className="px-3 py-1 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
+        className="px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
                dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
       >
         {showItems ? "▼ Ítems" : "▶ Ítems"}
       </button>
 
-      {showItems && (
+            {showItems && (
         <div className="mb-4 space-y-3">
           {!readOnly && (
             <form onSubmit={handleAddItem} className="flex flex-col gap-2">
@@ -188,7 +189,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 id="charge-item-code"
                 type="text"
                 placeholder="Código"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                 required
               />
@@ -196,7 +197,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 id="charge-item-desc"
                 type="text"
                 placeholder="Descripción del ítem"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                 required
               />
@@ -206,7 +207,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 min={1}
                 step={1}
                 placeholder="Cantidad"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                 required
               />
@@ -216,25 +217,25 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 min={0}
                 step={0.01}
                 placeholder="Precio unitario"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                 required
               />
               <button
                 type="submit"
-                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition-colors self-start"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition-colors self-start"
               >
                 + Agregar ítem
               </button>
             </form>
           )}
 
-          <ul className="mt-2">
+          <ul className="mt-2 space-y-1">
             {order.items?.length === 0 && (
-              <li className="text-sm text-gray-600 dark:text-gray-400">Sin ítems</li>
+              <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin ítems</li>
             )}
             {order.items?.map((it: ChargeItem) => (
-              <li key={it.id} className="border-b border-gray-200 dark:border-gray-700 py-1 text-sm text-[#0d2c53] dark:text-gray-100">
+              <li key={it.id} className="border-b border-gray-200 dark:border-gray-700 py-1 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
                 {editItemId === it.id ? (
                   <form
                     onSubmit={(e) => {
@@ -247,26 +248,26 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                       type="text"
                       value={editDescription}
                       onChange={(e) => setEditDescription(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                     />
                     <input
                       type="number"
                       value={editQty}
                       onChange={(e) => setEditQty(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                     />
                     <input
                       type="number"
                       step="0.01"
                       value={editPrice}
                       onChange={(e) => setEditPrice(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                     />
                     <div className="flex gap-2">
-                      <button type="submit" className="px-3 py-2 bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] rounded text-sm">
+                      <button type="submit" className="px-3 py-2 text-xs sm:text-sm bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] rounded">
                         Guardar
                       </button>
-                      <button type="button" onClick={() => setEditItemId(null)} className="px-3 py-2 bg-gray-400 text-white rounded text-sm">
+                      <button type="button" onClick={() => setEditItemId(null)} className="px-3 py-2 text-xs sm:text-sm bg-gray-400 text-white rounded">
                         Cancelar
                       </button>
                     </div>
@@ -274,7 +275,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 ) : (
                   <>
                     {it.code} — {it.description ?? "Sin descripción"} ({it.qty} × ${Number(it.unit_price).toFixed(2)})
-                    <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">= ${Number(it.subtotal).toFixed(2)}</span>
+                    <span className="ml-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">= ${Number(it.subtotal).toFixed(2)}</span>
                     {!readOnly && (
                       <>
                         <button
@@ -306,7 +307,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
             {/* Pagos */}
       <button
         onClick={() => setShowPayments(!showPayments)}
-        className="px-3 py-1 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
+        className="px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
                    dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
       >
         {showPayments ? "▼ Pagos" : "▶ Pagos"}
@@ -322,14 +323,14 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 placeholder="Monto"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
                 required
               />
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               >
                 <option value="cash">Efectivo</option>
@@ -342,7 +343,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 placeholder="Referencia"
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                            bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
               />
               {method === "transfer" && (
@@ -351,7 +352,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                   placeholder="Banco"
                   value={bank}
                   onChange={(e) => setBank(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                              bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                 />
               )}
@@ -361,13 +362,13 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                   placeholder="Detalle"
                   value={otherDetail}
                   onChange={(e) => setOtherDetail(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                              bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
                 />
               )}
               <button
                 type="submit"
-                className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors self-start"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors self-start"
                 disabled={createPayment.isPending}
               >
                 {createPayment.isPending ? "Registrando..." : "+ Registrar pago"}
@@ -376,14 +377,14 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           )}
 
           {/* Lista de pagos */}
-          <ul className="mt-2">
+          <ul className="mt-2 space-y-1">
             {order.payments?.length === 0 && (
-              <li className="text-sm text-gray-600 dark:text-gray-400">Sin pagos registrados</li>
+              <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin pagos registrados</li>
             )}
             {order.payments?.map((p: Payment) => (
               <li
                 key={p.id}
-                className="border-b border-gray-200 dark:border-gray-700 py-1 text-sm text-[#0d2c53] dark:text-gray-100"
+                className="border-b border-gray-200 dark:border-gray-700 py-1 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
               >
                 {p.method} — ${Number(p.amount).toFixed(2)}
                 {p.reference_number && <span className="ml-2">Ref: {p.reference_number}</span>}

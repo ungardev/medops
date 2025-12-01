@@ -1,8 +1,8 @@
+// src/components/Payments/ChargeOrderRow.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PaymentList from "./PaymentList";
-import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
 import { ChargeOrder } from "../../types/payments";
 import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
 
@@ -14,7 +14,6 @@ interface Props {
 
 export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }: Props) {
   const [expanded, setExpanded] = useState(false);
-  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const invalidateChargeOrders = useInvalidateChargeOrders();
 
@@ -47,11 +46,7 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
 
   const handleRegisterPaymentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (onRegisterPayment) {
-      onRegisterPayment();
-    } else {
-      setShowModal(true);
-    }
+    onRegisterPayment?.();
   };
 
   const formattedDate = order.appointment_date
@@ -94,41 +89,78 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
 
   return (
     <div
-      className={`rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 mb-3 cursor-pointer 
+      className={`rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 mb-2 sm:mb-3 cursor-pointer 
         ${isSelected ? "ring-2 ring-[#0d2c53] bg-[#0d2c53]/10 dark:bg-[#0d2c53]/30" : "bg-white dark:bg-gray-900"}`}
       onClick={() => setExpanded(!expanded)}
     >
-      <div className="flex justify-between items-center">
-        <div className="flex gap-4 items-center text-sm text-[#0d2c53] dark:text-gray-100">
-          <span className="font-semibold">{patientName}</span>
-          <span>{formattedDate}</span>
-          <span>${formattedAmount}</span>
-          <span
-            className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`}
-          >
-            {statusLabel}
-          </span>
-        </div>
-
-        <div className="flex gap-2">
+      {/* Vista mobile vertical */}
+      <div className="flex flex-col gap-2 sm:hidden text-[11px] text-[#0d2c53] dark:text-gray-100">
+        <span className="font-semibold">{patientName}</span>
+        <span>{formattedDate}</span>
+        <span>${formattedAmount}</span>
+        <span
+          className={`inline-flex items-center rounded-md px-1 py-0.5 text-[11px] font-medium ring-1 ring-inset max-w-max ${statusClass}`}
+        >
+          {statusLabel}
+        </span>
+        <div className="flex flex-col gap-2 mt-2">
           <button
-            className="px-3 py-1 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
+            className="w-full px-3 py-1.5 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition"
             onClick={handleRegisterPaymentClick}
           >
             Registrar pago
           </button>
           <button
-            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+            className="w-full px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 
                        bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition"
             onClick={handleExport}
           >
             Exportar
           </button>
           <button
-            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+            className="w-full px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 
                        bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+            onClick={handleViewDetail}
+          >
+            Ver detalle
+          </button>
+        </div>
+      </div>
+
+      {/* Vista desktop intacta */}
+      <div className="hidden sm:flex justify-between items-center">
+        <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
+          <span className="font-semibold">{patientName}</span>
+          <span>{formattedDate}</span>
+          <span>${formattedAmount}</span>
+          <span
+            className={`inline-flex items-center rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs font-medium ring-1 ring-inset max-w-max ${statusClass}`}
+          >
+            {statusLabel}
+          </span>
+        </div>
+
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          <button
+            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-[11px] sm:text-sm"
+            onClick={handleRegisterPaymentClick}
+          >
+            Registrar pago
+          </button>
+          <button
+            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
+            onClick={handleExport}
+          >
+            Exportar
+          </button>
+          <button
+            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
+                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
+                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
             onClick={handleViewDetail}
           >
             Ver detalle
@@ -137,24 +169,9 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
       </div>
 
       {expanded && (
-        <div className="mt-3">
+        <div className="mt-2 sm:mt-3">
           <PaymentList payments={order.payments || []} />
         </div>
-      )}
-
-      {showModal && !onRegisterPayment && (
-        <RegisterPaymentModal
-          appointmentId={order.appointment}
-          chargeOrderId={order.id}
-          onClose={() => {
-            setShowModal(false);
-            invalidateChargeOrders(order.id);
-          }}
-          onSuccess={() => {
-            console.log("Pago registrado en orden", order.id);
-            invalidateChargeOrders(order.id);
-          }}
-        />
       )}
     </div>
   );

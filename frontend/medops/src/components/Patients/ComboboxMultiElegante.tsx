@@ -1,3 +1,4 @@
+// src/components/Patients/ComboboxMultiElegante.tsx
 import React, { useState } from "react";
 
 interface Option {
@@ -48,7 +49,7 @@ export default function ComboboxMultiElegante({
   };
 
   return (
-    <div className="w-full text-sm">
+    <div className="w-full text-xs sm:text-sm">
       {/* Chips seleccionados */}
       <div className="flex flex-wrap gap-2 mb-2">
         {selectedOptions.map((opt) => (
@@ -74,7 +75,7 @@ export default function ComboboxMultiElegante({
         value={input}
         onChange={(e) => setInput(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+        className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                    bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                    focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
       />
@@ -87,7 +88,7 @@ export default function ComboboxMultiElegante({
             <div
               key={opt.id}
               onClick={() => handleAdd(opt.id)}
-              className="px-3 py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
             >
               {opt.name}
             </div>
@@ -95,7 +96,7 @@ export default function ComboboxMultiElegante({
           {onCreate && (
             <div
               onClick={handleCreate}
-              className="px-3 py-2 cursor-pointer text-[#0d2c53] dark:text-blue-400 hover:underline"
+              className="px-2 sm:px-3 py-1.5 sm:py-2 cursor-pointer text-[#0d2c53] dark:text-blue-400 hover:underline"
             >
               Crear: <strong>{input}</strong>
             </div>

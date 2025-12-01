@@ -1,4 +1,3 @@
-// src/components/WaitingRoom/RegisterWalkinModal.tsx
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useForm } from "react-hook-form";
@@ -38,7 +37,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (query.length < 2) {
+      if (query.length < 1) {
         setResults([]);
         setHighlightedIndex(-1);
         return;
@@ -75,7 +74,8 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
   }, [mode, results, highlightedIndex, selectedPatient, onClose]);
-    const onSubmit = async (values: FormValues) => {
+
+  const onSubmit = async (values: FormValues) => {
     try {
       let patientId: number;
       if (selectedPatient) {
@@ -100,7 +100,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     }
   };
 
-  const alreadyInWaitingRoom = selectedPatient
+    const alreadyInWaitingRoom = selectedPatient
     ? existingEntries.some(
         (e) =>
           e.patient.id === selectedPatient.id &&
@@ -115,165 +115,167 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg p-6 animate-fade-slide"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 animate-fade-slide"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-4">
-          Registrar llegada
-        </h2>
+        <div className="px-4 sm:px-6 space-y-4">
+          <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white">
+            Registrar llegada
+          </h2>
 
-        {/* === MODO BÚSQUEDA === */}
-        {mode === "search" && (
-          <div className="space-y-4">
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              placeholder="Buscar paciente por nombre o cédula..."
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setSelectedPatient(null);
-              }}
-            />
+          {/* === MODO BÚSQUEDA === */}
+          {mode === "search" && (
+            <>
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+                placeholder="Buscar paciente por nombre o cédula..."
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setSelectedPatient(null);
+                }}
+              />
 
-            {results.length > 0 && !selectedPatient && (
-              <ul className="border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700">
-                {results.map((p, index) => (
-                  <li
-                    key={p.id}
-                    className={`px-3 py-2 cursor-pointer ${
-                      index === highlightedIndex
-                        ? "bg-[#0d2c53] text-white"
-                        : "text-[#0d2c53] dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    }`}
-                    onClick={() => {
-                      setSelectedPatient(p);
-                      setQuery("");
-                      setResults([]);
-                    }}
-                  >
-                    {p.full_name} {p.national_id ? `— ${p.national_id}` : ""}
-                  </li>
-                ))}
-              </ul>
-            )}
-                        {selectedPatient && (
-              <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700 text-center">
-                <h3 className="text-[#0d2c53] dark:text-white font-semibold mb-2">
-                  {selectedPatient.full_name}
-                  {selectedPatient.national_id ? ` (${selectedPatient.national_id})` : ""}
-                </h3>
-                {alreadyInWaitingRoom ? (
-                  <p className="text-red-600 font-medium">
-                    ⚠️ Este paciente ya está en la sala de espera
-                  </p>
-                ) : (
-                  <div className="flex gap-2 justify-center mt-3">
-                    <button
-                      className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
-                      onClick={() => onSubmit({} as FormValues)}
+              {results.length > 0 && !selectedPatient && (
+                <ul className="border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700 max-h-40 overflow-y-auto">
+                  {results.map((p, index) => (
+                    <li
+                      key={p.id}
+                      className={`px-3 py-2 cursor-pointer text-xs sm:text-sm ${
+                        index === highlightedIndex
+                          ? "bg-[#0d2c53] text-white"
+                          : "text-[#0d2c53] dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      }`}
+                      onClick={() => {
+                        setSelectedPatient(p);
+                        setQuery("");
+                        setResults([]);
+                      }}
                     >
-                      Registrar llegada
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
-                      onClick={() => setSelectedPatient(null)}
-                    >
-                      Cambiar
-                    </button>
-                  </div>
-                )}
+                      {p.full_name} {p.national_id ? `— ${p.national_id}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {selectedPatient && (
+                <div className="p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700 text-center">
+                  <h3 className="text-[#0d2c53] dark:text-white font-semibold mb-2 text-sm sm:text-base">
+                    {selectedPatient.full_name}
+                    {selectedPatient.national_id ? ` (${selectedPatient.national_id})` : ""}
+                  </h3>
+                  {alreadyInWaitingRoom ? (
+                    <p className="text-red-600 font-medium text-xs sm:text-sm">
+                      ⚠️ Este paciente ya está en la sala de espera
+                    </p>
+                  ) : (
+                    <div className="flex gap-2 justify-center mt-3">
+                      <button
+                        className="px-3 sm:px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
+                        onClick={() => onSubmit({} as FormValues)}
+                      >
+                        Registrar llegada
+                      </button>
+                      <button
+                        className="px-3 sm:px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
+                        onClick={() => setSelectedPatient(null)}
+                      >
+                        Cambiar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors w-full text-xs sm:text-sm"
+                onClick={() => setMode("create")}
+              >
+                Crear nuevo paciente
+              </button>
+            </>
+          )}
+                    {/* === MODO CREACIÓN === */}
+          {mode === "create" && (
+            <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+                placeholder="Nombre"
+                {...register("first_name", { required: "El nombre es obligatorio" })}
+              />
+              {errors.first_name && (
+                <span className="text-red-600 text-xs sm:text-sm">{errors.first_name.message}</span>
+              )}
+
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                placeholder="Segundo nombre (opcional)"
+                {...register("second_name")}
+              />
+
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+                placeholder="Apellido"
+                {...register("last_name", { required: "El apellido es obligatorio" })}
+              />
+              {errors.last_name && (
+                <span className="text-red-600 text-xs sm:text-sm">{errors.last_name.message}</span>
+              )}
+
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                placeholder="Segundo apellido (opcional)"
+                {...register("second_last_name")}
+              />
+
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+                placeholder="Documento (Cédula)"
+                {...register("national_id", { required: "El documento es obligatorio" })}
+              />
+              {errors.national_id && (
+                <span className="text-red-600 text-xs sm:text-sm">{errors.national_id.message}</span>
+              )}
+
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                placeholder="Teléfono"
+                {...register("phone")}
+              />
+
+              <input
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
+                placeholder="Email"
+                {...register("email", {
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Email inválido",
+                  },
+                })}
+              />
+              {errors.email && (
+                <span className="text-red-600 text-xs sm:text-sm">{errors.email.message}</span>
+              )}
+
+              <div className="flex gap-2 justify-end mt-4">
+                <button
+                  className="px-3 sm:px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
+                  type="submit"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Creando..." : "Crear y registrar llegada"}
+                </button>
+                <button
+                  className="px-3 sm:px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
+                  type="button"
+                  onClick={() => setMode("search")}
+                >
+                  Volver
+                </button>
               </div>
-            )}
-
-            <button
-              className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors w-full"
-              onClick={() => setMode("create")}
-            >
-              Crear nuevo paciente
-            </button>
-          </div>
-        )}
-
-        {/* === MODO CREACIÓN === */}
-        {mode === "create" && (
-          <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              placeholder="Nombre"
-              {...register("first_name", { required: "El nombre es obligatorio" })}
-            />
-            {errors.first_name && (
-              <span className="text-red-600 text-sm">{errors.first_name.message}</span>
-            )}
-
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              placeholder="Segundo nombre (opcional)"
-              {...register("second_name")}
-            />
-
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              placeholder="Apellido"
-              {...register("last_name", { required: "El apellido es obligatorio" })}
-            />
-            {errors.last_name && (
-              <span className="text-red-600 text-sm">{errors.last_name.message}</span>
-            )}
-
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              placeholder="Segundo apellido (opcional)"
-              {...register("second_last_name")}
-            />
-
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              placeholder="Documento (Cédula)"
-              {...register("national_id", { required: "El documento es obligatorio" })}
-            />
-            {errors.national_id && (
-              <span className="text-red-600 text-sm">{errors.national_id.message}</span>
-            )}
-
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              placeholder="Teléfono"
-              {...register("phone")}
-            />
-
-            <input
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              placeholder="Email"
-              {...register("email", {
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Email inválido",
-                },
-              })}
-            />
-            {errors.email && (
-              <span className="text-red-600 text-sm">{errors.email.message}</span>
-            )}
-
-            <div className="flex gap-2 justify-end mt-4">
-              <button
-                className="px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Creando..." : "Crear y registrar llegada"}
-              </button>
-              <button
-                className="px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
-                type="button"
-                onClick={() => setMode("search")}
-              >
-                Volver
-              </button>
-            </div>
-          </form>
-        )}
+            </form>
+          )}
+        </div>
       </div>
     </div>,
     document.getElementById("modal-root")!

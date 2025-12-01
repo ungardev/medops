@@ -6,6 +6,7 @@ import ChargeOrderRow from "./ChargeOrderRow";
 import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
 import { ChargeOrder, ChargeOrderStatus } from "../../types/payments";
 import { useChargeOrdersPaginated } from "../../hooks/payments/useChargeOrdersPaginated";
+import { useAllChargeOrders } from "../../hooks/payments/useAllChargeOrders"; // ⚔️ nuevo hook
 
 export interface ChargeOrderListProps {
   onRegisterPayment?: (orderId: number, appointmentId: number) => void;
@@ -18,7 +19,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // 🔹 Paginación normal
+  // 🔹 Paginación normal (solo para la lista visible)
   const {
     data: paginatedData,
     isLoading,
@@ -42,9 +43,13 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
     enabled: query.trim().length > 0,
   });
 
+  // 🔹 Todas las órdenes (para totales globales)
+  const { data: allOrders } = useAllChargeOrders();
+
+  // 🔹 Lista visible (paginada o búsqueda)
   const orders = query.trim().length > 0 ? searchResults ?? [] : paginatedData?.results ?? [];
 
-  // 🔹 Filtrado local
+  // 🔹 Filtrado local sobre la lista visible
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
     const q = query.toLowerCase().trim();
@@ -55,7 +60,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
     });
   }, [orders, query]);
 
-  const handleKeyDown = useCallback(
+    const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (filteredOrders.length === 0) return;
       if (e.key === "ArrowDown") {
@@ -78,13 +83,13 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
   );
 
   if (isLoading || searchLoading)
-    return <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando órdenes de cobro...</p>;
+    return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">Cargando órdenes de cobro...</p>;
   if (error)
-    return <p className="text-sm text-red-600 dark:text-red-400">Error cargando órdenes</p>;
+    return <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">Error cargando órdenes</p>;
 
-  // 🔹 Totales institucionales con enums
-  const totals = Array.isArray(orders)
-    ? orders.reduce(
+  // 🔹 Totales institucionales con enums (calculados sobre TODA la DB)
+  const totals = Array.isArray(allOrders)
+    ? allOrders.reduce(
         (acc, order) => {
           const raw = order.total_amount ?? order.total ?? 0;
           const amt =
@@ -115,14 +120,11 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
   const startIdx = (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(currentPage * pageSize, totalCount);
 
-    return (
-    <div className="space-y-6">
+  return (
+    <div className="space-y-4 sm:space-y-6">
       {/* Buscador */}
       <div>
-        <label
-          htmlFor="orderSearch"
-          className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1"
-        >
+        <label htmlFor="orderSearch" className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
           Buscar órdenes
         </label>
         <input
@@ -136,15 +138,15 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
             setCurrentPage(1);
           }}
           onKeyDown={handleKeyDown}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+          className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
                      bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                      focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
         />
       </div>
 
       {/* Resumen de Totales */}
-      {totals && Array.isArray(orders) && orders.length > 0 && (
-        <div className="flex flex-wrap gap-4 text-sm">
+      {totals && (
+        <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
           <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800 text-[#0d2c53] dark:text-gray-100">
             <strong>Total:</strong> ${totals.total.toFixed(2)}
           </span>
@@ -175,7 +177,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
             />
           ))
         ) : (
-          <div className="text-center text-sm text-[#0d2c53] dark:text-gray-400 py-6 italic">
+          <div className="text-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400 py-4 sm:py-6 italic">
             No se encontraron órdenes
           </div>
         )}
@@ -183,11 +185,11 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
 
       {/* Paginación */}
       {query.trim().length === 0 && totalCount > pageSize && (
-        <div className="flex items-center justify-between text-sm mt-4">
+        <div className="flex items-center justify-between text-xs sm:text-sm mt-3 sm:mt-4">
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+            className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
                        bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 disabled:opacity-50"
           >
             Anterior
@@ -198,7 +200,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
           <button
             disabled={endIdx >= totalCount}
             onClick={() => setCurrentPage((p) => p + 1)}
-            className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
+            className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
                        bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 disabled:opacity-50"
           >
             Siguiente
