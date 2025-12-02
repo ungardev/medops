@@ -5,6 +5,7 @@ import axios from "axios";
 import PaymentList from "./PaymentList";
 import { ChargeOrder } from "../../types/payments";
 import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
+import { CreditCard, ArrowUpSquare, Eye } from "lucide-react";
 
 interface Props {
   order: ChargeOrder;
@@ -87,13 +88,29 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
       ? "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200"
       : "bg-gray-100 text-[#0d2c53] ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
 
-  return (
+  const confirmed = order.payments?.filter(p => p.status === "confirmed")
+    .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
+
+  const pending = order.payments?.filter(p => p.status === "pending")
+    .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
+
+  const rejected = order.payments?.filter(p => p.status === "rejected")
+    .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
+
+    return (
     <div
-      className={`rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 mb-2 sm:mb-3 cursor-pointer 
+      className={`relative rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 mb-2 sm:mb-3 cursor-pointer 
         ${isSelected ? "ring-2 ring-[#0d2c53] bg-[#0d2c53]/10 dark:bg-[#0d2c53]/30" : "bg-white dark:bg-gray-900"}`}
       onClick={() => setExpanded(!expanded)}
     >
-      {/* Vista mobile vertical */}
+      {/* Iconos en mobile */}
+      <div className="absolute top-2 right-2 sm:hidden flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
+        <CreditCard className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleRegisterPaymentClick} />
+        <ArrowUpSquare className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleExport} />
+        <Eye className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleViewDetail} />
+      </div>
+
+      {/* Vista mobile */}
       <div className="flex flex-col gap-2 sm:hidden text-[11px] text-[#0d2c53] dark:text-gray-100">
         <span className="font-semibold">{patientName}</span>
         <span>{formattedDate}</span>
@@ -103,74 +120,58 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
         >
           {statusLabel}
         </span>
-        <div className="flex flex-col gap-2 mt-2">
-          <button
-            className="w-full px-3 py-1.5 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition"
-            onClick={handleRegisterPaymentClick}
-          >
-            Registrar pago
-          </button>
-          <button
-            className="w-full px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-            onClick={handleExport}
-          >
-            Exportar
-          </button>
-          <button
-            className="w-full px-3 py-1.5 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition"
-            onClick={handleViewDetail}
-          >
-            Ver detalle
-          </button>
-        </div>
       </div>
 
-      {/* Vista desktop intacta */}
+      {/* Vista desktop */}
       <div className="hidden sm:flex justify-between items-center">
         <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
           <span className="font-semibold">{patientName}</span>
           <span>{formattedDate}</span>
           <span>${formattedAmount}</span>
-          <span
-            className={`inline-flex items-center rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs font-medium ring-1 ring-inset max-w-max ${statusClass}`}
-          >
+          <span className={`inline-flex items-center rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs font-medium ring-1 ring-inset max-w-max ${statusClass}`}>
             {statusLabel}
           </span>
         </div>
 
         <div className="flex flex-wrap gap-1.5 sm:gap-2">
-          <button
-            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-[11px] sm:text-sm"
-            onClick={handleRegisterPaymentClick}
-          >
+          <button className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-[11px] sm:text-sm" onClick={handleRegisterPaymentClick}>
             Registrar pago
           </button>
-          <button
-            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
-            onClick={handleExport}
-          >
+          <button className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm" onClick={handleExport}>
             Exportar
           </button>
-          <button
-            className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
-            onClick={handleViewDetail}
-          >
+          <button className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm" onClick={handleViewDetail}>
             Ver detalle
           </button>
         </div>
       </div>
 
+      {/* Expandido */}
       {expanded && (
         <div className="mt-2 sm:mt-3">
-          <PaymentList payments={order.payments || []} />
+          {/* Badges filtrados solo en mobile */}
+          <div className="flex flex-wrap gap-2 sm:hidden text-[11px] mb-2">
+            {[
+              { label: "Total", value: order.total_amount ?? order.total, className: "bg-gray-100 text-[#0d2c53] dark:bg-gray-700 dark:text-gray-200" },
+              { label: "Confirmados", value: confirmed, className: "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200" },
+              { label: "Pendientes", value: pending, className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200" },
+              { label: "Rechazados", value: rejected, className: "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200" },
+            ]
+              .filter(b => b.value !== undefined && Number(b.value) > 0)
+              .map((b, idx) => (
+                <span key={idx} className={`inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset ${b.className}`}>
+                  <strong>{b.label}:</strong> ${Number(b.value).toFixed(2)}
+                </span>
+              ))}
+          </div>
+
+          {/* PaymentList: sin resumen en mobile, con resumen en desktop */}
+          <div className="sm:hidden">
+            <PaymentList payments={order.payments || []} hideSummaryBadges />
+          </div>
+          <div className="hidden sm:block">
+            <PaymentList payments={order.payments || []} />
+          </div>
         </div>
       )}
     </div>

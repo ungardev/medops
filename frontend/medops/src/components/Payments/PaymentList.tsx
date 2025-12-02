@@ -3,9 +3,10 @@ import { Payment, PaymentStatus, PaymentMethod } from "../../types/payments";
 
 interface Props {
   payments: Payment[];
+  hideSummaryBadges?: boolean; // 🔹 nueva prop
 }
 
-export default function PaymentList({ payments }: Props) {
+export default function PaymentList({ payments, hideSummaryBadges = false }: Props) {
   if (!payments || payments.length === 0) {
     return (
       <div className="text-sm text-[#0d2c53] dark:text-gray-400 italic">
@@ -39,21 +40,23 @@ export default function PaymentList({ payments }: Props) {
 
   return (
     <div className="space-y-4 mt-3">
-      {/* Resumen compacto */}
-      <div className="flex flex-wrap gap-4 text-xs">
-        <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800 text-[#0d2c53] dark:text-gray-100">
-          <strong>Total pagos:</strong> ${totals.total.toFixed(2)}
-        </span>
-        <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">
-          <strong>Confirmados:</strong> ${totals.confirmed.toFixed(2)}
-        </span>
-        <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200">
-          <strong>Pendientes:</strong> ${totals.pending.toFixed(2)}
-        </span>
-        <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">
-          <strong>Rechazados/Anulados:</strong> ${totals.failed.toFixed(2)}
-        </span>
-      </div>
+      {/* 🔒 Solo mostrar resumen si no se pidió ocultarlo */}
+      {!hideSummaryBadges && (
+        <div className="flex flex-wrap gap-4 text-xs">
+          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800 text-[#0d2c53] dark:text-gray-100">
+            <strong>Total pagos:</strong> ${totals.total.toFixed(2)}
+          </span>
+          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">
+            <strong>Confirmados:</strong> ${totals.confirmed.toFixed(2)}
+          </span>
+          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200">
+            <strong>Pendientes:</strong> ${totals.pending.toFixed(2)}
+          </span>
+          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">
+            <strong>Rechazados/Anulados:</strong> ${totals.failed.toFixed(2)}
+          </span>
+        </div>
+      )}
 
       {/* Tabla real */}
       <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">

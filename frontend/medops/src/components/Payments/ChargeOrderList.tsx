@@ -3,10 +3,9 @@ import { useState, useMemo, useCallback } from "react";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import ChargeOrderRow from "./ChargeOrderRow";
-import RegisterPaymentModal from "../Dashboard/RegisterPaymentModal";
-import { ChargeOrder, ChargeOrderStatus } from "../../types/payments";
+import { ChargeOrder } from "../../types/payments";
 import { useChargeOrdersPaginated } from "../../hooks/payments/useChargeOrdersPaginated";
-import { useAllChargeOrders } from "../../hooks/payments/useAllChargeOrders"; // ⚔️ nuevo hook
+import { useChargeOrdersSummary } from "../../hooks/payments/useChargeOrdersSummary";
 
 export interface ChargeOrderListProps {
   onRegisterPayment?: (orderId: number, appointmentId: number) => void;
@@ -15,18 +14,15 @@ export interface ChargeOrderListProps {
 export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
-  const [selectedOrder, setSelectedOrder] = useState<ChargeOrder | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // 🔹 Paginación normal (solo para la lista visible)
   const {
     data: paginatedData,
     isLoading,
     error,
   } = useChargeOrdersPaginated(currentPage, pageSize);
 
-  // 🔹 Búsqueda global
   const { data: searchResults, isLoading: searchLoading } = useQuery<ChargeOrder[]>({
     queryKey: ["charge-orders-search", query],
     queryFn: async (): Promise<ChargeOrder[]> => {
@@ -43,13 +39,10 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
     enabled: query.trim().length > 0,
   });
 
-  // 🔹 Todas las órdenes (para totales globales)
-  const { data: allOrders } = useAllChargeOrders();
+  const { data: summary } = useChargeOrdersSummary();
 
-  // 🔹 Lista visible (paginada o búsqueda)
   const orders = query.trim().length > 0 ? searchResults ?? [] : paginatedData?.results ?? [];
 
-  // 🔹 Filtrado local sobre la lista visible
   const filteredOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
     const q = query.toLowerCase().trim();
@@ -60,7 +53,7 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
     });
   }, [orders, query]);
 
-    const handleKeyDown = useCallback(
+  const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (filteredOrders.length === 0) return;
       if (e.key === "ArrowDown") {
@@ -87,35 +80,6 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
   if (error)
     return <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">Error cargando órdenes</p>;
 
-  // 🔹 Totales institucionales con enums (calculados sobre TODA la DB)
-  const totals = Array.isArray(allOrders)
-    ? allOrders.reduce(
-        (acc, order) => {
-          const raw = order.total_amount ?? order.total ?? 0;
-          const amt =
-            typeof raw === "string" ? parseFloat(raw || "0") : Number(raw || 0);
-          acc.total += amt;
-
-          switch (order.status) {
-            case ChargeOrderStatus.PAID:
-              acc.confirmed += amt;
-              break;
-            case ChargeOrderStatus.OPEN:
-            case ChargeOrderStatus.PARTIALLY_PAID:
-              acc.pending += amt;
-              break;
-            case ChargeOrderStatus.VOID:
-            case ChargeOrderStatus.WAIVED:
-              acc.failed += amt;
-              break;
-          }
-
-          return acc;
-        },
-        { total: 0, confirmed: 0, pending: 0, failed: 0 }
-      )
-    : null;
-
   const totalCount = query.trim().length > 0 ? orders.length : paginatedData?.count ?? 0;
   const startIdx = (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(currentPage * pageSize, totalCount);
@@ -124,7 +88,10 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
     <div className="space-y-4 sm:space-y-6">
       {/* Buscador */}
       <div>
-        <label htmlFor="orderSearch" className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+        <label
+          htmlFor="orderSearch"
+          className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1"
+        >
           Buscar órdenes
         </label>
         <input
@@ -145,19 +112,19 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
       </div>
 
       {/* Resumen de Totales */}
-      {totals && (
+      {summary && (
         <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm">
           <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800 text-[#0d2c53] dark:text-gray-100">
-            <strong>Total:</strong> ${totals.total.toFixed(2)}
+            <strong>Total:</strong> ${summary.total.toFixed(2)}
           </span>
           <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">
-            <strong>Confirmados:</strong> ${totals.confirmed.toFixed(2)}
+            <strong>Confirmados:</strong> ${summary.confirmed.toFixed(2)}
           </span>
           <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200">
-            <strong>Pendientes:</strong> ${totals.pending.toFixed(2)}
+            <strong>Pendientes:</strong> ${summary.pending.toFixed(2)}
           </span>
           <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">
-            <strong>Fallidos:</strong> ${totals.failed.toFixed(2)}
+            <strong>Fallidos:</strong> ${summary.failed.toFixed(2)}
           </span>
         </div>
       )}
@@ -171,7 +138,6 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
               order={order}
               isSelected={idx === selectedIndex}
               onRegisterPayment={() => {
-                setSelectedOrder(order);
                 onRegisterPayment?.(order.id, order.appointment);
               }}
             />
@@ -206,19 +172,6 @@ export default function ChargeOrderList({ onRegisterPayment }: ChargeOrderListPr
             Siguiente
           </button>
         </div>
-      )}
-
-      {/* Modal de Registrar Pago */}
-      {selectedOrder && (
-        <RegisterPaymentModal
-          chargeOrderId={selectedOrder.id}
-          appointmentId={selectedOrder.appointment ?? undefined}
-          onClose={() => setSelectedOrder(null)}
-          onSuccess={() => {
-            console.log("Pago registrado en orden", selectedOrder.id);
-            setSelectedOrder(null);
-          }}
-        />
       )}
     </div>
   );

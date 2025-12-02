@@ -3788,26 +3788,47 @@ def search(request):
             "orders": []
         })
 
+    # 🔹 Tokenización institucional
+    tokens = [t.strip() for t in query.lower().split() if t.strip()]
+    if not tokens:
+        return Response({
+            "patients": [],
+            "appointments": [],
+            "orders": []
+        })
+
     # 🔹 Pacientes: buscar por nombres y cédula
-    patients = Patient.objects.filter(
-        Q(first_name__icontains=query) |
-        Q(last_name__icontains=query) |
-        Q(national_id__icontains=query)
-    ).values("id", "first_name", "last_name", "national_id")[:10]
+    patient_q = Q()
+    for token in tokens:
+        patient_q |= Q(first_name__icontains=token)
+        patient_q |= Q(last_name__icontains=token)
+        patient_q |= Q(national_id__icontains=token)
+
+    patients = Patient.objects.filter(patient_q).values(
+        "id", "first_name", "last_name", "national_id"
+    )[:10]
 
     # 🔹 Citas: buscar por nombre del paciente y estado
-    appointments = Appointment.objects.filter(
-        Q(patient__first_name__icontains=query) |
-        Q(patient__last_name__icontains=query) |
-        Q(status__icontains=query)
-    ).values("id", "appointment_date", "status")[:10]
+    appointment_q = Q()
+    for token in tokens:
+        appointment_q |= Q(patient__first_name__icontains=token)
+        appointment_q |= Q(patient__last_name__icontains=token)
+        appointment_q |= Q(status__icontains=token)
+
+    appointments = Appointment.objects.filter(appointment_q).values(
+        "id", "appointment_date", "status"
+    )[:10]
 
     # 🔹 Órdenes / Pagos: buscar por paciente y estado
-    orders = ChargeOrder.objects.filter(
-        Q(patient__first_name__icontains=query) |
-        Q(patient__last_name__icontains=query) |
-        Q(status__icontains=query)
-    ).values("id", "total", "balance_due", "status")[:10]
+    order_q = Q()
+    for token in tokens:
+        order_q |= Q(patient__first_name__icontains=token)
+        order_q |= Q(patient__last_name__icontains=token)
+        order_q |= Q(status__icontains=token)
+
+    orders = ChargeOrder.objects.filter(order_q).values(
+        "id", "total", "balance_due", "status"
+    )[:10]
 
     return Response({
         "patients": list(patients),

@@ -24,7 +24,7 @@ export default function ReportFilters({ onFilter }: Props) {
         Filtros
       </h3>
 
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 sm:items-end sm:gap-4 space-y-4 sm:space-y-0">
         {/* Fecha desde */}
         <div className="flex flex-col">
           <label className="text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
@@ -34,7 +34,7 @@ export default function ReportFilters({ onFilter }: Props) {
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
@@ -49,7 +49,7 @@ export default function ReportFilters({ onFilter }: Props) {
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
@@ -63,7 +63,7 @@ export default function ReportFilters({ onFilter }: Props) {
           <select
             value={type}
             onChange={(e) => setType(e.target.value as ReportType)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           >
@@ -74,12 +74,14 @@ export default function ReportFilters({ onFilter }: Props) {
         </div>
 
         {/* Botón aplicar */}
-        <button
-          className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
-          onClick={handleApply}
-        >
-          Aplicar filtros
-        </button>
+        <div className="flex flex-col">
+          <button
+            className="w-full px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
+            onClick={handleApply}
+          >
+            Aplicar filtros
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -1,10 +1,11 @@
+// src/api/payments.ts
 import { apiFetch } from "./client";
 import { Payment, PaymentInput } from "../types/payments";
 
 // 🔹 Obtener todos los pagos
 export const getPayments = () => apiFetch<Payment[]>("payments/");
 
-// 🔹 Crear un nuevo pago
+// 🔹 Crear un nuevo pago (standalone, no ligado a ChargeOrder)
 export const createPayment = (data: PaymentInput) =>
   apiFetch<Payment>("payments/", {
     method: "POST",
@@ -31,6 +32,13 @@ export const getPaymentsByPatient = (patientId: number) =>
 // 🔹 Resumen global de pagos por método
 export const getPaymentSummary = () =>
   apiFetch<{ method: string; total: number }[]>("payments/summary/");
+
+// 🔹 Registrar pago ligado a una ChargeOrder
+export const registerPayment = (chargeOrderId: number, data: PaymentInput) =>
+  apiFetch<Payment>(`charge-orders/${chargeOrderId}/payments/`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 
 // 🔹 Reexportar tipo
 export type { Payment };

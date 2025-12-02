@@ -1,8 +1,9 @@
 // src/components/Payments/RegisterPaymentModal.tsx
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
 import { PaymentInput, Payment, PaymentMethod, PaymentStatus } from "../../types/payments";
+import { registerPayment } from "@/api/payments";
 
 interface Props {
   appointmentId: number;
@@ -24,14 +25,11 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
 
   const mutation = useMutation<Payment, Error, PaymentInput>({
     mutationFn: async (data) => {
-      const res = await axios.post(
-        `http://127.0.0.1/api/charge-orders/${chargeOrderId}/payments/`,
-        {
-          ...data,
-          status: PaymentStatus.CONFIRMED,
-        }
-      );
-      return res.data as Payment;
+      const res = await registerPayment(chargeOrderId, {
+        ...data,
+        status: PaymentStatus.CONFIRMED,
+      });
+      return res;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["charge-orders"] });
@@ -51,10 +49,10 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate(form as PaymentInput);
+    mutation.mutate({ ...form, status: PaymentStatus.CONFIRMED });
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2 sm:px-0">
       <div className="max-w-md w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-6">
         <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
@@ -126,7 +124,6 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
             />
           </div>
 
-          {/* Botones verticales */}
           <div className="flex flex-col gap-2 mt-3 sm:mt-4">
             <button
               type="submit"
@@ -147,6 +144,7 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

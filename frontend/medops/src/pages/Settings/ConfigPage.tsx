@@ -92,12 +92,12 @@ export default function ConfigPage() {
       .filter(Boolean) as string[];
   };
 
-    return (
-    <main className="p-6 space-y-6">
-      <h2 className="text-2xl font-semibold text-[#0d2c53] dark:text-gray-100">Configuración</h2>
+  return (
+    <main className="px-3 py-4 sm:p-6 space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-semibold text-[#0d2c53] dark:text-gray-100">Configuración</h2>
 
       {/* Configuración Institucional */}
-      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3">Institución</h3>
         {instLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando configuración institucional...</p>}
         {instForm && (
@@ -116,7 +116,7 @@ export default function ConfigPage() {
                   )}
                 </div>
                 <button
-                  className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                  className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
                              bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                              hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm mt-3"
                   onClick={() => setEditingInstitution(true)}
@@ -162,18 +162,17 @@ export default function ConfigPage() {
                 />
                 <input type="file" onChange={handleLogoChangeInput} className="w-full text-sm" />
                 {logoPreview && <img src={logoPreview} alt="Logo preview" className="h-20 mt-2 rounded border shadow-sm" />}
-                <div className="flex gap-2">
-                  <button type="submit" className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm">Guardar</button>
-                  <button type="button" className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm" onClick={() => setEditingInstitution(false)}>Cancelar</button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm">Guardar</button>
+                  <button type="button" className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm" onClick={() => setEditingInstitution(false)}>Cancelar</button>
                 </div>
               </form>
             )}
           </>
         )}
       </section>
-
               {/* Configuración Médico Operador */}
-      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3">Médico Operador</h3>
         {docLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando configuración del médico...</p>}
         {docForm && (
@@ -194,7 +193,7 @@ export default function ConfigPage() {
                   )}
                 </div>
                 <button
-                  className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+                  className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
                              bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
                              hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm mt-3"
                   onClick={() => setEditingDoctor(true)}
@@ -286,9 +285,9 @@ export default function ConfigPage() {
                     <img src={signaturePreview} alt="Firma preview" className="h-20 mt-2 rounded border shadow-sm" />
                   )}
                 </div>
-                <div className="flex gap-2">
-                  <button type="submit" className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm">Guardar</button>
-                  <button type="button" className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm" onClick={() => setEditingDoctor(false)}>Cancelar</button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm">Guardar</button>
+                  <button type="button" className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm" onClick={() => setEditingDoctor(false)}>Cancelar</button>
                 </div>
               </form>
             )}

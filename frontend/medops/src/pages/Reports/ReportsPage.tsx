@@ -15,21 +15,21 @@ export default function ReportsPage() {
   };
 
   return (
-    <main className="p-6 space-y-6">
+    <main className="px-3 py-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header institucional */}
-      <header className="mb-6">
-        <h2 className="text-2xl font-semibold text-[#0d2c53] dark:text-gray-100">
+      <header className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-semibold text-[#0d2c53] dark:text-gray-100">
           Reportes Institucionales
         </h2>
       </header>
 
       {/* Filtros */}
-      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
         <ReportFilters onFilter={handleFilter} />
       </section>
 
       {/* Tabla */}
-      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
         {isLoading && (
           <p className="text-sm text-[#0d2c53] dark:text-gray-400">Cargando reportes...</p>
         )}
@@ -40,7 +40,7 @@ export default function ReportsPage() {
       </section>
 
       {/* Exportación */}
-      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
+      <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
         <ReportExport filters={filters} data={data} />
       </section>
     </main>

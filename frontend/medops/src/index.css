@@ -25,20 +25,20 @@
 /* 🔹 Utilidades manuales para tokens extendidos */
 @layer utilities {
   /* Fondos */
-  .bg-bg-muted { background-color: #f9fafb; }    /* fondo claro */
-  .bg-bg-dark { background-color: #111827; }     /* fondo oscuro principal */
-  .bg-surface-dark { background-color: #1f2937; }/* superficie secundaria */
+  .bg-bg-muted { background-color: #f9fafb; }
+  .bg-bg-dark { background-color: #111827; }
+  .bg-surface-dark { background-color: #1f2937; }
 
   /* Texto */
-  .text-muted { color: #6b7280; }                 /* texto secundario claro */
-  .text-text-dark { color: #e5e7eb; }             /* texto principal en dark */
-  .text-text-dark-muted { color: #9ca3af; }       /* texto secundario en dark */
-  .text-primary { color: #3b82f6; }               /* azul institucional */
-  .text-accent-dark { color: #f59e0b; }           /* acento amber en dark */
+  .text-muted { color: #6b7280; }
+  .text-text-dark { color: #e5e7eb; }
+  .text-text-dark-muted { color: #9ca3af; }
+  .text-primary { color: #3b82f6; }
+  .text-accent-dark { color: #f59e0b; }
 
   /* Bordes */
-  .border-border { border-color: #e5e7eb; }       /* borde claro */
-  .border-border-dark { border-color: #374151; }  /* borde en dark */
+  .border-border { border-color: #e5e7eb; }
+  .border-border-dark { border-color: #374151; }
 }
 
 /* 🔹 Helpers opcionales para elevar contraste en dark */
@@ -48,13 +48,14 @@
   .text-subtle { @apply text-gray-600 dark:text-gray-300; }
 }
 
-/* 🔹 Ajustes globales para modales */
-html, body {
+/* 🔹 Ajustes globales */
+html, body, #root {
   height: 100%;
-  overflow: visible; /* evita que los portales queden recortados */
+  overflow-x: hidden; /* 🔒 Bloquea scroll horizontal en mobile y desktop */
 }
 
+/* 🔹 Ajustes globales para modales */
 #modal-root {
   position: relative;
-  z-index: 50; /* asegura que los modales estén por encima del layout */
+  z-index: 50;
 }

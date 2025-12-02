@@ -61,8 +61,8 @@ export default function SearchPage() {
   }, [query]);
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-bold text-[#0d2c53] dark:text-white mb-6">
+    <div className="px-3 py-4 sm:p-6">
+      <h1 className="text-lg sm:text-xl font-bold text-[#0d2c53] dark:text-white mb-4 sm:mb-6">
         Resultados de búsqueda
       </h1>
 
@@ -88,11 +88,11 @@ export default function SearchPage() {
         (results.patients.length > 0 ||
           results.appointments.length > 0 ||
           results.orders.length > 0) ? (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Pacientes */}
           {results.patients.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-3">
+              <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
                 Pacientes
               </h2>
               <ul className="space-y-2">
@@ -100,7 +100,7 @@ export default function SearchPage() {
                   <li key={p.id}>
                     <Link
                       to={`/patients/${p.id}`}
-                      className="block p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                      className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
                       <p className="font-medium text-[#0d2c53] dark:text-white">
                         {p.first_name} {p.last_name}
@@ -118,7 +118,7 @@ export default function SearchPage() {
           {/* Citas */}
           {results.appointments.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-3">
+              <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
                 Citas
               </h2>
               <ul className="space-y-2">
@@ -126,7 +126,7 @@ export default function SearchPage() {
                   <li key={c.id}>
                     <Link
                       to={`/appointments`}
-                      className="block p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                      className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
                       <p className="font-medium text-[#0d2c53] dark:text-white">
                         Fecha: {c.appointment_date}
@@ -144,7 +144,7 @@ export default function SearchPage() {
           {/* Órdenes / Pagos */}
           {results.orders.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-3">
+              <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
                 Órdenes / Pagos
               </h2>
               <ul className="space-y-2">
@@ -152,7 +152,7 @@ export default function SearchPage() {
                   <li key={o.id}>
                     <Link
                       to={`/charge-orders/${o.id}`}
-                      className="block p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                      className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
                       <p className="font-medium text-[#0d2c53] dark:text-white">
                         Orden #{o.id}

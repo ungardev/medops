@@ -44,7 +44,7 @@ function Tooltip({ label, children }: { label: string; children: React.ReactNode
     >
       {children}
       {visible && (
-        <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-black text-white text-xs shadow-lg z-50 animate-fade-slide">
+        <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-black text-white text-xs shadow-lg z-50">
           {label}
         </div>
       )}
@@ -70,18 +70,18 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`border-r border-gray-200 dark:border-gray-700 shadow-sm transition-all duration-300
+      className={`border-r border-gray-200 dark:border-gray-700 shadow-sm
         ${effectiveCollapsed ? "w-20" : "w-64"}
-        fixed z-50 top-0 left-0 h-screen bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200
-        ${mobileOpen ? "" : "md:opacity-100 md:pointer-events-auto opacity-0 pointer-events-none"}
-        md:sticky md:top-0 md:block md:z-10 md:h-screen md:max-h-screen md:overflow-y-auto md:left-auto md:translate-x-0 md:flex-shrink-0 md:bg-white md:dark:bg-gray-900 md:text-gray-700 md:dark:text-gray-200
+        h-screen bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200
+        flex-shrink-0 overflow-y-auto overflow-x-hidden
       `}
+      style={{ transition: "width 300ms ease-in-out" }}
     >
       <div className="flex flex-col justify-between h-full pt-2 pb-4 px-4">
         {/* Toggle (desktop) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="mb-3 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors self-end md:block hidden"
+          className="mb-3 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors self-end hidden md:block"
         >
           {effectiveCollapsed ? (
             <ChevronRight className="w-5 h-5 transition-transform duration-300" />
@@ -101,19 +101,19 @@ export default function Sidebar({
         {/* Branding institucional */}
         <Link
           to="/"
-          className={`mb-4 flex justify-center items-center ${effectiveCollapsed ? "h-10" : "h-16"}`}
+          className={`mb-4 flex justify-center items-center overflow-hidden ${effectiveCollapsed ? "h-20" : "h-16"}`}
         >
           {!effectiveCollapsed ? (
             <>
               <img
                 src="/logo-medops-light.svg"
                 alt="MedOps"
-                className="h-auto max-h-14 w-auto block dark:hidden"
+                className="max-h-14 w-auto block dark:hidden"
               />
               <img
                 src="/logo-medops-dark.svg"
                 alt="MedOps"
-                className="h-auto max-h-14 w-auto hidden dark:block"
+                className="max-h-14 w-auto hidden dark:block"
               />
             </>
           ) : (
@@ -121,12 +121,12 @@ export default function Sidebar({
               <img
                 src="/logo-icon-light.svg"
                 alt="MedOps"
-                className="h-auto max-h-8 w-auto block dark:hidden"
+                className="max-h-14 w-auto block dark:hidden"
               />
               <img
                 src="/logo-icon-dark.svg"
                 alt="MedOps"
-                className="h-auto max-h-8 w-auto hidden dark:block"
+                className="max-h-14 w-auto hidden dark:block"
               />
             </>
           )}
@@ -140,7 +140,7 @@ export default function Sidebar({
         )}
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden">
           <ul className="flex flex-col gap-2">
             {navItems.map(({ path, label, icon: Icon }) => (
               <li key={path}>

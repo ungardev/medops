@@ -9,23 +9,19 @@ export default function InstitutionalLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const location = useLocation();
 
-  // 🔹 Restaurar estado colapsado desde localStorage
   useEffect(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
     if (saved === "true") setCollapsed(true);
   }, []);
 
-  // 🔹 Persistir estado colapsado en localStorage
   useEffect(() => {
     localStorage.setItem("sidebarCollapsed", collapsed.toString());
   }, [collapsed]);
 
-  // 🔹 Cerrar Sidebar móvil al cambiar de ruta
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
 
-  // 🔹 Bloquear scroll del body cuando Sidebar móvil está abierto
   useEffect(() => {
     if (mobileSidebarOpen) {
       document.body.classList.add("overflow-hidden");
@@ -36,40 +32,60 @@ export default function InstitutionalLayout() {
   }, [mobileSidebarOpen]);
 
   return (
-    <div className="relative min-h-screen flex flex-col md:flex-row items-stretch bg-gray-50 dark:bg-gray-900 text-[#0d2c53] dark:text-white transition-colors">
-      {/* 🔹 Overlay móvil separado del Sidebar */}
-      {mobileSidebarOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/40 z-40"
-          onClick={() => setMobileSidebarOpen(false)}
-          aria-hidden="true"
-        />
-      )}
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-[#0d2c53] dark:text-white overflow-x-hidden">
+      {/* 🔹 Overlay móvil */}
+      <div
+        className={`md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
+          mobileSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setMobileSidebarOpen(false)}
+        aria-hidden="true"
+      />
 
-      {/* 🔹 Sidebar envuelto y blindado */}
-      <div className="w-64 md:w-auto flex-shrink-0 z-50">
-        <Sidebar
-          collapsed={collapsed}
-          setCollapsed={setCollapsed}
-          mobileOpen={mobileSidebarOpen}
-          setMobileOpen={setMobileSidebarOpen}
-        />
-      </div>
-
-      {/* 🔹 Content */}
-      <div className="flex-1 flex flex-col transition-all duration-300 ease-in-out">
-        <InstitutionalHeader
-          setCollapsed={setCollapsed}
-          setMobileOpen={setMobileSidebarOpen}
-        />
-
-        <main className="flex-1 overflow-y-auto overflow-x-auto bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 min-w-0">
-            <Outlet />
+      {/* 🔹 Layout principal */}
+      <div className="relative min-h-screen flex flex-col md:flex-row">
+        {/* 🔹 Sidebar móvil */}
+        {mobileSidebarOpen && (
+          <div className="md:hidden fixed top-0 left-0 h-screen z-50 w-64">
+            <Sidebar
+              collapsed={false}
+              setCollapsed={() => {}}
+              mobileOpen={true}
+              setMobileOpen={setMobileSidebarOpen}
+            />
           </div>
-        </main>
+        )}
 
-        <InstitutionalFooter />
+        {/* 🔹 Sidebar desktop fijo */}
+        <div
+          className="hidden md:block fixed top-0 left-0 h-screen z-50"
+          style={{ width: collapsed ? "80px" : "256px" }}
+        >
+          <Sidebar
+            collapsed={collapsed}
+            setCollapsed={setCollapsed}
+            mobileOpen={false}
+            setMobileOpen={setMobileSidebarOpen}
+          />
+        </div>
+
+        {/* 🔹 Contenido desplazado solo en desktop */}
+        <div
+          className={`flex-1 flex flex-col min-w-0 ${
+            collapsed ? "md:ml-20" : "md:ml-64"
+          }`}
+        >
+          <InstitutionalHeader
+            setCollapsed={setCollapsed}
+            setMobileOpen={setMobileSidebarOpen}
+          />
+          <main className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 min-w-0">
+              <Outlet />
+            </div>
+          </main>
+          <InstitutionalFooter />
+        </div>
       </div>
     </div>
   );

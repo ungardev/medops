@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
-// Tipos institucionales
 interface Notification {
   id: number;
   timestamp: string;
@@ -21,19 +20,11 @@ interface HeaderProps {
   setMobileOpen: (value: boolean) => void;
 }
 
-// 🔹 Formateador institucional de notificaciones
 function formatNotification(n: Notification): string {
   const { action, entity, metadata } = n;
-
-  if (action === "patient_arrived" && entity === "WaitingRoomEntry") {
-    return `Paciente llegó a la sala (ID ${metadata.patient_id})`;
-  }
-  if (action === "payment_registered" && entity === "ChargeOrder") {
-    return `Pago registrado de $${metadata.amount} USD`;
-  }
-  if (action === "generated" && entity === "MedicalReport") {
-    return `Informe médico generado (Código ${metadata.audit_code})`;
-  }
+  if (action === "patient_arrived" && entity === "WaitingRoomEntry") return `Paciente llegó a la sala (ID ${metadata.patient_id})`;
+  if (action === "payment_registered" && entity === "ChargeOrder") return `Pago registrado de $${metadata.amount} USD`;
+  if (action === "generated" && entity === "MedicalReport") return `Informe médico generado (Código ${metadata.audit_code})`;
   if (action === "generate_pdf" && entity === "MedicalDocument") {
     const tipo = metadata.category?.replace(/_/g, " ") ?? "documento";
     return `PDF generado: ${tipo}`;
@@ -41,27 +32,23 @@ function formatNotification(n: Notification): string {
   return `${action} en ${entity}`;
 }
 
-// 🔹 Enlace institucional por entidad
 function getNotificationLink(n: Notification): string | undefined {
   const { entity, entity_id, metadata } = n;
-
   if (entity === "ChargeOrder") return `/charge-orders/${entity_id}`;
   if (entity === "WaitingRoomEntry") return `/waitingroom`;
   if (entity === "MedicalReport" || entity === "MedicalDocument") {
     const patientId = metadata?.patient_id;
-    if (patientId) {
-      return `/patients/${patientId}?tab=documents`;
-    }
+    if (patientId) return `/patients/${patientId}?tab=documents`;
   }
   return undefined;
 }
+
 export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: HeaderProps) {
   const navigate = useNavigate();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [query, setQuery] = useState("");
-
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -121,11 +108,10 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
   };
 
   return (
-    <header className="sticky top-0 z-[40] w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      <div className="max-w-7xl mx-auto w-full h-16 flex items-center justify-between gap-4 px-4 sm:px-6">
-        {/* 🔹 Bloque izquierdo: hamburguesa + buscador */}
+    <header className="sticky top-0 z-40 w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="max-w-7xl mx-auto w-full h-16 flex items-center justify-between gap-4 px-4 sm:px-6 min-w-0">
+        {/* Bloque izquierdo: hamburguesa + buscador */}
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          {/* Hamburguesa móvil */}
           <button
             onClick={() => setMobileOpen(true)}
             className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white flex-shrink-0"
@@ -136,8 +122,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
             </svg>
           </button>
 
-          {/* Buscador institucional */}
-          <div className="relative w-full max-w-md">
+          <div className="relative w-full max-w-md min-w-0">
             <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
             <input
               type="text"
@@ -150,8 +135,8 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
           </div>
         </div>
 
-        {/* 🔹 Bloque derecho: acciones */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Bloque derecho: acciones */}
+        <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
           {/* Tema */}
           <button
             onClick={toggleTheme}
@@ -170,7 +155,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
             >
               <Bell className="w-6 h-6" />
               {notifications.length > 0 && (
-                <span className="absolute top-[2px] right-[2px] bg-[#0d2c53] text-white text-[10px] rounded-full px-1 leading-none shadow-sm">
+                <span className="absolute top-[2px] right-[2px] bg-[#0d2c53] text-white text-[10px] rounded-full px-1 leading-none">
                   {notifications.length}
                 </span>
               )}
