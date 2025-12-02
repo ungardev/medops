@@ -35,7 +35,7 @@ const FinancialMetrics: React.FC = () => {
     <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 lg:p-6 space-y-3 sm:space-y-4 min-h-[260px] sm:min-h-[300px]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">
           Indicadores Financieros
         </h3>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -45,7 +45,7 @@ const FinancialMetrics: React.FC = () => {
               onClick={() => setCurrency(c as "USD" | "VES")}
               className={`flex-1 sm:flex-none px-3 py-1.5 text-sm rounded border transition-colors ${
                 currency === c
-                  ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-gray-200 dark:hover:text-black"
+                  ? "bg-[#0d2c53] text-white border-[#0d2c53] dark:bg-white dark:text-[#0d2c53] dark:border-white hover:bg-[#09325f] dark:hover:bg-gray-200"
                   : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
               }`}
             >
@@ -63,12 +63,12 @@ const FinancialMetrics: React.FC = () => {
           subtitle="Mes actual"
         />
         <MetricCard
-          title="Pagos confirmados"
+          title="Pagos Confirmados"
           value={data.total_payments}
           subtitle="Procesados"
         />
         <MetricCard
-          title="Exoneraciones"
+          title="Exonerados"
           value={data.total_waived}
           subtitle={`Monto estimado: ${formatAmount(data.estimated_waived_amount)}`}
         />

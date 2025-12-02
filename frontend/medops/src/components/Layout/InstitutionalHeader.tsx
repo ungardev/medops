@@ -100,14 +100,19 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
 
   const handleSearch = () => {
     const q = query.trim();
-    if (q) navigate(`/search?query=${encodeURIComponent(q)}`);
+    if (q) {
+      navigate(`/search?query=${encodeURIComponent(q)}`);
+      setQuery(""); // 🔹 limpiar el input después de buscar
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleSearch();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSearch();
+    }
   };
-
-  return (
+    return (
     <header className="sticky top-0 z-40 w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="max-w-7xl mx-auto w-full h-16 flex items-center justify-between gap-4 px-4 sm:px-6 min-w-0">
         {/* Bloque izquierdo: hamburguesa + buscador */}

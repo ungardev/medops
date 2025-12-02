@@ -1,4 +1,4 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import axios from "axios";
@@ -31,12 +31,16 @@ interface SearchResponse {
 
 export default function SearchPage() {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 🔹 Estado controlado del input
   const params = new URLSearchParams(location.search);
   const query = params.get("query") || "";
+  const [searchTerm, setSearchTerm] = useState(query);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -60,11 +64,39 @@ export default function SearchPage() {
       });
   }, [query]);
 
+  // 🔹 Manejo del submit
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm(""); // limpiar el input después de buscar
+    }
+  };
+
   return (
     <div className="px-3 py-4 sm:p-6">
       <h1 className="text-lg sm:text-xl font-bold text-[#0d2c53] dark:text-white mb-4 sm:mb-6">
         Resultados de búsqueda
       </h1>
+
+      {/* 🔹 Formulario de búsqueda */}
+      <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar pacientes, citas u órdenes..."
+          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
+                     bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
+                     focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+        />
+        <button
+          type="submit"
+          className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
+        >
+          Buscar
+        </button>
+      </form>
 
       {!query.trim() ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
