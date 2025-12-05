@@ -16,9 +16,11 @@ const AuditLog: React.FC = () => {
   const { data: inst } = useInstitutionSettings();
   const { data: doc } = useDoctorConfig();
 
+  // Badges compactos, sobrios y sin desbordes en tablet (desktop intacto).
   const severityBadge = (severity?: string | null) => {
-    const base = "px-2 py-0.5 text-xs rounded font-medium ring-1 ring-inset";
-    switch (severity?.toLowerCase()) {
+    const base =
+      "inline-flex items-center justify-center px-2 py-[2px] text-[11px] md:text-xs rounded font-medium ring-1 ring-inset whitespace-nowrap max-w-[96px] md:max-w-[110px] overflow-hidden truncate";
+    switch ((severity || "").toLowerCase()) {
       case "alta":
       case "high":
         return <span className={`${base} bg-red-100 text-red-800 ring-red-300`}>Alta</span>;
@@ -31,13 +33,18 @@ const AuditLog: React.FC = () => {
       case "info":
         return <span className={`${base} bg-blue-100 text-blue-800 ring-blue-300`}>Info</span>;
       default:
-        return <span className={`${base} bg-gray-100 text-gray-800 ring-gray-300`}>{severity?.toUpperCase() || "Sin severidad"}</span>;
+        return (
+          <span className={`${base} bg-gray-100 text-gray-800 ring-gray-300`}>
+            {severity?.toUpperCase() || "Sin severidad"}
+          </span>
+        );
     }
   };
 
   const actionBadge = (action: string) => {
-    const base = "px-2 py-0.5 text-xs rounded font-medium ring-1 ring-inset";
-    switch (action.toLowerCase()) {
+    const base =
+      "inline-flex items-center justify-center px-2 py-[2px] text-[11px] md:text-xs rounded font-medium ring-1 ring-inset whitespace-nowrap max-w-[120px] md:max-w-[140px] overflow-hidden truncate";
+    switch ((action || "").toLowerCase()) {
       case "creacion":
       case "create":
         return <span className={`${base} bg-green-100 text-green-800 ring-green-300`}>Creación</span>;
@@ -51,7 +58,11 @@ const AuditLog: React.FC = () => {
       case "export_pdf":
         return <span className={`${base} bg-purple-100 text-purple-800 ring-purple-300`}>Generación PDF</span>;
       default:
-        return <span className={`${base} bg-gray-100 text-gray-800 ring-gray-300`}>{action.toUpperCase()}</span>;
+        return (
+          <span className={`${base} bg-gray-100 text-gray-800 ring-gray-300`}>
+            {action.toUpperCase()}
+          </span>
+        );
     }
   };
 
@@ -87,7 +98,7 @@ const AuditLog: React.FC = () => {
     pdf.save("audit-log.pdf");
   };
 
-    const handleExportCSV = () => {
+  const handleExportCSV = () => {
     const header = [
       "Institución", inst?.name || "",
       "RIF/NIT", inst?.tax_id || "",
@@ -96,7 +107,7 @@ const AuditLog: React.FC = () => {
       "Médico Operador", doc?.full_name || "",
       "Colegiado", doc?.colegiado_id || "",
       "Licencia", doc?.license || "",
-      "Fecha exportación", moment().format("YYYY-MM-DD HH:mm:ss")
+      "Fecha exportación", moment().format("YYYY-MM-DD HH:mm:ss"),
     ].join(",");
 
     const rows = (events || []).slice(0, 50).map((e) =>
@@ -124,15 +135,15 @@ const AuditLog: React.FC = () => {
   return (
     <section className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 sm:px-6 py-4 sm:py-3 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 text-center md:text-left">
           Auditoría en vivo
         </h3>
-        <div className="flex gap-2 relative">
+        {/* Controles compactos para tablet; desktop intacto */}
+        <div className="flex flex-row flex-wrap md:flex-nowrap items-center justify-center md:justify-end gap-2">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 
-                       text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             {expanded ? "Ocultar" : "Mostrar"}
             {expanded ? (
@@ -145,8 +156,7 @@ const AuditLog: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setExportOpen(!exportOpen)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 
-                         text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Exportar
               {exportOpen ? (
@@ -156,15 +166,21 @@ const AuditLog: React.FC = () => {
               )}
             </button>
             {exportOpen && (
-              <div className="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-10">
+              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-10">
                 <button
-                  onClick={() => { handleExportPDF(); setExportOpen(false); }}
+                  onClick={() => {
+                    handleExportPDF();
+                    setExportOpen(false);
+                  }}
                   className="block w-full text-left px-4 py-2 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
                   PDF (50 eventos)
                 </button>
                 <button
-                  onClick={() => { handleExportCSV(); setExportOpen(false); }}
+                  onClick={() => {
+                    handleExportCSV();
+                    setExportOpen(false);
+                  }}
                   className="block w-full text-left px-4 py-2 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
                   CSV (50 eventos)
@@ -197,13 +213,21 @@ const AuditLog: React.FC = () => {
                 <tbody>
                   {(events || []).slice(0, 10).map((entry: EventLogEntry) => (
                     <tr key={entry.id} className="hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 whitespace-nowrap">
                         {moment(entry.timestamp).format("YYYY-MM-DD HH:mm:ss")}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">{entry.actor}</td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">{entry.entity}</td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">{actionBadge(entry.action)}</td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">{severityBadge(entry.severity)}</td>
+                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 truncate max-w-[160px] md:max-w-[220px]">
+                        {entry.actor}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 truncate max-w-[160px] md:max-w-[220px]">
+                        {entry.entity}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                        {actionBadge(entry.action)}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                        {severityBadge(entry.severity)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -1,3 +1,4 @@
+// src/components/ui/Tabs.tsx
 import { ReactNode, useState, useEffect } from "react";
 
 interface TabProps {
@@ -47,11 +48,12 @@ export function Tabs({ children, defaultTab, className, layout = "vertical" }: T
 
   return (
     <div className={className ?? "space-y-3 sm:space-y-4"}>
-      <div className="flex flex-wrap gap-1 sm:gap-2 border-b pb-2">
+      {/* 🔹 Tabs header con soporte tablet */}
+      <div className="flex flex-wrap gap-1 sm:gap-2 border-b pb-2 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.props.id}
-            className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+            className={`px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
               active === tab.props.id
                 ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
                 : "bg-gray-100 text-[#0d2c53] hover:bg-gray-200 border border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"

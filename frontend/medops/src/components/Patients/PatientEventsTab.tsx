@@ -16,13 +16,13 @@ export default function PatientEventsTab({ patient }: PatientTabProps) {
   if (isEmpty)
     return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">No hay eventos registrados.</p>;
 
-    return (
+  return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
       <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
         Eventos / Auditoría
       </h3>
 
-      {/* 🔹 Vista desktop: tabla */}
+      {/* 🔹 Vista desktop: tabla (intocable) */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">
           <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
@@ -56,10 +56,13 @@ export default function PatientEventsTab({ patient }: PatientTabProps) {
         </table>
       </div>
 
-      {/* 🔹 Vista mobile: tarjetas */}
+      {/* 🔹 Vista mobile: tarjetas mejoradas */}
       <div className="sm:hidden space-y-3">
         {events.map((ev: PatientEvent) => (
-          <div key={ev.id} className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3">
+          <div
+            key={ev.id}
+            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 shadow-sm"
+          >
             <p className="text-sm font-semibold text-[#0d2c53] dark:text-gray-100 mb-2">
               Evento #{ev.id}
             </p>
@@ -71,9 +74,11 @@ export default function PatientEventsTab({ patient }: PatientTabProps) {
               <div>
                 <strong>Metadata:</strong>{" "}
                 {ev.metadata ? (
-                  <pre className="text-xs font-mono text-[#0d2c53] dark:text-gray-300 whitespace-pre-wrap">
-                    {JSON.stringify(ev.metadata, null, 2)}
-                  </pre>
+                  <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                    <pre className="text-xs font-mono text-[#0d2c53] dark:text-gray-300 whitespace-pre-wrap">
+                      {JSON.stringify(ev.metadata, null, 2)}
+                    </pre>
+                  </div>
                 ) : (
                   "—"
                 )}

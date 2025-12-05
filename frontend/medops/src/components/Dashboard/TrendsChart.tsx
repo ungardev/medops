@@ -121,53 +121,57 @@ const TrendsChart: React.FC = () => {
   return (
     <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 min-h-[280px] sm:min-h-[300px]">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Tendencias</h3>
-        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-          {(["day", "week", "month"] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-sm rounded border transition-colors ${
-                range === r
-                  ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
-                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-              }`}
-            >
-              {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
-            </button>
-          ))}
-          {(["USD", "VES"] as const).map((c) => (
-            <button
-              key={c}
-              onClick={() => setCurrency(c)}
-              className={`flex-1 sm:flex-none px-3 py-1.5 text-sm rounded border transition-colors ${
-                currency === c
-                  ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
-                  : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
+      <div className="flex flex-col md:space-y-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
+        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white text-center md:text-center lg:text-left mb-2 md:mb-0">
+          Tendencias
+        </h3>
+
+        {/* Botonera: mobile dos líneas, tablet horizontal, desktop intacto */}
+        <div className="flex flex-col gap-2 w-full lg:flex-row lg:justify-end lg:gap-2 mt-2 md:mt-0">
+          <div className="grid grid-cols-3 gap-2 w-full lg:flex lg:justify-end lg:gap-2">
+            {(["day", "week", "month"] as const).map((r) => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={`w-full px-3 py-1.5 text-sm rounded border transition-colors md:h-9 md:px-3 md:py-0 whitespace-nowrap ${
+                  range === r
+                    ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
+                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-2 gap-2 w-full lg:flex lg:justify-end lg:gap-2">
+            {(["USD", "VES"] as const).map((c) => (
+              <button
+                key={c}
+                onClick={() => setCurrency(c)}
+                className={`w-full px-3 py-1.5 text-sm rounded border transition-colors md:h-9 md:px-3 md:py-0 whitespace-nowrap ${
+                  currency === c
+                    ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
+                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {currency === "VES" && typeof bcvRate === "number" && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Tasa BCV aplicada: {bcvRate.toFixed(2)} Bs/USD
         </p>
       )}
 
       {/* Chart or message */}
-      {range === "day" && !hasData ? (
-        <div className="h-40 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
-          <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos para hoy</p>
-        </div>
-      ) : !hasData ? (
+      {!hasData ? (
         <div className="h-40 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            No hay datos disponibles para el rango seleccionado
+            {range === "day" ? "No hay datos para hoy" : "No hay datos disponibles para el rango seleccionado"}
           </p>
         </div>
       ) : (

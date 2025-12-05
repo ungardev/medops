@@ -1,5 +1,6 @@
 // src/components/Consultation/ConsultationActions.tsx
 import { useConsultationActions } from "../../hooks/consultations/useConsultationActions";
+import { useNavigate } from "react-router-dom";
 
 interface ConsultationActionsProps {
   consultationId: number;
@@ -7,21 +8,29 @@ interface ConsultationActionsProps {
 
 export default function ConsultationActions({ consultationId }: ConsultationActionsProps) {
   const { complete, cancel, isPending } = useConsultationActions();
+  const navigate = useNavigate();
 
-  const handleComplete = () => {
-    complete(consultationId);
-    // 🔹 Recarga la página tras breve delay para desmontar la vista
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+  const handleComplete = async () => {
+    try {
+      await complete(consultationId);
+      // 🔹 Navegar directamente a WaitingRoom.tsx
+      navigate("/waiting-room");
+    } catch (error) {
+      console.error("Error finalizando consulta:", error);
+    }
   };
 
-  const handleCancel = () => {
-    cancel(consultationId);
-    // 🔹 También puedes recargar si quieres desmontar al cancelar
-    // setTimeout(() => window.location.reload(), 500);
+  const handleCancel = async () => {
+    try {
+      await cancel(consultationId);
+      // 🔹 Opcional: también podrías navegar a WaitingRoom si aplica
+      // navigate("/waiting-room");
+    } catch (error) {
+      console.error("Error cancelando consulta:", error);
+    }
   };
-    return (
+
+  return (
     <div className="flex justify-end gap-2 sm:gap-4 mt-4 sm:mt-6 border-t pt-3 sm:pt-4">
       <button
         onClick={handleCancel}

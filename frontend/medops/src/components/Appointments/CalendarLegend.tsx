@@ -17,8 +17,12 @@ export default function CalendarLegend() {
           key={item.key}
           className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm"
         >
-          <span className={`w-3 h-3 sm:w-4 sm:h-4 rounded ${item.color}`}></span>
-          <span className="text-[#0d2c53] dark:text-gray-300">{item.label}</span>
+          <span
+            className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded ${item.color}`}
+          ></span>
+          <span className="text-[#0d2c53] dark:text-gray-300 font-medium">
+            {item.label}
+          </span>
         </div>
       ))}
     </div>

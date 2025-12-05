@@ -52,7 +52,7 @@ export default function Patients() {
     return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando pacientes...</p>;
   if (error) return <p className="text-sm text-red-600">Error cargando pacientes</p>;
 
-    return (
+  return (
     <div className="p-3 sm:p-4">
       <PageHeader title="Pacientes" />
 
@@ -82,18 +82,17 @@ export default function Patients() {
           <span className="text-xs text-[#0d2c53] dark:text-gray-400">Buscando…</span>
         )}
       </div>
-
-      {/* 🔹 Vista responsive: tabla en desktop, tarjetas en mobile */}
+              {/* 🔹 Vista responsive: tabla en tablet y desktop */}
       <div className="hidden sm:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+        <table className="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-100 dark:bg-gray-700">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Folio</th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Nombre completo</th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Edad</th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Género</th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Contacto</th>
-              <th className="px-4 py-2 text-left text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Acciones</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Folio</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Nombre completo</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Edad</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Género</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Contacto</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 text-left text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-200">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
@@ -117,12 +116,12 @@ export default function Patients() {
             ) : (
               list.map((p: Patient) => (
                 <tr key={p.id}>
-                  <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">{p.id}</td>
-                  <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">{p.full_name}</td>
-                  <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">{p.age ?? "-"}</td>
-                  <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">{p.gender ?? "-"}</td>
-                  <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">{p.contact_info ?? "-"}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">{p.id}</td>
+                  <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">{p.full_name}</td>
+                  <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">{p.age ?? "-"}</td>
+                  <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">{p.gender ?? "-"}</td>
+                  <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">{p.contact_info ?? "-"}</td>
+                  <td className="px-3 sm:px-4 py-1.5 sm:py-2">
                     <div className="flex gap-2">
                       <button
                         className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-[#0d2c53] dark:text-gray-200"
@@ -144,6 +143,7 @@ export default function Patients() {
           </tbody>
         </table>
       </div>
+
       {/* 🔹 Mobile cards */}
       <div className="sm:hidden space-y-3">
         {list.length === 0 ? (

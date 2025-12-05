@@ -27,7 +27,12 @@ export default function ConsultationWorkflow({
   return (
     <Tabs
       defaultTab="diagnosis"
-      className="space-y-3 sm:space-y-4 [&_.tab-label]:text-[#0d2c53] dark:[&_.tab-label]:text-white"
+      className="
+        space-y-3 sm:space-y-4 
+        [&_.tab-label]:text-[#0d2c53] dark:[&_.tab-label]:text-white
+        [&_.tab-label]:text-xs sm:[&_.tab-label]:text-sm md:[&_.tab-label]:text-base
+        [&_.tab-label]:font-medium
+      "
     >
       <Tab id="diagnosis" label="Diagnóstico">
         <DiagnosisPanel

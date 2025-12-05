@@ -78,10 +78,10 @@ export default function Sidebar({
       style={{ transition: "width 300ms ease-in-out" }}
     >
       <div className="flex flex-col justify-between h-full pt-2 pb-4 px-4">
-        {/* Toggle (desktop) */}
+        {/* Toggle (solo desktop) */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="mb-3 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors self-end hidden md:block"
+          className="mb-3 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors self-end hidden lg:block"
         >
           {effectiveCollapsed ? (
             <ChevronRight className="w-5 h-5 transition-transform duration-300" />
@@ -90,10 +90,10 @@ export default function Sidebar({
           )}
         </button>
 
-        {/* Cierre en móviles */}
+        {/* Cierre en móviles y tablets */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="md:hidden self-end mb-2 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white"
+          className="lg:hidden self-end mb-2 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white"
         >
           <X className="w-5 h-5" />
         </button>

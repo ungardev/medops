@@ -1,3 +1,4 @@
+// src/components/Consultation/DocumentsPanel.tsx
 import React, { useState } from "react";
 import {
   useDocuments,
@@ -38,18 +39,30 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
   const skipped: string[] = data?.skipped || [];
 
   return (
-    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800 relative z-10">
-      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
+    <div
+      className="
+        rounded-lg shadow-lg p-3 sm:p-4 
+        bg-white dark:bg-gray-900 
+        lg:bg-white lg:dark:bg-gray-800 
+        relative z-10
+      "
+    >
+      {/* 🔹 Título visible en todas las versiones */}
+      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
         Documentos clínicos
       </h3>
 
       {isLoading && (
-        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando documentos...</p>
+        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+          Cargando documentos...
+        </p>
       )}
 
       <ul className="mb-4 space-y-1">
         {documents.length === 0 && !isLoading && (
-          <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin documentos</li>
+          <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+            Sin documentos
+          </li>
         )}
         {documents.map((doc: DocumentItem) => (
           <li

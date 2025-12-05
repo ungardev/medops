@@ -9,8 +9,13 @@ interface Props {
 export default function CalendarHeader({ currentMonth, onChangeMonth }: Props) {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 sm:mb-4 gap-2 sm:gap-0">
+      {/* Mes/Año actual */}
+      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100 order-1 sm:order-none">
+        {currentMonth.format("MMMM YYYY")}
+      </h3>
+
       {/* Botones de navegación */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 order-2 sm:order-none">
         <button
           onClick={() => onChangeMonth(currentMonth.clone().subtract(1, "month"))}
           className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
@@ -35,11 +40,6 @@ export default function CalendarHeader({ currentMonth, onChangeMonth }: Props) {
           Mes siguiente →
         </button>
       </div>
-
-      {/* Mes/Año actual */}
-      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100">
-        {currentMonth.format("MMMM YYYY")}
-      </h3>
     </div>
   );
 }

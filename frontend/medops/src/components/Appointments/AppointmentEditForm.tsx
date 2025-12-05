@@ -37,11 +37,11 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-2 sm:px-0">
-      <div className="max-w-md sm:max-w-lg w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-6">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-3 sm:px-0">
+      <div className="max-w-md sm:max-w-lg w-full max-h-[85vh] overflow-y-auto rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-4 sm:mb-6">
-          <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100">Editar Cita</h2>
+          <h2 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100">Editar Cita</h2>
           <button
             type="button"
             className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
@@ -54,10 +54,10 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
           {/* Paciente (readonly) */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-300 mb-1.5">
               Paciente
             </label>
             <input
@@ -71,7 +71,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
 
           {/* Fecha */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-300 mb-1.5">
               Fecha
             </label>
             <input
@@ -88,7 +88,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
 
           {/* Tipo */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-300 mb-1.5">
               Tipo
             </label>
             <select
@@ -106,7 +106,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
 
           {/* Monto esperado */}
           <div>
-            <label className="block text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+            <label className="block text-xs sm:text-sm font-semibold text-[#0d2c53] dark:text-gray-300 mb-1.5">
               Monto esperado
             </label>
             <input
@@ -121,7 +121,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
           </div>
 
           {/* Botones */}
-          <div className="flex justify-between mt-4 sm:mt-6">
+          <div className="flex justify-end gap-2 mt-4 sm:mt-6">
             <button
               type="button"
               onClick={onClose}

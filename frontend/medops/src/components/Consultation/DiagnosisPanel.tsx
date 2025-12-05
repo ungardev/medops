@@ -127,7 +127,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
           />
 
           {isLoading && <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Buscando...</p>}
-          {!isLoading && query.length >= 2 && results.length === 0 && (
+          {!isLoading && query.length >= 1 && results.length === 0 && (
             <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">Sin resultados para "{query}"</p>
           )}
 

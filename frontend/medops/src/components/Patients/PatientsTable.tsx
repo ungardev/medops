@@ -16,13 +16,14 @@ export default function PatientsTable({
 }: PatientsTableProps) {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
+      {/* 🔹 Blindamos estilos institucionales aquí */}
+      <table className="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700 text-xs sm:text-sm">
         <thead className="bg-gray-50 dark:bg-gray-700">
           <tr>
             {headers.map((h, idx) => (
               <th
                 key={idx}
-                className="px-2 sm:px-4 py-1.5 sm:py-2 text-left font-semibold text-[#0d2c53] dark:text-gray-200"
+                className="px-2 sm:px-4 py-1.5 sm:py-2 text-left font-semibold text-[#0d2c53] dark:text-gray-200 truncate"
               >
                 {h}
               </th>

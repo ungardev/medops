@@ -52,8 +52,8 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
 
   return (
     <>
-      {/* 🔹 Vista desktop: tabla */}
-      <div className="hidden sm:block">
+      {/* 🔹 Vista tablet/desktop: tabla */}
+      <div className="hidden sm:block overflow-x-auto">
         <PatientsTable
           headers={[
             "Cédula",
@@ -77,22 +77,22 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
           ) : (
             data?.results.map((p) => (
               <>
-                <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">
+                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
                   {p.national_id || "—"}
                 </td>
-                <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">
+                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
                   {p.full_name}
                 </td>
-                <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">
+                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
                   {calculateAge(p.birthdate)}
                 </td>
-                <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">
+                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
                   {p.gender}
                 </td>
-                <td className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100">
+                <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
                   {p.contact_info || "—"}
                 </td>
-                <td className="px-4 py-2 flex gap-2">
+                <td className="px-3 sm:px-4 py-1.5 sm:py-2 flex gap-2">
                   <button
                     className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-xs sm:text-sm 
                                text-[#0d2c53] dark:text-gray-200 hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"

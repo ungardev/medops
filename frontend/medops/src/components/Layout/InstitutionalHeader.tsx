@@ -112,6 +112,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
       handleSearch();
     }
   };
+
     return (
     <header className="sticky top-0 z-40 w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="max-w-7xl mx-auto w-full h-16 flex items-center justify-between gap-4 px-4 sm:px-6 min-w-0">
@@ -119,7 +120,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <button
             onClick={() => setMobileOpen(true)}
-            className="md:hidden inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white flex-shrink-0"
+            className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white flex-shrink-0"
             aria-label="Abrir menú"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

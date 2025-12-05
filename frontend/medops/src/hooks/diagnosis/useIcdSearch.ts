@@ -16,10 +16,10 @@ export function useIcdSearch(query: string) {
   return useQuery<IcdResult[]>({
     queryKey: ["icd-search", query],
     queryFn: async () => {
-      if (!query || query.length < 2) return [];
+      if (!query || query.length < 1) return []; // 🔹 ahora dispara desde el primer caracter
       return apiFetch<IcdResult[]>(`icd/search/?q=${encodeURIComponent(query)}`);
     },
-    enabled: !!query && query.length >= 2, // solo dispara si hay query válida
+    enabled: !!query && query.length >= 1, // 🔹 habilitado desde el primer caracter
     staleTime: 1000 * 60 * 5, // cache 5 minutos
   });
 }

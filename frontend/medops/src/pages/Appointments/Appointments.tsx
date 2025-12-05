@@ -163,7 +163,7 @@ export default function Appointments() {
             />
             <button
               onClick={() => setShowCreateForm(true)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition text-xs sm:text-sm"
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
             >
               + Nueva Cita
             </button>

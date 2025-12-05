@@ -1,6 +1,6 @@
-// src/components/Appointments/AppointmentsList.tsx
 import React from "react";
 import { Appointment, AppointmentStatus } from "types/appointments";
+import { XMarkIcon, EyeIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 interface AppointmentsListProps {
   appointments: Appointment[];
@@ -40,7 +40,7 @@ export default function AppointmentsList({
             <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b">Fecha</th>
             <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b">Tipo</th>
             <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b">Estado</th>
-            <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b text-right">Acciones</th>
+            <th className="px-2 sm:px-4 py-1.5 sm:py-2 border-b text-center">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -72,38 +72,26 @@ export default function AppointmentsList({
                   </span>
                 </div>
               </td>
-              <td className="px-2 sm:px-4 py-1.5 sm:py-2 text-right">
-                <div className="flex justify-end gap-1.5 sm:gap-2">
+              <td className="px-2 sm:px-4 py-1.5 sm:py-2">
+                <div className="flex justify-center gap-2">
                   {a.status !== "canceled" && (
-                    <button
+                    <XMarkIcon
                       onClick={() => onStatusChange(a.id, "canceled")}
-                      className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                                 bg-gray-100 dark:bg-gray-700 text-red-600 dark:text-red-400 
-                                 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
-                    >
-                      Cancelar
-                    </button>
+                      className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400 cursor-pointer hover:scale-110 transition"
+                    />
                   )}
-                  <button
+                  <EyeIcon
                     onClick={() => onEdit(a)}
-                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                               bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
-                  >
-                    Ver detalle
-                  </button>
-                  <button
+                    className="h-4 w-4 sm:h-5 sm:w-5 text-[#0d2c53] dark:text-gray-200 cursor-pointer hover:scale-110 transition"
+                  />
+                  <TrashIcon
                     onClick={() => {
                       if (window.confirm("¿Está seguro de eliminar esta cita?")) {
                         onDelete(a.id);
                       }
                     }}
-                    className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                               bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                               hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm"
-                  >
-                    Eliminar
-                  </button>
+                    className="h-4 w-4 sm:h-5 sm:w-5 text-[#0d2c53] dark:text-gray-200 cursor-pointer hover:scale-110 transition"
+                  />
                 </div>
               </td>
             </tr>

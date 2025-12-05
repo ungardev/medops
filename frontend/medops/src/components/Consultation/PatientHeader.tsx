@@ -1,4 +1,6 @@
 import type { Patient } from "../../types/patients";
+import { Link } from "react-router-dom";
+import { FaUser } from "react-icons/fa"; // 🔹 Ícono institucional usado en PatientsList
 
 interface PatientHeaderProps {
   patient: Patient & {
@@ -12,13 +14,19 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
     <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
         {/* Identidad */}
-        <div>
+        <div className="flex items-center gap-2">
           <h2 className="text-base sm:text-xl font-bold text-[#0d2c53] dark:text-white">
             {patient.full_name}
           </h2>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            C.I.: {patient.national_id || "N/A"} | Edad: {patient.age ?? "-"}
-          </p>
+          {/* Ícono FaUser → clickeable directo */}
+          <Link
+            to={`/patients/${patient.id}`}
+            aria-label="Ver ficha del paciente"
+            title="Ver ficha del paciente"
+            className="text-[#0d2c53] dark:text-gray-200 hover:text-[#0b2444] dark:hover:text-gray-400 transition-colors"
+          >
+            <FaUser className="w-4 h-4 sm:w-5 sm:h-5" />
+          </Link>
         </div>
 
         {/* Estado financiero */}

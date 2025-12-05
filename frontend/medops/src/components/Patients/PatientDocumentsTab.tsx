@@ -50,7 +50,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const documents = Array.isArray(data?.list) ? data.list : [];
   const isEmpty = !isLoading && !error && documents.length === 0;
 
-    return (
+  return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
       <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
         Documentos clínicos
@@ -93,7 +93,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
         <div className="col-span-12 sm:col-span-3 flex items-center">
           <button
             type="submit"
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition text-xs sm:text-sm w-full"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm w-full"
             disabled={uploadDocument.isPending}
           >
             {uploadDocument.isPending ? "Subiendo..." : "Subir"}
@@ -115,8 +115,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
           No tiene documentos registrados
         </p>
       )}
-
-      {/* Tabla / Tarjetas */}
+            {/* Tabla / Tarjetas */}
       {!isLoading && !error && documents.length > 0 && (
         <>
           {/* Desktop: tabla */}
@@ -128,7 +127,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                   <th className="px-4 py-2 border-b">Categoría</th>
                   <th className="px-4 py-2 border-b">Archivo</th>
                   <th className="px-4 py-2 border-b">Subido</th>
-                  <th className="px-4 py-2 border-b">Acciones</th>
+                  <th className="px-4 py-2 border-b text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,13 +155,15 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                         : "—"}
                     </td>
                     <td className="px-4 py-2">
-                      <button
-                        className="px-3 py-1 text-xs sm:text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition"
-                        onClick={() => handleDelete(d.id)}
-                        disabled={deleteDocument.isPending}
-                      >
-                        {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
-                      </button>
+                      <div className="flex justify-center">
+                        <button
+                          className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                          onClick={() => handleDelete(d.id)}
+                          disabled={deleteDocument.isPending}
+                        >
+                          {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -199,9 +200,9 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                   <strong>Subido:</strong>{" "}
                   {d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString("es-VE") : "—"}
                 </p>
-                <div className="mt-2">
+                <div className="mt-2 flex justify-end">
                   <button
-                    className="px-2 py-1 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+                    className="px-3 py-1.5 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
                     onClick={() => handleDelete(d.id)}
                     disabled={deleteDocument.isPending}
                   >

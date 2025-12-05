@@ -7,6 +7,9 @@ module.exports = {
       fontFamily: {
         sans: ["Manrope", "ui-sans-serif", "system-ui"], // 🔹 fuente institucional
       },
+      screens: {
+        lg: "1280px", // 🔹 desktop real: ≥1280px
+      },
       colors: {
         // 🔹 Tokens claros
         bgLight: "#f3f4f6",           // fondo claro institucional

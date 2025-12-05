@@ -16,13 +16,13 @@ export default function PatientPendingAppointmentsTab({ patient }: PatientTabPro
   if (isEmpty)
     return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">No tiene citas pendientes</p>;
 
-    return (
+  return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
       <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
         Citas pendientes
       </h3>
 
-      {/* 🔹 Vista desktop: tabla */}
+      {/* 🔹 Vista desktop: tabla (intocable) */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">
           <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
@@ -50,18 +50,30 @@ export default function PatientPendingAppointmentsTab({ patient }: PatientTabPro
         </table>
       </div>
 
-      {/* 🔹 Vista mobile: tarjetas */}
+      {/* 🔹 Vista mobile: tarjetas mejoradas */}
       <div className="sm:hidden space-y-3">
         {appointments?.map((a: Appointment) => (
-          <div key={a.id} className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3">
+          <div
+            key={a.id}
+            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 shadow-sm"
+          >
             <p className="text-sm font-semibold text-[#0d2c53] dark:text-gray-100 mb-2">
               Cita #{a.id}
             </p>
             <div className="text-xs text-[#0d2c53] dark:text-gray-300 space-y-1">
-              <div><strong>Fecha:</strong> {a.appointment_date ? new Date(a.appointment_date).toLocaleDateString("es-VE") : "—"}</div>
-              <div><strong>Tipo:</strong> {a.appointment_type ?? "—"}</div>
-              <div><strong>Estado:</strong> {a.status ?? "—"}</div>
-              <div><strong>Notas:</strong> {a.notes || "—"}</div>
+              <div>
+                <strong>Fecha:</strong>{" "}
+                {a.appointment_date ? new Date(a.appointment_date).toLocaleDateString("es-VE") : "—"}
+              </div>
+              <div>
+                <strong>Tipo:</strong> {a.appointment_type ?? "—"}
+              </div>
+              <div>
+                <strong>Estado:</strong> {a.status ?? "—"}
+              </div>
+              <div>
+                <strong>Notas:</strong> {a.notes || "—"}
+              </div>
             </div>
           </div>
         ))}

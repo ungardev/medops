@@ -4,7 +4,6 @@ import { useConsultationById } from "../../hooks/consultations/useConsultationBy
 import {
   PatientHeader,
   DocumentsPanel,
-  ConsultationActions,
   ChargeOrderPanel,
 } from "../../components/Consultation";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
@@ -92,7 +91,7 @@ export default function PatientConsultationsDetail() {
     }
   };
 
-  return (
+    return (
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       <div
         className={`p-2 sm:p-3 rounded-md text-center font-semibold shadow-sm ${
@@ -108,26 +107,25 @@ export default function PatientConsultationsDetail() {
 
       <PatientHeader patient={toPatientHeaderPatient(appointment.patient)} />
 
-      <div className="grid grid-cols-12 gap-4 sm:gap-6">
-        <div className="col-span-12 sm:col-span-3 space-y-3 sm:space-y-4">
-          <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-            <DocumentsPanel
-              patientId={appointment.patient.id}
-              appointmentId={appointment.id}
-              readOnly={readOnly}
-            />
-          </div>
-
-          <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-            <ChargeOrderPanel
-              appointmentId={appointment.id}
-              chargeOrder={appointment.charge_order}
-              readOnly={readOnly}
-            />
-          </div>
+      {/* 🔹 Mobile/Tablet: vertical */}
+      <div className="lg:hidden space-y-4">
+        <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+          <DocumentsPanel
+            patientId={appointment.patient.id}
+            appointmentId={appointment.id}
+            readOnly={readOnly}
+          />
         </div>
 
-        <div className="col-span-12 sm:col-span-9">
+        <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
+          <ChargeOrderPanel
+            appointmentId={appointment.id}
+            chargeOrder={appointment.charge_order}
+            readOnly={readOnly}
+          />
+        </div>
+
+        <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
           <ConsultationWorkflow
             diagnoses={appointment.diagnoses}
             appointmentId={appointment.id}
@@ -135,14 +133,11 @@ export default function PatientConsultationsDetail() {
             readOnly={readOnly}
           />
         </div>
-      </div>
 
-      <div className="flex flex-col gap-3 sm:gap-4 mt-4 sm:mt-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-          <ConsultationActions consultationId={appointment.id} />
-
+        {/* 🔹 Botones alineados */}
+        <div className="flex flex-wrap justify-end gap-2 sm:gap-3 mt-4">
           {canGenerateReport && (
-            <div className="flex flex-wrap items-center gap-2">
+            <>
               <button
                 className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
                 disabled={generateReport.isPending}
@@ -169,19 +164,89 @@ export default function PatientConsultationsDetail() {
               >
                 {generateDocuments.isPending
                   ? "Generando..."
-                  : "Generar Documentos de Consulta"}
+                  : "Generar Documentos"}
               </button>
-            </div>
+            </>
           )}
-        </div>
 
-        <div className="flex justify-end">
           <button
             className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs sm:text-sm"
             onClick={() => setReadOnly((prev) => !prev)}
           >
             {readOnly ? "Activar edición" : "Cerrar edición"}
           </button>
+        </div>
+      </div>
+                {/* 🔹 Desktop intacto */}
+      <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6">
+        <div className="col-span-3 space-y-4">
+          <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+            <DocumentsPanel
+              patientId={appointment.patient.id}
+              appointmentId={appointment.id}
+              readOnly={readOnly}
+            />
+          </div>
+
+          <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+            <ChargeOrderPanel
+              appointmentId={appointment.id}
+              chargeOrder={appointment.charge_order}
+              readOnly={readOnly}
+            />
+          </div>
+        </div>
+
+        <div className="col-span-9 relative pb-20">
+          <ConsultationWorkflow
+            diagnoses={appointment.diagnoses}
+            appointmentId={appointment.id}
+            notes={appointment.notes ?? null}
+            readOnly={readOnly}
+          />
+
+          {/* 🔹 Botones alineados en esquina inferior derecha */}
+          <div className="absolute bottom-0 right-0 flex flex-wrap justify-end gap-2 sm:gap-3">
+            {canGenerateReport && (
+              <>
+                <button
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
+                  disabled={generateReport.isPending}
+                  onClick={handleGenerateReport}
+                >
+                  {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
+                </button>
+
+                {generateReport.data?.file_url && (
+                  <a
+                    href={generateReport.data.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
+                  >
+                    Ver Informe Médico
+                  </a>
+                )}
+
+                <button
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors text-xs sm:text-sm"
+                  disabled={generateDocuments.isPending}
+                  onClick={handleGenerateDocuments}
+                >
+                  {generateDocuments.isPending
+                    ? "Generando..."
+                    : "Generar Documentos"}
+                </button>
+              </>
+            )}
+
+            <button
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs sm:text-sm"
+              onClick={() => setReadOnly((prev) => !prev)}
+            >
+              {readOnly ? "Activar edición" : "Cerrar edición"}
+            </button>
+          </div>
         </div>
       </div>
 

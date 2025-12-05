@@ -33,9 +33,9 @@ export default function InstitutionalLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-[#0d2c53] dark:text-white overflow-x-hidden">
-      {/* 🔹 Overlay móvil */}
+      {/* 🔹 Overlay móvil y tablet */}
       <div
-        className={`md:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
+        className={`sm:block lg:hidden fixed inset-0 bg-black/40 z-40 transition-opacity duration-300 ${
           mobileSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setMobileSidebarOpen(false)}
@@ -43,10 +43,10 @@ export default function InstitutionalLayout() {
       />
 
       {/* 🔹 Layout principal */}
-      <div className="relative min-h-screen flex flex-col md:flex-row">
-        {/* 🔹 Sidebar móvil */}
+      <div className="relative min-h-screen flex flex-col lg:flex-row">
+        {/* 🔹 Sidebar móvil y tablet flotante */}
         {mobileSidebarOpen && (
-          <div className="md:hidden fixed top-0 left-0 h-screen z-50 w-64">
+          <div className="sm:block lg:hidden fixed top-0 left-0 h-screen z-50 w-64">
             <Sidebar
               collapsed={false}
               setCollapsed={() => {}}
@@ -58,8 +58,8 @@ export default function InstitutionalLayout() {
 
         {/* 🔹 Sidebar desktop fijo */}
         <div
-          className="hidden md:block fixed top-0 left-0 h-screen z-50"
-          style={{ width: collapsed ? "80px" : "256px" }}
+          className="hidden lg:block fixed top-0 left-0 h-screen z-50"
+          style={{ width: collapsed ? "80px" : "256px", transition: "width 300ms ease-in-out" }}
         >
           <Sidebar
             collapsed={collapsed}
@@ -71,8 +71,8 @@ export default function InstitutionalLayout() {
 
         {/* 🔹 Contenido desplazado solo en desktop */}
         <div
-          className={`flex-1 flex flex-col min-w-0 ${
-            collapsed ? "md:ml-20" : "md:ml-64"
+          className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
+            collapsed ? "lg:ml-20" : "lg:ml-64"
           }`}
         >
           <InstitutionalHeader

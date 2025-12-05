@@ -7,30 +7,31 @@ interface NotificationBadgeProps {
 }
 
 const NotificationBadge: React.FC<NotificationBadgeProps> = ({ action }) => {
-  let label = "";
-  let className =
-    "inline-block px-2 py-0.5 text-xs rounded font-semibold text-white";
+  // 🔹 Etiquetas cortas para mobile/tablet; completas en desktop
+  const short =
+    action === "create" ? "CREAR" :
+    action === "update" ? "EDITAR" :
+    action === "delete" ? "BORRAR" : "EVENTO";
 
-  switch (action) {
-    case "create":
-      label = "CREACIÓN";
-      className += " bg-green-600";
-      break;
-    case "update":
-      label = "ACTUALIZACIÓN";
-      className += " bg-yellow-500";
-      break;
-    case "delete":
-      label = "ELIMINACIÓN";
-      className += " bg-red-600";
-      break;
-    default:
-      label = "EVENTO";
-      className += " bg-[#0d2c53]";
-      break;
-  }
+  const full =
+    action === "create" ? "CREACIÓN" :
+    action === "update" ? "ACTUALIZACIÓN" :
+    action === "delete" ? "ELIMINACIÓN" : "EVENTO";
 
-  return <span className={className}>{label}</span>;
+  const base =
+    "inline-flex flex-none items-center justify-center max-w-[80px] md:max-w-[96px] lg:max-w-none overflow-hidden truncate px-2 py-[2px] text-xs rounded font-semibold text-white text-center leading-none";
+
+  const color =
+    action === "create" ? "bg-green-600" :
+    action === "update" ? "bg-yellow-500" :
+    action === "delete" ? "bg-red-600" : "bg-[#0d2c53]";
+
+  return (
+    <span className={`${base} ${color}`}>
+      <span className="lg:hidden">{short}</span>
+      <span className="hidden lg:inline">{full}</span>
+    </span>
+  );
 };
 
 export default NotificationBadge;

@@ -96,22 +96,21 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
 
   const rejected = order.payments?.filter(p => p.status === "rejected")
     .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
-
     return (
     <div
       className={`relative rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 mb-2 sm:mb-3 cursor-pointer 
         ${isSelected ? "ring-2 ring-[#0d2c53] bg-[#0d2c53]/10 dark:bg-[#0d2c53]/30" : "bg-white dark:bg-gray-900"}`}
       onClick={() => setExpanded(!expanded)}
     >
-      {/* Iconos en mobile */}
+      {/* Íconos solo en mobile/tablet (para evitar doble render en desktop) */}
       <div className="absolute top-2 right-2 sm:hidden flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
         <CreditCard className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleRegisterPaymentClick} />
-        <ArrowUpSquare className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleExport} />
         <Eye className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleViewDetail} />
+        <ArrowUpSquare className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleExport} />
       </div>
 
-      {/* Vista mobile */}
-      <div className="flex flex-col gap-2 sm:hidden text-[11px] text-[#0d2c53] dark:text-gray-100">
+      {/* Vista compacta (mobile/tablet) */}
+      <div className="flex flex-col gap-2 text-[11px] text-[#0d2c53] dark:text-gray-100 sm:hidden">
         <span className="font-semibold">{patientName}</span>
         <span>{formattedDate}</span>
         <span>${formattedAmount}</span>
@@ -122,7 +121,7 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
         </span>
       </div>
 
-      {/* Vista desktop */}
+      {/* Vista desktop con íconos dentro del layout (sin absolute) */}
       <div className="hidden sm:flex justify-between items-center">
         <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
           <span className="font-semibold">{patientName}</span>
@@ -133,23 +132,16 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-1.5 sm:gap-2">
-          <button className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-[11px] sm:text-sm" onClick={handleRegisterPaymentClick}>
-            Registrar pago
-          </button>
-          <button className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm" onClick={handleExport}>
-            Exportar
-          </button>
-          <button className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-[11px] sm:text-sm" onClick={handleViewDetail}>
-            Ver detalle
-          </button>
+        <div className="flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
+          <CreditCard className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleRegisterPaymentClick} />
+          <Eye className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleViewDetail} />
+          <ArrowUpSquare className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleExport} />
         </div>
       </div>
 
       {/* Expandido */}
       {expanded && (
         <div className="mt-2 sm:mt-3">
-          {/* Badges filtrados solo en mobile */}
           <div className="flex flex-wrap gap-2 sm:hidden text-[11px] mb-2">
             {[
               { label: "Total", value: order.total_amount ?? order.total, className: "bg-gray-100 text-[#0d2c53] dark:bg-gray-700 dark:text-gray-200" },
@@ -165,7 +157,6 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
               ))}
           </div>
 
-          {/* PaymentList: sin resumen en mobile, con resumen en desktop */}
           <div className="sm:hidden">
             <PaymentList payments={order.payments || []} hideSummaryBadges />
           </div>
