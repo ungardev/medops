@@ -2,7 +2,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "/api",
+  baseURL: "http://127.0.0.1:8000/api/",  // ⚔️ Forzado para demo CS50W
   withCredentials: true,
 });
 
@@ -16,7 +16,6 @@ if (token) {
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("authToken");
   if (token) {
-    // ⚔️ blindaje: inicializar headers si no existen
     if (!config.headers) {
       config.headers = {};
     }

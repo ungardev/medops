@@ -1,6 +1,5 @@
 // src/api/client.ts
-const API_BASE =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "/api";
+const API_BASE = "http://127.0.0.1:8000/api";  // ⚔️ Forzado para demo CS50W
 
 async function doFetch<T>(
   endpoint: string,
@@ -37,7 +36,6 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const response = await doFetch<T>(endpoint, options);
 
-  // 204 no es válido para apiFetch (estricto)
   if (response.status === 204) {
     const error: any = new Error("No Content en endpoint estricto");
     error.status = 204;
@@ -51,7 +49,6 @@ export async function apiFetch<T>(
     throw error;
   }
 
-  // DELETE típicamente no devuelve body; ajusta si tu API sí lo devuelve
   if ((options.method || "GET").toUpperCase() === "DELETE") {
     return {} as T;
   }
