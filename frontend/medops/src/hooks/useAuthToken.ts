@@ -1,3 +1,4 @@
+// src/hooks/useAuthToken.ts
 import { useState, useEffect, useCallback } from "react";
 
 export function useAuthToken() {
@@ -11,10 +12,13 @@ export function useAuthToken() {
     setToken(newToken);
   }, []);
 
-  // ✅ Limpiar token
+  // ✅ Limpiar token y redirigir al login frontend
   const clearToken = useCallback(() => {
     localStorage.removeItem("authToken");
     setToken(null);
+
+    // 🔹 Redirigir al login institucional del frontend (React Router)
+    window.location.href = "/login";
   }, []);
 
   // ✅ Sincronizar entre pestañas

@@ -1,11 +1,23 @@
-import React from "react";
+// src/pages/Dashboard/index.tsx
+import React, { useEffect } from "react";
 import ClinicalMetrics from "@/components/Dashboard/ClinicalMetrics";
 import FinancialMetrics from "@/components/Dashboard/FinancialMetrics";
 import TrendsChart from "@/components/Dashboard/TrendsChart";
 import NotificationsFeed from "@/components/Dashboard/NotificationsFeed";
 import AuditLog from "@/components/Dashboard/AuditLog";
+import { useAuthToken } from "@/hooks/useAuthToken"; // 🔒 para acceder al token
+import { queryClient } from "@/lib/reactQuery"; // 🔒 para invalidar notificaciones
 
 export default function Dashboard() {
+  const { token } = useAuthToken();
+
+  // 🔒 invalidar notificaciones cuando el token esté disponible
+  useEffect(() => {
+    if (token) {
+      queryClient.invalidateQueries({ queryKey: ["notifications", token] });
+    }
+  }, [token]);
+
   const cardBase =
     "w-full rounded-lg shadow-md bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-4";
   const cardTall = `${cardBase} min-h-[300px]`; // métricas clínicas y financieras

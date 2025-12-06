@@ -1,7 +1,9 @@
+// src/components/InstitutionalHeader.tsx
 import { Bell, UserCircle, Search, LogOut, Settings, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import { useAuthToken } from "hooks/useAuthToken"; // ✅ NUEVO IMPORT
 
 interface Notification {
   id: number;
@@ -45,6 +47,7 @@ function getNotificationLink(n: Notification): string | undefined {
 
 export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: HeaderProps) {
   const navigate = useNavigate();
+  const { clearToken } = useAuthToken(); // ✅ usar hook para logout
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -102,7 +105,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
     const q = query.trim();
     if (q) {
       navigate(`/search?query=${encodeURIComponent(q)}`);
-      setQuery(""); // 🔹 limpiar el input después de buscar
+      setQuery(""); // ✅ limpiar input
     }
   };
 
@@ -111,6 +114,11 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
       e.preventDefault();
       handleSearch();
     }
+  };
+
+  const handleLogout = () => {
+    clearToken(); // ✅ borra token
+    navigate("/login"); // ✅ redirige al login frontend
   };
 
     return (
@@ -217,7 +225,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
                   Configuración
                 </button>
                 <button
-                  onClick={() => navigate("/login")}
+                  onClick={handleLogout} // ✅ usa el mecanismo blindado
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <LogOut className="w-4 h-4" />

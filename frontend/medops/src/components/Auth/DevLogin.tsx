@@ -4,7 +4,13 @@ export function DevLogin() {
   const { saveToken } = useAuthToken();
 
   const handleSetToken = () => {
-    saveToken("6d6bb3a135ac1ba88ff4502ecd8c1c697847ee89"); // 👈 tu token del servidor
+    // ✅ Leer token desde variables de entorno
+    const devToken = import.meta.env.VITE_DEV_TOKEN;
+    if (devToken) {
+      saveToken(devToken);
+    } else {
+      console.warn("⚠️ No se encontró VITE_DEV_TOKEN en .env.development");
+    }
   };
 
   return (

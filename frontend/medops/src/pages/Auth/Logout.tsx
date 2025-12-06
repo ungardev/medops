@@ -1,10 +1,7 @@
 // src/pages/Auth/Login.tsx
 import { useState } from "react";
-import { useAuthToken } from "../../hooks/useAuthToken"; // 🔹 ruta relativa corregida
+import { useAuthToken } from "hooks/useAuthToken";
 import { useNavigate } from "react-router-dom";
-import { queryClient } from "../../lib/reactQuery"; // 🔹 ruta relativa corregida
-import axios from "axios"; // 🔹 para actualizar headers inmediatamente
-import { api } from "../../lib/apiClient"; // 🔹 cliente institucional
 
 export default function Login() {
   const { saveToken } = useAuthToken();
@@ -32,22 +29,8 @@ export default function Login() {
       const data = await res.json();
       if (!data.token) throw new Error("Respuesta inválida del servidor");
 
-      // 🔹 Guardar token en hook/localStorage
       saveToken(data.token);
-
-      // 🔥 Actualizar Axios global inmediatamente con el token
-      axios.defaults.headers.common["Authorization"] = `Token ${data.token}`;
-
-      // 🔥 Actualizar cliente institucional api
-      api.defaults.headers.common["Authorization"] = `Token ${data.token}`;
-
-      // 🔥 Invalidar notificaciones con token como parte de la clave
-      queryClient.invalidateQueries({ queryKey: ["notifications", data.token] });
-
-      // 🔒 Redirigir con delay para asegurar que Axios esté listo
-      setTimeout(() => {
-        navigate("/");
-      }, 100);
+      navigate("/");
     } catch (err: any) {
       setError(err.message || "Error de conexión con el servidor");
     } finally {
@@ -59,14 +42,23 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <form
         onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-6 py-6 w-full max-w-sm text-center"
+        className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-8 w-full max-w-sm text-center"
       >
-        {/* Logo institucional dentro del contenedor, con margen inferior */}
+        {/* Logo institucional desde /public */}
         <img
           src="/logo-medops-light.svg"
           alt="MedOps Logo"
-          className="mx-auto mb-6 w-24 h-24 object-contain"
+          className="mx-auto mb-6 w-28 h-28 object-contain dark:hidden"
         />
+        <img
+          src="/logo-medops-dark.svg"
+          alt="MedOps Logo"
+          className="mx-auto mb-6 w-28 h-28 object-contain hidden dark:block"
+        />
+
+        <h2 className="text-2xl font-bold text-[#0d2c53] dark:text-white mb-6 font-manrope">
+          Iniciar sesión
+        </h2>
 
         <div className="mb-4 text-left">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

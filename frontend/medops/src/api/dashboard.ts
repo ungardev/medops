@@ -1,19 +1,5 @@
 // src/api/dashboard.ts
-const BASE_URL = import.meta.env.VITE_API_URL ?? "/api";
-const token = localStorage.getItem("authToken");
-
-async function get<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Token ${token}` } : {}),
-    },
-    credentials: "include",
-    ...init,
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  return res.json();
-}
+import { api } from "@/lib/apiClient"; // 🔒 cliente institucional con interceptor
 
 // 🔹 Util institucional para blindar respuestas
 function toArray<T>(raw: unknown): T[] {
@@ -32,8 +18,7 @@ export type DashboardParams = {
 };
 
 export const DashboardAPI = {
-  summary: (params?: DashboardParams) => {
-    // 🔹 Limpiar parámetros para evitar undefined/null en el query string
+  summary: async (params?: DashboardParams) => {
     const cleanParams: Record<string, string> = {};
     if (params?.start_date) cleanParams.start_date = params.start_date;
     if (params?.end_date) cleanParams.end_date = params.end_date;
@@ -43,29 +28,32 @@ export const DashboardAPI = {
     const query = new URLSearchParams(cleanParams).toString();
     const qp = query ? `?${query}` : "";
 
-    return get<import("@/types/dashboard").DashboardSummary>(
-      `/dashboard/summary${qp}`
-    );
+    const res = await api.get(`/dashboard/summary${qp}`);
+    return res.data as import("@/types/dashboard").DashboardSummary;
   },
 
-  notifications: () =>
-    get<import("@/types/dashboard").NotificationEvent[]>(`/notifications/`),
+  notifications: async () => {
+    const res = await api.get(`/notifications/`);
+    return res.data as import("@/types/dashboard").NotificationEvent[];
+  },
 
   waitingRoomToday: async () => {
-    const raw = await get<any>(`/waitingroom/today/entries/`);
-    return toArray<import("@/types/dashboard").AppointmentSummary>(raw);
+    const res = await api.get(`/waitingroom/today/entries/`);
+    return toArray<import("@/types/dashboard").AppointmentSummary>(res.data);
   },
 
   appointmentsToday: async () => {
-    const raw = await get<any>(`/appointments/today/`);
-    return toArray<import("@/types/dashboard").AppointmentSummary>(raw);
+    const res = await api.get(`/appointments/today/`);
+    return toArray<import("@/types/dashboard").AppointmentSummary>(res.data);
   },
 
   payments: async () => {
-    const raw = await get<any>(`/payments/`);
-    return toArray<import("@/types/dashboard").PaymentSummary>(raw);
+    const res = await api.get(`/payments/`);
+    return toArray<import("@/types/dashboard").PaymentSummary>(res.data);
   },
 
-  eventLog: () =>
-    get<import("@/types/dashboard").EventLogEntry[]>(`/event_log/`),
+  eventLog: async () => {
+    const res = await api.get(`/event_log/`);
+    return res.data as import("@/types/dashboard").EventLogEntry[];
+  },
 };

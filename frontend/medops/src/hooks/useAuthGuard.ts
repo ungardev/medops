@@ -10,8 +10,11 @@ export function useAuthGuard() {
     const token = localStorage.getItem("authToken");
 
     if (!token) {
-      // 🚨 No hay token → redirigir
+      // 🚨 No hay token → redirigir al login institucional del frontend
       navigate("/login", { replace: true });
+
+      // ❌ Eliminado: window.location.href = `${apiRoot}login`
+      // ✅ Nunca redirigir al backend, el login es una page React
     } else {
       // ✅ Token presente → continuar
       setChecking(false);

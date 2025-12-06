@@ -1,10 +1,11 @@
-import { useState } from "react";
+// src/components/NotificationsFeed.tsx
+import { useState, useEffect } from "react";
 import { useNotifications } from "@/hooks/dashboard/useNotifications";
 import { NotificationEvent } from "@/types/dashboard";
 import moment from "moment";
 import RegisterPaymentModal from "./RegisterPaymentModal";
-import AppointmentDetail from "@/components/Appointments/AppointmentDetail"; // 🔹 Usar AppointmentDetail
-import { useAppointment } from "@/hooks/appointments/useAppointments"; // 🔹 Hook para cargar cita
+import AppointmentDetail from "@/components/Appointments/AppointmentDetail";
+import { useAppointment } from "@/hooks/appointments/useAppointments";
 import { Link } from "react-router-dom";
 import { EyeIcon } from "@heroicons/react/24/outline";
 
@@ -64,12 +65,19 @@ function AppointmentDetailWrapper({
     />
   );
 }
-
 export default function NotificationsFeed() {
-  const { data, isLoading } = useNotifications();
+  const { data, isLoading, refetch } = useNotifications();
   const [selectedChargeOrder, setSelectedChargeOrder] = useState<number | null>(null);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null); // 🔹 Estado para cita
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
   const [filter, setFilter] = useState<"all" | "info" | "warning" | "critical">("all");
+
+  // 🔹 Fuerza refetch al montar para evitar fallback fantasma
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      refetch();
+    }, 500); // medio segundo para que el backend esté listo
+    return () => clearTimeout(timeout);
+  }, [refetch]);
 
   const notifications = toArray<NotificationEvent>(data);
   const filtered =
@@ -122,7 +130,6 @@ export default function NotificationsFeed() {
                 key={n.id}
                 className="p-4 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex justify-between items-start gap-3"
               >
-                {/* Bloque de texto */}
                 <div className="flex-1 min-w-0">
                   <p className="min-w-0 text-sm font-medium text-[#0d2c53] dark:text-white flex items-center gap-2 leading-tight">
                     {n.entity === "Payment" && (
@@ -147,13 +154,12 @@ export default function NotificationsFeed() {
                     {n.actor ? ` • ${n.actor}` : ""}
                   </span>
                 </div>
-                                {/* Acción */}
+
+                {/* Acción */}
                 {n.entity === "WaitingRoom" ? (
                   <Link
                     to="/waitingroom"
                     className="inline-flex items-center justify-center w-8 h-8 rounded border border-red-600 text-red-600 hover:bg-gray-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors flex-none"
-                    aria-label="Ver sala de espera"
-                    title="Ver sala de espera"
                   >
                     <EyeIcon className="w-4 h-4" />
                   </Link>
@@ -161,8 +167,6 @@ export default function NotificationsFeed() {
                   <button
                     className="inline-flex items-center justify-center w-8 h-8 rounded border border-yellow-500 text-yellow-600 hover:bg-gray-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors flex-none"
                     onClick={() => setSelectedAppointmentId(n.entity_id)}
-                    aria-label="Ver cita"
-                    title="Ver cita"
                   >
                     <EyeIcon className="w-4 h-4" />
                   </button>
@@ -170,8 +174,6 @@ export default function NotificationsFeed() {
                   <button
                     className="inline-flex items-center justify-center w-8 h-8 rounded border border-[#0d2c53] text-[#0d2c53] hover:bg-gray-50 dark:border-gray-500 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors flex-none"
                     onClick={() => setSelectedChargeOrder(n.entity_id)}
-                    aria-label="Ver orden"
-                    title="Ver orden"
                   >
                     <EyeIcon className="w-4 h-4" />
                   </button>
@@ -180,8 +182,6 @@ export default function NotificationsFeed() {
                     <Link
                       to={n.action.href}
                       className="inline-flex items-center justify-center w-8 h-8 rounded border border-gray-300 dark:border-gray-600 text-[#0d2c53] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex-none"
-                      aria-label="Ver detalle"
-                      title="Ver detalle"
                     >
                       <EyeIcon className="w-4 h-4" />
                     </Link>
