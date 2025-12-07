@@ -2,7 +2,7 @@
 import { Bell, UserCircle, Search, LogOut, Settings, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import { api } from "@/lib/apiClient"; // ⚔️ Cliente institucional
 import { useAuthToken } from "hooks/useAuthToken"; // ✅ NUEVO IMPORT
 
 interface Notification {
@@ -44,10 +44,9 @@ function getNotificationLink(n: Notification): string | undefined {
   }
   return undefined;
 }
-
 export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: HeaderProps) {
   const navigate = useNavigate();
-  const { clearToken } = useAuthToken(); // ✅ usar hook para logout
+  const { clearToken } = useAuthToken();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -66,17 +65,19 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
   }, []);
 
   useEffect(() => {
-    setLoadingNotifications(true);
-    axios
-      .get<Notification[]>("/notifications/")
-      .then((res) => {
+    const fetchNotifications = async () => {
+      setLoadingNotifications(true);
+      try {
+        const res = await api.get<Notification[]>("/notifications/");
         const raw = Array.isArray(res.data) ? res.data : [];
         setNotifications(raw.slice(0, 5));
-      })
-      .catch(() => setNotifications([]))
-      .then(() => {
+      } catch {
+        setNotifications([]);
+      } finally {
         setLoadingNotifications(false);
-      });
+      }
+    };
+    fetchNotifications();
   }, []);
 
   useEffect(() => {
@@ -105,7 +106,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
     const q = query.trim();
     if (q) {
       navigate(`/search?query=${encodeURIComponent(q)}`);
-      setQuery(""); // ✅ limpiar input
+      setQuery("");
     }
   };
 
@@ -117,11 +118,11 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
   };
 
   const handleLogout = () => {
-    clearToken(); // ✅ borra token
-    navigate("/login"); // ✅ redirige al login frontend
+    clearToken();
+    navigate("/login");
   };
 
-    return (
+  return (
     <header className="sticky top-0 z-40 w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="max-w-7xl mx-auto w-full h-16 flex items-center justify-between gap-4 px-4 sm:px-6 min-w-0">
         {/* Bloque izquierdo: hamburguesa + buscador */}
@@ -225,7 +226,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
                   Configuración
                 </button>
                 <button
-                  onClick={handleLogout} // ✅ usa el mecanismo blindado
+                  onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                 >
                   <LogOut className="w-4 h-4" />

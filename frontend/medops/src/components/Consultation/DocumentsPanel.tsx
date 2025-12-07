@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import {
   useDocuments,
   useUploadDocument,
-  DocumentItem,
 } from "../../hooks/consultations/useDocuments";
+import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
 
 export interface DocumentsPanelProps {
   patientId: number;
@@ -35,36 +35,26 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
     );
   };
 
-  const documents: DocumentItem[] = data?.documents || [];
-  const skipped: string[] = data?.skipped || [];
+  // 🔹 Ajuste: consumir `documents` y `errors` del GenerateDocumentsResponse
+  const documents: GeneratedDocument[] = (data as GenerateDocumentsResponse)?.documents || [];
+  const skipped: string[] = (data as GenerateDocumentsResponse)?.skipped || [];
+  const errors: { category: string; error: string }[] = (data as GenerateDocumentsResponse)?.errors || [];
 
   return (
-    <div
-      className="
-        rounded-lg shadow-lg p-3 sm:p-4 
-        bg-white dark:bg-gray-900 
-        lg:bg-white lg:dark:bg-gray-800 
-        relative z-10
-      "
-    >
-      {/* 🔹 Título visible en todas las versiones */}
-      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
-        Documentos clínicos
-      </h3>
-
+    <div className="space-y-3">
       {isLoading && (
         <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
           Cargando documentos...
         </p>
       )}
 
-      <ul className="mb-4 space-y-1">
+      <ul className="space-y-1">
         {documents.length === 0 && !isLoading && (
           <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
             Sin documentos
           </li>
         )}
-        {documents.map((doc: DocumentItem) => (
+        {documents.map((doc) => (
           <li
             key={doc.audit_code}
             className="border-b border-gray-200 dark:border-gray-700 py-1 text-xs sm:text-sm"
@@ -92,6 +82,19 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
         <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">
           No se generaron: {skipped.join(", ")}
         </p>
+      )}
+
+      {errors.length > 0 && (
+        <div className="space-y-1">
+          {errors.map((err, idx) => (
+            <p
+              key={idx}
+              className="text-xs sm:text-sm text-red-600 dark:text-red-400"
+            >
+              Error en {err.category}: {err.error}
+            </p>
+          ))}
+        </div>
       )}
 
       {!readOnly && (

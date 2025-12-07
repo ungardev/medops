@@ -1,6 +1,6 @@
 // src/hooks/payments/useChargeOrdersPaginated.ts
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { apiFetch } from "@/api/client"; // ⚔️ Cliente institucional
 import type { ChargeOrder } from "../../types/payments";
 
 export interface PaginatedChargeOrderResponse {
@@ -16,17 +16,10 @@ export interface PaginatedChargeOrderResponse {
 export function useChargeOrdersPaginated(page: number = 1, pageSize: number = 10) {
   return useQuery<PaginatedChargeOrderResponse, Error>({
     queryKey: ["charge-orders", page, pageSize],
-    queryFn: async (): Promise<PaginatedChargeOrderResponse> => {
-      const res = await axios.get<PaginatedChargeOrderResponse>("/charge-orders/", {
-        params: {
-          page,
-          page_size: pageSize,
-          // 🔹 Orden institucional: más recientes primero, con desempate por id
-          ordering: "-appointment_date,-issued_at,-id",
-        },
-      });
-      return res.data;
-    },
+    queryFn: async (): Promise<PaginatedChargeOrderResponse> =>
+      apiFetch<PaginatedChargeOrderResponse>(
+        `charge-orders/?page=${page}&page_size=${pageSize}&ordering=-appointment_date,-issued_at,-id`
+      ),
     // 🔹 Mantener datos previos mientras carga la nueva página
     placeholderData: (prev) => prev,
   });

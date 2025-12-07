@@ -1,8 +1,8 @@
 // src/pages/Payments/Payments.tsx
 import { useState } from "react";
-import PageHeader from "../../components/Layout/PageHeader";
-import ChargeOrderList from "../../components/Payments/ChargeOrderList";
-import RegisterPaymentModal from "../../components/Payments/RegisterPaymentModal";
+import PageHeader from "@/components/Layout/PageHeader";
+import ChargeOrderList from "@/components/Payments/ChargeOrderList";
+import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
 
 export default function Payments() {
   const [showModal, setShowModal] = useState(false);

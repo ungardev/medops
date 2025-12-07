@@ -17,7 +17,6 @@ type DoctorForm = {
   phone?: string;
   signature?: string | File;
 };
-
 export default function ConfigPage() {
   const { data: inst, updateInstitution, isLoading: instLoading, handleLogoChange } = useInstitutionSettings();
   const { data: doc, updateDoctor, isLoading: docLoading, handleSignatureChange } = useDoctorConfig();
@@ -92,7 +91,7 @@ export default function ConfigPage() {
       .filter(Boolean) as string[];
   };
 
-  return (
+    return (
     <main className="px-3 py-4 sm:p-6 space-y-4 sm:space-y-6">
       <h2 className="text-xl sm:text-2xl font-semibold text-[#0d2c53] dark:text-gray-100">Configuración</h2>
 
@@ -109,8 +108,12 @@ export default function ConfigPage() {
                 <p><strong>Teléfono:</strong> {instForm.phone}</p>
                 <p><strong>RIF/NIT:</strong> {instForm.tax_id}</p>
                 <div className="mt-2">
-                  {instForm.logo && typeof instForm.logo === "string" ? (
-                    <img src={`http://127.0.0.1${instForm.logo}`} alt="Logo institucional" className="h-20 rounded border shadow-sm" />
+                  {instForm.logo ? (
+                    <img
+                      src="/logo-medops-light.svg"
+                      alt="Logo institucional"
+                      className="h-20 rounded border shadow-sm"
+                    />
                   ) : (
                     <span className="italic text-gray-500 dark:text-gray-400">Sin logo cargado</span>
                   )}
@@ -132,34 +135,6 @@ export default function ConfigPage() {
                 }}
                 className="space-y-4"
               >
-                <input
-                  type="text"
-                  value={instForm.name || ""}
-                  onChange={(e) => setInstForm({ ...instForm, name: e.target.value })}
-                  placeholder="Nombre"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <input
-                  type="text"
-                  value={instForm.address || ""}
-                  onChange={(e) => setInstForm({ ...instForm, address: e.target.value })}
-                  placeholder="Dirección"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <input
-                  type="text"
-                  value={instForm.phone || ""}
-                  onChange={(e) => setInstForm({ ...instForm, phone: e.target.value })}
-                  placeholder="Teléfono"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <input
-                  type="text"
-                  value={instForm.tax_id || ""}
-                  onChange={(e) => setInstForm({ ...instForm, tax_id: e.target.value })}
-                  placeholder="RIF / NIT"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
                 <input type="file" onChange={handleLogoChangeInput} className="w-full text-sm" />
                 {logoPreview && <img src={logoPreview} alt="Logo preview" className="h-20 mt-2 rounded border shadow-sm" />}
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -171,7 +146,8 @@ export default function ConfigPage() {
           </>
         )}
       </section>
-              {/* Configuración Médico Operador */}
+
+      {/* Configuración Médico Operador */}
       <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3">Médico Operador</h3>
         {docLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando configuración del médico...</p>}
@@ -186,8 +162,12 @@ export default function ConfigPage() {
                 <p><strong>Email:</strong> {docForm.email}</p>
                 <p><strong>Teléfono:</strong> {docForm.phone}</p>
                 <div className="mt-2">
-                  {docForm.signature && typeof docForm.signature === "string" ? (
-                    <img src={`http://127.0.0.1${docForm.signature}`} alt="Firma digital" className="h-20 rounded border shadow-sm" />
+                  {docForm.signature ? (
+                    <img
+                      src="/logo-icon-light.svg"
+                      alt="Firma digital"
+                      className="h-20 rounded border shadow-sm"
+                    />
                   ) : (
                     <span className="italic text-gray-500 dark:text-gray-400">Sin firma cargada</span>
                   )}
@@ -219,72 +199,10 @@ export default function ConfigPage() {
                 }}
                 className="space-y-4"
               >
-                <input
-                  type="text"
-                  value={docForm.full_name || ""}
-                  onChange={(e) => setDocForm({ ...docForm, full_name: e.target.value })}
-                  placeholder="Nombre completo"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <input
-                  type="text"
-                  value={docForm.colegiado_id || ""}
-                  onChange={(e) => setDocForm({ ...docForm, colegiado_id: e.target.value })}
-                  placeholder="Número de colegiado"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <div>
-                  <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">Especialidades</label>
-                  {loadingSpecs ? (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Cargando especialidades...</p>
-                  ) : Array.isArray(specialties) ? (
-                    <select
-                      multiple
-                      value={docForm.specialties || []}
-                      onChange={(e) => {
-                        const selected = Array.from(e.target.selectedOptions, (opt) => opt.value);
-                        setDocForm({ ...docForm, specialties: selected });
-                      }}
-                      className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53] bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                    >
-                      {(specialties as SpecialtyChoice[]).map((spec) => (
-                        <option key={spec.id} value={String(spec.id)}>
-                          {spec.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">No hay especialidades disponibles.</p>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  value={docForm.license || ""}
-                  onChange={(e) => setDocForm({ ...docForm, license: e.target.value })}
-                  placeholder="Licencia / Registro sanitario"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <input
-                  type="email"
-                  value={docForm.email || ""}
-                  onChange={(e) => setDocForm({ ...docForm, email: e.target.value })}
-                  placeholder="Correo profesional"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <input
-                  type="tel"
-                  value={docForm.phone || ""}
-                  onChange={(e) => setDocForm({ ...docForm, phone: e.target.value })}
-                  placeholder="Teléfono"
-                  className="w-full px-3 py-2 border rounded-md text-sm focus:ring-[#0d2c53]"
-                />
-                <div>
-                  <label className="block text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1">Firma digital</label>
-                  <input type="file" onChange={handleSignatureUpload} className="w-full text-sm" />
-                  {signaturePreview && (
-                    <img src={signaturePreview} alt="Firma preview" className="h-20 mt-2 rounded border shadow-sm" />
-                  )}
-                </div>
+                <input type="file" onChange={handleSignatureUpload} className="w-full text-sm" />
+                {signaturePreview && (
+                  <img src={signaturePreview} alt="Firma preview" className="h-20 mt-2 rounded border shadow-sm" />
+                )}
                 <div className="flex flex-col sm:flex-row gap-2">
                   <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm">Guardar</button>
                   <button type="button" className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm" onClick={() => setEditingDoctor(false)}>Cancelar</button>

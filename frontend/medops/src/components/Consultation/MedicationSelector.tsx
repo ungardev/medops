@@ -9,7 +9,14 @@ interface MedicationSelectorProps {
 
 export default function MedicationSelector({ valueCatalogId, valueText, onChange }: MedicationSelectorProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const { data: medications = [], isLoading } = useMedicationCatalog(searchTerm);
+  const { data, isLoading } = useMedicationCatalog(searchTerm);
+
+  // 🔹 Normalizamos la respuesta: siempre será un array
+  const medications: MedicationCatalogItem[] = Array.isArray(data)
+    ? data
+    : Array.isArray((data as any)?.results)
+    ? (data as any).results
+    : [];
 
   const handleSelect = (med: MedicationCatalogItem) => {
     onChange({ catalogId: med.id, text: undefined });
@@ -18,7 +25,8 @@ export default function MedicationSelector({ valueCatalogId, valueText, onChange
   const handleTextChange = (text: string) => {
     onChange({ catalogId: undefined, text });
   };
-    return (
+
+  return (
     <div className="flex flex-col gap-2">
       <input
         type="text"

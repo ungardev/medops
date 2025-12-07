@@ -1,5 +1,5 @@
 // src/hooks/consultations/useConsultationActions.ts
-import { useMutation, useQueryClient, UseMutationResult } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 import type { Appointment } from "../../types/appointments";
 
@@ -9,13 +9,13 @@ interface UpdateStatusInput {
 }
 
 export function useConsultationActions(): {
-  complete: (id: number) => void;
-  cancel: (id: number) => void;
+  complete: (id: number) => Promise<Appointment>;
+  cancel: (id: number) => Promise<Appointment>;
   isPending: boolean;
 } {
   const queryClient = useQueryClient();
 
-  const mutation: UseMutationResult<Appointment, Error, UpdateStatusInput> = useMutation({
+  const mutation = useMutation<Appointment, Error, UpdateStatusInput>({
     mutationFn: async (data: UpdateStatusInput): Promise<Appointment> => {
       return apiFetch<Appointment>(`appointments/${data.id}/status/`, {
         method: "PATCH",
@@ -30,8 +30,8 @@ export function useConsultationActions(): {
   });
 
   return {
-    complete: (id: number) => mutation.mutate({ id, status: "completed" }),
-    cancel: (id: number) => mutation.mutate({ id, status: "canceled" }),
+    complete: (id: number) => mutation.mutateAsync({ id, status: "completed" }),
+    cancel: (id: number) => mutation.mutateAsync({ id, status: "canceled" }),
     isPending: mutation.isPending,
   };
 }

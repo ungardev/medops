@@ -1,12 +1,20 @@
 // src/api/client.ts
-const API_BASE = "http://127.0.0.1:8000/api";  // ⚔️ Forzado para demo CS50W
+const API_BASE = import.meta.env.VITE_API_ROOT || "http://127.0.0.1:8000/api";  // ✅ configurable vía .env
 
 async function doFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  const url = `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
-  const token = localStorage.getItem("authToken");
+  // ✅ Blindaje: si endpoint ya es absoluto, úsalo tal cual
+  const url = endpoint.startsWith("http")
+    ? endpoint
+    : `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
+
+  // ✅ Token desde localStorage o .env
+  const token =
+    localStorage.getItem("authToken") ||
+    import.meta.env.VITE_API_TOKEN ||
+    "";
 
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -20,6 +28,7 @@ async function doFetch<T>(
 
   const response = await fetch(url, { ...options, headers });
 
+  // ✅ Manejo institucional de errores de autenticación
   if (response.status === 401 || response.status === 403) {
     localStorage.removeItem("authToken");
     window.location.href = "/login";
@@ -34,7 +43,13 @@ export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = (options.method || "GET").toUpperCase();
   const response = await doFetch<T>(endpoint, options);
+
+  // ✅ DELETE debe devolver vacío sin lanzar error por 204
+  if (method === "DELETE") {
+    return {} as T;
+  }
 
   if (response.status === 204) {
     const error: any = new Error("No Content en endpoint estricto");
@@ -47,10 +62,6 @@ export async function apiFetch<T>(
     const error: any = new Error(`Error ${response.status}: ${text}`);
     error.status = response.status;
     throw error;
-  }
-
-  if ((options.method || "GET").toUpperCase() === "DELETE") {
-    return {} as T;
   }
 
   return response.json() as Promise<T>;

@@ -7,12 +7,12 @@ import { useDeleteDocument } from "../../hooks/patients/useDeleteDocument";
 import { MedicalDocument } from "../../types/documents";
 import { useNotify } from "../../hooks/useNotify";
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || "http://127.0.0.1/api";
+const API_ROOT = import.meta.env.VITE_API_ROOT || "http://127.0.0.1:8000/api";
 
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
   const uploadDocument = useUploadDocument(patient.id);
-  const deleteDocument = useDeleteDocument();
+  const deleteDocument = useDeleteDocument(patient.id); // ✅ ahora recibe patient.id
   const notify = useNotify();
 
   const [file, setFile] = useState<File | null>(null);
@@ -22,7 +22,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   useEffect(() => {
     if (uploadDocument.isSuccess) notify.success("Documento subido correctamente");
     if (uploadDocument.isError) notify.error("Error al subir el documento");
-    if (deleteDocument.isSuccess) notify.success("Documento eliminado");
+    if (deleteDocument.isSuccess) notify.success("Documento eliminado correctamente");
     if (deleteDocument.isError) notify.error("Error al eliminar el documento");
   }, [
     uploadDocument.isSuccess,
@@ -50,7 +50,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const documents = Array.isArray(data?.list) ? data.list : [];
   const isEmpty = !isLoading && !error && documents.length === 0;
 
-  return (
+    return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
       <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
         Documentos clínicos
@@ -102,20 +102,11 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
       </form>
 
       {/* Estados */}
-      {isLoading && (
-        <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">Cargando documentos...</p>
-      )}
-      {error && (
-        <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">
-          Error: {(error as Error).message}
-        </p>
-      )}
-      {isEmpty && (
-        <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">
-          No tiene documentos registrados
-        </p>
-      )}
-            {/* Tabla / Tarjetas */}
+      {isLoading && <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">Cargando documentos...</p>}
+      {error && <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>}
+      {isEmpty && <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">No tiene documentos registrados</p>}
+
+      {/* Tabla / Tarjetas */}
       {!isLoading && !error && documents.length > 0 && (
         <>
           {/* Desktop: tabla */}
@@ -150,9 +141,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                       )}
                     </td>
                     <td className="px-4 py-2">
-                      {d.uploaded_at
-                        ? new Date(d.uploaded_at).toLocaleDateString("es-VE")
-                        : "—"}
+                      {d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString("es-VE") : "—"}
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex justify-center">

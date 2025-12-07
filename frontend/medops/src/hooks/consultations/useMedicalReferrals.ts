@@ -1,20 +1,17 @@
 // src/hooks/consultations/useMedicalReferrals.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { apiFetch } from "../../api/client";
 import type { MedicalReferral } from "../../types/consultation";
-
-// ✅ Endpoint relativo para evitar doble /api cuando baseURL ya es "/api/"
-const API_URL = "medical-referrals/";
 
 export function useMedicalReferrals(appointmentId: number) {
   return useQuery<MedicalReferral[], Error>({
     queryKey: ["medical-referrals", appointmentId],
     queryFn: async (): Promise<MedicalReferral[]> => {
       console.debug("📡 Fetching medical referrals for appointment:", appointmentId);
-      const { data } = await axios.get<{ count: number; results: MedicalReferral[] }>(API_URL, {
-        params: { appointment: appointmentId },
-      });
-      return data.results;
+      const data = await apiFetch<{ count: number; results: MedicalReferral[] }>(
+        `medical-referrals/?appointment=${appointmentId}`
+      );
+      return data?.results ?? []; // ✅ nunca undefined
     },
     enabled: !!appointmentId,
   });
@@ -23,7 +20,7 @@ export function useMedicalReferrals(appointmentId: number) {
 export function useCreateMedicalReferral() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Partial<MedicalReferral>) => {
+    mutationFn: async (payload: Partial<MedicalReferral> & { appointment: number }) => {
       const finalPayload = {
         ...payload,
         specialty_ids: payload.specialty_ids ?? [],
@@ -33,10 +30,13 @@ export function useCreateMedicalReferral() {
 
       console.debug("📤 Payload final (create):", finalPayload);
 
-      const { data } = await axios.post<MedicalReferral>(API_URL, finalPayload);
+      const data = await apiFetch<MedicalReferral>("medical-referrals/", {
+        method: "POST",
+        body: JSON.stringify(finalPayload),
+      });
       return data;
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-referrals", variables.appointment],
       });
@@ -47,7 +47,7 @@ export function useCreateMedicalReferral() {
 export function useUpdateMedicalReferral() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...payload }: Partial<MedicalReferral> & { id: number }) => {
+    mutationFn: async ({ id, ...payload }: Partial<MedicalReferral> & { id: number; appointment: number }) => {
       const finalPayload = {
         ...payload,
         specialty_ids: payload.specialty_ids ?? [],
@@ -55,10 +55,13 @@ export function useUpdateMedicalReferral() {
 
       console.debug("📤 Payload final (update):", finalPayload);
 
-      const { data } = await axios.patch<MedicalReferral>(`${API_URL}${id}/`, finalPayload);
+      const data = await apiFetch<MedicalReferral>(`medical-referrals/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify(finalPayload),
+      });
       return data;
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-referrals", variables.appointment],
       });
@@ -69,10 +72,10 @@ export function useUpdateMedicalReferral() {
 export function useDeleteMedicalReferral() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id }: { id: number; appointment: number }) => {
-      await axios.delete(`${API_URL}${id}/`);
+    mutationFn: async ({ id, appointment }: { id: number; appointment: number }) => {
+      await apiFetch<{}>(`medical-referrals/${id}/`, { method: "DELETE" });
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-referrals", variables.appointment],
       });

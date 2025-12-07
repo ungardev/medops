@@ -7,8 +7,12 @@ export interface MedicalReport {
   status: "generated";       // Estado del informe (por ahora siempre "generated")
   file_url?: string | null;  // URL del archivo PDF/HTML generado (opcional)
 
-  institution?: InstitutionSettings | null; // 🔹 Datos institucionales
-  doctor?: DoctorOperator | null;           // 🔹 Datos del médico operador
+  // 🔹 Campos adicionales que devuelve generate_medical_report
+  audit_code?: string | null; // Código de auditoría institucional
+  qr_code_url?: string | null; // QR embebido en el informe (opcional)
+
+  institution?: InstitutionSettings | null; // Datos institucionales
+  doctor?: DoctorOperator | null;           // Datos del médico operador
 }
 
 // --- Datos institucionales (InstitutionSettingsSerializer)

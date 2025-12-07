@@ -1,13 +1,13 @@
 // src/pages/Payments/ChargeOrderDetail.tsx
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import axios from "axios";
-import PageHeader from "../../components/Layout/PageHeader";
-import PaymentList from "../../components/Payments/PaymentList";
-import RegisterPaymentModal from "../../components/Payments/RegisterPaymentModal";
+import PageHeader from "@/components/Layout/PageHeader";
+import PaymentList from "@/components/Payments/PaymentList";
+import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
 import { useState } from "react";
-import { ChargeOrder } from "../../types/payments";
-import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
+import { ChargeOrder } from "@/types/payments";
+import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders";
+import { apiFetch } from "@/api/client"; // ⚔️ Cliente institucional
 
 interface Event {
   id: number;
@@ -16,7 +16,6 @@ interface Event {
   timestamp: string;
   notes?: string | null | Record<string, any>;
 }
-
 export default function ChargeOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,28 +26,20 @@ export default function ChargeOrderDetail() {
     return <p className="text-sm text-red-600 dark:text-red-400">ID de orden inválido</p>;
   }
 
-  const queryKey = ["charge-order", id] as const;
-
   const { data: order, isLoading, error } = useQuery<ChargeOrder>({
-    queryKey,
-    queryFn: async () => {
-      const res = await axios.get(`http://127.0.0.1/api/charge-orders/${id}/`);
-      return res.data as ChargeOrder;
-    },
+    queryKey: ["charge-order", id],
+    queryFn: async () => apiFetch<ChargeOrder>(`charge-orders/${id}/`),
   });
 
   const { data: events } = useQuery<Event[]>({
     queryKey: ["charge-order-events", id],
-    queryFn: async () => {
-      const res = await axios.get(`http://127.0.0.1/api/charge-orders/${id}/events/`);
-      return res.data as Event[];
-    },
+    queryFn: async () => apiFetch<Event[]>(`charge-orders/${id}/events/`),
   });
 
   // ✅ Mutación para anular orden
   const voidMutation = useMutation({
     mutationFn: async () => {
-      await axios.post(`http://127.0.0.1/api/charge-orders/${id}/void/`);
+      await apiFetch<void>(`charge-orders/${id}/void/`, { method: "POST" });
     },
     onSuccess: () => {
       invalidateChargeOrders(id);
@@ -58,7 +49,7 @@ export default function ChargeOrderDetail() {
   // ✅ Mutación para exonerar orden
   const waiveMutation = useMutation({
     mutationFn: async () => {
-      await axios.post(`http://127.0.0.1/api/charge-orders/${id}/waive/`);
+      await apiFetch<void>(`charge-orders/${id}/waive/`, { method: "POST" });
     },
     onSuccess: () => {
       invalidateChargeOrders(id);
@@ -71,11 +62,12 @@ export default function ChargeOrderDetail() {
       return;
     }
     try {
-      const res = await axios.get<Blob>(
-        `http://127.0.0.1/api/charge-orders/${order.id}/export/`,
-        { responseType: "blob" }
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/charge-orders/${order.id}/export/`,
+        { headers: { Accept: "application/pdf" } }
       );
-      const blob = res.data;
+      if (!response.ok) throw new Error("Error exportando orden");
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;

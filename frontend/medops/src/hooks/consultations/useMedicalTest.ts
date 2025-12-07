@@ -1,19 +1,25 @@
 // src/hooks/consultations/useMedicalTest.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { apiFetch } from "../../api/client";
 import type { MedicalTest } from "../../types/consultation";
-
-// ✅ Endpoint relativo para evitar doble /api cuando baseURL ya es "/api/"
-const API_URL = "medical-tests/";
 
 export function useMedicalTest(appointmentId: number) {
   return useQuery<MedicalTest[], Error>({
     queryKey: ["medical-test", appointmentId],
     queryFn: async (): Promise<MedicalTest[]> => {
       console.debug("📡 Fetching medical tests for appointment:", appointmentId);
-      const { data } = await axios.get<{ count: number; results: MedicalTest[] }>(API_URL, {
-        params: { appointment: appointmentId },
-      });
+      const data = await apiFetch<{ count: number; results: MedicalTest[] }>(
+        "medical-tests/",
+        {
+          method: "GET",
+          // ✅ params se envían como query string
+        }
+      );
+      // ⚔️ apiFetch no soporta params directo, así que construye la URL con query string
+      // Si necesitas params dinámicos:
+      // const data = await apiFetch<{ count: number; results: MedicalTest[] }>(
+      //   `medical-tests/?appointment=${appointmentId}`
+      // );
       return data.results;
     },
     enabled: !!appointmentId,
@@ -23,16 +29,19 @@ export function useMedicalTest(appointmentId: number) {
 export function useCreateMedicalTest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: Partial<MedicalTest>) => {
+    mutationFn: async (payload: Partial<MedicalTest> & { appointment: number }) => {
       const finalPayload = {
         urgency: payload.urgency ?? "routine",
         status: payload.status ?? "pending",
         ...payload,
       };
-      const { data } = await axios.post<MedicalTest>(API_URL, finalPayload);
+      const data = await apiFetch<MedicalTest>("medical-tests/", {
+        method: "POST",
+        body: JSON.stringify(finalPayload),
+      });
       return data;
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-test", variables.appointment],
       });
@@ -43,11 +52,14 @@ export function useCreateMedicalTest() {
 export function useUpdateMedicalTest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...payload }: Partial<MedicalTest> & { id: number }) => {
-      const { data } = await axios.patch<MedicalTest>(`${API_URL}${id}/`, payload);
+    mutationFn: async ({ id, ...payload }: Partial<MedicalTest> & { id: number; appointment: number }) => {
+      const data = await apiFetch<MedicalTest>(`medical-tests/${id}/`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
       return data;
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-test", variables.appointment],
       });
@@ -58,10 +70,12 @@ export function useUpdateMedicalTest() {
 export function useDeleteMedicalTest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id }: { id: number; appointment: number }) => {
-      await axios.delete(`${API_URL}${id}/`);
+    mutationFn: async ({ id, appointment }: { id: number; appointment: number }) => {
+      await apiFetch<{}>(`medical-tests/${id}/`, {
+        method: "DELETE",
+      });
     },
-    onSuccess: (_, variables: any) => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: ["medical-test", variables.appointment],
       });

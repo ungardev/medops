@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { api } from "@/lib/apiClient";  // ⚔️ Cliente institucional
 import { DoctorConfig } from "@/types/config";
 
 export function useDoctorConfig() {
@@ -9,12 +9,12 @@ export function useDoctorConfig() {
   const query = useQuery<DoctorConfig>({
     queryKey: ["config", "doctor"],
     queryFn: async () => {
-      const res = await axios.get<DoctorConfig>("config/doctor/");
+      const res = await api.get<DoctorConfig>("config/doctor/");
       return res.data;
     },
   });
 
-  // 🔹 PATCH actualización del médico operador (siempre multipart/form-data)
+  // 🔹 PATCH actualización del médico operador (multipart/form-data)
   const mutation = useMutation({
     mutationFn: async (newSettings: Partial<DoctorConfig>) => {
       const formData = new FormData();
@@ -28,14 +28,14 @@ export function useDoctorConfig() {
         formData.append("signature", newSettings.signature);
       }
 
-      // 🔹 FIX: enviar specialty_ids como lista en multipart
+      // 🔹 specialty_ids como lista en multipart
       if (newSettings.specialty_ids && Array.isArray(newSettings.specialty_ids)) {
         newSettings.specialty_ids.forEach((id) => {
           formData.append("specialty_ids", String(id));
         });
       }
 
-      const res = await axios.patch("config/doctor/", formData, {
+      const res = await api.patch("config/doctor/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;

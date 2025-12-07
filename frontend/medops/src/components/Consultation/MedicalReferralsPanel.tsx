@@ -19,9 +19,9 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
   const { data, isLoading } = useMedicalReferrals(appointmentId);
   const referrals = Array.isArray(data) ? data : []; // ✅ blindaje
 
-  const { mutate: createReferral } = useCreateMedicalReferral();
-  const { mutate: updateReferral } = useUpdateMedicalReferral();
-  const { mutate: deleteReferral } = useDeleteMedicalReferral();
+  const { mutateAsync: createReferral } = useCreateMedicalReferral();
+  const { mutateAsync: updateReferral } = useUpdateMedicalReferral();
+  const { mutateAsync: deleteReferral } = useDeleteMedicalReferral();
 
   const [referredTo, setReferredTo] = useState("");
   const [reason, setReason] = useState("");
@@ -33,26 +33,36 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
 
   const [editingReferral, setEditingReferral] = useState<MedicalReferral | null>(null);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!referredTo || readOnly) return;
-    createReferral({
+
+    const payload = {
       appointment: appointmentId,
       referred_to: referredTo,
       reason,
       specialty_ids: selectedSpecialties.map((s) => s.id),
       urgency,
       status,
-    });
-    setReferredTo("");
-    setReason("");
-    setSelectedSpecialties([]);
-    setUrgency("routine");
-    setStatus("issued");
+    };
+
+    console.debug("📤 Creando referencia médica:", payload);
+
+    try {
+      await createReferral(payload);
+      setReferredTo("");
+      setReason("");
+      setSelectedSpecialties([]);
+      setUrgency("routine");
+      setStatus("issued");
+    } catch (err: any) {
+      console.error("❌ Error al crear referencia:", err.message);
+    }
   };
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     if (!editingReferral || readOnly) return;
-    updateReferral({
+
+    const payload = {
       id: editingReferral.id,
       appointment: appointmentId,
       referred_to: editingReferral.referred_to,
@@ -60,8 +70,24 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       specialty_ids: editingReferral.specialties?.map((s) => s.id) || [],
       urgency: editingReferral.urgency,
       status: editingReferral.status,
-    });
-    setEditingReferral(null);
+    };
+
+    console.debug("📤 Actualizando referencia médica:", payload);
+
+    try {
+      await updateReferral(payload);
+      setEditingReferral(null);
+    } catch (err: any) {
+      console.error("❌ Error al actualizar referencia:", err.message);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteReferral({ id, appointment: appointmentId });
+    } catch (err: any) {
+      console.error("❌ Error al eliminar referencia:", err.message);
+    }
   };
 
     return (
@@ -94,7 +120,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                     </button>
                     <button
                       className="px-2 sm:px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors text-xs sm:text-sm"
-                      onClick={() => deleteReferral({ id: r.id, appointment: appointmentId })}
+                      onClick={() => handleDelete(r.id)}
                     >
                       Eliminar
                     </button>

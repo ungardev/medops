@@ -139,7 +139,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     });
   };
 
-    if (isAppointmentMode(props) && isLoading) {
+  if (isAppointmentMode(props) && isLoading) {
     return <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando orden...</p>;
   }
 
@@ -162,35 +162,25 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   }
 
   return (
-    <div
-      className="
-        rounded-lg shadow-lg p-3 sm:p-4 
-        bg-white dark:bg-gray-900 
-        lg:bg-white lg:dark:bg-gray-800
-      "
-    >
-      {/* 🔹 Título visible en todas las versiones */}
-      <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
-        Orden de Cobro
-      </h3>
-
-      <div className="mb-3 text-xs sm:text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-[#0d2c53] dark:text-gray-100">
+    <div className="space-y-3">
+      {/* 🔹 Resumen financiero */}
+      <div className="text-xs sm:text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-[#0d2c53] dark:text-gray-100">
         <p><strong>Total:</strong> ${Number(order.total ?? 0).toFixed(2)}</p>
         <p><strong>Pagado:</strong> ${(Number(order.total ?? 0) - Number(order.balance_due ?? 0)).toFixed(2)}</p>
         <p><strong>Saldo pendiente:</strong> ${Number(order.balance_due ?? 0).toFixed(2)}</p>
         <p><strong>Estado:</strong> {order.status}</p>
       </div>
-            {/* Ítems */}
+
+      {/* Ítems */}
       <button
         onClick={() => setShowItems(!showItems)}
         className="px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
-               dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
+               dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
       >
         {showItems ? "▼ Ítems" : "▶ Ítems"}
       </button>
-
-      {showItems && (
-        <div className="mb-4 space-y-3">
+            {showItems && (
+        <div className="space-y-3">
           {!readOnly && (
             <form onSubmit={handleAddItem} className="flex flex-col gap-2">
               <input
@@ -319,13 +309,13 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       <button
         onClick={() => setShowPayments(!showPayments)}
         className="px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
-                   dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors mb-2"
+                   dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
       >
         {showPayments ? "▼ Pagos" : "▶ Pagos"}
       </button>
 
       {showPayments && (
-        <div className="mb-4 space-y-3">
+        <div className="space-y-3">
           {!readOnly && (
             <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
               <input

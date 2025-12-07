@@ -1,7 +1,6 @@
 // src/components/Payments/ChargeOrderRow.tsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import PaymentList from "./PaymentList";
 import { ChargeOrder } from "../../types/payments";
 import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
@@ -21,11 +20,22 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const res = await axios.get(
-        `http://127.0.0.1/api/charge-orders/${order.id}/export/`,
-        { responseType: "blob" }
+      const token = localStorage.getItem("authToken");
+
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/charge-orders/${order.id}/export/`,
+        {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Token ${token}` } : {}),
+          },
+          credentials: "include",
+        }
       );
-      const blob = res.data as Blob;
+
+      if (!response.ok) throw new Error("Error exportando orden");
+
+      const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -96,32 +106,31 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
 
   const rejected = order.payments?.filter(p => p.status === "rejected")
     .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
-    return (
+
+  return (
     <div
       className={`relative rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 mb-2 sm:mb-3 cursor-pointer 
         ${isSelected ? "ring-2 ring-[#0d2c53] bg-[#0d2c53]/10 dark:bg-[#0d2c53]/30" : "bg-white dark:bg-gray-900"}`}
       onClick={() => setExpanded(!expanded)}
     >
-      {/* Íconos solo en mobile/tablet (para evitar doble render en desktop) */}
+      {/* Íconos mobile */}
       <div className="absolute top-2 right-2 sm:hidden flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
         <CreditCard className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleRegisterPaymentClick} />
         <Eye className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleViewDetail} />
         <ArrowUpSquare className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleExport} />
       </div>
 
-      {/* Vista compacta (mobile/tablet) */}
+      {/* Vista compacta */}
       <div className="flex flex-col gap-2 text-[11px] text-[#0d2c53] dark:text-gray-100 sm:hidden">
         <span className="font-semibold">{patientName}</span>
         <span>{formattedDate}</span>
         <span>${formattedAmount}</span>
-        <span
-          className={`inline-flex items-center rounded-md px-1 py-0.5 text-[11px] font-medium ring-1 ring-inset max-w-max ${statusClass}`}
-        >
+        <span className={`inline-flex items-center rounded-md px-1 py-0.5 text-[11px] font-medium ring-1 ring-inset max-w-max ${statusClass}`}>
           {statusLabel}
         </span>
       </div>
 
-      {/* Vista desktop con íconos dentro del layout (sin absolute) */}
+      {/* Vista desktop */}
       <div className="hidden sm:flex justify-between items-center">
         <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
           <span className="font-semibold">{patientName}</span>
@@ -131,7 +140,6 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
             {statusLabel}
           </span>
         </div>
-
         <div className="flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
           <CreditCard className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleRegisterPaymentClick} />
           <Eye className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleViewDetail} />

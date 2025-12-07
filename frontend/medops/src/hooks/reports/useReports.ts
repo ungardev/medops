@@ -1,20 +1,15 @@
+// src/hooks/reports/useReports.ts
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import { apiFetch } from "@/api/client"; // ⚔️ Cliente institucional
 import { ReportFiltersInput, ReportRow, ReportType } from "@/types/reports";
 
 // 🔹 Función de consulta a la API de reportes
 async function fetchReports(filters: ReportFiltersInput): Promise<ReportRow[]> {
   const { start_date, end_date, type } = filters;
 
-  const response = await axios.get<ReportRow[]>("/reports/", {
-    params: {
-      type: type ?? ReportType.FINANCIAL, // ✅ default institucional con enum
-      start_date: start_date || undefined,
-      end_date: endDateOrUndefined(end_date),
-    },
-  });
-
-  return response.data;
+  return apiFetch<ReportRow[]>(
+    `reports/?type=${type ?? ReportType.FINANCIAL}&start_date=${start_date || ""}&end_date=${endDateOrUndefined(end_date) ?? ""}`
+  );
 }
 
 // 🔹 Helper para blindar valores nulos

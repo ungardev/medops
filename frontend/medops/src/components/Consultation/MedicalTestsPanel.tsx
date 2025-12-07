@@ -15,9 +15,9 @@ export interface MedicalTestsPanelProps {
 
 export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly = false }: MedicalTestsPanelProps) {
   const { data, isLoading } = useMedicalTest(appointmentId);
-  const { mutate: createTest } = useCreateMedicalTest();
-  const { mutate: updateTest } = useUpdateMedicalTest();
-  const { mutate: deleteTest } = useDeleteMedicalTest();
+  const { mutateAsync: createTest } = useCreateMedicalTest(); // ✅ usamos mutateAsync
+  const { mutateAsync: updateTest } = useUpdateMedicalTest();
+  const { mutateAsync: deleteTest } = useDeleteMedicalTest();
 
   // ✅ Blindaje: si data no es array, usamos []
   const tests = Array.isArray(data) ? data : [];
@@ -33,7 +33,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
   const [urgency, setUrgency] = useState<"routine" | "urgent" | "stat">("routine");
   const [status, setStatus] = useState<"pending" | "completed" | "cancelled">("pending");
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!testType || readOnly) return;
 
     const payload: any = {
@@ -49,13 +49,26 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
     }
 
     console.debug("📤 Creando examen médico:", payload);
-    createTest(payload);
 
-    setTestType("");
-    setDescription("");
-    setUrgency("routine");
-    setStatus("pending");
+    try {
+      await createTest(payload); // ✅ esperamos la respuesta
+      setTestType("");
+      setDescription("");
+      setUrgency("routine");
+      setStatus("pending");
+    } catch (err: any) {
+      console.error("❌ Error al crear examen:", err.message);
+    }
   };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteTest({ id, appointment: appointmentId });
+    } catch (err: any) {
+      console.error("❌ Error al eliminar examen:", err.message);
+    }
+  };
+
     return (
     <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
       <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
@@ -91,7 +104,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
               {!readOnly && (
                 <button
                   className="mt-2 sm:mt-0 px-2 sm:px-3 py-1 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors text-xs sm:text-sm"
-                  onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
+                  onClick={() => handleDelete(t.id)}
                 >
                   Eliminar
                 </button>

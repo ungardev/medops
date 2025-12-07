@@ -32,7 +32,8 @@ async function fetchAllAppointments(): Promise<AllAppointmentsResult> {
   let nextUrl = first?.next;
 
   while (nextUrl) {
-    const pageData = await apiFetch<any>(nextUrl.replace("http://127.0.0.1/api/", ""));
+    // ⚔️ Ahora podemos pasar nextUrl directo gracias al blindaje en client.ts
+    const pageData = await apiFetch<any>(nextUrl);
     const pageResults = normalize(pageData);
     allResults = [...allResults, ...pageResults];
     nextUrl = pageData?.next;

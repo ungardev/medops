@@ -35,4 +35,5 @@ export interface ReportRow {
   entity: string;        // paciente, procedimiento o entidad
   status: ReportStatus;  // estado institucional
   amount: number;        // monto asociado en USD
+  currency: string;      // ⚔️ moneda asociada (ej: "USD", "VES")
 }

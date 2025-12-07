@@ -1,3 +1,4 @@
+// src/components/ReportFilters.tsx
 import React, { useState } from "react";
 import { ReportFiltersInput, ReportType } from "@/types/reports";
 
@@ -11,11 +12,12 @@ export default function ReportFilters({ onFilter }: Props) {
   const [type, setType] = useState<ReportType>(ReportType.FINANCIAL);
 
   const handleApply = () => {
-    onFilter({
-      start_date: startDate,
-      end_date: endDate,
+    const filters: ReportFiltersInput = {
+      start_date: startDate.trim() !== "" ? startDate : undefined,
+      end_date: endDate.trim() !== "" ? endDate : undefined,
       type,
-    });
+    };
+    onFilter(filters);
   };
 
   return (

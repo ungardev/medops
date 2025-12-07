@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import axios from "axios";
+import { api } from "@/lib/apiClient";  // ⚔️ Cliente institucional
 import { InstitutionSettings } from "@/types/config";
 
 export function useInstitutionSettings() {
@@ -9,12 +9,12 @@ export function useInstitutionSettings() {
   const query = useQuery<InstitutionSettings>({
     queryKey: ["config", "institution"],
     queryFn: async () => {
-      const res = await axios.get<InstitutionSettings>("config/institution/");
+      const res = await api.get<InstitutionSettings>("config/institution/");
       return res.data;
     },
   });
 
-  // 🔹 PATCH actualización institucional (siempre multipart/form-data)
+  // 🔹 PATCH actualización institucional (multipart/form-data)
   const mutation = useMutation({
     mutationFn: async (newSettings: Partial<InstitutionSettings>) => {
       const formData = new FormData();
@@ -26,7 +26,7 @@ export function useInstitutionSettings() {
         formData.append("logo", newSettings.logo);
       }
 
-      const res = await axios.patch("config/institution/", formData, {
+      const res = await api.patch("config/institution/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       return res.data;

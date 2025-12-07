@@ -3,16 +3,20 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 
 export interface GeneratedDocument {
-  id: number;
   category: string;
-  description: string;
-  file_url: string;
+  title: string;
+  filename: string | null;
+  audit_code: string;
+  file_url: string | null;
 }
 
 export interface GenerateDocumentsResponse {
-  generated: GeneratedDocument[];
+  consultation_id: number;
+  audit_code: string | null;
+  generated_at: string;
+  documents: GeneratedDocument[];
   skipped: string[];
-  message: string;
+  errors: { category: string; error: string }[];
 }
 
 export function useGenerateConsultationDocuments() {
