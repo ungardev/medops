@@ -10,6 +10,8 @@ export function useDeletePatient() {
     onSuccess: () => {
       // 🔒 invalida todas las queries que empiezan con "patients"
       queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
+      // ⚔️ forzar refetch inmediato de la lista activa
+      queryClient.refetchQueries({ queryKey: ["patients"], exact: false });
     },
   });
 }

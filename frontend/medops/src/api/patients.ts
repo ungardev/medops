@@ -38,10 +38,13 @@ export const updatePatient = (id: number, data: PatientInput): Promise<Patient> 
   });
 };
 
-// 🔹 Eliminar un paciente
+// 🔹 Eliminar un paciente (con token institucional)
 export const deletePatient = (id: number): Promise<void> =>
   apiFetch<void>(`patients/${id}/`, {
     method: "DELETE",
+    headers: {
+      Authorization: `Token ${import.meta.env.VITE_DEV_TOKEN}`, // 👈 clave de tu .env
+    },
   });
 
 // 🔹 Buscar pacientes (autocomplete / buscador)

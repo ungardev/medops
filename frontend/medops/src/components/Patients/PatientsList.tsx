@@ -38,8 +38,7 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
       deletePatient.mutate(id, {
         onSuccess: () => {
           console.log("Paciente eliminado");
-          // 🔒 React Query ya invalida ["patients"], pero forzamos refetch inmediato
-          // para que el paciente desaparezca sin esperar
+          // ⚔️ ya se invalida y refetch desde el hook useDeletePatient
         },
         onError: (e: any) => {
           console.error("Error eliminando paciente:", e);
@@ -151,8 +150,9 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
                   <button
                     className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
                     onClick={() => handleDelete(p.id)}
+                    disabled={deletePatient.isPending}
                   >
-                    <FaTimes />
+                    {deletePatient.isPending ? "…" : <FaTimes />}
                   </button>
                 </div>
               </div>
