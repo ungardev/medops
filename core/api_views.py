@@ -511,7 +511,8 @@ def patient_search_api(request):
         qs_filter |= Q(second_last_name__icontains=term)
         qs_filter |= Q(national_id__icontains=term)
 
-    qs = Patient.objects.filter(qs_filter).order_by("-created_at")
+    # ⚔️ Blindaje institucional: solo pacientes activos
+    qs = Patient.objects.filter(active=True).filter(qs_filter).order_by("-created_at")
 
     paginator = PageNumberPagination()
     paginator.page_size = int(request.query_params.get("page_size", 10))
