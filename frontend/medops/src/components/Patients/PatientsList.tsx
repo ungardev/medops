@@ -8,7 +8,6 @@ import Pagination from "../Common/Pagination";
 import { usePatients } from "../../hooks/patients/usePatients";
 import EmptyState from "../Common/EmptyState";
 import { EmptyStateRegistry } from "../Common/EmptyStateRegistry";
-import DeletePatientModal from "./DeletePatientModal";
 import { FaUser, FaTimes } from "react-icons/fa";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -26,69 +25,27 @@ function calculateAge(birthdate?: string | null): number | string {
 
 export default function PatientsList({ onEdit }: PatientsListProps) {
   const navigate = useNavigate();
-  const deletePatient = useDeletePatient();
-  const queryClient = useQueryClient(); // ⚔️ acceso al cache
+  const queryClient = useQueryClient();
+
+  const { mutate: deletePatient, isPending } = useDeletePatient();
 
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   const { data, isLoading, isError } = usePatients(currentPage, pageSize);
 
-  // 🔒 Estado del modal de eliminación
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [selectedName, setSelectedName] = useState<string | null>(null);
-
-  const openDeleteModal = (p: Patient) => {
-    setSelectedId(p.id);
-    setSelectedName(p.full_name);
-    setDeleteOpen(true);
-  };
-
-  const closeDeleteModal = () => {
-    setDeleteOpen(false);
-    setSelectedId(null);
-    setSelectedName(null);
-  };
-
-  const confirmDelete = () => {
-    if (selectedId == null) return;
-    deletePatient.mutate(selectedId, {
-      onSuccess: () => {
-        console.log("Paciente eliminado");
-        closeDeleteModal();
-        // ⚔️ invalidar y refetch inmediato
-        queryClient.invalidateQueries({ queryKey: ["patients"] });
-        queryClient.refetchQueries({ queryKey: ["patients"] });
-      },
-      onError: (e: any) => {
-        console.error("Error eliminando paciente:", e);
-        alert(e.message || "Error eliminando paciente");
-      },
-    });
-  };
-
   const emptyConfig = EmptyStateRegistry.pacientes;
   const emptyIcon = React.createElement(emptyConfig.icon, emptyConfig.iconProps);
 
-  return (
+    return (
     <>
-      {/* 🔹 Modal institucional de eliminación */}
-      <DeletePatientModal
-        open={deleteOpen}
-        patientName={selectedName}
-        onConfirm={confirmDelete}
-        onClose={closeDeleteModal}
-      />
-
-      {/* 🔹 Vista tablet/desktop: tabla */}
       <div className="hidden sm:block overflow-x-auto">
         <PatientsTable
           headers={["Folio", "Nombre completo", "Edad", "Género", "Contacto", "Acciones"]}
           isLoading={isLoading}
           isError={isError}
         >
-          {data?.results.length === 0 ? (
+          {(!data || data.results.length === 0) ? (
             <td colSpan={6}>
               <EmptyState
                 icon={emptyIcon}
@@ -97,7 +54,7 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
               />
             </td>
           ) : (
-            data?.results.map((p) => (
+            data.results.map((p) => (
               <React.Fragment key={p.id}>
                 <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
                   {p.id}
@@ -125,10 +82,22 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
                   <button
                     className="px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 text-xs sm:text-sm 
                                text-red-600 dark:text-red-400 hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
-                    onClick={() => openDeleteModal(p)}
-                    disabled={deletePatient.isPending}
+                    onClick={() => {
+                      console.log("[ACTION] clic directo en eliminar para paciente", p.id);
+                      deletePatient(p.id, {
+                        onSuccess: () => {
+                          console.log("[HOOK] éxito al eliminar", p.id);
+                          queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
+                        },
+                        onError: (e: any) => {
+                          console.error("[HOOK] error eliminando paciente:", e);
+                          alert(e?.message || "Error eliminando paciente");
+                        },
+                      });
+                    }}
+                    disabled={isPending}
                   >
-                    {deletePatient.isPending ? "Eliminando..." : "Eliminar"}
+                    {isPending ? "Eliminando..." : "Eliminar"}
                   </button>
                   <button
                     className="px-3 py-1 rounded-md bg-[#0d2c53] text-white text-xs sm:text-sm border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
@@ -143,16 +112,15 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
         </PatientsTable>
       </div>
 
-      {/* 🔹 Vista mobile: tarjetas */}
       <div className="sm:hidden space-y-3">
-        {data?.results.length === 0 ? (
+        {(!data || data.results.length === 0) ? (
           <EmptyState
             icon={emptyIcon}
             title={emptyConfig.title}
             message={emptyConfig.message}
           />
         ) : (
-          data?.results.map((p) => (
+          data.results.map((p) => (
             <div
               key={p.id}
               className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3"
@@ -170,10 +138,22 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
                   </button>
                   <button
                     className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
-                    onClick={() => openDeleteModal(p)}
-                    disabled={deletePatient.isPending}
+                    onClick={() => {
+                      console.log("[ACTION] clic directo en eliminar para paciente", p.id);
+                      deletePatient(p.id, {
+                        onSuccess: () => {
+                          console.log("[HOOK] éxito al eliminar", p.id);
+                          queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
+                        },
+                        onError: (e: any) => {
+                          console.error("[HOOK] error eliminando paciente:", e);
+                          alert(e?.message || "Error eliminando paciente");
+                        },
+                      });
+                    }}
+                    disabled={isPending}
                   >
-                    {deletePatient.isPending ? "…" : <FaTimes />}
+                    {isPending ? "…" : <FaTimes />}
                   </button>
                 </div>
               </div>

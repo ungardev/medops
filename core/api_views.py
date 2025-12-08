@@ -65,7 +65,7 @@ from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, Gen
 
 from .serializers import (
     PatientReadSerializer, PatientWriteSerializer, PatientDetailSerializer,
-    AppointmentSerializer, PaymentSerializer,
+    PatientListSerializer, AppointmentSerializer, PaymentSerializer,
     WaitingRoomEntrySerializer, WaitingRoomEntryDetailSerializer,
     DashboardSummarySerializer,
     GeneticPredispositionSerializer, MedicalDocumentReadSerializer, MedicalDocumentWriteSerializer,
@@ -1114,12 +1114,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         return Patient.objects.filter(active=True).order_by("-created_at")
 
     def get_serializer_class(self):
-        from .serializers import (
-            PatientListSerializer,
-            PatientDetailSerializer,
-            PatientWriteSerializer,
-            PatientReadSerializer,
-        )
+        
         if self.action == "list":
             return PatientListSerializer
         if self.action == "retrieve":
@@ -1212,6 +1207,24 @@ class PatientViewSet(viewsets.ModelViewSet):
                     "size_bytes": doc.size_bytes,
                 }, status=201)
             return Response(serializer.errors, status=400)
+    
+    @action(detail=False, methods=["get"], url_path="search")
+    def search(self, request):
+        """
+        GET → Buscar pacientes activos por nombre o documento.
+        """
+        q = request.query_params.get("q", "").strip()
+        queryset = Patient.objects.filter(active=True)
+
+        if q:
+            queryset = queryset.filter(
+                Q(full_name__icontains=q) |
+                Q(national_id__icontains=q)
+            )
+
+        page = self.paginate_queryset(queryset)
+        serializer = PatientListSerializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["delete"], url_path=r"documents/(?P<document_id>\d+)")
     def delete_document(self, request, pk=None, document_id=None):

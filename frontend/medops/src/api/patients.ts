@@ -45,14 +45,13 @@ export const updatePatient = (id: number, data: PatientInput): Promise<Patient> 
   });
 };
 
-// 🔹 Eliminar un paciente (soft delete con token institucional)
-export const deletePatient = (id: number): Promise<void> =>
-  apiFetch<void>(`patients/${id}/`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Token ${import.meta.env.VITE_DEV_TOKEN}`,
-    },
-  });
+// 🔹 Eliminar un paciente (soft delete institucional)
+// ⚔️ Ahora con trazas para confirmar ejecución
+export const deletePatient = async (id: number): Promise<void> => {
+  console.log("[API] intentando DELETE /patients/" + id + "/");
+  await apiFetch<void>(`patients/${id}/`, { method: "DELETE" });
+  console.log("[API] DELETE completado para paciente " + id);
+};
 
 // 🔹 Buscar pacientes (autocomplete / buscador)
 export interface PatientSearchResponse {
@@ -62,7 +61,10 @@ export interface PatientSearchResponse {
 
 export const searchPatients = (q: string): Promise<PatientSearchResponse> => {
   if (!q.trim()) return Promise.resolve({ count: 0, results: [] });
-  return apiFetch<PatientSearchResponse>(`patients/search/?q=${encodeURIComponent(q)}`);
+  // ⚔️ Blindaje institucional: solo pacientes activos
+  return apiFetch<PatientSearchResponse>(
+    `patients/search/?q=${encodeURIComponent(q)}&active=true`
+  );
 };
 
 // 🔹 Obtener un paciente por ID

@@ -8,22 +8,24 @@ import { useNavigate } from "react-router-dom";
 import PageHeader from "../../components/Layout/PageHeader";
 import PatientsSearch from "../../components/Patients/PatientsSearch";
 import NewPatientModal from "../../components/Patients/NewPatientModal";
-import DeletePatientModal from "../../components/Patients/DeletePatientModal";
 
 import EmptyState from "../../components/Common/EmptyState";
 import { EmptyStateRegistry } from "../../components/Common/EmptyStateRegistry";
 
 import { Patient } from "../../types/patients";
+import { useDeletePatient } from "../../hooks/patients/useDeletePatient";
+import { useQueryClient } from "@tanstack/react-query";
+import Pagination from "../../components/Common/Pagination";
 
 export default function Patients() {
   const [query, setQuery] = useState("");
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { mutate: deletePatient, isPending } = useDeletePatient();
 
   const { data: paged, isLoading: isLoadingPaged, error, refetch } = usePatients(currentPage, pageSize);
   const { data: searchResults = [], isLoading: isSearching } = usePatientsSearch(query);
@@ -35,24 +37,11 @@ export default function Patients() {
 
   const viewPatient = (id: number) => navigate(`/patients/${id}`);
 
-  const confirmDeletePatient = (patient: Patient) => {
-    setPatientToDelete(patient);
-    setShowDeleteModal(true);
-  };
-
-  const deletePatient = () => {
-    if (patientToDelete) {
-      alert(`Paciente eliminado: ${patientToDelete.full_name}`);
-    }
-    setShowDeleteModal(false);
-    setPatientToDelete(null);
-  };
-
   if (isLoadingPaged && query.trim().length === 0)
     return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando pacientes...</p>;
   if (error) return <p className="text-sm text-red-600">Error cargando pacientes</p>;
 
-  return (
+    return (
     <div className="p-3 sm:p-4">
       <PageHeader title="Pacientes" />
 
@@ -79,10 +68,10 @@ export default function Patients() {
           </p>
         )}
         {isSearching && (
-          <span className="text-xs text-[#0d2c53] dark:text-gray-400">Buscando…</span>
+          <span className="text-xs sm:text-[#0d2c53] dark:text-gray-400">Buscando…</span>
         )}
       </div>
-              {/* 🔹 Vista responsive: tabla en tablet y desktop */}
+
       <div className="hidden sm:block overflow-x-auto">
         <table className="min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-100 dark:bg-gray-700">
@@ -131,7 +120,24 @@ export default function Patients() {
                       </button>
                       <button
                         className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
-                        onClick={() => confirmDeletePatient(p)}
+                        onClick={() => {
+                          if (window.confirm(`⚠️ Estás a punto de eliminar al paciente ${p.full_name}. Esta acción es irreversible.`)) {
+                            console.log("[ACTION] confirmado eliminar paciente", p.id);
+                            deletePatient(p.id, {
+                              onSuccess: () => {
+                                console.log("[HOOK] éxito al eliminar", p.id);
+                                queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
+                              },
+                              onError: (e: any) => {
+                                console.error("[HOOK] error eliminando paciente:", e);
+                                alert(e?.message || "Error eliminando paciente");
+                              },
+                            });
+                          } else {
+                            console.log("[ACTION] cancelado eliminar paciente", p.id);
+                          }
+                        }}
+                        disabled={isPending}
                       >
                         <FaTimes />
                       </button>
@@ -144,78 +150,15 @@ export default function Patients() {
         </table>
       </div>
 
-      {/* 🔹 Mobile cards */}
-      <div className="sm:hidden space-y-3">
-        {list.length === 0 ? (
-          <EmptyState
-            icon={React.createElement(
-              EmptyStateRegistry.pacientes.icon,
-              EmptyStateRegistry.pacientes.iconProps
-            )}
-            title={EmptyStateRegistry.pacientes.title}
-            message={
-              query.trim().length > 0
-                ? "No se encontraron pacientes. Intenta ajustar la búsqueda o registrar un nuevo paciente."
-                : EmptyStateRegistry.pacientes.message
-            }
+      {/* ✅ Paginado alineado a la derecha */}
+      {query.trim().length === 0 && (paged?.total ?? 0) > 0 && (
+        <div className="flex justify-end mt-4">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={paged?.total ?? 0}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
           />
-        ) : (
-          list.map((p: Patient) => (
-            <div
-              key={p.id}
-              className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-semibold text-[#0d2c53] dark:text-gray-100">
-                  {p.full_name}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-[#0d2c53] dark:text-gray-200"
-                    onClick={() => viewPatient(p.id)}
-                  >
-                    <FaUser />
-                  </button>
-                  <button
-                    className="p-2 rounded-md hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700 text-red-600 dark:text-red-400"
-                    onClick={() => confirmDeletePatient(p)}
-                  >
-                    <FaTimes />
-                  </button>
-                </div>
-              </div>
-              <div className="text-xs text-[#0d2c53] dark:text-gray-300 space-y-1">
-                <div><strong>Folio:</strong> {p.id}</div>
-                <div><strong>Edad:</strong> {p.age ?? "-"}</div>
-                <div><strong>Género:</strong> {p.gender ?? "-"}</div>
-                <div><strong>Contacto:</strong> {p.contact_info ?? "-"}</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {query.trim().length === 0 && (
-        <div className="flex flex-wrap items-center justify-end gap-2 mt-4">
-          <button
-            className="px-2 sm:px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 text-xs sm:text-sm disabled:opacity-50"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-          >
-            ← Anterior
-          </button>
-
-          <span className="px-2 sm:px-3 py-1 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-300">
-            Página {currentPage} de {Math.max(totalPages, 1)}
-          </span>
-
-          <button
-            className="px-2 sm:px-3 py-1 rounded-md bg-gray-200 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 text-xs sm:text-sm disabled:opacity-50"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.max(totalPages, 1)))}
-          >
-            Siguiente →
-          </button>
         </div>
       )}
 
@@ -223,13 +166,6 @@ export default function Patients() {
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreated={refetch}
-      />
-
-      <DeletePatientModal
-        open={showDeleteModal}
-        patientName={patientToDelete?.full_name ?? null}
-        onConfirm={deletePatient}
-        onClose={() => setShowDeleteModal(false)}
       />
     </div>
   );

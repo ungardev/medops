@@ -1,5 +1,6 @@
 // src/api/client.ts
-const API_BASE = import.meta.env.VITE_API_ROOT || "http://127.0.0.1:8000/api";  // ✅ configurable vía .env
+const API_BASE =
+  import.meta.env.VITE_API_ROOT || "http://127.0.0.1:8000/api"; // ✅ configurable vía .env
 
 async function doFetch<T>(
   endpoint: string,
@@ -10,10 +11,10 @@ async function doFetch<T>(
     ? endpoint
     : `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
 
-  // ✅ Token desde localStorage o .env
+  // ✅ Token institucional unificado: siempre usa el mismo .env
   const token =
     localStorage.getItem("authToken") ||
-    import.meta.env.VITE_API_TOKEN ||
+    import.meta.env.VITE_DEV_TOKEN || // 👈 unificado con curl
     "";
 
   const headers: Record<string, string> = {
@@ -25,6 +26,8 @@ async function doFetch<T>(
   if (options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
+
+  console.log("[CLIENT] Fetch →", url, options.method || "GET"); // ⚔️ trazador
 
   const response = await fetch(url, { ...options, headers });
 
@@ -38,7 +41,7 @@ async function doFetch<T>(
   return response;
 }
 
-// 🔹 Use para endpoints que deben devolver datos (PATCH/POST/PUT/GET estrictos)
+// 🔹 Endpoints estrictos (PATCH/POST/PUT/GET/DELETE)
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -46,8 +49,14 @@ export async function apiFetch<T>(
   const method = (options.method || "GET").toUpperCase();
   const response = await doFetch<T>(endpoint, options);
 
-  // ✅ DELETE debe devolver vacío sin lanzar error por 204
   if (method === "DELETE") {
+    if (!response.ok) {
+      const text = await response.text();
+      const error: any = new Error(`Error ${response.status}: ${text}`);
+      error.status = response.status;
+      throw error;
+    }
+    console.log("[CLIENT] DELETE completado en", endpoint);
     return {} as T;
   }
 
@@ -67,7 +76,7 @@ export async function apiFetch<T>(
   return response.json() as Promise<T>;
 }
 
-// 🔹 Use para GET opcionales que pueden no tener datos (mapear 404/204 → null)
+// 🔹 Endpoints GET opcionales (mapear 404/204 → null)
 export async function apiFetchOptional<T>(
   endpoint: string,
   options: RequestInit = {}
