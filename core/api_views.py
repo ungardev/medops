@@ -1106,8 +1106,9 @@ class PatientPagination(PageNumberPagination):
 
 
 class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all().order_by("-created_at")
-    pagination_class = PatientPagination  # 👈 ahora sí con paginación
+    # 🔒 Solo pacientes activos
+    queryset = Patient.objects.filter(active=True).order_by("-created_at")
+    pagination_class = PatientPagination
 
     def get_serializer_class(self):
         from .serializers import (
@@ -1126,10 +1127,10 @@ class PatientViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         """
-        DELETE → Elimina un paciente y devuelve 204 No Content.
+        DELETE → Marca el paciente como inactivo (soft delete) y devuelve 204 No Content.
         """
         patient = self.get_object()
-        patient.delete()
+        patient.delete()  # 👈 ahora marca active=False gracias al override en el modelo
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["get"])
@@ -1162,7 +1163,7 @@ class PatientViewSet(viewsets.ModelViewSet):
                     "category": doc.category,
                     "description": doc.description,
                     "audit_code": doc.audit_code,
-                    "file_url": file_url,  # 👈 clave homogénea
+                    "file_url": file_url,
                     "appointment_id": getattr(doc.appointment, "id", None),
                     "uploaded_at": doc.uploaded_at,
                     "source": doc.source,

@@ -108,6 +108,15 @@ class Patient(models.Model):
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
         return f"{self.national_id or 'SIN-CI'} - " + " ".join([p for p in parts if p])
 
+    # 🔒 Soft delete institucional
+    def delete(self, *args, **kwargs):
+        """
+        En lugar de eliminar físicamente el registro,
+        marca el paciente como inactivo (active=False).
+        """
+        self.active = False
+        self.save(update_fields=["active"])
+
 
 class Appointment(models.Model):
     STATUS_CHOICES = [
