@@ -1215,7 +1215,10 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         if q:
             queryset = queryset.filter(
-                Q(full_name__icontains=q) |
+                Q(first_name__icontains=q) |
+                Q(middle_name__icontains=q) |
+                Q(last_name__icontains=q) |
+                Q(second_last_name__icontains=q) |
                 Q(national_id__icontains=q)
             )
 
