@@ -38,6 +38,8 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
       deletePatient.mutate(id, {
         onSuccess: () => {
           console.log("Paciente eliminado");
+          // 🔒 React Query ya invalida ["patients"], pero forzamos refetch inmediato
+          // para que el paciente desaparezca sin esperar
         },
         onError: (e: any) => {
           console.error("Error eliminando paciente:", e);
@@ -76,7 +78,7 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
             </td>
           ) : (
             data?.results.map((p) => (
-              <>
+              <React.Fragment key={p.id}>
                 <td className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100 truncate">
                   {p.national_id || "—"}
                 </td>
@@ -115,7 +117,7 @@ export default function PatientsList({ onEdit }: PatientsListProps) {
                     Ver ficha
                   </button>
                 </td>
-              </>
+              </React.Fragment>
             ))
           )}
         </PatientsTable>

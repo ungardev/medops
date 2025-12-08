@@ -8,7 +8,8 @@ export function useDeletePatient() {
   return useMutation<void, Error, number>({
     mutationFn: deletePatient,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["patients"] });
+      // 🔒 invalida todas las queries que empiezan con "patients"
+      queryClient.invalidateQueries({ queryKey: ["patients"], exact: false });
     },
   });
 }

@@ -1124,6 +1124,14 @@ class PatientViewSet(viewsets.ModelViewSet):
             return PatientWriteSerializer
         return PatientReadSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        DELETE → Elimina un paciente y devuelve 204 No Content.
+        """
+        patient = self.get_object()
+        patient.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=True, methods=["get"])
     def payments(self, request, pk=None):
         patient = self.get_object()
@@ -1202,7 +1210,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 
         doc = get_object_or_404(MedicalDocument, id=document_id, patient_id=pk)
         doc.delete()
-        return Response(status=204)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["get"])
     def completed_appointments(self, request, pk=None):
