@@ -1213,6 +1213,9 @@ class PatientViewSet(viewsets.ModelViewSet):
         q = request.query_params.get("q", "").strip()
         queryset = Patient.objects.filter(active=True)
 
+        print("[SEARCH] q =", q)
+        print("[SEARCH] antes del filtro =", queryset.count())
+
         if q:
             queryset = queryset.filter(
                 Q(first_name__icontains=q) |
@@ -1222,10 +1225,12 @@ class PatientViewSet(viewsets.ModelViewSet):
                 Q(national_id__icontains=q)
             )
 
+        print("[SEARCH] después del filtro =", queryset.count())
+        print("[SEARCH] IDs =", list(queryset.values_list("id", flat=True)))
+
         page = self.paginate_queryset(queryset)
         serializer = PatientListSerializer(page, many=True)
         return self.get_paginated_response(serializer.data)
-    
 
     @action(detail=True, methods=["delete"], url_path=r"documents/(?P<document_id>\d+)")
     def delete_document(self, request, pk=None, document_id=None):
