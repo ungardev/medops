@@ -33,7 +33,12 @@ export default function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [results, setResults] = useState<SearchResponse | null>(null);
+  // ✅ Estado inicial con arrays vacíos para evitar undefined
+  const [results, setResults] = useState<SearchResponse>({
+    patients: [],
+    appointments: [],
+    orders: [],
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +49,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     if (!query.trim()) {
-      setResults(null);
+      setResults({ patients: [], appointments: [], orders: [] });
       setLoading(false);
       return;
     }
@@ -53,9 +58,16 @@ export default function SearchPage() {
     setError(null);
 
     axios
+      // ✅ FIX: ahora llamamos a /search/, el proxy añade /api
       .get("/search/", { params: { query: query.trim() } })
       .then((res) => {
-        setResults(res.data as SearchResponse);
+        const data = res.data as SearchResponse;
+        // ✅ Garantizar arrays con fallback
+        setResults({
+          patients: data.patients ?? [],
+          appointments: data.appointments ?? [],
+          orders: data.orders ?? [],
+        });
         setLoading(false);
       })
       .catch(() => {
@@ -116,10 +128,9 @@ export default function SearchPage() {
         <p className="text-red-600 dark:text-red-400">
           {error}. Intente nuevamente.
         </p>
-      ) : results &&
-        (results.patients.length > 0 ||
-          results.appointments.length > 0 ||
-          results.orders.length > 0) ? (
+      ) : results.patients.length > 0 ||
+        results.appointments.length > 0 ||
+        results.orders.length > 0 ? (
         <div className="space-y-6 sm:space-y-8">
           {/* Pacientes */}
           {results.patients.length > 0 && (

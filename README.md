@@ -42,7 +42,7 @@ MedOps provides a comprehensive set of features that transform complex healthcar
   Token-based authentication, Axios interceptors, and secure AWS deployment ensure robust protection.
 
 - 📱 **Responsive Layout**  
-  A sober, professional design optimized for both desktop and mobile devices.
+  A sober, professional design optimized for both desktop, mobile and tablet devices.
 
 ---
 
@@ -116,7 +116,7 @@ medops/
 │   │   ├── context/         # React context providers
 │   │   ├── hooks/           # React Query hooks
 │   │   ├── lib/             # Utilities
-│   │   ├── pages/           # Page-level components (WaitingRoom, Consultation, Reports)
+│   │   ├── pages/           # Page-level components (WaitingRoom, Consultation, Reports, Search)
 │   │   ├── types/           # TypeScript types
 │   │   └── utils/           # Helper functions
 │   ├── tailwind.config.js   # TailwindCSS configuration
@@ -226,7 +226,7 @@ It follows a clear narrative to demonstrate reproducibility, sobriety, and profe
 
 3. **Dashboard Overview**
    - Display the main dashboard with consultations, patients, and financial summaries.  
-   - Emphasize sober, responsive layout (desktop and mobile).
+   - Emphasize sober, responsive layout (desktop, mobile and tablet).
 
 4. **Clinical Workflow**
    - Start a consultation, manage patient data, and finalize the consultation.  

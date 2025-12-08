@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(), // 👈 Tailwind como plugin de Vite
+    tailwindcss(),
   ],
   resolve: {
     alias: {
@@ -21,6 +21,15 @@ export default defineConfig({
       types: path.resolve(__dirname, 'src/types'),
       utils: path.resolve(__dirname, 'src/utils'),
       contexts: path.resolve(__dirname, 'src/contexts'),
+    },
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000', // 👈 backend Django
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 })
