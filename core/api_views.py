@@ -1225,6 +1225,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(queryset)
         serializer = PatientListSerializer(page, many=True)
         return self.get_paginated_response(serializer.data)
+    
 
     @action(detail=True, methods=["delete"], url_path=r"documents/(?P<document_id>\d+)")
     def delete_document(self, request, pk=None, document_id=None):
