@@ -1114,7 +1114,6 @@ class PatientViewSet(viewsets.ModelViewSet):
         return Patient.objects.filter(active=True).order_by("-created_at")
 
     def get_serializer_class(self):
-        
         if self.action == "list":
             return PatientListSerializer
         if self.action == "retrieve":
@@ -1144,7 +1143,6 @@ class PatientViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def payments(self, request, pk=None):
         patient = self.get_object()
-        from .serializers import PaymentSerializer
         payments = Payment.objects.filter(appointment__patient=patient)
         serializer = PaymentSerializer(payments, many=True)
         return Response(serializer.data)
@@ -1183,7 +1181,6 @@ class PatientViewSet(viewsets.ModelViewSet):
             return Response(data, status=200)
 
         if request.method == "POST":
-            from .serializers import MedicalDocumentWriteSerializer
             serializer = MedicalDocumentWriteSerializer(data=request.data, context={"request": request})
             if serializer.is_valid():
                 doc = serializer.save(patient=patient)
@@ -1207,7 +1204,7 @@ class PatientViewSet(viewsets.ModelViewSet):
                     "size_bytes": doc.size_bytes,
                 }, status=201)
             return Response(serializer.errors, status=400)
-    
+
     @action(detail=False, methods=["get"], url_path="search")
     def search(self, request):
         """
@@ -1232,9 +1229,6 @@ class PatientViewSet(viewsets.ModelViewSet):
         DELETE → Elimina un documento del paciente validando pertenencia.
         Ruta: /patients/{pk}/documents/{document_id}/
         """
-        from django.shortcuts import get_object_or_404
-        from .models import MedicalDocument
-
         doc = get_object_or_404(MedicalDocument, id=document_id, patient_id=pk)
         doc.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -1242,7 +1236,6 @@ class PatientViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def completed_appointments(self, request, pk=None):
         patient = self.get_object()
-        from .serializers import AppointmentSerializer
         appointments = Appointment.objects.filter(
             patient=patient,
             status="completed"
@@ -1253,7 +1246,6 @@ class PatientViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["get"])
     def pending_appointments(self, request, pk=None):
         patient = self.get_object()
-        from .serializers import AppointmentSerializer
         appointments = Appointment.objects.filter(
             patient=patient,
             status__in=["pending", "arrived", "in_consultation"]
