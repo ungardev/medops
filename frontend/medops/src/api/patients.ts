@@ -2,9 +2,16 @@
 import { apiFetch } from "./client";
 import { Patient, PatientInput, PatientRef } from "../types/patients";
 
-// 🔹 Obtener todos los pacientes (lista completa, sin paginación)
-export const getPatients = (): Promise<Patient[]> =>
-  apiFetch<Patient[]>("patients/");
+// 🔹 Obtener pacientes activos con paginación (blindaje contra inactivos)
+export const getPatients = (page = 1, pageSize = 20): Promise<Patient[]> =>
+  apiFetch<any>(`patients/?page=${page}&page_size=${pageSize}`).then((res) => {
+    // DRF clásico: { count, results, next, previous }
+    if (res && Array.isArray(res.results)) {
+      return res.results as Patient[];
+    }
+    // Fallback seguro
+    return Array.isArray(res) ? (res as Patient[]) : [];
+  });
 
 // 🔹 Crear un nuevo paciente (con limpieza de payload)
 export const createPatient = (data: PatientInput): Promise<Patient> => {
@@ -38,17 +45,16 @@ export const updatePatient = (id: number, data: PatientInput): Promise<Patient> 
   });
 };
 
-// 🔹 Eliminar un paciente (con token institucional)
+// 🔹 Eliminar un paciente (soft delete con token institucional)
 export const deletePatient = (id: number): Promise<void> =>
   apiFetch<void>(`patients/${id}/`, {
     method: "DELETE",
     headers: {
-      Authorization: `Token ${import.meta.env.VITE_DEV_TOKEN}`, // 👈 clave de tu .env
+      Authorization: `Token ${import.meta.env.VITE_DEV_TOKEN}`,
     },
   });
 
 // 🔹 Buscar pacientes (autocomplete / buscador)
-//    Ahora devuelve { count, results } para alinearse con la paginación DRF
 export interface PatientSearchResponse {
   count: number;
   results: PatientRef[];

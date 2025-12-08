@@ -19,6 +19,7 @@ class GeneticPredispositionSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "description"]
 
 
+# 🔹 Serializer para crear/actualizar pacientes (sin campo active)
 class PatientWriteSerializer(serializers.ModelSerializer):
     """Serializer para crear/actualizar pacientes"""
     genetic_predispositions = serializers.PrimaryKeyRelatedField(
@@ -46,8 +47,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "blood_type",
             "allergies",
             "medical_history",
-            "active",
-            "genetic_predispositions",  # 👈 añadido
+            "genetic_predispositions",  # 👈 mantenido
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
@@ -59,7 +59,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "blood_type": {"required": False, "allow_null": True},
             "allergies": {"required": False, "allow_blank": True},
             "medical_history": {"required": False, "allow_blank": True},
-            "genetic_predispositions": {"required": False},  # 👈 añadido
+            "genetic_predispositions": {"required": False},
         }
 
 
