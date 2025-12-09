@@ -1,4 +1,3 @@
-// src/hooks/consultations/useMedicalTest.ts
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
 import type { MedicalTest } from "../../types/consultation";
@@ -8,18 +7,11 @@ export function useMedicalTest(appointmentId: number) {
     queryKey: ["medical-test", appointmentId],
     queryFn: async (): Promise<MedicalTest[]> => {
       console.debug("📡 Fetching medical tests for appointment:", appointmentId);
+      // ⚔️ FIX: ahora filtramos por appointmentId en la query string
       const data = await apiFetch<{ count: number; results: MedicalTest[] }>(
-        "medical-tests/",
-        {
-          method: "GET",
-          // ✅ params se envían como query string
-        }
+        `medical-tests/?appointment=${appointmentId}`,
+        { method: "GET" }
       );
-      // ⚔️ apiFetch no soporta params directo, así que construye la URL con query string
-      // Si necesitas params dinámicos:
-      // const data = await apiFetch<{ count: number; results: MedicalTest[] }>(
-      //   `medical-tests/?appointment=${appointmentId}`
-      // );
       return data.results;
     },
     enabled: !!appointmentId,

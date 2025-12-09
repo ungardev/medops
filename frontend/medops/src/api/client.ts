@@ -29,7 +29,10 @@ async function doFetch<T>(
 
   console.log("[CLIENT] Fetch →", url, options.method || "GET"); // ⚔️ trazador
 
+  const start = performance.now();
   const response = await fetch(url, { ...options, headers });
+  const end = performance.now();
+  console.log(`⏱️ Tiempo fetch (solo red): ${(end - start).toFixed(2)} ms`);
 
   // ✅ Manejo institucional de errores de autenticación
   if (response.status === 401 || response.status === 403) {
@@ -73,7 +76,12 @@ export async function apiFetch<T>(
     throw error;
   }
 
-  return response.json() as Promise<T>;
+  const parseStart = performance.now();
+  const data = await response.json() as T;
+  const parseEnd = performance.now();
+  console.log(`⏱️ Tiempo parse JSON: ${(parseEnd - parseStart).toFixed(2)} ms`);
+
+  return data;
 }
 
 // 🔹 Endpoints GET opcionales (mapear 404/204 → null)
@@ -94,5 +102,10 @@ export async function apiFetchOptional<T>(
     throw error;
   }
 
-  return response.json() as Promise<T>;
+  const parseStart = performance.now();
+  const data = await response.json() as T;
+  const parseEnd = performance.now();
+  console.log(`⏱️ Tiempo parse JSON (optional): ${(parseEnd - parseStart).toFixed(2)} ms`);
+
+  return data;
 }

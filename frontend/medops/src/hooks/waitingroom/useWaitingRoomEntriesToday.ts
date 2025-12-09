@@ -10,7 +10,7 @@ async function fetchEntriesToday(): Promise<WaitingRoomEntry[]> {
   return data;
 }
 
-// 🔹 Hook blindado con initialData y polling institucional
+// 🔹 Hook blindado con initialData, polling institucional y placeholderData
 export function useWaitingRoomEntriesToday() {
   return useQuery<WaitingRoomEntry[], Error>({
     queryKey: ["waitingRoomEntriesToday"],
@@ -18,5 +18,6 @@ export function useWaitingRoomEntriesToday() {
     staleTime: 30_000,
     refetchInterval: 5000, // ⚔️ polling institucional cada 5s
     initialData: [],       // ⚔️ asegura que siempre sea un array tipado
+    placeholderData: (prev) => prev ?? [] // ⚔️ mantiene la tabla anterior mientras llega la nueva
   });
 }

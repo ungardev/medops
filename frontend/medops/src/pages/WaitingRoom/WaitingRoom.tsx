@@ -1,9 +1,9 @@
 // src/pages/WaitingRoom/WaitingRoom.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import RegisterWalkinModal from "../../components/WaitingRoom/RegisterWalkinModal";
 import ConfirmGenericModal from "../../components/Common/ConfirmGenericModal";
 import Toast from "../../components/Common/Toast";
-import LoadingOverlay from "../../components/Common/LoadingOverlay";
+import PageHeader from "../../components/Layout/PageHeader";
 
 import { useWaitingRoomEntriesToday } from "../../hooks/waitingroom/useWaitingRoomEntriesToday";
 import { useUpdateWaitingRoomStatus } from "../../hooks/waitingroom/useUpdateWaitingRoomStatus";
@@ -11,7 +11,6 @@ import { useRegisterArrival } from "../../hooks/waitingroom/useRegisterArrival";
 import { useUpdateAppointmentStatus } from "../../hooks/appointments/useUpdateAppointmentStatus";
 import type { WaitingRoomStatus, WaitingRoomEntry } from "../../types/waitingRoom";
 import { useQueryClient } from "@tanstack/react-query";
-import PageHeader from "../../components/Layout/PageHeader";
 
 /**
  * Badges de estado — institucional
@@ -39,6 +38,7 @@ const renderWaitTime = (arrival_time: string | null) => {
   const hours = Math.floor(minutes / 60);
   return `~${hours} h`;
 };
+
 /**
  * Botones de acción por estado
  */
@@ -117,19 +117,29 @@ const renderActionButton = (
       return null;
   }
 };
-
 export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
-  const { data: entries, isLoading, error } = useWaitingRoomEntriesToday();
+  const { data: entries, isLoading, error, isFetching } = useWaitingRoomEntriesToday();
   const updateWaitingRoomStatus = useUpdateWaitingRoomStatus();
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const queryClient = useQueryClient();
 
-    const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
+  // ⚔️ Overlay institucional activo desde el inicio
+  const [showOverlay, setShowOverlay] = useState(true);
+  const showSkeleton = isLoading && (!entries || entries.length === 0);
+
+  useEffect(() => {
+    if (!isLoading && !isFetching && entries && entries.length > 0) {
+      const timeout = setTimeout(() => setShowOverlay(false), 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoading, isFetching, entries]);
+
+  const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (["in_consultation", "completed", "canceled"].includes(newStatus)) {
       if (entry.appointment_id) updateAppointmentStatus.mutate({ id: entry.appointment_id, status: newStatus });
     } else {
@@ -175,27 +185,6 @@ export default function WaitingRoom() {
     }
   };
 
-  // ⚔️ Skeleton institucional en primera carga
-  if (isLoading && (!entries || entries.length === 0)) {
-    return (
-      <div className="p-4 sm:p-6">
-        <PageHeader title="Sala de Espera" />
-        <table className="min-w-full text-xs sm:text-sm border border-gray-200 rounded-lg">
-          <tbody>
-            {[...Array(5)].map((_, i) => (
-              <tr key={i} className="animate-pulse">
-                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
-                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
-                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
-                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-
   if (error) return <p className="text-red-600">Error cargando datos</p>;
 
   const orderedGroup: WaitingRoomEntry[] =
@@ -209,9 +198,8 @@ export default function WaitingRoom() {
       const status = e.appointment_status ?? e.status ?? "waiting";
       return ["pending", "canceled"].includes(status);
     }) ?? [];
-
-      return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+    return (
+    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6 relative">
       {/* Header */}
       <div className="flex items-center justify-between">
         <PageHeader title="Sala de Espera" />
@@ -219,79 +207,106 @@ export default function WaitingRoom() {
           <button
             className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
             onClick={() => setShowModal(true)}
-            aria-label="Registrar llegada"
           >
             Registrar llegada
           </button>
           <button
             className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors"
             onClick={() => setShowConfirm(true)}
-            aria-label="Cerrar jornada"
           >
             Cerrar jornada
           </button>
         </div>
       </div>
 
-      {/* Lista Orden */}
-      <h3 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-white">Lista Orden</h3>
-      <table className="min-w-full text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
-        <thead className="bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200">
-          <tr>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Paciente</th>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Estado</th>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Tiempo</th>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orderedGroup.map((entry) => {
-            const status = entry.appointment_status ?? entry.status ?? "waiting";
-            return (
-              <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-2 sm:px-4 py-2 border-b truncate max-w-[220px]">
-                  {entry.patient?.full_name ?? "SIN-NOMBRE"}
-                </td>
-                <td className="px-2 sm:px-4 py-2 border-b">{renderStatusBadge(status)}</td>
-                <td className="px-2 sm:px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
-                <td className="px-2 sm:px-4 py-2 border-b">
-                  {renderActionButton(entry, handleStatusChange, entries ?? [])}
-                </td>
+      {/* Skeleton institucional si aplica */}
+      {showSkeleton && (
+        <table className="min-w-full text-xs sm:text-sm border border-gray-200 rounded-lg mb-4">
+          <tbody>
+            {[...Array(5)].map((_, i) => (
+              <tr key={i} className="animate-pulse">
+                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
+                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
+                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
+                <td className="px-4 py-2 border-b bg-gray-100">&nbsp;</td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      )}
 
-      {/* Por Confirmar */}
-      <h3 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-white">Por Confirmar</h3>
-      <table className="min-w-full text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
-        <thead className="bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200">
-          <tr>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Paciente</th>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Estado</th>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Tiempo</th>
-            <th className="px-2 sm:px-4 py-2 border-b text-left">Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pendingGroup.map((entry) => {
-            const status = entry.appointment_status ?? entry.status ?? "waiting";
-            return (
-              <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-2 sm:px-4 py-2 border-b truncate max-w-[220px]">
-                  {entry.patient?.full_name ?? "SIN-NOMBRE"}
-                </td>
-                <td className="px-2 sm:px-4 py-2 border-b">{renderStatusBadge(status)}</td>
-                <td className="px-2 sm:px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
-                <td className="px-2 sm:px-4 py-2 border-b">
-                  {renderActionButton(entry, handleStatusChange, entries ?? [])}
-                </td>
+      {/* Lista Orden */}
+      {!showSkeleton && (
+        <>
+          <h3 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-white">Lista Orden</h3>
+          <table className="min-w-full text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-lg mb-4">
+            <thead className="bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200">
+              <tr>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Paciente</th>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Estado</th>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Tiempo</th>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Acción</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {orderedGroup.map((entry) => {
+                const status = entry.appointment_status ?? entry.status ?? "waiting";
+                return (
+                  <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-2 sm:px-4 py-2 border-b truncate max-w-[220px]">
+                      {entry.patient?.full_name ?? "SIN-NOMBRE"}
+                    </td>
+                    <td className="px-2 sm:px-4 py-2 border-b">{renderStatusBadge(status)}</td>
+                    <td className="px-2 sm:px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
+                    <td className="px-2 sm:px-4 py-2 border-b">
+                      {renderActionButton(entry, handleStatusChange, entries ?? [])}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* Por Confirmar */}
+          <h3 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-white">Por Confirmar</h3>
+          <table className="min-w-full text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-lg">
+            <thead className="bg-gray-50 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200">
+              <tr>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Paciente</th>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Estado</th>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Tiempo</th>
+                <th className="px-2 sm:px-4 py-2 border-b text-left">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingGroup.map((entry) => {
+                const status = entry.appointment_status ?? entry.status ?? "waiting";
+                return (
+                  <tr key={entry.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-2 sm:px-4 py-2 border-b truncate max-w-[220px]">
+                      {entry.patient?.full_name ?? "SIN-NOMBRE"}
+                    </td>
+                    <td className="px-2 sm:px-4 py-2 border-b">{renderStatusBadge(status)}</td>
+                    <td className="px-2 sm:px-4 py-2 border-b">{renderWaitTime(entry.arrival_time)}</td>
+                    <td className="px-2 sm:px-4 py-2 border-b">
+                      {renderActionButton(entry, handleStatusChange, entries ?? [])}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {/* Overlay institucional adaptativo desde inicio y en refetch */}
+      {showOverlay && (
+        <div className="absolute inset-0 bg-white/70 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <span className="text-base text-[#0d2c53] dark:text-white animate-pulse font-semibold">
+            Actualizando sala de espera…
+          </span>
+        </div>
+      )}
 
       {/* Modales */}
       {showModal && (

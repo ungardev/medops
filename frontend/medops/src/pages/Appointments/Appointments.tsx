@@ -1,5 +1,5 @@
 // src/pages/Appointments.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import moment from "moment";
 import {
   Appointment,
@@ -35,13 +35,24 @@ export default function Appointments() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  const { data: allData } = useAllAppointments();
+  const { data: allData, isLoading, isFetching, error } = useAllAppointments();
   const allAppointments = allData?.list ?? [];
 
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
   const cancelMutation = useCancelAppointment();
   const statusMutation = useUpdateAppointmentStatus();
+
+  // ⚔️ Overlay institucional activo desde el inicio
+  const [showOverlay, setShowOverlay] = useState(true);
+  const showSkeleton = isLoading && (!allAppointments || allAppointments.length === 0);
+
+  useEffect(() => {
+    if (!isLoading && !isFetching && allAppointments && allAppointments.length > 0) {
+      const timeout = setTimeout(() => setShowOverlay(false), 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [isLoading, isFetching, allAppointments]);
 
   const saveAppointment = (data: AppointmentInput, id?: number) => {
     if (!window.confirm("¿Desea guardar los cambios de esta cita?")) return;
@@ -87,8 +98,9 @@ export default function Appointments() {
     currentPage * pageSize
   );
 
-  return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+  if (error) return <p className="text-red-600">Error cargando citas</p>;
+    return (
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 relative">
       {/* Header */}
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-[#0d2c53] dark:text-gray-100">Citas</h1>
@@ -201,6 +213,15 @@ export default function Appointments() {
           )}
         </div>
       </div>
+
+      {/* Overlay institucional adaptativo desde inicio y en refetch */}
+      {showOverlay && (
+        <div className="absolute inset-0 bg-white/70 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <span className="text-base text-[#0d2c53] dark:text-white animate-pulse font-semibold">
+            Actualizando citas…
+          </span>
+        </div>
+      )}
     </div>
   );
 }
