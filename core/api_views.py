@@ -1267,6 +1267,9 @@ class PatientViewSet(viewsets.ModelViewSet):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def waitingroom_entries_today_api(request):
+    import time
+    start = time.time()
+
     try:
         today = timezone.localdate()
 
@@ -1282,10 +1285,15 @@ def waitingroom_entries_today_api(request):
         )
 
         serializer = WaitingRoomEntrySerializer(qs, many=True)
+
+        end = time.time()
+        print(f"⏱️ Tiempo de ejecución waitingroom_entries_today_api: {end - start:.2f} segundos")
+
         return Response(serializer.data, status=200)
 
     except Exception as e:
-        print("🔥 ERROR EN WAITING ROOM ENTRIES 🔥", e)
+        end = time.time()
+        print(f"🔥 ERROR EN WAITING ROOM ENTRIES 🔥 {e} (duró {end - start:.2f} segundos)")
         return Response([], status=200)
 
 

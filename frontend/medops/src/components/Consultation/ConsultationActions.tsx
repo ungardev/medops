@@ -1,6 +1,7 @@
 // src/components/Consultation/ConsultationActions.tsx
 import { useConsultationActions } from "../../hooks/consultations/useConsultationActions";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 
 interface ConsultationActionsProps {
   consultationId: number;
@@ -12,21 +13,28 @@ export default function ConsultationActions({ consultationId }: ConsultationActi
 
   const handleComplete = async () => {
     try {
-      await complete(consultationId);
-      // 🔹 Navegar directamente a WaitingRoom.tsx
-      navigate("/waiting-room");
+      console.log("[ConsultationActions] Finalizando consulta ID:", consultationId);
+      const result = await complete(consultationId);
+      console.log("[ConsultationActions] Resultado PATCH:", result);
+      toast.success("Consulta finalizada");
+      // ⚔️ Ajuste: ruta consistente con main.tsx
+      navigate("/waitingroom");
     } catch (error) {
-      console.error("Error finalizando consulta:", error);
+      console.error("[ConsultationActions] Error finalizando consulta:", error);
+      toast.error("Error al finalizar consulta");
     }
   };
 
   const handleCancel = async () => {
     try {
-      await cancel(consultationId);
-      // 🔹 Opcional: también podrías navegar a WaitingRoom si aplica
-      // navigate("/waiting-room");
+      console.log("[ConsultationActions] Cancelando consulta ID:", consultationId);
+      const result = await cancel(consultationId);
+      console.log("[ConsultationActions] Resultado PATCH:", result);
+      toast.success("Consulta cancelada");
+      // Opcional: navigate("/waitingroom");
     } catch (error) {
-      console.error("Error cancelando consulta:", error);
+      console.error("[ConsultationActions] Error cancelando consulta:", error);
+      toast.error("Error al cancelar consulta");
     }
   };
 

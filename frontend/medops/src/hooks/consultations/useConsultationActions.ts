@@ -17,15 +17,25 @@ export function useConsultationActions(): {
 
   const mutation = useMutation<Appointment, Error, UpdateStatusInput>({
     mutationFn: async (data: UpdateStatusInput): Promise<Appointment> => {
-      return apiFetch<Appointment>(`appointments/${data.id}/status/`, {
+      console.log("[useConsultationActions] PATCH request:", data);
+      const response = await apiFetch<Appointment>(`appointments/${data.id}/status/`, {
         method: "PATCH",
         body: JSON.stringify({ status: data.status }),
       });
+      console.log("[useConsultationActions] PATCH response:", response);
+      return response;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      console.log("[useConsultationActions] Mutation success:", { data, variables });
       // 🔹 Invalidate queries so UI refreshes
       queryClient.invalidateQueries({ queryKey: ["consultation", "current"] });
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+    },
+    onError: (error, variables) => {
+      console.error("[useConsultationActions] Mutation error:", { error, variables });
+    },
+    onSettled: (data, error, variables) => {
+      console.log("[useConsultationActions] Mutation settled:", { data, error, variables });
     },
   });
 
