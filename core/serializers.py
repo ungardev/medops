@@ -611,58 +611,93 @@ class ChargeItemSerializer(serializers.ModelSerializer):
 
 
 class ChargeOrderSerializer(serializers.ModelSerializer):
-    # 🔹 Totales como float homogéneo
     total = serializers.FloatField(read_only=True)
     balance_due = serializers.FloatField(read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
 
-    # 🔹 Auditoría (fechas ya formateadas globalmente por DATETIME_FORMAT en settings.py)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
-    created_by = serializers.CharField(read_only=True)
-    updated_by = serializers.CharField(read_only=True)
+    # ✅ Campo plano para Search.tsx y otros endpoints
+    patient_name = serializers.SerializerMethodField()
 
     class Meta:
         model = ChargeOrder
         fields = (
-            "id", "appointment", "patient", "currency",
-            "total", "balance_due", "status",
-            "issued_at", "issued_by", "items",
+            "id",
+            "appointment",
+            "patient",
+            "currency",
+            "total",
+            "balance_due",
+            "status",
+            "issued_at",
+            "issued_by",
+            "items",
             "payments",
-            "created_at", "updated_at", "created_by", "updated_by",
+            "patient_name",   # ✅ añadido
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
         )
         read_only_fields = (
-            "total", "balance_due", "status", "issued_at",
-            "created_at", "updated_at", "created_by", "updated_by",
+            "total",
+            "balance_due",
+            "status",
+            "issued_at",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
         )
 
-    def create(self, validated_data):
-        order = ChargeOrder.objects.create(**validated_data)
-        order.recalc_totals()
-        order.save(update_fields=["total", "balance_due", "status"])
-        return order
+    def get_patient_name(self, obj):
+        p = obj.patient
+        if not p:
+            return "SIN-NOMBRE"
+        parts = [
+            p.first_name,
+            p.middle_name,
+            p.last_name,
+            p.second_last_name,
+        ]
+        return " ".join([x for x in parts if x])
 
 
 # --- Citas ---
 class AppointmentSerializer(serializers.ModelSerializer):
     patient = PatientReadSerializer(read_only=True)
-    charge_order = ChargeOrderSerializer(read_only=True)  # 👈 añadido
+    charge_order = ChargeOrderSerializer(read_only=True)
+
+    # ✅ Campo plano para Search.tsx y otros endpoints
+    patient_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Appointment
         fields = [
             "id",
-            "patient",           # incluye id, full_name y email
+            "patient",
+            "patient_name",      # ✅ añadido
             "appointment_date",
             "appointment_type",
             "expected_amount",
             "status",
             "arrival_time",
-            "completed_at",      # 👈 nuevo campo expuesto
+            "completed_at",
             "notes",
-            "charge_order",      # 👈 añadido
+            "charge_order",
         ]
+
+    def get_patient_name(self, obj):
+        p = obj.patient
+        if not p:
+            return "SIN-NOMBRE"
+        parts = [
+            p.first_name,
+            p.middle_name,
+            p.last_name,
+            p.second_last_name,
+        ]
+        return " ".join([x for x in parts if x])
 
 
 # --- Documentos clínicos ---
@@ -1193,7 +1228,6 @@ class ChoicesSerializer(serializers.Serializer):
     label = serializers.CharField()
 
 
-# serializers.py (o donde definas AppointmentDetailSerializer)
 class AppointmentDetailSerializer(AppointmentSerializer):
     diagnoses = DiagnosisSerializer(many=True, read_only=True)
     # 🔹 agregados

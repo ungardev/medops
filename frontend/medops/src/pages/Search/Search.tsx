@@ -14,6 +14,7 @@ interface Appointment {
   id: number;
   appointment_date: string;
   status: string;
+  patient_name?: string; // ✅ nuevo campo
 }
 
 interface Order {
@@ -21,6 +22,7 @@ interface Order {
   total: number;
   balance_due: number;
   status: string;
+  patient_name?: string; // ✅ nuevo campo
 }
 
 interface SearchResponse {
@@ -33,7 +35,6 @@ export default function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ Estado inicial con arrays vacíos para evitar undefined
   const [results, setResults] = useState<SearchResponse>({
     patients: [],
     appointments: [],
@@ -42,7 +43,6 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 🔹 Estado controlado del input
   const params = new URLSearchParams(location.search);
   const query = params.get("query") || "";
   const [searchTerm, setSearchTerm] = useState(query);
@@ -58,11 +58,9 @@ export default function SearchPage() {
     setError(null);
 
     axios
-      // ✅ FIX: ahora llamamos a /search/, el proxy añade /api
       .get("/search/", { params: { query: query.trim() } })
       .then((res) => {
         const data = res.data as SearchResponse;
-        // ✅ Garantizar arrays con fallback
         setResults({
           patients: data.patients ?? [],
           appointments: data.appointments ?? [],
@@ -76,12 +74,11 @@ export default function SearchPage() {
       });
   }, [query]);
 
-  // 🔹 Manejo del submit
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(""); // limpiar el input después de buscar
+      setSearchTerm("");
     }
   };
 
@@ -91,7 +88,6 @@ export default function SearchPage() {
         Resultados de búsqueda
       </h1>
 
-      {/* 🔹 Formulario de búsqueda */}
       <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
         <input
           type="text"
@@ -175,7 +171,7 @@ export default function SearchPage() {
                         Fecha: {c.appointment_date}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Estado: {c.status}
+                        Estado: {c.status} — Paciente: {c.patient_name || "—"}
                       </p>
                     </Link>
                   </li>
@@ -198,7 +194,7 @@ export default function SearchPage() {
                       className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                     >
                       <p className="font-medium text-[#0d2c53] dark:text-white">
-                        Orden #{o.id}
+                        Orden #{o.id} — Paciente: {o.patient_name || "—"}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
                         Monto: ${o.total} — Estado: {o.status}
