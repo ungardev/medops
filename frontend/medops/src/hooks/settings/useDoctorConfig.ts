@@ -22,7 +22,7 @@ export function useDoctorConfig() {
         specialties: data.specialties?.map((s) => s.id),
       });
 
-      // ✅ Deduplicación defensiva por si algún día el backend manda duplicados
+      // ✅ Deduplicación defensiva
       const dedupedSpecialties = Array.isArray(data.specialties)
         ? data.specialties.filter(
             (s, i, self) => self.findIndex((x) => x.id === s.id) === i
@@ -57,7 +57,7 @@ export function useDoctorConfig() {
     refetchOnMount: false,
     refetchOnReconnect: false,
 
-    structuralSharing: true, // ✅ evita cambios de referencia innecesarios
+    structuralSharing: true,
   });
 
   // ✅ PATCH actualización del médico operador (multipart/form-data)
@@ -67,26 +67,41 @@ export function useDoctorConfig() {
 
       const formData = new FormData();
 
-      if (newSettings.full_name)
-        formData.append("full_name", newSettings.full_name);
-      if (newSettings.colegiado_id)
-        formData.append("colegiado_id", newSettings.colegiado_id);
-      if (newSettings.license)
-        formData.append("license", newSettings.license);
-      if (newSettings.email)
-        formData.append("email", newSettings.email);
-      if (newSettings.phone)
-        formData.append("phone", newSettings.phone);
+      // ✅ CAMPOS QUE SIEMPRE SE DEBEN ENVIAR (aunque estén vacíos)
+      if (newSettings.full_name !== undefined)
+        formData.append("full_name", String(newSettings.full_name));
 
-      if (newSettings.signature && newSettings.signature instanceof File) {
+      if (newSettings.colegiado_id !== undefined)
+        formData.append("colegiado_id", String(newSettings.colegiado_id));
+
+      if (newSettings.license !== undefined)
+        formData.append("license", String(newSettings.license));
+
+      if (newSettings.email !== undefined)
+        formData.append("email", String(newSettings.email));
+
+      if (newSettings.phone !== undefined)
+        formData.append("phone", String(newSettings.phone));
+
+      // ✅ Firma digital
+      if (newSettings.signature instanceof File) {
         formData.append("signature", newSettings.signature);
       }
 
-      // ✅ specialty_ids como lista en multipart
-      if (newSettings.specialty_ids && Array.isArray(newSettings.specialty_ids)) {
-        newSettings.specialty_ids.forEach((id) => {
-          formData.append("specialty_ids", String(id));
-        });
+      // ✅ specialty_ids SIEMPRE se envía, incluso si está vacío
+      if (Array.isArray(newSettings.specialty_ids)) {
+        if (newSettings.specialty_ids.length === 0) {
+          formData.append("specialty_ids", "");
+        } else {
+          newSettings.specialty_ids.forEach((id) => {
+            formData.append("specialty_ids", String(id));
+          });
+        }
+      }
+
+      // ✅ LOG DE CAMPOS ENVIADOS
+      for (const pair of formData.entries()) {
+        console.log("FORMDATA >>>", pair[0], "=", pair[1]);
       }
 
       const res = await api.patch("config/doctor/", formData, {

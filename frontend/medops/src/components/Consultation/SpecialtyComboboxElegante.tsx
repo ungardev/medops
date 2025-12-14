@@ -1,5 +1,6 @@
+// src/components/Consultation/SpecialtyComboboxElegante.tsx
 import { Combobox } from "@headlessui/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Specialty } from "../../types/consultation";
 
 interface Props {
@@ -10,21 +11,15 @@ interface Props {
 
 export default function SpecialtyComboboxElegante({ value, onChange, options }: Props) {
   const [search, setSearch] = useState("");
+  const lock = useRef(false);
 
-  // ✅ LOGS DE DEPURACIÓN
-  console.log("=== COMBOBOX RENDER ===");
-  console.log("VALUE >>>", value.map((s) => s.id));
-  console.log("OPTIONS >>>", options.map((s) => s.id));
-
-  // ✅ Deduplicación interna por si el padre manda duplicados
+  // Deduplicar siempre que el padre mande basura
   const dedupedValue = value.filter(
     (s, i, self) => self.findIndex((x) => x.id === s.id) === i
   );
 
-  // ✅ Si el padre manda duplicados, los limpiamos automáticamente
   useEffect(() => {
     if (dedupedValue.length !== value.length) {
-      console.log("DEDUP ENFORCED >>>", dedupedValue.map((s) => s.id));
       onChange(dedupedValue);
     }
   }, [value]);
@@ -35,32 +30,24 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
       )
     : options;
 
-  // ✅ Blindaje institucional contra doble selección
   const addSpecialty = (s: Specialty | null) => {
-    console.log("ADD SPECIALTY CALLED >>>", s);
-
     if (!s) return;
 
-    // ✅ Evitar duplicados incluso si Headless UI dispara dos eventos
-    if (dedupedValue.some((v) => v.id === s.id)) {
-      console.log("IGNORED DUPLICATE >>>", s.id);
-      return;
-    }
+    // HeadlessUI dobla eventos a veces → lock
+    if (lock.current) return;
+    lock.current = true;
+    setTimeout(() => {
+      lock.current = false;
+    }, 50);
 
-    const next = [...dedupedValue, s];
+    if (dedupedValue.some((v) => v.id === s.id)) return;
 
-    console.log("ADDING >>>", next.map((x) => x.id));
-
-    onChange(next);
-
-    // ✅ Limpiar input después de seleccionar
+    onChange([...dedupedValue, s]);
     setSearch("");
   };
 
   const removeSpecialty = (id: number) => {
-    const next = dedupedValue.filter((v) => v.id !== id);
-    console.log("REMOVING >>>", id, "NEXT >>>", next.map((x) => x.id));
-    onChange(next);
+    onChange(dedupedValue.filter((v) => v.id !== id));
   };
 
   return (

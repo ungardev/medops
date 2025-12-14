@@ -7,12 +7,14 @@ import { useDeleteDocument } from "../../hooks/patients/useDeleteDocument";
 import { MedicalDocument } from "../../types/documents";
 import { useNotify } from "../../hooks/useNotify";
 
-const API_ROOT = import.meta.env.VITE_API_ROOT || "http://127.0.0.1:8000/api";
+// ✅ BASE_URL institucional sin puerto hardcodeado y sin duplicar /api
+const RAW_ROOT = import.meta.env.VITE_API_ROOT || "http://127.0.0.1/api";
+const BASE_URL = RAW_ROOT.replace(/\/api\/?$/, "");
 
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
   const uploadDocument = useUploadDocument(patient.id);
-  const deleteDocument = useDeleteDocument(patient.id); // ✅ ahora recibe patient.id
+  const deleteDocument = useDeleteDocument(patient.id);
   const notify = useNotify();
 
   const [file, setFile] = useState<File | null>(null);
@@ -50,7 +52,14 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const documents = Array.isArray(data?.list) ? data.list : [];
   const isEmpty = !isLoading && !error && documents.length === 0;
 
-    return (
+  // ✅ Construcción institucional del URL del archivo
+  const resolveFileURL = (file_url: string) => {
+    if (!file_url) return "";
+    if (file_url.startsWith("http")) return file_url;
+    return `${BASE_URL}${file_url}`;
+  };
+
+  return (
     <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
       <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
         Documentos clínicos
@@ -109,7 +118,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
       {/* Tabla / Tarjetas */}
       {!isLoading && !error && documents.length > 0 && (
         <>
-          {/* Desktop: tabla */}
+          {/* Desktop */}
           <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">
               <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
@@ -129,7 +138,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                     <td className="px-4 py-2">
                       {d.file_url ? (
                         <a
-                          href={`${API_ROOT}${d.file_url}`}
+                          href={resolveFileURL(d.file_url)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[#0d2c53] dark:text-blue-400 hover:underline"
@@ -160,7 +169,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
             </table>
           </div>
 
-          {/* Mobile: tarjetas */}
+          {/* Mobile */}
           <div className="sm:hidden space-y-3">
             {documents.map((d: MedicalDocument) => (
               <div key={d.id} className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3">
@@ -174,7 +183,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                   <strong>Archivo:</strong>{" "}
                   {d.file_url ? (
                     <a
-                      href={`${API_ROOT}${d.file_url}`}
+                      href={resolveFileURL(d.file_url)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-[#0d2c53] dark:text-blue-400 hover:underline"

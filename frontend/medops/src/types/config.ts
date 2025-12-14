@@ -5,7 +5,7 @@ export interface InstitutionSettings {
   address: string;
   phone: string;
   tax_id: string;
-  logo?: string | File;
+  logo?: string | File | null;
 }
 
 // 🔹 Especialidad del médico
@@ -20,10 +20,14 @@ export interface DoctorConfig {
   id?: number;
   full_name?: string;
   colegiado_id?: string;
-  specialty_ids?: number[];   // IDs numéricos para backend
-  specialties?: Specialty[];  // 👈 objetos con id, code, name para UI
+
+  specialty_ids?: number[];      // IDs numéricos para backend
+  specialties?: Specialty[];     // objetos para UI
+
   license?: string;
   email?: string;
   phone?: string;
-  signature?: string | File;
+
+  // ✅ FIX CRÍTICO: aceptar null porque el backend devuelve null
+  signature?: string | File | null;
 }

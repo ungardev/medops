@@ -3850,7 +3850,10 @@ def search(request):
         patient_q |= Q(national_id__icontains=token)
 
     patients = Patient.objects.filter(patient_q).values(
-        "id", "first_name", "last_name", "national_id"
+        "id",
+        "first_name",
+        "last_name",
+        "national_id"
     )[:10]
 
     # 🔹 Citas: buscar por nombre del paciente y estado
@@ -3861,7 +3864,12 @@ def search(request):
         appointment_q |= Q(status__icontains=token)
 
     appointments = Appointment.objects.filter(appointment_q).values(
-        "id", "appointment_date", "status"
+        "id",
+        "appointment_date",
+        "status",
+        "patient_id",
+        "patient__first_name",
+        "patient__last_name"
     )[:10]
 
     # 🔹 Órdenes / Pagos: buscar por paciente y estado
@@ -3872,7 +3880,13 @@ def search(request):
         order_q |= Q(status__icontains=token)
 
     orders = ChargeOrder.objects.filter(order_q).values(
-        "id", "total", "balance_due", "status"
+        "id",
+        "total",
+        "balance_due",
+        "status",
+        "patient_id",
+        "patient__first_name",
+        "patient__last_name"
     )[:10]
 
     return Response({
