@@ -3843,7 +3843,7 @@ def search(request):
         })
 
     # -----------------------------------------
-    # ✅ PACIENTES
+    # ✅ PACIENTES (formato original para Search.tsx)
     # -----------------------------------------
     patient_q = Q()
     for token in tokens:
@@ -3851,11 +3851,16 @@ def search(request):
         patient_q |= Q(last_name__icontains=token)
         patient_q |= Q(national_id__icontains=token)
 
-    patients = Patient.objects.filter(patient_q)[:10]
-    patients_data = PatientReadSerializer(patients, many=True).data
+    patients = Patient.objects.filter(patient_q).values(
+        "id",
+        "first_name",
+        "last_name",
+        "national_id"
+    )[:10]
+    patients_data = list(patients)
 
     # -----------------------------------------
-    # ✅ CITAS
+    # ✅ CITAS (con patient_name desde el serializer)
     # -----------------------------------------
     appointment_q = Q()
     for token in tokens:
@@ -3867,7 +3872,7 @@ def search(request):
     appointments_data = AppointmentSerializer(appointments, many=True).data
 
     # -----------------------------------------
-    # ✅ ÓRDENES / PAGOS
+    # ✅ ÓRDENES / PAGOS (con patient_name desde el serializer)
     # -----------------------------------------
     order_q = Q()
     for token in tokens:
