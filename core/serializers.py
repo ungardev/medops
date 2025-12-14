@@ -870,23 +870,37 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         return rep
 
     def update(self, instance, validated_data):
-    # Puede venir como specialties (por source) o specialty_ids (directo)
-        specialties = validated_data.pop("specialties", None) or validated_data.pop("specialty_ids", None)
+        """
+        ✅ FIX DEFINITIVO:
+        - Maneja specialties y specialty_ids correctamente
+        - Permite enviar [] para borrar todas
+        - Evita el bug del OR que destruía la lógica
+        """
 
-        # Actualizar campos simples
+        specialties = None
+
+        # ✅ Si vienen specialties (por source="specialties")
+        if "specialties" in validated_data:
+            specialties = validated_data.pop("specialties")
+
+        # ✅ Si vienen specialty_ids directamente
+        if "specialty_ids" in validated_data:
+            specialties = validated_data.pop("specialty_ids")
+
+        # ✅ Actualizar campos simples
         for attr, val in validated_data.items():
             setattr(instance, attr, val)
+
         instance.save()
 
-        # Aplicar ManyToMany explícitamente
+        # ✅ Actualizar ManyToMany correctamente
         if specialties is not None:
-            # Normalizar: si vienen IDs como strings o ints, convertirlos a queryset
-            try:
+            # specialties puede ser lista de IDs o lista de objetos
+            if all(isinstance(s, int) or isinstance(s, str) for s in specialties):
                 ids = [int(s) for s in specialties]
                 qs = Specialty.objects.filter(id__in=ids)
                 instance.specialties.set(qs)
-            except Exception:
-                # Si DRF ya resolvió a objetos Specialty
+            else:
                 instance.specialties.set(specialties)
 
         return instance

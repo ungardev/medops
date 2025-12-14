@@ -2,7 +2,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/",  // ⚔️ Forzado para demo CS50W
+  baseURL: "http://127.0.0.1/api/",  // ⚔️ Forzado para demo CS50W
   withCredentials: true,
 });
 

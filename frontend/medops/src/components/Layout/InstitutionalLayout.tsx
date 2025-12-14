@@ -3,6 +3,7 @@ import Sidebar from "./Sidebar";
 import InstitutionalHeader from "./InstitutionalHeader";
 import InstitutionalFooter from "./InstitutionalFooter";
 import { useState, useEffect } from "react";
+import { Toaster } from "react-hot-toast";
 
 export default function InstitutionalLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -87,6 +88,30 @@ export default function InstitutionalLayout() {
           <InstitutionalFooter />
         </div>
       </div>
+
+      {/* 🔹 Toaster institucional global */}
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            fontSize: "14px",
+            borderRadius: "6px",
+            padding: "10px 14px",
+          },
+          success: {
+            style: {
+              background: "#0d2c53",
+              color: "white",
+            },
+          },
+          error: {
+            style: {
+              background: "#b91c1c",
+              color: "white",
+            },
+          },
+        }}
+      />
     </div>
   );
 }

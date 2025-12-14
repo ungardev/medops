@@ -4,23 +4,28 @@ import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings"
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { InstitutionSettings, DoctorConfig } from "@/types/config";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
-
-type SpecialtyChoice = { id: number; code: string; name: string };
+import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
+import type { Specialty } from "@/types/consultation";
 
 type DoctorForm = {
   id?: number;
   full_name?: string;
   colegiado_id?: string;
-  specialties: string[];
+  specialties: Specialty[];
   license?: string;
   email?: string;
   phone?: string;
   signature?: string | File;
 };
+
 export default function ConfigPage() {
-  const { data: inst, updateInstitution, isLoading: instLoading, handleLogoChange } = useInstitutionSettings();
-  const { data: doc, updateDoctor, isLoading: docLoading, handleSignatureChange } = useDoctorConfig();
-  const { data: specialties, isLoading: loadingSpecs } = useSpecialtyChoices();
+  const { data: inst, updateInstitution, isLoading: instLoading, handleLogoChange } =
+    useInstitutionSettings();
+
+  const { data: doc, updateDoctor, isLoading: docLoading, handleSignatureChange } =
+    useDoctorConfig();
+
+  const { data: specialties = [] } = useSpecialtyChoices();
 
   const [instForm, setInstForm] = useState<Partial<InstitutionSettings>>(inst || {});
   const [docForm, setDocForm] = useState<DoctorForm>({
@@ -37,30 +42,48 @@ export default function ConfigPage() {
   const [editingInstitution, setEditingInstitution] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(false);
 
-  useEffect(() => {
+  // ✅ FIX DEFINITIVO: evitar re‑inyecciones por Strict Mode
+  const [initialized, setInitialized] = useState(false);
+
+  // ✅ LOGS
+  console.log("===== DEBUG CONFIG PAGE =====");
+  console.log("DOC RAW >>>", doc && {
+    id: doc.id,
+    specialty_ids: (doc as any).specialty_ids,
+    specialties: (doc as any).specialties,
+  });
+  console.log(
+    "DOCFORM.SPECIALTIES >>>",
+    docForm.specialties.map((s) => ({ id: s.id, name: s.name, code: s.code }))
+  );
+
+    useEffect(() => {
     if (inst) setInstForm(inst);
   }, [inst]);
 
   useEffect(() => {
-    if (doc) {
-      const ids =
-        Array.isArray((doc as any).specialty_ids)
-          ? (doc as any).specialty_ids.map((id: number) => String(id))
-          : Array.isArray((doc as any).specialties)
-          ? (doc as any).specialties.map((s: any) => String(s.id))
-          : [];
-      setDocForm({
-        id: doc.id,
-        full_name: doc.full_name,
-        colegiado_id: doc.colegiado_id,
-        specialties: ids,
-        license: doc.license,
-        email: doc.email,
-        phone: doc.phone,
-        signature: doc.signature,
-      });
-    }
-  }, [doc]);
+    if (!doc || specialties.length === 0) return;
+    if (initialized) return; // ✅ evita re‑inyecciones
+
+    const ids =
+      Array.isArray((doc as any).specialty_ids)
+        ? (doc as any).specialty_ids.map((id: number) => Number(id))
+        : [];
+
+    const matched = specialties.filter((s) => ids.includes(s.id));
+
+    // ✅ deduplicación final
+    const deduplicated = matched.filter(
+      (s, i, self) => self.findIndex((x) => x.id === s.id) === i
+    );
+
+    setDocForm((prev) => ({
+      ...prev,
+      specialties: deduplicated,
+    }));
+
+    setInitialized(true); // ✅ solo una vez
+  }, [doc, specialties, initialized]);
 
   const [logoPreview, setLogoPreview] = useState<string>("");
   const [signaturePreview, setSignaturePreview] = useState<string>("");
@@ -81,24 +104,26 @@ export default function ConfigPage() {
     }
   };
 
-  const getSpecialtyNames = (ids?: string[]) => {
-    if (!ids || !specialties) return [];
-    return ids
-      .map((id) => {
-        const match = (specialties as SpecialtyChoice[]).find((s) => String(s.id) === String(id));
-        return match?.name;
-      })
-      .filter(Boolean) as string[];
-  };
+  const getSpecialtyNames = (list?: Specialty[]) =>
+    list?.map((s) => s.name) || [];
 
-    return (
+  return (
     <main className="px-3 py-4 sm:p-6 space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-semibold text-[#0d2c53] dark:text-gray-100">Configuración</h2>
-
-      {/* Configuración Institucional */}
+      <h2 className="text-xl sm:text-2xl font-semibold text-[#0d2c53] dark:text-gray-100">
+        Configuración
+      </h2>
+            {/* ✅ Configuración Institucional */}
       <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3">Institución</h3>
-        {instLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando configuración institucional...</p>}
+        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3">
+          Institución
+        </h3>
+
+        {instLoading && (
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Cargando configuración institucional...
+          </p>
+        )}
+
         {instForm && (
           <>
             {!editingInstitution ? (
@@ -107,23 +132,16 @@ export default function ConfigPage() {
                 <p><strong>Dirección:</strong> {instForm.address}</p>
                 <p><strong>Teléfono:</strong> {instForm.phone}</p>
                 <p><strong>RIF/NIT:</strong> {instForm.tax_id}</p>
+
                 <div className="mt-2">
                   {instForm.logo ? (
-                    <img
-                      src="/logo-medops-light.svg"
-                      alt="Logo institucional"
-                      className="h-20 rounded border shadow-sm"
-                    />
+                    <img src="/logo-medops-light.svg" className="h-20 rounded border shadow-sm" />
                   ) : (
                     <span className="italic text-gray-500 dark:text-gray-400">Sin logo cargado</span>
                   )}
                 </div>
-                <button
-                  className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                             bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                             hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm mt-3"
-                  onClick={() => setEditingInstitution(true)}
-                >
+
+                <button className="btn-secondary mt-3" onClick={() => setEditingInstitution(true)}>
                   Editar
                 </button>
               </div>
@@ -133,13 +151,24 @@ export default function ConfigPage() {
                   e.preventDefault();
                   updateInstitution(instForm).then(() => setEditingInstitution(false));
                 }}
-                className="space-y-4"
+                className="space-y-4 text-sm text-[#0d2c53] dark:text-gray-200"
               >
-                <input type="file" onChange={handleLogoChangeInput} className="w-full text-sm" />
-                {logoPreview && <img src={logoPreview} alt="Logo preview" className="h-20 mt-2 rounded border shadow-sm" />}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input className="input" placeholder="Nombre" value={instForm.name || ""} onChange={(e) => setInstForm({ ...instForm, name: e.target.value })} />
+                  <input className="input" placeholder="Dirección" value={instForm.address || ""} onChange={(e) => setInstForm({ ...instForm, address: e.target.value })} />
+                  <input className="input" placeholder="Teléfono" value={instForm.phone || ""} onChange={(e) => setInstForm({ ...instForm, phone: e.target.value })} />
+                  <input className="input" placeholder="RIF / NIT" value={instForm.tax_id || ""} onChange={(e) => setInstForm({ ...instForm, tax_id: e.target.value })} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Logo institucional</label>
+                  <input type="file" onChange={handleLogoChangeInput} className="w-full text-sm" />
+                  {logoPreview && <img src={logoPreview} className="h-20 mt-2 rounded border shadow-sm" />}
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm">Guardar</button>
-                  <button type="button" className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm" onClick={() => setEditingInstitution(false)}>Cancelar</button>
+                  <button type="submit" className="btn-primary">Guardar</button>
+                  <button type="button" className="btn-secondary" onClick={() => setEditingInstitution(false)}>Cancelar</button>
                 </div>
               </form>
             )}
@@ -147,49 +176,46 @@ export default function ConfigPage() {
         )}
       </section>
 
-      {/* Configuración Médico Operador */}
+      {/* ✅ Configuración Médico Operador */}
       <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3">Médico Operador</h3>
+        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-3">
+          Médico Operador
+        </h3>
+
         {docLoading && <p className="text-sm text-gray-600 dark:text-gray-400">Cargando configuración del médico...</p>}
+
         {docForm && (
           <>
             {!editingDoctor ? (
               <div className="space-y-2 text-sm text-[#0d2c53] dark:text-gray-300">
                 <p><strong>Nombre completo:</strong> {docForm.full_name}</p>
                 <p><strong>Número de colegiado:</strong> {docForm.colegiado_id}</p>
-                <p><strong>Especialidades:</strong> {getSpecialtyNames(docForm.specialties)?.join(", ") || "No especificadas"}</p>
+                <p><strong>Especialidades:</strong> {getSpecialtyNames(docForm.specialties).join(", ") || "No especificadas"}</p>
                 <p><strong>Licencia:</strong> {docForm.license}</p>
                 <p><strong>Email:</strong> {docForm.email}</p>
                 <p><strong>Teléfono:</strong> {docForm.phone}</p>
+
                 <div className="mt-2">
                   {docForm.signature ? (
-                    <img
-                      src="/logo-icon-light.svg"
-                      alt="Firma digital"
-                      className="h-20 rounded border shadow-sm"
-                    />
+                    <img src="/logo-icon-light.svg" className="h-20 rounded border shadow-sm" />
                   ) : (
                     <span className="italic text-gray-500 dark:text-gray-400">Sin firma cargada</span>
                   )}
                 </div>
-                <button
-                  className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                             bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                             hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm mt-3"
-                  onClick={() => setEditingDoctor(true)}
-                >
+
+                <button className="btn-secondary mt-3" onClick={() => setEditingDoctor(true)}>
                   Editar
                 </button>
               </div>
             ) : (
-              <form
+                            <form
                 onSubmit={(e) => {
                   e.preventDefault();
                   const payload: Partial<DoctorConfig> = {
                     id: docForm.id,
                     full_name: docForm.full_name,
                     colegiado_id: docForm.colegiado_id,
-                    specialty_ids: (docForm.specialties || []).map((id: string) => Number(id)),
+                    specialty_ids: docForm.specialties.map((s) => s.id),
                     license: docForm.license,
                     email: docForm.email,
                     phone: docForm.phone,
@@ -197,15 +223,58 @@ export default function ConfigPage() {
                   };
                   updateDoctor(payload).then(() => setEditingDoctor(false));
                 }}
-                className="space-y-4"
+                className="space-y-4 text-sm text-[#0d2c53] dark:text-gray-200"
               >
-                <input type="file" onChange={handleSignatureUpload} className="w-full text-sm" />
-                {signaturePreview && (
-                  <img src={signaturePreview} alt="Firma preview" className="h-20 mt-2 rounded border shadow-sm" />
-                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <input className="input" placeholder="Nombre completo" value={docForm.full_name || ""} onChange={(e) => setDocForm({ ...docForm, full_name: e.target.value })} />
+                  <input className="input" placeholder="Número de colegiado" value={docForm.colegiado_id || ""} onChange={(e) => setDocForm({ ...docForm, colegiado_id: e.target.value })} />
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium mb-1">Especialidades</label>
+
+                    <SpecialtyComboboxElegante
+                      value={docForm.specialties}
+                      onChange={(next) => setDocForm({ ...docForm, specialties: next })}
+                      options={specialties}
+                    />
+
+                    {docForm.specialties.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {docForm.specialties.map((s) => (
+                          <span key={s.id} className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-[#0d2c53]/10 dark:bg-gray-700 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
+                            {s.name} ({s.code})
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setDocForm({
+                                  ...docForm,
+                                  specialties: docForm.specialties.filter((v) => v.id !== s.id),
+                                })
+                              }
+                              className="px-2 py-0.5 rounded bg-[#0d2c53] text-white hover:bg-[#0b2444] text-xs sm:text-sm"
+                            >
+                              Quitar
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <input className="input" placeholder="Licencia" value={docForm.license || ""} onChange={(e) => setDocForm({ ...docForm, license: e.target.value })} />
+                  <input className="input" placeholder="Correo profesional" value={docForm.email || ""} onChange={(e) => setDocForm({ ...docForm, email: e.target.value })} />
+                  <input className="input" placeholder="Teléfono" value={docForm.phone || ""} onChange={(e) => setDocForm({ ...docForm, phone: e.target.value })} />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Firma digital</label>
+                  <input type="file" onChange={handleSignatureUpload} className="w-full text-sm" />
+                  {signaturePreview && <img src={signaturePreview} className="h-20 mt-2 rounded border shadow-sm" />}
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-2">
-                  <button type="submit" className="w-full sm:w-auto px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm">Guardar</button>
-                  <button type="button" className="w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm" onClick={() => setEditingDoctor(false)}>Cancelar</button>
+                  <button type="submit" className="btn-primary">Guardar</button>
+                  <button type="button" className="btn-secondary" onClick={() => setEditingDoctor(false)}>Cancelar</button>
                 </div>
               </form>
             )}

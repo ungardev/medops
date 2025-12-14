@@ -3,21 +3,22 @@ import { useQuery } from "@tanstack/react-query";
 import type { WaitingRoomEntry } from "../../types/waitingRoom";
 import { apiFetch } from "../../api/client";
 
-// 🔹 Fetch tipado y con log de depuración
+// ✅ Fetch tipado con log de depuración
 async function fetchEntriesToday(): Promise<WaitingRoomEntry[]> {
   const data = await apiFetch<WaitingRoomEntry[]>("waitingroom/today/entries/");
   console.log("🧪 fetchEntriesToday payload:", data);
   return data;
 }
 
-// 🔹 Hook blindado con initialData, polling institucional y placeholderData
+// ✅ Hook institucional SIN initialData ni placeholderData
+//    Esto permite que isLoading sea TRUE al inicio y activa el overlay correctamente.
 export function useWaitingRoomEntriesToday() {
   return useQuery<WaitingRoomEntry[], Error>({
     queryKey: ["waitingRoomEntriesToday"],
     queryFn: fetchEntriesToday,
-    staleTime: 30_000,
-    refetchInterval: 5000, // ⚔️ polling institucional cada 5s
-    initialData: [],       // ⚔️ asegura que siempre sea un array tipado
-    placeholderData: (prev) => prev ?? [] // ⚔️ mantiene la tabla anterior mientras llega la nueva
+    staleTime: 30_000,          // datos frescos por 30s
+    refetchInterval: 5000,      // polling institucional cada 5s
+    refetchOnMount: true,       // fuerza carga inicial real
+    refetchOnWindowFocus: false // evita parpadeos al cambiar de pestaña
   });
 }

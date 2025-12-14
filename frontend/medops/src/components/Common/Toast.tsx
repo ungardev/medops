@@ -1,28 +1,29 @@
-import React, { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { toast } from "react-hot-toast";
 
 interface ToastProps {
   message: string;
-  type?: "success" | "error" | "info";
+  type: "success" | "error" | "info";
   onClose: () => void;
-  duration?: number; // en ms, default 3000
 }
 
-const Toast: React.FC<ToastProps> = ({ message, type = "info", onClose, duration = 3000 }) => {
+export default function Toast({ message, type, onClose }: ToastProps) {
+  const hasShown = useRef(false);
+
   useEffect(() => {
-    const timer = setTimeout(onClose, duration);
-    return () => clearTimeout(timer);
-  }, [onClose, duration]);
+    if (hasShown.current) return;
 
-  const base =
-    "fixed bottom-6 right-6 px-4 py-2 rounded-lg shadow-lg text-sm font-medium animate-fade-slide z-50";
+    if (type === "success") {
+      toast.success(message);
+    } else if (type === "error") {
+      toast.error(message);
+    } else {
+      toast(message);
+    }
 
-  const styles = {
-    success: `${base} bg-green-600 text-white`,
-    error: `${base} bg-red-600 text-white`,
-    info: `${base} bg-blue-600 text-white`,
-  };
+    hasShown.current = true;
+    onClose();
+  }, [message, type, onClose]);
 
-  return <div className={styles[type]}>{message}</div>;
-};
-
-export default Toast;
+  return null;
+}

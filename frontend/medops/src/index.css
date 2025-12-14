@@ -59,3 +59,30 @@ html, body, #root {
   position: relative;
   z-index: 50;
 }
+
+/* 🔹 Inputs institucionales */
+@layer components {
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
+           bg-white dark:bg-gray-800 text-sm text-[#0d2c53] dark:text-gray-100 
+           placeholder-gray-400 dark:placeholder-gray-500 
+           focus:outline-none focus:ring-2 focus:ring-[#0d2c53] transition;
+  }
+}
+
+/* 🔹 Botón primario institucional */
+@layer components {
+  .btn-primary {
+    @apply w-full sm:w-auto px-4 py-2 rounded-md bg-[#0d2c53] text-white 
+           hover:bg-[#0b2444] transition text-sm font-medium;
+  }
+}
+
+/* 🔹 Botón secundario institucional */
+@layer components {
+  .btn-secondary {
+    @apply w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
+           bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
+           hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm font-medium;
+  }
+}
