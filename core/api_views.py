@@ -3842,55 +3842,47 @@ def search(request):
             "orders": []
         })
 
-    # 🔹 Pacientes: buscar por nombres y cédula
+    # -----------------------------------------
+    # ✅ PACIENTES
+    # -----------------------------------------
     patient_q = Q()
     for token in tokens:
         patient_q |= Q(first_name__icontains=token)
         patient_q |= Q(last_name__icontains=token)
         patient_q |= Q(national_id__icontains=token)
 
-    patients = Patient.objects.filter(patient_q).values(
-        "id",
-        "first_name",
-        "last_name",
-        "national_id"
-    )[:10]
+    patients = Patient.objects.filter(patient_q)[:10]
+    patients_data = PatientReadSerializer(patients, many=True).data
 
-    # 🔹 Citas: buscar por nombre del paciente y estado
+    # -----------------------------------------
+    # ✅ CITAS
+    # -----------------------------------------
     appointment_q = Q()
     for token in tokens:
         appointment_q |= Q(patient__first_name__icontains=token)
         appointment_q |= Q(patient__last_name__icontains=token)
         appointment_q |= Q(status__icontains=token)
 
-    appointments = Appointment.objects.filter(appointment_q).values(
-        "id",
-        "appointment_date",
-        "status",
-        "patient_id",
-        "patient__first_name",
-        "patient__last_name"
-    )[:10]
+    appointments = Appointment.objects.filter(appointment_q).select_related("patient")[:10]
+    appointments_data = AppointmentSerializer(appointments, many=True).data
 
-    # 🔹 Órdenes / Pagos: buscar por paciente y estado
+    # -----------------------------------------
+    # ✅ ÓRDENES / PAGOS
+    # -----------------------------------------
     order_q = Q()
     for token in tokens:
         order_q |= Q(patient__first_name__icontains=token)
         order_q |= Q(patient__last_name__icontains=token)
         order_q |= Q(status__icontains=token)
 
-    orders = ChargeOrder.objects.filter(order_q).values(
-        "id",
-        "total",
-        "balance_due",
-        "status",
-        "patient_id",
-        "patient__first_name",
-        "patient__last_name"
-    )[:10]
+    orders = ChargeOrder.objects.filter(order_q).select_related("patient")[:10]
+    orders_data = ChargeOrderSerializer(orders, many=True).data
 
+    # -----------------------------------------
+    # ✅ RESPUESTA FINAL
+    # -----------------------------------------
     return Response({
-        "patients": list(patients),
-        "appointments": list(appointments),
-        "orders": list(orders),
+        "patients": patients_data,
+        "appointments": appointments_data,
+        "orders": orders_data,
     })
