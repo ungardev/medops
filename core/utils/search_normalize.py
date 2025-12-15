@@ -3,7 +3,7 @@ from typing import Union
 
 from django.db.models import F, Expression
 from django.db.models.functions import Lower
-from django.contrib.postgres.search import Unaccent
+from django.db.models.functions import Unaccent
 
 
 def normalize(field: Union[str, F, Expression]):
