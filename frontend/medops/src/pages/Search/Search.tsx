@@ -14,7 +14,9 @@ interface Appointment {
   id: number;
   appointment_date: string;
   status: string;
-  patient_name?: string; // ✅ nuevo campo
+  patient_name?: string;
+  patient?: { id: number }; // ✅ por si viene anidado
+  patient_id?: number;      // ✅ por si viene plano
 }
 
 interface Order {
@@ -22,7 +24,10 @@ interface Order {
   total: number;
   balance_due: number;
   status: string;
-  patient_name?: string; // ✅ nuevo campo
+  patient_name?: string;
+  patient?: { id: number };
+  patient_id?: number;
+  appointment?: number; // ✅ necesario para navegar al detalle clínico
 }
 
 interface SearchResponse {
@@ -128,7 +133,8 @@ export default function SearchPage() {
         results.appointments.length > 0 ||
         results.orders.length > 0 ? (
         <div className="space-y-6 sm:space-y-8">
-          {/* Pacientes */}
+
+          {/* ✅ PACIENTES */}
           {results.patients.length > 0 && (
             <section>
               <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
@@ -154,54 +160,72 @@ export default function SearchPage() {
             </section>
           )}
 
-          {/* Citas */}
+          {/* ✅ CITAS */}
           {results.appointments.length > 0 && (
             <section>
               <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
                 Citas
               </h2>
               <ul className="space-y-2">
-                {results.appointments.map((c) => (
-                  <li key={c.id}>
-                    <Link
-                      to={`/appointments`}
-                      className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                    >
-                      <p className="font-medium text-[#0d2c53] dark:text-white">
-                        Fecha: {c.appointment_date}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Estado: {c.status} — Paciente: {c.patient_name || "—"}
-                      </p>
-                    </Link>
-                  </li>
-                ))}
+                {results.appointments.map((c) => {
+                  const patientId =
+                    c.patient?.id || c.patient_id || null;
+
+                  return (
+                    <li key={c.id}>
+                      <Link
+                        to={
+                          patientId
+                            ? `/patients/${patientId}/consultations/${c.id}`
+                            : "/appointments"
+                        }
+                        className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                      >
+                        <p className="font-medium text-[#0d2c53] dark:text-white">
+                          Fecha: {c.appointment_date}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Estado: {c.status} — Paciente: {c.patient_name || "—"}
+                        </p>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
 
-          {/* Órdenes / Pagos */}
+          {/* ✅ ÓRDENES / PAGOS */}
           {results.orders.length > 0 && (
             <section>
               <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
                 Órdenes / Pagos
               </h2>
               <ul className="space-y-2">
-                {results.orders.map((o) => (
-                  <li key={o.id}>
-                    <Link
-                      to={`/charge-orders/${o.id}`}
-                      className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                    >
-                      <p className="font-medium text-[#0d2c53] dark:text-white">
-                        Orden #{o.id} — Paciente: {o.patient_name || "—"}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Monto: ${o.total} — Estado: {o.status}
-                      </p>
-                    </Link>
-                  </li>
-                ))}
+                {results.orders.map((o) => {
+                  const patientId =
+                    o.patient?.id || o.patient_id || null;
+
+                  return (
+                    <li key={o.id}>
+                      <Link
+                        to={
+                          patientId && o.appointment
+                            ? `/patients/${patientId}/consultations/${o.appointment}`
+                            : `/charge-orders/${o.id}`
+                        }
+                        className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                      >
+                        <p className="font-medium text-[#0d2c53] dark:text-white">
+                          Orden #{o.id} — Paciente: {o.patient_name || "—"}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          Monto: ${o.total} — Estado: {o.status}
+                        </p>
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
