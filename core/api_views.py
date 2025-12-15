@@ -497,30 +497,54 @@ def dashboard_summary_api(request):
 @api_view(["GET"])
 def patient_search_api(request):
     query = request.GET.get("q", "").strip()
+
     if not query:
-        return Response({"count": 0, "next": None, "previous": None, "results": []}, status=200)
+        return Response([], status=200)
 
-    terms = query.split()
-    qs_filter = Q()
+    # Normalizar tokens del usuario
+    raw_tokens = [t.strip() for t in query.split() if t.strip()]
+    tokens = [normalize_token(t) for t in raw_tokens]
 
-    for term in terms:
-        if term.isdigit():
-            qs_filter |= Q(id=int(term))  # ⚔️ búsqueda exacta por folio
-        qs_filter |= Q(first_name__icontains=term)
-        qs_filter |= Q(last_name__icontains=term)
-        qs_filter |= Q(middle_name__icontains=term)
-        qs_filter |= Q(second_last_name__icontains=term)
-        qs_filter |= Q(national_id__icontains=term)
+    if not tokens:
+        return Response([], status=200)
 
-    # ⚔️ Blindaje institucional: solo pacientes activos
-    qs = Patient.objects.filter(active=True).filter(qs_filter).order_by("-created_at")
+    # ============================================================
+    # ANNOTATE NORMALIZADO
+    # ============================================================
+    qs = (
+        Patient.objects
+        .filter(active=True)
+        .annotate(
+            first_name_norm=normalize(F("first_name")),
+            last_name_norm=normalize(F("last_name")),
+            middle_name_norm=normalize(F("middle_name")),
+            second_last_name_norm=normalize(F("second_last_name")),
+            national_id_norm=normalize(F("national_id")),
+        )
+    )
 
-    paginator = PageNumberPagination()
-    paginator.page_size = int(request.query_params.get("page_size", 10))
-    result_page = paginator.paginate_queryset(qs, request)
+    # ============================================================
+    # FILTRO ACENTO-INSENSIBLE
+    # ============================================================
+    q = Q()
+    for token in tokens:
+        q |= Q(first_name_norm__icontains=token)
+        q |= Q(last_name_norm__icontains=token)
+        q |= Q(middle_name_norm__icontains=token)
+        q |= Q(second_last_name_norm__icontains=token)
+        q |= Q(national_id_norm__icontains=token)
 
-    serializer = PatientReadSerializer(result_page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+        # búsqueda exacta por folio
+        if token.isdigit():
+            q |= Q(id=int(token))
+
+    qs = qs.filter(q).order_by("id")[:10]
+
+    # ============================================================
+    # SERIALIZACIÓN SIMPLE (sin paginación)
+    # ============================================================
+    serializer = PatientReadSerializer(qs, many=True)
+    return Response(serializer.data, status=200)
 
 
 @extend_schema(responses={200: AppointmentSerializer(many=True)})
