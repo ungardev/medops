@@ -3834,7 +3834,7 @@ def search(request):
             "orders": []
         })
 
-    # ✅ Normalizar tokens del usuario (acentos + mayúsculas)
+    # Normalizar tokens del usuario
     raw_tokens = [t.strip() for t in query.split() if t.strip()]
     tokens = [normalize_token(t) for t in raw_tokens]
 
@@ -3846,7 +3846,7 @@ def search(request):
         })
 
     # ============================================================
-    # ✅ PACIENTES (formato original para Search.tsx)
+    # PACIENTES
     # ============================================================
     patients = (
         Patient.objects
@@ -3864,16 +3864,13 @@ def search(request):
         patient_q |= Q(national_id_norm__icontains=token)
 
     patients = patients.filter(patient_q).values(
-        "id",
-        "first_name",
-        "last_name",
-        "national_id"
+        "id", "first_name", "last_name", "national_id"
     )[:10]
 
     patients_data = list(patients)
 
     # ============================================================
-    # ✅ CITAS (con patient_name desde el serializer)
+    # CITAS
     # ============================================================
     appointments = (
         Appointment.objects
@@ -3895,7 +3892,7 @@ def search(request):
     appointments_data = AppointmentSerializer(appointments, many=True).data
 
     # ============================================================
-    # ✅ ÓRDENES / PAGOS (con patient_name desde el serializer)
+    # ÓRDENES
     # ============================================================
     orders = (
         ChargeOrder.objects
@@ -3916,9 +3913,6 @@ def search(request):
     orders = orders.filter(order_q)[:10]
     orders_data = ChargeOrderSerializer(orders, many=True).data
 
-    # ============================================================
-    # ✅ RESPUESTA FINAL
-    # ============================================================
     return Response({
         "patients": patients_data,
         "appointments": appointments_data,
