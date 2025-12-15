@@ -3848,67 +3848,72 @@ def search(request):
     # ============================================================
     # ✅ PACIENTES (formato original para Search.tsx)
     # ============================================================
-    patients_q = Q()
-    for token in tokens:
-        patients_q |= Q(first_name_norm__icontains=token)
-        patients_q |= Q(last_name_norm__icontains=token)
-        patients_q |= Q(national_id_norm__icontains=token)
-
     patients = (
         Patient.objects
         .annotate(
-            first_name_norm=normalize("first_name"),
-            last_name_norm=normalize("last_name"),
-            national_id_norm=normalize("national_id"),
+            first_name_norm=normalize(F("first_name")),
+            last_name_norm=normalize(F("last_name")),
+            national_id_norm=normalize(F("national_id")),
         )
-        .filter(patients_q)
-        .values("id", "first_name", "last_name", "national_id")[:10]
     )
+
+    patient_q = Q()
+    for token in tokens:
+        patient_q |= Q(first_name_norm__icontains=token)
+        patient_q |= Q(last_name_norm__icontains=token)
+        patient_q |= Q(national_id_norm__icontains=token)
+
+    patients = patients.filter(patient_q).values(
+        "id",
+        "first_name",
+        "last_name",
+        "national_id"
+    )[:10]
 
     patients_data = list(patients)
 
     # ============================================================
     # ✅ CITAS (con patient_name desde el serializer)
     # ============================================================
-    appointments_q = Q()
-    for token in tokens:
-        appointments_q |= Q(patient__first_name_norm__icontains=token)
-        appointments_q |= Q(patient__last_name_norm__icontains=token)
-        appointments_q |= Q(status_norm__icontains=token)
-
     appointments = (
         Appointment.objects
         .annotate(
-            status_norm=normalize("status"),
-            patient__first_name_norm=normalize("patient__first_name"),
-            patient__last_name_norm=normalize("patient__last_name"),
+            status_norm=normalize(F("status")),
+            patient_first_name_norm=normalize(F("patient__first_name")),
+            patient_last_name_norm=normalize(F("patient__last_name")),
         )
-        .filter(appointments_q)
-        .select_related("patient")[:10]
+        .select_related("patient")
     )
 
+    appointment_q = Q()
+    for token in tokens:
+        appointment_q |= Q(patient_first_name_norm__icontains=token)
+        appointment_q |= Q(patient_last_name_norm__icontains=token)
+        appointment_q |= Q(status_norm__icontains=token)
+
+    appointments = appointments.filter(appointment_q)[:10]
     appointments_data = AppointmentSerializer(appointments, many=True).data
 
     # ============================================================
     # ✅ ÓRDENES / PAGOS (con patient_name desde el serializer)
     # ============================================================
-    orders_q = Q()
-    for token in tokens:
-        orders_q |= Q(patient__first_name_norm__icontains=token)
-        orders_q |= Q(patient__last_name_norm__icontains=token)
-        orders_q |= Q(status_norm__icontains=token)
-
     orders = (
         ChargeOrder.objects
         .annotate(
-            status_norm=normalize("status"),
-            patient__first_name_norm=normalize("patient__first_name"),
-            patient__last_name_norm=normalize("patient__last_name"),
+            status_norm=normalize(F("status")),
+            patient_first_name_norm=normalize(F("patient__first_name")),
+            patient_last_name_norm=normalize(F("patient__last_name")),
         )
-        .filter(orders_q)
-        .select_related("patient")[:10]
+        .select_related("patient")
     )
 
+    order_q = Q()
+    for token in tokens:
+        order_q |= Q(patient_first_name_norm__icontains=token)
+        order_q |= Q(patient_last_name_norm__icontains=token)
+        order_q |= Q(status_norm__icontains=token)
+
+    orders = orders.filter(order_q)[:10]
     orders_data = ChargeOrderSerializer(orders, many=True).data
 
     # ============================================================
