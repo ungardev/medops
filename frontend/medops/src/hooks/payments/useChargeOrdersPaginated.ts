@@ -18,7 +18,8 @@ export function useChargeOrdersPaginated(page: number = 1, pageSize: number = 10
     queryKey: ["charge-orders", page, pageSize],
     queryFn: async (): Promise<PaginatedChargeOrderResponse> =>
       apiFetch<PaginatedChargeOrderResponse>(
-        `charge-orders/?page=${page}&page_size=${pageSize}&ordering=-appointment_date,-issued_at,-id`
+        `/charge-orders/?page=${page}&page_size=${pageSize}&ordering=-appointment_date,-issued_at,-id`,
+        { method: "GET" }
       ),
     // 🔹 Mantener datos previos mientras carga la nueva página
     placeholderData: (prev) => prev,

@@ -4006,3 +4006,63 @@ def appointment_search_api(request):
 
     serializer = AppointmentSerializer(qs, many=True)
     return Response(serializer.data, status=200)
+
+
+@extend_schema(
+    parameters=[OpenApiParameter("q", str, OpenApiParameter.QUERY)],
+    responses={200: ChargeOrderPaymentSerializer(many=True)}
+)
+@api_view(["GET"])
+def chargeorder_search_api(request):
+    query = request.GET.get("q", "").strip()
+
+    if not query:
+        return Response([], status=200)
+
+    raw_tokens = [t.strip() for t in query.split() if t.strip()]
+    tokens = [normalize_token(t) for t in raw_tokens]
+
+    if not tokens:
+        return Response([], status=200)
+
+    qs = (
+        ChargeOrder.objects
+        .select_related("patient", "appointment")
+        .annotate(
+            patient_name_norm = normalize(
+                Coalesce(F("patient__full_name"), Value(""), output_field=CharField())
+            ),
+            status_norm = normalize(
+                Coalesce(F("status"), Value(""), output_field=CharField())
+            ),
+            total_norm = normalize(
+                Coalesce(Cast(F("total"), output_field=CharField()), Value(""), output_field=CharField())
+            ),
+            balance_norm = normalize(
+                Coalesce(Cast(F("balance_due"), output_field=CharField()), Value(""), output_field=CharField())
+            ),
+            date_norm = normalize(
+                Coalesce(Cast(F("appointment__appointment_date"), output_field=CharField()), Value(""), output_field=CharField())
+            ),
+            id_norm = normalize(
+                Cast(F("id"), output_field=CharField())
+            ),
+        )
+    )
+
+    q = Q()
+    for token in tokens:
+        q |= Q(patient_name_norm__icontains=token)
+        q |= Q(status_norm__icontains=token)
+        q |= Q(total_norm__icontains=token)
+        q |= Q(balance_norm__icontains=token)
+        q |= Q(date_norm__icontains=token)
+        q |= Q(id_norm__icontains=token)
+
+        if token.isdigit():
+            q |= Q(id=int(token))
+
+    qs = qs.filter(q).order_by("-appointment__appointment_date", "-issued_at", "-id")[:10]
+
+    serializer = ChargeOrderPaymentSerializer(qs, many=True)
+    return Response(serializer.data, status=200)
