@@ -4025,27 +4025,36 @@ def chargeorder_search_api(request):
     if not tokens:
         return Response([], status=200)
 
+    # 🔹 Construcción real del nombre completo del paciente
+    full_name_expr = (
+        Coalesce(F("patient__first_name"), Value(""), output_field=CharField())
+        + Value(" ")
+        + Coalesce(F("patient__middle_name"), Value(""), output_field=CharField())
+        + Value(" ")
+        + Coalesce(F("patient__last_name"), Value(""), output_field=CharField())
+        + Value(" ")
+        + Coalesce(F("patient__second_last_name"), Value(""), output_field=CharField())
+    )
+
     qs = (
         ChargeOrder.objects
         .select_related("patient", "appointment")
         .annotate(
-            patient_name_norm = normalize(
-                Coalesce(F("patient__full_name"), Value(""), output_field=CharField())
-            ),
-            status_norm = normalize(
+            patient_name_norm=normalize(full_name_expr),
+            status_norm=normalize(
                 Coalesce(F("status"), Value(""), output_field=CharField())
             ),
-            total_norm = normalize(
-                Coalesce(Cast(F("total"), output_field=CharField()), Value(""), output_field=CharField())
+            total_norm=normalize(
+                Coalesce(Cast(F("total"), CharField()), Value(""), output_field=CharField())
             ),
-            balance_norm = normalize(
-                Coalesce(Cast(F("balance_due"), output_field=CharField()), Value(""), output_field=CharField())
+            balance_norm=normalize(
+                Coalesce(Cast(F("balance_due"), CharField()), Value(""), output_field=CharField())
             ),
-            date_norm = normalize(
-                Coalesce(Cast(F("appointment__appointment_date"), output_field=CharField()), Value(""), output_field=CharField())
+            date_norm=normalize(
+                Coalesce(Cast(F("appointment__appointment_date"), CharField()), Value(""), output_field=CharField())
             ),
-            id_norm = normalize(
-                Cast(F("id"), output_field=CharField())
+            id_norm=normalize(
+                Cast(F("id"), CharField())
             ),
         )
     )
@@ -4062,7 +4071,11 @@ def chargeorder_search_api(request):
         if token.isdigit():
             q |= Q(id=int(token))
 
-    qs = qs.filter(q).order_by("-appointment__appointment_date", "-issued_at", "-id")[:10]
+    qs = qs.filter(q).order_by(
+        "-appointment__appointment_date",
+        "-issued_at",
+        "-id"
+    )[:10]
 
     serializer = ChargeOrderPaymentSerializer(qs, many=True)
     return Response(serializer.data, status=200)
