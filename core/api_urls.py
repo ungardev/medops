@@ -47,7 +47,8 @@ from .api_views import (
     appointment_detail_api,
     documents_api,
     search,
-    appointment_search_api,   # 👈 AÑADIDO: IMPORT DEL ENDPOINT DE BÚSQUEDA DE CITAS
+    appointment_search_api,
+    chargeorder_search_api,   # 👈 AÑADIDO: IMPORT DEL ENDPOINT DE BÚSQUEDA DE ÓRDENES
 )
 
 # --- Swagger / OpenAPI ---
@@ -103,7 +104,7 @@ urlpatterns = [
     ),
 
     # --- Citas ---
-    path("appointments/search/", appointment_search_api, name="appointment-search-api"),  # 👈 AÑADIDO
+    path("appointments/search/", appointment_search_api, name="appointment-search-api"),
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
@@ -131,6 +132,9 @@ urlpatterns = [
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
 
+    # --- Órdenes de Pago: búsqueda institucional ---
+    path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
+
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
     path("notifications/", api_views.notifications_api, name="notifications-api"),
@@ -155,7 +159,7 @@ urlpatterns = [
     path("choices/medical-referral/", medicalreferral_choices_api, name="medicalreferral-choices-api"),
     path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
 
-    # --- Búsqueda institucional ---
+    # --- Búsqueda institucional general ---
     path("search/", search, name="search-api"),
 ]
 
