@@ -20,7 +20,10 @@ import {
   useUpdateAppointment,
   useUpdateAppointmentStatus,
 } from "hooks/appointments";
+
 import { useAllAppointments } from "hooks/appointments/useAllAppointments";
+import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch";
+
 import Pagination from "components/Common/Pagination";
 
 export default function Appointments() {
@@ -35,8 +38,15 @@ export default function Appointments() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
+  // 🔹 Carga completa (calendario + vista ejecutiva)
   const { data: allData, isLoading, isFetching, error } = useAllAppointments();
   const allAppointments = allData?.list ?? [];
+
+  // 🔹 Buscador institucional (backend)
+  const {
+    data: searchResults = [],
+    isLoading: isSearching,
+  } = useAppointmentsSearch(search);
 
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
@@ -45,7 +55,6 @@ export default function Appointments() {
 
   // ⚔️ Overlay institucional activo desde el inicio
   const [showOverlay, setShowOverlay] = useState(true);
-  const showSkeleton = isLoading && (!allAppointments || allAppointments.length === 0);
 
   useEffect(() => {
     if (!isLoading && !isFetching && allAppointments && allAppointments.length > 0) {
@@ -71,7 +80,17 @@ export default function Appointments() {
     }
   };
 
-  const filteredAppointments = allAppointments
+  // ============================================================
+  // 🔍 LÓGICA INSTITUCIONAL DE BÚSQUEDA
+  // ============================================================
+
+  const isSearchingActive = search.trim().length > 0;
+
+  // 🔹 Si hay búsqueda → usar backend
+  const backendAppointments = searchResults;
+
+  // 🔹 Si NO hay búsqueda → aplicar filtros locales
+  const localFilteredAppointments = allAppointments
     .filter((appt) =>
       selectedDate
         ? moment(appt.appointment_date, "YYYY-MM-DD").isSame(selectedDate, "day")
@@ -80,26 +99,23 @@ export default function Appointments() {
     .filter((appt) =>
       statusFilter === "all" ? true : appt.status === statusFilter
     )
-    .filter((appt) => {
-      if (!search.trim()) return true;
-      const term = search.toLowerCase();
-      return (
-        appt.patient.full_name.toLowerCase().includes(term) ||
-        appt.appointment_date.includes(term) ||
-        (appt.notes && appt.notes.toLowerCase().includes(term)) ||
-        appt.appointment_type.toLowerCase().includes(term)
-      );
-    })
     .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
 
-  const totalItems = filteredAppointments.length;
-  const paginatedAppointments = filteredAppointments.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // 🔹 Selección final según modo
+  const finalAppointments = isSearchingActive
+    ? backendAppointments
+    : localFilteredAppointments;
+
+  // 🔹 Paginación solo cuando NO hay búsqueda
+  const totalItems = isSearchingActive ? finalAppointments.length : localFilteredAppointments.length;
+
+  const paginatedAppointments = isSearchingActive
+    ? finalAppointments // sin paginación
+    : finalAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (error) return <p className="text-red-600">Error cargando citas</p>;
-    return (
+
+  return (
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 relative">
       {/* Header */}
       <div>
@@ -155,7 +171,8 @@ export default function Appointments() {
                 ? `Citas del ${moment(selectedDate).format("DD/MM/YYYY")}`
                 : "Todas las Citas"}
             </h2>
-            {selectedDate && (
+
+            {selectedDate && !isSearchingActive && (
               <button
                 onClick={() => setSelectedDate(null)}
                 className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
@@ -169,10 +186,13 @@ export default function Appointments() {
 
           {/* Filtros + Nueva Cita */}
           <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
-            <AppointmentFilters
-              activeFilter={statusFilter}
-              onFilterChange={setStatusFilter}
-            />
+            {!isSearchingActive && (
+              <AppointmentFilters
+                activeFilter={statusFilter}
+                onFilterChange={setStatusFilter}
+              />
+            )}
+
             <button
               onClick={() => setShowCreateForm(true)}
               className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
@@ -192,6 +212,16 @@ export default function Appointments() {
                          bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
                          focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
             />
+
+            {isSearchingActive && (
+              <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400 mt-1">
+                Mostrando resultados para “{search.trim()}”
+              </p>
+            )}
+
+            {isSearching && (
+              <span className="text-xs sm:text-[#0d2c53] dark:text-gray-400">Buscando…</span>
+            )}
           </div>
 
           <AppointmentsList
@@ -201,7 +231,8 @@ export default function Appointments() {
             onStatusChange={(id, status) => statusMutation.mutate({ id, status })}
           />
 
-          {totalItems > 0 && (
+          {/* Paginación solo cuando NO hay búsqueda */}
+          {!isSearchingActive && totalItems > 0 && (
             <div className="flex justify-end mt-3 sm:mt-4">
               <Pagination
                 currentPage={currentPage}
@@ -214,7 +245,7 @@ export default function Appointments() {
         </div>
       </div>
 
-      {/* Overlay institucional adaptativo desde inicio y en refetch */}
+      {/* Overlay institucional adaptativo */}
       {showOverlay && (
         <div className="absolute inset-0 bg-white/70 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <span className="text-base text-[#0d2c53] dark:text-white animate-pulse font-semibold">

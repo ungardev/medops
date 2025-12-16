@@ -11,11 +11,11 @@ from .api_views import (
     DiagnosisViewSet,
     TreatmentViewSet,
     PrescriptionViewSet,
-    ChargeOrderViewSet,        # 👈 añadido
-    ChargeItemViewSet,         # 👈 nuevo
-    MedicalTestViewSet,        # 👈 NUEVO
-    MedicalReferralViewSet,    # 👈 NUEVO
-    SpecialtyViewSet,          # 👈 NUEVO catálogo institucional
+    ChargeOrderViewSet,
+    ChargeItemViewSet,
+    MedicalTestViewSet,
+    MedicalReferralViewSet,
+    SpecialtyViewSet,
     update_appointment_status,
     update_waitingroom_status,
     patient_search_api,
@@ -35,10 +35,9 @@ from .api_views import (
     generate_prescription_pdf,
     generate_treatment_pdf,
     generate_referral_pdf,
-    generate_chargeorder_pdf,      # 👈 ENDPOINT DE ORDEN FINANCIERA
+    generate_chargeorder_pdf,
     generate_used_documents,
     icd_search_api,
-    # --- Endpoints de choices ---
     treatment_choices_api,
     prescription_choices_api,
     medicaltest_choices_api,
@@ -46,14 +45,15 @@ from .api_views import (
     specialty_choices_api,
     current_consultation_api,
     appointment_detail_api,
-    documents_api,                 # 👈 endpoint global de documentos clínicos
-    search,                        # 👈 NUEVO endpoint de búsqueda institucional
+    documents_api,
+    search,
+    appointment_search_api,   # 👈 AÑADIDO: IMPORT DEL ENDPOINT DE BÚSQUEDA DE CITAS
 )
 
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
-from django.conf.urls.static import static   # 👈 añadido
+from django.conf.urls.static import static
 
 # --- Router DRF ---
 router = routers.DefaultRouter()
@@ -103,6 +103,7 @@ urlpatterns = [
     ),
 
     # --- Citas ---
+    path("appointments/search/", appointment_search_api, name="appointment-search-api"),  # 👈 AÑADIDO
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
@@ -155,7 +156,7 @@ urlpatterns = [
     path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
 
     # --- Búsqueda institucional ---
-    path("search/", search, name="search-api"),  # 👈 FIX: ahora bajo /api/search/
+    path("search/", search, name="search-api"),
 ]
 
 # --- Documentación OpenAPI ---
