@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.files import File
 from django.core.files.base import ContentFile
 from django.db import transaction
-from django.db.models import Count, Sum, Q, F
+from django.db.models import Count, Sum, Q, F, Value
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse, FileResponse
@@ -3966,12 +3966,12 @@ def appointment_search_api(request):
         Appointment.objects
         .select_related("patient")
         .annotate(
-            patient_first_name_norm = normalize(Coalesce(F("patient__first_name"), "")),
-            patient_last_name_norm  = normalize(Coalesce(F("patient__last_name"), "")),
-            status_norm             = normalize(Coalesce(F("status"), "")),
-            type_norm               = normalize(Coalesce(F("appointment_type"), "")),
-            notes_norm              = normalize(Coalesce(F("notes"), "")),
-            date_norm               = normalize(Coalesce(F("appointment_date"), "")),
+            patient_first_name_norm = normalize(Coalesce(F("patient__first_name"), Value(""))),
+            patient_last_name_norm  = normalize(Coalesce(F("patient__last_name"), Value(""))),
+            status_norm             = normalize(Coalesce(F("status"), Value(""))),
+            type_norm               = normalize(Coalesce(F("appointment_type"), Value(""))),
+            notes_norm              = normalize(Coalesce(F("notes"), Value(""))),
+            date_norm               = normalize(Coalesce(F("appointment_date"), Value(""))),
         )
     )
 
@@ -3991,4 +3991,3 @@ def appointment_search_api(request):
 
     serializer = AppointmentSerializer(qs, many=True)
     return Response(serializer.data, status=200)
-
