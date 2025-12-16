@@ -5,7 +5,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Count, Sum, Q, F, Value, CharField
-from django.db.models.functions import TruncDate, TruncMonth, TruncWeek, Coalesce, Cast
+from django.db.models.functions import TruncDate, TruncMonth, TruncWeek, Coalesce, Cast, Concat
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404
@@ -4025,15 +4025,16 @@ def chargeorder_search_api(request):
     if not tokens:
         return Response([], status=200)
 
-    # 🔹 Construcción real del nombre completo del paciente
-    full_name_expr = (
-        Coalesce(F("patient__first_name"), Value(""), output_field=CharField())
-        + Value(" ")
-        + Coalesce(F("patient__middle_name"), Value(""), output_field=CharField())
-        + Value(" ")
-        + Coalesce(F("patient__last_name"), Value(""), output_field=CharField())
-        + Value(" ")
-        + Coalesce(F("patient__second_last_name"), Value(""), output_field=CharField())
+    # 🔹 Construcción real del nombre completo usando Concat (seguro en Django 5)
+    full_name_expr = Concat(
+        Coalesce(F("patient__first_name"), Value(""), output_field=CharField()),
+        Value(" "),
+        Coalesce(F("patient__middle_name"), Value(""), output_field=CharField()),
+        Value(" "),
+        Coalesce(F("patient__last_name"), Value(""), output_field=CharField()),
+        Value(" "),
+        Coalesce(F("patient__second_last_name"), Value(""), output_field=CharField()),
+        output_field=CharField(),
     )
 
     qs = (
