@@ -5,7 +5,7 @@ from django.core.files import File
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import Count, Sum, Q, F, Value, CharField
-from django.db.models.functions import TruncDate, TruncMonth, TruncWeek
+from django.db.models.functions import TruncDate, TruncMonth, TruncWeek, Coalesce, Cast
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse, FileResponse
 from django.shortcuts import get_object_or_404
@@ -78,7 +78,6 @@ from .serializers import (
 )
 
 from core.utils.search_normalize import normalize, normalize_token
-from django.db.models.functions import Coalesce
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 
 
@@ -3982,7 +3981,11 @@ def appointment_search_api(request):
                 Coalesce(F("notes"), Value(""), output_field=CharField())
             ),
             date_norm = normalize(
-                Coalesce(F("appointment_date"), Value(""), output_field=CharField())
+                Coalesce(
+                    Cast(F("appointment_date"), output_field=CharField()),
+                    Value(""),
+                    output_field=CharField()
+                )
             ),
         )
     )
