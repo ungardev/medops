@@ -78,6 +78,7 @@ from .serializers import (
 )
 
 from core.utils.search_normalize import normalize, normalize_token
+from django.db.models.functions import Coalesce
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 
 
@@ -3950,64 +3951,44 @@ def search(request):
 )
 @api_view(["GET"])
 def appointment_search_api(request):
-    """
-    🔍 Buscador institucional de citas:
-    - Acento-insensible
-    - Multi-campo: paciente, fecha, tipo, notas, estado
-    - Máximo 10 resultados
-    - Respuesta sin paginación (lista simple)
-    """
     query = request.GET.get("q", "").strip()
 
     if not query:
         return Response([], status=200)
 
-    # Normalizar tokens del usuario
     raw_tokens = [t.strip() for t in query.split() if t.strip()]
     tokens = [normalize_token(t) for t in raw_tokens]
 
     if not tokens:
         return Response([], status=200)
 
-    # ============================================================
-    # ANNOTATE NORMALIZADO
-    # ============================================================
     qs = (
         Appointment.objects
         .select_related("patient")
         .annotate(
-            patient_first_name_norm=normalize(F("patient__first_name")),
-            patient_last_name_norm=normalize(F("patient__last_name")),
-            status_norm=normalize(F("status")),
-            type_norm=normalize(F("appointment_type")),
-            notes_norm=normalize(F("notes")),
-            date_norm=normalize(F("appointment_date")),
+            patient_first_name_norm = normalize(Coalesce(F("patient__first_name"), "")),
+            patient_last_name_norm  = normalize(Coalesce(F("patient__last_name"), "")),
+            status_norm             = normalize(Coalesce(F("status"), "")),
+            type_norm               = normalize(Coalesce(F("appointment_type"), "")),
+            notes_norm              = normalize(Coalesce(F("notes"), "")),
+            date_norm               = normalize(Coalesce(F("appointment_date"), "")),
         )
     )
 
-    # ============================================================
-    # FILTRO ACENTO-INSENSIBLE
-    # ============================================================
     q = Q()
     for token in tokens:
-        # Paciente
         q |= Q(patient_first_name_norm__icontains=token)
         q |= Q(patient_last_name_norm__icontains=token)
-
-        # Estado, tipo, notas, fecha
         q |= Q(status_norm__icontains=token)
         q |= Q(type_norm__icontains=token)
         q |= Q(notes_norm__icontains=token)
         q |= Q(date_norm__icontains=token)
 
-        # Si es número → buscar por ID de cita
         if token.isdigit():
             q |= Q(id=int(token))
 
     qs = qs.filter(q).order_by("-appointment_date")[:10]
 
-    # ============================================================
-    # SERIALIZACIÓN SIMPLE
-    # ============================================================
     serializer = AppointmentSerializer(qs, many=True)
     return Response(serializer.data, status=200)
+
