@@ -60,7 +60,8 @@ from drf_spectacular.utils import (
     extend_schema, OpenApiResponse, OpenApiParameter, OpenApiExample
 )
 
-from .models import (Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource
+from .models import (
+    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination, Patient
 )
 
 from .serializers import (
@@ -74,7 +75,9 @@ from .serializers import (
     EventSerializer, ReportRowSerializer, ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer,
     DoctorOperatorSerializer, MedicalReportSerializer, ICD11EntrySerializer, DiagnosisWriteSerializer,
     MedicalTestSerializer, MedicalReferralSerializer, PrescriptionWriteSerializer, TreatmentWriteSerializer,
-    MedicalTestWriteSerializer, MedicalReferralWriteSerializer, SpecialtySerializer
+    MedicalTestWriteSerializer, MedicalReferralWriteSerializer, SpecialtySerializer,
+    PersonalHistorySerializer, FamilyHistorySerializer, SurgerySerializer, HabitSerializer,
+    VaccineSerializer, VaccinationScheduleSerializer, PatientVaccinationSerializer, PatientClinicalProfileSerializer,
 )
 
 from core.utils.search_normalize import normalize, normalize_token
@@ -4080,3 +4083,93 @@ def chargeorder_search_api(request):
 
     serializer = ChargeOrderPaymentSerializer(qs, many=True)
     return Response(serializer.data, status=200)
+
+
+class PersonalHistoryViewSet(viewsets.ModelViewSet):
+    queryset = PersonalHistory.objects.all()
+    serializer_class = PersonalHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            return PersonalHistory.objects.filter(patient_id=patient_id)
+        return super().get_queryset()
+
+
+class FamilyHistoryViewSet(viewsets.ModelViewSet):
+    queryset = FamilyHistory.objects.all()
+    serializer_class = FamilyHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            return FamilyHistory.objects.filter(patient_id=patient_id)
+        return super().get_queryset()
+
+
+class SurgeryViewSet(viewsets.ModelViewSet):
+    queryset = Surgery.objects.all()
+    serializer_class = SurgerySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            return Surgery.objects.filter(patient_id=patient_id)
+        return super().get_queryset()
+
+
+class HabitViewSet(viewsets.ModelViewSet):
+    queryset = Habit.objects.all()
+    serializer_class = HabitSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            return Habit.objects.filter(patient_id=patient_id)
+        return super().get_queryset()
+
+
+class VaccineViewSet(viewsets.ModelViewSet):
+    queryset = Vaccine.objects.all()
+    serializer_class = VaccineSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class VaccinationScheduleViewSet(viewsets.ModelViewSet):
+    queryset = VaccinationSchedule.objects.all()
+    serializer_class = VaccinationScheduleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        country = self.request.query_params.get("country")
+        if country:
+            return VaccinationSchedule.objects.filter(country=country)
+        return super().get_queryset()
+
+
+class PatientVaccinationViewSet(viewsets.ModelViewSet):
+    queryset = PatientVaccination.objects.all()
+    serializer_class = PatientVaccinationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.request.query_params.get("patient")
+        if patient_id:
+            return PatientVaccination.objects.filter(patient_id=patient_id)
+        return super().get_queryset()
+
+
+class PatientClinicalProfileViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Patient.objects.all()
+    serializer_class = PatientClinicalProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    @action(detail=True, methods=["get"])
+    def profile(self, request, pk=None):
+        patient = self.get_object()
+        serializer = PatientClinicalProfileSerializer(patient)
+        return Response(serializer.data)

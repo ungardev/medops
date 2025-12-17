@@ -115,9 +115,26 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
     >
       {/* Íconos mobile */}
       <div className="absolute top-2 right-2 sm:hidden flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
-        <CreditCard className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleRegisterPaymentClick} />
-        <Eye className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleViewDetail} />
-        <ArrowUpSquare className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleExport} />
+        <span title="Registrar pago">
+          <CreditCard
+            className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
+            onClick={handleRegisterPaymentClick}
+          />
+        </span>
+
+        <span title="Ver detalle">
+          <Eye
+            className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
+            onClick={handleViewDetail}
+          />
+        </span>
+
+        <span title="Exportar PDF">
+          <ArrowUpSquare
+            className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
+            onClick={handleExport}
+          />
+        </span>
       </div>
 
       {/* Vista compacta */}
@@ -129,8 +146,7 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
           {statusLabel}
         </span>
       </div>
-
-      {/* Vista desktop */}
+            {/* Vista desktop */}
       <div className="hidden sm:flex justify-between items-center">
         <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
           <span className="font-semibold">{patientName}</span>
@@ -140,10 +156,29 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
             {statusLabel}
           </span>
         </div>
+
+        {/* Íconos desktop */}
         <div className="flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
-          <CreditCard className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleRegisterPaymentClick} />
-          <Eye className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleViewDetail} />
-          <ArrowUpSquare className="w-5 h-5 cursor-pointer hover:text-[#0b2444]" onClick={handleExport} />
+          <span title="Registrar pago">
+            <CreditCard
+              className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
+              onClick={handleRegisterPaymentClick}
+            />
+          </span>
+
+          <span title="Ver detalle">
+            <Eye
+              className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
+              onClick={handleViewDetail}
+            />
+          </span>
+
+          <span title="Exportar PDF">
+            <ArrowUpSquare
+              className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
+              onClick={handleExport}
+            />
+          </span>
         </div>
       </div>
 

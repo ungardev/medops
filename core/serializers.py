@@ -4,7 +4,8 @@ from .models import (
     Patient, Appointment, Payment, Event, WaitingRoomEntry,
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
-    ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent
+    ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
+    PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -1282,3 +1283,139 @@ class AppointmentDetailSerializer(AppointmentSerializer):
             .first()
         )
         return ChargeOrderSerializer(order).data if order else None
+
+
+class PersonalHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PersonalHistory
+        fields = [
+            "id",
+            "patient",
+            "type",
+            "description",
+            "date",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+
+class FamilyHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FamilyHistory
+        fields = [
+            "id",
+            "patient",
+            "condition",
+            "relative",
+            "notes",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class SurgerySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Surgery
+        fields = [
+            "id",
+            "patient",
+            "name",
+            "date",
+            "hospital",
+            "complications",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class HabitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Habit
+        fields = [
+            "id",
+            "patient",
+            "type",
+            "description",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+
+class VaccineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Vaccine
+        fields = [
+            "id",
+            "name",
+            "code",
+            "description",
+            "country",
+        ]
+        read_only_fields = ["id"]
+
+
+class VaccinationScheduleSerializer(serializers.ModelSerializer):
+    vaccine_detail = VaccineSerializer(source="vaccine", read_only=True)
+
+    class Meta:
+        model = VaccinationSchedule
+        fields = [
+            "id",
+            "vaccine",
+            "vaccine_detail",
+            "recommended_age_months",
+            "dose_number",
+            "country",
+        ]
+        read_only_fields = ["id"]
+
+
+class PatientVaccinationSerializer(serializers.ModelSerializer):
+    vaccine_detail = VaccineSerializer(source="vaccine", read_only=True)
+
+    class Meta:
+        model = PatientVaccination
+        fields = [
+            "id",
+            "patient",
+            "vaccine",
+            "vaccine_detail",
+            "dose_number",
+            "date_administered",
+            "lot",
+            "center",
+            "next_dose_date",
+        ]
+        read_only_fields = ["id"]
+
+
+class PatientClinicalProfileSerializer(serializers.ModelSerializer):
+    personal_history = PersonalHistorySerializer(many=True, read_only=True)
+    family_history = FamilyHistorySerializer(many=True, read_only=True)
+    surgeries = SurgerySerializer(many=True, read_only=True)
+    habits = HabitSerializer(many=True, read_only=True)
+    vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Patient
+        fields = [
+            "id",
+            "first_name",
+            "middle_name",
+            "last_name",
+            "second_last_name",
+            "birthdate",
+            "birth_place",
+            "birth_country",
+            "gender",
+            "address",
+            "blood_type",
+            "allergies",
+            "medical_history",
+            "personal_history",
+            "family_history",
+            "surgeries",
+            "habits",
+            "vaccinations",
+        ]

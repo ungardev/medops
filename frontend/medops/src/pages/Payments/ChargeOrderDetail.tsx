@@ -7,7 +7,7 @@ import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
 import { useState } from "react";
 import { ChargeOrder } from "@/types/payments";
 import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders";
-import { apiFetch } from "@/api/client"; // ⚔️ Cliente institucional
+import { apiFetch } from "@/api/client";
 
 interface Event {
   id: number;
@@ -16,6 +16,7 @@ interface Event {
   timestamp: string;
   notes?: string | null | Record<string, any>;
 }
+
 export default function ChargeOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -36,7 +37,6 @@ export default function ChargeOrderDetail() {
     queryFn: async () => apiFetch<Event[]>(`charge-orders/${id}/events/`),
   });
 
-  // ✅ Mutación para anular orden
   const voidMutation = useMutation({
     mutationFn: async () => {
       await apiFetch<void>(`charge-orders/${id}/void/`, { method: "POST" });
@@ -46,7 +46,6 @@ export default function ChargeOrderDetail() {
     },
   });
 
-  // ✅ Mutación para exonerar orden
   const waiveMutation = useMutation({
     mutationFn: async () => {
       await apiFetch<void>(`charge-orders/${id}/waive/`, { method: "POST" });
@@ -56,17 +55,29 @@ export default function ChargeOrderDetail() {
     },
   });
 
+  // Exportar PDF igual que ChargeOrderRow
   const handleExport = async () => {
     if (!order?.id) {
       alert("No se encontró el ID de la orden.");
       return;
     }
+
     try {
+      const token = localStorage.getItem("authToken");
+
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/charge-orders/${order.id}/export/`,
-        { headers: { Accept: "application/pdf" } }
+        {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Token ${token}` } : {}),
+          },
+          credentials: "include",
+        }
       );
+
       if (!response.ok) throw new Error("Error exportando orden");
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -76,20 +87,24 @@ export default function ChargeOrderDetail() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+
     } catch (err) {
       console.error("Error exportando orden", err);
       alert("No se pudo exportar la orden. Verifica el endpoint en el backend.");
     }
   };
 
-  if (isLoading) return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando detalle de la orden...</p>;
-  if (error || !order) return <p className="text-sm text-red-600 dark:text-red-400">Error cargando la orden</p>;
+  if (isLoading)
+    return <p className="text-sm text-gray-600 dark:text-gray-400">Cargando detalle de la orden...</p>;
+
+  if (error || !order)
+    return <p className="text-sm text-red-600 dark:text-red-400">Error cargando la orden</p>;
 
   const total = order.total_amount ?? order.total ?? 0;
   const paid = order.payments?.reduce((acc, p) => acc + Number(p.amount), 0) ?? 0;
   const pending = Number(total) - paid;
 
-    return (
+  return (
     <div className="p-6 space-y-6">
       <PageHeader
         title={`Orden de Pago #${order.id}`}
@@ -141,7 +156,7 @@ export default function ChargeOrderDetail() {
         <PaymentList payments={order.payments || []} />
       </section>
 
-      {/* Timeline de eventos */}
+      {/* Timeline */}
       {events && events.length > 0 && (
         <section className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-4 bg-white dark:bg-gray-900">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Historial de Eventos</h3>
@@ -165,6 +180,7 @@ export default function ChargeOrderDetail() {
                   >
                     ●
                   </span>
+
                   <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700 shadow-sm">
                     <div className="flex justify-between">
                       <span className="font-medium capitalize">{ev.action.replace("_", " ")}</span>
@@ -172,14 +188,14 @@ export default function ChargeOrderDetail() {
                         {new Date(ev.timestamp).toLocaleString()}
                       </span>
                     </div>
+
                     <div className="text-sm text-gray-600 dark:text-gray-300">
                       Actor: {ev.actor ?? "—"}
                     </div>
+
                     {ev.notes && (
                       <div className="text-xs text-gray-500 italic mt-1">
-                        {typeof ev.notes === "object"
-                          ? JSON.stringify(ev.notes)
-                          : ev.notes}
+                        {typeof ev.notes === "object" ? JSON.stringify(ev.notes) : ev.notes}
                       </div>
                     )}
                   </div>
@@ -192,12 +208,15 @@ export default function ChargeOrderDetail() {
       {/* Acciones */}
       <div className="mt-6 flex flex-wrap gap-3">
         <button
+          type="button"
           className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition text-sm"
           onClick={() => setShowModal(true)}
         >
           Registrar pago
         </button>
+
         <button
+          type="button"
           className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
                      bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
                      hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
@@ -205,21 +224,27 @@ export default function ChargeOrderDetail() {
         >
           Exportar
         </button>
+
         <button
+          type="button"
           className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition text-sm"
           onClick={() => voidMutation.mutate()}
           disabled={voidMutation.isPending}
         >
           {voidMutation.isPending ? "Anulando..." : "Anular orden"}
         </button>
+
         <button
+          type="button"
           className="px-4 py-2 rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition text-sm"
           onClick={() => waiveMutation.mutate()}
           disabled={waiveMutation.isPending}
         >
           {waiveMutation.isPending ? "Exonerando..." : "Exonerar orden"}
         </button>
+
         <button
+          type="button"
           className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
                      bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 
                      hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
@@ -229,7 +254,7 @@ export default function ChargeOrderDetail() {
         </button>
       </div>
 
-      {/* Modal de pago */}
+      {/* Modal */}
       {showModal && (
         <RegisterPaymentModal
           appointmentId={order.appointment}

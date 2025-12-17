@@ -55,11 +55,29 @@ class Patient(models.Model):
             MaxLengthValidator(10, message="La cédula no puede tener más de 10 dígitos.")
         ]
     )
+
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)
     second_last_name = models.CharField(max_length=100, blank=True, null=True)
+
     birthdate = models.DateField(blank=True, null=True)
+
+    # 🔹 NUEVO: Lugar de nacimiento
+    birth_place = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Lugar de nacimiento"
+    )
+
+    # 🔹 NUEVO: País de nacimiento (para esquemas de vacunación)
+    birth_country = models.CharField(
+        max_length=100,
+        default="Venezuela",
+        verbose_name="País de nacimiento"
+    )
+
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     contact_info = models.TextField(blank=True, null=True)
 
@@ -1071,3 +1089,159 @@ class MedicationCatalog(models.Model):
 
     def __str__(self):
         return f"{self.name} — {self.presentation} — {self.concentration}"
+
+
+class PersonalHistory(models.Model):
+    HISTORY_TYPES = [
+        ("patologico", "Patológico"),
+        ("no_patologico", "No patológico"),
+        ("quirurgico", "Quirúrgico"),
+        ("traumatico", "Traumático"),
+        ("alergico", "Alérgico"),
+        ("toxico", "Tóxico"),
+        ("gineco_obstetrico", "Gineco-Obstétrico"),
+    ]
+
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="personal_history"
+    )
+    type = models.CharField(max_length=50, choices=HISTORY_TYPES)
+    description = models.TextField()
+    date = models.DateField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Personal History"
+        verbose_name_plural = "Personal Histories"
+
+    def __str__(self):
+        return f"{self.patient} — {self.get_type_display()}"
+
+
+class FamilyHistory(models.Model):
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="family_history"
+    )
+    condition = models.CharField(max_length=255)
+    relative = models.CharField(max_length=100)  # madre, padre, abuelo, etc.
+    notes = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Family History"
+        verbose_name_plural = "Family Histories"
+
+    def __str__(self):
+        return f"{self.patient} — {self.condition} ({self.relative})"
+
+
+class Surgery(models.Model):
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="surgeries"
+    )
+    name = models.CharField(max_length=255)
+    date = models.DateField()
+    hospital = models.CharField(max_length=255, blank=True, null=True)
+    complications = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Surgery"
+        verbose_name_plural = "Surgeries"
+
+    def __str__(self):
+        return f"{self.patient} — {self.name}"
+
+
+class Habit(models.Model):
+    HABIT_TYPES = [
+        ("tabaco", "Tabaco"),
+        ("alcohol", "Alcohol"),
+        ("actividad_fisica", "Actividad física"),
+        ("dieta", "Dieta"),
+        ("sueno", "Sueño"),
+    ]
+
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="habits"
+    )
+    type = models.CharField(max_length=50, choices=HABIT_TYPES)
+    description = models.TextField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Habit"
+        verbose_name_plural = "Habits"
+
+    def __str__(self):
+        return f"{self.patient} — {self.get_type_display()}"
+
+
+class Vaccine(models.Model):
+    name = models.CharField(max_length=255)
+    code = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True, null=True)
+    country = models.CharField(max_length=100, default="Venezuela")
+
+    class Meta:
+        verbose_name = "Vaccine"
+        verbose_name_plural = "Vaccines"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class VaccinationSchedule(models.Model):
+    vaccine = models.ForeignKey(
+        Vaccine,
+        on_delete=models.CASCADE,
+        related_name="schedule"
+    )
+    recommended_age_months = models.PositiveIntegerField()
+    dose_number = models.PositiveIntegerField()
+    country = models.CharField(max_length=100, default="Venezuela")
+
+    class Meta:
+        verbose_name = "Vaccination Schedule"
+        verbose_name_plural = "Vaccination Schedules"
+        ordering = ["recommended_age_months", "dose_number"]
+
+    def __str__(self):
+        return f"{self.vaccine.code} — Dosis {self.dose_number} ({self.recommended_age_months} meses)"
+
+
+class PatientVaccination(models.Model):
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="vaccinations"
+    )
+    vaccine = models.ForeignKey(Vaccine, on_delete=models.CASCADE)
+    dose_number = models.PositiveIntegerField()
+    date_administered = models.DateField()
+    lot = models.CharField(max_length=100, blank=True, null=True)
+    center = models.CharField(max_length=255, blank=True, null=True)
+    next_dose_date = models.DateField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Patient Vaccination"
+        verbose_name_plural = "Patient Vaccinations"
+        unique_together = ("patient", "vaccine", "dose_number")
+
+    def __str__(self):
+        return f"{self.patient} — {self.vaccine.code} D{self.dose_number}"
+
+

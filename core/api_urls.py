@@ -16,6 +16,18 @@ from .api_views import (
     MedicalTestViewSet,
     MedicalReferralViewSet,
     SpecialtyViewSet,
+
+    # --- Nuevos ViewSets clínicos ---
+    PersonalHistoryViewSet,
+    FamilyHistoryViewSet,
+    SurgeryViewSet,
+    HabitViewSet,
+    VaccineViewSet,
+    VaccinationScheduleViewSet,
+    PatientVaccinationViewSet,
+    PatientClinicalProfileViewSet,
+
+    # --- Funciones ---
     update_appointment_status,
     update_waitingroom_status,
     patient_search_api,
@@ -48,7 +60,7 @@ from .api_views import (
     documents_api,
     search,
     appointment_search_api,
-    chargeorder_search_api,   # 👈 AÑADIDO: IMPORT DEL ENDPOINT DE BÚSQUEDA DE ÓRDENES
+    chargeorder_search_api,
 )
 
 # --- Swagger / OpenAPI ---
@@ -58,6 +70,8 @@ from django.conf.urls.static import static
 
 # --- Router DRF ---
 router = routers.DefaultRouter()
+
+# --- Core ---
 router.register(r"patients", PatientViewSet, basename="patient")
 router.register(r"appointments", AppointmentViewSet, basename="appointment")
 router.register(r"payments", PaymentViewSet, basename="payment")
@@ -72,6 +86,16 @@ router.register(r"charge-items", ChargeItemViewSet, basename="chargeitem")
 router.register(r"medical-tests", MedicalTestViewSet, basename="medicaltest")
 router.register(r"medical-referrals", MedicalReferralViewSet, basename="medicalreferral")
 router.register(r"specialties", SpecialtyViewSet, basename="specialty")
+
+# --- Nuevos módulos clínicos ---
+router.register(r"personal-history", PersonalHistoryViewSet, basename="personal-history")
+router.register(r"family-history", FamilyHistoryViewSet, basename="family-history")
+router.register(r"surgeries", SurgeryViewSet, basename="surgery")
+router.register(r"habits", HabitViewSet, basename="habit")
+router.register(r"vaccines", VaccineViewSet, basename="vaccine")
+router.register(r"vaccination-schedule", VaccinationScheduleViewSet, basename="vaccination-schedule")
+router.register(r"patient-vaccinations", PatientVaccinationViewSet, basename="patient-vaccination")
+router.register(r"patient-clinical-profile", PatientClinicalProfileViewSet, basename="patient-clinical-profile")
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -92,6 +116,8 @@ urlpatterns = [
 
     # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
+
+    # Documentos del paciente
     path(
         "patients/<int:pk>/documents/",
         PatientViewSet.as_view({"get": "documents", "post": "documents"}),
@@ -101,6 +127,13 @@ urlpatterns = [
         "patients/<int:pk>/documents/<int:document_id>/",
         PatientViewSet.as_view({"delete": "delete_document"}),
         name="patient-document-delete-api",
+    ),
+
+    # --- Perfil clínico estructurado ---
+    path(
+        "patients/<int:pk>/profile/",
+        PatientClinicalProfileViewSet.as_view({"get": "profile"}),
+        name="patient-clinical-profile",
     ),
 
     # --- Citas ---
@@ -132,7 +165,7 @@ urlpatterns = [
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
 
-    # --- Órdenes de Pago: búsqueda institucional ---
+    # --- Órdenes de Pago ---
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
 
     # --- Auditoría ---
