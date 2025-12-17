@@ -24,7 +24,14 @@ from .models import (
     MedicalReferral,
     DoctorOperator,
     Specialty,
-    MedicationCatalog
+    MedicationCatalog,
+    PersonalHistory,
+    FamilyHistory,
+    Surgery,
+    Habit,
+    Vaccine,
+    VaccinationSchedule,
+    PatientVaccination
 )
 
 logger = logging.getLogger("core")
@@ -98,13 +105,29 @@ class MedicalDocumentInlineForDiagnosis(admin.TabularInline):
 # -------------------------
 @admin.register(Patient)
 class PatientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'national_id', 'first_name', 'last_name', 'birthdate', 'gender', 'contact_info')
+    list_display = (
+        'id',
+        'national_id',
+        'first_name',
+        'last_name',
+        'birthdate',
+        'birth_place',        # 👈 NUEVO
+        'birth_country',      # 👈 NUEVO
+        'gender',
+        'contact_info'
+    )
     list_display_links = ('id', 'national_id', 'first_name', 'last_name')
-    search_fields = ('national_id', 'first_name', 'last_name', 'contact_info')
+    search_fields = (
+        'national_id',
+        'first_name',
+        'last_name',
+        'contact_info',
+        'birth_place',        # 👈 NUEVO
+        'birth_country'       # 👈 NUEVO
+    )
     ordering = ('last_name', 'first_name')
     list_per_page = 25
     inlines = [MedicalDocumentInlineForPatient]
-
 
 # -------------------------
 # Appointment
@@ -359,6 +382,76 @@ class MedicationCatalogAdmin(admin.ModelAdmin):
     search_fields = ["name", "concentration"]
     list_filter = ["presentation", "route", "unit"]
     ordering = ["name"]
+
+
+@admin.register(PersonalHistory)
+class PersonalHistoryAdmin(admin.ModelAdmin):
+    list_display = ("id", "patient", "type", "date", "created_at")
+    list_filter = ("type", "date")
+    search_fields = ("patient__first_name", "patient__last_name", "description")
+    ordering = ("-date",)
+    list_per_page = 25
+
+
+@admin.register(FamilyHistory)
+class FamilyHistoryAdmin(admin.ModelAdmin):
+    list_display = ("id", "patient", "condition", "relative", "created_at")
+    list_filter = ("relative",)
+    search_fields = ("patient__first_name", "patient__last_name", "condition", "relative")
+    ordering = ("-created_at",)
+    list_per_page = 25
+
+
+@admin.register(Surgery)
+class SurgeryAdmin(admin.ModelAdmin):
+    list_display = ("id", "patient", "name", "date", "hospital", "created_at")
+    list_filter = ("date",)
+    search_fields = ("patient__first_name", "patient__last_name", "name", "hospital")
+    ordering = ("-date",)
+    list_per_page = 25
+
+
+@admin.register(Habit)
+class HabitAdmin(admin.ModelAdmin):
+    list_display = ("id", "patient", "type", "created_at")
+    list_filter = ("type",)
+    search_fields = ("patient__first_name", "patient__last_name", "description")
+    ordering = ("-created_at",)
+    list_per_page = 25
+
+
+@admin.register(Vaccine)
+class VaccineAdmin(admin.ModelAdmin):
+    list_display = ("code", "name", "country")
+    search_fields = ("code", "name")
+    list_filter = ("country",)
+    ordering = ("code",)
+    list_per_page = 50
+
+
+@admin.register(VaccinationSchedule)
+class VaccinationScheduleAdmin(admin.ModelAdmin):
+    list_display = ("vaccine", "dose_number", "recommended_age_months", "country")
+    list_filter = ("country", "vaccine")
+    search_fields = ("vaccine__code", "vaccine__name")
+    ordering = ("recommended_age_months", "dose_number")
+    list_per_page = 50
+
+
+@admin.register(PatientVaccination)
+class PatientVaccinationAdmin(admin.ModelAdmin):
+    list_display = ("id", "patient", "vaccine", "dose_number", "date_administered", "center")
+    list_filter = ("vaccine", "dose_number")
+    search_fields = (
+        "patient__first_name",
+        "patient__last_name",
+        "vaccine__code",
+        "vaccine__name",
+        "center",
+        "lot",
+    )
+    ordering = ("-date_administered",)
+    list_per_page = 25
 
 
 # Personalización del panel de administración
