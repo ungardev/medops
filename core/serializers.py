@@ -39,6 +39,8 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "second_last_name",
             "national_id",
             "birthdate",
+            "birth_place",       # 🔥 AGREGADO
+            "birth_country",     # 🔥 AGREGADO
             "gender",
             "contact_info",
             "email",
@@ -48,10 +50,12 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "blood_type",
             "allergies",
             "medical_history",
-            "genetic_predispositions",  # 👈 mantenido
+            "genetic_predispositions",
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
+            "birth_place": {"required": False, "allow_blank": True},   # 🔥 AGREGADO
+            "birth_country": {"required": False, "allow_blank": True}, # 🔥 AGREGADO
             "gender": {"required": False, "allow_null": True},
             "email": {"required": False, "allow_blank": True},
             "address": {"required": False, "allow_blank": True},
@@ -1396,23 +1400,46 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
     surgeries = SurgerySerializer(many=True, read_only=True)
     habits = HabitSerializer(many=True, read_only=True)
     vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
+    genetic_predispositions = serializers.PrimaryKeyRelatedField(
+        many=True,
+        read_only=True
+    )
 
     class Meta:
         model = Patient
         fields = [
+            # Identificación
             "id",
+            "national_id",
+
+            # Nombre completo
             "first_name",
             "middle_name",
             "last_name",
             "second_last_name",
+
+            # Datos demográficos
             "birthdate",
             "birth_place",
             "birth_country",
             "gender",
+
+            # Contacto
+            "email",
+            "contact_info",
             "address",
+
+            # Datos clínicos básicos
+            "weight",
+            "height",
             "blood_type",
             "allergies",
             "medical_history",
+
+            # Predisposiciones genéticas
+            "genetic_predispositions",
+
+            # Secciones clínicas relacionadas
             "personal_history",
             "family_history",
             "surgeries",
