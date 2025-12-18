@@ -22,7 +22,6 @@ class GeneticPredispositionSerializer(serializers.ModelSerializer):
 
 # 🔹 Serializer para crear/actualizar pacientes (sin campo active)
 class PatientWriteSerializer(serializers.ModelSerializer):
-    """Serializer para crear/actualizar pacientes"""
     genetic_predispositions = serializers.PrimaryKeyRelatedField(
         queryset=GeneticPredisposition.objects.all(),
         many=True,
@@ -39,8 +38,8 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "second_last_name",
             "national_id",
             "birthdate",
-            "birth_place",       # 🔥 AGREGADO
-            "birth_country",     # 🔥 AGREGADO
+            "birth_place",
+            "birth_country",
             "gender",
             "contact_info",
             "email",
@@ -54,8 +53,8 @@ class PatientWriteSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
-            "birth_place": {"required": False, "allow_blank": True},   # 🔥 AGREGADO
-            "birth_country": {"required": False, "allow_blank": True}, # 🔥 AGREGADO
+            "birth_place": {"required": False, "allow_blank": True},
+            "birth_country": {"required": False, "allow_blank": True},
             "gender": {"required": False, "allow_null": True},
             "email": {"required": False, "allow_blank": True},
             "address": {"required": False, "allow_blank": True},
@@ -66,6 +65,22 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "medical_history": {"required": False, "allow_blank": True},
             "genetic_predispositions": {"required": False},
         }
+
+    def create(self, validated_data):
+        preds = validated_data.pop("genetic_predispositions", None)
+        instance = super().create(validated_data)
+        if preds is not None:
+            instance.genetic_predispositions.set(preds)
+        return instance
+
+    def update(self, instance, validated_data):
+        preds = validated_data.pop("genetic_predispositions", None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if preds is not None:
+            instance.genetic_predispositions.set(preds)
+        return instance
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
@@ -125,27 +140,20 @@ class PatientReadSerializer(serializers.ModelSerializer):
 
 
 class PatientListSerializer(serializers.ModelSerializer):
-    """Serializer para listar pacientes en tabla (Pacientes.tsx)"""
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
         fields = [
-            "id",           # usado como folio en la tabla
+            "id",
             "full_name",
             "age",
             "gender",
             "contact_info",
         ]
 
-    @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
-        """
-        Construye el nombre completo, devolviendo 'SIN-NOMBRE' si no hay datos.
-        """
-        if not obj:
-            return "SIN-NOMBRE"
         parts = [
             getattr(obj, "first_name", None),
             getattr(obj, "middle_name", None),
@@ -155,11 +163,7 @@ class PatientListSerializer(serializers.ModelSerializer):
         full_name = " ".join(filter(None, parts)).strip()
         return full_name if full_name else "SIN-NOMBRE"
 
-    @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_age(self, obj) -> Optional[int]:
-        """
-        Calcula la edad si hay fecha de nacimiento válida.
-        """
         if not obj or not obj.birthdate:
             return None
         today = date.today()
@@ -170,7 +174,6 @@ class PatientListSerializer(serializers.ModelSerializer):
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
-    """Serializer completo para la vista detallada"""
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
@@ -180,7 +183,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "full_name",
-            "age",  # 👈 añadido
+            "age",
             "national_id",
             "first_name",
             "middle_name",
@@ -202,12 +205,10 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
-    @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
         parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
         return " ".join(filter(None, parts)) or "SIN-NOMBRE"
 
-    @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_age(self, obj) -> Optional[int]:
         if not obj or not obj.birthdate:
             return None
@@ -1400,46 +1401,30 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
     surgeries = SurgerySerializer(many=True, read_only=True)
     habits = HabitSerializer(many=True, read_only=True)
     vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
-    genetic_predispositions = serializers.PrimaryKeyRelatedField(
-        many=True,
-        read_only=True
-    )
+    genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Patient
         fields = [
-            # Identificación
             "id",
             "national_id",
-
-            # Nombre completo
             "first_name",
             "middle_name",
             "last_name",
             "second_last_name",
-
-            # Datos demográficos
             "birthdate",
             "birth_place",
             "birth_country",
             "gender",
-
-            # Contacto
             "email",
             "contact_info",
             "address",
-
-            # Datos clínicos básicos
             "weight",
             "height",
             "blood_type",
             "allergies",
             "medical_history",
-
-            # Predisposiciones genéticas
             "genetic_predispositions",
-
-            # Secciones clínicas relacionadas
             "personal_history",
             "family_history",
             "surgeries",

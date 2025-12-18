@@ -34,18 +34,28 @@ export default function PersonalHistoryModal({
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Tipo</label>
+            <label className="text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1 block">
+              Tipo
+            </label>
             <input
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md text-sm
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                         border-gray-300 dark:border-gray-600
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value })}
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">Descripción</label>
+            <label className="text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1 block">
+              Descripción
+            </label>
             <textarea
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md text-sm
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                         border-gray-300 dark:border-gray-600
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               rows={3}
               value={form.description}
               onChange={(e) =>
@@ -55,10 +65,15 @@ export default function PersonalHistoryModal({
           </div>
 
           <div>
-            <label className="text-sm font-medium">Fecha</label>
+            <label className="text-sm font-medium text-[#0d2c53] dark:text-gray-300 mb-1 block">
+              Fecha
+            </label>
             <input
               type="date"
-              className="w-full px-3 py-2 border rounded-md"
+              className="w-full px-3 py-2 border rounded-md text-sm
+                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                         border-gray-300 dark:border-gray-600
+                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               value={form.date}
               onChange={(e) => setForm({ ...form, date: e.target.value })}
             />
@@ -67,13 +82,13 @@ export default function PersonalHistoryModal({
 
         <div className="flex justify-end gap-2 mt-6">
           <button
-            className="px-4 py-2 bg-gray-200 rounded-md"
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 rounded-md text-sm"
             onClick={onClose}
           >
             Cancelar
           </button>
           <button
-            className="px-4 py-2 bg-[#0d2c53] text-white rounded-md"
+            className="px-4 py-2 bg-[#0d2c53] text-white rounded-md text-sm"
             onClick={handleSave}
           >
             Guardar

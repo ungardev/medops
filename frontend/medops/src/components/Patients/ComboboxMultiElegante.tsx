@@ -25,27 +25,37 @@ export default function ComboboxMultiElegante({
 
   const safeOptions: Option[] = Array.isArray(options) ? options : [];
 
-  const selectedOptions = safeOptions.filter((opt) => value.includes(opt.id));
+  // 🔥 Blindaje: limpiar IDs inválidos ANTES de usarlos
+  const cleanValue = value.filter(
+    (id) => typeof id === "number" && !isNaN(id)
+  );
+
+  const selectedOptions = safeOptions.filter((opt) =>
+    cleanValue.includes(opt.id)
+  );
+
   const filteredOptions = safeOptions.filter(
     (opt) =>
-      !value.includes(opt.id) &&
+      !cleanValue.includes(opt.id) &&
       opt.name.toLowerCase().includes(input.toLowerCase())
   );
 
   const handleAdd = (id: number) => {
-    onChange([...value, id]);
+    if (typeof id !== "number" || isNaN(id)) return; // 🔥 Blindaje
+    onChange([...cleanValue, id]);
     setInput("");
   };
 
   const handleRemove = (id: number) => {
-    onChange(value.filter((v) => v !== id));
+    onChange(cleanValue.filter((v) => v !== id));
   };
 
   const handleCreate = () => {
-    if (onCreate && input.trim() !== "") {
-      onCreate(input.trim());
-      setInput("");
-    }
+    const trimmed = input.trim();
+    if (!onCreate || trimmed === "") return;
+
+    onCreate(trimmed);
+    setInput("");
   };
 
   return (
@@ -69,7 +79,7 @@ export default function ComboboxMultiElegante({
         ))}
       </div>
 
-      {/* Input de búsqueda/creación */}
+      {/* Input */}
       <input
         type="text"
         value={input}
@@ -80,7 +90,7 @@ export default function ComboboxMultiElegante({
                    focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
       />
 
-      {/* Dropdown de opciones */}
+      {/* Dropdown */}
       {input && (
         <div className="mt-2 border border-gray-300 dark:border-gray-600 rounded-md 
                         bg-white dark:bg-gray-800 shadow-sm max-h-40 overflow-y-auto">
@@ -93,6 +103,7 @@ export default function ComboboxMultiElegante({
               {opt.name}
             </div>
           ))}
+
           {onCreate && (
             <div
               onClick={handleCreate}
