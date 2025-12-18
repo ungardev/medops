@@ -1146,20 +1146,33 @@ class PatientViewSet(viewsets.ModelViewSet):
         if self.action == "list":
             return PatientListSerializer
         if self.action == "retrieve":
-            return PatientDetailSerializer
+            # 👇 Devuelve el perfil clínico completo (incluye predisposiciones y secciones)
+            return PatientClinicalProfileSerializer
         if self.action in ["create", "update", "partial_update"]:
+            # 👇 Escritura (persistencia M2M vía .set())
             return PatientWriteSerializer
-        return PatientReadSerializer
+        # Opcional: si necesitas una lectura simple para otras acciones
+        return PatientDetailSerializer
 
     def list(self, request, *args, **kwargs):
         """
         GET → Lista paginada de pacientes activos.
         Blindaje explícito para evitar incluir inactivos por cache o queryset estático.
         """
-        queryset = self.get_queryset()  # 👈 activos únicamente
+        queryset = self.get_queryset()
         page = self.paginate_queryset(queryset)
         serializer = self.get_serializer(page, many=True)
         return self.get_paginated_response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        """
+        PATCH → Actualización parcial con persistencia ManyToMany via PatientWriteSerializer.
+        """
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         """
@@ -1242,9 +1255,6 @@ class PatientViewSet(viewsets.ModelViewSet):
         q = request.query_params.get("q", "").strip()
         queryset = Patient.objects.filter(active=True)
 
-        print("[SEARCH] q =", q)
-        print("[SEARCH] antes del filtro =", queryset.count())
-
         if q:
             queryset = queryset.filter(
                 Q(first_name__icontains=q) |
@@ -1253,9 +1263,6 @@ class PatientViewSet(viewsets.ModelViewSet):
                 Q(second_last_name__icontains=q) |
                 Q(national_id__icontains=q)
             )
-
-        print("[SEARCH] después del filtro =", queryset.count())
-        print("[SEARCH] IDs =", list(queryset.values_list("id", flat=True)))
 
         page = self.paginate_queryset(queryset)
         serializer = PatientListSerializer(page, many=True)
