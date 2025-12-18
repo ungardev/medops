@@ -27,6 +27,7 @@ export interface Patient extends PatientRef {
   middle_name?: string | null;
   last_name: string;
   second_last_name?: string | null;
+
   birthdate?: string | null;   // ISO string
   gender: "M" | "F" | "Unknown" | null;
   contact_info?: string | null;
@@ -38,6 +39,10 @@ export interface Patient extends PatientRef {
   blood_type?: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | null;
   allergies?: string | null;
   medical_history?: string | null;
+
+  // 🔹 NUEVOS CAMPOS DEMOGRÁFICOS
+  birth_place?: string | null;
+  birth_country?: string | null;
 
   // 🔹 Predisposiciones genéticas (objetos completos en lectura)
   genetic_predispositions?: GeneticPredisposition[];
@@ -51,7 +56,7 @@ export interface Patient extends PatientRef {
   updated_at?: string | null;
 
   // 🔹 Campos calculados/extendidos desde el backend
-  age?: number | null;   // 👈 añadido para que se muestre en PatientHeader
+  age?: number | null;
 }
 
 // --- Datos de entrada para crear/editar paciente
@@ -61,10 +66,15 @@ export type PatientInput = {
   middle_name?: string;
   last_name: string;
   second_last_name?: string;
+
   birthdate?: string | null;
   gender?: "M" | "F" | "Unknown" | null;
   contact_info?: string;
   email?: string | null;
+
+  // 🔹 NUEVOS CAMPOS DEMOGRÁFICOS
+  birth_place?: string;
+  birth_country?: string;
 
   // 🔹 Campos opcionales en creación/edición
   address?: string;
