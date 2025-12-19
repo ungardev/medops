@@ -1151,7 +1151,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         if self.action in ["create", "update", "partial_update"]:
             # 👇 Escritura (persistencia M2M vía .set())
             return PatientWriteSerializer
-        # Opcional: si necesitas una lectura simple para otras acciones
+        # Opcional: lectura simple para otras acciones
         return PatientDetailSerializer
 
     def list(self, request, *args, **kwargs):
@@ -1167,12 +1167,15 @@ class PatientViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         """
         PATCH → Actualización parcial con persistencia ManyToMany via PatientWriteSerializer.
+        Devuelve el perfil clínico completo para sincronizar UI inmediatamente.
         """
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = PatientWriteSerializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        # 👇 responder con perfil clínico completo
+        read_serializer = PatientClinicalProfileSerializer(instance)
+        return Response(read_serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         """

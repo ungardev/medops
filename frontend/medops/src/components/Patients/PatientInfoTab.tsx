@@ -6,7 +6,6 @@ import PersonalHistorySection from "./sections/PersonalHistorySection";
 import FamilyHistorySection from "./sections/FamilyHistorySection";
 import SurgeriesSection from "./sections/SurgeriesSection";
 import HabitsSection from "./sections/HabitsSection";
-import VaccinationSection from "./sections/VaccinationSection";
 import GeneticSection from "./sections/GeneticSection";
 import AlertsSection from "./sections/AlertsSection";
 
@@ -16,16 +15,18 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Traer vacunación + esquema nacional
   const { vaccinations: vaccQuery, schedule } = useVaccinations(patientId);
 
   // Función institucional para refrescar el perfil clínico
   const refreshProfile = () => {
+    setLoading(true);
     apiFetch(`patients/${patientId}/profile/`)
       .then((data) => setProfile(data))
-      .catch((err) =>
-        console.error("Error recargando perfil clínico:", err)
-      );
+      .catch((err) => {
+        console.error("Error recargando perfil clínico:", err);
+        setProfile(null);
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -51,13 +52,11 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
   return (
     <div className="p-4 space-y-8">
 
-      {/* DATOS PERSONALES */}
       <DemographicsSection
         patient={profile}
-        onRefresh={refreshProfile}   // 🔥 FIX INSTITUCIONAL
+        onRefresh={refreshProfile}
       />
 
-      {/* ALERTAS CLÍNICAS INTELIGENTES */}
       <AlertsSection
         patient={profile}
         vaccinations={Array.isArray(vaccQuery.data) ? vaccQuery.data : []}
@@ -67,31 +66,31 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       <PersonalHistorySection
         items={profile.personal_history}
         patientId={patientId}
+        onRefresh={refreshProfile}
       />
 
       <FamilyHistorySection
         items={profile.family_history}
         patientId={patientId}
+        onRefresh={refreshProfile}
       />
 
       <SurgeriesSection
         items={profile.surgeries}
         patientId={patientId}
+        onRefresh={refreshProfile}
       />
 
       <HabitsSection
         items={profile.habits}
         patientId={patientId}
+        onRefresh={refreshProfile}
       />
 
       <GeneticSection
         items={profile.genetic_predispositions}
         patientId={patientId}
-      />
-
-      <VaccinationSection
-        vaccinations={profile.vaccinations}
-        patientId={patientId}
+        onRefresh={refreshProfile}   // 🔥 FIX INSTITUCIONAL
       />
     </div>
   );

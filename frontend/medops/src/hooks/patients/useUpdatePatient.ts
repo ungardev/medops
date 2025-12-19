@@ -1,15 +1,21 @@
 // src/hooks/patients/useUpdatePatient.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { updatePatient } from "../../api/patients";
-import { Patient, PatientInput } from "types/patients";
+import { PatientClinicalProfile, PatientInput } from "types/patients";
 
+/**
+ * Hook institucional para actualizar un paciente.
+ * - Acepta PATCH parciales (Partial<PatientInput>)
+ * - Devuelve el perfil clínico completo (PatientClinicalProfile)
+ * - Invalida cache de detalle y lista para refrescar datos
+ */
 export function useUpdatePatient(id: number) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (data: PatientInput) => updatePatient(id, data),
+  return useMutation<PatientClinicalProfile, Error, Partial<PatientInput>>({
+    mutationFn: (data: Partial<PatientInput>) => updatePatient(id, data),
     onSuccess: () => {
-      // ✅ Forzar refetch del detalle del paciente para refrescar created_at y updated_at
+      // ✅ Forzar refetch del detalle del paciente (perfil clínico completo)
       queryClient.invalidateQueries({ queryKey: ["patient", id] });
 
       // ✅ También refrescar la lista de pacientes

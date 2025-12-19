@@ -13,10 +13,6 @@ interface GeneticItem {
 interface Props {
   items: GeneticItem[] | null | undefined;
   patientId: number;
-  /**
-   * Opcional: permite refrescar el perfil clínico completo del paciente
-   * después de una actualización exitosa.
-   */
   onRefresh?: () => void;
 }
 
@@ -51,11 +47,15 @@ export default function GeneticSection({ items, patientId, onRefresh }: Props) {
 
     const payload = {
       genetic_predispositions: selected,
-    } as any;
+    };
 
     updatePatient.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (data: any) => {
         setEditing(false);
+        // 🔥 Actualizar estado local con predisposiciones completas devueltas por el PATCH
+        if (data?.genetic_predispositions) {
+          setSelected(data.genetic_predispositions.map((gp: any) => gp.id));
+        }
         if (onRefresh) onRefresh();
       },
       onError: (err: any) => {
@@ -70,14 +70,16 @@ export default function GeneticSection({ items, patientId, onRefresh }: Props) {
   const handleCreate = async (name: string) => {
     setLocalError(null);
 
-    // Evitar crear nombres vacíos
     const trimmed = name.trim();
     if (!trimmed) return;
 
     try {
       const newPred = await createPred.mutateAsync({ name: trimmed });
-      // Una vez creada, la añadimos a la selección
-      setSelected((prev) => [...prev, newPred.id]);
+      if (newPred?.id && typeof newPred.id === "number") {
+        setSelected((prev) => [...prev, newPred.id]);
+      } else {
+        console.error("Predisposición creada sin ID válido:", newPred);
+      }
     } catch (err) {
       console.error("Error al crear predisposición genética:", err);
       setLocalError(
@@ -87,8 +89,6 @@ export default function GeneticSection({ items, patientId, onRefresh }: Props) {
   };
 
   const isSaving = updatePatient.isPending || createPred.isPending;
-
-  const isEditingState = editing;
 
   return (
     <div className="relative p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
@@ -106,7 +106,7 @@ export default function GeneticSection({ items, patientId, onRefresh }: Props) {
           Predisposiciones genéticas
         </h3>
 
-        {isEditingState ? (
+        {editing ? (
           <div className="flex gap-2">
             <button
               className="px-3 py-1.5 bg-[#0d2c53] text-white rounded-md text-sm disabled:opacity-60"
@@ -120,7 +120,6 @@ export default function GeneticSection({ items, patientId, onRefresh }: Props) {
               onClick={() => {
                 setEditing(false);
                 setLocalError(null);
-                // Revertimos selección a lo que viene del backend
                 const safe = Array.isArray(items) ? items : [];
                 setSelected(safe.map((i) => i.id));
               }}
@@ -152,9 +151,8 @@ export default function GeneticSection({ items, patientId, onRefresh }: Props) {
         </div>
       )}
 
-      {isEditingState ? (
+      {editing ? (
         isCatalogLoading ? (
-          // Skeleton simple institucional
           <div className="space-y-2">
             <div className="h-9 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse" />
             <div className="h-4 w-2/3 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse" />

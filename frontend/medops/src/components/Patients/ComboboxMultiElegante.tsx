@@ -22,6 +22,7 @@ export default function ComboboxMultiElegante({
   placeholder = "Selecciona o crea opciones...",
 }: Props) {
   const [input, setInput] = useState("");
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
 
   const safeOptions: Option[] = Array.isArray(options) ? options : [];
 
@@ -44,6 +45,7 @@ export default function ComboboxMultiElegante({
     if (typeof id !== "number" || isNaN(id)) return; // 🔥 Blindaje
     onChange([...cleanValue, id]);
     setInput("");
+    setHighlightedIndex(-1);
   };
 
   const handleRemove = (id: number) => {
@@ -56,6 +58,30 @@ export default function ComboboxMultiElegante({
 
     onCreate(trimmed);
     setInput("");
+    setHighlightedIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!filteredOptions || filteredOptions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < filteredOptions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredOptions.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
+        handleAdd(filteredOptions[highlightedIndex].id);
+      } else if (onCreate && input.trim() !== "") {
+        handleCreate();
+      }
+    }
   };
 
   return (
@@ -83,7 +109,11 @@ export default function ComboboxMultiElegante({
       <input
         type="text"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => {
+          setInput(e.target.value);
+          setHighlightedIndex(-1);
+        }}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md 
                    bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
@@ -94,11 +124,16 @@ export default function ComboboxMultiElegante({
       {input && (
         <div className="mt-2 border border-gray-300 dark:border-gray-600 rounded-md 
                         bg-white dark:bg-gray-800 shadow-sm max-h-40 overflow-y-auto">
-          {filteredOptions.map((opt) => (
+          {filteredOptions.map((opt, idx) => (
             <div
               key={opt.id}
               onClick={() => handleAdd(opt.id)}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
+              onMouseEnter={() => setHighlightedIndex(idx)}
+              className={`px-2 sm:px-3 py-1.5 sm:py-2 cursor-pointer ${
+                idx === highlightedIndex
+                  ? "bg-[#0d2c53]/20 dark:bg-gray-600"
+                  : "hover:bg-[#0d2c53]/10 dark:hover:bg-gray-700"
+              }`}
             >
               {opt.name}
             </div>

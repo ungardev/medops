@@ -1,6 +1,11 @@
 // src/api/patients.ts
 import { apiFetch } from "./client";
-import { Patient, PatientInput, PatientRef } from "../types/patients";
+import {
+  Patient,
+  PatientInput,
+  PatientRef,
+  PatientClinicalProfile,
+} from "../types/patients";
 
 // 🔹 Obtener pacientes activos con paginación (blindaje contra inactivos)
 export const getPatients = (page = 1, pageSize = 20): Promise<Patient[]> =>
@@ -30,7 +35,11 @@ export const createPatient = (data: PatientInput): Promise<Patient> => {
 };
 
 // 🔹 Actualizar un paciente existente (usar PATCH en lugar de PUT)
-export const updatePatient = (id: number, data: PatientInput): Promise<Patient> => {
+// ⚔️ Ahora acepta PATCH parciales y devuelve perfil clínico completo
+export const updatePatient = (
+  id: number,
+  data: Partial<PatientInput>
+): Promise<PatientClinicalProfile> => {
   const cleaned: any = {};
   Object.entries(data).forEach(([key, value]) => {
     if (value !== "" && value !== null && value !== undefined) {
@@ -38,7 +47,7 @@ export const updatePatient = (id: number, data: PatientInput): Promise<Patient> 
     }
   });
 
-  return apiFetch<Patient>(`patients/${id}/`, {
+  return apiFetch<PatientClinicalProfile>(`patients/${id}/`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cleaned),
@@ -68,5 +77,5 @@ export const searchPatients = (q: string): Promise<PatientSearchResponse> => {
 };
 
 // 🔹 Obtener un paciente por ID
-export const getPatient = (id: number): Promise<Patient> =>
-  apiFetch<Patient>(`patients/${id}/`);
+export const getPatient = (id: number): Promise<PatientClinicalProfile> =>
+  apiFetch<PatientClinicalProfile>(`patients/${id}/`);

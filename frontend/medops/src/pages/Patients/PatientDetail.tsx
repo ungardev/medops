@@ -10,6 +10,7 @@ import PatientDocumentsTab from "../../components/Patients/PatientDocumentsTab";
 import PatientPaymentsTab from "../../components/Patients/PatientPaymentsTab";
 import PatientPendingAppointmentsTab from "../../components/Patients/PatientPendingAppointmentsTab";
 import PatientEventsTab from "../../components/Patients/PatientEventsTab";
+import VaccinationTab from "../../components/Patients/VaccinationTab"; // 👈 nuevo import
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
@@ -78,6 +79,11 @@ export default function PatientDetail() {
 
           <Tab id="eventos" label="Eventos">
             <PatientEventsTab patient={patient} />
+          </Tab>
+
+          {/* Nuevo Tab institucional de vacunación */}
+          <Tab id="vacunacion" label="Vacunación">
+            <VaccinationTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
         </Tabs>
       </div>
