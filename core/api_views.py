@@ -4153,6 +4153,7 @@ class VaccinationScheduleViewSet(viewsets.ModelViewSet):
     queryset = VaccinationSchedule.objects.all()
     serializer_class = VaccinationScheduleSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None  # ← desactiva la paginación en este endpoint
 
     def get_queryset(self):
         country = self.request.query_params.get("country")
