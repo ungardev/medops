@@ -1,3 +1,4 @@
+import { useState } from "react";
 import DiagnosisPanel from "./DiagnosisPanel";
 import TreatmentPanel from "./TreatmentPanel";
 import PrescriptionPanel from "./PrescriptionPanel";
@@ -24,9 +25,12 @@ export default function ConsultationWorkflow({
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
 
+  const [activeTab, setActiveTab] = useState("diagnosis"); // 👈 control local
+
   return (
     <Tabs
-      defaultTab="diagnosis"
+      value={activeTab}
+      onChange={setActiveTab}
       className="
         space-y-3 sm:space-y-4 
         [&_.tab-label]:text-[#0d2c53] dark:[&_.tab-label]:text-white

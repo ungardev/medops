@@ -1,133 +1,206 @@
-import React, { useState, useMemo } from "react";
+// src/components/Patients/sections/AlertsSection.tsx
+import React, { useMemo, useState } from "react";
+import { PlusIcon } from "@heroicons/react/24/solid";
 import AlertModal from "./AlertModal";
+import { useClinicalAlerts } from "../../../hooks/patients/useClinicalAlerts";
 
 type AlertType = "danger" | "warning" | "info";
 
-interface ClinicalAlert {
-  id?: number;
+interface AutoAlert {
+  type: AlertType;
+  message: React.ReactNode;
+}
+
+interface ManualAlert {
+  id: number;
   type: AlertType;
   message: string;
 }
 
 interface Props {
   patient: any;
+  antecedentes: any[];
+  habits: any[];
+  surgeries: any[];
   vaccinations: any[];
   vaccinationSchedule: any[];
+  onChangeTab?: (id: string) => void;
+}
+
+function isRecent(date?: string) {
+  if (!date) return false;
+  const diffMonths =
+    (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24 * 30);
+  return diffMonths < 6;
 }
 
 export default function AlertsSection({
   patient,
+  antecedentes,
+  habits,
+  surgeries,
   vaccinations,
   vaccinationSchedule,
+  onChangeTab,
 }: Props) {
-  const [manualAlerts, setManualAlerts] = useState<ClinicalAlert[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<ClinicalAlert | null>(null);
+  const [editing, setEditing] = useState<ManualAlert | null>(null);
+
+  const { list, create, update, remove } = useClinicalAlerts(patient.id);
 
   // --- ALERTAS AUTOMÁTICAS ---
-  const autoAlerts: ClinicalAlert[] = useMemo(() => {
-    const alerts: ClinicalAlert[] = [];
+  const autoAlerts: AutoAlert[] = useMemo(() => {
+    const alerts: AutoAlert[] = [];
 
-    // 1. Alergias
-    if (patient.allergies) {
+    // ClinicalProfile: alergias
+    const allergies = antecedentes.filter((a) =>
+      a.condition.toLowerCase().includes("alergia")
+    );
+    if (allergies.length > 0) {
       alerts.push({
         type: "danger",
-        message: `Alergias registradas: ${patient.allergies}`,
+        message: (
+          <div>
+            Alergias registradas: {allergies.map((a) => a.condition).join(", ")}
+            <button
+              onClick={() => onChangeTab?.("clinical-profile")}
+              className="ml-2 underline text-blue-700"
+            >
+              Editar en Clinical Profile
+            </button>
+          </div>
+        ),
       });
     }
 
-    // 2. Enfermedades crónicas
-    if (patient.medical_history) {
-      alerts.push({
-        type: "warning",
-        message: `Antecedentes médicos relevantes: ${patient.medical_history}`,
-      });
-    }
-
-    // 3. Cirugías recientes (< 6 meses)
-    if (patient.surgeries?.length > 0) {
-      const recent = patient.surgeries.filter((s: any) => {
-        const diff =
-          (Date.now() - new Date(s.date).getTime()) / (1000 * 60 * 60 * 24 * 30);
-        return diff < 6;
-      });
-
-      if (recent.length > 0) {
-        alerts.push({
-          type: "warning",
-          message: `Cirugías recientes: ${recent
-            .map((s: any) => s.name)
-            .join(", ")}`,
-        });
-      }
-    }
-
-    // 4. Hábitos de riesgo
-    const risky = patient.habits?.filter((h: any) =>
-      ["tabaquismo", "alcohol", "drogas"].includes(h.type.toLowerCase())
+    // ClinicalProfile: antecedentes médicos relevantes
+    const medicalHistory = antecedentes.filter(
+      (a) => a.type === "personal" || a.type === "familiar"
     );
-
-    if (risky?.length > 0) {
+    if (medicalHistory.length > 0) {
       alerts.push({
         type: "warning",
-        message: `Hábitos de riesgo: ${risky
-          .map((h: any) => h.type)
-          .join(", ")}`,
+        message: (
+          <div>
+            Antecedentes médicos relevantes:{" "}
+            {medicalHistory.map((a) => a.condition).join(", ")}
+            <button
+              onClick={() => onChangeTab?.("clinical-profile")}
+              className="ml-2 underline text-blue-700"
+            >
+              Editar en Clinical Profile
+            </button>
+          </div>
+        ),
       });
     }
 
-    // 5. Predisposiciones genéticas
-    if (patient.genetic_predispositions?.length > 0) {
+    // ClinicalProfile: hábitos de riesgo
+    const riskyHabits = habits.filter((h) =>
+      ["tabaquismo", "alcohol", "drogas"].includes(h.type)
+    );
+    if (riskyHabits.length > 0) {
+      alerts.push({
+        type: "warning",
+        message: (
+          <div>
+            Hábitos de riesgo: {riskyHabits.map((h) => h.type).join(", ")}
+            <button
+              onClick={() => onChangeTab?.("clinical-profile")}
+              className="ml-2 underline text-blue-700"
+            >
+              Editar hábitos
+            </button>
+          </div>
+        ),
+      });
+    }
+
+    // ClinicalProfile: predisposiciones genéticas
+    const genetics = antecedentes.filter((a) => a.type === "genetico");
+    if (genetics.length > 0) {
       alerts.push({
         type: "info",
-        message: `Predisposiciones genéticas: ${patient.genetic_predispositions
-          .map((g: any) => g.name)
-          .join(", ")}`,
+        message: (
+          <div>
+            Predisposiciones genéticas:{" "}
+            {genetics.map((g) => g.condition).join(", ")}
+            <button
+              onClick={() => onChangeTab?.("clinical-profile")}
+              className="ml-2 underline text-blue-700"
+            >
+              Editar en Clinical Profile
+            </button>
+          </div>
+        ),
       });
     }
 
-    // 6. Vacunas faltantes
-    const missing = vaccinationSchedule.filter((dose: any) => {
-      return !vaccinations.some(
-        (v: any) =>
-          v.vaccine.id === dose.vaccine.id &&
-          v.dose_number === dose.dose_number
-      );
-    });
+    // Surgeries: recientes
+    const recentSurgeries = surgeries.filter((s) => isRecent(s.date));
+    if (recentSurgeries.length > 0) {
+      alerts.push({
+        type: "warning",
+        message: (
+          <div>
+            Cirugías recientes: {recentSurgeries.map((s) => s.name).join(", ")}
+            <button
+              onClick={() => onChangeTab?.("cirugias")}
+              className="ml-2 underline text-blue-700"
+            >
+              Ver cirugías
+            </button>
+          </div>
+        ),
+      });
+    }
 
+    // Vaccination: faltantes
+    const missing = vaccinationSchedule.filter(
+      (dose: any) =>
+        !vaccinations.some(
+          (v: any) =>
+            v.vaccine.id === dose.vaccine.id &&
+            v.dose_number === dose.dose_number
+        )
+    );
     if (missing.length > 0) {
       alerts.push({
         type: "warning",
-        message: `Vacunas faltantes: ${missing
-          .map((m: any) => `${m.vaccine.code} dosis ${m.dose_number}`)
-          .join(", ")}`,
+        message: (
+          <div>
+            Tiene {missing.length} vacunas faltantes según el esquema SVPP
+            <button
+              onClick={() => onChangeTab?.("vacunacion")}
+              className="ml-2 underline text-blue-700"
+            >
+              Ir a vacunación
+            </button>
+          </div>
+        ),
       });
     }
 
     return alerts;
-  }, [patient, vaccinations, vaccinationSchedule]);
+  }, [antecedentes, habits, surgeries, vaccinations, vaccinationSchedule, onChangeTab]);
 
   // --- MANEJO DE ALERTAS MANUALES ---
-  const handleSave = (data: ClinicalAlert) => {
+  const handleSave = (data: { type: AlertType; message: string }) => {
     if (editing) {
-      setManualAlerts((prev) =>
-        prev.map((a) => (a.id === editing.id ? { ...a, ...data } : a))
-      );
+      update.mutate({ id: editing.id, data });
     } else {
-      setManualAlerts((prev) => [
-        ...prev,
-        { id: Date.now(), ...data },
-      ]);
+      create.mutate(data);
     }
     setModalOpen(false);
     setEditing(null);
   };
 
   const handleDelete = (id: number) => {
-    setManualAlerts((prev) => prev.filter((a) => a.id !== id));
+    remove.mutate(id);
   };
 
-  const allAlerts: ClinicalAlert[] = [...autoAlerts, ...manualAlerts];
+  const manualAlerts: ManualAlert[] = (list.data as ManualAlert[]) ?? [];
+  const allAlerts: (AutoAlert | ManualAlert)[] = [...autoAlerts, ...manualAlerts];
 
   const color: Record<AlertType, string> = {
     danger: "bg-red-100 border-red-300 text-red-800",
@@ -141,49 +214,51 @@ export default function AlertsSection({
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">
           Alertas clínicas
         </h3>
-
-        <button
-          className="px-3 py-1.5 bg-[#0d2c53] text-white rounded-md text-sm"
-          onClick={() => setModalOpen(true)}
-        >
-          Añadir alerta
-        </button>
+        <PlusIcon
+          className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
+          onClick={() => {
+            setEditing(null);
+            setModalOpen(true);
+          }}
+        />
       </div>
 
       {allAlerts.length === 0 ? (
         <p className="text-sm text-gray-500">No hay alertas clínicas.</p>
       ) : (
         <ul className="space-y-3">
-          {allAlerts.map((alert) => (
-            <li
-              key={alert.id ?? alert.message}
-              className={`p-3 border rounded-md ${color[alert.type]}`}
-            >
-              <div className="flex justify-between">
-                <p className="text-sm">{alert.message}</p>
-
-                {alert.id && (
-                  <div className="flex gap-2">
-                    <button
-                      className="text-blue-700 text-sm"
-                      onClick={() => {
-                        setEditing(alert);
-                        setModalOpen(true);
-                      }}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      className="text-red-700 text-sm"
-                      onClick={() => handleDelete(alert.id!)}
-                    >
-                      Eliminar
-                    </button>
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
+          {allAlerts.map((alert) => {
+            const type = alert.type as AlertType;
+            return (
+              <li
+                key={"id" in alert ? alert.id : String(alert.message)}
+                className={`p-3 border rounded-md whitespace-pre-line ${color[type]}`}
+              >
+                <div className="flex justify-between">
+                  <div className="text-sm">{alert.message}</div>
+                  {"id" in alert && (
+                    <div className="flex gap-2">
+                      <button
+                        className="text-blue-700 text-sm"
+                        onClick={() => {
+                          setEditing(alert as ManualAlert);
+                          setModalOpen(true);
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="text-red-700 text-sm"
+                        onClick={() => handleDelete((alert as ManualAlert).id)}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

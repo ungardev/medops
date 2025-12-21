@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { VaccinationSchedule, PatientVaccination } from "../../hooks/patients/useVaccinations";
 
 interface Props {
-  schedule: VaccinationSchedule[];
+  schedule: VaccinationSchedule[] | { results: VaccinationSchedule[] }; // ← acepta array plano o paginado
   vaccinations: PatientVaccination[];
   onRegisterDose?: (dose: VaccinationSchedule) => void;
 }
@@ -65,6 +65,11 @@ export default function VaccinationMatrixUniversal({
 }: Props) {
   const [highlightedCell, setHighlightedCell] = useState<string | null>(null);
 
+  // 🔐 Blindaje: acepta array plano o paginado
+  const scheduleData: VaccinationSchedule[] = Array.isArray(schedule)
+    ? schedule
+    : schedule.results ?? [];
+
   const vaccineList = [
     { code: "BCG", name: "Anti tuberculosis" },
     { code: "HB", name: "Anti Hepatitis B" },
@@ -113,7 +118,7 @@ export default function VaccinationMatrixUniversal({
                 {vaccine.code}
               </td>
               {ageGroups.map((age) => {
-                const dose = schedule.find(
+                const dose = scheduleData.find(
                   (d) =>
                     d.vaccine_detail.code === vaccine.code &&
                     ageGroupMatches(age, d.recommended_age_months)

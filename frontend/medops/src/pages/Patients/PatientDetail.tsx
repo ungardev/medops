@@ -10,15 +10,43 @@ import PatientDocumentsTab from "../../components/Patients/PatientDocumentsTab";
 import PatientPaymentsTab from "../../components/Patients/PatientPaymentsTab";
 import PatientPendingAppointmentsTab from "../../components/Patients/PatientPendingAppointmentsTab";
 import PatientEventsTab from "../../components/Patients/PatientEventsTab";
-import VaccinationTab from "../../components/Patients/VaccinationTab"; // 👈 nuevo import
+import VaccinationTab from "../../components/Patients/VaccinationTab";
+import SurgeriesTab from "../../components/Patients/SurgeriesTab"; // 👈 nuevo import
+
+function normalizeTab(id?: string): string {
+  const map: Record<string, string> = {
+    info: "info",
+    consultas: "consultas",
+    documents: "documentos",
+    documentos: "documentos",
+    pagos: "pagos",
+    citas: "citas",
+    events: "eventos",
+    eventos: "eventos",
+    vacunacion: "vacunacion",
+    cirugias: "cirugias", // 👈 soporte explícito para el nuevo tab
+  };
+  if (!id) return "info";
+  return map[id.toLowerCase()] ?? id;
+}
 
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
 
   const { data: patient, isLoading, error } = usePatient(patientId);
-  const [searchParams] = useSearchParams();
-  const defaultTab = searchParams.get("tab") ?? "info";
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentTab = normalizeTab(searchParams.get("tab") ?? "info");
+
+  const setTab = (next: string) => {
+    const normalized = normalizeTab(next);
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.set("tab", normalized);
+      return p;
+    });
+  };
 
   if (isLoading)
     return (
@@ -54,7 +82,8 @@ export default function PatientDetail() {
 
       <div className="overflow-x-auto">
         <Tabs
-          defaultTab={defaultTab}
+          value={currentTab}
+          onChange={setTab}
           className="border-b border-gray-200 dark:border-gray-700 text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-gray-300"
         >
           <Tab id="info" label="Información">
@@ -69,21 +98,24 @@ export default function PatientDetail() {
             <PatientDocumentsTab patient={patient} />
           </Tab>
 
-          <Tab id="pagos" label="Pagos">
-            <PatientPaymentsTab patient={patient} />
+          <Tab id="vacunacion" label="Vacunación">
+            <VaccinationTab patientId={patientId} onRefresh={() => {}} />
+          </Tab>
+
+          <Tab id="cirugias" label="Cirugías">
+            <SurgeriesTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
 
           <Tab id="citas" label="Citas pendientes">
             <PatientPendingAppointmentsTab patient={patient} />
           </Tab>
 
-          <Tab id="eventos" label="Eventos">
-            <PatientEventsTab patient={patient} />
+          <Tab id="pagos" label="Pagos">
+            <PatientPaymentsTab patient={patient} />
           </Tab>
 
-          {/* Nuevo Tab institucional de vacunación */}
-          <Tab id="vacunacion" label="Vacunación">
-            <VaccinationTab patientId={patientId} onRefresh={() => {}} />
+          <Tab id="eventos" label="Eventos">
+            <PatientEventsTab patient={patient} />
           </Tab>
         </Tabs>
       </div>

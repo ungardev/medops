@@ -5,7 +5,8 @@ from .models import (
     Diagnosis, Treatment, Prescription, MedicalDocument, GeneticPredisposition,
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
-    PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination
+    PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
+    Allergy, MedicalHistory
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -18,6 +19,17 @@ class GeneticPredispositionSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneticPredisposition
         fields = ["id", "name", "description"]
+
+
+class AllergySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Allergy
+        fields = ["id", "name", "severity", "source", "notes", "created_at", "updated_at"]
+
+class MedicalHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MedicalHistory
+        fields = ["id", "condition", "status", "source", "notes", "created_at", "updated_at"]
 
 
 # 🔹 Serializer para crear/actualizar pacientes (sin campo active)
@@ -47,8 +59,6 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "weight",
             "height",
             "blood_type",
-            "allergies",
-            "medical_history",
             "genetic_predispositions",
         ]
         extra_kwargs = {
@@ -61,8 +71,6 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "weight": {"required": False, "allow_null": True},
             "height": {"required": False, "allow_null": True},
             "blood_type": {"required": False, "allow_null": True},
-            "allergies": {"required": False, "allow_blank": True},
-            "medical_history": {"required": False, "allow_blank": True},
             "genetic_predispositions": {"required": False},
         }
 
@@ -86,7 +94,8 @@ class PatientWriteSerializer(serializers.ModelSerializer):
 class PatientReadSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
-    allergies = serializers.SerializerMethodField()
+    allergies = AllergySerializer(many=True, read_only=True)
+    medical_history = MedicalHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Patient
@@ -96,8 +105,9 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "national_id",
             "email",
             "age",
-            "allergies",
             "gender",
+            "allergies",        # ahora array de objetos
+            "medical_history",  # ahora array de objetos
         ]
 
     @extend_schema_field(serializers.CharField())
@@ -129,19 +139,12 @@ class PatientReadSerializer(serializers.ModelSerializer):
         )
         return age if age >= 0 else None
 
-    @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_allergies(self, obj) -> str:
-        """
-        Devuelve alergias como string, vacío si es None.
-        """
-        if not obj:
-            return ""
-        return obj.allergies or ""
-
 
 class PatientListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
+    allergies = AllergySerializer(many=True, read_only=True)
+    medical_history = MedicalHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Patient
@@ -151,6 +154,8 @@ class PatientListSerializer(serializers.ModelSerializer):
             "age",
             "gender",
             "contact_info",
+            "allergies",        # ahora array de objetos
+            "medical_history",  # ahora array de objetos
         ]
 
     def get_full_name(self, obj) -> str:
@@ -177,6 +182,8 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
+    allergies = AllergySerializer(many=True, read_only=True)
+    medical_history = MedicalHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Patient
@@ -197,8 +204,8 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "weight",
             "height",
             "blood_type",
-            "allergies",
-            "medical_history",
+            "allergies",          # ahora array de objetos
+            "medical_history",    # ahora array de objetos
             "genetic_predispositions",
             "active",
             "created_at",

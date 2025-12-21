@@ -1,10 +1,11 @@
 // src/components/Patients/VaccinationTab.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useVaccinations,
   PatientVaccination,
   VaccinationSchedule,
   PatientVaccinationPayload,
+  Paginated,
 } from "../../hooks/patients/useVaccinations";
 import VaccinationModal from "./VaccinationModal";
 import VaccinationMatrixUniversal from "./VaccinationMatrixUniversal";
@@ -53,16 +54,28 @@ export default function VaccinationTab({ patientId, onRefresh }: Props) {
     }
   };
 
-  const schema: VaccinationSchedule[] = Array.isArray(schedule.data?.results)
-    ? schedule.data.results
-    : [];
+  // 🔐 Blindaje: acepta array plano o paginado
+  const schema: VaccinationSchedule[] = Array.isArray(schedule.data)
+    ? schedule.data
+    : (schedule.data as Paginated<VaccinationSchedule> | undefined)?.results ?? [];
 
   const applied: PatientVaccination[] = Array.isArray(vaccQuery.data)
     ? vaccQuery.data
     : [];
 
+  // ⚡ Scroll automático al Matrix SVPP cuando se activa el tab
+  useEffect(() => {
+    const el = document.getElementById("vaccination-matrix");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
+
   return (
-    <div className="relative p-6 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+    <div
+      id="vaccination-matrix"
+      className="relative p-6 border rounded-lg bg-white dark:bg-gray-800 shadow-sm"
+    >
       {isSaving && (
         <div className="absolute inset-0 bg-black/10 dark:bg-black/30 rounded-lg flex items-center justify-center z-10">
           <div className="px-4 py-2 bg-white dark:bg-gray-900 rounded-md shadow text-sm text-[#0d2c53] dark:text-gray-100">

@@ -58,8 +58,8 @@ export function useVaccinations(patientId: number) {
       apiFetch(`patient-vaccinations/?patient=${patientId}`),
   });
 
-  // Esquema teórico SVPP (paginado)
-  const schedule = useQuery<Paginated<VaccinationSchedule>>({
+  // Esquema teórico SVPP (puede venir paginado o como array plano)
+  const schedule = useQuery<VaccinationSchedule[] | Paginated<VaccinationSchedule>>({
     queryKey: ["vaccination-schedule", "Venezuela"],
     queryFn: () =>
       apiFetch(`vaccination-schedule/?country=Venezuela`),

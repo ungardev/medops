@@ -1,13 +1,12 @@
+// src/components/Patients/PatientInfoTab.tsx
 import React, { useState, useEffect } from "react";
 import { apiFetch } from "../../api/client";
 
 import DemographicsSection from "./sections/DemographicsSection";
-import PersonalHistorySection from "./sections/PersonalHistorySection";
-import FamilyHistorySection from "./sections/FamilyHistorySection";
-import SurgeriesSection from "./sections/SurgeriesSection";
-import HabitsSection from "./sections/HabitsSection";
-import GeneticSection from "./sections/GeneticSection";
 import AlertsSection from "./sections/AlertsSection";
+import ClinicalProfileSection from "./sections/ClinicalProfileSection";
+import ClinicalBackgroundModal from "./sections/ClinicalBackgroundModal";
+import HabitsModal from "./sections/HabitsModal";
 
 import { useVaccinations } from "../../hooks/patients/useVaccinations";
 
@@ -15,9 +14,13 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  const [modalAntecedenteType, setModalAntecedenteType] = useState<
+    "personal" | "familiar" | "genetico" | null
+  >(null);
+  const [modalHabitoOpen, setModalHabitoOpen] = useState(false);
+
   const { vaccinations: vaccQuery, schedule } = useVaccinations(patientId);
 
-  // Función institucional para refrescar el perfil clínico
   const refreshProfile = () => {
     setLoading(true);
     apiFetch(`patients/${patientId}/profile/`)
@@ -51,47 +54,60 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
 
   return (
     <div className="p-4 space-y-8">
-
-      <DemographicsSection
-        patient={profile}
-        onRefresh={refreshProfile}
-      />
+      <DemographicsSection patient={profile} onRefresh={refreshProfile} />
 
       <AlertsSection
         patient={profile}
+        antecedentes={profile.clinical_background ?? []}
+        habits={profile.habits ?? []}
+        surgeries={profile.surgeries ?? []}
         vaccinations={Array.isArray(vaccQuery.data) ? vaccQuery.data : []}
         vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
+        onChangeTab={(tab) => {
+          // Aquí puedes integrar con PatientDetail para cambiar de tab
+          console.log("Cambiar a tab:", tab);
+        }}
       />
 
-      <PersonalHistorySection
-        items={profile.personal_history}
+      <ClinicalProfileSection
+        antecedentes={profile.clinical_background ?? []}
+        habits={profile.habits ?? []}
         patientId={patientId}
         onRefresh={refreshProfile}
+        onCreateAntecedente={(type) => setModalAntecedenteType(type)}
+        onCreateHabito={() => setModalHabitoOpen(true)}
       />
 
-      <FamilyHistorySection
-        items={profile.family_history}
-        patientId={patientId}
-        onRefresh={refreshProfile}
-      />
+      {modalAntecedenteType && (
+        <ClinicalBackgroundModal
+          open={true}
+          type={modalAntecedenteType}
+          onClose={() => setModalAntecedenteType(null)}
+          onSave={(data) => {
+            apiFetch(`patients/${patientId}/clinical-background/`, {
+              method: "POST",
+              body: JSON.stringify(data),
+            })
+              .then(() => refreshProfile())
+              .finally(() => setModalAntecedenteType(null));
+          }}
+        />
+      )}
 
-      <SurgeriesSection
-        items={profile.surgeries}
-        patientId={patientId}
-        onRefresh={refreshProfile}
-      />
-
-      <HabitsSection
-        items={profile.habits}
-        patientId={patientId}
-        onRefresh={refreshProfile}
-      />
-
-      <GeneticSection
-        items={profile.genetic_predispositions}
-        patientId={patientId}
-        onRefresh={refreshProfile}   // 🔥 FIX INSTITUCIONAL
-      />
+      {modalHabitoOpen && (
+        <HabitsModal
+          open={true}
+          onClose={() => setModalHabitoOpen(false)}
+          onSave={(data) => {
+            apiFetch(`patients/${patientId}/habits/`, {
+              method: "POST",
+              body: JSON.stringify({ ...data, patient: patientId }),
+            })
+              .then(() => refreshProfile())
+              .finally(() => setModalHabitoOpen(false));
+          }}
+        />
+      )}
     </div>
   );
 }

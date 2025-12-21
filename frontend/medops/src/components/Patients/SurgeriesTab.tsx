@@ -1,34 +1,33 @@
+// src/components/Patients/SurgeriesTab.tsx
 import React, { useState } from "react";
-import { useSurgeries } from "../../../hooks/patients/useSurgeries";
+import { useSurgeries, Surgery } from "../../hooks/patients/useSurgeries";
 import SurgeriesModal from "./SurgeriesModal";
 
 interface Props {
-  items: any[];
   patientId: number;
-  onRefresh?: () => void; // 🔥 FIX INSTITUCIONAL
+  onRefresh?: () => void;
 }
 
-export default function SurgeriesSection({ items, patientId, onRefresh }: Props) {
+export default function SurgeriesTab({ patientId, onRefresh }: Props) {
   const { query, create, update, remove } = useSurgeries(patientId);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<Surgery | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const isSaving =
-    create.isPending || update.isPending || remove.isPending;
+  const isSaving = create.isPending || update.isPending || remove.isPending;
 
   const handleCreate = () => {
     setEditingItem(null);
     setModalOpen(true);
   };
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: Surgery) => {
     setEditingItem(item);
     setModalOpen(true);
   };
 
-  const handleSave = (data: any) => {
+  const handleSave = (data: Surgery) => {
     setLocalError(null);
 
     if (editingItem) {
@@ -37,7 +36,7 @@ export default function SurgeriesSection({ items, patientId, onRefresh }: Props)
         {
           onSuccess: () => {
             query.refetch();
-            if (onRefresh) onRefresh();
+            onRefresh?.();
             setModalOpen(false);
           },
           onError: () =>
@@ -50,7 +49,7 @@ export default function SurgeriesSection({ items, patientId, onRefresh }: Props)
         {
           onSuccess: () => {
             query.refetch();
-            if (onRefresh) onRefresh();
+            onRefresh?.();
             setModalOpen(false);
           },
           onError: () =>
@@ -66,7 +65,7 @@ export default function SurgeriesSection({ items, patientId, onRefresh }: Props)
     remove.mutate(id, {
       onSuccess: () => {
         query.refetch();
-        if (onRefresh) onRefresh();
+        onRefresh?.();
       },
       onError: () =>
         setLocalError("No se pudo eliminar la cirugía. Intenta nuevamente."),
@@ -74,9 +73,8 @@ export default function SurgeriesSection({ items, patientId, onRefresh }: Props)
   };
 
   return (
-    <div className="relative p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-
-      {/* Overlay institucional cuando se está guardando */}
+    <div className="relative p-6 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+      {/* Overlay institucional */}
       {isSaving && (
         <div className="absolute inset-0 bg-black/10 dark:bg-black/30 rounded-lg flex items-center justify-center z-10">
           <div className="px-4 py-2 bg-white dark:bg-gray-900 rounded-md shadow text-sm text-[#0d2c53] dark:text-gray-100">
@@ -86,9 +84,9 @@ export default function SurgeriesSection({ items, patientId, onRefresh }: Props)
       )}
 
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">
-          Cirugías
-        </h3>
+        <h2 className="text-xl font-semibold text-[#0d2c53] dark:text-white">
+          Cirugías y Procedimientos
+        </h2>
 
         <button
           className="px-3 py-1.5 bg-[#0d2c53] text-white rounded-md text-sm disabled:opacity-60"
@@ -112,13 +110,13 @@ export default function SurgeriesSection({ items, patientId, onRefresh }: Props)
           <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse" />
           <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse" />
         </div>
-      ) : items.length === 0 ? (
+      ) : query.data && query.data.length === 0 ? (
         <p className="text-sm text-gray-500 dark:text-gray-300">
           No hay cirugías registradas.
         </p>
       ) : (
         <ul className="space-y-3">
-          {items.map((item) => (
+          {query.data?.map((item) => (
             <li
               key={item.id}
               className="p-3 border rounded-md bg-gray-50 dark:bg-gray-700"
@@ -139,6 +137,16 @@ export default function SurgeriesSection({ items, patientId, onRefresh }: Props)
                   {item.date && (
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       {item.date}
+                    </p>
+                  )}
+                  {item.status && (
+                    <p className="text-xs italic text-gray-600 dark:text-gray-300">
+                      Estado: {item.status}
+                    </p>
+                  )}
+                  {item.doctor && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300">
+                      Doctor: {item.doctor}
                     </p>
                   )}
                 </div>

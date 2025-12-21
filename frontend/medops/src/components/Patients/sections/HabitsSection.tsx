@@ -1,43 +1,55 @@
+// src/components/Patients/sections/HabitsSection.tsx
 import React, { useState } from "react";
 import { useHabits } from "../../../hooks/patients/useHabits";
 import HabitsModal from "./HabitsModal";
+import {
+  Habit,
+  HabitForm,
+  HabitImpact,
+} from "../../../types/patients";
 
 interface Props {
-  items: any[];
+  items: Habit[];
   patientId: number;
-  onRefresh?: () => void; // 🔥 FIX INSTITUCIONAL
+  onRefresh?: () => void;
 }
+
+const impactColors: Record<HabitImpact, string> = {
+  alto: "bg-red-100 border-red-300 text-red-800",
+  medio: "bg-yellow-100 border-yellow-300 text-yellow-800",
+  bajo: "bg-green-100 border-green-300 text-green-800",
+};
 
 export default function HabitsSection({ items, patientId, onRefresh }: Props) {
   const { query, create, update, remove } = useHabits(patientId);
 
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<Habit | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
-  const isSaving =
-    create.isPending || update.isPending || remove.isPending;
+  const isSaving = create.isPending || update.isPending || remove.isPending;
 
   const handleCreate = () => {
     setEditingItem(null);
     setModalOpen(true);
   };
 
-  const handleEdit = (item: any) => {
+  const handleEdit = (item: Habit) => {
     setEditingItem(item);
     setModalOpen(true);
   };
 
-  const handleSave = (data: any) => {
+  const handleSave = (data: HabitForm) => {
     setLocalError(null);
 
     if (editingItem) {
+      // Actualización: combinamos el item existente con los datos del formulario
       update.mutate(
         { ...editingItem, ...data },
         {
           onSuccess: () => {
             query.refetch();
-            if (onRefresh) onRefresh();
+            onRefresh?.();
             setModalOpen(false);
           },
           onError: () =>
@@ -45,12 +57,13 @@ export default function HabitsSection({ items, patientId, onRefresh }: Props) {
         }
       );
     } else {
+      // Creación: enviamos el formulario junto con el patientId
       create.mutate(
         { ...data, patient: patientId },
         {
           onSuccess: () => {
             query.refetch();
-            if (onRefresh) onRefresh();
+            onRefresh?.();
             setModalOpen(false);
           },
           onError: () =>
@@ -66,7 +79,7 @@ export default function HabitsSection({ items, patientId, onRefresh }: Props) {
     remove.mutate(id, {
       onSuccess: () => {
         query.refetch();
-        if (onRefresh) onRefresh();
+        onRefresh?.();
       },
       onError: () =>
         setLocalError("No se pudo eliminar el hábito. Intenta nuevamente."),
@@ -75,7 +88,6 @@ export default function HabitsSection({ items, patientId, onRefresh }: Props) {
 
   return (
     <div className="relative p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-
       {/* Overlay institucional cuando se está guardando */}
       {isSaving && (
         <div className="absolute inset-0 bg-black/10 dark:bg-black/30 rounded-lg flex items-center justify-center z-10">
@@ -121,16 +133,23 @@ export default function HabitsSection({ items, patientId, onRefresh }: Props) {
           {items.map((item) => (
             <li
               key={item.id}
-              className="p-3 border rounded-md bg-gray-50 dark:bg-gray-700"
+              className={`p-3 border rounded-md ${
+                item.impact
+                  ? impactColors[item.impact]
+                  : "bg-gray-50 dark:bg-gray-700"
+              }`}
             >
               <div className="flex justify-between">
                 <div>
                   <p className="font-medium text-[#0d2c53] dark:text-white">
                     {item.type}
                   </p>
-                  {item.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {item.description}
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    Frecuencia: {item.frequency}
+                  </p>
+                  {item.notes && (
+                    <p className="text-xs text-gray-600 dark:text-gray-300">
+                      {item.notes}
                     </p>
                   )}
                 </div>
@@ -161,7 +180,16 @@ export default function HabitsSection({ items, patientId, onRefresh }: Props) {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSave}
-        initial={editingItem}
+        initial={
+          editingItem
+            ? {
+                type: editingItem.type,
+                frequency: editingItem.frequency,
+                impact: editingItem.impact ?? "",
+                notes: editingItem.notes ?? "",
+              }
+            : undefined
+        }
       />
     </div>
   );

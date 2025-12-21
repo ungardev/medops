@@ -61,7 +61,8 @@ from drf_spectacular.utils import (
 )
 
 from .models import (
-    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination, Patient
+    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination, Allergy, MedicalHistory
+
 )
 
 from .serializers import (
@@ -78,6 +79,7 @@ from .serializers import (
     MedicalTestWriteSerializer, MedicalReferralWriteSerializer, SpecialtySerializer,
     PersonalHistorySerializer, FamilyHistorySerializer, SurgerySerializer, HabitSerializer,
     VaccineSerializer, VaccinationScheduleSerializer, PatientVaccinationSerializer, PatientClinicalProfileSerializer,
+    AllergySerializer, MedicalHistorySerializer
 )
 
 from core.utils.search_normalize import normalize, normalize_token
@@ -4184,3 +4186,29 @@ class PatientClinicalProfileViewSet(viewsets.ReadOnlyModelViewSet):
         patient = self.get_object()
         serializer = PatientClinicalProfileSerializer(patient)
         return Response(serializer.data)
+
+
+class AllergyViewSet(viewsets.ModelViewSet):
+    serializer_class = AllergySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.kwargs.get("patient_pk")
+        return Allergy.objects.filter(patient_id=patient_id).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        patient_id = self.kwargs.get("patient_pk")
+        serializer.save(patient_id=patient_id)
+
+
+class MedicalHistoryViewSet(viewsets.ModelViewSet):
+    serializer_class = MedicalHistorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.kwargs.get("patient_pk")
+        return MedicalHistory.objects.filter(patient_id=patient_id).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        patient_id = self.kwargs.get("patient_pk")
+        serializer.save(patient_id=patient_id)

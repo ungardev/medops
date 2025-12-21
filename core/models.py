@@ -63,15 +63,13 @@ class Patient(models.Model):
 
     birthdate = models.DateField(blank=True, null=True)
 
-    # 🔹 NUEVO: Lugar de nacimiento
+    # 🔹 Lugar y país de nacimiento
     birth_place = models.CharField(
         max_length=255,
         blank=True,
         null=True,
         verbose_name="Lugar de nacimiento"
     )
-
-    # 🔹 NUEVO: País de nacimiento (para esquemas de vacunación)
     birth_country = models.CharField(
         max_length=100,
         default="Venezuela",
@@ -81,15 +79,12 @@ class Patient(models.Model):
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     contact_info = models.TextField(blank=True, null=True)
 
-    # 👇 Email ahora opcional
     email = models.EmailField(
         max_length=255,
         verbose_name="Correo electrónico",
         blank=True,
         null=True
     )
-
-    # 👇 Dirección opcional
     address = models.TextField(
         blank=True,
         null=True,
@@ -100,20 +95,20 @@ class Patient(models.Model):
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # kg
     height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # cm
     blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True)
-    allergies = models.TextField(blank=True, null=True)
-    medical_history = models.TextField(blank=True, null=True)
 
-    # 🔹 Predisposiciones genéticas
+    # 🔹 Relaciones clínicas desacopladas
+    # Alergias y antecedentes médicos ahora son modelos separados
+    # patient.allergies.all() → Allergy
+    # patient.medical_history.all() → MedicalHistory
+
     genetic_predispositions = models.ManyToManyField(
         "GeneticPredisposition",
         blank=True,
         related_name="patients"
     )
 
-    # Historial
+    # Auditoría
     history = HistoricalRecords()
-
-    # Campos operativos
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     active = models.BooleanField(default=True)
@@ -1245,3 +1240,86 @@ class PatientVaccination(models.Model):
         return f"{self.patient} — {self.vaccine.code} D{self.dose_number}"
 
 
+# 🔹 Modelo especializado para alergias
+class Allergy(models.Model):
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="allergies"
+    )
+    name = models.CharField(max_length=100)
+    severity = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Gravedad de la alergia: leve, moderada, grave"
+    )
+    source = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Fuente: historia clínica, verbal, prueba"
+    )
+    notes = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Auditoría institucional
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = "Allergy"
+        verbose_name_plural = "Allergies"
+        indexes = [
+            models.Index(fields=["patient", "name"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.severity or 'N/A'})"
+
+
+# 🔹 Modelo especializado para antecedentes médicos
+class MedicalHistory(models.Model):
+    STATUS_CHOICES = [
+        ("active", "Activo"),
+        ("resolved", "Resuelto"),
+        ("suspected", "Sospecha"),
+        ("positive", "Positivo"),
+        ("negative", "Negativo"),
+    ]
+
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        related_name="medical_history"
+    )
+    condition = models.CharField(max_length=100)
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="active"
+    )
+    source = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Fuente: historia clínica, verbal, prueba"
+    )
+    notes = models.TextField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Auditoría institucional
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = "Medical History"
+        verbose_name_plural = "Medical Histories"
+        indexes = [
+            models.Index(fields=["patient", "condition", "status"]),
+        ]
+
+    def __str__(self):
+        return f"{self.condition} — {self.status}"

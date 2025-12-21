@@ -44,12 +44,32 @@ export interface Surgery {
   notes?: string | null;
 }
 
-// --- Hábito
+// --- Tipos institucionales para hábitos
+export type HabitType =
+  | "tabaquismo"
+  | "alcohol"
+  | "drogas"
+  | "ejercicio"
+  | "alimentacion";
+
+export type HabitFrequency = "diario" | "ocasional" | "semanal" | "mensual";
+export type HabitImpact = "alto" | "medio" | "bajo";
+
+// --- Hábito (lectura desde backend)
 export interface Habit {
   id: number;
-  type: string; // ej. "tabaco", "alcohol"
-  frequency?: string | null;
+  type: HabitType;
+  frequency: HabitFrequency;
+  impact?: HabitImpact;
   notes?: string | null;
+}
+
+// --- Hábito (formulario frontend, creación/edición)
+export interface HabitForm {
+  type: HabitType | "";
+  frequency: HabitFrequency | "";
+  impact?: HabitImpact | "";
+  notes?: string;
 }
 
 // --- Vacunación del paciente (registro aplicado)

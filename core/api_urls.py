@@ -26,6 +26,8 @@ from .api_views import (
     VaccinationScheduleViewSet,
     PatientVaccinationViewSet,
     PatientClinicalProfileViewSet,
+    AllergyViewSet,
+    MedicalHistoryViewSet,
 
     # --- Funciones ---
     update_appointment_status,
@@ -96,6 +98,8 @@ router.register(r"vaccines", VaccineViewSet, basename="vaccine")
 router.register(r"vaccination-schedule", VaccinationScheduleViewSet, basename="vaccination-schedule")
 router.register(r"patient-vaccinations", PatientVaccinationViewSet, basename="patient-vaccination")
 router.register(r"patient-clinical-profile", PatientClinicalProfileViewSet, basename="patient-clinical-profile")
+router.register(r"allergies", AllergyViewSet, basename="allergy")
+router.register(r"medical-history", MedicalHistoryViewSet, basename="medical-history")
 
 # --- Funciones personalizadas ---
 urlpatterns = [
