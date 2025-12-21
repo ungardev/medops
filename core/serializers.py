@@ -6,7 +6,7 @@ from .models import (
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
-    Allergy, MedicalHistory
+    Allergy, MedicalHistory, ClinicalAlert
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -1438,3 +1438,9 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "habits",
             "vaccinations",
         ]
+
+
+class ClinicalAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClinicalAlert
+        fields = ["id", "patient", "type", "message", "created_at", "updated_at"]

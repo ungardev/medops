@@ -61,7 +61,7 @@ from drf_spectacular.utils import (
 )
 
 from .models import (
-    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination, Allergy, MedicalHistory
+    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination, Allergy, MedicalHistory, ClinicalAlert
 
 )
 
@@ -79,7 +79,7 @@ from .serializers import (
     MedicalTestWriteSerializer, MedicalReferralWriteSerializer, SpecialtySerializer,
     PersonalHistorySerializer, FamilyHistorySerializer, SurgerySerializer, HabitSerializer,
     VaccineSerializer, VaccinationScheduleSerializer, PatientVaccinationSerializer, PatientClinicalProfileSerializer,
-    AllergySerializer, MedicalHistorySerializer
+    AllergySerializer, MedicalHistorySerializer, ClinicalAlertSerializer
 )
 
 from core.utils.search_normalize import normalize, normalize_token
@@ -4211,4 +4211,17 @@ class MedicalHistoryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         patient_id = self.kwargs.get("patient_pk")
+        serializer.save(patient_id=patient_id)
+
+
+class ClinicalAlertViewSet(viewsets.ModelViewSet):
+    serializer_class = ClinicalAlertSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.kwargs["patient_id"]
+        return ClinicalAlert.objects.filter(patient_id=patient_id)
+
+    def perform_create(self, serializer):
+        patient_id = self.kwargs["patient_id"]
         serializer.save(patient_id=patient_id)

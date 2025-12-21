@@ -20,6 +20,7 @@ interface ManualAlert {
 interface Props {
   patient: any;
   antecedentes: any[];
+  allergies?: any[];            // 👈 ahora opcional
   habits: any[];
   surgeries: any[];
   vaccinations: any[];
@@ -37,6 +38,7 @@ function isRecent(date?: string) {
 export default function AlertsSection({
   patient,
   antecedentes,
+  allergies = [],   // 👈 valor por defecto para evitar undefined
   habits,
   surgeries,
   vaccinations,
@@ -52,16 +54,13 @@ export default function AlertsSection({
   const autoAlerts: AutoAlert[] = useMemo(() => {
     const alerts: AutoAlert[] = [];
 
-    // ClinicalProfile: alergias
-    const allergies = antecedentes.filter((a) =>
-      a.condition.toLowerCase().includes("alergia")
-    );
+    // Alergias
     if (allergies.length > 0) {
       alerts.push({
         type: "danger",
         message: (
           <div>
-            Alergias registradas: {allergies.map((a) => a.condition).join(", ")}
+            Alergias registradas: {allergies.map((a) => a.name).join(", ")}
             <button
               onClick={() => onChangeTab?.("clinical-profile")}
               className="ml-2 underline text-blue-700"
@@ -73,7 +72,7 @@ export default function AlertsSection({
       });
     }
 
-    // ClinicalProfile: antecedentes médicos relevantes
+    // Antecedentes médicos relevantes
     const medicalHistory = antecedentes.filter(
       (a) => a.type === "personal" || a.type === "familiar"
     );
@@ -95,7 +94,7 @@ export default function AlertsSection({
       });
     }
 
-    // ClinicalProfile: hábitos de riesgo
+    // Hábitos de riesgo
     const riskyHabits = habits.filter((h) =>
       ["tabaquismo", "alcohol", "drogas"].includes(h.type)
     );
@@ -116,7 +115,7 @@ export default function AlertsSection({
       });
     }
 
-    // ClinicalProfile: predisposiciones genéticas
+    // Predisposiciones genéticas
     const genetics = antecedentes.filter((a) => a.type === "genetico");
     if (genetics.length > 0) {
       alerts.push({
@@ -136,7 +135,7 @@ export default function AlertsSection({
       });
     }
 
-    // Surgeries: recientes
+    // Cirugías recientes
     const recentSurgeries = surgeries.filter((s) => isRecent(s.date));
     if (recentSurgeries.length > 0) {
       alerts.push({
@@ -155,7 +154,7 @@ export default function AlertsSection({
       });
     }
 
-    // Vaccination: faltantes
+    // Vacunas faltantes
     const missing = vaccinationSchedule.filter(
       (dose: any) =>
         !vaccinations.some(
@@ -182,7 +181,7 @@ export default function AlertsSection({
     }
 
     return alerts;
-  }, [antecedentes, habits, surgeries, vaccinations, vaccinationSchedule, onChangeTab]);
+  }, [antecedentes, allergies, habits, surgeries, vaccinations, vaccinationSchedule, onChangeTab]);
 
   // --- MANEJO DE ALERTAS MANUALES ---
   const handleSave = (data: { type: AlertType; message: string }) => {

@@ -7,6 +7,7 @@ import AlertsSection from "./sections/AlertsSection";
 import ClinicalProfileSection from "./sections/ClinicalProfileSection";
 import ClinicalBackgroundModal from "./sections/ClinicalBackgroundModal";
 import HabitsModal from "./sections/HabitsModal";
+import AllergyModal from "./sections/AllergyModal"; // 👈 nuevo import
 
 import { useVaccinations } from "../../hooks/patients/useVaccinations";
 
@@ -18,6 +19,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
     "personal" | "familiar" | "genetico" | null
   >(null);
   const [modalHabitoOpen, setModalHabitoOpen] = useState(false);
+  const [modalAlergiaOpen, setModalAlergiaOpen] = useState(false); // 👈 nuevo estado
 
   const { vaccinations: vaccQuery, schedule } = useVaccinations(patientId);
 
@@ -59,23 +61,25 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       <AlertsSection
         patient={profile}
         antecedentes={profile.clinical_background ?? []}
+        allergies={profile.allergies ?? []} // 👈 ahora se pasan alergias
         habits={profile.habits ?? []}
         surgeries={profile.surgeries ?? []}
         vaccinations={Array.isArray(vaccQuery.data) ? vaccQuery.data : []}
         vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
         onChangeTab={(tab) => {
-          // Aquí puedes integrar con PatientDetail para cambiar de tab
           console.log("Cambiar a tab:", tab);
         }}
       />
 
       <ClinicalProfileSection
         antecedentes={profile.clinical_background ?? []}
+        allergies={profile.allergies ?? []} // 👈 ahora se pasan alergias
         habits={profile.habits ?? []}
         patientId={patientId}
         onRefresh={refreshProfile}
         onCreateAntecedente={(type) => setModalAntecedenteType(type)}
         onCreateHabito={() => setModalHabitoOpen(true)}
+        onCreateAlergia={() => setModalAlergiaOpen(true)} // 👈 nuevo callback
       />
 
       {modalAntecedenteType && (
@@ -105,6 +109,21 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
             })
               .then(() => refreshProfile())
               .finally(() => setModalHabitoOpen(false));
+          }}
+        />
+      )}
+
+      {modalAlergiaOpen && (
+        <AllergyModal
+          open={true}
+          onClose={() => setModalAlergiaOpen(false)}
+          onSave={(data) => {
+            apiFetch(`patients/${patientId}/allergies/`, {
+              method: "POST",
+              body: JSON.stringify({ ...data, patient: patientId }),
+            })
+              .then(() => refreshProfile())
+              .finally(() => setModalAlergiaOpen(false));
           }}
         />
       )}

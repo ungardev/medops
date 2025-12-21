@@ -31,13 +31,23 @@ interface Habit {
   notes?: string;
 }
 
+interface Allergy {
+  id: number;
+  name: string;
+  severity?: string;
+  source?: string;
+  notes?: string;
+}
+
 interface Props {
   antecedentes: ClinicalBackground[];
-  habits: Habit[];
+  allergies?: Allergy[];               // 👈 ahora opcional
+  habits?: Habit[];                     // 👈 ahora opcional
   patientId: number;
   onRefresh?: () => void;
   onCreateAntecedente?: (type: BackgroundType) => void;
   onCreateHabito?: () => void;
+  onCreateAlergia?: () => void;
 }
 
 const antecedentesLabels: Record<BackgroundType, string> = {
@@ -60,11 +70,13 @@ const impactColors: Record<HabitImpact, string> = {
 
 export default function ClinicalProfileSection({
   antecedentes,
-  habits,
+  allergies = [],   // 👈 valor por defecto
+  habits = [],      // 👈 valor por defecto
   patientId,
   onRefresh,
   onCreateAntecedente,
   onCreateHabito,
+  onCreateAlergia,
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -151,6 +163,59 @@ export default function ClinicalProfileSection({
           </div>
         );
       })}
+
+      {/* Sección de alergias */}
+      <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+        <button
+          className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+          onClick={() => setExpanded(expanded === "alergias" ? null : "alergias")}
+        >
+          <span className="flex items-center gap-2">
+            <SparklesIcon className="w-4 h-4 text-[#0d2c53]" />
+            Alergias
+          </span>
+          <span className="text-xs text-gray-600 dark:text-gray-300">
+            {allergies.length} registro(s)
+          </span>
+        </button>
+
+        {expanded === "alergias" && (
+          <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
+            {allergies.length === 0 ? (
+              <p className="text-xs text-gray-500">No hay alergias registradas.</p>
+            ) : (
+              <ul className="space-y-2">
+                {allergies.map((item) => (
+                  <li
+                    key={item.id}
+                    className="p-2 border rounded-md text-sm bg-red-50 dark:bg-red-900"
+                  >
+                    <div className="flex justify-between">
+                      <span className="font-medium">{item.name}</span>
+                      <span className="text-xs text-gray-500">
+                        {item.severity || "—"}
+                      </span>
+                    </div>
+                    {item.source && (
+                      <p className="text-xs text-gray-600">Fuente: {item.source}</p>
+                    )}
+                    {item.notes && (
+                      <p className="text-xs text-gray-600">{item.notes}</p>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex justify-start mt-2">
+              <PlusIcon
+                className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
+                onClick={() => onCreateAlergia?.()}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Sección de hábitos */}
       <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
