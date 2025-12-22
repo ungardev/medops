@@ -4255,7 +4255,7 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
         return qs
 
     def get_serializer_class(self):
-        type_param = self.request.data.get("type") or self.request.query_params.get("type")
+        type_param = self.request.query_params.get("type")
         if type_param == "personal":
             return PersonalHistorySerializer
         elif type_param == "familiar":
@@ -4269,7 +4269,7 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
         if not patient_id:
             raise ValidationError({"patient": "Campo requerido"})
 
-        type_param = self.request.data.get("type")
+        type_param = self.request.query_params.get("type")
 
         # 🔹 No pasar "type" al serializer, solo mapear campos
         data = dict(self.request.data)
@@ -4279,9 +4279,8 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
             # Mapear condition → description
             if "condition" in data:
                 data["description"] = data.pop("condition")
-            if "status" in data:
-                data.pop("status")  # GeneticPredisposition no usa status
-            if "relation" in data:
-                data.pop("relation")  # tampoco usa relation
+            # GeneticPredisposition no usa estos campos
+            data.pop("status", None)
+            data.pop("relation", None)
 
         serializer.save(patient_id=patient_id, **data)

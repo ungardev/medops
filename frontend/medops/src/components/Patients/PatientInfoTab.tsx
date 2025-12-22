@@ -90,11 +90,11 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           onSave={(data) => {
             const payload = {
               ...data,
-              type: modalAntecedenteType, // ✅ asegura que el tipo se incluya
-              patient: patientId,         // ✅ asegura que el paciente se incluya
+              patient: patientId, // ✅ solo enviamos patient y los campos del modelo
             };
 
-            apiFetch(`clinical-background/`, {
+            // Pasamos el tipo como query param, no dentro del body
+            apiFetch(`clinical-background/?type=${modalAntecedenteType}`, {
               method: "POST",
               body: JSON.stringify(payload),
             })
