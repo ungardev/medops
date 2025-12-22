@@ -94,7 +94,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
               patient: patientId,         // ✅ asegura que el paciente se incluya
             };
 
-            apiFetch(`patients/${patientId}/clinical-background/`, {
+            apiFetch(`clinical-background/`, {
               method: "POST",
               body: JSON.stringify(payload),
             })

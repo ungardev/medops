@@ -4265,8 +4265,23 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
         return PersonalHistorySerializer
 
     def perform_create(self, serializer):
-        # Asociar siempre al paciente
         patient_id = self.request.data.get("patient")
         if not patient_id:
             raise ValidationError({"patient": "Campo requerido"})
-        serializer.save(patient_id=patient_id)
+
+        type_param = self.request.data.get("type")
+
+        # 🔹 No pasar "type" al serializer, solo mapear campos
+        data = dict(self.request.data)
+        data.pop("type", None)
+
+        if type_param == "genetico":
+            # Mapear condition → description
+            if "condition" in data:
+                data["description"] = data.pop("condition")
+            if "status" in data:
+                data.pop("status")  # GeneticPredisposition no usa status
+            if "relation" in data:
+                data.pop("relation")  # tampoco usa relation
+
+        serializer.save(patient_id=patient_id, **data)
