@@ -48,6 +48,7 @@ interface Props {
   onCreateAntecedente?: (type: BackgroundType) => void;
   onCreateHabito?: () => void;
   onCreateAlergia?: () => void;
+  onCreateGenetico?: () => void;        // 👈 nuevo callback para predisposiciones genéticas
 }
 
 const antecedentesLabels: Record<BackgroundType, string> = {
@@ -77,6 +78,7 @@ export default function ClinicalProfileSection({
   onCreateAntecedente,
   onCreateHabito,
   onCreateAlergia,
+  onCreateGenetico, // 👈 nuevo
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -155,7 +157,11 @@ export default function ClinicalProfileSection({
                 <div className="flex justify-start mt-2">
                   <PlusIcon
                     className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
-                    onClick={() => onCreateAntecedente?.(type)}
+                    onClick={() =>
+                      type === "genetico"
+                        ? onCreateGenetico?.()
+                        : onCreateAntecedente?.(type)
+                    }
                   />
                 </div>
               </div>

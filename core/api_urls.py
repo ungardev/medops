@@ -28,7 +28,8 @@ from .api_views import (
     PatientClinicalProfileViewSet,
     AllergyViewSet,
     MedicalHistoryViewSet,
-    ClinicalAlertViewSet,   # 👈 nuevo
+    ClinicalAlertViewSet,
+    ClinicalBackgroundViewSet,   # 👈 agregado
 
     # --- Funciones ---
     update_appointment_status,
@@ -101,7 +102,8 @@ router.register(r"patient-vaccinations", PatientVaccinationViewSet, basename="pa
 router.register(r"patient-clinical-profile", PatientClinicalProfileViewSet, basename="patient-clinical-profile")
 router.register(r"allergies", AllergyViewSet, basename="allergy")
 router.register(r"medical-history", MedicalHistoryViewSet, basename="medical-history")
-router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, basename="patient-alerts")  # 👈 nuevo endpoint
+router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, basename="patient-alerts")
+router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")  # 👈 nuevo endpoint unificado
 
 # --- Funciones personalizadas ---
 urlpatterns = [

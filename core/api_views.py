@@ -4225,3 +4225,48 @@ class ClinicalAlertViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         patient_id = self.kwargs["patient_id"]
         serializer.save(patient_id=patient_id)
+
+
+# --- Endpoint unificado para antecedentes clínicos ---
+class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
+    """
+    Endpoint unificado para antecedentes clínicos:
+    - type = personal → PersonalHistory
+    - type = familiar → FamilyHistory
+    - type = genetico → GeneticPredisposition asociado al paciente
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        patient_id = self.request.query_params.get("patient")
+        type_param = self.request.query_params.get("type")
+
+        if type_param == "personal":
+            qs = PersonalHistory.objects.all()
+        elif type_param == "familiar":
+            qs = FamilyHistory.objects.all()
+        elif type_param == "genetico":
+            qs = GeneticPredisposition.objects.all()
+        else:
+            qs = PersonalHistory.objects.none()
+
+        if patient_id:
+            qs = qs.filter(patient_id=patient_id)
+        return qs
+
+    def get_serializer_class(self):
+        type_param = self.request.data.get("type") or self.request.query_params.get("type")
+        if type_param == "personal":
+            return PersonalHistorySerializer
+        elif type_param == "familiar":
+            return FamilyHistorySerializer
+        elif type_param == "genetico":
+            return GeneticPredispositionSerializer
+        return PersonalHistorySerializer
+
+    def perform_create(self, serializer):
+        # Asociar siempre al paciente
+        patient_id = self.request.data.get("patient")
+        if not patient_id:
+            raise ValidationError({"patient": "Campo requerido"})
+        serializer.save(patient_id=patient_id)

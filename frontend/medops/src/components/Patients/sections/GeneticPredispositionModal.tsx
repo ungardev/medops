@@ -1,3 +1,4 @@
+// src/components/Patients/sections/GeneticPredispositionModal.tsx
 import React, { useState } from "react";
 import { Dialog } from "@headlessui/react";
 
@@ -5,39 +6,35 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSave: (data: {
-    condition: string;
-    status: string;
-    source?: string;
+    predisposition: number; // id del catálogo
     notes?: string;
   }) => void;
+  catalog: { id: number; name: string }[]; // catálogo institucional
   initial?: {
-    condition?: string;
-    status?: string;
-    source?: string;
+    predisposition?: number;
     notes?: string;
   };
 }
 
-export default function PersonalHistoryModal({
+export default function GeneticPredispositionModal({
   open,
   onClose,
   onSave,
+  catalog,
   initial,
 }: Props) {
   const [form, setForm] = useState({
-    condition: initial?.condition ?? "",
-    status: initial?.status ?? "activo",
-    source: initial?.source ?? "",
+    predisposition: initial?.predisposition ?? 0,
     notes: initial?.notes ?? "",
   });
 
   if (!open) return null;
 
-  const setField = (field: keyof typeof form, value: string) =>
+  const setField = (field: keyof typeof form, value: any) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   const handleSave = () => {
-    if (!form.condition.trim()) return;
+    if (!form.predisposition) return;
     onSave(form);
   };
 
@@ -46,61 +43,32 @@ export default function PersonalHistoryModal({
       <div className="flex items-center justify-center min-h-screen bg-black/40">
         <Dialog.Panel className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-lg">
           <Dialog.Title className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-4">
-            {initial ? "Editar antecedente personal" : "Nuevo antecedente personal"}
+            {initial ? "Editar predisposición genética" : "Nueva predisposición genética"}
           </Dialog.Title>
 
           <div className="space-y-4 text-sm">
+            {/* Selección de predisposición */}
             <div>
               <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                Condición
-              </label>
-              <input
-                type="text"
-                value={form.condition}
-                onChange={(e) => setField("condition", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 
-                           text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 
-                           focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                Estado
+                Predisposición
               </label>
               <select
-                value={form.status}
-                onChange={(e) => setField("status", e.target.value)}
+                value={form.predisposition}
+                onChange={(e) => setField("predisposition", Number(e.target.value))}
                 className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 
                            text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 
                            focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               >
-                <option value="activo">Activo</option>
-                <option value="resuelto">Resuelto</option>
-                <option value="sospecha">Sospecha</option>
-                <option value="positivo">Positivo</option>
-                <option value="negativo">Negativo</option>
+                <option value={0}>— Seleccionar —</option>
+                {catalog.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <div>
-              <label className="block mb-1 text-gray-700 dark:text-gray-300">
-                Fuente
-              </label>
-              <select
-                value={form.source}
-                onChange={(e) => setField("source", e.target.value)}
-                className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 
-                           text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 
-                           focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              >
-                <option value="">—</option>
-                <option value="historia_clinica">Historia clínica</option>
-                <option value="verbal">Verbal</option>
-                <option value="prueba_genetica">Prueba genética</option>
-              </select>
-            </div>
-
+            {/* Notas */}
             <div>
               <label className="block mb-1 text-gray-700 dark:text-gray-300">
                 Notas
@@ -116,6 +84,7 @@ export default function PersonalHistoryModal({
             </div>
           </div>
 
+          {/* Botones */}
           <div className="flex justify-end gap-2 mt-6">
             <button
               className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm"

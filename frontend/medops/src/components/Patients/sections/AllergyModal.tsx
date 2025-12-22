@@ -70,13 +70,16 @@ export default function AllergyModal({ open, onClose, onSave }: Props) {
               <label className="block mb-1 text-gray-700 dark:text-gray-300">
                 Fuente
               </label>
-              <input
-                type="text"
+              <select
                 value={form.source}
                 onChange={(e) => setField("source", e.target.value)}
-                placeholder="Historia clínica, verbal, prueba..."
                 className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              />
+              >
+                <option value="">—</option>
+                <option value="historia_clinica">Historia clínica</option>
+                <option value="verbal">Verbal</option>
+                <option value="prueba_genetica">Prueba genética</option>
+              </select>
             </div>
 
             <div>
@@ -95,7 +98,7 @@ export default function AllergyModal({ open, onClose, onSave }: Props) {
           <div className="mt-6 flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-sm rounded-md"
+              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm rounded-md"
             >
               Cancelar
             </button>

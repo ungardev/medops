@@ -6,6 +6,7 @@ export function useClinicalAlerts(patientId: number) {
   const queryClient = useQueryClient();
   const listKey = ["clinical-alerts", patientId];
 
+  // --- Listar alertas ---
   const list = useQuery({
     queryKey: listKey,
     queryFn: async () => {
@@ -14,6 +15,7 @@ export function useClinicalAlerts(patientId: number) {
     },
   });
 
+  // --- Crear alerta ---
   const create = useMutation({
     mutationFn: async (data: { type: string; message: string }) =>
       apiFetch(`patients/${patientId}/alerts/`, {
@@ -23,18 +25,23 @@ export function useClinicalAlerts(patientId: number) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: listKey }),
   });
 
+  // --- Actualizar alerta ---
   const update = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: { type: string; message: string } }) =>
-      apiFetch(`alerts/${id}/`, {
+    mutationFn: async ({
+      id,
+      data,
+    }: { id: number; data: { type: string; message: string } }) =>
+      apiFetch(`patients/${patientId}/alerts/${id}/`, {
         method: "PUT",
         body: JSON.stringify(data),
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: listKey }),
   });
 
+  // --- Eliminar alerta ---
   const remove = useMutation({
     mutationFn: async (id: number) =>
-      apiFetch(`alerts/${id}/`, {
+      apiFetch(`patients/${patientId}/alerts/${id}/`, {
         method: "DELETE",
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: listKey }),

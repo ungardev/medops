@@ -58,6 +58,7 @@ export default function ClinicalBackgroundModal({
   if (!open) return null;
 
   const handleSave = () => {
+    if (!form.condition.trim()) return; // ✅ no guardar si está vacío
     onSave(form);
   };
 
@@ -174,7 +175,7 @@ export default function ClinicalBackgroundModal({
         {/* Botones */}
         <div className="flex justify-end gap-2 mt-6">
           <button
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 rounded-md text-sm"
+            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm"
             onClick={onClose}
           >
             Cancelar
