@@ -4283,4 +4283,6 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
             data.pop("status", None)
             data.pop("relation", None)
 
-        serializer.save(patient_id=patient_id, **data)
+        # ✅ Asignar correctamente la instancia de Patient
+        patient_instance = Patient.objects.get(pk=patient_id)
+        serializer.save(patient=patient_instance, **data)
