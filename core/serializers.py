@@ -1410,7 +1410,6 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
     vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
 
-    # 🔹 Bloque unificado para el frontend (array)
     clinical_background = serializers.SerializerMethodField()
 
     class Meta:
@@ -1440,14 +1439,14 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "surgeries",
             "habits",
             "vaccinations",
-            "clinical_background",  # ✅ agregado al final
+            "clinical_background",
         ]
 
     def get_clinical_background(self, obj):
-        personales = PersonalHistorySerializer(obj.personal_history.all(), many=True).data
-        familiares = FamilyHistorySerializer(obj.family_history.all(), many=True).data
-        geneticos = GeneticPredispositionSerializer(obj.genetic_predispositions.all(), many=True).data
-        # 🔹 Unificar en un solo array
+        personales = PersonalHistorySerializer(obj.personal_history.all(), many=True).data or []
+        familiares = FamilyHistorySerializer(obj.family_history.all(), many=True).data or []
+        geneticos = GeneticPredispositionSerializer(obj.genetic_predispositions.all(), many=True).data or []
+        # 🔹 Siempre devolver un array, aunque esté vacío
         return list(personales) + list(familiares) + list(geneticos)
 
 
