@@ -1410,6 +1410,9 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
     vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
 
+    # 🔹 Nuevo bloque unificado para el frontend
+    clinical_background = serializers.SerializerMethodField()
+
     class Meta:
         model = Patient
         fields = [
@@ -1437,7 +1440,15 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "surgeries",
             "habits",
             "vaccinations",
+            "clinical_background",  # ✅ agregado al final
         ]
+
+    def get_clinical_background(self, obj):
+        return {
+            "personal": PersonalHistorySerializer(obj.personal_history.all(), many=True).data,
+            "familiar": FamilyHistorySerializer(obj.family_history.all(), many=True).data,
+            "genetico": GeneticPredispositionSerializer(obj.genetic_predispositions.all(), many=True).data,
+        }
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):
