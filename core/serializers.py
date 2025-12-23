@@ -1435,21 +1435,52 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "surgeries",
             "habits",
             "vaccinations",
-            "clinical_background",  # ✅ bloque unificado
+            "clinical_background",
         ]
 
     def get_clinical_background(self, obj):
-        # 🔹 Filtrar directamente por paciente
-        personales = PersonalHistory.objects.filter(patient=obj)
-        familiares = FamilyHistory.objects.filter(patient=obj)
-        geneticos = obj.genetic_predispositions.all()
+        personales_qs = PersonalHistory.objects.filter(patient=obj)
+        familiares_qs = FamilyHistory.objects.filter(patient=obj)
+        geneticos_qs = obj.genetic_predispositions.all()
 
-        personales_data = PersonalHistorySerializer(personales, many=True).data
-        familiares_data = FamilyHistorySerializer(familiares, many=True).data
-        geneticos_data = GeneticPredispositionSerializer(geneticos, many=True).data
+        personales = [
+            {
+                "id": ph.id,
+                "type": "personal",
+                "condition": getattr(ph, "description", None) or getattr(ph, "condition", None),
+                "status": getattr(ph, "status", "activo"),
+                "notes": getattr(ph, "notes", None),
+                "source": "historia_clinica",
+            }
+            for ph in personales_qs
+        ]
 
-        # 🔹 Siempre devolver un array, aunque esté vacío
-        return list(personales_data) + list(familiares_data) + list(geneticos_data)
+        familiares = [
+            {
+                "id": fh.id,
+                "type": "familiar",
+                "condition": getattr(fh, "condition", None),
+                "status": getattr(fh, "status", "positivo"),
+                "relation": getattr(fh, "relative", None),
+                "notes": getattr(fh, "notes", None),
+                "source": "historia_clinica",
+            }
+            for fh in familiares_qs
+        ]
+
+        geneticos = [
+            {
+                "id": gp.id,
+                "type": "genetico",
+                "condition": getattr(gp, "name", None),
+                "status": "positivo",
+                "notes": getattr(gp, "description", None),
+                "source": "prueba_genetica",
+            }
+            for gp in geneticos_qs
+        ]
+
+        return personales + familiares + geneticos
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):
