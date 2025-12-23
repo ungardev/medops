@@ -4233,7 +4233,7 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
     Endpoint unificado para antecedentes clínicos:
     - type = personal → PersonalHistory
     - type = familiar → FamilyHistory
-    - type = genetico → GeneticPredisposition asociado al paciente
+    - type = genetico → GeneticPredisposition asociado al paciente (M2M)
     """
     permission_classes = [IsAuthenticated]
 
@@ -4243,16 +4243,24 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
 
         if type_param == "personal":
             qs = PersonalHistory.objects.all()
+            if patient_id:
+                qs = qs.filter(patient_id=patient_id)
+            return qs
+
         elif type_param == "familiar":
             qs = FamilyHistory.objects.all()
-        elif type_param == "genetico":
-            qs = GeneticPredisposition.objects.all()
-        else:
-            qs = PersonalHistory.objects.none()
+            if patient_id:
+                qs = qs.filter(patient_id=patient_id)
+            return qs
 
-        if patient_id:
-            qs = qs.filter(patient_id=patient_id)
-        return qs
+        elif type_param == "genetico":
+            # La relación es ManyToMany: filtrar por pacientes__id
+            qs = GeneticPredisposition.objects.all()
+            if patient_id:
+                qs = qs.filter(patients__id=patient_id)
+            return qs
+
+        return PersonalHistory.objects.none()
 
     def get_serializer_class(self):
         type_param = self.request.query_params.get("type")
@@ -4265,24 +4273,92 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
         return PersonalHistorySerializer
 
     def perform_create(self, serializer):
+        # Validar y recuperar paciente
         patient_id = self.request.data.get("patient")
         if not patient_id:
             raise ValidationError({"patient": "Campo requerido"})
 
+        try:
+            patient_instance = Patient.objects.get(pk=patient_id)
+        except Patient.DoesNotExist:
+            raise ValidationError({"patient": f"Paciente {patient_id} no existe"})
+
         type_param = self.request.query_params.get("type")
 
-        # 🔹 No pasar "type" al serializer, solo mapear campos
-        data = dict(self.request.data)
-        data.pop("type", None)
+        # Copia controlada de los datos y limpieza
+        # Nota: serializer.validated_data existe y podemos mutarla antes de save()
+        # para evitar conflictos con kwargs.
+        vd = dict(serializer.validated_data)
+        vd.pop("patient", None)   # evitar duplicar el argumento 'patient'
+        vd.pop("type", None)      # 'type' del body no debe ir a serializers (solo query decide)
 
         if type_param == "genetico":
-            # Mapear condition → description
-            if "condition" in data:
-                data["description"] = data.pop("condition")
-            # GeneticPredisposition no usa estos campos
-            data.pop("status", None)
-            data.pop("relation", None)
+            # GeneticPredisposition no tiene FK al paciente;
+            # es una M2M desde Patient. Creamos/obtenemos la predisposición y la asociamos.
+            # El serializer debe tener 'name' y 'description'.
+            # Si llega 'condition' desde algún cliente, mapear a 'description'.
+            if "condition" in vd and "description" not in vd:
+                vd["description"] = vd.pop("condition")
 
-        # ✅ Asignar correctamente la instancia de Patient
-        patient_instance = Patient.objects.get(pk=patient_id)
-        serializer.save(patient=patient_instance, **data)
+            # Si viene 'id', buscamos; si no, usamos 'name' como clave de idempotencia
+            gp_instance = None
+            gp_id = self.request.data.get("id")
+            if gp_id:
+                gp_instance = GeneticPredisposition.objects.get(pk=gp_id)
+                # Si además hay descripción, actualizamos
+                if "description" in vd:
+                    gp_instance.description = vd["description"]
+                    gp_instance.save(update_fields=["description"])
+            else:
+                name = vd.get("name")
+                if not name:
+                    raise ValidationError({"name": "Campo requerido para predisposición genética"})
+                gp_instance, _created = GeneticPredisposition.objects.get_or_create(
+                    name=name,
+                    defaults={"description": vd.get("description")}
+                )
+                # Si ya existía y viene nueva descripción, opcionalmente actualizar
+                if not _created and "description" in vd:
+                    gp_instance.description = vd["description"]
+                    gp_instance.save(update_fields=["description"])
+
+            # Asociar al paciente
+            patient_instance.genetic_predispositions.add(gp_instance)
+            # No retornamos nada aquí; DRF espera que save() haya creado una instancia:
+            # Para consistencia de respuesta, podemos setear serializer.instance.
+            serializer.instance = gp_instance
+            return
+
+        # Tipos con FK directa al paciente (personal / familiar):
+        if type_param == "personal":
+            # Asegurar mapeo correcto: description presente, type con choice válido
+            # (el modal ya envía personalType, pero si no, hacemos fallback)
+            if "description" not in vd and "condition" in vd:
+                vd["description"] = vd.pop("condition")
+
+            if "type" not in vd:
+                # Fallback defensivo: si no llega 'type' del modelo, asumimos 'patologico'
+                vd["type"] = "patologico"
+
+            # Quitar campos no usados por PersonalHistory
+            for k in ("status", "relation", "name"):
+                vd.pop(k, None)
+
+        elif type_param == "familiar":
+            # Asegurar campos mínimos
+            if "condition" not in vd and "description" in vd:
+                vd["condition"] = vd.pop("description")
+            # 'relative' debe existir; si no, validación explícita
+            if "relative" not in vd or not vd["relative"]:
+                raise ValidationError({"relative": "Campo requerido para antecedente familiar"})
+
+            # Quitar campos no usados por FamilyHistory
+            for k in ("type", "name", "status", "date"):
+                vd.pop(k, None)
+
+        # Mutar validated_data antes de save para evitar conflicto del 'patient'
+        serializer.validated_data.clear()
+        serializer.validated_data.update(vd)
+
+        # Guardar con instancia de Patient correctamente
+        serializer.save(patient=patient_instance)
