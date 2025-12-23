@@ -1403,12 +1403,11 @@ class PatientVaccinationSerializer(serializers.ModelSerializer):
 
 
 class PatientClinicalProfileSerializer(serializers.ModelSerializer):
-    personal_history = PersonalHistorySerializer(many=True, read_only=True)
-    family_history = FamilyHistorySerializer(many=True, read_only=True)
     surgeries = SurgerySerializer(many=True, read_only=True)
     habits = HabitSerializer(many=True, read_only=True)
     vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
-    genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
+    allergies = AllergySerializer(many=True, read_only=True)
+    medical_history = MedicalHistorySerializer(many=True, read_only=True)
 
     clinical_background = serializers.SerializerMethodField()
 
@@ -1433,21 +1432,24 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "blood_type",
             "allergies",
             "medical_history",
-            "genetic_predispositions",
-            "personal_history",
-            "family_history",
             "surgeries",
             "habits",
             "vaccinations",
-            "clinical_background",
+            "clinical_background",  # ✅ bloque unificado
         ]
 
     def get_clinical_background(self, obj):
-        personales = PersonalHistorySerializer(obj.personal_history.all(), many=True).data or []
-        familiares = FamilyHistorySerializer(obj.family_history.all(), many=True).data or []
-        geneticos = GeneticPredispositionSerializer(obj.genetic_predispositions.all(), many=True).data or []
+        # 🔹 Filtrar directamente por paciente
+        personales = PersonalHistory.objects.filter(patient=obj)
+        familiares = FamilyHistory.objects.filter(patient=obj)
+        geneticos = obj.genetic_predispositions.all()
+
+        personales_data = PersonalHistorySerializer(personales, many=True).data
+        familiares_data = FamilyHistorySerializer(familiares, many=True).data
+        geneticos_data = GeneticPredispositionSerializer(geneticos, many=True).data
+
         # 🔹 Siempre devolver un array, aunque esté vacío
-        return list(personales) + list(familiares) + list(geneticos)
+        return list(personales_data) + list(familiares_data) + list(geneticos_data)
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):

@@ -40,15 +40,15 @@ interface Allergy {
 }
 
 interface Props {
-  antecedentes: ClinicalBackground[];
-  allergies?: Allergy[];               // 👈 ahora opcional
-  habits?: Habit[];                     // 👈 ahora opcional
+  antecedentes?: ClinicalBackground[];   // ✅ ahora opcional
+  allergies?: Allergy[];                 // opcional con valor por defecto
+  habits?: Habit[];                      // opcional con valor por defecto
   patientId: number;
   onRefresh?: () => void;
   onCreateAntecedente?: (type: BackgroundType) => void;
   onCreateHabito?: () => void;
   onCreateAlergia?: () => void;
-  onCreateGenetico?: () => void;        // 👈 nuevo callback para predisposiciones genéticas
+  onCreateGenetico?: () => void;         // callback específico para predisposiciones genéticas
 }
 
 const antecedentesLabels: Record<BackgroundType, string> = {
@@ -68,17 +68,16 @@ const impactColors: Record<HabitImpact, string> = {
   medio: "bg-yellow-100 border-yellow-300 text-yellow-800",
   bajo: "bg-green-100 border-green-300 text-green-800",
 };
-
 export default function ClinicalProfileSection({
-  antecedentes,
-  allergies = [],   // 👈 valor por defecto
-  habits = [],      // 👈 valor por defecto
+  antecedentes = [],   // ✅ valor por defecto para evitar undefined
+  allergies = [],
+  habits = [],
   patientId,
   onRefresh,
   onCreateAntecedente,
   onCreateHabito,
   onCreateAlergia,
-  onCreateGenetico, // 👈 nuevo
+  onCreateGenetico,
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -89,7 +88,9 @@ export default function ClinicalProfileSection({
   };
 
   antecedentes.forEach((item) => {
-    grouped[item.type].push(item);
+    if (grouped[item.type]) {
+      grouped[item.type].push(item);
+    }
   });
 
   return (
