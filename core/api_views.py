@@ -1188,6 +1188,16 @@ class PatientViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=["get"])
+    def profile(self, request, pk=None):
+        """
+        GET → Devuelve el perfil clínico completo del paciente,
+        incluyendo antecedentes personales, familiares y predisposiciones genéticas.
+        """
+        patient = self.get_object()
+        serializer = PatientClinicalProfileSerializer(patient)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["get"])
     def payments(self, request, pk=None):
         patient = self.get_object()
         payments = Payment.objects.filter(appointment__patient=patient)
