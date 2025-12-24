@@ -7,27 +7,26 @@ import {
   FireIcon,
   PlusIcon,
 } from "@heroicons/react/24/solid";
+import { apiFetch } from "../../../api/client";
+import ClinicalBackgroundModal from "./ClinicalBackgroundModal";
 
-type BackgroundType = "personal" | "familiar" | "genetico";
-type HabitType = "tabaquismo" | "alcohol" | "drogas" | "ejercicio" | "alimentacion";
-type HabitFrequency = "diario" | "ocasional" | "semanal" | "mensual";
-type HabitImpact = "alto" | "medio" | "bajo";
+type BackgroundType = "personal" | "family" | "genetic" | "allergy" | "habit";
 
 interface ClinicalBackground {
   id: number;
   type: BackgroundType;
   condition: string;
-  relation?: "padre" | "madre" | "hermano" | "hijo";
-  status: "activo" | "resuelto" | "sospecha" | "positivo" | "negativo";
-  source?: "historia_clinica" | "prueba_genetica" | "verbal";
+  relative?: string;   // clave correcta según el modelo del backend
+  status?: string;
+  source?: string;
   notes?: string;
 }
 
 interface Habit {
   id: number;
-  type: HabitType;
-  frequency: HabitFrequency;
-  impact?: HabitImpact;
+  type: string;
+  frequency: string;
+  impact?: string;
   notes?: string;
 }
 
@@ -40,116 +39,160 @@ interface Allergy {
 }
 
 interface Props {
-  antecedentes?: ClinicalBackground[];   // ✅ ahora opcional
-  allergies?: Allergy[];                 // opcional con valor por defecto
-  habits?: Habit[];                      // opcional con valor por defecto
+  backgrounds?: ClinicalBackground[];
+  allergies?: Allergy[];
+  habits?: Habit[];
   patientId: number;
   onRefresh?: () => void;
-  onCreateAntecedente?: (type: BackgroundType) => void;
-  onCreateHabito?: () => void;
-  onCreateAlergia?: () => void;
-  onCreateGenetico?: () => void;         // callback específico para predisposiciones genéticas
 }
 
-const antecedentesLabels: Record<BackgroundType, string> = {
+const backgroundLabels: Record<BackgroundType, string> = {
   personal: "Antecedentes personales",
-  familiar: "Antecedentes familiares",
-  genetico: "Predisposiciones genéticas",
+  family: "Antecedentes familiares",
+  genetic: "Predisposiciones genéticas",
+  allergy: "Alergias",
+  habit: "Hábitos",
 };
 
-const antecedentesIcons: Record<BackgroundType, React.ElementType> = {
+const backgroundIcons: Record<BackgroundType, React.ElementType> = {
   personal: UserIcon,
-  familiar: UsersIcon,
-  genetico: SparklesIcon,
+  family: UsersIcon,
+  genetic: SparklesIcon,
+  allergy: SparklesIcon,
+  habit: FireIcon,
 };
 
-const impactColors: Record<HabitImpact, string> = {
-  alto: "bg-red-100 border-red-300 text-red-800",
-  medio: "bg-yellow-100 border-yellow-300 text-yellow-800",
-  bajo: "bg-green-100 border-green-300 text-green-800",
+const impactColors: Record<string, string> = {
+  high: "bg-red-100 border-red-300 text-red-800",
+  medium: "bg-yellow-100 border-yellow-300 text-yellow-800",
+  low: "bg-green-100 border-green-300 text-green-800",
 };
+
 export default function ClinicalProfileSection({
-  antecedentes = [],   // ✅ valor por defecto para evitar undefined
+  backgrounds = [],
   allergies = [],
   habits = [],
   patientId,
   onRefresh,
-  onCreateAntecedente,
-  onCreateHabito,
-  onCreateAlergia,
-  onCreateGenetico,
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalType, setModalType] = useState<BackgroundType>("personal");
+  const [modalInitial, setModalInitial] = useState<any>(undefined);
 
   const grouped: Record<BackgroundType, ClinicalBackground[]> = {
     personal: [],
-    familiar: [],
-    genetico: [],
+    family: [],
+    genetic: [],
+    allergy: [],
+    habit: [],
   };
 
-  antecedentes.forEach((item) => {
+  backgrounds.forEach((item) => {
     if (grouped[item.type]) {
       grouped[item.type].push(item);
     }
   });
 
+  const handleDeleteBackground = (item: ClinicalBackground) => {
+    let endpoint = "";
+    if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
+    if (item.type === "family") endpoint = `family-history/${item.id}/`;
+    if (item.type === "genetic") endpoint = `genetic-predisposition/${item.id}/`;
+    if (item.type === "allergy") endpoint = `allergies/${item.id}/`;
+    if (item.type === "habit") endpoint = `habits/${item.id}/`;
+
+    apiFetch(endpoint, { method: "DELETE" })
+      .then(() => onRefresh?.())
+      .catch((err: unknown) => console.error("Error eliminando registro:", err));
+  };
+
+  const handleSave = (type: BackgroundType, payload: any) => {
+    const isEdit = modalInitial?.id;
+    let endpoint = "";
+    if (type === "personal") endpoint = "personal-history/";
+    if (type === "family") endpoint = "family-history/";
+    if (type === "genetic") endpoint = "genetic-predisposition/";
+    if (type === "allergy") endpoint = "allergies/";
+    if (type === "habit") endpoint = "habits/";
+
+    const method = isEdit ? "PATCH" : "POST";
+    const url = isEdit ? `${endpoint}${modalInitial.id}/` : endpoint;
+
+    const body = { ...payload, patient: patientId };
+    console.log("[SAVE] URL:", url, "METHOD:", method, "BODY:", body);
+
+    apiFetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" }, // ✅ fuerza JSON
+      body: JSON.stringify(body),
+    })
+      .then((res: any) => {
+        console.log("[SAVE] Response:", res);
+        setModalOpen(false);
+        onRefresh?.();
+      })
+      .catch((err: unknown) => console.error("[SAVE] Error guardando registro:", err));
+  };
+
   return (
     <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm space-y-4">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">
-        Clinical Profile
-      </h3>
+      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Perfil clínico</h3>
 
-      {/* Secciones de antecedentes */}
-      {(["personal", "familiar", "genetico"] as BackgroundType[]).map((type) => {
-        const Icon = antecedentesIcons[type];
+      {(Object.keys(backgroundLabels) as BackgroundType[]).map((type) => {
+        const Icon = backgroundIcons[type];
+        const items = type === "allergy" ? allergies : type === "habit" ? habits : grouped[type];
         return (
-          <div
-            key={type}
-            className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700"
-          >
+          <div key={type} className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
             <button
               className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
               onClick={() => setExpanded(expanded === type ? null : type)}
             >
               <span className="flex items-center gap-2">
                 <Icon className="w-4 h-4 text-[#0d2c53]" />
-                {antecedentesLabels[type]}
+                {backgroundLabels[type]}
               </span>
-              <span className="text-xs text-gray-600 dark:text-gray-300">
-                {grouped[type].length} registro(s)
-              </span>
+              <span className="text-xs text-gray-600 dark:text-gray-300">{items.length} registro(s)</span>
             </button>
 
             {expanded === type && (
               <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
-                {grouped[type].length === 0 ? (
+                {items.length === 0 ? (
                   <p className="text-xs text-gray-500">No hay registros.</p>
                 ) : (
                   <ul className="space-y-2">
-                    {grouped[type].map((item) => (
+                    {items.map((item: any) => (
                       <li
                         key={item.id}
-                        className="p-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700"
+                        className={`p-2 border rounded-md text-sm ${
+                          item.impact ? impactColors[item.impact] : "bg-gray-50 dark:bg-gray-700"
+                        }`}
                       >
                         <div className="flex justify-between">
-                          <span className="font-medium">{item.condition}</span>
+                          <span className="font-medium">{item.condition || item.name || item.type}</span>
                           <span className="text-xs text-gray-500">
-                            {item.status}
+                            {item.status || item.frequency || item.severity || "—"}
                           </span>
                         </div>
-                        {item.relation && (
-                          <p className="text-xs text-gray-600">
-                            Relación: {item.relation}
-                          </p>
-                        )}
-                        {item.source && (
-                          <p className="text-xs text-gray-600">
-                            Fuente: {item.source}
-                          </p>
-                        )}
-                        {item.notes && (
-                          <p className="text-xs text-gray-600">{item.notes}</p>
-                        )}
+                        {item.relative && <p className="text-xs text-gray-600">Relación: {item.relative}</p>}
+                        {item.source && <p className="text-xs text-gray-600">Fuente: {item.source}</p>}
+                        {item.notes && <p className="text-xs text-gray-600">{item.notes}</p>}
+
+                        <div className="flex gap-2 mt-1">
+                          <button
+                            className="text-blue-700 text-xs"
+                            onClick={() => {
+                              setModalType(type);
+                              setModalInitial(item);
+                              setModalOpen(true);
+                            }}
+                          >
+                            Editar
+                          </button>
+                          <button className="text-red-700 text-xs" onClick={() => handleDeleteBackground(item)}>
+                            Eliminar
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -158,11 +201,11 @@ export default function ClinicalProfileSection({
                 <div className="flex justify-start mt-2">
                   <PlusIcon
                     className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
-                    onClick={() =>
-                      type === "genetico"
-                        ? onCreateGenetico?.()
-                        : onCreateAntecedente?.(type)
-                    }
+                    onClick={() => {
+                      setModalType(type);
+                      setModalInitial(undefined);
+                      setModalOpen(true);
+                    }}
                   />
                 </div>
               </div>
@@ -171,112 +214,13 @@ export default function ClinicalProfileSection({
         );
       })}
 
-      {/* Sección de alergias */}
-      <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
-        <button
-          className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-          onClick={() => setExpanded(expanded === "alergias" ? null : "alergias")}
-        >
-          <span className="flex items-center gap-2">
-            <SparklesIcon className="w-4 h-4 text-[#0d2c53]" />
-            Alergias
-          </span>
-          <span className="text-xs text-gray-600 dark:text-gray-300">
-            {allergies.length} registro(s)
-          </span>
-        </button>
-
-        {expanded === "alergias" && (
-          <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
-            {allergies.length === 0 ? (
-              <p className="text-xs text-gray-500">No hay alergias registradas.</p>
-            ) : (
-              <ul className="space-y-2">
-                {allergies.map((item) => (
-                  <li
-                    key={item.id}
-                    className="p-2 border rounded-md text-sm bg-red-50 dark:bg-red-900"
-                  >
-                    <div className="flex justify-between">
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-xs text-gray-500">
-                        {item.severity || "—"}
-                      </span>
-                    </div>
-                    {item.source && (
-                      <p className="text-xs text-gray-600">Fuente: {item.source}</p>
-                    )}
-                    {item.notes && (
-                      <p className="text-xs text-gray-600">{item.notes}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="flex justify-start mt-2">
-              <PlusIcon
-                className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
-                onClick={() => onCreateAlergia?.()}
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Sección de hábitos */}
-      <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
-        <button
-          className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-          onClick={() => setExpanded(expanded === "habitos" ? null : "habitos")}
-        >
-          <span className="flex items-center gap-2">
-            <FireIcon className="w-4 h-4 text-[#0d2c53]" />
-            Hábitos
-          </span>
-          <span className="text-xs text-gray-600 dark:text-gray-300">
-            {habits.length} registro(s)
-          </span>
-        </button>
-
-        {expanded === "habitos" && (
-          <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
-            {habits.length === 0 ? (
-              <p className="text-xs text-gray-500">No hay hábitos registrados.</p>
-            ) : (
-              <ul className="space-y-2">
-                {habits.map((item) => (
-                  <li
-                    key={item.id}
-                    className={`p-2 border rounded-md text-sm ${
-                      item.impact
-                        ? impactColors[item.impact]
-                        : "bg-gray-50 dark:bg-gray-700"
-                    }`}
-                  >
-                    <div className="flex justify-between">
-                      <span className="font-medium">{item.type}</span>
-                      <span className="text-xs text-gray-500">
-                        {item.frequency}
-                      </span>
-                    </div>
-                    {item.notes && (
-                      <p className="text-xs text-gray-600">{item.notes}</p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="flex justify-start mt-2">
-              <PlusIcon
-                className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
-                onClick={onCreateHabito}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      <ClinicalBackgroundModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={(payload) => handleSave(modalType, payload)}
+        initial={modalInitial}
+        type={modalType}
+      />
     </div>
   );
 }

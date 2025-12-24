@@ -5,21 +5,12 @@ import { apiFetch } from "../../api/client";
 import DemographicsSection from "./sections/DemographicsSection";
 import AlertsSection from "./sections/AlertsSection";
 import ClinicalProfileSection from "./sections/ClinicalProfileSection";
-import ClinicalBackgroundModal from "./sections/ClinicalBackgroundModal";
-import HabitsModal from "./sections/HabitsModal";
-import AllergyModal from "./sections/AllergyModal";
 
 import { useVaccinations } from "../../hooks/patients/useVaccinations";
 
 export default function PatientInfoTab({ patientId }: { patientId: number }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
-  const [modalAntecedenteType, setModalAntecedenteType] = useState<
-    "personal" | "familiar" | "genetico" | null
-  >(null);
-  const [modalHabitoOpen, setModalHabitoOpen] = useState(false);
-  const [modalAlergiaOpen, setModalAlergiaOpen] = useState(false);
 
   const { vaccinations: vaccQuery, schedule } = useVaccinations(patientId);
 
@@ -28,7 +19,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
     apiFetch(`patients/${patientId}/profile/`)
       .then((data) => setProfile(data))
       .catch((err) => {
-        console.error("Error recargando perfil clínico:", err);
+        console.error("Error reloading clinical profile:", err);
         setProfile(null);
       })
       .finally(() => setLoading(false));
@@ -60,7 +51,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
 
       <AlertsSection
         patient={profile}
-        antecedentes={profile.clinical_background ?? []}
+        backgrounds={profile.clinical_background ?? []}
         allergies={profile.allergies ?? []}
         habits={profile.habits ?? []}
         surgeries={profile.surgeries ?? []}
@@ -72,67 +63,12 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       />
 
       <ClinicalProfileSection
-        antecedentes={profile.clinical_background ?? []}
+        backgrounds={profile.clinical_background ?? []}
         allergies={profile.allergies ?? []}
         habits={profile.habits ?? []}
         patientId={patientId}
         onRefresh={refreshProfile}
-        onCreateAntecedente={(type) => setModalAntecedenteType(type)}
-        onCreateHabito={() => setModalHabitoOpen(true)}
-        onCreateAlergia={() => setModalAlergiaOpen(true)}
       />
-
-      {modalAntecedenteType && (
-        <ClinicalBackgroundModal
-          open={true}
-          type={modalAntecedenteType}
-          onClose={() => setModalAntecedenteType(null)}
-          onSave={(data) => {
-            const payload = {
-              ...data,
-              patient: patientId, // ✅ solo enviamos patient y los campos del modelo
-            };
-
-            // Pasamos el tipo como query param, no dentro del body
-            apiFetch(`clinical-background/?type=${modalAntecedenteType}`, {
-              method: "POST",
-              body: JSON.stringify(payload),
-            })
-              .then(() => refreshProfile())
-              .finally(() => setModalAntecedenteType(null));
-          }}
-        />
-      )}
-
-      {modalHabitoOpen && (
-        <HabitsModal
-          open={true}
-          onClose={() => setModalHabitoOpen(false)}
-          onSave={(data) => {
-            apiFetch(`patients/${patientId}/habits/`, {
-              method: "POST",
-              body: JSON.stringify({ ...data, patient: patientId }),
-            })
-              .then(() => refreshProfile())
-              .finally(() => setModalHabitoOpen(false));
-          }}
-        />
-      )}
-
-      {modalAlergiaOpen && (
-        <AllergyModal
-          open={true}
-          onClose={() => setModalAlergiaOpen(false)}
-          onSave={(data) => {
-            apiFetch(`patients/${patientId}/allergies/`, {
-              method: "POST",
-              body: JSON.stringify({ ...data, patient: patientId }),
-            })
-              .then(() => refreshProfile())
-              .finally(() => setModalAlergiaOpen(false));
-          }}
-        />
-      )}
     </div>
   );
 }

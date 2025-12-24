@@ -1458,10 +1458,10 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
         familiares = [
             {
                 "id": fh.id,
-                "type": "familiar",
+                "type": "family",  # ✅ clave alineada con el frontend
                 "condition": getattr(fh, "condition", None),
                 "status": getattr(fh, "status", "positivo"),
-                "relation": getattr(fh, "relative", None),
+                "relative": getattr(fh, "relative", None),  # ✅ clave correcta
                 "notes": getattr(fh, "notes", None),
                 "source": "historia_clinica",
             }
@@ -1471,7 +1471,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
         geneticos = [
             {
                 "id": gp.id,
-                "type": "genetico",
+                "type": "genetic",  # ✅ clave alineada con el frontend
                 "condition": getattr(gp, "name", None),
                 "status": "positivo",
                 "notes": getattr(gp, "description", None),

@@ -19,8 +19,8 @@ interface ManualAlert {
 
 interface Props {
   patient: any;
-  antecedentes: any[];
-  allergies?: any[];            // 👈 ahora opcional
+  backgrounds: any[];
+  allergies?: any[];
   habits: any[];
   surgeries: any[];
   vaccinations: any[];
@@ -37,8 +37,8 @@ function isRecent(date?: string) {
 
 export default function AlertsSection({
   patient,
-  antecedentes,
-  allergies = [],   // 👈 valor por defecto para evitar undefined
+  backgrounds,
+  allergies = [],
   habits,
   surgeries,
   vaccinations,
@@ -54,7 +54,6 @@ export default function AlertsSection({
   const autoAlerts: AutoAlert[] = useMemo(() => {
     const alerts: AutoAlert[] = [];
 
-    // Alergias
     if (allergies.length > 0) {
       alerts.push({
         type: "danger",
@@ -65,16 +64,15 @@ export default function AlertsSection({
               onClick={() => onChangeTab?.("clinical-profile")}
               className="ml-2 underline text-blue-700"
             >
-              Editar en Clinical Profile
+              Editar en perfil clínico
             </button>
           </div>
         ),
       });
     }
 
-    // Antecedentes médicos relevantes
-    const medicalHistory = antecedentes.filter(
-      (a) => a.type === "personal" || a.type === "familiar"
+    const medicalHistory = backgrounds.filter(
+      (a) => a.type === "personal" || a.type === "family"
     );
     if (medicalHistory.length > 0) {
       alerts.push({
@@ -87,16 +85,15 @@ export default function AlertsSection({
               onClick={() => onChangeTab?.("clinical-profile")}
               className="ml-2 underline text-blue-700"
             >
-              Editar en Clinical Profile
+              Editar en perfil clínico
             </button>
           </div>
         ),
       });
     }
 
-    // Hábitos de riesgo
     const riskyHabits = habits.filter((h) =>
-      ["tabaquismo", "alcohol", "drogas"].includes(h.type)
+      ["smoking", "alcohol", "drugs"].includes(h.type)
     );
     if (riskyHabits.length > 0) {
       alerts.push({
@@ -115,27 +112,24 @@ export default function AlertsSection({
       });
     }
 
-    // Predisposiciones genéticas
-    const genetics = antecedentes.filter((a) => a.type === "genetico");
+    const genetics = backgrounds.filter((a) => a.type === "genetic");
     if (genetics.length > 0) {
       alerts.push({
         type: "info",
         message: (
           <div>
-            Predisposiciones genéticas:{" "}
-            {genetics.map((g) => g.condition).join(", ")}
+            Predisposiciones genéticas: {genetics.map((g) => g.condition).join(", ")}
             <button
               onClick={() => onChangeTab?.("clinical-profile")}
               className="ml-2 underline text-blue-700"
             >
-              Editar en Clinical Profile
+              Editar en perfil clínico
             </button>
           </div>
         ),
       });
     }
 
-    // Cirugías recientes
     const recentSurgeries = surgeries.filter((s) => isRecent(s.date));
     if (recentSurgeries.length > 0) {
       alerts.push({
@@ -144,7 +138,7 @@ export default function AlertsSection({
           <div>
             Cirugías recientes: {recentSurgeries.map((s) => s.name).join(", ")}
             <button
-              onClick={() => onChangeTab?.("cirugias")}
+              onClick={() => onChangeTab?.("surgeries")}
               className="ml-2 underline text-blue-700"
             >
               Ver cirugías
@@ -154,7 +148,6 @@ export default function AlertsSection({
       });
     }
 
-    // Vacunas faltantes
     const missing = vaccinationSchedule.filter(
       (dose: any) =>
         !vaccinations.some(
@@ -170,7 +163,7 @@ export default function AlertsSection({
           <div>
             Tiene {missing.length} vacunas faltantes según el esquema SVPP
             <button
-              onClick={() => onChangeTab?.("vacunacion")}
+              onClick={() => onChangeTab?.("vaccination")}
               className="ml-2 underline text-blue-700"
             >
               Ir a vacunación
@@ -181,9 +174,9 @@ export default function AlertsSection({
     }
 
     return alerts;
-  }, [antecedentes, allergies, habits, surgeries, vaccinations, vaccinationSchedule, onChangeTab]);
+  }, [backgrounds, allergies, habits, surgeries, vaccinations, vaccinationSchedule, onChangeTab]);
 
-  // --- MANEJO DE ALERTAS MANUALES ---
+  // --- ALERTAS MANUALES ---
   const handleSave = (data: { type: AlertType; message: string }) => {
     if (editing) {
       update.mutate({ id: editing.id, data });
@@ -226,11 +219,12 @@ export default function AlertsSection({
         <p className="text-sm text-gray-500">No hay alertas clínicas.</p>
       ) : (
         <ul className="space-y-3">
-          {allAlerts.map((alert) => {
+          {allAlerts.map((alert, index) => {
             const type = alert.type as AlertType;
+            const key = "id" in alert ? `manual-${alert.id}` : `auto-${index}`;
             return (
               <li
-                key={"id" in alert ? alert.id : String(alert.message)}
+                key={key}
                 className={`p-3 border rounded-md whitespace-pre-line ${color[type]}`}
               >
                 <div className="flex justify-between">
