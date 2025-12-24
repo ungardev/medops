@@ -1441,7 +1441,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
     def get_clinical_background(self, obj):
         personales_qs = PersonalHistory.objects.filter(patient=obj)
         familiares_qs = FamilyHistory.objects.filter(patient=obj)
-        geneticos_qs = obj.genetic_predispositions.all()
+        geneticos_qs = obj.genetic_predispositions.all()  # ✅ ManyToMany ya definido en Patient
 
         personales = [
             {
@@ -1472,16 +1472,15 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             {
                 "id": gp.id,
                 "type": "genetic",  # ✅ clave alineada con el frontend
-                "condition": getattr(gp, "name", None),
+                "condition": gp.name,
                 "status": "positivo",
-                "notes": getattr(gp, "description", None),
+                "notes": gp.description,
                 "source": "prueba_genetica",
             }
             for gp in geneticos_qs
         ]
 
         return personales + familiares + geneticos
-
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):
