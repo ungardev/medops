@@ -1483,6 +1483,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
         return personales + familiares + geneticos
 
 
+
 class ClinicalAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClinicalAlert

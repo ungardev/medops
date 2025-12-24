@@ -98,7 +98,7 @@ export default function ClinicalProfileSection({
     let endpoint = "";
     if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
     if (item.type === "family") endpoint = `family-history/${item.id}/`;
-    if (item.type === "genetic") endpoint = `genetic-predisposition/${item.id}/`;
+    if (item.type === "genetic") endpoint = `genetic-predispositions/${item.id}/`; // ✅ corregido plural
     if (item.type === "allergy") endpoint = `allergies/${item.id}/`;
     if (item.type === "habit") endpoint = `habits/${item.id}/`;
 
@@ -112,7 +112,7 @@ export default function ClinicalProfileSection({
     let endpoint = "";
     if (type === "personal") endpoint = "personal-history/";
     if (type === "family") endpoint = "family-history/";
-    if (type === "genetic") endpoint = "genetic-predisposition/";
+    if (type === "genetic") endpoint = "genetic-predispositions/"; // ✅ corregido plural
     if (type === "allergy") endpoint = "allergies/";
     if (type === "habit") endpoint = "habits/";
 
@@ -169,7 +169,9 @@ export default function ClinicalProfileSection({
                         }`}
                       >
                         <div className="flex justify-between">
-                          <span className="font-medium">{item.condition || item.name || item.type}</span>
+                          <span className="font-medium">
+                            {item.condition || item.name || item.type}
+                          </span>
                           <span className="text-xs text-gray-500">
                             {item.status || item.frequency || item.severity || "—"}
                           </span>
@@ -189,7 +191,10 @@ export default function ClinicalProfileSection({
                           >
                             Editar
                           </button>
-                          <button className="text-red-700 text-xs" onClick={() => handleDeleteBackground(item)}>
+                          <button
+                            className="text-red-700 text-xs"
+                            onClick={() => handleDeleteBackground(item)}
+                          >
                             Eliminar
                           </button>
                         </div>
