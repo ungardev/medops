@@ -16,7 +16,7 @@ interface ClinicalBackground {
   id: number;
   type: BackgroundType;
   condition: string;
-  relative?: string;   // clave correcta según el modelo del backend
+  relative?: string;
   status?: string;
   source?: string;
   notes?: string;
@@ -98,7 +98,7 @@ export default function ClinicalProfileSection({
     let endpoint = "";
     if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
     if (item.type === "family") endpoint = `family-history/${item.id}/`;
-    if (item.type === "genetic") endpoint = `genetic-predispositions/${item.id}/`; // ✅ corregido plural
+    if (item.type === "genetic") endpoint = `genetic-predispositions/${item.id}/`;
     if (item.type === "allergy") endpoint = `allergies/${item.id}/`;
     if (item.type === "habit") endpoint = `habits/${item.id}/`;
 
@@ -107,32 +107,45 @@ export default function ClinicalProfileSection({
       .catch((err: unknown) => console.error("Error eliminando registro:", err));
   };
 
-  const handleSave = (type: BackgroundType, payload: any) => {
+  const handleSave = async (type: BackgroundType, payload: any) => {
     const isEdit = modalInitial?.id;
     let endpoint = "";
     if (type === "personal") endpoint = "personal-history/";
     if (type === "family") endpoint = "family-history/";
-    if (type === "genetic") endpoint = "genetic-predispositions/"; // ✅ corregido plural
+    if (type === "genetic") endpoint = "genetic-predispositions/";
     if (type === "allergy") endpoint = "allergies/";
     if (type === "habit") endpoint = "habits/";
 
     const method = isEdit ? "PATCH" : "POST";
     const url = isEdit ? `${endpoint}${modalInitial.id}/` : endpoint;
 
-    const body = { ...payload, patient: patientId };
+    const body = { ...payload };
     console.log("[SAVE] URL:", url, "METHOD:", method, "BODY:", body);
 
-    apiFetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" }, // ✅ fuerza JSON
-      body: JSON.stringify(body),
-    })
-      .then((res: any) => {
-        console.log("[SAVE] Response:", res);
-        setModalOpen(false);
-        onRefresh?.();
-      })
-      .catch((err: unknown) => console.error("[SAVE] Error guardando registro:", err));
+    try {
+      const res: any = await apiFetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      // 👇 Vincular predisposición genética al paciente
+      if (type === "genetic" && !isEdit && res?.id) {
+        await apiFetch(`patients/${patientId}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            genetic_predispositions: [res.id],
+          }),
+        });
+      }
+
+      console.log("[SAVE] Response:", res);
+      setModalOpen(false);
+      onRefresh?.();
+    } catch (err) {
+      console.error("[SAVE] Error guardando registro:", err);
+    }
   };
 
   return (

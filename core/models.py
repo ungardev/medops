@@ -14,6 +14,18 @@ from django.conf import settings
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES
 
 # Create your models here.
+class GeneticPredisposition(models.Model):
+    name = models.CharField(max_length=100, unique=True)  # catálogo global, único por nombre
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Genetic Predisposition"
+        verbose_name_plural = "Genetic Predispositions"
+
+    def __str__(self):
+        return self.name
+
+
 class Patient(models.Model):
     GENDER_CHOICES = [
         ('M', 'Male'),
@@ -90,7 +102,7 @@ class Patient(models.Model):
     # patient.medical_history.all() → MedicalHistory
 
     genetic_predispositions = models.ManyToManyField(
-        "GeneticPredisposition",
+        GeneticPredisposition,
         blank=True,
         related_name="patients"
     )
@@ -117,23 +129,6 @@ class Patient(models.Model):
         """
         self.active = False
         self.save(update_fields=["active"])
-
-
-class GeneticPredisposition(models.Model):
-    patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="genetic_predispositions"
-    )
-    name = models.CharField(max_length=100)  # 👈 sin unique=True
-    description = models.TextField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Genetic Predisposition"
-        verbose_name_plural = "Genetic Predispositions"
-
-    def __str__(self):
-        return f"{self.patient}: {self.name}"
 
 
 class Appointment(models.Model):
