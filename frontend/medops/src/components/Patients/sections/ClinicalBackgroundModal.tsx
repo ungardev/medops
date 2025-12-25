@@ -51,6 +51,7 @@ const habitTypes = [
   { value: "actividad_fisica", label: "Actividad física" },
   { value: "dieta", label: "Dieta" },
   { value: "sueno", label: "Sueño" },
+  { value: "drogas", label: "Drogas" },
 ];
 
 const allergySeverityChoices = [

@@ -1342,6 +1342,18 @@ class SurgerySerializer(serializers.ModelSerializer):
 
 
 class HabitSerializer(serializers.ModelSerializer):
+    # Definimos las opciones permitidas para el campo "type"
+    HABIT_CHOICES = [
+        ("tabaco", "Tabaco"),
+        ("alcohol", "Alcohol"),
+        ("actividad_fisica", "Actividad física"),
+        ("dieta", "Dieta"),
+        ("sueno", "Sueño"),
+        ("drogas", "Drogas"),
+    ]
+
+    type = serializers.ChoiceField(choices=HABIT_CHOICES)
+
     class Meta:
         model = Habit
         fields = [
@@ -1351,7 +1363,7 @@ class HabitSerializer(serializers.ModelSerializer):
             "description",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "patient"]
 
 
 class VaccineSerializer(serializers.ModelSerializer):
