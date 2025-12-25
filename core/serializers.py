@@ -1439,13 +1439,24 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_clinical_background(self, obj):
-        personales_qs = PersonalHistory.objects.filter(patient=obj)
-        familiares_qs = FamilyHistory.objects.filter(patient=obj)
-        geneticos_qs = obj.genetic_predispositions.all()  # ✅ ManyToMany ya definido en Patient
+        try:
+            personales_qs = PersonalHistory.objects.filter(patient=obj)
+        except Exception:
+            personales_qs = []
+
+        try:
+            familiares_qs = FamilyHistory.objects.filter(patient=obj)
+        except Exception:
+            familiares_qs = []
+
+        try:
+            geneticos_qs = getattr(obj, "genetic_predispositions", []).all()
+        except Exception:
+            geneticos_qs = []
 
         personales = [
             {
-                "id": ph.id,
+                "id": getattr(ph, "id", None),
                 "type": "personal",
                 "condition": getattr(ph, "description", None) or getattr(ph, "condition", None),
                 "status": getattr(ph, "status", "activo"),
@@ -1457,11 +1468,11 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
 
         familiares = [
             {
-                "id": fh.id,
-                "type": "family",  # ✅ clave alineada con el frontend
+                "id": getattr(fh, "id", None),
+                "type": "family",
                 "condition": getattr(fh, "condition", None),
                 "status": getattr(fh, "status", "positivo"),
-                "relative": getattr(fh, "relative", None),  # ✅ clave correcta
+                "relative": getattr(fh, "relative", None),
                 "notes": getattr(fh, "notes", None),
                 "source": "historia_clinica",
             }
@@ -1470,11 +1481,11 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
 
         geneticos = [
             {
-                "id": gp.id,
-                "type": "genetic",  # ✅ clave alineada con el frontend
-                "condition": gp.name,
+                "id": getattr(gp, "id", None),
+                "type": "genetic",
+                "condition": getattr(gp, "name", None),
                 "status": "positivo",
-                "notes": gp.description,
+                "notes": getattr(gp, "description", None),
                 "source": "prueba_genetica",
             }
             for gp in geneticos_qs

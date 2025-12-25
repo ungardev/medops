@@ -48,6 +48,7 @@ from reportlab.platypus import (
 from reportlab.lib.styles import getSampleStyleSheet
 
 from rest_framework import viewsets, status, serializers, permissions, filters
+from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -1139,6 +1140,7 @@ class PatientPagination(PageNumberPagination):
 class PatientViewSet(viewsets.ModelViewSet):
     # 🔒 Paginación institucional
     pagination_class = PatientPagination
+    permission_classes = [permissions.IsAuthenticated]
 
     # 🔒 Queryset dinámico: siempre solo activos en listados
     def get_queryset(self):
@@ -1155,6 +1157,19 @@ class PatientViewSet(viewsets.ModelViewSet):
             return PatientWriteSerializer
         # Opcional: lectura simple para otras acciones
         return PatientDetailSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        GET → Devuelve el perfil clínico completo del paciente.
+        Blindaje: si el paciente no existe, devuelve 404 en vez de 500.
+        """
+        try:
+            patient = self.get_object()
+        except Patient.DoesNotExist:
+            raise NotFound("Paciente no encontrado")
+
+        serializer = PatientClinicalProfileSerializer(patient)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def list(self, request, *args, **kwargs):
         """

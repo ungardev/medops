@@ -110,7 +110,7 @@ export default function ClinicalProfileSection({
         let endpoint = "";
         if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
         if (item.type === "family") endpoint = `family-history/${item.id}/`;
-        if (item.type === "allergy") endpoint = `allergies/${item.id}/`;
+        if (item.type === "allergy") endpoint = `patients/${patientId}/allergies/${item.id}/`;
         if (item.type === "habit") endpoint = `habits/${item.id}/`;
         await apiFetch(endpoint, { method: "DELETE" });
       }
@@ -209,7 +209,6 @@ export default function ClinicalProfileSection({
           }
         }
       } else if (type === "allergy") {
-        // 👇 FIX: usar endpoint anidado para incluir patient_id
         const allergyBody = {
           name: body.name,
           severity: body.severity,
@@ -218,7 +217,7 @@ export default function ClinicalProfileSection({
         };
 
         const allergyUrl = isEdit
-          ? `allergies/${modalInitial.id}/`
+          ? `patients/${patientId}/allergies/${modalInitial.id}/`
           : `patients/${patientId}/allergies/`;
 
         res = await apiFetch(allergyUrl, {
