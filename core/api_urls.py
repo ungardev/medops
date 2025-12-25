@@ -108,6 +108,7 @@ router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="cli
 # --- Router anidado para pacientes ---
 patients_router = nested_routers.NestedDefaultRouter(router, r"patients", lookup="patient")
 patients_router.register(r"allergies", AllergyViewSet, basename="patient-allergies")
+patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
 
 # --- Funciones personalizadas ---
 urlpatterns = [

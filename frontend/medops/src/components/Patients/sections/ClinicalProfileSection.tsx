@@ -11,6 +11,7 @@ import { apiFetch } from "../../../api/client";
 import ClinicalBackgroundModal from "./ClinicalBackgroundModal";
 
 type BackgroundType = "personal" | "family" | "genetic" | "habit";
+type ModalType = BackgroundType | "allergy";
 
 interface ClinicalBackground {
   id: number;
@@ -75,7 +76,7 @@ export default function ClinicalProfileSection({
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<BackgroundType | "allergy">("personal");
+  const [modalType, setModalType] = useState<ModalType>("personal");
   const [modalInitial, setModalInitial] = useState<any>(undefined);
 
   const grouped: Record<BackgroundType, ClinicalBackground[]> = {
@@ -130,7 +131,7 @@ export default function ClinicalProfileSection({
     return all;
   };
 
-  const handleSave = async (type: BackgroundType | "allergy", payload: any) => {
+  const handleSave = async (type: ModalType, payload: any) => {
     const isEdit = modalInitial?.id;
     let endpoint = "";
     if (type === "personal") endpoint = "personal-history/";

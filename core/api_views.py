@@ -4155,15 +4155,18 @@ class SurgeryViewSet(viewsets.ModelViewSet):
 
 
 class HabitViewSet(viewsets.ModelViewSet):
-    queryset = Habit.objects.all()
+    """
+    ViewSet para manejar los hábitos clínicos de un paciente.
+    Expuesto como recurso anidado en /api/patients/{patient_pk}/habits/
+    """
     serializer_class = HabitSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        patient_id = self.request.query_params.get("patient")
+        patient_id = self.kwargs.get("patient_pk")
         if patient_id:
             return Habit.objects.filter(patient_id=patient_id)
-        return super().get_queryset()
+        return Habit.objects.all()
 
 
 class VaccineViewSet(viewsets.ModelViewSet):
