@@ -4155,10 +4155,6 @@ class SurgeryViewSet(viewsets.ModelViewSet):
 
 
 class HabitViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para manejar los hábitos clínicos de un paciente.
-    Expuesto como recurso anidado en /api/patients/{patient_pk}/habits/
-    """
     serializer_class = HabitSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -4167,6 +4163,10 @@ class HabitViewSet(viewsets.ModelViewSet):
         if patient_id:
             return Habit.objects.filter(patient_id=patient_id)
         return Habit.objects.all()
+
+    def perform_create(self, serializer):
+        patient_id = self.kwargs.get("patient_pk")
+        serializer.save(patient_id=patient_id)
 
 
 class VaccineViewSet(viewsets.ModelViewSet):
