@@ -1439,6 +1439,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
         ]
 
     def get_clinical_background(self, obj):
+        # 🔒 Blindaje: nunca explotar si las relaciones no existen
         try:
             personales_qs = PersonalHistory.objects.filter(patient=obj)
         except Exception:
@@ -1450,7 +1451,8 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             familiares_qs = []
 
         try:
-            geneticos_qs = getattr(obj, "genetic_predispositions", []).all()
+            geneticos_qs = getattr(obj, "genetic_predispositions", None)
+            geneticos_qs = geneticos_qs.all() if geneticos_qs else []
         except Exception:
             geneticos_qs = []
 

@@ -1163,11 +1163,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         GET → Devuelve el perfil clínico completo del paciente.
         Blindaje: si el paciente no existe, devuelve 404 en vez de 500.
         """
-        try:
-            patient = self.get_object()
-        except Patient.DoesNotExist:
-            raise NotFound("Paciente no encontrado")
-
+        patient = get_object_or_404(Patient, pk=kwargs.get("pk"), active=True)
         serializer = PatientClinicalProfileSerializer(patient)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
