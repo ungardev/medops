@@ -1,13 +1,14 @@
 // src/components/Patients/sections/ClinicalBackgroundModal.tsx
 import React, { useState, useEffect } from "react";
+import { apiFetch } from "../../../api/client";
 
 type BackgroundType = "personal" | "family" | "genetic" | "allergy" | "habit";
 
 interface ClinicalBackgroundForm {
   type: BackgroundType;
   condition?: string;
-  relation?: string; // usado en el formulario
-  relative?: string; // ✅ agregado para compatibilidad con datos entrantes del backend
+  relation?: string;
+  relative?: string;
   status?: "active" | "resolved" | "suspected" | "positive" | "negative";
   source?: string;
   notes?: string;
@@ -52,6 +53,20 @@ const habitTypes = [
   { value: "sueno", label: "Sueño" },
 ];
 
+const allergySeverityChoices = [
+  { value: "leve", label: "Leve" },
+  { value: "moderada", label: "Moderada" },
+  { value: "grave", label: "Grave" },
+  { value: "anafilactica", label: "Anafiláctica" },
+];
+
+const allergySourceChoices = [
+  { value: "historia_clinica", label: "Historia clínica" },
+  { value: "prueba_cutanea", label: "Prueba cutánea" },
+  { value: "prueba_sanguinea", label: "Prueba sanguínea" },
+  { value: "autorreporte", label: "Autorreporte" },
+];
+
 export default function ClinicalBackgroundModal({
   open,
   onClose,
@@ -73,12 +88,13 @@ export default function ClinicalBackgroundModal({
     date: "",
   });
 
+  const [options, setOptions] = useState<{ id: number; name: string }[]>([]);
+
   useEffect(() => {
     if (open) {
       setForm({
         type,
         condition: initial?.condition ?? "",
-        // ✅ acepta tanto relation (frontend) como relative (backend) sin romper TS
         relation: initial?.relation ?? initial?.relative ?? "",
         status: initial?.status ?? "active",
         source: initial?.source ?? "",
@@ -89,6 +105,21 @@ export default function ClinicalBackgroundModal({
         description: initial?.description ?? "",
         date: initial?.date ?? "",
       });
+
+      if (type === "genetic") {
+        const fetchAll = async () => {
+          let all: { id: number; name: string }[] = [];
+          let url: string | null = "genetic-predispositions/?limit=100";
+          while (url) {
+            const res: any = await apiFetch(url);
+            const list = Array.isArray(res) ? res : res.results || [];
+            all = [...all, ...list];
+            url = res.next || null;
+          }
+          setOptions(all);
+        };
+        fetchAll().catch((err) => console.error("Error cargando catálogo:", err));
+      }
     }
   }, [open, initial, type]);
 
@@ -107,10 +138,10 @@ export default function ClinicalBackgroundModal({
       if (form.notes) payload.notes = form.notes;
     } else if (type === "family") {
       payload.condition = form.condition;
-      payload.relative = form.relation; // ✅ clave correcta para el backend
+      payload.relative = form.relation;
       if (form.notes) payload.notes = form.notes;
     } else if (type === "genetic") {
-      payload.name = form.condition;
+      payload.name = form.name;
       payload.description = form.notes || "";
     } else if (type === "allergy") {
       payload.name = form.name;
@@ -122,7 +153,9 @@ export default function ClinicalBackgroundModal({
       payload.description = form.description;
     }
 
+    console.log("Payload enviado:", payload);
     onSave(payload);
+    onClose();
   };
     return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -198,15 +231,21 @@ export default function ClinicalBackgroundModal({
           {type === "genetic" && (
             <>
               <div>
-                <label className="block text-sm font-medium mb-1">Nombre</label>
-                <input
+                <label className="block text-sm font-medium mb-1">Predisposición genética</label>
+                <select
                   className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.condition}
-                  onChange={(e) => setField("condition", e.target.value)}
-                />
+                  value={form.name}
+                  onChange={(e) => setField("name", e.target.value)}
+                >
+                  <option value="">Seleccione...</option>
+                  {Array.isArray(options) &&
+                    options.map((opt) => (
+                      <option key={opt.id} value={opt.name}>{opt.name}</option>
+                    ))}
+                </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Descripción</label>
+                <label className="block text-sm font-medium mb-1">Notas</label>
                 <textarea
                   className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
                   value={form.notes}
@@ -215,8 +254,7 @@ export default function ClinicalBackgroundModal({
               </div>
             </>
           )}
-
-          {type === "allergy" && (
+                    {type === "allergy" && (
             <>
               <div>
                 <label className="block text-sm font-medium mb-1">Nombre</label>
@@ -224,23 +262,36 @@ export default function ClinicalBackgroundModal({
                   className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
                   value={form.name}
                   onChange={(e) => setField("name", e.target.value)}
+                  placeholder="Ej: Penicilina, Polen, Mariscos..."
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Severidad</label>
-                <input
+                <select
                   className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
                   value={form.severity}
                   onChange={(e) => setField("severity", e.target.value)}
-                />
+                >
+                  <option value="">Seleccione...</option>
+                  <option value="leve">Leve</option>
+                  <option value="moderada">Moderada</option>
+                  <option value="grave">Grave</option>
+                  <option value="anafilactica">Anafiláctica</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Fuente</label>
-                <input
+                <select
                   className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
                   value={form.source}
                   onChange={(e) => setField("source", e.target.value)}
-                />
+                >
+                  <option value="">Seleccione...</option>
+                  <option value="historia_clinica">Historia clínica</option>
+                  <option value="prueba_cutanea">Prueba cutánea</option>
+                  <option value="prueba_sanguinea">Prueba sanguínea</option>
+                  <option value="autorreporte">Autorreporte</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Notas</label>

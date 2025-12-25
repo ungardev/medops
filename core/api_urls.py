@@ -1,5 +1,6 @@
-from django.urls import path
+from django.urls import path, include
 from rest_framework import routers
+from rest_framework_nested import routers as nested_routers
 from . import api_views
 from .api_views import (
     PatientViewSet,
@@ -29,7 +30,7 @@ from .api_views import (
     AllergyViewSet,
     MedicalHistoryViewSet,
     ClinicalAlertViewSet,
-    ClinicalBackgroundViewSet,   # 👈 agregado
+    ClinicalBackgroundViewSet,
 
     # --- Funciones ---
     update_appointment_status,
@@ -72,7 +73,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
 
-# --- Router DRF ---
+# --- Router DRF principal ---
 router = routers.DefaultRouter()
 
 # --- Core ---
@@ -100,10 +101,13 @@ router.register(r"vaccines", VaccineViewSet, basename="vaccine")
 router.register(r"vaccination-schedule", VaccinationScheduleViewSet, basename="vaccination-schedule")
 router.register(r"patient-vaccinations", PatientVaccinationViewSet, basename="patient-vaccination")
 router.register(r"patient-clinical-profile", PatientClinicalProfileViewSet, basename="patient-clinical-profile")
-router.register(r"allergies", AllergyViewSet, basename="allergy")
 router.register(r"medical-history", MedicalHistoryViewSet, basename="medical-history")
 router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, basename="patient-alerts")
-router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")  # 👈 nuevo endpoint unificado
+router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")
+
+# --- Router anidado para pacientes ---
+patients_router = nested_routers.NestedDefaultRouter(router, r"patients", lookup="patient")
+patients_router.register(r"allergies", AllergyViewSet, basename="patient-allergies")
 
 # --- Funciones personalizadas ---
 urlpatterns = [
@@ -214,7 +218,9 @@ if settings.DEBUG:
         path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     ]
 
+# --- Routers principales y anidados ---
 urlpatterns += router.urls
+urlpatterns += patients_router.urls
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

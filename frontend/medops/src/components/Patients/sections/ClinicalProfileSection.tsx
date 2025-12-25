@@ -94,17 +94,42 @@ export default function ClinicalProfileSection({
     }
   });
 
-  const handleDeleteBackground = (item: ClinicalBackground) => {
-    let endpoint = "";
-    if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
-    if (item.type === "family") endpoint = `family-history/${item.id}/`;
-    if (item.type === "genetic") endpoint = `genetic-predispositions/${item.id}/`;
-    if (item.type === "allergy") endpoint = `allergies/${item.id}/`;
-    if (item.type === "habit") endpoint = `habits/${item.id}/`;
+  const handleDeleteBackground = async (item: ClinicalBackground) => {
+    try {
+      if (item.type === "genetic") {
+        await apiFetch(`patients/${patientId}/`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            genetic_predispositions: backgrounds
+              .filter((b) => b.type === "genetic" && b.id !== item.id)
+              .map((b) => b.id),
+          }),
+        });
+      } else {
+        let endpoint = "";
+        if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
+        if (item.type === "family") endpoint = `family-history/${item.id}/`;
+        if (item.type === "allergy") endpoint = `allergies/${item.id}/`;
+        if (item.type === "habit") endpoint = `habits/${item.id}/`;
+        await apiFetch(endpoint, { method: "DELETE" });
+      }
+      onRefresh?.();
+    } catch (err) {
+      console.error("Error eliminando registro:", err);
+    }
+  };
 
-    apiFetch(endpoint, { method: "DELETE" })
-      .then(() => onRefresh?.())
-      .catch((err: unknown) => console.error("Error eliminando registro:", err));
+  const fetchAllGeneticCatalog = async (): Promise<{ id: number; name: string }[]> => {
+    let all: { id: number; name: string }[] = [];
+    let url: string | null = "genetic-predispositions/?limit=100";
+    while (url) {
+      const res: any = await apiFetch(url);
+      const list = Array.isArray(res) ? res : res.results || [];
+      all = [...all, ...list];
+      url = res.next || null;
+    }
+    return all;
   };
 
   const handleSave = async (type: BackgroundType, payload: any) => {
@@ -123,20 +148,89 @@ export default function ClinicalProfileSection({
     console.log("[SAVE] URL:", url, "METHOD:", method, "BODY:", body);
 
     try {
-      const res: any = await apiFetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      let res: any;
 
-      // 👇 Vincular predisposición genética al paciente
-      if (type === "genetic" && !isEdit && res?.id) {
-        await apiFetch(`patients/${patientId}/`, {
-          method: "PATCH",
+      if (type === "genetic") {
+        const name = (body.name || "").trim();
+        if (!name) throw new Error("Nombre genético vacío");
+
+        const catalog = await fetchAllGeneticCatalog();
+        const match = catalog.find(
+          (g) => g.name.trim().toLowerCase() === name.toLowerCase()
+        );
+
+        const currentIds = backgrounds.filter((b) => b.type === "genetic").map((b) => b.id);
+
+        if (isEdit) {
+          const updatedIds = currentIds.filter((id) => id !== modalInitial.id);
+          const newId = match
+            ? match.id
+            : ((await apiFetch("genetic-predispositions/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, description: body.notes || "" }),
+              })) as any).id;
+
+          await apiFetch(`patients/${patientId}/`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              genetic_predispositions: [...updatedIds, newId],
+            }),
+          });
+          res = { id: newId, name };
+        } else {
+          if (match) {
+            await apiFetch(`patients/${patientId}/`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                genetic_predispositions: Array.from(new Set([...currentIds, match.id])),
+              }),
+            });
+            res = match;
+          } else {
+            const created: any = await apiFetch("genetic-predispositions/", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, description: body.notes || "" }),
+            }) as any;
+
+            if (created?.id) {
+              await apiFetch(`patients/${patientId}/`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  genetic_predispositions: [...currentIds, created.id],
+                }),
+              });
+            }
+            res = created;
+          }
+        }
+      } else if (type === "allergy") {
+        // 👇 FIX: usar endpoint anidado para incluir patient_id
+        const allergyBody = {
+          name: body.name,
+          severity: body.severity,
+          source: body.source,
+          notes: body.notes,
+        };
+
+        const allergyUrl = isEdit
+          ? `allergies/${modalInitial.id}/`
+          : `patients/${patientId}/allergies/`;
+
+        res = await apiFetch(allergyUrl, {
+          method,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            genetic_predispositions: [res.id],
-          }),
+          body: JSON.stringify(allergyBody),
+        });
+      } else {
+        res = await apiFetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
         });
       }
 
@@ -148,7 +242,7 @@ export default function ClinicalProfileSection({
     }
   };
 
-  return (
+    return (
     <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm space-y-4">
       <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Perfil clínico</h3>
 
