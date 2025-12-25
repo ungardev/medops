@@ -4222,6 +4222,7 @@ class AllergyViewSet(viewsets.ModelViewSet):
         serializer.save(patient_id=patient_id)
 
 
+
 class MedicalHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = MedicalHistorySerializer
     permission_classes = [permissions.IsAuthenticated]

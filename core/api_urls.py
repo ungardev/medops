@@ -144,7 +144,7 @@ urlpatterns = [
     # --- Perfil clínico estructurado ---
     path(
         "patients/<int:pk>/profile/",
-        PatientClinicalProfileViewSet.as_view({"get": "profile"}),
+        PatientViewSet.as_view({"get": "profile"}),
         name="patient-clinical-profile",
     ),
 

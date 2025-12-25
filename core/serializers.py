@@ -1430,50 +1430,47 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "weight",
             "height",
             "blood_type",
+            # campos raíz
             "allergies",
             "medical_history",
             "surgeries",
             "habits",
             "vaccinations",
+            # campo calculado compacto
             "clinical_background",
         ]
 
     def get_clinical_background(self, obj):
-        # 🔒 Blindaje: nunca explotar si las relaciones no existen
+        # personales
         try:
             personales_qs = PersonalHistory.objects.filter(patient=obj)
         except Exception:
             personales_qs = []
-
-        try:
-            familiares_qs = FamilyHistory.objects.filter(patient=obj)
-        except Exception:
-            familiares_qs = []
-
-        try:
-            geneticos_qs = getattr(obj, "genetic_predispositions", None)
-            geneticos_qs = geneticos_qs.all() if geneticos_qs else []
-        except Exception:
-            geneticos_qs = []
 
         personales = [
             {
                 "id": getattr(ph, "id", None),
                 "type": "personal",
                 "condition": getattr(ph, "description", None) or getattr(ph, "condition", None),
-                "status": getattr(ph, "status", "activo"),
+                "status": getattr(ph, "status", "active"),
                 "notes": getattr(ph, "notes", None),
                 "source": "historia_clinica",
             }
             for ph in personales_qs
         ]
 
+        # familiares
+        try:
+            familiares_qs = FamilyHistory.objects.filter(patient=obj)
+        except Exception:
+            familiares_qs = []
+
         familiares = [
             {
                 "id": getattr(fh, "id", None),
                 "type": "family",
                 "condition": getattr(fh, "condition", None),
-                "status": getattr(fh, "status", "positivo"),
+                "status": getattr(fh, "status", "positive"),
                 "relative": getattr(fh, "relative", None),
                 "notes": getattr(fh, "notes", None),
                 "source": "historia_clinica",
@@ -1481,18 +1478,26 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             for fh in familiares_qs
         ]
 
+        # genéticos
+        try:
+            geneticos_qs = getattr(obj, "genetic_predispositions", None)
+            geneticos_qs = geneticos_qs.all() if geneticos_qs else []
+        except Exception:
+            geneticos_qs = []
+
         geneticos = [
             {
                 "id": getattr(gp, "id", None),
                 "type": "genetic",
                 "condition": getattr(gp, "name", None),
-                "status": "positivo",
+                "status": "positive",
                 "notes": getattr(gp, "description", None),
                 "source": "prueba_genetica",
             }
             for gp in geneticos_qs
         ]
 
+        # NO incluir alergias aquí — se exponen como campo raíz
         return personales + familiares + geneticos
 
 
