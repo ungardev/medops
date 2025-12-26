@@ -95,7 +95,7 @@ export default function ClinicalBackgroundModal({
     if (open) {
       setForm({
         type,
-        condition: initial?.condition ?? "",
+        condition: type === "habit" ? initial?.type ?? "" : initial?.condition ?? "",
         relation: initial?.relation ?? initial?.relative ?? "",
         status: initial?.status ?? "active",
         source: initial?.source ?? "",
@@ -150,14 +150,16 @@ export default function ClinicalBackgroundModal({
       payload.source = form.source;
       if (form.notes) payload.notes = form.notes;
     } else if (type === "habit") {
-      payload.type = form.condition;
+      payload.type = form.condition;       // tipo real (tabaco, drogas, etc.)
       payload.description = form.description;
+      if (form.notes) payload.notes = form.notes;
     }
 
     console.log("Payload enviado:", payload);
     onSave(payload);
     onClose();
   };
+
     return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-lg">
@@ -255,7 +257,8 @@ export default function ClinicalBackgroundModal({
               </div>
             </>
           )}
-                    {type === "allergy" && (
+
+          {type === "allergy" && (
             <>
               <div>
                 <label className="block text-sm font-medium mb-1">Nombre</label>
@@ -274,10 +277,9 @@ export default function ClinicalBackgroundModal({
                   onChange={(e) => setField("severity", e.target.value)}
                 >
                   <option value="">Seleccione...</option>
-                  <option value="leve">Leve</option>
-                  <option value="moderada">Moderada</option>
-                  <option value="grave">Grave</option>
-                  <option value="anafilactica">Anafiláctica</option>
+                  {allergySeverityChoices.map((choice) => (
+                    <option key={choice.value} value={choice.value}>{choice.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -288,10 +290,9 @@ export default function ClinicalBackgroundModal({
                   onChange={(e) => setField("source", e.target.value)}
                 >
                   <option value="">Seleccione...</option>
-                  <option value="historia_clinica">Historia clínica</option>
-                  <option value="prueba_cutanea">Prueba cutánea</option>
-                  <option value="prueba_sanguinea">Prueba sanguínea</option>
-                  <option value="autorreporte">Autorreporte</option>
+                  {allergySourceChoices.map((choice) => (
+                    <option key={choice.value} value={choice.value}>{choice.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -325,6 +326,14 @@ export default function ClinicalBackgroundModal({
                   className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
                   value={form.description}
                   onChange={(e) => setField("description", e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Notas</label>
+                <textarea
+                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  value={form.notes}
+                  onChange={(e) => setField("notes", e.target.value)}
                 />
               </div>
             </>

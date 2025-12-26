@@ -26,6 +26,74 @@ class GeneticPredisposition(models.Model):
         return self.name
 
 
+class Country(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        db_table = "countries"  # ⚠️ No existe aún en tu catálogo migrado, pero lo dejamos preparado
+        verbose_name = "Country"
+        verbose_name_plural = "Countries"
+
+    def __str__(self):
+        return self.name
+
+
+class State(models.Model):
+    country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="states")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "estados"   # 🔹 apunta a la tabla migrada
+        unique_together = ("country", "name")
+        verbose_name = "State"
+        verbose_name_plural = "States"
+
+    def __str__(self):
+        return f"{self.name}, {self.country.name}"
+
+
+class City(models.Model):
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="cities")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "ciudades"  # 🔹 apunta a la tabla migrada
+        unique_together = ("state", "name")
+        verbose_name = "City"
+        verbose_name_plural = "Cities"
+
+    def __str__(self):
+        return f"{self.name}, {self.state.name}"
+
+
+class Parish(models.Model):
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="parishes")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "parroquias"  # 🔹 apunta a la tabla migrada
+        unique_together = ("city", "name")
+        verbose_name = "Parish"
+        verbose_name_plural = "Parishes"
+
+    def __str__(self):
+        return f"{self.name}, {self.city.name}"
+
+
+class Neighborhood(models.Model):
+    parish = models.ForeignKey(Parish, on_delete=models.CASCADE, related_name="neighborhoods")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "neighborhoods"  # ⚠️ aún no existe en tu catálogo migrado, pero lo dejamos preparado
+        unique_together = ("parish", "name")
+        verbose_name = "Neighborhood"
+        verbose_name_plural = "Neighborhoods"
+
+    def __str__(self):
+        return f"{self.name}, {self.parish.name}"
+
+
 class Patient(models.Model):
     GENDER_CHOICES = [
         ('M', 'Male'),
@@ -85,10 +153,14 @@ class Patient(models.Model):
         blank=True,
         null=True
     )
-    address = models.TextField(
-        blank=True,
+
+    # 🔹 Dirección cerrada con catálogo
+    neighborhood = models.ForeignKey(
+        Neighborhood,
+        on_delete=models.SET_NULL,
         null=True,
-        verbose_name="Dirección"
+        blank=True,
+        verbose_name="Urbanización / Barrio"
     )
 
     # 🔹 Datos clínicos básicos
@@ -102,7 +174,7 @@ class Patient(models.Model):
     # patient.medical_history.all() → MedicalHistory
 
     genetic_predispositions = models.ManyToManyField(
-        GeneticPredisposition,
+        "GeneticPredisposition",
         blank=True,
         related_name="patients"
     )
@@ -1341,3 +1413,4 @@ class ClinicalAlert(models.Model):
 
     def __str__(self):
         return f"[{self.type}] {self.message[:50]}"
+

@@ -1,4 +1,3 @@
-// src/components/Patients/sections/ClinicalProfileSection.tsx
 import React, { useState } from "react";
 import {
   UserIcon,
@@ -28,6 +27,7 @@ interface Habit {
   type: string;
   frequency: string;
   impact?: string;
+  description?: string;
   notes?: string;
 }
 
@@ -94,7 +94,9 @@ export default function ClinicalProfileSection({
 
   const handleDeleteBackground = async (item: any) => {
     try {
-      if (item.type === "genetic") {
+      if (item.kind === "habit") {
+        await apiFetch(`patients/${patientId}/habits/${item.id}/`, { method: "DELETE" });
+      } else if (item.type === "genetic") {
         await apiFetch(`patients/${patientId}/`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -110,7 +112,6 @@ export default function ClinicalProfileSection({
         let endpoint = "";
         if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
         if (item.type === "family") endpoint = `family-history/${item.id}/`;
-        if (item.type === "habit") endpoint = `habits/${item.id}/`;
         await apiFetch(endpoint, { method: "DELETE" });
       }
       onRefresh?.();
@@ -119,33 +120,25 @@ export default function ClinicalProfileSection({
     }
   };
 
-  const fetchAllGeneticCatalog = async (): Promise<{ id: number; name: string }[]> => {
-    let all: { id: number; name: string }[] = [];
-    let url: string | null = "genetic-predispositions/?limit=100";
-    while (url) {
-      const res: any = await apiFetch(url);
-      const list = Array.isArray(res) ? res : res.results || [];
-      all = [...all, ...list];
-      url = res.next || null;
-    }
-    return all;
-  };
-
   const handleSave = async (type: ModalType, payload: any) => {
     const isEdit = modalInitial?.id;
     let endpoint = "";
     if (type === "personal") endpoint = "personal-history/";
     if (type === "family") endpoint = "family-history/";
     if (type === "genetic") endpoint = "genetic-predispositions/";
-    if (type === "habit") endpoint = "habits/";
+    if (type === "habit") endpoint = `patients/${patientId}/habits/`;
 
     const method = isEdit ? "PATCH" : "POST";
-    const url = isEdit ? `${endpoint}${modalInitial.id}/` : endpoint;
+    const url = isEdit
+      ? type === "habit"
+        ? `patients/${patientId}/habits/${modalInitial.id}/`
+        : `${endpoint}${modalInitial.id}/`
+      : endpoint;
 
     try {
       let res: any;
       if (type === "genetic") {
-        // lógica genética igual que antes...
+        // lógica genética...
       } else if (type === "allergy") {
         const allergyBody = {
           name: payload.name,
@@ -160,6 +153,19 @@ export default function ClinicalProfileSection({
           method,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(allergyBody),
+        });
+      } else if (type === "habit") {
+        const habitBody = {
+          type: payload.type,
+          description: payload.description,
+          frequency: payload.frequency,
+          impact: payload.impact,
+          notes: payload.notes,
+        };
+        res = await apiFetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(habitBody),
         });
       } else {
         res = await apiFetch(url, {
@@ -176,13 +182,14 @@ export default function ClinicalProfileSection({
     }
   };
 
-  return (
+    return (
     <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm space-y-4">
       <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Perfil clínico</h3>
 
-      {(Object.keys(backgroundLabels) as BackgroundType[]).map((type) => {
+      {/* Renderizamos primero personales, familiares y genéticos */}
+      {(["personal", "family", "genetic"] as BackgroundType[]).map((type) => {
         const Icon = backgroundIcons[type];
-        const items = type === "habit" ? habits : grouped[type];
+        const items = grouped[type];
         return (
           <div key={type} className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
             <button
@@ -204,10 +211,9 @@ export default function ClinicalProfileSection({
                     {items.map((item: any) => (
                       <li key={item.id} className="p-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700">
                         <div className="flex justify-between">
-                          <span className="font-medium">{item.condition || item.name}</span>
-                          <span className="text-xs text-gray-500">{item.status || item.frequency || "—"}</span>
+                          <span className="font-medium">{item.condition || item.name || item.type}</span>
+                          <span className="text-xs text-gray-500">{item.status || "—"}</span>
                         </div>
-                        {item.relative && <p className="text-xs text-gray-600">Relación: {item.relative}</p>}
                         {item.notes && <p className="text-xs text-gray-600">{item.notes}</p>}
                         <div className="flex gap-2 mt-1">
                           <button
@@ -246,7 +252,8 @@ export default function ClinicalProfileSection({
           </div>
         );
       })}
-            {/* Bloque separado para alergias */}
+
+      {/* Bloque separado para alergias (antes que hábitos) */}
       <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
         <button
           className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -300,6 +307,68 @@ export default function ClinicalProfileSection({
                 className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
                 onClick={() => {
                   setModalType("allergy");
+                  setModalInitial(undefined);
+                  setModalOpen(true);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+            {/* Finalmente, Hábitos */}
+      <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+        <button
+          className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
+          onClick={() => setExpanded(expanded === "habit" ? null : "habit")}
+        >
+          <span className="flex items-center gap-2">
+            <FireIcon className="w-4 h-4 text-[#0d2c53]" />
+            Hábitos
+          </span>
+          <span className="text-xs text-gray-600 dark:text-gray-300">{habits.length} registro(s)</span>
+        </button>
+
+        {expanded === "habit" && (
+          <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
+            {habits.length === 0 ? (
+              <p className="text-xs text-gray-500">No hay registros.</p>
+            ) : (
+              <ul className="space-y-2">
+                {habits.map((item: any) => (
+                  <li key={item.id} className="p-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700">
+                    <div className="flex justify-between">
+                      <span className="font-medium">{item.type}</span>
+                      <span className="text-xs text-gray-500">{item.frequency || "—"}</span>
+                    </div>
+                    {item.description && <p className="text-xs text-gray-600">{item.description}</p>}
+                    {item.notes && <p className="text-xs text-gray-600">{item.notes}</p>}
+                    <div className="flex gap-2 mt-1">
+                      <button
+                        className="text-blue-700 text-xs"
+                        onClick={() => {
+                          setModalType("habit");
+                          setModalInitial({ ...item, kind: "habit" });
+                          setModalOpen(true);
+                        }}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        className="text-red-700 text-xs"
+                        onClick={() => handleDeleteBackground({ ...item, kind: "habit" })}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex justify-start mt-2">
+              <PlusIcon
+                className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
+                onClick={() => {
+                  setModalType("habit");
                   setModalInitial(undefined);
                   setModalOpen(true);
                 }}
