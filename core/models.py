@@ -156,7 +156,7 @@ class Patient(models.Model):
 
     # 🔹 Dirección cerrada con catálogo
     neighborhood = models.ForeignKey(
-        Neighborhood,
+        "Neighborhood",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -186,6 +186,7 @@ class Patient(models.Model):
     active = models.BooleanField(default=True)
 
     class Meta:
+        db_table = "patients"  # 🔹 institucionalizado: apunta a la tabla en PostgreSQL
         verbose_name = "Patient"
         verbose_name_plural = "Patients"
 
