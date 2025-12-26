@@ -11,7 +11,7 @@ class Command(BaseCommand):
 
         with connection.cursor() as cursor:
             # Estados
-            cursor.execute("SELECT id, nombre FROM estados;")
+            cursor.execute("SELECT id, name FROM estados;")
             for state_id, name in cursor.fetchall():
                 state, _ = State.objects.get_or_create(
                     id=state_id,
@@ -20,7 +20,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Estado importado: {state.name}"))
 
             # Municipios
-            cursor.execute("SELECT id, nombre, estado_id FROM municipios;")
+            cursor.execute("SELECT id, name, estado_id FROM municipios;")
             for mun_id, name, state_id in cursor.fetchall():
                 try:
                     state = State.objects.get(id=state_id)
@@ -33,7 +33,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"Municipio {name} ignorado: estado {state_id} no existe"))
 
             # Ciudades
-            cursor.execute("SELECT id, nombre, estado_id FROM ciudades;")
+            cursor.execute("SELECT id, name, estado_id FROM ciudades;")
             for city_id, name, state_id in cursor.fetchall():
                 try:
                     state = State.objects.get(id=state_id)
@@ -46,7 +46,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.WARNING(f"Ciudad {name} ignorada: estado {state_id} no existe"))
 
             # Parroquias
-            cursor.execute("SELECT id, nombre, ciudad_id FROM parroquias;")
+            cursor.execute("SELECT id, name, ciudad_id FROM parroquias;")
             for parish_id, name, city_id in cursor.fetchall():
                 try:
                     city = City.objects.get(id=city_id)
