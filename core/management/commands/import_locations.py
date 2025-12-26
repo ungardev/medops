@@ -6,24 +6,38 @@ class Command(BaseCommand):
     help = "Importa datos desde tablas crudas (estados, municipios, ciudades, parroquias) a los modelos jerárquicos"
 
     def handle(self, *args, **options):
-        # 🔹 Aseguramos que exista el país Venezuela
+        # 🔹 País base
         country, _ = Country.objects.get_or_create(name="Venezuela")
 
         with connection.cursor() as cursor:
             # Estados
             cursor.execute("SELECT id, nombre FROM estados;")
-            for row in cursor.fetchall():
-                state_id, name = row
+            for state_id, name in cursor.fetchall():
                 state, _ = State.objects.get_or_create(
                     id=state_id,
                     defaults={"name": name, "country": country}
                 )
                 self.stdout.write(self.style.SUCCESS(f"Estado importado: {state.name}"))
 
+            # Municipios
+            cursor.execute("SELECT id, nombre, estado_id FROM municipios;")
+            for mun_id, name, state_id in cursor.fetchall():
+                try:
+                    state = State.objects.get(id=state_id)
+                    # ⚠️ Aquí puedes decidir si crear un modelo Municipality en Django
+                    # o mapear municipios como ciudades intermedias.
+                    # Por ahora, los dejamos como City con un flag especial.
+                    city, _ = City.objects.get_or_create(
+                        id=mun_id,
+                        defaults={"name": name, "state": state}
+                    )
+                    self.stdout.write(self.style.SUCCESS(f"Municipio importado como City: {city.name}"))
+                except State.DoesNotExist:
+                    self.stdout.write(self.style.WARNING(f"Municipio {name} ignorado: estado {state_id} no existe"))
+
             # Ciudades
             cursor.execute("SELECT id, nombre, estado_id FROM ciudades;")
-            for row in cursor.fetchall():
-                city_id, name, state_id = row
+            for city_id, name, state_id in cursor.fetchall():
                 try:
                     state = State.objects.get(id=state_id)
                     city, _ = City.objects.get_or_create(
@@ -36,8 +50,7 @@ class Command(BaseCommand):
 
             # Parroquias
             cursor.execute("SELECT id, nombre, ciudad_id FROM parroquias;")
-            for row in cursor.fetchall():
-                parish_id, name, city_id = row
+            for parish_id, name, city_id in cursor.fetchall():
                 try:
                     city = City.objects.get(id=city_id)
                     parish, _ = Parish.objects.get_or_create(
