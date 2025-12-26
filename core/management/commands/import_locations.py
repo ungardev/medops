@@ -1,9 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.db import connection
-from core.models import Country, State, City, Parish
+from core.models import Country, State, Municipality, City, Parish
 
 class Command(BaseCommand):
-    help = "Importa datos desde tablas crudas (estados, municipios, ciudades, parroquias) a los modelos jerárquicos"
+    help = "Importa datos crudos (estados, municipios, ciudades, parroquias) a los modelos jerárquicos"
 
     def handle(self, *args, **options):
         # 🔹 País base
@@ -24,14 +24,11 @@ class Command(BaseCommand):
             for mun_id, name, state_id in cursor.fetchall():
                 try:
                     state = State.objects.get(id=state_id)
-                    # ⚠️ Aquí puedes decidir si crear un modelo Municipality en Django
-                    # o mapear municipios como ciudades intermedias.
-                    # Por ahora, los dejamos como City con un flag especial.
-                    city, _ = City.objects.get_or_create(
+                    municipality, _ = Municipality.objects.get_or_create(
                         id=mun_id,
                         defaults={"name": name, "state": state}
                     )
-                    self.stdout.write(self.style.SUCCESS(f"Municipio importado como City: {city.name}"))
+                    self.stdout.write(self.style.SUCCESS(f"Municipio importado: {municipality.name}"))
                 except State.DoesNotExist:
                     self.stdout.write(self.style.WARNING(f"Municipio {name} ignorado: estado {state_id} no existe"))
 

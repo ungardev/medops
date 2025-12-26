@@ -94,6 +94,20 @@ class Neighborhood(models.Model):
         return f"{self.name}, {self.parish.name}"
 
 
+class Municipality(models.Model):
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="municipalities")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "municipios"
+        unique_together = ("state", "name")
+        verbose_name = "Municipality"
+        verbose_name_plural = "Municipalities"
+
+    def __str__(self):
+        return f"{self.name}, {self.state.name}"
+
+
 class Patient(models.Model):
     GENDER_CHOICES = [
         ('M', 'Male'),
