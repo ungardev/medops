@@ -6,7 +6,7 @@ from .models import (
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
-    Allergy, MedicalHistory, ClinicalAlert
+    Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -32,12 +32,89 @@ class MedicalHistorySerializer(serializers.ModelSerializer):
         fields = ["id", "condition", "status", "source", "notes", "created_at", "updated_at"]
 
 
+class CountrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Country
+        fields = ["id", "name"]
+
+
+class StateSerializer(serializers.ModelSerializer):
+    country = CountrySerializer(read_only=True)
+    country_id = serializers.PrimaryKeyRelatedField(
+        queryset=Country.objects.all(),
+        write_only=True,
+        source="country"
+    )
+
+    class Meta:
+        model = State
+        fields = ["id", "name", "country", "country_id"]
+
+
+class MunicipalitySerializer(serializers.ModelSerializer):
+    state = StateSerializer(read_only=True)
+    state_id = serializers.PrimaryKeyRelatedField(
+        queryset=State.objects.all(),
+        write_only=True,
+        source="state"
+    )
+
+    class Meta:
+        model = Municipality
+        fields = ["id", "name", "state", "state_id"]
+
+
+class CitySerializer(serializers.ModelSerializer):
+    state = StateSerializer(read_only=True)
+    state_id = serializers.PrimaryKeyRelatedField(
+        queryset=State.objects.all(),
+        write_only=True,
+        source="state"
+    )
+
+    class Meta:
+        model = City
+        fields = ["id", "name", "state", "state_id"]
+
+
+class ParishSerializer(serializers.ModelSerializer):
+    municipality = MunicipalitySerializer(read_only=True)
+    municipality_id = serializers.PrimaryKeyRelatedField(
+        queryset=Municipality.objects.all(),
+        write_only=True,
+        source="municipality"
+    )
+
+    class Meta:
+        model = Parish
+        fields = ["id", "name", "municipality", "municipality_id"]
+
+
+class NeighborhoodSerializer(serializers.ModelSerializer):
+    parish = ParishSerializer(read_only=True)
+    parish_id = serializers.PrimaryKeyRelatedField(
+        queryset=Parish.objects.all(),
+        write_only=True,
+        source="parish"
+    )
+
+    class Meta:
+        model = Neighborhood
+        fields = ["id", "name", "parish", "parish_id"]
+
+
 # 🔹 Serializer para crear/actualizar pacientes (sin campo active)
 class PatientWriteSerializer(serializers.ModelSerializer):
     genetic_predispositions = serializers.PrimaryKeyRelatedField(
         queryset=GeneticPredisposition.objects.all(),
         many=True,
         required=False
+    )
+    neighborhood_id = serializers.PrimaryKeyRelatedField(
+        queryset=Neighborhood.objects.all(),
+        required=False,
+        allow_null=True,
+        source="neighborhood"
     )
 
     class Meta:
@@ -60,6 +137,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "height",
             "blood_type",
             "genetic_predispositions",
+            "neighborhood_id",   # ⚡ añadido
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
@@ -96,6 +174,8 @@ class PatientReadSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField()
     allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
+    neighborhood = NeighborhoodSerializer(read_only=True)  # ⚡ detalle del barrio
+    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta
 
     class Meta:
         model = Patient
@@ -106,16 +186,16 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "email",
             "age",
             "gender",
-            "allergies",        # ahora array de objetos
-            "medical_history",  # ahora array de objetos
+            "allergies",
+            "medical_history",
+            "neighborhood",
+            "address_chain",
         ]
 
     @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
-        """
-        Construye el nombre completo, devolviendo 'SIN-NOMBRE' si no hay datos.
-        """
-        if not obj:  # 👈 blindaje extra
+        """Construye el nombre completo, devolviendo 'SIN-NOMBRE' si no hay datos."""
+        if not obj:
             return "SIN-NOMBRE"
         parts = [
             getattr(obj, "first_name", None),
@@ -128,9 +208,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_age(self, obj) -> Optional[int]:
-        """
-        Calcula la edad si hay fecha de nacimiento válida.
-        """
+        """Calcula la edad si hay fecha de nacimiento válida."""
         if not obj or not obj.birthdate:
             return None
         today = date.today()
@@ -138,6 +216,29 @@ class PatientReadSerializer(serializers.ModelSerializer):
             (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
         )
         return age if age >= 0 else None
+
+    def get_address_chain(self, obj):
+        """Devuelve la cadena jerárquica completa de dirección."""
+        n = obj.neighborhood
+        if not n:
+            return {
+                "neighborhood": "SIN-BARRIO",
+                "parish": "SIN-PARROQUIA",
+                "municipality": "SIN-MUNICIPIO",
+                "state": "SIN-ESTADO",
+                "country": "SIN-PAÍS",
+            }
+        p = n.parish
+        m = p.municipality if p else None
+        s = m.state if m else None
+        c = s.country if s else None
+        return {
+            "neighborhood": n.name,
+            "parish": p.name if p else "SIN-PARROQUIA",
+            "municipality": m.name if m else "SIN-MUNICIPIO",
+            "state": s.name if s else "SIN-ESTADO",
+            "country": c.name if c else "SIN-PAÍS",
+        }
 
 
 class PatientListSerializer(serializers.ModelSerializer):
@@ -184,6 +285,8 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
+    neighborhood = NeighborhoodSerializer(read_only=True)  # ⚡ detalle barrio/parroquia/municipio/estado/país
+    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta
 
     class Meta:
         model = Patient
@@ -204,9 +307,11 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "weight",
             "height",
             "blood_type",
-            "allergies",          # ahora array de objetos
-            "medical_history",    # ahora array de objetos
+            "allergies",              # array de objetos
+            "medical_history",        # array de objetos
             "genetic_predispositions",
+            "neighborhood",           # ⚡ detalle barrio
+            "address_chain",          # ⚡ cadena compacta
             "active",
             "created_at",
             "updated_at",
@@ -224,6 +329,29 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
         )
         return age if age >= 0 else None
+
+    def get_address_chain(self, obj):
+        """Devuelve la cadena jerárquica completa de dirección."""
+        n = obj.neighborhood
+        if not n:
+            return {
+                "neighborhood": "SIN-BARRIO",
+                "parish": "SIN-PARROQUIA",
+                "municipality": "SIN-MUNICIPIO",
+                "state": "SIN-ESTADO",
+                "country": "SIN-PAÍS",
+            }
+        p = n.parish
+        m = p.municipality if p else None
+        s = m.state if m else None
+        c = s.country if s else None
+        return {
+            "neighborhood": n.name,
+            "parish": p.name if p else "SIN-PARROQUIA",
+            "municipality": m.name if m else "SIN-MUNICIPIO",
+            "state": s.name if s else "SIN-ESTADO",
+            "country": c.name if c else "SIN-PAÍS",
+        }
 
 
 class PrescriptionComponentSerializer(serializers.ModelSerializer):
