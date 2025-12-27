@@ -4394,12 +4394,12 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
 class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Country.objects.all().order_by("name")
     serializer_class = CountrySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]   # ⚡ acceso público
 
 
 class StateViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]   # ⚡ acceso público
 
     def get_queryset(self):
         qs = State.objects.select_related("country").order_by("name")
@@ -4409,7 +4409,7 @@ class StateViewSet(viewsets.ReadOnlyModelViewSet):
 
 class MunicipalityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MunicipalitySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]   # ⚡ acceso público
 
     def get_queryset(self):
         qs = Municipality.objects.select_related("state", "state__country").order_by("name")
@@ -4419,7 +4419,7 @@ class MunicipalityViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CitySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]   # ⚡ acceso público
 
     def get_queryset(self):
         qs = City.objects.select_related("state", "state__country").order_by("name")
@@ -4429,7 +4429,7 @@ class CityViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ParishViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ParishSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]   # ⚡ acceso público
 
     def get_queryset(self):
         qs = Parish.objects.select_related(
@@ -4441,18 +4441,21 @@ class ParishViewSet(viewsets.ReadOnlyModelViewSet):
 
 class NeighborhoodViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NeighborhoodSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]   # ⚡ acceso público
 
     def get_queryset(self):
         qs = Neighborhood.objects.select_related(
-            "parish", "parish__municipality", "parish__municipality__state", "parish__municipality__state__country"
+            "parish",
+            "parish__municipality",
+            "parish__municipality__state",
+            "parish__municipality__state__country",
         ).order_by("name")
         parish_id = self.request.query_params.get("parish")
         return qs.filter(parish_id=parish_id) if parish_id else qs
 
 
 class AddressChainView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]   # ⚡ acceso público
 
     def get(self, request):
         nid = request.query_params.get("neighborhood_id")
@@ -4463,7 +4466,7 @@ class AddressChainView(APIView):
                 "parish",
                 "parish__municipality",
                 "parish__municipality__state",
-                "parish__municipality__state__country"
+                "parish__municipality__state__country",
             ).get(id=nid)
         except Neighborhood.DoesNotExist:
             return Response({"detail": "Barrio no encontrado"}, status=404)
