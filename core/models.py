@@ -106,17 +106,28 @@ class Parish(models.Model):
 
 
 class Neighborhood(models.Model):
-    parish = models.ForeignKey(Parish, on_delete=models.CASCADE, related_name="neighborhoods")
+    parish = models.ForeignKey(
+        "core.Parish",
+        on_delete=models.CASCADE,
+        related_name="neighborhoods",
+        null=True,   # ⚡ temporal en desarrollo
+        blank=True   # ⚡ temporal en desarrollo
+    )
     name = models.CharField(max_length=100)
 
     class Meta:
         db_table = "neighborhoods"
-        unique_together = ("parish", "name")
         verbose_name = "Neighborhood"
         verbose_name_plural = "Neighborhoods"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["parish", "name"],
+                name="unique_neighborhood_per_parish"
+            )
+        ]
 
     def __str__(self):
-        return f"{self.name}, {self.parish.name}"
+        return f"{self.name}, {self.parish.name if self.parish else 'SIN-PARROQUIA'}"
 
 
 class Patient(models.Model):
