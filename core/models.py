@@ -82,7 +82,7 @@ class City(models.Model):
 
 class Parish(models.Model):
     municipality = models.ForeignKey(
-        Municipality,
+        "core.Municipality",
         on_delete=models.CASCADE,
         related_name="parishes",
         null=True,   # ⚡ temporal en desarrollo
@@ -92,9 +92,14 @@ class Parish(models.Model):
 
     class Meta:
         db_table = "parroquias"
-        unique_together = ("municipality", "name")
         verbose_name = "Parish"
         verbose_name_plural = "Parishes"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["municipality", "name"],
+                name="unique_parish_per_municipality"
+            )
+        ]
 
     def __str__(self):
         return f"{self.name}, {self.municipality.name if self.municipality else 'SIN-MUNICIPIO'}"
