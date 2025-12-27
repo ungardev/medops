@@ -1,6 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Patient, PatientInput } from "types/patients";
 import { useUpdatePatient } from "../../../hooks/patients/useUpdatePatient";
+
+async function fetchOptions(endpoint: string, params?: Record<string, any>) {
+  const query = params
+    ? "?" + new URLSearchParams(params as Record<string, string>).toString()
+    : "";
+  const res = await fetch(endpoint + query);
+  return res.json();
+}
 
 interface DemographicsSectionProps {
   patient: Patient;
@@ -26,6 +34,7 @@ export default function DemographicsSection({
     email: patient.email ?? undefined,
     contact_info: patient.contact_info ?? undefined,
     address: patient.address ?? undefined,
+    neighborhood_id: patient.neighborhood?.id ?? undefined, // ⚡ añadido
   });
 
   const updatePatient = useUpdatePatient(patient.id);
@@ -41,13 +50,47 @@ export default function DemographicsSection({
     updatePatient.mutate(form as PatientInput, {
       onSuccess: () => {
         setEditing(false);
-        onRefresh(); // 🔥 recarga el perfil actualizado
+        onRefresh();
       },
       onError: (err) => console.error("Error al actualizar:", err),
     });
   };
 
-  return (
+  // --- Estados para selects jerárquicos ---
+  const [countries, setCountries] = useState<any[]>([]);
+  const [states, setStates] = useState<any[]>([]);
+  const [municipalities, setMunicipalities] = useState<any[]>([]);
+  const [parishes, setParishes] = useState<any[]>([]);
+  const [neighborhoods, setNeighborhoods] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchOptions("/api/countries/").then(setCountries);
+  }, []);
+
+  useEffect(() => {
+    if (form.country_id) {
+      fetchOptions("/api/states/", { country: form.country_id }).then(setStates);
+    }
+  }, [form.country_id]);
+
+  useEffect(() => {
+    if (form.state_id) {
+      fetchOptions("/api/municipalities/", { state: form.state_id }).then(setMunicipalities);
+    }
+  }, [form.state_id]);
+
+  useEffect(() => {
+    if (form.municipality_id) {
+      fetchOptions("/api/parishes/", { municipality: form.municipality_id }).then(setParishes);
+    }
+  }, [form.municipality_id]);
+
+  useEffect(() => {
+    if (form.parish_id) {
+      fetchOptions("/api/neighborhoods/", { parish: form.parish_id }).then(setNeighborhoods);
+    }
+  }, [form.parish_id]);
+    return (
     <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">
@@ -80,85 +123,32 @@ export default function DemographicsSection({
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <Field
-          label="Cédula"
-          value={form.national_id ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("national_id", v)}
-        />
+        <Field label="Cédula" value={form.national_id ?? ""} editing={editing} onChange={(v: string) => setField("national_id", v)} />
+        <Field label="Nombre" value={form.first_name ?? ""} editing={editing} onChange={(v: string) => setField("first_name", v)} />
+        <Field label="Segundo nombre" value={form.middle_name ?? ""} editing={editing} onChange={(v: string) => setField("middle_name", v)} />
+        <Field label="Apellido" value={form.last_name ?? ""} editing={editing} onChange={(v: string) => setField("last_name", v)} />
+        <Field label="Segundo apellido" value={form.second_last_name ?? ""} editing={editing} onChange={(v: string) => setField("second_last_name", v)} />
+        <Field label="Fecha de nacimiento" type="date" value={form.birthdate ?? ""} editing={editing} onChange={(v: string) => setField("birthdate", v)} />
+        <Field label="Lugar de nacimiento" value={form.birth_place ?? ""} editing={editing} onChange={(v: string) => setField("birth_place", v)} />
+        <Field label="País de nacimiento" value={form.birth_country ?? ""} editing={editing} onChange={(v: string) => setField("birth_country", v)} />
+        <Field label="Email" value={form.email ?? ""} editing={editing} onChange={(v: string) => setField("email", v)} />
+        <Field label="Teléfono" value={form.contact_info ?? ""} editing={editing} onChange={(v: string) => setField("contact_info", v)} />
+        <Field label="Dirección" value={form.address ?? ""} editing={editing} multiline span={12} onChange={(v: string) => setField("address", v)} />
 
-        <Field
-          label="Nombre"
-          value={form.first_name ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("first_name", v)}
-        />
-
-        <Field
-          label="Segundo nombre"
-          value={form.middle_name ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("middle_name", v)}
-        />
-
-        <Field
-          label="Apellido"
-          value={form.last_name ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("last_name", v)}
-        />
-
-        <Field
-          label="Segundo apellido"
-          value={form.second_last_name ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("second_last_name", v)}
-        />
-
-        <Field
-          label="Fecha de nacimiento"
-          type="date"
-          value={form.birthdate ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("birthdate", v)}
-        />
-
-        <Field
-          label="Lugar de nacimiento"
-          value={form.birth_place ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("birth_place", v)}
-        />
-
-        <Field
-          label="País de nacimiento"
-          value={form.birth_country ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("birth_country", v)}
-        />
-
-        <Field
-          label="Email"
-          value={form.email ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("email", v)}
-        />
-
-        <Field
-          label="Teléfono"
-          value={form.contact_info ?? ""}
-          editing={editing}
-          onChange={(v: string) => setField("contact_info", v)}
-        />
-
-        <Field
-          label="Dirección"
-          value={form.address ?? ""}
-          editing={editing}
-          multiline
-          span={12}
-          onChange={(v: string) => setField("address", v)}
-        />
+        {/* --- Selects jerárquicos de Dirección --- */}
+        {editing ? (
+          <>
+            <SelectField label="País" options={countries} value={form.country_id ?? ""} onChange={(v) => setField("country_id", Number(v))} />
+            <SelectField label="Estado" options={states} value={form.state_id ?? ""} onChange={(v) => setField("state_id", Number(v))} />
+            <SelectField label="Municipio" options={municipalities} value={form.municipality_id ?? ""} onChange={(v) => setField("municipality_id", Number(v))} />
+            <SelectField label="Parroquia" options={parishes} value={form.parish_id ?? ""} onChange={(v) => setField("parish_id", Number(v))} />
+            <SelectField label="Barrio" options={neighborhoods} value={form.neighborhood_id ?? ""} onChange={(v) => setField("neighborhood_id", Number(v))} />
+          </>
+        ) : (
+          <p className="col-span-12 text-sm text-[#0d2c53] dark:text-gray-100">
+            Dirección: {patient.address_chain?.country}, {patient.address_chain?.state}, {patient.address_chain?.municipality}, {patient.address_chain?.parish}, {patient.address_chain?.neighborhood}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -225,6 +215,38 @@ function Field({
           {value !== "" ? value : "—"}
         </p>
       )}
+    </div>
+  );
+}
+
+interface SelectFieldProps {
+  label: string;
+  options: any[];
+  value: string | number;
+  onChange: (value: string) => void;
+}
+
+function SelectField({ label, options, value, onChange }: SelectFieldProps) {
+  return (
+    <div className="col-span-6">
+      <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border rounded-md text-sm
+                   bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
+                   border-gray-300 dark:border-gray-600
+                   focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+      >
+        <option value="">Seleccione...</option>
+        {options.map((opt) => (
+          <option key={opt.id} value={opt.id}>
+            {opt.name}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

@@ -140,6 +140,36 @@ export interface Patient extends PatientRef {
 
   // 🔹 Campos calculados/extendidos desde el backend
   age?: number | null;
+
+  // 🔹 Dirección completa
+  neighborhood?: {
+    id: number;
+    name: string;
+    parish?: {
+      id: number;
+      name: string;
+      municipality?: {
+        id: number;
+        name: string;
+        state?: {
+          id: number;
+          name: string;
+          country?: {
+            id: number;
+            name: string;
+          };
+        };
+      };
+    };
+  };
+
+  address_chain?: {
+    neighborhood: string;
+    parish: string;
+    municipality: string;
+    state: string;
+    country: string;
+  };
 }
 
 // --- Datos de entrada para crear/editar paciente (escritura)
@@ -169,6 +199,13 @@ export type PatientInput = {
 
   // 🔹 Predisposiciones genéticas en input (IDs numéricos)
   genetic_predispositions?: number[];
+
+  // 🔹 Campos de dirección en input
+  neighborhood_id?: number;
+  country_id?: number;
+  state_id?: number;
+  municipality_id?: number;
+  parish_id?: number;
 };
 
 // --- Perfil clínico completo (respuesta enriquecida del backend)

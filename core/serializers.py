@@ -331,9 +331,22 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         return age if age >= 0 else None
 
     def get_address_chain(self, obj):
-        """Devuelve la cadena jerárquica completa de dirección."""
-        n = obj.neighborhood
-        if not n:
+        """Devuelve la cadena jerárquica completa de dirección, con blindaje total."""
+        try:
+            n = getattr(obj, "neighborhood", None)
+            p = getattr(n, "parish", None) if n else None
+            m = getattr(p, "municipality", None) if p else None
+            s = getattr(m, "state", None) if m else None
+            c = getattr(s, "country", None) if s else None
+
+            return {
+                "neighborhood": getattr(n, "name", "SIN-BARRIO"),
+                "parish": getattr(p, "name", "SIN-PARROQUIA"),
+                "municipality": getattr(m, "name", "SIN-MUNICIPIO"),
+                "state": getattr(s, "name", "SIN-ESTADO"),
+                "country": getattr(c, "name", "SIN-PAÍS"),
+            }
+        except Exception:
             return {
                 "neighborhood": "SIN-BARRIO",
                 "parish": "SIN-PARROQUIA",
@@ -341,17 +354,6 @@ class PatientDetailSerializer(serializers.ModelSerializer):
                 "state": "SIN-ESTADO",
                 "country": "SIN-PAÍS",
             }
-        p = n.parish
-        m = p.municipality if p else None
-        s = m.state if m else None
-        c = s.country if s else None
-        return {
-            "neighborhood": n.name,
-            "parish": p.name if p else "SIN-PARROQUIA",
-            "municipality": m.name if m else "SIN-MUNICIPIO",
-            "state": s.name if s else "SIN-ESTADO",
-            "country": c.name if c else "SIN-PAÍS",
-        }
 
 
 class PrescriptionComponentSerializer(serializers.ModelSerializer):
