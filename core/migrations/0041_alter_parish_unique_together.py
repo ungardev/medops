@@ -10,8 +10,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterUniqueTogether(
+        migrations.AlterModelOptions(
             name='parish',
-            unique_together={('municipality', 'name')},
+            options={
+                'verbose_name': 'Parish',
+                'verbose_name_plural': 'Parishes',
+                'db_table': 'parroquias',
+                'unique_together': {('municipality', 'name')},
+            },
         ),
     ]
