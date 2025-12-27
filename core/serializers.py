@@ -137,7 +137,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "height",
             "blood_type",
             "genetic_predispositions",
-            "neighborhood_id",   # ⚡ añadido
+            "neighborhood_id",   # ⚡ añadido para enlazar barrio/parroquia/municipio/estado/país
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
@@ -244,6 +244,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
 class PatientListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
+    full_address = serializers.SerializerMethodField()
     allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
 
@@ -255,6 +256,7 @@ class PatientListSerializer(serializers.ModelSerializer):
             "age",
             "gender",
             "contact_info",
+            "full_address",     # nuevo campo calculado
             "allergies",        # ahora array de objetos
             "medical_history",  # ahora array de objetos
         ]
@@ -277,6 +279,18 @@ class PatientListSerializer(serializers.ModelSerializer):
             (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
         )
         return age if age >= 0 else None
+
+    def get_full_address(self, obj) -> Optional[str]:
+        parts = []
+        if getattr(obj, "parish", None):
+            parts.append(obj.parish.name)
+        if getattr(obj, "city", None):
+            parts.append(obj.city.name)
+        if getattr(obj, "municipality", None):
+            parts.append(obj.municipality.name)
+        if getattr(obj, "state", None):
+            parts.append(obj.state.name)
+        return ", ".join(parts) if parts else None
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
@@ -1552,6 +1566,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
 
     clinical_background = serializers.SerializerMethodField()
+    full_address = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
@@ -1568,7 +1583,6 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "gender",
             "email",
             "contact_info",
-            "address",
             "weight",
             "height",
             "blood_type",
@@ -1578,8 +1592,9 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "surgeries",
             "habits",
             "vaccinations",
-            # campo calculado compacto
+            # campos calculados
             "clinical_background",
+            "full_address",
         ]
 
     def get_clinical_background(self, obj):
@@ -1641,6 +1656,18 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
 
         # NO incluir alergias aquí — se exponen como campo raíz
         return personales + familiares + geneticos
+
+    def get_full_address(self, obj):
+        parts = []
+        if getattr(obj, "parish", None):
+            parts.append(obj.parish.name)
+        if getattr(obj, "city", None):
+            parts.append(obj.city.name)
+        if getattr(obj, "municipality", None):
+            parts.append(obj.municipality.name)
+        if getattr(obj, "state", None):
+            parts.append(obj.state.name)
+        return ", ".join(parts) if parts else None
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):
