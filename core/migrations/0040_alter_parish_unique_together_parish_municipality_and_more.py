@@ -11,17 +11,23 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterUniqueTogether(
-            name='parish',
-            unique_together={('municipality', 'name')},
-        ),
         migrations.AddField(
             model_name='parish',
             name='municipality',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='parishes', to='core.municipality'),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='parishes',
+                to='core.municipality'
+            ),
         ),
         migrations.RemoveField(
             model_name='parish',
             name='city',
+        ),
+        migrations.AlterUniqueTogether(
+            name='parish',
+            unique_together={('municipality', 'name')},
         ),
     ]
