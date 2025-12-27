@@ -30,7 +30,7 @@ class Country(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
-        db_table = "countries"  # ⚠️ No existe aún en tu catálogo migrado, pero lo dejamos preparado
+        db_table = "countries"
         verbose_name = "Country"
         verbose_name_plural = "Countries"
 
@@ -43,55 +43,13 @@ class State(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = "estados"   # 🔹 apunta a la tabla migrada
+        db_table = "estados"
         unique_together = ("country", "name")
         verbose_name = "State"
         verbose_name_plural = "States"
 
     def __str__(self):
         return f"{self.name}, {self.country.name}"
-
-
-class City(models.Model):
-    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="cities")
-    name = models.CharField(max_length=100)
-
-    class Meta:
-        db_table = "ciudades"  # 🔹 apunta a la tabla migrada
-        unique_together = ("state", "name")
-        verbose_name = "City"
-        verbose_name_plural = "Cities"
-
-    def __str__(self):
-        return f"{self.name}, {self.state.name}"
-
-
-class Parish(models.Model):
-    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="parishes")
-    name = models.CharField(max_length=100)
-
-    class Meta:
-        db_table = "parroquias"  # 🔹 apunta a la tabla migrada
-        unique_together = ("city", "name")
-        verbose_name = "Parish"
-        verbose_name_plural = "Parishes"
-
-    def __str__(self):
-        return f"{self.name}, {self.city.name}"
-
-
-class Neighborhood(models.Model):
-    parish = models.ForeignKey(Parish, on_delete=models.CASCADE, related_name="neighborhoods")
-    name = models.CharField(max_length=100)
-
-    class Meta:
-        db_table = "neighborhoods"  # ⚠️ aún no existe en tu catálogo migrado, pero lo dejamos preparado
-        unique_together = ("parish", "name")
-        verbose_name = "Neighborhood"
-        verbose_name_plural = "Neighborhoods"
-
-    def __str__(self):
-        return f"{self.name}, {self.parish.name}"
 
 
 class Municipality(models.Model):
@@ -106,6 +64,54 @@ class Municipality(models.Model):
 
     def __str__(self):
         return f"{self.name}, {self.state.name}"
+
+
+class City(models.Model):
+    state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="cities")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "ciudades"
+        unique_together = ("state", "name")
+        verbose_name = "City"
+        verbose_name_plural = "Cities"
+
+    def __str__(self):
+        return f"{self.name}, {self.state.name}"
+
+
+class Parish(models.Model):
+    municipality = models.ForeignKey(
+        Municipality,
+        on_delete=models.CASCADE,
+        related_name="parishes",
+        null=True,   # ⚡ temporal en desarrollo
+        blank=True   # ⚡ temporal en desarrollo
+    )
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "parroquias"
+        unique_together = ("municipality", "name")
+        verbose_name = "Parish"
+        verbose_name_plural = "Parishes"
+
+    def __str__(self):
+        return f"{self.name}, {self.municipality.name if self.municipality else 'SIN-MUNICIPIO'}"
+
+
+class Neighborhood(models.Model):
+    parish = models.ForeignKey(Parish, on_delete=models.CASCADE, related_name="neighborhoods")
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "neighborhoods"
+        unique_together = ("parish", "name")
+        verbose_name = "Neighborhood"
+        verbose_name_plural = "Neighborhoods"
+
+    def __str__(self):
+        return f"{self.name}, {self.parish.name}"
 
 
 class Patient(models.Model):
@@ -145,7 +151,6 @@ class Patient(models.Model):
 
     birthdate = models.DateField(blank=True, null=True)
 
-    # 🔹 Lugar y país de nacimiento
     birth_place = models.CharField(
         max_length=255,
         blank=True,
@@ -168,7 +173,6 @@ class Patient(models.Model):
         null=True
     )
 
-    # 🔹 Dirección cerrada con catálogo
     neighborhood = models.ForeignKey(
         "Neighborhood",
         on_delete=models.SET_NULL,
@@ -177,15 +181,9 @@ class Patient(models.Model):
         verbose_name="Urbanización / Barrio"
     )
 
-    # 🔹 Datos clínicos básicos
-    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # kg
-    height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # cm
+    weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True)
-
-    # 🔹 Relaciones clínicas desacopladas
-    # Alergias y antecedentes médicos ahora son modelos separados
-    # patient.allergies.all() → Allergy
-    # patient.medical_history.all() → MedicalHistory
 
     genetic_predispositions = models.ManyToManyField(
         "GeneticPredisposition",
@@ -193,14 +191,13 @@ class Patient(models.Model):
         related_name="patients"
     )
 
-    # Auditoría
     history = HistoricalRecords()
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     active = models.BooleanField(default=True)
 
     class Meta:
-        db_table = "patients"  # 🔹 institucionalizado: apunta a la tabla en PostgreSQL
+        db_table = "patients"
         verbose_name = "Patient"
         verbose_name_plural = "Patients"
 
@@ -208,12 +205,8 @@ class Patient(models.Model):
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
         return f"{self.national_id or 'SIN-CI'} - " + " ".join([p for p in parts if p])
 
-    # 🔒 Soft delete institucional
     def delete(self, *args, **kwargs):
-        """
-        En lugar de eliminar físicamente el registro,
-        marca el paciente como inactivo (active=False).
-        """
+        """Soft delete institucional: marca el paciente como inactivo."""
         self.active = False
         self.save(update_fields=["active"])
 
