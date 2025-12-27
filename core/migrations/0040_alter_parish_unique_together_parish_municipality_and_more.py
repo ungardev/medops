@@ -26,8 +26,4 @@ class Migration(migrations.Migration):
             model_name='parish',
             name='city',
         ),
-        migrations.AlterUniqueTogether(
-            name='parish',
-            unique_together={('municipality', 'name')},
-        ),
     ]
