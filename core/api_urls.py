@@ -32,6 +32,15 @@ from .api_views import (
     ClinicalAlertViewSet,
     ClinicalBackgroundViewSet,
 
+    # --- ViewSets de Direcciones ---
+    CountryViewSet,
+    StateViewSet,
+    MunicipalityViewSet,
+    CityViewSet,
+    ParishViewSet,
+    NeighborhoodViewSet,
+    AddressChainView,   # ⚡ endpoint compacto
+
     # --- Funciones ---
     update_appointment_status,
     update_waitingroom_status,
@@ -104,6 +113,14 @@ router.register(r"patient-clinical-profile", PatientClinicalProfileViewSet, base
 router.register(r"medical-history", MedicalHistoryViewSet, basename="medical-history")
 router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, basename="patient-alerts")
 router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")
+
+# --- Direcciones ---
+router.register(r"countries", CountryViewSet, basename="country")
+router.register(r"states", StateViewSet, basename="state")
+router.register(r"municipalities", MunicipalityViewSet, basename="municipality")
+router.register(r"cities", CityViewSet, basename="city")
+router.register(r"parishes", ParishViewSet, basename="parish")
+router.register(r"neighborhoods", NeighborhoodViewSet, basename="neighborhood")
 
 # --- Router anidado para pacientes ---
 patients_router = nested_routers.NestedDefaultRouter(router, r"patients", lookup="patient")
@@ -207,6 +224,9 @@ urlpatterns = [
 
     # --- Búsqueda institucional general ---
     path("search/", search, name="search-api"),
+
+    # --- Endpoint compacto de Direcciones ---
+    path("address-chain/", AddressChainView.as_view(), name="address-chain-api"),
 ]
 
 # --- Documentación OpenAPI ---
