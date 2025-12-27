@@ -47,6 +47,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet
 
+from rest_framework.views import APIView
 from rest_framework import viewsets, status, serializers, permissions, filters
 from rest_framework.exceptions import NotFound
 from rest_framework.pagination import PageNumberPagination
@@ -4448,3 +4449,34 @@ class NeighborhoodViewSet(viewsets.ReadOnlyModelViewSet):
         ).order_by("name")
         parish_id = self.request.query_params.get("parish")
         return qs.filter(parish_id=parish_id) if parish_id else qs
+
+
+class AddressChainView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        nid = request.query_params.get("neighborhood_id")
+        if not nid:
+            return Response({"detail": "neighborhood_id requerido"}, status=400)
+        try:
+            n = Neighborhood.objects.select_related(
+                "parish",
+                "parish__municipality",
+                "parish__municipality__state",
+                "parish__municipality__state__country"
+            ).get(id=nid)
+        except Neighborhood.DoesNotExist:
+            return Response({"detail": "Barrio no encontrado"}, status=404)
+
+        p = n.parish
+        m = p.municipality if p else None
+        s = m.state if m else None
+        c = s.country if s else None
+
+        return Response({
+            "country": {"id": c.id, "name": c.name} if c else {"id": None, "name": "SIN-PAÍS"},
+            "state": {"id": s.id, "name": s.name, "country_id": c.id if c else None} if s else {"id": None, "name": "SIN-ESTADO"},
+            "municipality": {"id": m.id, "name": m.name, "state_id": s.id if s else None} if m else {"id": None, "name": "SIN-MUNICIPIO"},
+            "parish": {"id": p.id, "name": p.name, "municipality_id": m.id if m else None} if p else {"id": None, "name": "SIN-PARROQUIA"},
+            "neighborhood": {"id": n.id, "name": n.name, "parish_id": p.id if p else None},
+        })
