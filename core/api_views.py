@@ -62,8 +62,7 @@ from drf_spectacular.utils import (
 )
 
 from .models import (
-    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination, Allergy, MedicalHistory, ClinicalAlert
-
+    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination, Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood
 )
 
 from .serializers import (
@@ -80,7 +79,8 @@ from .serializers import (
     MedicalTestWriteSerializer, MedicalReferralWriteSerializer, SpecialtySerializer,
     PersonalHistorySerializer, FamilyHistorySerializer, SurgerySerializer, HabitSerializer,
     VaccineSerializer, VaccinationScheduleSerializer, PatientVaccinationSerializer, PatientClinicalProfileSerializer,
-    AllergySerializer, MedicalHistorySerializer, ClinicalAlertSerializer
+    AllergySerializer, MedicalHistorySerializer, ClinicalAlertSerializer, CountrySerializer, StateSerializer, MunicipalitySerializer,
+    CitySerializer, ParishSerializer, NeighborhoodSerializer
 )
 
 from core.utils.search_normalize import normalize, normalize_token
@@ -4387,3 +4387,64 @@ class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
 
         # Guardar con instancia de Patient correctamente
         serializer.save(patient=patient_instance)
+
+
+# --- Direcciones ---
+class CountryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Country.objects.all().order_by("name")
+    serializer_class = CountrySerializer
+    permission_classes = [IsAuthenticated]
+
+
+class StateViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = StateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = State.objects.select_related("country").order_by("name")
+        country_id = self.request.query_params.get("country")
+        return qs.filter(country_id=country_id) if country_id else qs
+
+
+class MunicipalityViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = MunicipalitySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Municipality.objects.select_related("state", "state__country").order_by("name")
+        state_id = self.request.query_params.get("state")
+        return qs.filter(state_id=state_id) if state_id else qs
+
+
+class CityViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = CitySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = City.objects.select_related("state", "state__country").order_by("name")
+        state_id = self.request.query_params.get("state")
+        return qs.filter(state_id=state_id) if state_id else qs
+
+
+class ParishViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ParishSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Parish.objects.select_related(
+            "municipality", "municipality__state", "municipality__state__country"
+        ).order_by("name")
+        municipality_id = self.request.query_params.get("municipality")
+        return qs.filter(municipality_id=municipality_id) if municipality_id else qs
+
+
+class NeighborhoodViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = NeighborhoodSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Neighborhood.objects.select_related(
+            "parish", "parish__municipality", "parish__municipality__state", "parish__municipality__state__country"
+        ).order_by("name")
+        parish_id = self.request.query_params.get("parish")
+        return qs.filter(parish_id=parish_id) if parish_id else qs
