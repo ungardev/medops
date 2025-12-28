@@ -4395,11 +4395,13 @@ class CountryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Country.objects.all().order_by("name")
     serializer_class = CountrySerializer
     permission_classes = [AllowAny]   # ⚡ acceso público
+    pagination_class = None           # ⚡ sin paginación
 
 
 class StateViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StateSerializer
     permission_classes = [AllowAny]   # ⚡ acceso público
+    pagination_class = None           # ⚡ sin paginación
 
     def get_queryset(self):
         qs = State.objects.select_related("country").order_by("name")
@@ -4410,6 +4412,7 @@ class StateViewSet(viewsets.ReadOnlyModelViewSet):
 class MunicipalityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = MunicipalitySerializer
     permission_classes = [AllowAny]   # ⚡ acceso público
+    pagination_class = None           # ⚡ sin paginación
 
     def get_queryset(self):
         qs = Municipality.objects.select_related("state", "state__country").order_by("name")
@@ -4420,6 +4423,7 @@ class MunicipalityViewSet(viewsets.ReadOnlyModelViewSet):
 class CityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CitySerializer
     permission_classes = [AllowAny]   # ⚡ acceso público
+    pagination_class = None           # ⚡ sin paginación
 
     def get_queryset(self):
         qs = City.objects.select_related("state", "state__country").order_by("name")
@@ -4430,6 +4434,7 @@ class CityViewSet(viewsets.ReadOnlyModelViewSet):
 class ParishViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ParishSerializer
     permission_classes = [AllowAny]   # ⚡ acceso público
+    pagination_class = None           # ⚡ sin paginación
 
     def get_queryset(self):
         qs = Parish.objects.select_related(
@@ -4442,6 +4447,7 @@ class ParishViewSet(viewsets.ReadOnlyModelViewSet):
 class NeighborhoodViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = NeighborhoodSerializer
     permission_classes = [AllowAny]   # ⚡ acceso público
+    pagination_class = None           # ⚡ sin paginación
 
     def get_queryset(self):
         qs = Neighborhood.objects.select_related(
