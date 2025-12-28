@@ -175,7 +175,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
     allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
     neighborhood = NeighborhoodSerializer(read_only=True)  # ⚡ detalle del barrio
-    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta
+    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta con IDs
 
     class Meta:
         model = Patient
@@ -218,26 +218,26 @@ class PatientReadSerializer(serializers.ModelSerializer):
         return age if age >= 0 else None
 
     def get_address_chain(self, obj):
-        """Devuelve la cadena jerárquica completa de dirección."""
+        """Devuelve la cadena jerárquica completa de dirección con IDs."""
         n = obj.neighborhood
         if not n:
             return {
-                "neighborhood": "SIN-BARRIO",
-                "parish": "SIN-PARROQUIA",
-                "municipality": "SIN-MUNICIPIO",
-                "state": "SIN-ESTADO",
-                "country": "SIN-PAÍS",
+                "neighborhood": "SIN-BARRIO", "neighborhood_id": None,
+                "parish": "SIN-PARROQUIA", "parish_id": None,
+                "municipality": "SIN-MUNICIPIO", "municipality_id": None,
+                "state": "SIN-ESTADO", "state_id": None,
+                "country": "SIN-PAÍS", "country_id": None,
             }
         p = n.parish
         m = p.municipality if p else None
         s = m.state if m else None
         c = s.country if s else None
         return {
-            "neighborhood": n.name,
-            "parish": p.name if p else "SIN-PARROQUIA",
-            "municipality": m.name if m else "SIN-MUNICIPIO",
-            "state": s.name if s else "SIN-ESTADO",
-            "country": c.name if c else "SIN-PAÍS",
+            "neighborhood": n.name, "neighborhood_id": n.id,
+            "parish": p.name if p else "SIN-PARROQUIA", "parish_id": p.id if p else None,
+            "municipality": m.name if m else "SIN-MUNICIPIO", "municipality_id": m.id if m else None,
+            "state": s.name if s else "SIN-ESTADO", "state_id": s.id if s else None,
+            "country": c.name if c else "SIN-PAÍS", "country_id": c.id if c else None,
         }
 
 
@@ -300,7 +300,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
     neighborhood = NeighborhoodSerializer(read_only=True)  # ⚡ detalle barrio/parroquia/municipio/estado/país
-    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta
+    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta con IDs
 
     class Meta:
         model = Patient
@@ -325,7 +325,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "medical_history",        # array de objetos
             "genetic_predispositions",
             "neighborhood",           # ⚡ detalle barrio
-            "address_chain",          # ⚡ cadena compacta
+            "address_chain",          # ⚡ cadena compacta con IDs
             "active",
             "created_at",
             "updated_at",
@@ -345,7 +345,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         return age if age >= 0 else None
 
     def get_address_chain(self, obj):
-        """Devuelve la cadena jerárquica completa de dirección, con blindaje total."""
+        """Devuelve la cadena jerárquica completa de dirección con IDs y nombres."""
         try:
             n = getattr(obj, "neighborhood", None)
             p = getattr(n, "parish", None) if n else None
@@ -355,18 +355,23 @@ class PatientDetailSerializer(serializers.ModelSerializer):
 
             return {
                 "neighborhood": getattr(n, "name", "SIN-BARRIO"),
+                "neighborhood_id": getattr(n, "id", None),
                 "parish": getattr(p, "name", "SIN-PARROQUIA"),
+                "parish_id": getattr(p, "id", None),
                 "municipality": getattr(m, "name", "SIN-MUNICIPIO"),
+                "municipality_id": getattr(m, "id", None),
                 "state": getattr(s, "name", "SIN-ESTADO"),
+                "state_id": getattr(s, "id", None),
                 "country": getattr(c, "name", "SIN-PAÍS"),
+                "country_id": getattr(c, "id", None),
             }
         except Exception:
             return {
-                "neighborhood": "SIN-BARRIO",
-                "parish": "SIN-PARROQUIA",
-                "municipality": "SIN-MUNICIPIO",
-                "state": "SIN-ESTADO",
-                "country": "SIN-PAÍS",
+                "neighborhood": "SIN-BARRIO", "neighborhood_id": None,
+                "parish": "SIN-PARROQUIA", "parish_id": None,
+                "municipality": "SIN-MUNICIPIO", "municipality_id": None,
+                "state": "SIN-ESTADO", "state_id": None,
+                "country": "SIN-PAÍS", "country_id": None,
             }
 
 

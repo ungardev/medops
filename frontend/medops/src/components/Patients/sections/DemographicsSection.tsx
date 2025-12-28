@@ -7,7 +7,10 @@ async function fetchOptions(endpoint: string, params?: Record<string, any>) {
     ? "?" + new URLSearchParams(params as Record<string, string>).toString()
     : "";
   const res = await fetch(endpoint + query);
-  return res.json();
+  const data = await res.json();
+  // ⚡ Blindaje: extraer results si existe, siempre devolver array
+  const items = Array.isArray(data.results) ? data.results : data;
+  return Array.isArray(items) ? items : [];
 }
 
 interface DemographicsSectionProps {
@@ -70,24 +73,32 @@ export default function DemographicsSection({
   useEffect(() => {
     if (form.country_id) {
       fetchOptions("/api/states/", { country: form.country_id }).then(setStates);
+    } else {
+      setStates([]);
     }
   }, [form.country_id]);
 
   useEffect(() => {
     if (form.state_id) {
       fetchOptions("/api/municipalities/", { state: form.state_id }).then(setMunicipalities);
+    } else {
+      setMunicipalities([]);
     }
   }, [form.state_id]);
 
   useEffect(() => {
     if (form.municipality_id) {
       fetchOptions("/api/parishes/", { municipality: form.municipality_id }).then(setParishes);
+    } else {
+      setParishes([]);
     }
   }, [form.municipality_id]);
 
   useEffect(() => {
     if (form.parish_id) {
       fetchOptions("/api/neighborhoods/", { parish: form.parish_id }).then(setNeighborhoods);
+    } else {
+      setNeighborhoods([]);
     }
   }, [form.parish_id]);
     return (
@@ -227,6 +238,7 @@ interface SelectFieldProps {
 }
 
 function SelectField({ label, options, value, onChange }: SelectFieldProps) {
+  const safeOptions = Array.isArray(options) ? options : [];
   return (
     <div className="col-span-6">
       <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">
@@ -241,7 +253,7 @@ function SelectField({ label, options, value, onChange }: SelectFieldProps) {
                    focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
       >
         <option value="">Seleccione...</option>
-        {options.map((opt) => (
+        {safeOptions.map((opt) => (
           <option key={opt.id} value={opt.id}>
             {opt.name}
           </option>
