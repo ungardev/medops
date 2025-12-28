@@ -197,6 +197,14 @@ class Patient(models.Model):
         verbose_name="Urbanización / Barrio"
     )
 
+    # ⚡ Campo libre para dirección detallada
+    address = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Dirección detallada"
+    )
+
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True)
@@ -225,6 +233,7 @@ class Patient(models.Model):
         """Soft delete institucional: marca el paciente como inactivo."""
         self.active = False
         self.save(update_fields=["active"])
+
 
 
 class Appointment(models.Model):
