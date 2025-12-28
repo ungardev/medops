@@ -132,12 +132,12 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "gender",
             "contact_info",
             "email",
-            "address",
+            "address",                # ⚡ campo libre de dirección
             "weight",
             "height",
             "blood_type",
             "genetic_predispositions",
-            "neighborhood_id",   # ⚡ añadido para enlazar barrio/parroquia/municipio/estado/país
+            "neighborhood_id",        # ⚡ enlace barrio/parroquia/municipio/estado/país
         ]
         extra_kwargs = {
             "birthdate": {"required": False, "allow_null": True},
@@ -145,7 +145,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "birth_country": {"required": False, "allow_blank": True},
             "gender": {"required": False, "allow_null": True},
             "email": {"required": False, "allow_blank": True},
-            "address": {"required": False, "allow_blank": True},
+            "address": {"required": False, "allow_blank": True},  # ⚡ opcional
             "weight": {"required": False, "allow_null": True},
             "height": {"required": False, "allow_null": True},
             "blood_type": {"required": False, "allow_null": True},
@@ -174,8 +174,8 @@ class PatientReadSerializer(serializers.ModelSerializer):
     age = serializers.SerializerMethodField()
     allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
-    neighborhood = NeighborhoodSerializer(read_only=True)  # ⚡ detalle del barrio
-    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta con IDs
+    neighborhood = NeighborhoodSerializer(read_only=True)   # ⚡ detalle barrio/parroquia/municipio/estado/país
+    address_chain = serializers.SerializerMethodField()     # ⚡ cadena compacta con IDs
 
     class Meta:
         model = Patient
@@ -186,6 +186,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "email",
             "age",
             "gender",
+            "address",           # ⚡ campo libre de dirección
             "allergies",
             "medical_history",
             "neighborhood",
@@ -256,9 +257,9 @@ class PatientListSerializer(serializers.ModelSerializer):
             "age",
             "gender",
             "contact_info",
-            "full_address",     # nuevo campo calculado
-            "allergies",        # ahora array de objetos
-            "medical_history",  # ahora array de objetos
+            "full_address",     # ⚡ dirección compacta (jerárquica + libre)
+            "allergies",
+            "medical_history",
         ]
 
     def get_full_name(self, obj) -> str:
@@ -282,14 +283,21 @@ class PatientListSerializer(serializers.ModelSerializer):
 
     def get_full_address(self, obj) -> Optional[str]:
         parts = []
-        if getattr(obj, "parish", None):
-            parts.append(obj.parish.name)
-        if getattr(obj, "city", None):
-            parts.append(obj.city.name)
-        if getattr(obj, "municipality", None):
-            parts.append(obj.municipality.name)
-        if getattr(obj, "state", None):
-            parts.append(obj.state.name)
+        # ⚡ primero la jerarquía
+        n = getattr(obj, "neighborhood", None)
+        if n:
+            parts.append(n.name)
+            if n.parish:
+                parts.append(n.parish.name)
+                if n.parish.municipality:
+                    parts.append(n.parish.municipality.name)
+                    if n.parish.municipality.state:
+                        parts.append(n.parish.municipality.state.name)
+                        if n.parish.municipality.state.country:
+                            parts.append(n.parish.municipality.state.country.name)
+        # ⚡ luego el campo libre
+        if getattr(obj, "address", None):
+            parts.insert(0, obj.address)  # lo pongo al inicio para máxima visibilidad
         return ", ".join(parts) if parts else None
 
 
@@ -299,8 +307,8 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
-    neighborhood = NeighborhoodSerializer(read_only=True)  # ⚡ detalle barrio/parroquia/municipio/estado/país
-    address_chain = serializers.SerializerMethodField()    # ⚡ cadena compacta con IDs
+    neighborhood = NeighborhoodSerializer(read_only=True)   # ⚡ detalle barrio/parroquia/municipio/estado/país
+    address_chain = serializers.SerializerMethodField()     # ⚡ cadena jerárquica con IDs
 
     class Meta:
         model = Patient
@@ -317,15 +325,15 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "gender",
             "contact_info",
             "email",
-            "address",
+            "address",              # ⚡ campo libre de dirección
             "weight",
             "height",
             "blood_type",
-            "allergies",              # array de objetos
-            "medical_history",        # array de objetos
+            "allergies",            # array de objetos
+            "medical_history",      # array de objetos
             "genetic_predispositions",
-            "neighborhood",           # ⚡ detalle barrio
-            "address_chain",          # ⚡ cadena compacta con IDs
+            "neighborhood",         # ⚡ detalle barrio
+            "address_chain",        # ⚡ cadena jerárquica con IDs
             "active",
             "created_at",
             "updated_at",
