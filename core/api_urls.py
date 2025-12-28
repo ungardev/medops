@@ -39,7 +39,8 @@ from .api_views import (
     CityViewSet,
     ParishViewSet,
     NeighborhoodViewSet,
-    AddressChainView,   # ⚡ endpoint compacto
+    AddressChainView,          # ⚡ endpoint compacto
+    NeighborhoodSearchView,    # ⚡ nuevo endpoint inverso
 
     # --- Funciones ---
     update_appointment_status,
@@ -225,8 +226,9 @@ urlpatterns = [
     # --- Búsqueda institucional general ---
     path("search/", search, name="search-api"),
 
-    # --- Endpoint compacto de Direcciones ---
+    # --- Endpoints de Direcciones ---
     path("address-chain/", AddressChainView.as_view(), name="address-chain-api"),
+    path("neighborhood-search/", NeighborhoodSearchView.as_view(), name="neighborhood-search-api"),
 ]
 
 # --- Documentación OpenAPI ---

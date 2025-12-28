@@ -4489,3 +4489,29 @@ class AddressChainView(APIView):
             "parish": {"id": p.id, "name": p.name, "municipality_id": m.id if m else None} if p else {"id": None, "name": "SIN-PARROQUIA"},
             "neighborhood": {"id": n.id, "name": n.name, "parish_id": p.id if p else None},
         })
+
+
+# --- Buscador jerárquico de barrios ---
+class NeighborhoodSearchView(APIView):
+    permission_classes = [AllowAny]   # ⚡ acceso público
+
+    def get(self, request):
+        country_id = request.query_params.get("country")
+        state_id = request.query_params.get("state")
+        municipality_id = request.query_params.get("municipality")
+        parish_id = request.query_params.get("parish")
+
+        qs = Neighborhood.objects.select_related(
+            "parish__municipality__state__country"
+        ).order_by("name")
+
+        if parish_id:
+            qs = qs.filter(parish_id=parish_id)
+        if municipality_id:
+            qs = qs.filter(parish__municipality_id=municipality_id)
+        if state_id:
+            qs = qs.filter(parish__municipality__state_id=state_id)
+        if country_id:
+            qs = qs.filter(parish__municipality__state__country_id=country_id)
+
+        return Response(NeighborhoodSerializer(qs, many=True).data)
