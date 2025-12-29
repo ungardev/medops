@@ -1611,6 +1611,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
     clinical_background = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
     address_chain = serializers.SerializerMethodField()   # ⚡ añadido
+    address = serializers.SerializerMethodField()         # ⚡ campo libre añadido
 
     class Meta:
         model = Patient
@@ -1640,6 +1641,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "clinical_background",
             "full_address",
             "address_chain",   # ⚡ añadido
+            "address",         # ⚡ campo libre añadido
         ]
 
     def get_clinical_background(self, obj):
@@ -1747,6 +1749,10 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
                 "state": "SIN-ESTADO", "state_id": None,
                 "country": "SIN-PAÍS", "country_id": None,
             }
+
+    def get_address(self, obj):
+        """Devuelve siempre string, nunca null."""
+        return obj.address or ""
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):
