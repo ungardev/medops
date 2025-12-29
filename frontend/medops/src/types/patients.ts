@@ -163,12 +163,18 @@ export interface Patient extends PatientRef {
     };
   };
 
+  // ⚡ address_chain extendido con IDs
   address_chain?: {
     neighborhood: string;
+    neighborhood_id: number | null;
     parish: string;
+    parish_id: number | null;
     municipality: string;
+    municipality_id: number | null;
     state: string;
+    state_id: number | null;
     country: string;
+    country_id: number | null;
   };
 }
 

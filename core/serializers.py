@@ -1580,6 +1580,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
 
     clinical_background = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
+    address_chain = serializers.SerializerMethodField()   # ⚡ añadido
 
     class Meta:
         model = Patient
@@ -1608,6 +1609,7 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             # campos calculados
             "clinical_background",
             "full_address",
+            "address_chain",   # ⚡ añadido
         ]
 
     def get_clinical_background(self, obj):
@@ -1672,6 +1674,8 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
 
     def get_full_address(self, obj):
         parts = []
+        if getattr(obj, "neighborhood", None):
+            parts.append(obj.neighborhood.name)
         if getattr(obj, "parish", None):
             parts.append(obj.parish.name)
         if getattr(obj, "city", None):
@@ -1680,7 +1684,39 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             parts.append(obj.municipality.name)
         if getattr(obj, "state", None):
             parts.append(obj.state.name)
+        if getattr(obj, "country", None):
+            parts.append(obj.country.name)
         return ", ".join(parts) if parts else None
+
+    def get_address_chain(self, obj):
+        """Devuelve la cadena jerárquica completa de dirección con IDs y nombres."""
+        try:
+            n = getattr(obj, "neighborhood", None)
+            p = getattr(n, "parish", None) if n else getattr(obj, "parish", None)
+            m = getattr(p, "municipality", None) if p else getattr(obj, "municipality", None)
+            s = getattr(m, "state", None) if m else getattr(obj, "state", None)
+            c = getattr(s, "country", None) if s else getattr(obj, "country", None)
+
+            return {
+                "neighborhood": getattr(n, "name", "SIN-BARRIO"),
+                "neighborhood_id": getattr(n, "id", None),
+                "parish": getattr(p, "name", "SIN-PARROQUIA"),
+                "parish_id": getattr(p, "id", None),
+                "municipality": getattr(m, "name", "SIN-MUNICIPIO"),
+                "municipality_id": getattr(m, "id", None),
+                "state": getattr(s, "name", "SIN-ESTADO"),
+                "state_id": getattr(s, "id", None),
+                "country": getattr(c, "name", "SIN-PAÍS"),
+                "country_id": getattr(c, "id", None),
+            }
+        except Exception:
+            return {
+                "neighborhood": "SIN-BARRIO", "neighborhood_id": None,
+                "parish": "SIN-PARROQUIA", "parish_id": None,
+                "municipality": "SIN-MUNICIPIO", "municipality_id": None,
+                "state": "SIN-ESTADO", "state_id": None,
+                "country": "SIN-PAÍS", "country_id": None,
+            }
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):
