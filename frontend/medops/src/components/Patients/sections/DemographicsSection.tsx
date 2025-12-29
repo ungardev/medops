@@ -97,7 +97,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: neighborhoodName,
-            parish: form.parish_id, // ⚡ asociamos a la parroquia seleccionada
+            parish_id: form.parish_id, // ✅ campo correcto
           }),
         });
         const data = await res.json();

@@ -161,11 +161,20 @@ class PatientWriteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         preds = validated_data.pop("genetic_predispositions", None)
+
+        # ⚡ Forzar persistencia explícita del campo address
+        if "address" in validated_data:
+            instance.address = validated_data.get("address", "")
+
+        # ⚡ Actualizar el resto de los campos
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
         instance.save()
+
         if preds is not None:
             instance.genetic_predispositions.set(preds)
+
         return instance
 
 
