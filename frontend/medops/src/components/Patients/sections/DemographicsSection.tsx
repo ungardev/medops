@@ -291,9 +291,7 @@ function SelectField({ label, options, value, onChange }: SelectFieldProps) {
           </option>
         ))}
       </select>
-      <p className="mt-1 text-[10px] text-gray-500">
-        {safeOptions.length > 0 ? `(${safeOptions.length} opciones)` : "(sin opciones)"}
-      </p>
+      {/* Subtexto eliminado */}
     </div>
   );
 }

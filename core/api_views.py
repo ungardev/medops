@@ -4444,7 +4444,14 @@ class ParishViewSet(viewsets.ReadOnlyModelViewSet):
         return qs.filter(municipality_id=municipality_id) if municipality_id else qs
 
 
-class NeighborhoodViewSet(viewsets.ReadOnlyModelViewSet):
+
+class NeighborhoodViewSet(viewsets.ModelViewSet):
+    queryset = Neighborhood.objects.select_related(
+        "parish",
+        "parish__municipality",
+        "parish__municipality__state",
+        "parish__municipality__state__country",
+    ).order_by("name")
     serializer_class = NeighborhoodSerializer
     permission_classes = [AllowAny]   # ⚡ acceso público
     pagination_class = None           # ⚡ sin paginación
