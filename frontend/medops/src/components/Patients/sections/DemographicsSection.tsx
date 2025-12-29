@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Patient, PatientInput } from "types/patients";
 import { useUpdatePatient } from "../../../hooks/patients/useUpdatePatient";
 
-// Normaliza arrays pero preserva relaciones anidadas
 function normalizeOptions(raw: any[]): any[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((x) => ({
@@ -13,14 +12,11 @@ function normalizeOptions(raw: any[]): any[] {
 }
 
 async function fetchOptions(endpoint: string) {
-  console.log("[CLIENT] Fetch →", endpoint);
   try {
     const res = await fetch(endpoint, { headers: { Accept: "application/json" } });
     const data = await res.json();
     const arr = Array.isArray(data?.results) ? data.results : data;
-    const normalized = normalizeOptions(arr);
-    console.log("[CLIENT] Options:", normalized.length, normalized.slice(0, 3));
-    return normalized;
+    return normalizeOptions(arr);
   } catch (e) {
     console.error("[CLIENT] Error:", e);
     return [];
@@ -69,7 +65,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     gender: patient.gender ?? undefined,
     email: patient.email ?? undefined,
     contact_info: patient.contact_info ?? undefined,
-    address: patient.address ?? undefined,
+    address: patient.address || "",
     country_id: chain.country_id ?? undefined,
     state_id: chain.state_id ?? undefined,
     municipality_id: chain.municipality_id ?? undefined,
@@ -77,8 +73,31 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     neighborhood_id: chain.neighborhood_id ?? undefined,
   });
 
-  // ⚡ Campo libre solo en frontend
   const [neighborhoodName, setNeighborhoodName] = useState(chain.neighborhood ?? "");
+
+  useEffect(() => {
+    const nextChain: AddressChainLocal = (patient.address_chain as AddressChainLocal) ?? EMPTY_CHAIN;
+    setForm({
+      national_id: patient.national_id ?? undefined,
+      first_name: patient.first_name ?? "",
+      middle_name: patient.middle_name ?? undefined,
+      last_name: patient.last_name ?? "",
+      second_last_name: patient.second_last_name ?? undefined,
+      birthdate: patient.birthdate ?? null,
+      birth_place: patient.birth_place ?? undefined,
+      birth_country: patient.birth_country ?? undefined,
+      gender: patient.gender ?? undefined,
+      email: patient.email ?? undefined,
+      contact_info: patient.contact_info ?? undefined,
+      address: patient.address || "",
+      country_id: nextChain.country_id ?? undefined,
+      state_id: nextChain.state_id ?? undefined,
+      municipality_id: nextChain.municipality_id ?? undefined,
+      parish_id: nextChain.parish_id ?? undefined,
+      neighborhood_id: nextChain.neighborhood_id ?? undefined,
+    });
+    setNeighborhoodName(nextChain.neighborhood ?? "");
+  }, [patient]);
 
   const updatePatient = useUpdatePatient(patient.id);
 
@@ -90,14 +109,13 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     try {
       let neighborhoodId = form.neighborhood_id;
 
-      // Si el usuario escribió un barrio nuevo y no hay ID
       if (neighborhoodName && !neighborhoodId) {
         const res = await fetch("/api/neighborhoods/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: neighborhoodName,
-            parish_id: form.parish_id, // ✅ campo correcto
+            parish_id: form.parish_id,
           }),
         });
         const data = await res.json();
@@ -125,29 +143,11 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const [parishes, setParishes] = useState<any[]>([]);
 
   useEffect(() => { fetchOptions("/api/countries/").then(setCountries); }, []);
+  useEffect(() => { form.country_id ? fetchOptions(`/api/states/?country=${form.country_id}`).then(setStates) : setStates([]); }, [form.country_id]);
+  useEffect(() => { form.state_id ? fetchOptions(`/api/municipalities/?state=${form.state_id}`).then(setMunicipalities) : setMunicipalities([]); }, [form.state_id]);
+  useEffect(() => { form.municipality_id ? fetchOptions(`/api/parishes/?municipality=${form.municipality_id}`).then(setParishes) : setParishes([]); }, [form.municipality_id]);
 
-  useEffect(() => {
-    console.log("[DEBUG] country_id:", form.country_id);
-    if (form.country_id) {
-      fetchOptions(`/api/states/?country=${form.country_id}`).then(setStates);
-    } else setStates([]);
-  }, [form.country_id]);
-
-  useEffect(() => {
-    console.log("[DEBUG] state_id:", form.state_id);
-    if (form.state_id) {
-      fetchOptions(`/api/municipalities/?state=${form.state_id}`).then(setMunicipalities);
-    } else setMunicipalities([]);
-  }, [form.state_id]);
-
-  useEffect(() => {
-    console.log("[DEBUG] municipality_id:", form.municipality_id);
-    if (form.municipality_id) {
-      fetchOptions(`/api/parishes/?municipality=${form.municipality_id}`).then(setParishes);
-    } else setParishes([]);
-  }, [form.municipality_id]);
-
-    return (
+  return (
     <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Datos Personales</h3>
@@ -162,17 +162,17 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       </div>
 
       <div className="grid grid-cols-12 gap-4">
-        <Field label="Cédula" value={form.national_id ?? ""} editing={editing} onChange={(v) => setField("national_id", v)} />
-        <Field label="Nombre" value={form.first_name ?? ""} editing={editing} onChange={(v) => setField("first_name", v)} />
-        <Field label="Segundo nombre" value={form.middle_name ?? ""} editing={editing} onChange={(v) => setField("middle_name", v)} />
-        <Field label="Apellido" value={form.last_name ?? ""} editing={editing} onChange={(v) => setField("last_name", v)} />
-        <Field label="Segundo apellido" value={form.second_last_name ?? ""} editing={editing} onChange={(v) => setField("second_last_name", v)} />
-        <Field label="Fecha de nacimiento" type="date" value={form.birthdate ?? ""} editing={editing} onChange={(v) => setField("birthdate", v)} />
-        <Field label="Lugar de nacimiento" value={form.birth_place ?? ""} editing={editing} onChange={(v) => setField("birth_place", v)} />
-        <Field label="País de nacimiento" value={form.birth_country ?? ""} editing={editing} onChange={(v) => setField("birth_country", v)} />
-        <Field label="Email" value={form.email ?? ""} editing={editing} onChange={(v) => setField("email", v)} />
-        <Field label="Teléfono" value={form.contact_info ?? ""} editing={editing} onChange={(v) => setField("contact_info", v)} />
-        <Field label="Dirección" value={form.address ?? ""} editing={editing} multiline span={12} onChange={(v) => setField("address", v)} />
+        <Field label="Cédula" value={form.national_id ? String(form.national_id) : ""} editing={editing} onChange={(v) => setField("national_id", v)} />
+        <Field label="Nombre" value={form.first_name || ""} editing={editing} onChange={(v) => setField("first_name", v)} />
+        <Field label="Segundo nombre" value={form.middle_name || ""} editing={editing} onChange={(v) => setField("middle_name", v)} />
+        <Field label="Apellido" value={form.last_name || ""} editing={editing} onChange={(v) => setField("last_name", v)} />
+        <Field label="Segundo apellido" value={form.second_last_name || ""} editing={editing} onChange={(v) => setField("second_last_name", v)} />
+        <Field label="Fecha de nacimiento" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setField("birthdate", v)} />
+        <Field label="Lugar de nacimiento" value={form.birth_place || ""} editing={editing} onChange={(v) => setField("birth_place", v)} />
+        <Field label="País de nacimiento" value={form.birth_country || ""} editing={editing} onChange={(v) => setField("birth_country", v)} />
+        <Field label="Email" value={form.email || ""} editing={editing} onChange={(v) => setField("email", v)} />
+        <Field label="Teléfono" value={form.contact_info || ""} editing={editing} onChange={(v) => setField("contact_info", v)} />
+        <Field label="Dirección" value={form.address || ""} editing={editing} multiline span={12} onChange={(v) => setField("address", v)} />
 
         {editing ? (
           <>
@@ -180,7 +180,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
             <SelectField label="Estado" options={states} value={form.state_id ?? ""} onChange={(v) => setField("state_id", Number(v))} />
             <SelectField label="Municipio" options={municipalities} value={form.municipality_id ?? ""} onChange={(v) => setField("municipality_id", Number(v))} />
             <SelectField label="Parroquia" options={parishes} value={form.parish_id ?? ""} onChange={(v) => setField("parish_id", Number(v))} />
-            {/* Barrio como campo libre */}
             <div className="col-span-6">
               <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">Barrio</label>
               <input
@@ -188,16 +187,13 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
                 value={neighborhoodName}
                 onChange={(e) => setNeighborhoodName(e.target.value)}
                 placeholder="Escriba o busque barrio..."
-                className="w-full px-3 py-2 border rounded-md text-sm
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                           border-gray-300 dark:border-gray-600
-                           focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+                className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               />
             </div>
           </>
         ) : (
           <p className="col-span-12 text-sm text-[#0d2c53] dark:text-gray-100">
-            Dirección: {chain.country}, {chain.state}, {chain.municipality}, {chain.parish}, {chain.neighborhood}
+            Dirección: {form.address || "—"}, {chain.country}, {chain.state}, {chain.municipality}, {chain.parish}, {chain.neighborhood}
           </p>
         )}
       </div>
@@ -205,7 +201,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   );
 }
 
-// ⚡ Componentes auxiliares
+// Auxiliares
 
 interface FieldProps {
   label: string;
@@ -241,20 +237,14 @@ function Field({
             rows={3}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       border-gray-300 dark:border-gray-600
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
         ) : (
           <input
             type={type}
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       border-gray-300 dark:border-gray-600
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
           />
         )
       ) : (
@@ -279,10 +269,7 @@ function SelectField({ label, options, value, onChange }: SelectFieldProps) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 border rounded-md text-sm
-                   bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                   border-gray-300 dark:border-gray-600
-                   focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+        className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
       >
         <option value="">Seleccione...</option>
         {safeOptions.map((opt) => (
@@ -291,7 +278,6 @@ function SelectField({ label, options, value, onChange }: SelectFieldProps) {
           </option>
         ))}
       </select>
-      {/* Subtexto eliminado */}
     </div>
   );
 }

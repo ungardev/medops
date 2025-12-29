@@ -155,16 +155,27 @@ class PatientWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         preds = validated_data.pop("genetic_predispositions", None)
         instance = super().create(validated_data)
+
+        # ⚡ Persistir address explícitamente
+        if "address" in validated_data:
+            instance.address = validated_data.get("address", "") or ""
+
+        instance.save()
+
         if preds is not None:
             instance.genetic_predispositions.set(preds)
+
         return instance
 
     def update(self, instance, validated_data):
         preds = validated_data.pop("genetic_predispositions", None)
 
-        # ⚡ Forzar persistencia explícita del campo address
+        # ⚡ Persistir address siempre como string
         if "address" in validated_data:
-            instance.address = validated_data.get("address", "")
+            instance.address = validated_data.get("address", "") or ""
+        elif "address" not in validated_data and instance.address is None:
+            # Si no viene en el payload y está en None, lo dejamos como string vacío
+            instance.address = ""
 
         # ⚡ Actualizar el resto de los campos
         for attr, value in validated_data.items():
