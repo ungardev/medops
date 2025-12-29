@@ -185,6 +185,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
     neighborhood = NeighborhoodSerializer(read_only=True)   # ⚡ detalle barrio/parroquia/municipio/estado/país
     address_chain = serializers.SerializerMethodField()     # ⚡ cadena compacta con IDs
+    address = serializers.SerializerMethodField()           # ⚡ blindamos campo libre
 
     class Meta:
         model = Patient
@@ -249,6 +250,10 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "state": s.name if s else "SIN-ESTADO", "state_id": s.id if s else None,
             "country": c.name if c else "SIN-PAÍS", "country_id": c.id if c else None,
         }
+
+    def get_address(self, obj):
+        """Devuelve siempre string, nunca null."""
+        return obj.address or ""
 
 
 class PatientListSerializer(serializers.ModelSerializer):
@@ -318,6 +323,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
     neighborhood = NeighborhoodSerializer(read_only=True)   # ⚡ detalle barrio/parroquia/municipio/estado/país
     address_chain = serializers.SerializerMethodField()     # ⚡ cadena jerárquica con IDs
+    address = serializers.SerializerMethodField()           # ⚡ blindamos campo libre
 
     class Meta:
         model = Patient
@@ -390,6 +396,10 @@ class PatientDetailSerializer(serializers.ModelSerializer):
                 "state": "SIN-ESTADO", "state_id": None,
                 "country": "SIN-PAÍS", "country_id": None,
             }
+
+    def get_address(self, obj):
+        """Devuelve siempre string, nunca null."""
+        return obj.address or ""
 
 
 class PrescriptionComponentSerializer(serializers.ModelSerializer):
