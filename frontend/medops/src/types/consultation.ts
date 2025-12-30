@@ -4,12 +4,26 @@ import type { ChargeOrder } from "./payments";
 // --- Diagnóstico ---
 export interface Diagnosis {
   id: number;
+
+  // 🔹 Metadatos ICD-11
   icd_code: string;        // código ICD-11 oficial (ej: "CA23.0")
   title?: string;          // descripción oficial OMS
   foundation_id?: string;  // ID único ICD-11
   description?: string;    // notas adicionales del médico
+
+  // 🔹 Campos clínicos prácticos (lo que devuelve el backend en consultas)
+  name?: string;           // nombre del diagnóstico (ej: "Diabetes tipo 2")
+  severity?: string;       // severidad clínica (ej: "moderada", "grave")
+  source?: string;         // origen del diagnóstico (ej: "anamnesis", "laboratorio")
+  notes?: string;          // notas adicionales
+
+  // 🔹 Relaciones
   treatments: Treatment[];
   prescriptions: Prescription[];
+
+  // 🔹 Metadatos
+  created_at?: string;
+  updated_at?: string;
 }
 
 // --- Tratamiento ---
@@ -29,8 +43,8 @@ export interface CreateTreatmentInput {
   plan: string;
   start_date?: string;
   end_date?: string;
-  status?: "active" | "completed" | "cancelled";   // 👈 corregido
-  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 corregido
+  status?: "active" | "completed" | "cancelled";
+  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other";
 }
 
 export interface UpdateTreatmentInput {
@@ -38,8 +52,8 @@ export interface UpdateTreatmentInput {
   plan?: string;
   start_date?: string;
   end_date?: string;
-  status?: "active" | "completed" | "cancelled";   // 👈 corregido
-  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 corregido
+  status?: "active" | "completed" | "cancelled";
+  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other";
 }
 
 // --- Componente de prescripción ---
@@ -79,7 +93,7 @@ export interface Prescription {
     | "topical" | "sublingual" | "inhalation"
     | "rectal" | "other";
 
-  components: PrescriptionComponent[];   // ✅ nuevo
+  components: PrescriptionComponent[];
 }
 
 // --- Inputs para mutaciones de prescripciones ---
@@ -90,7 +104,7 @@ export interface CreatePrescriptionInput {
   duration?: string;
   frequency?: Prescription["frequency"];
   route?: Prescription["route"];
-  components: PrescriptionComponent[];   // ✅ nuevo
+  components: PrescriptionComponent[];
 }
 
 export interface UpdatePrescriptionInput {
@@ -100,7 +114,7 @@ export interface UpdatePrescriptionInput {
   duration?: string;
   frequency?: Prescription["frequency"];
   route?: Prescription["route"];
-  components?: PrescriptionComponent[];  // ✅ nuevo
+  components?: PrescriptionComponent[];
 }
 
 // --- Documento clínico ---

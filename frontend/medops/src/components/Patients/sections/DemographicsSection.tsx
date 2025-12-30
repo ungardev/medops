@@ -2,6 +2,87 @@ import React, { useState, useEffect } from "react";
 import { Patient, PatientInput } from "types/patients";
 import { useUpdatePatient } from "../../../hooks/patients/useUpdatePatient";
 
+// Auxiliares (definidos arriba para eliminar "Cannot find name")
+interface FieldProps {
+  label: string;
+  value: string;
+  type?: "text" | "date" | "email" | "number";
+  multiline?: boolean;
+  span?: 3 | 4 | 6 | 12;
+  editing: boolean;
+  onChange?: (value: string) => void;
+}
+
+function Field({
+  label,
+  value,
+  type = "text",
+  multiline = false,
+  span = 3,
+  editing,
+  onChange,
+}: FieldProps) {
+  const colClass =
+    span === 12 ? "col-span-12" :
+    span === 6 ? "col-span-6" :
+    span === 4 ? "col-span-4" :
+    "col-span-3";
+
+  return (
+    <div className={colClass}>
+      <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">{label}</label>
+      {editing ? (
+        multiline ? (
+          <textarea
+            rows={3}
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+          />
+        ) : (
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+          />
+        )
+      ) : (
+        <p className="text-sm text-[#0d2c53] dark:text-gray-100">{value !== "" ? value : "—"}</p>
+      )}
+    </div>
+  );
+}
+
+interface SelectFieldProps {
+  label: string;
+  options: { id: number; name: string }[];
+  value: string | number;
+  onChange: (value: string) => void;
+}
+
+function SelectField({ label, options, value, onChange }: SelectFieldProps) {
+  const safeOptions = Array.isArray(options) ? options : [];
+  return (
+    <div className="col-span-6">
+      <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+      >
+        <option value="">Seleccione...</option>
+        {safeOptions.map((opt) => (
+          <option key={`${label}-${opt.id}`} value={opt.id}>
+            {opt.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// Helpers
 function normalizeOptions(raw: any[]): any[] {
   if (!Array.isArray(raw)) return [];
   return raw.map((x) => ({
@@ -147,7 +228,11 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   useEffect(() => { form.state_id ? fetchOptions(`/api/municipalities/?state=${form.state_id}`).then(setMunicipalities) : setMunicipalities([]); }, [form.state_id]);
   useEffect(() => { form.municipality_id ? fetchOptions(`/api/parishes/?municipality=${form.municipality_id}`).then(setParishes) : setParishes([]); }, [form.municipality_id]);
 
-  return (
+  const direccionTexto = form.address?.trim() || "—";
+  const direccionCompleta = `${direccionTexto}, ${chain.country}, ${chain.state}, ${chain.municipality}, ${chain.parish}, ${chain.neighborhood}`;
+  const direccionCorta = direccionCompleta.length <= 60;
+
+    return (
     <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Datos Personales</h3>
@@ -172,7 +257,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         <Field label="País de nacimiento" value={form.birth_country || ""} editing={editing} onChange={(v) => setField("birth_country", v)} />
         <Field label="Email" value={form.email || ""} editing={editing} onChange={(v) => setField("email", v)} />
         <Field label="Teléfono" value={form.contact_info || ""} editing={editing} onChange={(v) => setField("contact_info", v)} />
-        <Field label="Dirección" value={form.address || ""} editing={editing} multiline span={12} onChange={(v) => setField("address", v)} />
 
         {editing ? (
           <>
@@ -180,6 +264,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
             <SelectField label="Estado" options={states} value={form.state_id ?? ""} onChange={(v) => setField("state_id", Number(v))} />
             <SelectField label="Municipio" options={municipalities} value={form.municipality_id ?? ""} onChange={(v) => setField("municipality_id", Number(v))} />
             <SelectField label="Parroquia" options={parishes} value={form.parish_id ?? ""} onChange={(v) => setField("parish_id", Number(v))} />
+
             <div className="col-span-6">
               <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">Barrio</label>
               <input
@@ -190,94 +275,27 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
                 className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
               />
             </div>
+            <Field label="Dirección" value={form.address || ""} editing={editing} multiline span={6} onChange={(v) => setField("address", v)} />
           </>
         ) : (
-          <p className="col-span-12 text-sm text-[#0d2c53] dark:text-gray-100">
-            Dirección: {form.address || "—"}, {chain.country}, {chain.state}, {chain.municipality}, {chain.parish}, {chain.neighborhood}
-          </p>
+          <>
+            {direccionCorta ? (
+              <>
+                <Field label="Teléfono" value={form.contact_info || "—"} editing={false} />
+                <Field label="Dirección" value={direccionCompleta} editing={false} />
+              </>
+            ) : (
+              <>
+                <Field label="Teléfono" value={form.contact_info || "—"} editing={false} />
+                <div className="col-span-12">
+                  <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">Dirección</label>
+                  <p className="text-sm text-[#0d2c53] dark:text-gray-100">{direccionCompleta}</p>
+                </div>
+              </>
+            )}
+          </>
         )}
       </div>
-    </div>
-  );
-}
-
-// Auxiliares
-
-interface FieldProps {
-  label: string;
-  value: string;
-  type?: "text" | "date" | "email" | "number";
-  multiline?: boolean;
-  span?: 3 | 4 | 6 | 12;
-  editing: boolean;
-  onChange: (value: string) => void;
-}
-
-function Field({
-  label,
-  value,
-  type = "text",
-  multiline = false,
-  span = 3,
-  editing,
-  onChange,
-}: FieldProps) {
-  const colClass =
-    span === 12 ? "col-span-12" :
-    span === 6 ? "col-span-6" :
-    span === 4 ? "col-span-4" :
-    "col-span-3";
-
-  return (
-    <div className={colClass}>
-      <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">{label}</label>
-      {editing ? (
-        multiline ? (
-          <textarea
-            rows={3}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-        ) : (
-          <input
-            type={type}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-        )
-      ) : (
-        <p className="text-sm text-[#0d2c53] dark:text-gray-100">{value !== "" ? value : "—"}</p>
-      )}
-    </div>
-  );
-}
-
-interface SelectFieldProps {
-  label: string;
-  options: { id: number; name: string }[];
-  value: string | number;
-  onChange: (value: string) => void;
-}
-
-function SelectField({ label, options, value, onChange }: SelectFieldProps) {
-  const safeOptions = Array.isArray(options) ? options : [];
-  return (
-    <div className="col-span-6">
-      <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-      >
-        <option value="">Seleccione...</option>
-        {safeOptions.map((opt) => (
-          <option key={`${label}-${opt.id}`} value={opt.id}>
-            {opt.name}
-          </option>
-        ))}
-      </select>
     </div>
   );
 }

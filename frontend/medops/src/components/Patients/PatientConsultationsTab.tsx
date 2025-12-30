@@ -52,10 +52,10 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
         <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">
           <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
             <tr>
-              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b border-gray-300 dark:border-gray-600">ID</th>
-              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b border-gray-300 dark:border-gray-600">Fecha</th>
-              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b border-gray-300 dark:border-gray-600">Estado</th>
-              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b border-gray-300 dark:border-gray-600 text-center">Acciones</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b">ID</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b">Fecha</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b">Estado</th>
+              <th className="px-3 sm:px-4 py-1.5 sm:py-2 border-b text-center">Acciones</th>
             </tr>
           </thead>
           <tbody>

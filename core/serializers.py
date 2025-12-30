@@ -207,7 +207,9 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "email",
             "age",
             "gender",
-            "address",           # ⚡ campo libre de dirección
+            "birthdate",       # 👈 añadido
+            "contact_info",    # 👈 añadido
+            "address",         # ⚡ campo libre de dirección
             "allergies",
             "medical_history",
             "neighborhood",

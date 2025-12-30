@@ -84,9 +84,9 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
           <li key={d.id}>
             <DiagnosisBadge
               id={d.id}
-              icd_code={d.icd_code}
-              title={d.title || "Sin título"}
-              description={d.description}
+              icd_code={String(d.icd_code)}
+              title={typeof d.title === "string" ? d.title : d.name ?? "Sin título"}
+              description={typeof d.description === "string" ? d.description : d.notes ?? ""}
               {...(!readOnly && {
                 onEdit: handleEdit,
                 onDelete: handleDelete,
