@@ -706,6 +706,7 @@ class EventSerializer(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     action_label = serializers.SerializerMethodField()
     action_href = serializers.SerializerMethodField()
+    badge_action = serializers.SerializerMethodField()  # 🔹 Nuevo campo para el frontend
 
     class Meta:
         model = Event
@@ -725,6 +726,7 @@ class EventSerializer(serializers.ModelSerializer):
             "category",
             "action_label",
             "action_href",
+            "badge_action",  # 🔹 Incluido en la respuesta
         ]
 
     def get_title(self, obj):
@@ -774,6 +776,14 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "WaitingRoomEntry":
             return "/waitingroom"
         return None
+
+    def get_badge_action(self, obj):
+        # 🔹 Normaliza para NotificationBadge
+        if obj.action in ["create", "update", "delete"]:
+            return obj.action
+        if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
+            return "create"
+        return "other"
 
 
 # --- Sala de espera (básico) ---
