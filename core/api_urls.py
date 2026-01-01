@@ -39,8 +39,8 @@ from .api_views import (
     CityViewSet,
     ParishViewSet,
     NeighborhoodViewSet,
-    AddressChainView,          # ⚡ endpoint compacto
-    NeighborhoodSearchView,    # ⚡ nuevo endpoint inverso
+    AddressChainView,
+    NeighborhoodSearchView,
 
     # --- Funciones ---
     update_appointment_status,
@@ -76,6 +76,9 @@ from .api_views import (
     search,
     appointment_search_api,
     chargeorder_search_api,
+
+    # --- Notificaciones ---
+    notifications_api,   # ⚡ aseguramos que se importe la función correcta
 )
 
 # --- Swagger / OpenAPI ---
@@ -130,44 +133,17 @@ patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
 
 # --- Funciones personalizadas ---
 urlpatterns = [
-    # --- Login ---
     path("auth/token/", api_views.login_view, name="api-login"),
-
-    # --- Dashboard / métricas ---
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
-
-    # --- Reportes ---
     path("reports/", reports_api, name="reports-api"),
     path("reports/export/", reports_export_api, name="reports-export-api"),
-
-    # --- Configuración ---
     path("config/institution/", institution_settings_api, name="institution-settings-api"),
     path("config/doctor/", doctor_operator_settings_api, name="doctor-operator-settings-api"),
-
-    # --- Pacientes ---
     path("patients/search/", patient_search_api, name="patient-search-api"),
-
-    # Documentos del paciente
-    path(
-        "patients/<int:pk>/documents/",
-        PatientViewSet.as_view({"get": "documents", "post": "documents"}),
-        name="patient-documents-api",
-    ),
-    path(
-        "patients/<int:pk>/documents/<int:document_id>/",
-        PatientViewSet.as_view({"delete": "delete_document"}),
-        name="patient-document-delete-api",
-    ),
-
-    # --- Perfil clínico estructurado ---
-    path(
-        "patients/<int:pk>/profile/",
-        PatientViewSet.as_view({"get": "profile"}),
-        name="patient-clinical-profile",
-    ),
-
-    # --- Citas ---
+    path("patients/<int:pk>/documents/", PatientViewSet.as_view({"get": "documents", "post": "documents"}), name="patient-documents-api"),
+    path("patients/<int:pk>/documents/<int:document_id>/", PatientViewSet.as_view({"delete": "delete_document"}), name="patient-document-delete-api"),
+    path("patients/<int:pk>/profile/", PatientViewSet.as_view({"get": "profile"}), name="patient-clinical-profile"),
     path("appointments/search/", appointment_search_api, name="appointment-search-api"),
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
@@ -175,8 +151,6 @@ urlpatterns = [
     path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),
     path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),
     path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),
-
-    # --- Consultas ---
     path("consultation/current/", current_consultation_api, name="current-consultation-api"),
     path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
     path("consultations/<int:pk>/generate-used-documents/", generate_used_documents, name="generate-used-documents"),
@@ -185,23 +159,15 @@ urlpatterns = [
     path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
     path("chargeorders/<int:pk>/generate-pdf/", generate_chargeorder_pdf, name="generate-chargeorder-pdf"),
     path("charge-orders/<int:pk>/export/", generate_chargeorder_pdf, name="chargeorder-export"),
-
-    # --- Documentos clínicos ---
     path("documents/", documents_api, name="documents-api"),
-
-    # --- Diagnósticos ICD-11 ---
     path("icd/search/", icd_search_api, name="icd-search-api"),
-
-    # --- Pagos ---
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
-
-    # --- Órdenes de Pago ---
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
 
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
-    path("notifications/", api_views.notifications_api, name="notifications-api"),
+    path("notifications/", notifications_api, name="notifications-api"),  # ⚡ ruta explícita y corregida
     path("audit/aggregates/", api_views.audit_dashboard_api, name="audit-dashboard-api"),
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),
