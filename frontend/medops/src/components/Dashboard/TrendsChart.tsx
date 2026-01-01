@@ -27,10 +27,6 @@ const TrendsChart: React.FC = () => {
   const pagos = data?.payments_trend || [];
   const balance = data?.balance_trend || [];
 
-  console.log("📊 Citas:", citas);
-  console.log("📊 Pagos:", pagos);
-  console.log("📊 Balance:", balance);
-
   // Construir rango continuo de fechas
   const buildContinuousLabels = (start: string, end: string) => {
     const startDate = new Date(start);
@@ -56,10 +52,7 @@ const TrendsChart: React.FC = () => {
     labels = buildContinuousLabels(minDate, maxDate);
   }
 
-  console.log("📅 Labels continuos:", labels);
-
   const hasData = citas.length || pagos.length || balance.length;
-  console.log("✅ hasData:", hasData);
 
   // Colores base en strings
   const baseColors: Record<string, string> = {
@@ -69,7 +62,6 @@ const TrendsChart: React.FC = () => {
   };
 
   const buildGradient = (ctx: CanvasRenderingContext2D, color: string) => {
-    console.log("🎨 Generando gradiente con color:", color);
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
     gradient.addColorStop(0, color);
     gradient.addColorStop(1, "rgba(255,255,255,0)");
@@ -79,8 +71,6 @@ const TrendsChart: React.FC = () => {
   // Render inicial sin gradientes
   useLayoutEffect(() => {
     if (hasData && labels.length) {
-      console.log("🚀 Construyendo chartData inicial sin gradientes");
-
       const citasData = labels.map((date) => {
         const found = citas.find((p: any) => p.date === date);
         return typeof found?.value === "number" ? found.value : 0;
@@ -135,11 +125,8 @@ const TrendsChart: React.FC = () => {
   // Inyección de gradientes en caliente
   useLayoutEffect(() => {
     const timer = setTimeout(() => {
-      console.log("🧠 chartRef:", chartRef.current);
-      console.log("🧠 ctx:", chartRef.current?.ctx);
       if (chartRef.current && chartRef.current.ctx && chartData) {
         const ctx = chartRef.current.ctx;
-        console.log("🎯 Inyectando gradientes en datasets");
         const updated = {
           ...chartData,
           datasets: [

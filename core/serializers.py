@@ -734,6 +734,8 @@ class EventSerializer(serializers.ModelSerializer):
             return "Cita actualizada"
         if obj.entity == "WaitingRoom" and obj.action == "delete":
             return "Paciente retirado de sala de espera"
+        if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
+            return "Paciente llegó a la sala de espera"
         return f"{obj.entity} {obj.action}"
 
     def get_description(self, obj):
@@ -741,10 +743,13 @@ class EventSerializer(serializers.ModelSerializer):
             return f"Orden #{obj.entity_id} confirmada"
         if obj.entity == "Appointment":
             return f"Cita #{obj.entity_id} modificada"
+        if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
+            pid = obj.metadata.get("patient_id") if obj.metadata else None
+            aid = obj.metadata.get("appointment_id") if obj.metadata else None
+            return f"Paciente #{pid} con cita #{aid} registrado en sala de espera"
         return obj.metadata.get("message", "") if obj.metadata else ""
 
     def get_category(self, obj):
-        # Normaliza entity+action como clave única
         return f"{obj.entity.lower()}.{obj.action.lower()}"
 
     def get_action_label(self, obj):
@@ -752,6 +757,8 @@ class EventSerializer(serializers.ModelSerializer):
             return "Ver pago"
         if obj.entity == "Appointment":
             return "Ver cita"
+        if obj.entity == "WaitingRoomEntry":
+            return "Ver sala de espera"
         return "Ver detalle"
 
     def get_action_href(self, obj):
@@ -760,6 +767,8 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "Appointment":
             return f"/appointments/{obj.entity_id}"
         if obj.entity == "WaitingRoom":
+            return "/waitingroom"
+        if obj.entity == "WaitingRoomEntry":
             return "/waitingroom"
         return None
 

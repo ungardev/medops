@@ -1,7 +1,7 @@
 // src/components/Dashboard/NotificationsFeed.tsx
 import { useState, useEffect } from "react";
 import { useNotifications } from "@/hooks/dashboard/useNotifications";
-import { NotificationEvent } from "@/types/dashboard";
+import { NotificationEvent } from "@/types/notifications";
 import moment from "moment";
 import RegisterPaymentModal from "./RegisterPaymentModal";
 import AppointmentDetail from "@/components/Appointments/AppointmentDetail";
@@ -15,20 +15,6 @@ function toArray<T>(raw: unknown): T[] {
     return (raw as any).results as T[];
   }
   return [];
-}
-
-// 🔹 Type guards para entidades conocidas
-function isPayment(n: NotificationEvent) {
-  return n.entity === "Payment";
-}
-function isAppointment(n: NotificationEvent) {
-  return n.entity === "Appointment";
-}
-function isWaitingRoom(n: NotificationEvent) {
-  return n.entity === "WaitingRoom";
-}
-function isDashboard(n: NotificationEvent) {
-  return n.entity === "Dashboard";
 }
 
 function AppointmentDetailWrapper({
@@ -81,54 +67,14 @@ export default function NotificationsFeed() {
 
   const notifications = toArray<NotificationEvent>(data).slice(0, 6);
 
-  // 🔹 Mensaje sintetizado por entidad (tip-safe)
-  const renderMessage = (n: NotificationEvent) => {
-    if (isPayment(n)) {
-      return `Pago confirmado para orden #${n.entity_id}`;
+  const handleAction = (n: NotificationEvent) => {
+    if (n.category?.startsWith("appointment") && n.entity_id) {
+      setSelectedAppointmentId(n.entity_id);
+    } else if (n.category?.startsWith("payment") && n.entity_id) {
+      setSelectedChargeOrder(n.entity_id);
+    } else if (n.action_href) {
+      window.location.href = n.action_href;
     }
-    if (isAppointment(n)) {
-      return `Cita actualizada (#${n.entity_id})`;
-    }
-    if (isWaitingRoom(n)) {
-      return `Paciente retirado de la sala de espera`;
-    }
-    if (isDashboard(n)) {
-      // Mensaje genérico de auditoría/actividad del dashboard
-      return n.message ?? "Actividad registrada en el dashboard";
-    }
-    // Fallback institucional
-    return n.message ?? "Evento registrado";
-  };
-
-  // 🔹 Acción por entidad (tip-safe y con guardas)
-  const resolveAction = (n: NotificationEvent) => {
-    if (isAppointment(n)) {
-      return () => setSelectedAppointmentId(n.entity_id);
-    }
-    if (isPayment(n)) {
-      return () => setSelectedChargeOrder(n.entity_id);
-    }
-    if (isWaitingRoom(n)) {
-      return () => {
-        window.location.href = "/waitingroom";
-      };
-    }
-    // Acción navegable si existe href
-    if (n.action && typeof n.action.href === "string" && n.action.href.length > 0) {
-      return () => {
-        window.location.href = n.action!.href!;
-      };
-    }
-    return () => {};
-  };
-
-  // 🔹 Badge por entidad (solo AuditAction válidos)
-  const resolveBadge = (n: NotificationEvent): "create" | "update" | "delete" | "other" => {
-    if (isPayment(n)) return "create";
-    if (isAppointment(n)) return "update";
-    if (isWaitingRoom(n)) return "delete";
-    // Dashboard u otros eventos no categorizados
-    return "other";
   };
 
   return (
@@ -149,15 +95,20 @@ export default function NotificationsFeed() {
             notifications.map((n) => (
               <li key={n.id}>
                 <button
-                  onClick={resolveAction(n)}
+                  onClick={() => handleAction(n)}
                   className="w-full text-left p-3 rounded transition flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <div className="flex items-center gap-2">
-                    <NotificationBadge action={resolveBadge(n)} />
+                    <NotificationBadge action={n.action} severity={n.severity} />
                     <span className="truncate text-sm font-medium text-[#0d2c53] dark:text-white">
-                      {renderMessage(n)}
+                      {n.title}
                     </span>
                   </div>
+                  {n.description && (
+                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                      {n.description}
+                    </span>
+                  )}
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     {moment(n.timestamp).fromNow()}
                   </span>

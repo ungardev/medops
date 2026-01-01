@@ -1,10 +1,31 @@
 // types/notifications.ts
-export type NotificationType = "info" | "success" | "warning" | "error";
 
+// Severidad institucional (alineada con el modelo Event)
+export type NotificationSeverity = "info" | "warning" | "critical";
+
+// Acción auditada (para NotificationBadge)
+export type AuditAction = "create" | "update" | "delete" | "other";
+
+// Contrato enriquecido de notificación
 export interface NotificationEvent {
   id: number;
-  type: NotificationType;
-  message: string;
   timestamp: string; // ISO date
-  action?: { label: string; href: string };
+  actor?: string; // quién disparó el evento
+  entity: string; // Payment, Appointment, WaitingRoom, Dashboard, etc.
+  entity_id: number;
+  action: AuditAction; // acción normalizada para el badge
+  severity: NotificationSeverity; // nivel de importancia
+  notify: boolean;
+
+  // 🔹 Campos enriquecidos desde el serializer
+  title: string; // título sintetizado (ej. "Pago confirmado")
+  description?: string; // detalle adicional (ej. "Orden #147 confirmada")
+  category: string; // clave única (ej. "payment.create")
+  
+  // 🔹 Acción navegable
+  action_label?: string; // texto del botón (ej. "Ver pago")
+  action_href?: string;  // URL navegable (ej. "/payments/147")
+
+  // 🔹 Metadata flexible
+  metadata?: Record<string, any>;
 }
