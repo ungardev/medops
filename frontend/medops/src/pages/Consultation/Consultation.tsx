@@ -14,7 +14,7 @@ import ExportErrorToast from "../../components/Common/ExportErrorToast";
 import ExportSuccessToast from "../../components/Common/ExportSuccessToast";
 import MedicalReportSuccessToast from "../../components/Common/MedicalReportSuccessToast";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import ResponsivePanel from "../../components/Consultation/ResponsivePanel";
 import { useConsultationActions } from "../../hooks/consultations/useConsultationActions";
@@ -22,6 +22,10 @@ import CollapsiblePanel from "../../components/Common/CollapsiblePanel";
 import { useNavigate } from "react-router-dom";
 import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import type { MedicalReport } from "../../types/medicalReport";
+
+// 🔹 Utilidades institucionales
+import { toPatientHeaderPatient } from "../../utils/patientTransform";
+import { getPatient } from "../../api/patients";
 
 export default function Consultation() {
   const { data: appointment, isLoading } = useCurrentConsultation();
@@ -35,14 +39,24 @@ export default function Consultation() {
   const [exportErrors, setExportErrors] = useState<{ category: string; error: string }[] | null>(null);
   const [exportSuccess, setExportSuccess] = useState<{ documents: GeneratedDocument[]; skipped: string[] } | null>(null);
   const [reportSuccess, setReportSuccess] = useState<{ fileUrl?: string | null; auditCode?: string | null } | null>(null);
+  const [patientProfile, setPatientProfile] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (appointment?.patient?.id) {
+      getPatient(appointment.patient.id)
+        .then((full) => setPatientProfile(full))
+        .catch((e) => console.error("Error cargando perfil completo:", e));
+    }
+  }, [appointment?.patient?.id]);
 
   if (isLoading) return <p className="text-gray-500">Cargando consulta...</p>;
 
-  // ⚔️ Redirigir automáticamente si ya no hay consulta activa
   if (!appointment) {
     navigate("/waitingroom");
     return null;
   }
+
+  const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
 
   const canGenerateReport =
     appointment.status === "in_consultation" || appointment.status === "completed";
@@ -77,11 +91,14 @@ export default function Consultation() {
       setToast({ message: err.message || "Error al generar documentos", type: "error" });
     }
   };
-
     return (
     <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
       {/* Identidad del paciente */}
-      <PatientHeader patient={appointment.patient} />
+      {patient ? (
+        <PatientHeader patient={patient} />
+      ) : (
+        <p className="text-sm text-gray-500">Cargando datos del paciente...</p>
+      )}
 
       {/* Layout clínico */}
       {/* Mobile/Tablet */}
@@ -95,7 +112,12 @@ export default function Consultation() {
         </ResponsivePanel>
 
         <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-          <ConsultationWorkflow diagnoses={appointment.diagnoses} appointmentId={appointment.id} notes={appointment.notes ?? null} readOnly={false} />
+          <ConsultationWorkflow
+            diagnoses={appointment.diagnoses}
+            appointmentId={appointment.id}
+            notes={appointment.notes ?? null}
+            readOnly={false}
+          />
         </div>
 
         {/* Footer mobile/tablet */}
@@ -126,24 +148,38 @@ export default function Consultation() {
 
           {canGenerateReport && (
             <>
-              <button disabled={generateReport.isPending} onClick={handleGenerateReport} className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap">
+              <button
+                disabled={generateReport.isPending}
+                onClick={handleGenerateReport}
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap"
+              >
                 {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
               </button>
 
               {generateReport.data?.file_url && (
-                <a href={generateReport.data.file_url} target="_blank" rel="noopener noreferrer" className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors whitespace-nowrap">
+                <a
+                  href={generateReport.data.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors whitespace-nowrap"
+                >
                   Ver Informe Médico
                 </a>
               )}
 
-              <button disabled={generateDocuments.isPending} onClick={handleGenerateDocuments} className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-green-600 text-white border border-green-600 hover:bg-green-700 transition-colors whitespace-nowrap">
+              <button
+                disabled={generateDocuments.isPending}
+                onClick={handleGenerateDocuments}
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-green-600 text-white border border-green-600 hover:bg-green-700 transition-colors whitespace-nowrap"
+              >
                 {generateDocuments.isPending ? "Generando..." : "Generar Documentos"}
               </button>
             </>
           )}
         </div>
       </div>
-            {/* Desktop con CollapsiblePanel */}
+
+      {/* Desktop con CollapsiblePanel */}
       <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 relative">
         <div className="col-span-3 space-y-4">
           <CollapsiblePanel title="Documentos clínicos">
@@ -171,9 +207,7 @@ export default function Consultation() {
                 navigate("/waitingroom");
               }}
               disabled={isPending}
-              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium 
-                         bg-red-100 text-red-700 border border-red-300 
-                         hover:bg-red-200 transition-colors whitespace-nowrap"
+              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors whitespace-nowrap"
             >
               Cancelar consulta
             </button>
@@ -185,9 +219,7 @@ export default function Consultation() {
                 navigate("/waitingroom");
               }}
               disabled={isPending}
-              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium 
-                         bg-[#0d2c53] text-white border border-[#0d2c53] 
-                         hover:bg-[#0b2444] transition-colors whitespace-nowrap"
+              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap"
             >
               {isPending ? "Finalizando..." : "Finalizar consulta"}
             </button>
@@ -197,9 +229,7 @@ export default function Consultation() {
                 <button
                   disabled={generateReport.isPending}
                   onClick={handleGenerateReport}
-                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium 
-                             bg-[#0d2c53] text-white border border-[#0d2c53] 
-                             hover:bg-[#0b2444] transition-colors whitespace-nowrap"
+                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap"
                 >
                   {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
                 </button>
@@ -209,9 +239,7 @@ export default function Consultation() {
                     href={generateReport.data.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium 
-                               bg-gray-100 text-[#0d2c53] border border-gray-300 
-                               hover:bg-gray-200 transition-colors whitespace-nowrap"
+                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors whitespace-nowrap"
                   >
                     Ver Informe Médico
                   </a>
@@ -220,9 +248,7 @@ export default function Consultation() {
                 <button
                   disabled={generateDocuments.isPending}
                   onClick={handleGenerateDocuments}
-                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium 
-                             bg-green-600 text-white border border-green-600 
-                             hover:bg-green-700 transition-colors whitespace-nowrap"
+                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-green-600 text-white border border-green-600 hover:bg-green-700 transition-colors whitespace-nowrap"
                 >
                   {generateDocuments.isPending ? "Generando..." : "Generar Documentos"}
                 </button>

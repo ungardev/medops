@@ -701,9 +701,67 @@ class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
 
 # --- Eventos (auditoría) ---
 class EventSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+    action_label = serializers.SerializerMethodField()
+    action_href = serializers.SerializerMethodField()
+
     class Meta:
         model = Event
-        fields = ["id", "timestamp", "actor", "entity", "entity_id", "action", "metadata", "severity", "notify"]
+        fields = [
+            "id",
+            "timestamp",
+            "actor",
+            "entity",
+            "entity_id",
+            "action",
+            "metadata",
+            "severity",
+            "notify",
+            # 🔹 Campos enriquecidos
+            "title",
+            "description",
+            "category",
+            "action_label",
+            "action_href",
+        ]
+
+    def get_title(self, obj):
+        if obj.entity == "Payment" and obj.action == "create":
+            return "Pago confirmado"
+        if obj.entity == "Appointment" and obj.action == "update":
+            return "Cita actualizada"
+        if obj.entity == "WaitingRoom" and obj.action == "delete":
+            return "Paciente retirado de sala de espera"
+        return f"{obj.entity} {obj.action}"
+
+    def get_description(self, obj):
+        if obj.entity == "Payment":
+            return f"Orden #{obj.entity_id} confirmada"
+        if obj.entity == "Appointment":
+            return f"Cita #{obj.entity_id} modificada"
+        return obj.metadata.get("message", "") if obj.metadata else ""
+
+    def get_category(self, obj):
+        # Normaliza entity+action como clave única
+        return f"{obj.entity.lower()}.{obj.action.lower()}"
+
+    def get_action_label(self, obj):
+        if obj.entity == "Payment":
+            return "Ver pago"
+        if obj.entity == "Appointment":
+            return "Ver cita"
+        return "Ver detalle"
+
+    def get_action_href(self, obj):
+        if obj.entity == "Payment":
+            return f"/payments/{obj.entity_id}"
+        if obj.entity == "Appointment":
+            return f"/appointments/{obj.entity_id}"
+        if obj.entity == "WaitingRoom":
+            return "/waitingroom"
+        return None
 
 
 # --- Sala de espera (básico) ---

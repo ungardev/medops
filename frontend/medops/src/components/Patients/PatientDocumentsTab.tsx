@@ -6,10 +6,24 @@ import { useUploadDocument } from "../../hooks/patients/useUploadDocument";
 import { useDeleteDocument } from "../../hooks/patients/useDeleteDocument";
 import { MedicalDocument } from "../../types/documents";
 import { useNotify } from "../../hooks/useNotify";
+import { FaTrash } from "react-icons/fa";
 
 // ✅ BASE_URL institucional sin puerto hardcodeado y sin duplicar /api
 const RAW_ROOT = import.meta.env.VITE_API_ROOT || "http://127.0.0.1/api";
 const BASE_URL = RAW_ROOT.replace(/\/api\/?$/, "");
+
+// 🔹 Opciones cerradas de categoría (alineadas con DocumentCategory del backend)
+const CATEGORY_OPTIONS = [
+  { value: "prescription", label: "Prescripción" },
+  { value: "treatment", label: "Tratamiento" },
+  { value: "medical_test_order", label: "Órdenes de Exámenes" },
+  { value: "medical_referral", label: "Referencia Médica" },
+  { value: "medical_report", label: "Informe Médico General" },
+  { value: "other", label: "Otro" },
+];
+
+const resolveCategoryLabel = (value: string) =>
+  CATEGORY_OPTIONS.find((opt) => opt.value === value)?.label ?? value;
 
 export default function PatientDocumentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error, refetch } = useDocumentsByPatient(patient.id);
@@ -35,7 +49,10 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (!file || !description.trim() || !category) {
+      notify.error("Debe seleccionar archivo, descripción y categoría");
+      return;
+    }
     await uploadDocument.mutateAsync({ file, description, category });
     setFile(null);
     setDescription("");
@@ -89,15 +106,20 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
           />
         </div>
         <div className="col-span-12 sm:col-span-3">
-          <input
-            type="text"
-            placeholder="Categoría"
+          <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
                        bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
                        focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
+          >
+            <option value="">Seleccione categoría</option>
+            {CATEGORY_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="col-span-12 sm:col-span-3 flex items-center">
           <button
@@ -109,8 +131,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
           </button>
         </div>
       </form>
-
-      {/* Estados */}
+            {/* Estados */}
       {isLoading && <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">Cargando documentos...</p>}
       {error && <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>}
       {isEmpty && <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">No tiene documentos registrados</p>}
@@ -125,6 +146,7 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                 <tr>
                   <th className="px-4 py-2 border-b">Descripción</th>
                   <th className="px-4 py-2 border-b">Categoría</th>
+                  <th className="px-4 py-2 border-b">Origen</th>
                   <th className="px-4 py-2 border-b">Archivo</th>
                   <th className="px-4 py-2 border-b">Subido</th>
                   <th className="px-4 py-2 border-b text-center">Acciones</th>
@@ -134,7 +156,10 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                 {documents.map((d: MedicalDocument) => (
                   <tr key={d.id} className="border-b border-gray-200 dark:border-gray-700">
                     <td className="px-4 py-2">{d.description || "Documento sin descripción"}</td>
-                    <td className="px-4 py-2">{d.category || "Sin categoría"}</td>
+                    <td className="px-4 py-2">{resolveCategoryLabel(d.category ?? "")}</td>
+                    <td className="px-4 py-2">
+                      {d.source === "system_generated" ? "Generado por sistema" : "Subido por usuario"}
+                    </td>
                     <td className="px-4 py-2">
                       {d.file_url ? (
                         <a
@@ -155,10 +180,12 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                     <td className="px-4 py-2">
                       <div className="flex justify-center">
                         <button
-                          className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                          className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-1"
                           onClick={() => handleDelete(d.id)}
                           disabled={deleteDocument.isPending}
+                          title="Eliminar documento"
                         >
+                          <FaTrash className="w-3 h-3" />
                           {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
                         </button>
                       </div>
@@ -177,7 +204,10 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                   {d.description || "Documento sin descripción"}
                 </p>
                 <p className="text-xs text-[#0d2c53] dark:text-gray-300">
-                  <strong>Categoría:</strong> {d.category || "Sin categoría"}
+                  <strong>Categoría:</strong> {resolveCategoryLabel(d.category ?? "")}
+                </p>
+                <p className="text-xs text-[#0d2c53] dark:text-gray-300">
+                  <strong>Origen:</strong> {d.source === "system_generated" ? "Generado por sistema" : "Subido por usuario"}
                 </p>
                 <p className="text-xs text-[#0d2c53] dark:text-gray-300">
                   <strong>Archivo:</strong>{" "}
@@ -200,10 +230,12 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
                 </p>
                 <div className="mt-2 flex justify-end">
                   <button
-                    className="px-3 py-1.5 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors"
+                    className="px-3 py-1.5 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-1"
                     onClick={() => handleDelete(d.id)}
                     disabled={deleteDocument.isPending}
+                    title="Eliminar documento"
                   >
+                    <FaTrash className="w-3 h-3" />
                     {deleteDocument.isPending ? "Eliminando..." : "Eliminar"}
                   </button>
                 </div>

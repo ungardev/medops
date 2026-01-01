@@ -5,48 +5,42 @@ import FinancialMetrics from "@/components/Dashboard/FinancialMetrics";
 import TrendsChart from "@/components/Dashboard/TrendsChart";
 import NotificationsFeed from "@/components/Dashboard/NotificationsFeed";
 import AuditLog from "@/components/Dashboard/AuditLog";
-import { useAuthToken } from "@/hooks/useAuthToken"; // 🔒 para acceder al token
-import { queryClient } from "@/lib/reactQuery"; // 🔒 para invalidar notificaciones
+import { useAuthToken } from "@/hooks/useAuthToken";
+import { queryClient } from "@/lib/reactQuery";
 
 export default function Dashboard() {
   const { token } = useAuthToken();
 
-  // 🔒 invalidar notificaciones cuando el token esté disponible
   useEffect(() => {
     if (token) {
       queryClient.invalidateQueries({ queryKey: ["notifications", token] });
     }
   }, [token]);
 
-  const cardBase =
-    "w-full rounded-lg shadow-md bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-4";
-  const cardTall = `${cardBase} min-h-[300px]`; // métricas clínicas y financieras
-  const cardWide = `${cardBase} min-h-[360px]`; // tendencias y notificaciones
-
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 md:px-6 py-3 sm:py-6 md:py-6 space-y-6 sm:space-y-8 md:space-y-8">
-      {/* 🔹 Métricas clínicas y financieras */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-6 items-stretch">
-        <div className={cardTall}>
-          <ClinicalMetrics />
-        </div>
-        <div className={cardTall}>
-          <FinancialMetrics />
-        </div>
+    <div className="max-w-7xl mx-auto px-3 sm:px-6 py-4 space-y-6">
+      {/* 🔹 Línea 1: Métricas clínicas */}
+      <section>
+        <ClinicalMetrics />
       </section>
 
-      {/* 🔹 Tendencias y notificaciones */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-6 items-stretch">
-        <div className={cardWide}>
+      {/* 🔹 Línea 2: Métricas financieras */}
+      <section>
+        <FinancialMetrics />
+      </section>
+
+      {/* 🔹 Línea 3: Tendencias + Notificaciones */}
+      <section className="grid grid-cols-1 md:grid-cols-[1fr_320px] gap-4 items-stretch">
+        <div className="h-full">
           <TrendsChart />
         </div>
-        <div className={cardWide}>
+        <div className="h-full">
           <NotificationsFeed />
         </div>
       </section>
 
-      {/* 🔹 Audit log */}
-      <section className={cardBase}>
+      {/* 🔹 Línea 4: Auditoría */}
+      <section>
         <AuditLog />
       </section>
     </div>

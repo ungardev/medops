@@ -54,13 +54,60 @@ function normalizeMedicalHistory(medical_history: any): string {
   return String(medical_history ?? "");
 }
 
-// 🔹 Transformación estricta para PatientHeader
+// 🔹 Tipado local para la cadena de dirección (igual al usado en DemographicsSection)
+interface AddressChain {
+  country: string;
+  country_id: number | null;
+  state: string;
+  state_id: number | null;
+  municipality: string;
+  municipality_id: number | null;
+  parish: string;
+  parish_id: number | null;
+  neighborhood: string;
+  neighborhood_id: number | null;
+}
+
+const EMPTY_CHAIN: AddressChain = {
+  country: "",
+  country_id: null,
+  state: "",
+  state_id: null,
+  municipality: "",
+  municipality_id: null,
+  parish: "",
+  parish_id: null,
+  neighborhood: "",
+  neighborhood_id: null,
+};
+
+// 🔹 Normaliza address_chain para evitar undefined y tipos incorrectos
+function normalizeAddressChain(chain: any): AddressChain {
+  if (!chain || typeof chain !== "object") return EMPTY_CHAIN;
+  return {
+    country: String(chain.country ?? ""),
+    country_id: chain.country_id != null ? Number(chain.country_id) : null,
+    state: String(chain.state ?? ""),
+    state_id: chain.state_id != null ? Number(chain.state_id) : null,
+    municipality: String(chain.municipality ?? ""),
+    municipality_id: chain.municipality_id != null ? Number(chain.municipality_id) : null,
+    parish: String(chain.parish ?? ""),
+    parish_id: chain.parish_id != null ? Number(chain.parish_id) : null,
+    neighborhood: String(chain.neighborhood ?? ""),
+    neighborhood_id: chain.neighborhood_id != null ? Number(chain.neighborhood_id) : null,
+  };
+}
+
+// 🔹 Transformación estricta para PatientHeader (incluye address_chain)
 function toPatientHeaderPatient(p: any): PatientsPatient & { balance_due?: number; age?: number | null } {
   const full_name =
     p.full_name ??
     [p.first_name, p.middle_name, p.last_name, p.second_last_name].filter(Boolean).join(" ").trim();
 
   const age = p.age ?? calcAge(p.birthdate ?? null);
+
+  // Pasamos address_chain completo para que PatientHeader construya la dirección como en DemographicsSection
+  const address_chain: AddressChain = normalizeAddressChain(p.address_chain);
 
   return {
     id: p.id,
@@ -87,7 +134,10 @@ function toPatientHeaderPatient(p: any): PatientsPatient & { balance_due?: numbe
     full_name,
     balance_due: p.balance_due ?? undefined,
     age,
-  };
+
+    // 🔹 clave para la dirección completa
+    address_chain,
+  } as PatientsPatient & { balance_due?: number; age?: number | null };
 }
 
 export default function PatientConsultationsDetail() {
@@ -205,7 +255,7 @@ export default function PatientConsultationsDetail() {
                   Ver Informe Médico
                 </a>
               )}
-                            <button
+              <button
                 className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors text-xs sm:text-sm"
                 disabled={generateDocuments.isPending}
                 onClick={handleGenerateDocuments}

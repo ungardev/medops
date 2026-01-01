@@ -1,5 +1,5 @@
 // src/components/Patients/VaccinationTab.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   useVaccinations,
   PatientVaccination,
@@ -62,14 +62,6 @@ export default function VaccinationTab({ patientId, onRefresh }: Props) {
   const applied: PatientVaccination[] = Array.isArray(vaccQuery.data)
     ? vaccQuery.data
     : [];
-
-  // ⚡ Scroll automático al Matrix SVPP cuando se activa el tab
-  useEffect(() => {
-    const el = document.getElementById("vaccination-matrix");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth" });
-    }
-  }, []);
 
   return (
     <div

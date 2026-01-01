@@ -37,17 +37,20 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
 
   useEffect(() => {
     const fetchResults = async () => {
-      if (query.length < 1) {
+      if (!query || query.length < 1) {
         setResults([]);
         setHighlightedIndex(-1);
         return;
       }
       try {
         const response = await searchPatients(query);
-        setResults(response.results);
-        setHighlightedIndex(response.results.length > 0 ? 0 : -1);
+        const safeResults: PatientRef[] = Array.isArray(response?.results) ? response.results : [];
+        setResults(safeResults);
+        setHighlightedIndex(safeResults.length > 0 ? 0 : -1);
       } catch (e) {
         console.error("Error buscando pacientes:", e);
+        setResults([]);
+        setHighlightedIndex(-1);
       }
     };
     fetchResults();
@@ -56,16 +59,17 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
-      if (mode === "search" && results.length > 0 && !selectedPatient) {
+      const safeResults = results ?? [];
+      if (mode === "search" && Array.isArray(safeResults) && safeResults.length > 0 && !selectedPatient) {
         if (e.key === "ArrowDown") {
           e.preventDefault();
-          setHighlightedIndex((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+          setHighlightedIndex((prev) => (prev < safeResults.length - 1 ? prev + 1 : 0));
         } else if (e.key === "ArrowUp") {
           e.preventDefault();
-          setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+          setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : safeResults.length - 1));
         } else if (e.key === "Enter" && highlightedIndex >= 0) {
           e.preventDefault();
-          setSelectedPatient(results[highlightedIndex]);
+          setSelectedPatient(safeResults[highlightedIndex]);
           setQuery("");
           setResults([]);
         }
@@ -100,7 +104,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     }
   };
 
-    const alreadyInWaitingRoom = selectedPatient
+  const alreadyInWaitingRoom = selectedPatient
     ? existingEntries.some(
         (e) =>
           e.patient.id === selectedPatient.id &&
@@ -108,8 +112,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
           e.status !== "canceled"
       )
     : false;
-
-  return ReactDOM.createPortal(
+      return ReactDOM.createPortal(
     <div
       className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
       onClick={onClose}
@@ -136,7 +139,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
                 }}
               />
 
-              {results.length > 0 && !selectedPatient && (
+              {Array.isArray(results) && results.length > 0 && !selectedPatient && (
                 <ul className="border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700 max-h-40 overflow-y-auto">
                   {results.map((p, index) => (
                     <li
@@ -195,7 +198,8 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
               </button>
             </>
           )}
-                    {/* === MODO CREACIÓN === */}
+
+          {/* === MODO CREACIÓN === */}
           {mode === "create" && (
             <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
               <input

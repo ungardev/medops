@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// src/components/Dashboard/TrendsChart.tsx
+import React, { useState, useRef, useLayoutEffect } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -7,95 +8,189 @@ import {
   CategoryScale,
   LinearScale,
   Tooltip,
-  Legend,
+  Filler,
+  type ChartOptions,
 } from "chart.js";
 import { useDashboard } from "@/hooks/dashboard/useDashboard";
+import ButtonGroup from "@/components/Common/ButtonGroup";
 
-ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Legend);
+ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler);
 
 const TrendsChart: React.FC = () => {
   const [range, setRange] = useState<"day" | "week" | "month">("month");
   const [currency, setCurrency] = useState<"USD" | "VES">("USD");
+  const { data } = useDashboard({ range, currency });
+  const chartRef = useRef<any>(null);
+  const [chartData, setChartData] = useState<any>(null);
 
-  const { data, isLoading } = useDashboard({ range, currency });
+  const citas = data?.appointments_trend || [];
+  const pagos = data?.payments_trend || [];
+  const balance = data?.balance_trend || [];
 
-  if (isLoading) {
-    return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 min-h-[280px] sm:min-h-[300px]">
-        <p className="text-sm text-gray-500 dark:text-gray-400">Cargando tendencias...</p>
-      </section>
-    );
-  }
+  console.log("📊 Citas:", citas);
+  console.log("📊 Pagos:", pagos);
+  console.log("📊 Balance:", balance);
 
-  if (!data) {
-    return (
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 min-h-[280px] sm:min-h-[300px]">
-        <p className="text-sm text-red-600 dark:text-red-400">
-          No se pudo cargar la información de tendencias.
-        </p>
-      </section>
-    );
-  }
-
-  const appointmentsTrend = data.appointments_trend || [];
-  const paymentsTrend = data.payments_trend || [];
-  const balanceTrend = data.balance_trend || [];
-  const bcvRate = data.bcv_rate?.value;
-
-  const hasData =
-    appointmentsTrend.length > 0 ||
-    paymentsTrend.length > 0 ||
-    balanceTrend.length > 0;
-
-  const labels = appointmentsTrend.map((p) => p.date);
-
-  const isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const citasColor = isDarkMode ? "#3b82f6" : "#0d2c53";
-  const citasBg = isDarkMode ? "rgba(59, 130, 246, 0.2)" : "rgba(13, 44, 83, 0.2)";
-
-  const chartData = {
-    labels,
-    datasets: [
-      {
-        label: "Citas completadas",
-        data: appointmentsTrend.map((p) => p.value ?? 0),
-        borderColor: citasColor,
-        backgroundColor: citasBg,
-        tension: 0.3,
-      },
-      {
-        label: `Pagos confirmados (${currency})`,
-        data: paymentsTrend.map((p) => p.value ?? 0),
-        borderColor: "#22c55e",
-        backgroundColor: "rgba(34, 197, 94, 0.2)",
-        tension: 0.3,
-        yAxisID: "y1",
-      },
-      {
-        label: `Balance financiero (${currency})`,
-        data: balanceTrend.map((p) => p.value ?? 0),
-        borderColor: "#ef4444",
-        backgroundColor: "rgba(239, 68, 68, 0.2)",
-        tension: 0.3,
-        yAxisID: "y1",
-      },
-    ],
+  // Construir rango continuo de fechas
+  const buildContinuousLabels = (start: string, end: string) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const labels: string[] = [];
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      labels.push(d.toISOString().split("T")[0]);
+    }
+    return labels;
   };
 
-  const chartOptions = {
+  // Obtener min/max sin ordenar todo el arreglo dos veces
+  const allDates = [
+    ...citas.map((p: any) => p.date),
+    ...pagos.map((p: any) => p.date),
+    ...balance.map((p: any) => p.date),
+  ].filter(Boolean);
+
+  let labels: string[] = [];
+  if (allDates.length) {
+    const minDate = allDates.reduce((min, d) => (d < min ? d : min), allDates[0]);
+    const maxDate = allDates.reduce((max, d) => (d > max ? d : max), allDates[0]);
+    labels = buildContinuousLabels(minDate, maxDate);
+  }
+
+  console.log("📅 Labels continuos:", labels);
+
+  const hasData = citas.length || pagos.length || balance.length;
+  console.log("✅ hasData:", hasData);
+
+  // Colores base en strings
+  const baseColors: Record<string, string> = {
+    citas: "rgba(13,44,83,0.4)",
+    pagos: "rgba(34,197,94,0.4)",
+    balance: "rgba(239,68,68,0.4)",
+  };
+
+  const buildGradient = (ctx: CanvasRenderingContext2D, color: string) => {
+    console.log("🎨 Generando gradiente con color:", color);
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    gradient.addColorStop(0, color);
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+    return gradient;
+  };
+
+  // Render inicial sin gradientes
+  useLayoutEffect(() => {
+    if (hasData && labels.length) {
+      console.log("🚀 Construyendo chartData inicial sin gradientes");
+
+      const citasData = labels.map((date) => {
+        const found = citas.find((p: any) => p.date === date);
+        return typeof found?.value === "number" ? found.value : 0;
+      });
+
+      const pagosData = labels.map((date) => {
+        const found = pagos.find((p: any) => p.date === date);
+        return typeof found?.value === "number" ? found.value : 0;
+      });
+
+      const balanceData = labels.map((date) => {
+        const found = balance.find((p: any) => p.date === date);
+        return typeof found?.value === "number" ? found.value : 0;
+      });
+
+      const newChartData = {
+        labels,
+        datasets: [
+          {
+            label: "Citas",
+            data: citasData,
+            borderColor: "#0d2c53",
+            backgroundColor: baseColors.citas,
+            fill: true,
+            tension: 0.5,
+            pointRadius: 0,
+          },
+          {
+            label: `Pagos (${currency})`,
+            data: pagosData,
+            borderColor: "#22c55e",
+            backgroundColor: baseColors.pagos,
+            fill: true,
+            tension: 0.5,
+            pointRadius: 0,
+          },
+          {
+            label: `Balance (${currency})`,
+            data: balanceData,
+            borderColor: "#ef4444",
+            backgroundColor: baseColors.balance,
+            fill: true,
+            tension: 0.5,
+            pointRadius: 0,
+          },
+        ],
+      };
+      setChartData(newChartData);
+    }
+  }, [hasData, currency, labels.join("|")]);
+
+  // Inyección de gradientes en caliente
+  useLayoutEffect(() => {
+    const timer = setTimeout(() => {
+      console.log("🧠 chartRef:", chartRef.current);
+      console.log("🧠 ctx:", chartRef.current?.ctx);
+      if (chartRef.current && chartRef.current.ctx && chartData) {
+        const ctx = chartRef.current.ctx;
+        console.log("🎯 Inyectando gradientes en datasets");
+        const updated = {
+          ...chartData,
+          datasets: [
+            {
+              ...chartData.datasets[0],
+              backgroundColor: buildGradient(ctx, baseColors.citas),
+            },
+            {
+              ...chartData.datasets[1],
+              backgroundColor: buildGradient(ctx, baseColors.pagos),
+            },
+            {
+              ...chartData.datasets[2],
+              backgroundColor: buildGradient(ctx, baseColors.balance),
+            },
+          ],
+        };
+        setChartData(updated);
+      }
+    }, 120);
+
+    return () => clearTimeout(timer);
+  }, [chartData]);
+
+  const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 800,
+      easing: "easeOutQuart",
+    },
+    layout: {
+      padding: { top: 16, bottom: 8 },
+    },
     plugins: {
       legend: {
-        position: "bottom" as const,
+        position: "top",
         labels: {
           color: "#374151",
           font: { size: 12 },
+          boxWidth: 12,
         },
       },
       tooltip: {
-        mode: "index" as const,
+        mode: "index",
         intersect: false,
+        backgroundColor: "#0d2c53",
+        titleColor: "#fff",
+        bodyColor: "#fff",
+        borderColor: "#fff",
+        borderWidth: 1,
       },
     },
     scales: {
@@ -104,81 +199,47 @@ const TrendsChart: React.FC = () => {
         grid: { display: false },
       },
       y: {
-        type: "linear" as const,
-        position: "left" as const,
         ticks: { color: "#6b7280" },
         grid: { color: "#e5e7eb" },
-      },
-      y1: {
-        type: "linear" as const,
-        position: "right" as const,
-        ticks: { color: "#6b7280" },
-        grid: { drawOnChartArea: false },
       },
     },
   };
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 min-h-[280px] sm:min-h-[300px]">
-      {/* Header */}
-      <div className="flex flex-col md:space-y-2 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white text-center md:text-center lg:text-left mb-2 md:mb-0">
-          Tendencias
-        </h3>
-
-        {/* Botonera: mobile dos líneas, tablet horizontal, desktop intacto */}
-        <div className="flex flex-col gap-2 w-full lg:flex-row lg:justify-end lg:gap-2 mt-2 md:mt-0">
-          <div className="grid grid-cols-3 gap-2 w-full lg:flex lg:justify-end lg:gap-2">
-            {(["day", "week", "month"] as const).map((r) => (
-              <button
-                key={r}
-                onClick={() => setRange(r)}
-                className={`w-full px-3 py-1.5 text-sm rounded border transition-colors md:h-9 md:px-3 md:py-0 whitespace-nowrap ${
-                  range === r
-                    ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
-                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-                }`}
-              >
-                {r === "day" ? "Hoy" : r === "week" ? "Semana" : "Mes"}
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2 w-full lg:flex lg:justify-end lg:gap-2">
-            {(["USD", "VES"] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => setCurrency(c)}
-                className={`w-full px-3 py-1.5 text-sm rounded border transition-colors md:h-9 md:px-3 md:py-0 whitespace-nowrap ${
-                  currency === c
-                    ? "bg-[#0d2c53] text-white border-[#0d2c53] hover:bg-[#0b2444] hover:text-white dark:bg-white dark:text-black dark:border-white dark:hover:bg-gray-200 dark:hover:text-black"
-                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600"
-                }`}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+    <section className="h-full bg-white dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-md p-3 sm:p-4 flex flex-col">
+      {/* Header compacto */}
+      <div className="h-9 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#0d2c53] dark:text-white">Tendencias</h3>
+        <div className="flex gap-2">
+          <ButtonGroup
+            options={["day", "week", "month"]}
+            selected={range}
+            onSelect={(r) => setRange(r as any)}
+          />
+          <ButtonGroup
+            options={["USD", "VES"]}
+            selected={currency}
+            onSelect={(c) => setCurrency(c as any)}
+          />
         </div>
       </div>
 
-      {currency === "VES" && typeof bcvRate === "number" && (
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Tasa BCV aplicada: {bcvRate.toFixed(2)} Bs/USD
-        </p>
-      )}
-
-      {/* Chart or message */}
-      {!hasData ? (
-        <div className="h-40 flex items-center justify-center bg-gray-50 dark:bg-gray-900 rounded">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {range === "day" ? "No hay datos para hoy" : "No hay datos disponibles para el rango seleccionado"}
-          </p>
-        </div>
-      ) : (
-        <div className="relative w-full min-w-0 h-[240px] sm:h-[240px]">
-          <Line data={chartData} options={chartOptions} />
-        </div>
-      )}
+      {/* Gráfico blindado */}
+      <div className="flex-1 mt-3">
+        {!hasData ? (
+          <div className="h-full flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
+            No hay datos disponibles
+          </div>
+        ) : !chartData ? (
+          <div className="h-full flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
+            Cargando tendencias...
+          </div>
+        ) : (
+          <div className="relative w-full h-full">
+            <Line ref={chartRef} data={chartData} options={chartOptions} />
+          </div>
+        )}
+      </div>
     </section>
   );
 };

@@ -68,12 +68,25 @@ export interface PatientSearchResponse {
   results: PatientRef[];
 }
 
-export const searchPatients = (q: string): Promise<PatientSearchResponse> => {
-  if (!q.trim()) return Promise.resolve({ count: 0, results: [] });
+export const searchPatients = async (q: string): Promise<PatientSearchResponse> => {
+  if (!q.trim()) return { count: 0, results: [] };
+
   // ⚔️ Blindaje institucional: solo pacientes activos
-  return apiFetch<PatientSearchResponse>(
+  const res = await apiFetch<any>(
     `patients/search/?q=${encodeURIComponent(q)}&active=true`
   );
+
+  // Blindaje: aceptar array plano o { results }
+  const rawList: any[] = Array.isArray(res)
+    ? res
+    : Array.isArray(res?.results)
+    ? res.results
+    : [];
+
+  return {
+    count: Array.isArray(res?.results) ? res.count ?? rawList.length : rawList.length,
+    results: rawList as PatientRef[],
+  };
 };
 
 // 🔹 Obtener un paciente por ID
