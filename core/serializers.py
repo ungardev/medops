@@ -750,6 +750,7 @@ class EventSerializer(serializers.ModelSerializer):
         return obj.metadata.get("message", "") if obj.metadata else ""
 
     def get_category(self, obj):
+        # Normaliza entity+action como clave única
         return f"{obj.entity.lower()}.{obj.action.lower()}"
 
     def get_action_label(self, obj):
@@ -758,6 +759,8 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "Appointment":
             return "Ver cita"
         if obj.entity == "WaitingRoomEntry":
+            return "Ver sala de espera"
+        if obj.entity == "WaitingRoom":
             return "Ver sala de espera"
         return "Ver detalle"
 
