@@ -822,21 +822,10 @@ def notifications_api(request):
     recent_events = (
         Event.objects
         .filter(notify=True, timestamp__gte=window_start)
-        .order_by("-timestamp")[:10]  # se filtran 10 para luego reducir a 3 únicos
+        .order_by("-timestamp")[:3]  # 🔹 directamente los 3 más recientes
     )
 
-    # 🔹 Post-procesamiento: evitar duplicados por categoría
-    seen = set()
-    filtered = []
-    for event in recent_events:
-        key = f"{event.entity}.{event.action}"
-        if key not in seen:
-            seen.add(key)
-            filtered.append(event)
-        if len(filtered) == 3:
-            break
-
-    serializer = EventSerializer(filtered, many=True)
+    serializer = EventSerializer(recent_events, many=True)
     return Response(serializer.data, status=200)
 
 
