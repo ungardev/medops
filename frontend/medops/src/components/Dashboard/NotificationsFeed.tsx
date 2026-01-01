@@ -65,9 +65,14 @@ export default function NotificationsFeed() {
     return () => clearTimeout(timeout);
   }, [refetch]);
 
+  console.log("📦 Raw data desde useNotifications:", data);
+
   const notifications = toArray<NotificationEvent>(data).slice(0, 6);
 
+  console.log("📋 Notificaciones procesadas:", notifications);
+
   const handleAction = (n: NotificationEvent) => {
+    console.log("🧠 Acción disparada para notificación:", n);
     if (n.category?.startsWith("appointment") && n.entity_id) {
       setSelectedAppointmentId(n.entity_id);
     } else if (n.category?.startsWith("payment") && n.entity_id) {
@@ -92,29 +97,39 @@ export default function NotificationsFeed() {
           ) : notifications.length === 0 ? (
             <li className="text-sm text-gray-500 dark:text-gray-400">No hay notificaciones recientes.</li>
           ) : (
-            notifications.map((n) => (
-              <li key={n.id}>
-                <button
-                  onClick={() => handleAction(n)}
-                  className="w-full text-left p-3 rounded transition flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <div className="flex items-center gap-2">
-                    <NotificationBadge action={n.action} severity={n.severity} />
-                    <span className="truncate text-sm font-medium text-[#0d2c53] dark:text-white">
-                      {n.title}
+            notifications.map((n) => {
+              console.log("🔔 Renderizando notificación:", n);
+              return (
+                <li key={n.id}>
+                  <button
+                    onClick={() => handleAction(n)}
+                    className="w-full text-left p-3 rounded transition flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <div className="flex items-center gap-2">
+                      <NotificationBadge
+                        action={n.badge_action as "create" | "update" | "delete" | "other"}
+                        severity={n.severity}
+                      />
+                      <span className="truncate text-sm font-medium text-[#0d2c53] dark:text-white">
+                        {n.title}
+                      </span>
+                    </div>
+                    {n.description ? (
+                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                        {n.description}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+                        Sin descripción
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {moment(n.timestamp).fromNow()}
                     </span>
-                  </div>
-                  {n.description && (
-                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                      {n.description}
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {moment(n.timestamp).fromNow()}
-                  </span>
-                </button>
-              </li>
-            ))
+                  </button>
+                </li>
+              );
+            })
           )}
         </ul>
       </div>
