@@ -1,9 +1,21 @@
-// src/components/InstitutionalHeader.tsx
-import { Bell, UserCircle, Search, LogOut, Settings, Moon, Sun } from "lucide-react";
+// src/components/Layout/InstitutionalHeader.tsx
+import {
+  Bell, // 👈 Cambiado: Inbox por Bell
+  UserCircle,
+  Search,
+  LogOut,
+  Settings,
+  Moon,
+  Sun,
+  FileText,
+  DollarSign,
+  UserCheck,
+  Activity, // 👈 Nuevo: Para el icono por defecto de actividad
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { api } from "@/lib/apiClient"; // ⚔️ Cliente institucional
-import { useAuthToken } from "hooks/useAuthToken"; // ✅ NUEVO IMPORT
+import { api } from "@/lib/apiClient";
+import { useAuthToken } from "hooks/useAuthToken";
 
 interface Notification {
   id: number;
@@ -13,7 +25,7 @@ interface Notification {
   entity_id: number;
   action: string;
   metadata: Record<string, any>;
-  severity: string;
+  severity: "info" | "success" | "warning" | "error" | string;
   notify: boolean;
 }
 
@@ -22,46 +34,58 @@ interface HeaderProps {
   setMobileOpen: (value: boolean) => void;
 }
 
-function formatNotification(n: Notification): string {
-  const { action, entity, metadata } = n;
-  if (action === "patient_arrived" && entity === "WaitingRoomEntry") return `Paciente llegó a la sala (ID ${metadata.patient_id})`;
-  if (action === "payment_registered" && entity === "ChargeOrder") return `Pago registrado de $${metadata.amount} USD`;
-  if (action === "generated" && entity === "MedicalReport") return `Informe médico generado (Código ${metadata.audit_code})`;
-  if (action === "generate_pdf" && entity === "MedicalDocument") {
-    const tipo = metadata.category?.replace(/_/g, " ") ?? "documento";
-    return `PDF generado: ${tipo}`;
-  }
-  return `${action} en ${entity}`;
+function formatRelative(ts: string): string {
+  const d = new Date(ts);
+  const diff = Date.now() - d.getTime();
+  const min = Math.floor(diff / 60000);
+  const hr = Math.floor(min / 60);
+  const day = Math.floor(hr / 24);
+  if (day > 0) return `${day}d`;
+  if (hr > 0) return `${hr}h`;
+  if (min > 0) return `${min}m`;
+  return "ahora";
 }
 
-function getNotificationLink(n: Notification): string | undefined {
-  const { entity, entity_id, metadata } = n;
-  if (entity === "ChargeOrder") return `/charge-orders/${entity_id}`;
-  if (entity === "WaitingRoomEntry") return `/waitingroom`;
-  if (entity === "MedicalReport" || entity === "MedicalDocument") {
-    const patientId = metadata?.patient_id;
-    if (patientId) return `/patients/${patientId}?tab=documents`;
-  }
-  return undefined;
+function notificationIcon(n: Notification) {
+  const { action } = n;
+  if (action === "patient_arrived") return <UserCheck className="w-3.5 h-3.5" />;
+  if (action === "payment_registered") return <DollarSign className="w-3.5 h-3.5" />;
+  if (action === "report_generated") return <FileText className="w-3.5 h-3.5" />;
+  return <Activity className="w-3.5 h-3.5" />; // 👈 Cambiado a Activity como fallback
 }
-export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: HeaderProps) {
+
+export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   const navigate = useNavigate();
   const { clearToken } = useAuthToken();
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [query, setQuery] = useState("");
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  
   const notifRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
-    if (saved === "dark") {
-      document.documentElement.classList.add("dark");
-      setDarkMode(true);
-    }
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const isDark = saved === "dark" || (!saved && prefersDark);
+    document.documentElement.classList.toggle("dark", isDark);
+    setDarkMode(isDark);
   }, []);
 
   useEffect(() => {
@@ -69,8 +93,7 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
       setLoadingNotifications(true);
       try {
         const res = await api.get<Notification[]>("/notifications/");
-        const raw = Array.isArray(res.data) ? res.data : [];
-        setNotifications(raw.slice(0, 5));
+        setNotifications(Array.isArray(res.data) ? res.data.slice(0, 8) : []);
       } catch {
         setNotifications([]);
       } finally {
@@ -78,13 +101,15 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
       }
     };
     fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
-      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
-        setShowNotifications(false);
-      }
+      const target = e.target as Node;
+      if (notifRef.current && !notifRef.current.contains(target)) setShowNotifications(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) setMenuOpen(false);
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
@@ -92,29 +117,9 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
 
   const toggleTheme = () => {
     const next = !darkMode;
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
     setDarkMode(next);
-  };
-
-  const handleSearch = () => {
-    const q = query.trim();
-    if (q) {
-      navigate(`/search?query=${encodeURIComponent(q)}`);
-      setQuery("");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSearch();
-    }
   };
 
   const handleLogout = () => {
@@ -122,121 +127,161 @@ export default function InstitutionalHeader({ setCollapsed, setMobileOpen }: Hea
     navigate("/login");
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      navigate(`/search?query=${encodeURIComponent(query.trim())}`);
+      setQuery("");
+      searchInputRef.current?.blur();
+    }
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full h-16 flex-shrink-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-      <div className="max-w-7xl mx-auto w-full h-16 flex items-center justify-between gap-4 px-4 sm:px-6 min-w-0">
-        {/* Bloque izquierdo: hamburguesa + buscador */}
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+    <div className="w-full flex items-center justify-between h-full bg-transparent px-4">
+      {/* SECCIÓN BUSCADOR */}
+      <div className="flex items-center gap-4 flex-1">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="lg:hidden p-2 text-[var(--palantir-muted)] hover:text-[var(--palantir-text)]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+
+        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-md group">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-muted)] group-focus-within:text-[var(--palantir-active)] transition-colors" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Buscar paciente o comando... (Ctrl+K)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-md text-[13px] text-[var(--palantir-text)] focus:outline-none focus:border-[var(--palantir-active)]/50 transition-all placeholder:text-[var(--palantir-muted)]/50 font-mono"
+          />
+          <button type="submit" className="hidden" aria-hidden="true" />
+        </form>
+      </div>
+
+      {/* SECCIÓN ACCIONES */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={toggleTheme}
+          title="Cambiar tema"
+          className="p-2.5 text-[var(--palantir-muted)] hover:bg-[var(--palantir-border)] hover:text-[var(--palantir-text)] rounded-md transition-all"
+        >
+          {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+
+        {/* Notificaciones (Bell Icon) */}
+        <div className="relative" ref={notifRef}>
           <button
-            onClick={() => setMobileOpen(true)}
-            className="lg:hidden inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white flex-shrink-0"
-            aria-label="Abrir menú"
+            onClick={() => setShowNotifications(!showNotifications)}
+            className={`p-2.5 rounded-md transition-all relative ${
+              showNotifications 
+                ? "bg-[var(--palantir-active)]/10 text-[var(--palantir-active)]" 
+                : "text-[var(--palantir-muted)] hover:bg-[var(--palantir-border)] hover:text-[var(--palantir-text)]"
+            }`}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <Bell size={18} /> {/* 👈 Aquí está tu "cartelito" de notificaciones */}
+            {notifications.length > 0 && (
+              <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[var(--palantir-surface)] animate-pulse"></span>
+            )}
           </button>
 
-          <div className="relative w-full max-w-md min-w-0">
-            <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-500 dark:text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full pl-10 pr-4 py-2 rounded-md text-sm bg-white dark:bg-gray-800 text-[#0d2c53] dark:text-white border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-            />
-          </div>
+          {showNotifications && (
+            <div className="absolute right-0 mt-3 w-80 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-md shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-3 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)] flex justify-between items-center">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--palantir-muted)]">Log de Actividad</span>
+                <div className="flex items-center gap-1.5">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-[9px] text-emerald-500 px-1 py-0.5 font-bold">LIVE_FEED</span>
+                </div>
+              </div>
+              
+              <ul className="max-h-[380px] overflow-y-auto custom-scrollbar">
+                {loadingNotifications ? (
+                  <div className="p-8 text-center text-[11px] text-[var(--palantir-muted)] italic font-mono uppercase tracking-widest">Sincronizando...</div>
+                ) : notifications.length === 0 ? (
+                  <div className="p-8 text-center text-[11px] text-[var(--palantir-muted)] italic font-mono uppercase tracking-widest">Sin registros</div>
+                ) : (
+                  notifications.map((n) => (
+                    <li key={n.id} className="border-b border-[var(--palantir-border)]/50 last:border-0 hover:bg-[var(--palantir-bg)] transition-colors p-3">
+                      <div className="flex gap-3">
+                        <div className="mt-0.5 text-[var(--palantir-active)] bg-[var(--palantir-active)]/10 p-1.5 rounded-md h-fit border border-[var(--palantir-active)]/20">
+                          {notificationIcon(n)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start gap-2">
+                            <span className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight truncate">
+                              {n.actor}
+                            </span>
+                            <span className="text-[9px] text-[var(--palantir-muted)] font-mono whitespace-nowrap opacity-60">
+                              [{formatRelative(n.timestamp)}]
+                            </span>
+                          </div>
+                          <p className="text-[12px] text-[var(--palantir-muted)] leading-snug mt-0.5">
+                            {n.action.replace(/_/g, ' ')}: <span className="italic text-white/60">{n.entity}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+              <div className="p-2 border-t border-[var(--palantir-border)] bg-[var(--palantir-bg)]">
+                <button className="w-full py-1.5 text-[10px] text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors uppercase font-bold tracking-tighter">
+                  Acceder al Archivo de Logs
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Bloque derecho: acciones */}
-        <div className="flex items-center gap-1 flex-shrink-0 min-w-0">
-          {/* Tema */}
+        <div className="h-6 w-[1px] bg-[var(--palantir-border)] mx-2 opacity-50"></div>
+
+        {/* Perfil de Usuario */}
+        <div className="relative" ref={userMenuRef}>
           <button
-            onClick={toggleTheme}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white"
-            aria-label="Cambiar tema"
+            onClick={() => setMenuOpen(!menuOpen)}
+            className={`flex items-center gap-3 p-1.5 px-3 rounded-md transition-all group ${
+                menuOpen ? 'bg-[var(--palantir-border)]' : 'hover:bg-[var(--palantir-border)] shadow-sm'
+            }`}
           >
-            {darkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            <div className="relative">
+                <UserCircle size={22} className="text-[var(--palantir-muted)] group-hover:text-[var(--palantir-text)]" />
+                <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full border border-[var(--palantir-surface)]"></span>
+            </div>
+            <div className="hidden sm:block text-left">
+              <p className="text-[11px] font-bold text-[var(--palantir-text)] leading-none uppercase tracking-wider">ROOT_USER</p>
+              <p className="text-[9px] text-[var(--palantir-muted)] leading-none mt-1 font-mono uppercase opacity-70">Sys.Admin</p>
+            </div>
           </button>
 
-          {/* Notificaciones */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={() => setShowNotifications((v) => !v)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white"
-              aria-label="Notificaciones"
-            >
-              <Bell className="w-6 h-6" />
-              {notifications.length > 0 && (
-                <span className="absolute top-[2px] right-[2px] bg-[#0d2c53] text-white text-[10px] rounded-full px-1 leading-none">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
-
-            {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
-                <ul className="divide-y divide-gray-200 dark:divide-gray-700 max-h-64 overflow-y-auto">
-                  {loadingNotifications ? (
-                    <li className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">Cargando…</li>
-                  ) : notifications.length === 0 ? (
-                    <li className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">No hay notificaciones.</li>
-                  ) : (
-                    notifications.map((n) => {
-                      const label = formatNotification(n);
-                      const link = getNotificationLink(n);
-                      return (
-                        <li
-                          key={n.id}
-                          className="px-4 py-2 text-sm text-[#0d2c53] dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                          onClick={() => {
-                            if (link) navigate(link);
-                            setShowNotifications(false);
-                          }}
-                        >
-                          {label}
-                        </li>
-                      );
-                    })
-                  )}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Perfil */}
-          <div className="relative">
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-md text-gray-600 dark:text-gray-300 hover:text-[#0d2c53] dark:hover:text-white"
-              aria-label="Perfil"
-            >
-              <UserCircle className="w-6 h-6" />
-            </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-50">
+          {menuOpen && (
+            <div className="absolute right-0 mt-3 w-52 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-md shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="p-1.5">
                 <button
-                  onClick={() => navigate("/settings/config")}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                  onClick={() => { navigate("/settings/config"); setMenuOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-[12px] text-[var(--palantir-text)] hover:bg-[var(--palantir-bg)] rounded-md transition-all font-medium"
                 >
-                  <Settings className="w-4 h-4" />
-                  Configuración
+                  <Settings size={14} className="text-[var(--palantir-muted)]" /> Configuración
                 </button>
+                <div className="h-[1px] bg-[var(--palantir-border)] my-1 mx-2"></div>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#0d2c53] dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full flex items-center gap-3 px-3 py-2 text-[12px] text-red-400 hover:bg-red-400/10 rounded-md transition-all font-medium"
                 >
-                  <LogOut className="w-4 h-4" />
-                  Cerrar sesión
+                  <LogOut size={14} /> Finalizar Sesión
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
-    </header>
+    </div>
   );
 }

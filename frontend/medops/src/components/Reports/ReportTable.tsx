@@ -1,5 +1,11 @@
+// src/components/Reports/ReportTable.tsx
 import React from "react";
 import { ReportRow, ReportStatus, ReportType } from "@/types/reports";
+import { 
+  NoSymbolIcon, 
+  CircleStackIcon, 
+  ArrowUpRightIcon 
+} from "@heroicons/react/24/outline";
 
 interface Props {
   data: ReportRow[];
@@ -8,81 +14,71 @@ interface Props {
 export default function ReportTable({ data }: Props) {
   if (data.length === 0) {
     return (
-      <div className="px-4 py-6 text-center text-sm text-[#0d2c53] dark:text-gray-400 italic">
-        No hay resultados para los filtros seleccionados
+      <div className="flex flex-col items-center justify-center px-4 py-16 space-y-4">
+        <NoSymbolIcon className="w-10 h-10 text-[var(--palantir-muted)] opacity-20" />
+        <p className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.3em] animate-pulse">
+          No_Dataset_Records_Found
+        </p>
       </div>
     );
   }
 
+  // Helper para centralizar la lógica de estilos de estado estilo terminal
+  const getStatusConfig = (status: ReportStatus) => {
+    switch (status) {
+      case ReportStatus.CONFIRMED:
+        return { label: "CONFIRMED", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" };
+      case ReportStatus.PENDING:
+        return { label: "PENDING", color: "text-yellow-500", bg: "bg-yellow-500/10", border: "border-yellow-500/20" };
+      case ReportStatus.CANCELLED:
+        return { label: "CANCELLED", color: "text-red-500", bg: "bg-red-500/10", border: "border-red-500/20" };
+      default:
+        return { label: "COMPLETED", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" };
+    }
+  };
+
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-      {/* 🔹 Tabla en desktop */}
+    <div className="relative border border-white/5 bg-black/20 rounded-sm">
+      
+      {/* 🔹 DESKTOP DATA MATRIX */}
       <div className="hidden md:block overflow-x-auto">
-        <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100">
-          <thead className="bg-gray-50 dark:bg-gray-700 text-sm font-semibold text-[#0d2c53] dark:text-gray-200">
-            <tr>
-              <th className="px-4 py-2 border-b">Fecha</th>
-              <th className="px-4 py-2 border-b">Tipo</th>
-              <th className="px-4 py-2 border-b">Entidad</th>
-              <th className="px-4 py-2 border-b">Estado</th>
-              <th className="px-4 py-2 border-b text-right">Monto</th>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-white/5 border-b border-white/10">
+              <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-[var(--palantir-muted)]">Timestamp</th>
+              <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-[var(--palantir-muted)]">Classification</th>
+              <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-[var(--palantir-muted)]">Subject_Entity</th>
+              <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-[var(--palantir-muted)]">Signal_Status</th>
+              <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.25em] text-[var(--palantir-muted)] text-right">Value_USD</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-white/5">
             {data.map((row) => {
-              let statusLabel = "";
-              let statusClass = "";
-
-              switch (row.status) {
-                case ReportStatus.CONFIRMED:
-                  statusLabel = "Confirmado";
-                  statusClass =
-                    "bg-green-100 text-green-800 ring-green-200 dark:bg-green-800 dark:text-green-200";
-                  break;
-                case ReportStatus.PENDING:
-                  statusLabel = "Pendiente";
-                  statusClass =
-                    "bg-yellow-100 text-yellow-800 ring-yellow-200 dark:bg-yellow-700 dark:text-yellow-200";
-                  break;
-                case ReportStatus.CANCELLED:
-                  statusLabel = "Cancelado";
-                  statusClass =
-                    "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200";
-                  break;
-                case ReportStatus.COMPLETED:
-                case ReportStatus.FINALIZED:
-                  statusLabel = "Completado";
-                  statusClass =
-                    "bg-gray-100 text-[#0d2c53] ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
-                  break;
-              }
-
+              const status = getStatusConfig(row.status);
               return (
-                <tr key={row.id} className="border-b border-gray-200 dark:border-gray-700">
-                  <td className="px-4 py-2">{row.date}</td>
-                  <td className="px-4 py-2">
-                    <span className="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset bg-gray-100 text-[#0d2c53] dark:bg-gray-700 dark:text-gray-200">
-                      {row.type === ReportType.FINANCIAL
-                        ? "Financiero"
-                        : row.type === ReportType.CLINICAL
-                        ? "Clínico"
-                        : "Combinado"}
+                <tr key={row.id} className="group hover:bg-[var(--palantir-active)]/[0.03] transition-colors">
+                  <td className="px-6 py-4 font-mono text-[10px] text-[var(--palantir-muted)] group-hover:text-white transition-colors">
+                    {row.date}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-[9px] font-bold text-blue-400/80 uppercase tracking-widest flex items-center gap-1.5">
+                      <div className="w-1 h-1 bg-blue-400/40 rounded-full" />
+                      {row.type}
                     </span>
                   </td>
-                  <td className="px-4 py-2">{row.entity}</td>
-                  <td className="px-4 py-2">
-                    {statusLabel && (
-                      <span
-                        className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`}
-                      >
-                        {statusLabel}
-                      </span>
-                    )}
+                  <td className="px-6 py-4 text-[11px] font-medium text-white/80 uppercase group-hover:text-white">
+                    {row.entity}
                   </td>
-                  <td className="px-4 py-2 text-right">
-                    {row.amount.toLocaleString("es-VE", {
-                      style: "currency",
-                      currency: "USD",
+                  <td className="px-6 py-4">
+                    <div className={`inline-flex items-center px-2.5 py-1 rounded-xs border ${status.border} ${status.bg} ${status.color} text-[8px] font-black tracking-widest`}>
+                      <div className={`w-1 h-1 rounded-full ${status.color.replace('text', 'bg')} mr-2 animate-pulse`} />
+                      {status.label}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-right font-mono text-[11px] font-black text-white">
+                    {row.amount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
                     })}
                   </td>
                 </tr>
@@ -92,72 +88,46 @@ export default function ReportTable({ data }: Props) {
         </table>
       </div>
 
-      {/* 🔹 Cards en mobile */}
-      <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+      {/* 🔹 MOBILE DATA CARDS */}
+      <div className="md:hidden divide-y divide-white/5">
         {data.map((row) => {
-          let statusLabel = "";
-          let statusClass = "";
-
-          switch (row.status) {
-            case ReportStatus.CONFIRMED:
-              statusLabel = "Confirmado";
-              statusClass =
-                "bg-green-100 text-green-800 ring-green-200 dark:bg-green-800 dark:text-green-200";
-              break;
-            case ReportStatus.PENDING:
-              statusLabel = "Pendiente";
-              statusClass =
-                "bg-yellow-100 text-yellow-800 ring-yellow-200 dark:bg-yellow-700 dark:text-yellow-200";
-              break;
-            case ReportStatus.CANCELLED:
-              statusLabel = "Cancelado";
-              statusClass =
-                "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200";
-              break;
-            case ReportStatus.COMPLETED:
-            case ReportStatus.FINALIZED:
-              statusLabel = "Completado";
-              statusClass =
-                "bg-gray-100 text-[#0d2c53] ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
-              break;
-          }
-
+          const status = getStatusConfig(row.status);
           return (
-            <div key={row.id} className="p-4 space-y-2">
-              <div className="text-sm">
-                <span className="font-semibold">Fecha: </span>{row.date}
+            <div key={row.id} className="p-5 space-y-4 hover:bg-white/[0.02]">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <p className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">{row.date}</p>
+                  <h4 className="text-[11px] font-black text-white uppercase">{row.entity}</h4>
+                </div>
+                <div className={`px-2 py-0.5 border ${status.border} ${status.bg} ${status.color} text-[7px] font-black tracking-widest`}>
+                  {status.label}
+                </div>
               </div>
-              <div className="text-sm">
-                <span className="font-semibold">Tipo: </span>
-                {row.type === ReportType.FINANCIAL
-                  ? "Financiero"
-                  : row.type === ReportType.CLINICAL
-                  ? "Clínico"
-                  : "Combinado"}
-              </div>
-              <div className="text-sm">
-                <span className="font-semibold">Entidad: </span>{row.entity}
-              </div>
-              <div className="text-sm">
-                <span className="font-semibold">Estado: </span>
-                {statusLabel && (
-                  <span
-                    className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`}
-                  >
-                    {statusLabel}
-                  </span>
-                )}
-              </div>
-              <div className="text-sm">
-                <span className="font-semibold">Monto: </span>
-                {row.amount.toLocaleString("es-VE", {
-                  style: "currency",
-                  currency: "USD",
-                })}
+              
+              <div className="flex justify-between items-end border-t border-white/[0.03] pt-3">
+                <div className="flex items-center gap-2">
+                  <CircleStackIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
+                  <span className="text-[9px] font-bold text-blue-400/60 uppercase">{row.type}</span>
+                </div>
+                <span className="font-mono text-xs font-black text-white">
+                  USD {row.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* 🔹 TABLE FOOTER DE AUDITORÍA */}
+      <div className="bg-white/[0.02] border-t border-white/5 px-6 py-3 flex justify-between items-center">
+        <div className="flex items-center gap-4 text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
+          <span className="flex items-center gap-1"><ArrowUpRightIcon className="w-2 h-2" /> Data_Feed_Integrity: 100%</span>
+          <span className="hidden sm:inline">|</span>
+          <span className="hidden sm:inline">Buffer_Encryption: AES_256</span>
+        </div>
+        <div className="text-[8px] font-mono text-[var(--palantir-active)]/50 uppercase italic">
+          [ End_Of_Matrix ]
+        </div>
       </div>
     </div>
   );

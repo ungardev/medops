@@ -1,6 +1,7 @@
 // src/components/Appointments/CalendarDayDetail.tsx
 import moment from "moment";
 import { Appointment } from "../../types/appointments";
+import { XMarkIcon, CalendarIcon } from "@heroicons/react/24/outline";
 
 interface Props {
   date: Date;
@@ -15,74 +16,112 @@ export default function CalendarDayDetail({ date, appointments, onClose, onSelec
   );
 
   const handleClickAppointment = (appt: Appointment) => {
-    // ⚔️ cerrar el modal del día y abrir el detalle de cita
     onClose();
     onSelectAppointment(appt);
   };
 
+  const getStatusConfig = (status: string) => {
+    const configs: Record<string, { label: string; color: string }> = {
+      pending: { label: "WAITING_LOCK", color: "text-amber-500 border-amber-500/30 bg-amber-500/5" },
+      arrived: { label: "SUBJECT_PRESENT", color: "text-blue-400 border-blue-400/30 bg-blue-400/5" },
+      in_consultation: { label: "IN_PROGRESS", color: "text-indigo-400 border-indigo-400/30 bg-indigo-400/5" },
+      completed: { label: "OP_COMPLETE", color: "text-emerald-500 border-emerald-500/30 bg-emerald-500/5" },
+      canceled: { label: "TERMINATED", color: "text-red-500 border-red-500/30 bg-red-500/5" },
+    };
+    return configs[status] || { label: "UNKNOWN", color: "text-gray-400 border-gray-400/30" };
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 px-3 sm:px-0">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg w-full max-w-lg sm:max-w-2xl p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h2 className="text-sm sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100">
-            Citas del {moment(date).format("DD/MM/YYYY")}
-          </h2>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 px-4">
+      <div className="bg-[var(--palantir-bg)] border border-[var(--palantir-border)] w-full max-w-2xl shadow-2xl overflow-hidden">
+        
+        {/* Header de Operaciones Diarias */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--palantir-border)] bg-black/40">
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex p-2 border border-[var(--palantir-active)]/30 text-[var(--palantir-active)]">
+              <CalendarIcon className="w-5 h-5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black text-[var(--palantir-active)] uppercase tracking-[0.3em]">
+                Temporal_Sub_Inspector
+              </span>
+              <h2 className="text-lg font-black text-[var(--palantir-text)] uppercase tracking-tight">
+                Log_Entries: <span className="text-[var(--palantir-muted)] font-mono">{moment(date).format("DD_MMM_YYYY").toUpperCase()}</span>
+              </h2>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-xs sm:text-sm"
+            className="group flex items-center gap-2 px-3 py-1 border border-[var(--palantir-border)] hover:border-red-500/50 transition-all"
           >
-            Cerrar
+            <span className="text-[10px] font-bold text-[var(--palantir-muted)] group-hover:text-red-500 uppercase tracking-widest">Close_View</span>
+            <XMarkIcon className="w-4 h-4 text-[var(--palantir-muted)] group-hover:text-red-500" />
           </button>
         </div>
 
-        {/* Lista de citas */}
-        {dayAppointments.length === 0 ? (
-          <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">
-            No hay citas registradas para este día.
-          </p>
-        ) : (
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {dayAppointments.map((appt) => (
-              <li
-                key={appt.id}
-                className="py-2 cursor-pointer hover:bg-[#0d2c53]/10 dark:hover:bg-gray-800 px-2 rounded-md"
-                onClick={() => handleClickAppointment(appt)}
-              >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm sm:text-base font-medium text-[#0d2c53] dark:text-gray-100">
-                      {appt.patient.full_name}
-                    </p>
-                    <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">
-                      {appt.appointment_type} — {appt.status}
-                    </p>
-                  </div>
-                  <span
-                    className={`px-2 py-0.5 sm:py-1 rounded-md text-xs sm:text-sm font-semibold
-                      ${
-                        appt.status === "pending"
-                          ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-100"
-                          : appt.status === "arrived"
-                          ? "bg-blue-100 text-blue-800 dark:bg-blue-700 dark:text-blue-100"
-                          : appt.status === "in_consultation"
-                          ? "bg-cyan-100 text-cyan-800 dark:bg-cyan-700 dark:text-cyan-100"
-                          : appt.status === "completed"
-                          ? "bg-green-100 text-green-800 dark:bg-green-700 dark:text-green-100"
-                          : appt.status === "canceled"
-                          ? "bg-red-100 text-red-800 dark:bg-red-700 dark:text-red-100"
-                          : "bg-gray-100 text-[#0d2c53] dark:bg-gray-700 dark:text-gray-100"
-                      }`}
+        {/* Listado de Protocolos */}
+        <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+          {dayAppointments.length === 0 ? (
+            <div className="py-12 flex flex-col items-center justify-center border border-dashed border-[var(--palantir-border)] bg-black/10">
+              <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase animate-pulse">
+                -- No_Active_Deployments_Detected --
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {dayAppointments.map((appt) => {
+                const status = getStatusConfig(appt.status);
+                return (
+                  <div
+                    key={appt.id}
+                    onClick={() => handleClickAppointment(appt)}
+                    className="group relative flex items-center justify-between p-4 bg-black/20 border border-[var(--palantir-border)] hover:border-[var(--palantir-active)] transition-all cursor-pointer overflow-hidden"
                   >
-                    {moment(appt.appointment_date).format("HH:mm")}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                    {/* Indicador de Hover Lateral */}
+                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--palantir-active)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-mono text-[var(--palantir-active)] bg-[var(--palantir-active)]/10 px-1.5 py-0.5 border border-[var(--palantir-active)]/20">
+                          {moment(appt.appointment_date).format("HH:mm")}
+                        </span>
+                        <h3 className="text-sm font-black text-[var(--palantir-text)] uppercase tracking-wide group-hover:text-[var(--palantir-active)] transition-colors">
+                          {appt.patient.full_name}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-4 mt-1">
+                        <span className={`text-[9px] font-bold px-2 py-0.5 border ${status.color}`}>
+                          {status.label}
+                        </span>
+                        <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
+                          Type: {appt.appointment_type}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="hidden sm:flex flex-col items-end">
+                        <span className="text-[8px] font-bold text-[var(--palantir-muted)] uppercase tracking-tighter">Reference_Hash</span>
+                        <span className="text-[10px] font-mono text-[var(--palantir-text)]">#{appt.id.toString().padStart(5, '0')}</span>
+                      </div>
+                      <div className="w-2 h-2 rounded-full bg-[var(--palantir-active)] animate-pulse opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer Informativo */}
+        <div className="px-6 py-3 bg-black/60 border-t border-[var(--palantir-border)] flex justify-between items-center">
+          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em]">
+            System_Inspector_v2.0.4 // Active_Monitor
+          </span>
+          <span className="text-[8px] font-mono text-[var(--palantir-muted)]">
+            TOTAL_ENTRIES: {dayAppointments.length.toString().padStart(2, '0')}
+          </span>
+        </div>
       </div>
     </div>
   );

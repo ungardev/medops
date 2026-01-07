@@ -9,6 +9,35 @@ import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+const severityBadge = (severity?: string | null) => {
+  const base = "inline-flex items-center justify-center px-2 py-0.5 text-[10px] rounded-[2px] font-bold border whitespace-nowrap uppercase tracking-tighter";
+  switch ((severity || "").toLowerCase()) {
+    case "alta":
+    case "high":
+      return <span className={`${base} bg-red-500/10 text-red-500 border-red-500/20`}>Critical</span>;
+    case "media":
+    case "medium":
+      return <span className={`${base} bg-orange-500/10 text-orange-500 border-orange-500/20`}>Warning</span>;
+    case "baja":
+    case "low":
+      return <span className={`${base} bg-emerald-500/10 text-emerald-500 border-emerald-500/20`}>Stable</span>;
+    default:
+      return <span className={`${base} bg-[var(--palantir-muted)]/10 text-[var(--palantir-muted)] border-[var(--palantir-border)]`}>Info</span>;
+  }
+};
+
+const actionBadge = (action: string) => {
+  const base = "inline-flex items-center justify-center px-2 py-0.5 text-[10px] rounded-[2px] font-mono font-bold border whitespace-nowrap uppercase tracking-tighter";
+  const act = (action || "").toLowerCase();
+  if (act.includes("create") || act.includes("creacion")) 
+    return <span className={`${base} border-emerald-500/30 text-emerald-500 bg-emerald-500/5`}>OP_CREATE</span>;
+  if (act.includes("update") || act.includes("actualizacion")) 
+    return <span className={`${base} border-[var(--palantir-active)]/30 text-[var(--palantir-active)] bg-[var(--palantir-active)]/5`}>OP_UPDATE</span>;
+  if (act.includes("delete") || act.includes("eliminacion")) 
+    return <span className={`${base} border-red-500/30 text-red-500 bg-red-500/5`}>OP_DELETE</span>;
+  return <span className={`${base} border-[var(--palantir-muted)]/30 text-[var(--palantir-muted)]`}>OP_EXEC</span>;
+};
+
 const AuditLog: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
@@ -16,174 +45,86 @@ const AuditLog: React.FC = () => {
   const { data: inst } = useInstitutionSettings();
   const { data: doc } = useDoctorConfig();
 
-  // Badges compactos, sobrios y sin desbordes en tablet (desktop intacto).
-  const severityBadge = (severity?: string | null) => {
-    const base =
-      "inline-flex items-center justify-center px-2 py-[2px] text-[11px] md:text-xs rounded font-medium ring-1 ring-inset whitespace-nowrap max-w-[96px] md:max-w-[110px] overflow-hidden truncate";
-    switch ((severity || "").toLowerCase()) {
-      case "alta":
-      case "high":
-        return <span className={`${base} bg-red-100 text-red-800 ring-red-300`}>Alta</span>;
-      case "media":
-      case "medium":
-        return <span className={`${base} bg-yellow-100 text-yellow-800 ring-yellow-300`}>Media</span>;
-      case "baja":
-      case "low":
-        return <span className={`${base} bg-green-100 text-green-800 ring-green-300`}>Baja</span>;
-      case "info":
-        return <span className={`${base} bg-blue-100 text-blue-800 ring-blue-300`}>Info</span>;
-      default:
-        return (
-          <span className={`${base} bg-gray-100 text-gray-800 ring-gray-300`}>
-            {severity?.toUpperCase() || "Sin severidad"}
-          </span>
-        );
-    }
-  };
-
-  const actionBadge = (action: string) => {
-    const base =
-      "inline-flex items-center justify-center px-2 py-[2px] text-[11px] md:text-xs rounded font-medium ring-1 ring-inset whitespace-nowrap max-w-[120px] md:max-w-[140px] overflow-hidden truncate";
-    switch ((action || "").toLowerCase()) {
-      case "creacion":
-      case "create":
-        return <span className={`${base} bg-green-100 text-green-800 ring-green-300`}>Creación</span>;
-      case "actualizacion":
-      case "update":
-        return <span className={`${base} bg-blue-100 text-blue-800 ring-blue-300`}>Actualización</span>;
-      case "eliminacion":
-      case "delete":
-        return <span className={`${base} bg-red-100 text-red-800 ring-red-300`}>Eliminación</span>;
-      case "generacion_pdf":
-      case "export_pdf":
-        return <span className={`${base} bg-purple-100 text-purple-800 ring-purple-300`}>Generación PDF</span>;
-      default:
-        return (
-          <span className={`${base} bg-gray-100 text-gray-800 ring-gray-300`}>
-            {action.toUpperCase()}
-          </span>
-        );
-    }
-  };
-
   const handleExportPDF = () => {
     const pdf = new jsPDF();
     pdf.setFontSize(14);
     pdf.text("MedOps — Auditoría en vivo", 14, 20);
     pdf.setFontSize(10);
     pdf.text(`Institución: ${inst?.name || ""}`, 14, 28);
-    pdf.text(`RIF/NIT: ${inst?.tax_id || ""}`, 14, 34);
-    pdf.text(`Dirección: ${inst?.address || ""}`, 14, 40);
-    pdf.text(`Teléfono: ${inst?.phone || ""}`, 14, 46);
-    pdf.text(`Médico Operador: ${doc?.full_name || ""}`, 14, 54);
-    pdf.text(`Colegiado: ${doc?.colegiado_id || ""}`, 14, 60);
-    pdf.text(`Licencia: ${doc?.license || ""}`, 14, 66);
-    pdf.text(`Fecha exportación: ${moment().format("YYYY-MM-DD HH:mm:ss")}`, 14, 72);
+    pdf.text(`Médico: ${doc?.full_name || ""}`, 14, 34);
+    pdf.text(`Fecha: ${moment().format("YYYY-MM-DD HH:mm:ss")}`, 14, 40);
 
     autoTable(pdf, {
-      startY: 80,
+      startY: 50,
       head: [["Timestamp", "Usuario", "Entidad", "Acción", "Severidad"]],
-      body: (events || []).slice(0, 50).map((e) => [
+      body: (events || []).map((e) => [
         moment(e.timestamp).format("YYYY-MM-DD HH:mm:ss"),
         e.actor,
         e.entity,
         e.action.toUpperCase(),
         e.severity?.toUpperCase() || "SIN SEVERIDAD",
       ]),
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [240, 240, 240], textColor: 50 },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
+      headStyles: { fillColor: [24, 32, 38], textColor: 255 },
+      styles: { fontSize: 8 },
     });
-
     pdf.save("audit-log.pdf");
   };
 
   const handleExportCSV = () => {
-    const header = [
-      "Institución", inst?.name || "",
-      "RIF/NIT", inst?.tax_id || "",
-      "Dirección", inst?.address || "",
-      "Teléfono", inst?.phone || "",
-      "Médico Operador", doc?.full_name || "",
-      "Colegiado", doc?.colegiado_id || "",
-      "Licencia", doc?.license || "",
-      "Fecha exportación", moment().format("YYYY-MM-DD HH:mm:ss"),
-    ].join(",");
-
-    const rows = (events || []).slice(0, 50).map((e) =>
-      [
-        moment(e.timestamp).format("YYYY-MM-DD HH:mm:ss"),
-        e.actor,
-        e.entity,
-        e.action.toUpperCase(),
-        e.severity?.toUpperCase() || "SIN SEVERIDAD",
-      ].join(",")
+    const rows = (events || []).map((e) =>
+      [moment(e.timestamp).format("YYYY-MM-DD HH:mm:ss"), e.actor, e.entity, e.action, e.severity || "INFO"].join(",")
     );
-
-    const csvContent = [header, "Timestamp,Usuario,Entidad,Acción,Severidad", ...rows].join("\n");
+    const csvContent = ["Timestamp,Usuario,Entidad,Acción,Severidad", ...rows].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", "audit-log.csv");
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
   };
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-lg shadow px-4 sm:px-6 py-4 sm:py-3 space-y-4">
+    /* Eliminado overflow-hidden para permitir que el dropdown sea visible */
+    <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm relative z-20">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 text-center md:text-left">
-          Auditoría en vivo
-        </h3>
-        {/* Controles compactos para tablet; desktop intacto */}
-        <div className="flex flex-row flex-wrap md:flex-nowrap items-center justify-center md:justify-end gap-2">
+      <div className="px-4 py-3 bg-[var(--palantir-bg)]/30 border-b border-[var(--palantir-border)] flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--palantir-muted)]">Auditoría Operacional</h3>
+          <span className="text-[9px] font-mono text-[var(--palantir-active)] bg-[var(--palantir-active)]/10 px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/20">LIVE_LOG</span>
+        </div>
+
+        <div className="flex items-center gap-2 justify-end">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase border border-[var(--palantir-border)] rounded-sm text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] hover:bg-[var(--palantir-bg)] transition-all"
           >
-            {expanded ? "Ocultar" : "Mostrar"}
-            {expanded ? (
-              <ChevronUpIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            ) : (
-              <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-            )}
+            {expanded ? "Ocultar Datos" : "Ver Datos"}
+            {expanded ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
           </button>
 
           <div className="relative">
             <button
               onClick={() => setExportOpen(!exportOpen)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-[10px] font-bold uppercase border border-[var(--palantir-border)] rounded-sm bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/20 transition-all"
             >
               Exportar
-              {exportOpen ? (
-                <ChevronUpIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              ) : (
-                <ChevronDownIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-              )}
+              <ChevronDownIcon className={`w-3 h-3 transition-transform ${exportOpen ? 'rotate-180' : ''}`} />
             </button>
+            
             {exportOpen && (
-              <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded shadow-lg z-10">
+              /* Ajustado: Si no está expandido, el menú abre hacia arriba (bottom-full mb-2) */
+              <div className={`absolute right-0 w-44 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in-95 duration-200 ${expanded ? 'top-full mt-2' : 'bottom-full mb-2'}`}>
                 <button
-                  onClick={() => {
-                    handleExportPDF();
-                    setExportOpen(false);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  onClick={() => { handleExportPDF(); setExportOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase text-[var(--palantir-muted)] hover:bg-[var(--palantir-active)]/10 hover:text-[var(--palantir-active)] transition-colors"
                 >
-                  PDF (50 eventos)
+                  Reporte PDF (Full)
                 </button>
                 <button
-                  onClick={() => {
-                    handleExportCSV();
-                    setExportOpen(false);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-xs sm:text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  onClick={() => { handleExportCSV(); setExportOpen(false); }}
+                  className="w-full text-left px-4 py-2.5 text-[10px] font-bold uppercase text-[var(--palantir-muted)] hover:bg-[var(--palantir-active)]/10 hover:text-[var(--palantir-active)] border-t border-[var(--palantir-border)] transition-colors"
                 >
-                  CSV (50 eventos)
+                  Archivo CSV (Raw)
                 </button>
               </div>
             )}
@@ -191,41 +132,39 @@ const AuditLog: React.FC = () => {
         </div>
       </div>
 
-      {/* Tabla desplegable */}
+      {/* Tabla Desplegable */}
       {expanded && (
-        <>
+        <div className="animate-in slide-in-from-top-2 duration-300 overflow-hidden border-t border-[var(--palantir-border)]/10">
           {isLoading ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">Cargando auditoría...</p>
-          ) : !events || events.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No hay eventos registrados.</p>
+            <div className="p-8 text-center text-[10px] font-mono text-[var(--palantir-muted)] italic">FETCHING_LOGS...</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full text-xs sm:text-sm text-left border border-gray-100 dark:border-gray-700 rounded-lg">
-                <thead className="bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+              <table className="min-w-full text-left border-collapse">
+                <thead className="bg-[var(--palantir-bg)]/50">
                   <tr>
-                    <th className="px-2 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-600">Timestamp</th>
-                    <th className="px-2 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-600">Usuario</th>
-                    <th className="px-2 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-600">Entidad</th>
-                    <th className="px-2 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-600">Acción</th>
-                    <th className="px-2 sm:px-4 py-2 border-b border-gray-200 dark:border-gray-600">Severidad</th>
+                    <th className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-widest text-[var(--palantir-muted)] border-b border-[var(--palantir-border)]">Timestamp</th>
+                    <th className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-widest text-[var(--palantir-muted)] border-b border-[var(--palantir-border)]">Principal_Actor</th>
+                    <th className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-widest text-[var(--palantir-muted)] border-b border-[var(--palantir-border)]">Target_Entity</th>
+                    <th className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-widest text-[var(--palantir-muted)] border-b border-[var(--palantir-border)]">Action</th>
+                    <th className="px-4 py-2.5 text-[9px] font-bold uppercase tracking-widest text-[var(--palantir-muted)] border-b border-[var(--palantir-border)]">Status</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-[var(--palantir-border)]/50">
                   {(events || []).slice(0, 10).map((entry: EventLogEntry) => (
-                    <tr key={entry.id} className="hover:bg-gray-100 dark:hover:bg-gray-700">
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 whitespace-nowrap">
-                        {moment(entry.timestamp).format("YYYY-MM-DD HH:mm:ss")}
+                    <tr key={entry.id} className="hover:bg-[var(--palantir-active)]/[0.03] transition-colors">
+                      <td className="px-4 py-2.5 text-[10px] font-mono text-[var(--palantir-muted)] whitespace-nowrap">
+                        {moment(entry.timestamp).format("YYYY.MM.DD HH:mm:ss")}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 truncate max-w-[160px] md:max-w-[220px]">
+                      <td className="px-4 py-2.5 text-[11px] font-bold text-[var(--palantir-text)] uppercase whitespace-nowrap">
                         {entry.actor}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700 truncate max-w-[160px] md:max-w-[220px]">
+                      <td className="px-4 py-2.5 text-[10px] text-[var(--palantir-muted)] uppercase tracking-tight">
                         {entry.entity}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <td className="px-4 py-2.5">
                         {actionBadge(entry.action)}
                       </td>
-                      <td className="px-2 sm:px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                      <td className="px-4 py-2.5">
                         {severityBadge(entry.severity)}
                       </td>
                     </tr>
@@ -234,9 +173,9 @@ const AuditLog: React.FC = () => {
               </table>
             </div>
           )}
-        </>
+        </div>
       )}
-    </section>
+    </div>
   );
 };
 

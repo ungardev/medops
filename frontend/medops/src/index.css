@@ -1,88 +1,31 @@
 /* src/index.css */
-
-/* 🔹 Forzar uso de la configuración institucional desde la raíz del proyecto */
-@config "../tailwind.config.js";
-
-/* 🔹 Import oficial con el plugin de Vite */
 @import "tailwindcss";
 
-/* 🔹 Animación institucional */
-@keyframes fade-slide {
-  0% {
-    opacity: 0;
-    transform: translateX(-4px);
+@layer base {
+  :root {
+    /* MODO LIGHT (Lo dejamos listo pero enfocado en limpieza) */
+    --palantir-bg: #f5f8fa;
+    --palantir-surface: #ffffff;
+    --palantir-border: #d8e1e8;
+    --palantir-text: #182026;
+    --palantir-muted: #5c7080;
+    --palantir-accent: #38a1ff;
   }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
+
+  .dark {
+    /* MODO OSCURO UNIFICADO MEDOPS */
+    --palantir-bg: #0f131a;        /* Fondo total */
+    --palantir-surface: #182026;   /* Cards, Sidebar, Header */
+    --palantir-border: #24313c;    /* Divisores y bordes de botones */
+    --palantir-text: #f5f8fa;      /* Texto principal */
+    --palantir-muted: #8a9ba8;     /* Texto secundario/etiquetas */
+    --palantir-accent: #38a1ff;    /* Azul MedOps */
+    --palantir-accent-soft: rgba(56, 161, 255, 0.1);
   }
-}
 
-.animate-fade-slide {
-  animation: fade-slide 0.2s ease-out forwards;
-}
-
-/* 🔹 Utilidades manuales para tokens extendidos */
-@layer utilities {
-  /* Fondos */
-  .bg-bg-muted { background-color: #f9fafb; }
-  .bg-bg-dark { background-color: #111827; }
-  .bg-surface-dark { background-color: #1f2937; }
-
-  /* Texto */
-  .text-muted { color: #6b7280; }
-  .text-text-dark { color: #e5e7eb; }
-  .text-text-dark-muted { color: #9ca3af; }
-  .text-primary { color: #3b82f6; }
-  .text-accent-dark { color: #f59e0b; }
-
-  /* Bordes */
-  .border-border { border-color: #e5e7eb; }
-  .border-border-dark { border-color: #374151; }
-}
-
-/* 🔹 Helpers opcionales para elevar contraste en dark */
-@layer utilities {
-  .surface-card { @apply bg-white dark:bg-gray-900; }
-  .surface-subtle { @apply bg-gray-50 dark:bg-gray-800; }
-  .text-subtle { @apply text-gray-600 dark:text-gray-300; }
-}
-
-/* 🔹 Ajustes globales */
-html, body, #root {
-  height: 100%;
-  overflow-x: hidden; /* 🔒 Bloquea scroll horizontal en mobile y desktop */
-}
-
-/* 🔹 Ajustes globales para modales */
-#modal-root {
-  position: relative;
-  z-index: 50;
-}
-
-/* 🔹 Inputs institucionales */
-@layer components {
-  .input {
-    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md 
-           bg-white dark:bg-gray-800 text-sm text-[#0d2c53] dark:text-gray-100 
-           placeholder-gray-400 dark:placeholder-gray-500 
-           focus:outline-none focus:ring-2 focus:ring-[#0d2c53] transition;
-  }
-}
-
-/* 🔹 Botón primario institucional */
-@layer components {
-  .btn-primary {
-    @apply w-full sm:w-auto px-4 py-2 rounded-md bg-[#0d2c53] text-white 
-           hover:bg-[#0b2444] transition text-sm font-medium;
-  }
-}
-
-/* 🔹 Botón secundario institucional */
-@layer components {
-  .btn-secondary {
-    @apply w-full sm:w-auto px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-           bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-           hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm font-medium;
+  body {
+    background-color: var(--palantir-bg);
+    color: var(--palantir-text);
+    transition: background-color 0.3s ease;
   }
 }

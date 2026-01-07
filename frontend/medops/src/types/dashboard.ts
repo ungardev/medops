@@ -41,6 +41,16 @@ export type DashboardSummary = {
     precision: number;
     is_fallback: boolean;
   };
+
+  // 🔹 Alias para métricas compactas (usadas en MetricsRow.tsx)
+  scheduled_count?: number;       // alias de total_appointments o citas agendadas
+  pending_count?: number;         // alias de pending_appointments
+  waiting_count?: number;         // alias de waiting_room_count
+  in_consultation_count?: number; // alias de active_consultations
+  completed_count?: number;       // alias de completed_appointments
+  total_amount?: number;          // alias de total_payments_amount
+  payments_count?: number;        // alias de total_payments
+  exempted_count?: number;        // alias de total_waived
 };
 
 // --- Severidad de notificación ---

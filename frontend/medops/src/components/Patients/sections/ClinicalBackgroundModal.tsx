@@ -1,6 +1,16 @@
 // src/components/Patients/sections/ClinicalBackgroundModal.tsx
 import React, { useState, useEffect } from "react";
 import { apiFetch } from "../../../api/client";
+import { 
+  ClipboardList, 
+  Users, 
+  Dna, 
+  AlertTriangle, 
+  Activity, 
+  X, 
+  Save, 
+  Loader2 
+} from "lucide-react";
 
 type BackgroundType = "personal" | "family" | "genetic" | "allergy" | "habit";
 
@@ -8,7 +18,7 @@ interface ClinicalBackgroundForm {
   type: BackgroundType;
   condition?: string;
   relation?: string;
-  relative?: string;
+  relative?: string; // 🔹 Agregado para resolver error ts(2339)
   status?: "active" | "resolved" | "suspected" | "positive" | "negative";
   source?: string;
   notes?: string;
@@ -27,12 +37,12 @@ interface Props {
   type: BackgroundType;
 }
 
-const typeLabels: Record<BackgroundType, string> = {
-  personal: "Antecedente personal",
-  family: "Antecedente familiar",
-  genetic: "Predisposición genética",
-  allergy: "Alergia",
-  habit: "Hábito",
+const typeConfig: Record<BackgroundType, { label: string; icon: any; color: string }> = {
+  personal: { label: "Antecedente Personal", icon: ClipboardList, color: "text-blue-400" },
+  family: { label: "Antecedente Familiar", icon: Users, color: "text-purple-400" },
+  genetic: { label: "Predisposición Genética", icon: Dna, color: "text-emerald-400" },
+  allergy: { label: "Alergia / Reacción", icon: AlertTriangle, color: "text-orange-400" },
+  habit: { label: "Hábito / Estilo de Vida", icon: Activity, color: "text-cyan-400" },
 };
 
 const personalHistoryChoices = [
@@ -68,17 +78,12 @@ const allergySourceChoices = [
   { value: "autorreporte", label: "Autorreporte" },
 ];
 
-export default function ClinicalBackgroundModal({
-  open,
-  onClose,
-  onSave,
-  initial,
-  type,
-}: Props) {
+export default function ClinicalBackgroundModal({ open, onClose, onSave, initial, type }: Props) {
   const [form, setForm] = useState<ClinicalBackgroundForm>({
     type,
     condition: "",
     relation: "",
+    relative: "",
     status: "active",
     source: "",
     notes: "",
@@ -90,6 +95,9 @@ export default function ClinicalBackgroundModal({
   });
 
   const [options, setOptions] = useState<{ id: number; name: string }[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+
+  const activeConfig = typeConfig[type];
 
   useEffect(() => {
     if (open) {
@@ -97,6 +105,7 @@ export default function ClinicalBackgroundModal({
         type,
         condition: type === "habit" ? initial?.type ?? "" : initial?.condition ?? "",
         relation: initial?.relation ?? initial?.relative ?? "",
+        relative: initial?.relative ?? "",
         status: initial?.status ?? "active",
         source: initial?.source ?? "",
         notes: initial?.notes ?? "",
@@ -108,6 +117,7 @@ export default function ClinicalBackgroundModal({
       });
 
       if (type === "genetic") {
+        setLoadingOptions(true);
         const fetchAll = async () => {
           let all: { id: number; name: string }[] = [];
           let url: string | null = "genetic-predispositions/?limit=100";
@@ -118,8 +128,9 @@ export default function ClinicalBackgroundModal({
             url = res.next || null;
           }
           setOptions(all);
+          setLoadingOptions(false);
         };
-        fetchAll().catch((err) => console.error("Error cargando catálogo:", err));
+        fetchAll().catch(() => setLoadingOptions(false));
       }
     }
   }, [open, initial, type]);
@@ -131,227 +142,200 @@ export default function ClinicalBackgroundModal({
 
   const handleSave = () => {
     let payload: any = {};
-
     if (type === "personal") {
-      payload.type = form.personalType;
-      payload.description = form.condition;
-      payload.date = form.date || new Date().toISOString().slice(0, 10);
-      if (form.notes) payload.notes = form.notes;
+      payload = { type: form.personalType, description: form.condition, date: form.date || new Date().toISOString().slice(0, 10), notes: form.notes };
     } else if (type === "family") {
-      payload.condition = form.condition;
-      payload.relative = form.relation;
-      if (form.notes) payload.notes = form.notes;
+      payload = { condition: form.condition, relative: form.relation || form.relative, notes: form.notes };
     } else if (type === "genetic") {
-      payload.name = form.name;
-      payload.description = form.notes || "";
+      payload = { name: form.name, description: form.notes || "" };
     } else if (type === "allergy") {
-      payload.name = form.name;
-      payload.severity = form.severity;
-      payload.source = form.source;
-      if (form.notes) payload.notes = form.notes;
+      payload = { name: form.name, severity: form.severity, source: form.source, notes: form.notes };
     } else if (type === "habit") {
-      payload.type = form.condition;       // tipo real (tabaco, drogas, etc.)
-      payload.description = form.description;
-      if (form.notes) payload.notes = form.notes;
+      payload = { type: form.condition, description: form.description, notes: form.notes };
     }
-
-    console.log("Payload enviado:", payload);
     onSave(payload);
     onClose();
   };
 
-    return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-lg">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-6 border-b pb-2">
-          {initial ? `Editar ${typeLabels[type]}` : `Registrar ${typeLabels[type]}`}
-        </h3>
+  return (
+    <div className="fixed inset-0 bg-[#07090e]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
+      <div className="bg-[#11141a] border border-[var(--palantir-border)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        
+        {/* Cabecera */}
+        <div className="px-6 py-4 border-b border-[var(--palantir-border)] flex items-center justify-between bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg bg-white/5 ${activeConfig.color}`}>
+              <activeConfig.icon size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                {initial ? "Editar Registro" : "Nuevo Registro"}
+              </h3>
+              <p className={`text-[10px] font-mono uppercase tracking-widest ${activeConfig.color}`}>
+                {activeConfig.label}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        </div>
 
-        <div className="space-y-4">
+        {/* Formulario */}
+        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          
           {type === "personal" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-1">Tipo de antecedente</label>
+            <div className="space-y-4 animate-in slide-in-from-right-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Clasificación</label>
                 <select
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none"
                   value={form.personalType}
                   onChange={(e) => setField("personalType", e.target.value)}
                 >
-                  {personalHistoryChoices.map((choice) => (
-                    <option key={choice.value} value={choice.value}>{choice.label}</option>
-                  ))}
+                  {personalHistoryChoices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Condición</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Condición Médica</label>
                 <input
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none"
                   value={form.condition}
                   onChange={(e) => setField("condition", e.target.value)}
+                  placeholder="Ej: Hipertensión Arterial"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.notes}
-                  onChange={(e) => setField("notes", e.target.value)}
-                />
-              </div>
-            </>
+            </div>
           )}
 
           {type === "family" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-1">Condición</label>
+            <div className="space-y-4 animate-in slide-in-from-right-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Parentesco</label>
                 <input
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.condition}
-                  onChange={(e) => setField("condition", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Relación</label>
-                <input
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none"
                   value={form.relation}
                   onChange={(e) => setField("relation", e.target.value)}
-                  placeholder="Padre, Madre, Abuelo..."
+                  placeholder="Padre, Abuela materna, etc."
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.notes}
-                  onChange={(e) => setField("notes", e.target.value)}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Condición / Diagnóstico</label>
+                <input
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none"
+                  value={form.condition}
+                  onChange={(e) => setField("condition", e.target.value)}
+                  placeholder="Ej: Diabetes Tipo II"
                 />
               </div>
-            </>
+            </div>
           )}
 
           {type === "genetic" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-1">Predisposición genética</label>
+            <div className="space-y-4 animate-in slide-in-from-right-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1 flex justify-between">
+                  Catálogo Genético {loadingOptions && <Loader2 size={12} className="animate-spin" />}
+                </label>
                 <select
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none"
                   value={form.name}
                   onChange={(e) => setField("name", e.target.value)}
                 >
-                  <option value="">Seleccione...</option>
-                  {Array.isArray(options) &&
-                    options.map((opt) => (
-                      <option key={opt.id} value={opt.name}>{opt.name}</option>
-                    ))}
+                  <option value="">Seleccione predisposición...</option>
+                  {options.map((opt) => <option key={opt.id} value={opt.name}>{opt.name}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.notes}
-                  onChange={(e) => setField("notes", e.target.value)}
-                />
-              </div>
-            </>
+            </div>
           )}
 
           {type === "allergy" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-1">Nombre</label>
+            <div className="space-y-4 animate-in slide-in-from-right-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Agente Alérgeno</label>
                 <input
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none"
                   value={form.name}
                   onChange={(e) => setField("name", e.target.value)}
-                  placeholder="Ej: Penicilina, Polen, Mariscos..."
+                  placeholder="Medicamento, alimento, etc."
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Severidad</label>
-                <select
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.severity}
-                  onChange={(e) => setField("severity", e.target.value)}
-                >
-                  <option value="">Seleccione...</option>
-                  {allergySeverityChoices.map((choice) => (
-                    <option key={choice.value} value={choice.value}>{choice.label}</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Severidad</label>
+                  <select
+                    className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2 text-sm text-white focus:border-[var(--palantir-active)] outline-none px-2"
+                    value={form.severity}
+                    onChange={(e) => setField("severity", e.target.value)}
+                  >
+                    <option value="">Nivel...</option>
+                    {allergySeverityChoices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Fuente</label>
+                  <select
+                    className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2 text-sm text-white focus:border-[var(--palantir-active)] outline-none px-2"
+                    value={form.source}
+                    onChange={(e) => setField("source", e.target.value)}
+                  >
+                    <option value="">Origen...</option>
+                    {allergySourceChoices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Fuente</label>
-                <select
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.source}
-                  onChange={(e) => setField("source", e.target.value)}
-                >
-                  <option value="">Seleccione...</option>
-                  {allergySourceChoices.map((choice) => (
-                    <option key={choice.value} value={choice.value}>{choice.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.notes}
-                  onChange={(e) => setField("notes", e.target.value)}
-                />
-              </div>
-            </>
+            </div>
           )}
 
           {type === "habit" && (
-            <>
-              <div>
-                <label className="block text-sm font-medium mb-1">Tipo de hábito</label>
+            <div className="space-y-4 animate-in slide-in-from-right-2">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Tipo de Hábito</label>
                 <select
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none"
                   value={form.condition}
                   onChange={(e) => setField("condition", e.target.value)}
                 >
-                  {habitTypes.map((h) => (
-                    <option key={h.value} value={h.value}>{h.label}</option>
-                  ))}
+                  {habitTypes.map((h) => <option key={h.value} value={h.value}>{h.label}</option>)}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Descripción</label>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Descripción de consumo</label>
                 <textarea
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
+                  className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none min-h-[60px] resize-none"
                   value={form.description}
                   onChange={(e) => setField("description", e.target.value)}
+                  placeholder="Frecuencia, cantidad, tiempo..."
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Notas</label>
-                <textarea
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700"
-                  value={form.notes}
-                  onChange={(e) => setField("notes", e.target.value)}
-                />
-              </div>
-            </>
+            </div>
           )}
+
+          <div className="space-y-1.5 pt-2 border-t border-[var(--palantir-border)]/30">
+            <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Observaciones adicionales</label>
+            <textarea
+              className="w-full bg-[#0d1117]/50 border border-[var(--palantir-border)] rounded-lg py-2.5 px-4 text-sm text-white focus:border-[var(--palantir-active)] outline-none min-h-[80px] resize-none"
+              value={form.notes}
+              onChange={(e) => setField("notes", e.target.value)}
+              placeholder="Detalles clínicos relevantes..."
+            />
+          </div>
         </div>
 
-        <div className="flex justify-end gap-2 mt-6 border-t pt-4">
+        {/* Acciones */}
+        <div className="p-6 bg-black/20 border-t border-[var(--palantir-border)] flex items-center justify-end gap-3">
           <button
-            className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm"
             onClick={onClose}
+            className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
           >
             Cancelar
           </button>
           <button
-            className="px-4 py-2 bg-[#0d2c53] hover:bg-[#0b2342] text-white rounded-md text-sm"
             onClick={handleSave}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-white transition-all shadow-lg ${activeConfig.color.replace('text', 'bg').replace('-400', '-600')} hover:brightness-110 shadow-black/40`}
           >
-            Guardar
+            <Save size={16} />
+            {initial ? "Actualizar Registro" : "Guardar Registro"}
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 // src/components/Appointments/CalendarGrid.tsx
 import moment from "moment";
 import { useState } from "react";
-import { Appointment } from "../../types/appointments";
+import { Appointment, AppointmentStatus } from "../../types/appointments";
 import CalendarHeader from "./CalendarHeader";
 import CalendarLegend from "./CalendarLegend";
 import CalendarDayDetail from "./CalendarDayDetail";
@@ -11,6 +11,14 @@ interface Props {
   onSelectDate?: (date: Date) => void;
   onSelectAppointment?: (appt: Appointment) => void;
 }
+
+const STATUS_COLORS: Record<AppointmentStatus, string> = {
+  pending: "bg-amber-500",
+  arrived: "bg-blue-400",
+  in_consultation: "bg-indigo-400",
+  completed: "bg-emerald-500",
+  canceled: "bg-red-500",
+};
 
 export default function CalendarGrid({ appointments, onSelectDate, onSelectAppointment }: Props) {
   const [currentMonth, setCurrentMonth] = useState(moment());
@@ -34,18 +42,24 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
   }
 
   const handleSelectAppointment = (appt: Appointment) => {
-    // ⚔️ cerrar el CalendarDayDetail al seleccionar cita
     setSelectedDay(null);
     if (onSelectAppointment) onSelectAppointment(appt);
   };
 
   return (
-    <div>
-      {/* Header institucional con navegación */}
+    <div className="space-y-4">
+      {/* Header técnico de navegación */}
       <CalendarHeader currentMonth={currentMonth} onChangeMonth={setCurrentMonth} />
 
-      {/* Grid mensual */}
-      <div className="grid grid-cols-7 gap-px bg-[#0d2c53] dark:bg-gray-700 rounded-md overflow-hidden">
+      {/* Grid Principal */}
+      <div className="grid grid-cols-7 gap-[1px] bg-[var(--palantir-border)] border border-[var(--palantir-border)] overflow-hidden">
+        {/* Header de días de la semana */}
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+          <div key={d} className="bg-black/40 py-2 text-center text-[9px] font-black text-[var(--palantir-muted)] uppercase tracking-[0.2em]">
+            {d}
+          </div>
+        ))}
+
         {days.map((day) => {
           const key = day.format("YYYY-MM-DD");
           const isToday = day.isSame(moment(), "day");
@@ -55,58 +69,64 @@ export default function CalendarGrid({ appointments, onSelectDate, onSelectAppoi
           return (
             <div
               key={key}
-              className={`p-2 sm:p-3 min-h-[90px] sm:min-h-[110px] bg-white dark:bg-gray-900 text-xs sm:text-sm 
-                          ${isCurrentMonth ? "" : "opacity-50"} 
-                          ${
-                            isToday
-                              ? "border-2 border-[#0d2c53]"
-                              : "border border-gray-200 dark:border-gray-700"
-                          }`}
               onClick={() => {
                 setSelectedDay(day.toDate());
                 onSelectDate?.(day.toDate());
               }}
+              className={`relative min-h-[100px] p-2 transition-all cursor-pointer group
+                ${isCurrentMonth ? 'bg-[var(--palantir-surface)]' : 'bg-black/20 opacity-40'}
+                ${isToday ? 'ring-1 ring-inset ring-[var(--palantir-active)] z-10 shadow-[inset_0_0_10px_rgba(30,136,229,0.1)]' : 'hover:bg-white/5'}
+              `}
             >
-              <div className="font-semibold text-[#0d2c53] dark:text-gray-100 mb-1">
-                {day.date()}
+              {/* Número del día */}
+              <div className={`text-[11px] font-mono mb-2 ${isToday ? 'text-[var(--palantir-active)] font-black' : 'text-[var(--palantir-muted)]'}`}>
+                {day.date().toString().padStart(2, '0')}
               </div>
 
-              <div className="space-y-1 overflow-y-auto max-h-[70px] sm:max-h-[90px]">
-                {appts.map((appt) => (
+              {/* Contenedor de Citas */}
+              <div className="space-y-1">
+                {appts.slice(0, 3).map((appt) => (
                   <button
                     key={appt.id}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSelectAppointment(appt);
                     }}
-                    className={`block w-full text-left px-2 py-1 rounded-md text-xs sm:text-sm font-medium truncate
-                      ${
-                        appt.status === "pending"
-                          ? "bg-yellow-100 dark:bg-yellow-700 text-yellow-800 dark:text-yellow-100"
-                          : appt.status === "arrived"
-                          ? "bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-100"
-                          : appt.status === "in_consultation"
-                          ? "bg-cyan-100 dark:bg-cyan-700 text-cyan-800 dark:text-cyan-100"
-                          : appt.status === "completed"
-                          ? "bg-green-100 dark:bg-green-700 text-green-800 dark:text-green-100"
-                          : appt.status === "canceled"
-                          ? "bg-red-100 dark:bg-red-700 text-red-800 dark:text-red-100"
-                          : "bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                      }`}
+                    className="w-full flex items-center gap-1.5 px-1.5 py-0.5 bg-black/30 border-l-2 border-current hover:bg-black/50 transition-colors group/btn"
+                    style={{ borderColor: `var(--status-${appt.status}, ${STATUS_COLORS[appt.status]})` }}
                   >
-                    {appt.patient.full_name} ({appt.appointment_type})
+                    <div className={`w-1 h-1 shrink-0 ${STATUS_COLORS[appt.status]} rounded-full`} />
+                    <span className="text-[9px] font-mono uppercase truncate text-[var(--palantir-text)] opacity-80 group-hover/btn:opacity-100">
+                      {appt.patient.full_name}
+                    </span>
                   </button>
                 ))}
+                
+                {appts.length > 3 && (
+                  <div className="text-[8px] font-mono text-[var(--palantir-active)] uppercase tracking-tighter pl-1">
+                    + {appts.length - 3} MORE_RECORDS
+                  </div>
+                )}
               </div>
+
+              {/* Indicador visual de "Carga de datos" en el borde inferior */}
+              {appts.length > 0 && (
+                <div className="absolute bottom-0 left-0 right-0 h-[1px] flex gap-px px-1">
+                  {appts.map((a, i) => (
+                    <div key={i} className={`h-full flex-1 ${STATUS_COLORS[a.status]}`} />
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Leyenda institucional */}
-      <CalendarLegend />
+      {/* Leyenda y Detalles */}
+      <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+        <CalendarLegend />
+      </div>
 
-      {/* Panel de detalle del día */}
       {selectedDay && (
         <CalendarDayDetail
           date={selectedDay}

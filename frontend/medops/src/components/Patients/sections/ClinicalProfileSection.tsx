@@ -1,3 +1,4 @@
+// src/components/Patients/sections/ClinicalProfileSection.tsx
 import React, { useState } from "react";
 import {
   UserIcon,
@@ -5,7 +6,10 @@ import {
   SparklesIcon,
   FireIcon,
   PlusIcon,
-} from "@heroicons/react/24/solid";
+  ChevronDownIcon,
+  TrashIcon,
+  PencilIcon
+} from "@heroicons/react/24/outline";
 import { apiFetch } from "../../../api/client";
 import ClinicalBackgroundModal from "./ClinicalBackgroundModal";
 
@@ -48,23 +52,18 @@ interface Props {
 }
 
 const backgroundLabels: Record<BackgroundType, string> = {
-  personal: "Antecedentes personales",
-  family: "Antecedentes familiares",
-  genetic: "Predisposiciones genéticas",
-  habit: "Hábitos",
+  personal: "SUBJECT_PERSONAL_HISTORY",
+  family: "LINEAGE_FAMILY_HISTORY",
+  genetic: "GENOMIC_PREDISPOSITIONS",
+  habit: "LIFESTYLE_HABITS",
 };
 
-const backgroundIcons: Record<BackgroundType, React.ElementType> = {
+const backgroundIcons: Record<string, React.ElementType> = {
   personal: UserIcon,
   family: UsersIcon,
   genetic: SparklesIcon,
   habit: FireIcon,
-};
-
-const impactColors: Record<string, string> = {
-  high: "bg-red-100 border-red-300 text-red-800",
-  medium: "bg-yellow-100 border-yellow-300 text-yellow-800",
-  low: "bg-green-100 border-green-300 text-green-800",
+  allergy: SparklesIcon,
 };
 
 export default function ClinicalProfileSection({
@@ -74,7 +73,7 @@ export default function ClinicalProfileSection({
   patientId,
   onRefresh,
 }: Props) {
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>("personal");
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState<ModalType>("personal");
   const [modalInitial, setModalInitial] = useState<any>(undefined);
@@ -87,36 +86,23 @@ export default function ClinicalProfileSection({
   };
 
   backgrounds.forEach((item) => {
-    if (grouped[item.type]) {
-      grouped[item.type].push(item);
-    }
+    if (grouped[item.type]) grouped[item.type].push(item);
   });
 
-  const handleDeleteBackground = async (item: any) => {
+  const handleDelete = async (item: any, type: string) => {
+    if (!confirm("CONFIRM_DATA_PURGE: Are you sure?")) return;
     try {
-      if (item.kind === "habit") {
-        await apiFetch(`patients/${patientId}/habits/${item.id}/`, { method: "DELETE" });
-      } else if (item.type === "genetic") {
-        await apiFetch(`patients/${patientId}/`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            genetic_predispositions: backgrounds
-              .filter((b) => b.type === "genetic" && b.id !== item.id)
-              .map((b) => b.id),
-          }),
-        });
-      } else if (item.type === "allergy") {
-        await apiFetch(`patients/${patientId}/allergies/${item.id}/`, { method: "DELETE" });
-      } else {
-        let endpoint = "";
-        if (item.type === "personal") endpoint = `personal-history/${item.id}/`;
-        if (item.type === "family") endpoint = `family-history/${item.id}/`;
-        await apiFetch(endpoint, { method: "DELETE" });
-      }
+      let endpoint = "";
+      if (type === "habit") endpoint = `patients/${patientId}/habits/${item.id}/`;
+      else if (type === "allergy") endpoint = `patients/${patientId}/allergies/${item.id}/`;
+      else if (type === "personal") endpoint = `personal-history/${item.id}/`;
+      else if (type === "family") endpoint = `family-history/${item.id}/`;
+      else if (type === "genetic") endpoint = `genetic-predispositions/${item.id}/`;
+
+      await apiFetch(endpoint, { method: "DELETE" });
       onRefresh?.();
     } catch (err) {
-      console.error("Error eliminando registro:", err);
+      console.error("ERRO_DELETING_RECORD:", err);
     }
   };
 
@@ -127,255 +113,131 @@ export default function ClinicalProfileSection({
     if (type === "family") endpoint = "family-history/";
     if (type === "genetic") endpoint = "genetic-predispositions/";
     if (type === "habit") endpoint = `patients/${patientId}/habits/`;
+    if (type === "allergy") endpoint = `patients/${patientId}/allergies/`;
 
     const method = isEdit ? "PATCH" : "POST";
     const url = isEdit
-      ? type === "habit"
-        ? `patients/${patientId}/habits/${modalInitial.id}/`
+      ? (type === "habit" || type === "allergy") 
+        ? `${endpoint}${modalInitial.id}/` 
         : `${endpoint}${modalInitial.id}/`
       : endpoint;
 
     try {
-      let res: any;
-      if (type === "genetic") {
-        // lógica genética...
-      } else if (type === "allergy") {
-        const allergyBody = {
-          name: payload.name,
-          severity: payload.severity,
-          source: payload.source,
-          notes: payload.notes,
-        };
-        const allergyUrl = isEdit
-          ? `patients/${patientId}/allergies/${modalInitial.id}/`
-          : `patients/${patientId}/allergies/`;
-        res = await apiFetch(allergyUrl, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(allergyBody),
-        });
-      } else if (type === "habit") {
-        const habitBody = {
-          type: payload.type,
-          description: payload.description,
-          frequency: payload.frequency,
-          impact: payload.impact,
-          notes: payload.notes,
-        };
-        res = await apiFetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(habitBody),
-        });
-      } else {
-        res = await apiFetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      }
-      console.log("[SAVE] Response:", res);
+      await apiFetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       setModalOpen(false);
       onRefresh?.();
     } catch (err) {
-      console.error("[SAVE] Error guardando registro:", err);
+      console.error("ERROR_SAVING_RECORD:", err);
     }
   };
 
+  const renderSection = (type: ModalType, title: string, items: any[], Icon: any) => {
+    const isExpanded = expanded === type;
+
     return (
-    <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm space-y-4">
-      <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Perfil clínico</h3>
-
-      {/* Renderizamos primero personales, familiares y genéticos */}
-      {(["personal", "family", "genetic"] as BackgroundType[]).map((type) => {
-        const Icon = backgroundIcons[type];
-        const items = grouped[type];
-        return (
-          <div key={type} className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
-            <button
-              className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-              onClick={() => setExpanded(expanded === type ? null : type)}
-            >
-              <span className="flex items-center gap-2">
-                <Icon className="w-4 h-4 text-[#0d2c53]" />
-                {backgroundLabels[type]}
-              </span>
-              <span className="text-xs text-gray-600 dark:text-gray-300">{items.length} registro(s)</span>
-            </button>
-            {expanded === type && (
-              <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
-                {items.length === 0 ? (
-                  <p className="text-xs text-gray-500">No hay registros.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {items.map((item: any) => (
-                      <li key={item.id} className="p-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700">
-                        <div className="flex justify-between">
-                          <span className="font-medium">{item.condition || item.name || item.type}</span>
-                          <span className="text-xs text-gray-500">{item.status || "—"}</span>
-                        </div>
-                        {item.notes && <p className="text-xs text-gray-600">{item.notes}</p>}
-                        <div className="flex gap-2 mt-1">
-                          <button
-                            className="text-blue-700 text-xs"
-                            onClick={() => {
-                              setModalType(type);
-                              setModalInitial(item);
-                              setModalOpen(true);
-                            }}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            className="text-red-700 text-xs"
-                            onClick={() => handleDeleteBackground(item)}
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <div className="flex justify-start mt-2">
-                  <PlusIcon
-                    className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
-                    onClick={() => {
-                      setModalType(type);
-                      setModalInitial(undefined);
-                      setModalOpen(true);
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* Bloque separado para alergias (antes que hábitos) */}
-      <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className={`border-b border-[var(--palantir-border)] last:border-0 transition-all ${isExpanded ? 'bg-white/[0.02]' : ''}`}>
         <button
-          className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-          onClick={() => setExpanded(expanded === "allergy" ? null : "allergy")}
+          onClick={() => setExpanded(isExpanded ? null : type)}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/[0.03] transition-colors group"
         >
-          <span className="flex items-center gap-2">
-            <SparklesIcon className="w-4 h-4 text-[#0d2c53]" />
-            Alergias
-          </span>
-          <span className="text-xs text-gray-600 dark:text-gray-300">{allergies.length} registro(s)</span>
+          <div className="flex items-center gap-4">
+            <Icon className={`w-4 h-4 ${isExpanded ? 'text-[var(--palantir-active)]' : 'text-[var(--palantir-muted)]'}`} />
+            <span className={`text-[10px] font-mono tracking-[0.2em] uppercase ${isExpanded ? 'text-[var(--palantir-text)]' : 'text-[var(--palantir-muted)]'}`}>
+              {title}
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="text-[9px] font-mono text-[var(--palantir-muted)] opacity-50">
+              COUNT: {items.length.toString().padStart(2, '0')}
+            </span>
+            <ChevronDownIcon className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[var(--palantir-active)]' : 'text-[var(--palantir-muted)]'}`} />
+          </div>
         </button>
 
-        {expanded === "allergy" && (
-          <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
-            {allergies.length === 0 ? (
-              <p className="text-xs text-gray-500">No hay registros.</p>
-            ) : (
-              <ul className="space-y-2">
-                {allergies.map((item) => (
-                  <li key={item.id} className="p-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{item.name}</span>
-                      <span className="text-xs text-gray-500">{item.severity || "—"}</span>
+        {isExpanded && (
+          <div className="px-6 pb-6 pt-2 animate-in fade-in slide-in-from-top-2">
+            <div className="space-y-3">
+              {items.length === 0 ? (
+                <div className="text-[10px] font-mono text-[var(--palantir-muted)] py-4 border border-dashed border-[var(--palantir-border)] rounded-sm text-center">
+                  NO_RECORDS_FOUND_FOR_{type.toUpperCase()}
+                </div>
+              ) : (
+                items.map((item) => (
+                  <div key={item.id} className="group flex items-center justify-between p-3 border border-[var(--palantir-border)] bg-[var(--palantir-bg)]/40 hover:border-[var(--palantir-active)]/50 transition-all rounded-sm">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
+                          {item.condition || item.name || item.type}
+                        </span>
+                        {item.severity && (
+                          <span className="text-[8px] px-2 py-0.5 border border-red-500/30 text-red-500 font-black rounded-full uppercase">
+                            {item.severity}
+                          </span>
+                        )}
+                        {item.status && (
+                          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase italic">
+                            [{item.status}]
+                          </span>
+                        )}
+                      </div>
+                      {(item.notes || item.description) && (
+                        <p className="text-[10px] text-[var(--palantir-muted)] font-mono leading-relaxed max-w-xl">
+                          {">"} {item.notes || item.description}
+                        </p>
+                      )}
                     </div>
-                    {item.source && <p className="text-xs text-gray-600">Fuente: {item.source}</p>}
-                    {item.notes && <p className="text-xs text-gray-600">{item.notes}</p>}
-                    <div className="flex gap-2 mt-1">
-                      <button
-                        className="text-blue-700 text-xs"
-                        onClick={() => {
-                          setModalType("allergy");
-                          setModalInitial(item);
-                          setModalOpen(true);
-                        }}
+                    
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => { setModalType(type); setModalInitial(item); setModalOpen(true); }}
+                        className="p-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors"
                       >
-                        Editar
+                        <PencilIcon className="w-3.5 h-3.5" />
                       </button>
-                      <button
-                        className="text-red-700 text-xs"
-                        onClick={() => handleDeleteBackground({ ...item, type: "allergy" })}
+                      <button 
+                        onClick={() => handleDelete(item, type)}
+                        className="p-1.5 text-[var(--palantir-muted)] hover:text-red-500 transition-colors"
                       >
-                        Eliminar
+                        <TrashIcon className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex justify-start mt-2">
-              <PlusIcon
-                className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
-                onClick={() => {
-                  setModalType("allergy");
-                  setModalInitial(undefined);
-                  setModalOpen(true);
-                }}
-              />
+                  </div>
+                ))
+              )}
+              
+              <button
+                onClick={() => { setModalType(type); setModalInitial(undefined); setModalOpen(true); }}
+                className="w-full py-2 border border-dashed border-[var(--palantir-border)] hover:border-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/5 transition-all group flex justify-center items-center gap-2"
+              >
+                <PlusIcon className="w-3 h-3 text-[var(--palantir-muted)] group-hover:text-[var(--palantir-active)]" />
+                <span className="text-[9px] font-mono text-[var(--palantir-muted)] group-hover:text-[var(--palantir-active)] uppercase">Add_Entry</span>
+              </button>
             </div>
           </div>
         )}
       </div>
-            {/* Finalmente, Hábitos */}
-      <div className="rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
-        <button
-          className="w-full flex justify-between items-center px-3 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-          onClick={() => setExpanded(expanded === "habit" ? null : "habit")}
-        >
-          <span className="flex items-center gap-2">
-            <FireIcon className="w-4 h-4 text-[#0d2c53]" />
-            Hábitos
-          </span>
-          <span className="text-xs text-gray-600 dark:text-gray-300">{habits.length} registro(s)</span>
-        </button>
+    );
+  };
 
-        {expanded === "habit" && (
-          <div className="px-3 pt-3 pb-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 space-y-2">
-            {habits.length === 0 ? (
-              <p className="text-xs text-gray-500">No hay registros.</p>
-            ) : (
-              <ul className="space-y-2">
-                {habits.map((item: any) => (
-                  <li key={item.id} className="p-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700">
-                    <div className="flex justify-between">
-                      <span className="font-medium">{item.type}</span>
-                      <span className="text-xs text-gray-500">{item.frequency || "—"}</span>
-                    </div>
-                    {item.description && <p className="text-xs text-gray-600">{item.description}</p>}
-                    {item.notes && <p className="text-xs text-gray-600">{item.notes}</p>}
-                    <div className="flex gap-2 mt-1">
-                      <button
-                        className="text-blue-700 text-xs"
-                        onClick={() => {
-                          setModalType("habit");
-                          setModalInitial({ ...item, kind: "habit" });
-                          setModalOpen(true);
-                        }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="text-red-700 text-xs"
-                        onClick={() => handleDeleteBackground({ ...item, kind: "habit" })}
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex justify-start mt-2">
-              <PlusIcon
-                className="w-6 h-6 text-white bg-[#0d2c53] rounded-md p-1 cursor-pointer hover:bg-[#0b2444]"
-                onClick={() => {
-                  setModalType("habit");
-                  setModalInitial(undefined);
-                  setModalOpen(true);
-                }}
-              />
-            </div>
-          </div>
-        )}
+  return (
+    <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden">
+      <div className="bg-[var(--palantir-border)]/20 px-6 py-3 border-b border-[var(--palantir-border)]">
+        <span className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest flex items-center gap-2">
+          <div className="w-1 h-1 bg-[var(--palantir-active)] animate-pulse" />
+          Clinical_Bio_Profile
+        </span>
+      </div>
+
+      <div className="flex flex-col">
+        {renderSection("personal", backgroundLabels.personal, grouped.personal, backgroundIcons.personal)}
+        {renderSection("family", backgroundLabels.family, grouped.family, backgroundIcons.family)}
+        {renderSection("genetic", backgroundLabels.genetic, grouped.genetic, backgroundIcons.genetic)}
+        {renderSection("allergy", "IMMUNOLOGICAL_SENSITIVITY", allergies, backgroundIcons.allergy)}
+        {renderSection("habit", backgroundLabels.habit, habits, backgroundIcons.habit)}
       </div>
 
       <ClinicalBackgroundModal

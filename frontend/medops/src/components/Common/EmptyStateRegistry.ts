@@ -1,51 +1,29 @@
 // src/components/Common/EmptyStateRegistry.ts
-import { ComponentType } from "react";
-import {
-  UserIcon,
-  ClockIcon,
-  DocumentIcon,
-  Cog6ToothIcon,
-  ChartBarIcon,
+import { 
+  UserIcon, 
+  ClockIcon, 
+  DocumentIcon, 
+  Cog6ToothIcon, 
+  ChartBarIcon 
 } from "@heroicons/react/24/outline";
 
-type IconComponent = ComponentType<React.SVGProps<SVGSVGElement>>;
-
-interface EmptyStateEntry {
-  icon: IconComponent;
-  iconProps?: React.SVGProps<SVGSVGElement>;
-  title: string;
-  message?: string;
-}
-
-export const EmptyStateRegistry: Record<string, EmptyStateEntry> = {
+export const EmptyStateRegistry = {
   pacientes: {
     icon: UserIcon,
-    iconProps: { className: "w-12 h-12 text-gray-400 dark:text-gray-500" },
-    title: "No se encontraron pacientes",
-    message: "Intenta ajustar tu búsqueda o registrar un nuevo paciente.",
+    iconProps: { className: "w-16 h-16 text-[var(--palantir-muted)]" },
+    title: "No_Records_Found",
+    message: "Base de datos de sujetos vacía o sin coincidencias de búsqueda.",
   },
   salaDeEspera: {
     icon: ClockIcon,
-    iconProps: { className: "w-12 h-12 text-gray-400 dark:text-gray-500" },
-    title: "No hay pacientes en sala de espera",
-    message: "Los pacientes aparecerán aquí cuando sean registrados.",
+    iconProps: { className: "w-16 h-16 text-[var(--palantir-muted)]" },
+    title: "Queue_Is_Empty",
+    message: "No hay flujos de pacientes activos en el buffer de espera.",
   },
   reportes: {
     icon: DocumentIcon,
-    iconProps: { className: "w-12 h-12 text-gray-400 dark:text-gray-500" },
-    title: "No hay reportes disponibles",
-    message: "Genera un nuevo reporte para visualizar resultados.",
-  },
-  configuracion: {
-    icon: Cog6ToothIcon,
-    iconProps: { className: "w-12 h-12 text-gray-400 dark:text-gray-500" },
-    title: "Sin configuraciones definidas",
-    message: "Configura tu institución para comenzar.",
-  },
-  dashboard: {
-    icon: ChartBarIcon,
-    iconProps: { className: "w-12 h-12 text-gray-400 dark:text-gray-500" },
-    title: "No hay datos en el dashboard",
-    message: "Los indicadores aparecerán aquí cuando se registren eventos.",
-  },
+    iconProps: { className: "w-16 h-16 text-[var(--palantir-muted)]" },
+    title: "No_Telemetry_Available",
+    message: "Inicie procesos de consulta para generar logs de analítica.",
+  }
 };

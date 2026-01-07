@@ -1,35 +1,49 @@
+// src/components/InstitutionalFooter.tsx
+
 export default function InstitutionalFooter() {
   return (
     <footer
-      className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700
-                 px-4 sm:px-6 md:px-8
-                 py-2 sm:py-3 md:py-4
-                 flex flex-col md:flex-row items-center justify-between
-                 text-xs sm:text-sm md:text-base
-                 text-gray-600 dark:text-gray-400 transition-colors gap-2 md:gap-4"
+      className="h-10 bg-[var(--palantir-surface)] border-t border-[var(--palantir-border)] px-6
+                 flex items-center justify-between
+                 text-[11px] font-mono tracking-wider
+                 text-[var(--palantir-muted)] transition-all duration-300"
     >
-      {/* 🔹 Información institucional */}
-      <span className="text-[#0d2c53] dark:text-white text-center md:text-left">
-        © {new Date().getFullYear()} MedOps — Plataforma clínica auditada
-      </span>
-
-      {/* 🔹 Versión y enlaces */}
-      <div className="flex items-center gap-3 md:gap-6">
-        <span className="text-[#0d2c53] dark:text-white font-semibold">
-          v1.0.0
+      {/* 🔹 Estado del Sistema e Info Institucional */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--palantir-active)] opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--palantir-active)]"></span>
+          </span>
+          <span className="uppercase font-bold text-[var(--palantir-text)]">System_Ready</span>
+        </div>
+        <span className="hidden sm:inline text-[var(--palantir-border)]">|</span>
+        <span className="hidden sm:inline uppercase opacity-80">
+          © {new Date().getFullYear()} MEDOPS // CLINICAL_AUDIT_ACTIVE
         </span>
-        <a
-          href="/settings/config"
-          className="hover:text-[#0d2c53] dark:hover:text-white transition-colors"
-        >
-          Configuración
-        </a>
-        <a
-          href="/reports"
-          className="hover:text-[#0d2c53] dark:hover:text-white transition-colors"
-        >
-          Reportes
-        </a>
+      </div>
+
+      {/* 🔹 Versión y Enlaces de Acceso Rápido */}
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <span className="text-[var(--palantir-muted)] opacity-60">CORE_REL:</span>
+          <span className="text-[var(--palantir-active)] font-bold">v1.2.0-STABLE</span>
+        </div>
+        
+        <div className="hidden md:flex items-center gap-4 border-l border-[var(--palantir-border)] ml-4 pl-4">
+          <a
+            href="/settings/config"
+            className="hover:text-[var(--palantir-text)] transition-colors duration-200 uppercase"
+          >
+            Config
+          </a>
+          <a
+            href="/reports"
+            className="hover:text-[var(--palantir-text)] transition-colors duration-200 uppercase"
+          >
+            Logs
+          </a>
+        </div>
       </div>
     </footer>
   );

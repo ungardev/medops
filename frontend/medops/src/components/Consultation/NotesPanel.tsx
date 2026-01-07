@@ -1,11 +1,18 @@
 // src/components/Consultation/NotesPanel.tsx
 import React, { useState } from "react";
 import { useUpdateAppointmentNotes } from "../../hooks/appointments/useUpdateAppointmentNotes";
+import { 
+  DocumentTextIcon, 
+  PencilSquareIcon, 
+  CheckIcon, 
+  XMarkIcon,
+  CloudArrowUpIcon
+} from "@heroicons/react/24/outline";
 
 export interface NotesPanelProps {
-  appointmentId?: number;   // opcional en modo readOnly
+  appointmentId?: number;
   notes: string | null;
-  readOnly?: boolean;       // flag para modo lectura
+  readOnly?: boolean;
 }
 
 const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly }) => {
@@ -27,63 +34,116 @@ const NotesPanel: React.FC<NotesPanelProps> = ({ appointmentId, notes, readOnly 
     );
   };
 
+  const handleCancel = () => {
+    setValue(notes || "");
+    setIsEditing(false);
+  };
+
   return (
-    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
-        Notas Adicionales
-      </h3>
-            {readOnly && (
-        <div className="mb-2">
-          <p className="whitespace-pre-line text-xs sm:text-sm text-[#0d2c53] dark:text-gray-300">
-            {notes || "Sin notas registradas"}
-          </p>
+    <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden transition-all">
+      {/* HEADER SECTION */}
+      <div className="flex items-center justify-between bg-white/5 px-4 py-3 border-b border-[var(--palantir-border)]">
+        <div className="flex items-center gap-2">
+          <DocumentTextIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
+            Clinical_Observations
+          </span>
         </div>
-      )}
-
-      {!readOnly && !isEditing && (
-        <div className="mb-2">
-          <p className="whitespace-pre-line text-xs sm:text-sm text-[#0d2c53] dark:text-gray-300">
-            {value || "Sin notas registradas"}
-          </p>
+        
+        {!readOnly && !isEditing && (
           <button
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors mt-2 text-xs sm:text-sm"
             onClick={() => setIsEditing(true)}
+            className="flex items-center gap-1.5 text-[9px] font-black uppercase text-[var(--palantir-active)] hover:opacity-80 transition-all"
           >
-            Editar notas
+            <PencilSquareIcon className="w-3.5 h-3.5" />
+            Edit_Notes
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
-      {!readOnly && isEditing && (
-        <div className="flex flex-col gap-2">
-          <textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            rows={6}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              disabled={isPending}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
-            >
-              {isPending ? "Guardando..." : "Guardar"}
-            </button>
-            <button
-              onClick={() => {
-                setValue(notes || "");
-                setIsEditing(false);
-              }}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
-            >
-              Cancelar
-            </button>
+      <div className="p-4">
+        {isEditing ? (
+          <div className="space-y-4 animate-in fade-in duration-200">
+            <div className="relative">
+              <textarea
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                rows={8}
+                placeholder="Enter detailed clinical notes, patient history updates, or specific observations..."
+                className="w-full bg-black/40 border border-[var(--palantir-border)] p-4 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none resize-none leading-relaxed"
+                autoFocus
+              />
+              <div className="absolute bottom-3 right-3 opacity-20 pointer-events-none">
+                <DocumentTextIcon className="w-12 h-12" />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/5">
+              <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
+                {value.length} Characters_Recorded
+              </span>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancel}
+                  disabled={isPending}
+                  className="flex items-center gap-1 text-[9px] font-black uppercase text-[var(--palantir-muted)] hover:text-white transition-colors"
+                >
+                  <XMarkIcon className="w-3.5 h-3.5" /> 
+                  Abort
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isPending}
+                  className="flex items-center gap-2 bg-[var(--palantir-active)] hover:bg-blue-600 text-white px-4 py-2 text-[9px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <>
+                      <CloudArrowUpIcon className="w-3.5 h-3.5 animate-bounce" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckIcon className="w-3.5 h-3.5" />
+                      Commit_Observation
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="relative min-h-[120px]">
+            {value ? (
+              <p className="whitespace-pre-line text-[11px] font-mono leading-relaxed text-[var(--palantir-text)] opacity-90">
+                {value}
+              </p>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-8 border border-dashed border-[var(--palantir-border)] opacity-30">
+                <DocumentTextIcon className="w-8 h-8 mb-2" />
+                <span className="text-[9px] font-mono uppercase tracking-tighter">
+                  No_Additional_Notes_Recorded
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* FOOTER METADATA (Opcional, pero da el look Palantir) */}
+      <div className="bg-black/20 px-4 py-2 flex items-center justify-between border-t border-[var(--palantir-border)]">
+        <div className="flex gap-4">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full ${value ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
+            <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
+              Status: {value ? 'Data_Locked' : 'Empty_Buffer'}
+            </span>
           </div>
         </div>
-      )}
+        <span className="text-[8px] font-mono text-[var(--palantir-muted)]">
+          ID: {appointmentId || 'UNSET'}
+        </span>
+      </div>
     </div>
   );
 };

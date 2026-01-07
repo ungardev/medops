@@ -7,6 +7,13 @@ import TreatmentBadge, {
 } from "./TreatmentBadge";
 import { useUpdateTreatment } from "../../hooks/consultations/useUpdateTreatment";
 import { useDeleteTreatment } from "../../hooks/consultations/useDeleteTreatment";
+import { 
+  ClipboardDocumentListIcon, 
+  PlusIcon, 
+  CalendarDaysIcon,
+  TagIcon,
+  QueueListIcon
+} from "@heroicons/react/24/outline";
 
 export interface TreatmentPanelProps {
   diagnoses: Diagnosis[];
@@ -20,25 +27,16 @@ export interface TreatmentPanelProps {
     start_date?: string;
     end_date?: string;
     status: "active" | "completed" | "cancelled";
-    treatment_type:
-      | "pharmacological"
-      | "surgical"
-      | "rehabilitation"
-      | "lifestyle"
-      | "other";
+    treatment_type: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other";
   }) => void;
 }
 
-function normalizeStatus(
-  status: TreatmentStatus | undefined
-): "active" | "completed" | "cancelled" | undefined {
+function normalizeStatus(status: TreatmentStatus | undefined): "active" | "completed" | "cancelled" | undefined {
   if (!status) return undefined;
   return status === "suspended" ? "cancelled" : status;
 }
 
-function normalizeType(
-  type: TreatmentType | undefined
-): "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other" | undefined {
+function normalizeType(type: TreatmentType | undefined): "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other" | undefined {
   if (!type) return undefined;
   if (type === "therapeutic") return "rehabilitation";
   return type;
@@ -47,7 +45,6 @@ function normalizeType(
 const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
   diagnoses,
   appointmentId,
-  treatments,
   readOnly,
   onAdd,
 }) => {
@@ -81,72 +78,49 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
     setPlan("");
     setStartDate("");
     setEndDate("");
-    setStatus("active");
-    setTreatmentType("pharmacological");
   };
 
   return (
-    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">
-        Tratamientos
-      </h3>
-            {/* Modo lectura */}
-      {readOnly && (
-        <>
-          {diagnoses.length === 0 && (
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
-          )}
-          {diagnoses.map((d) => (
-            <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-white text-xs sm:text-sm">
-                {d.icd_code} — {d.title || d.description || "Sin descripción"}
-              </h4>
-              <ul className="ml-3 sm:ml-4">
-                {d.treatments && d.treatments.length > 0 ? (
-                  d.treatments.map((t: Treatment) => (
-                    <li key={t.id}>
-                      <TreatmentBadge
-                        id={t.id}
-                        plan={t.plan}
-                        start_date={t.start_date}
-                        end_date={t.end_date}
-                        status={t.status as TreatmentStatus}
-                        treatment_type={t.treatment_type as TreatmentType}
-                      />
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
-                )}
-              </ul>
-            </div>
-          ))}
-        </>
-      )}
+    <div className="space-y-8">
+      {/* HEADER SECTION */}
+      <div className="flex items-center gap-2 mb-6">
+        <ClipboardDocumentListIcon className="w-5 h-5 text-[var(--palantir-active)]" />
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
+          Clinical_Intervention_Matrix
+        </span>
+      </div>
 
-      {/* Modo edición */}
-      {!readOnly && (
-        <>
-          {diagnoses.length === 0 && (
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
-          )}
-          {diagnoses.map((d) => (
-            <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-white text-xs sm:text-sm">
-                {d.icd_code} — {d.title || d.description || "Sin descripción"}
-              </h4>
-              <ul className="ml-3 sm:ml-4">
+      {/* RENDER DIAGNOSES AND THEIR TREATMENTS */}
+      <div className="space-y-6">
+        {diagnoses.length === 0 ? (
+          <div className="p-8 border border-dashed border-[var(--palantir-border)] text-center opacity-40">
+            <span className="text-[10px] font-mono uppercase italic">Awaiting_Diagnosis_Input...</span>
+          </div>
+        ) : (
+          diagnoses.map((d) => (
+            <div key={d.id} className="border-l border-[var(--palantir-border)] pl-4 py-1 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-2 py-0.5 rounded text-[9px] font-black font-mono border border-[var(--palantir-active)]/20">
+                  {d.icd_code}
+                </span>
+                <h4 className="text-[11px] font-bold uppercase tracking-tight text-[var(--palantir-text)] opacity-80">
+                  {d.title || "Untitled_Condition"}
+                </h4>
+              </div>
+
+              <div className="grid gap-2 ml-4">
                 {d.treatments && d.treatments.length > 0 ? (
                   d.treatments.map((t: Treatment) => (
-                    <li key={t.id}>
-                      <TreatmentBadge
-                        id={t.id}
-                        plan={t.plan}
-                        start_date={t.start_date}
-                        end_date={t.end_date}
-                        status={t.status as TreatmentStatus}
-                        treatment_type={t.treatment_type as TreatmentType}
-                        onEdit={(id, newPlan, start, end, newStatus, newType) =>
+                    <TreatmentBadge
+                      key={t.id}
+                      id={t.id}
+                      plan={t.plan}
+                      start_date={t.start_date}
+                      end_date={t.end_date}
+                      status={t.status as TreatmentStatus}
+                      treatment_type={t.treatment_type as TreatmentType}
+                      {...(!readOnly && {
+                        onEdit: (id, newPlan, start, end, newStatus, newType) =>
                           updateTreatment({
                             id,
                             plan: newPlan,
@@ -154,96 +128,114 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                             end_date: end ?? undefined,
                             status: normalizeStatus(newStatus),
                             treatment_type: normalizeType(newType),
-                          })
-                        }
-                        onDelete={(id) => deleteTreatment(id)}
-                      />
-                    </li>
+                          }),
+                        onDelete: (id) => deleteTreatment(id),
+                      })}
+                    />
                   ))
                 ) : (
-                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin tratamientos</li>
+                  <span className="text-[9px] font-mono uppercase text-[var(--palantir-muted)] italic pl-2">
+                    // No_Treatments_Assigned
+                  </span>
                 )}
-              </ul>
+              </div>
             </div>
-          ))}
+          ))
+        )}
+      </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
-            <select
-              value={diagnosisId}
-              onChange={(e) => setDiagnosisId(Number(e.target.value))}
-              required
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-            >
-              <option value="">Seleccionar diagnóstico</option>
-              {diagnoses.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.icd_code} — {d.title || d.description}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="text"
-              placeholder="Plan de tratamiento"
-              value={plan}
-              onChange={(e) => setPlan(e.target.value)}
-              required
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-            />
-
-            <div className="flex gap-2">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              />
+      {/* NEW TREATMENT FORM (Command Area) */}
+      {!readOnly && diagnoses.length > 0 && (
+        <div className="mt-10 pt-6 border-t border-[var(--palantir-border)]">
+          <form onSubmit={handleSubmit} className="bg-white/5 border border-[var(--palantir-border)] p-5 space-y-4">
+            <div className="flex items-center gap-2 mb-2">
+              <PlusIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Add_New_Procedure</span>
             </div>
 
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value as any)}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-            >
-              <option value="active">Activo</option>
-              <option value="completed">Completado</option>
-              <option value="cancelled">Cancelado</option>
-            </select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Diagnosis Link */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Condition_Link</label>
+                <div className="relative">
+                  <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-muted)]" />
+                  <select
+                    value={diagnosisId}
+                    onChange={(e) => setDiagnosisId(Number(e.target.value))}
+                    required
+                    className="w-full bg-black/40 border border-[var(--palantir-border)] pl-10 pr-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none appearance-none"
+                  >
+                    <option value="">SELECT_DIAGNOSIS</option>
+                    {diagnoses.map((d) => (
+                      <option key={d.id} value={d.id}>[{d.icd_code}] {d.title || d.description}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-            <select
-              value={treatmentType}
-              onChange={(e) => setTreatmentType(e.target.value as any)}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-            >
-              <option value="pharmacological">Farmacológico</option>
-              <option value="surgical">Quirúrgico</option>
-              <option value="rehabilitation">Rehabilitación</option>
-              <option value="lifestyle">Cambio de estilo de vida</option>
-              <option value="other">Otro</option>
-            </select>
+              {/* Treatment Type */}
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Modality</label>
+                <div className="relative">
+                  <QueueListIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-muted)]" />
+                  <select
+                    value={treatmentType}
+                    onChange={(e) => setTreatmentType(e.target.value as any)}
+                    className="w-full bg-black/40 border border-[var(--palantir-border)] pl-10 pr-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none appearance-none"
+                  >
+                    <option value="pharmacological">PHARMACOLOGICAL</option>
+                    <option value="surgical">SURGICAL</option>
+                    <option value="rehabilitation">REHABILITATION</option>
+                    <option value="lifestyle">LIFESTYLE_MOD</option>
+                    <option value="other">OTHER_PROCEDURE</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-            <button
-              type="submit"
-              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
-            >
-              + Agregar tratamiento
-            </button>
+            {/* Plan Textarea */}
+            <div className="space-y-1">
+              <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Clinical_Plan_Details</label>
+              <textarea
+                placeholder="DEFINE_INTERVENTION_STEPS..."
+                value={plan}
+                onChange={(e) => setPlan(e.target.value)}
+                required
+                className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none min-h-[80px]"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Start_Date</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Estimated_End</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)]"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  className="w-full bg-[var(--palantir-active)] hover:bg-blue-600 text-white h-[38px] flex items-center justify-center gap-2 transition-all group"
+                >
+                  <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform" />
+                  <span className="text-[9px] font-black uppercase tracking-widest">Execute_Add</span>
+                </button>
+              </div>
+            </div>
           </form>
-        </>
+        </div>
       )}
     </div>
   );

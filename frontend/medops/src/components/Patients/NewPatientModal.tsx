@@ -4,6 +4,7 @@ import ReactDOM from "react-dom";
 import { useForm } from "react-hook-form";
 import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
 import { PatientInput } from "../../types/patients";
+import { XMarkIcon, UserPlusIcon } from "@heroicons/react/24/outline";
 
 interface Props {
   open: boolean;
@@ -22,13 +23,7 @@ interface FormValues {
 }
 
 const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<FormValues>();
-
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>();
   const createPatient = useCreatePatient();
 
   if (!open) return null;
@@ -38,10 +33,10 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
       first_name: values.first_name.trim(),
       last_name: values.last_name.trim(),
       national_id: values.national_id.trim(),
-      ...(values.second_name?.trim() ? { second_name: values.second_name.trim() } : {}),
-      ...(values.second_last_name?.trim() ? { second_last_name: values.second_last_name.trim() } : {}),
-      ...(values.phone?.trim() ? { phone: values.phone.trim() } : {}),
-      ...(values.email?.trim() ? { email: values.email.trim() } : {}),
+      ...(values.second_name?.trim() && { second_name: values.second_name.trim() }),
+      ...(values.second_last_name?.trim() && { second_last_name: values.second_last_name.trim() }),
+      ...(values.phone?.trim() && { phone: values.phone.trim() }),
+      ...(values.email?.trim() && { email: values.email.trim() }),
     };
 
     createPatient.mutate(payload, {
@@ -50,121 +45,82 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
         reset();
         onClose();
       },
-      onError: (e: unknown) => {
-        const message = e instanceof Error ? e.message : "Error creando paciente";
-        console.error("Error creando paciente:", e);
-        alert(message);
-      },
     });
   };
-    return ReactDOM.createPortal(
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-2 sm:px-0"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-md"
+
+  const inputClass = "w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] text-[var(--palantir-text)] text-[11px] font-mono p-2.5 rounded-sm focus:outline-none focus:border-[var(--palantir-active)] transition-all placeholder:text-[var(--palantir-muted)]/30 uppercase";
+
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 bg-[#020617]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+      <div 
+        className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-xl shadow-2xl animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-4">
-          Nuevo Paciente
-        </h2>
-        <form className="flex flex-col gap-2 sm:gap-3" onSubmit={handleSubmit(onSubmit)}>
-          <input
-            placeholder="Nombre"
-            {...register("first_name", { required: "El nombre es obligatorio" })}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-          {errors.first_name && (
-            <span className="text-xs sm:text-sm text-red-600 dark:text-red-400">{errors.first_name.message}</span>
-          )}
+        {/* Header del Modal */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/50">
+          <div className="flex items-center gap-3">
+            <UserPlusIcon className="w-5 h-5 text-[var(--palantir-active)]" />
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-text)]">
+              Initialize_Subject_Record
+            </h2>
+          </div>
+          <button onClick={onClose} className="text-[var(--palantir-muted)] hover:text-white transition-colors">
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
 
-          <input
-            placeholder="Segundo nombre (opcional)"
-            {...register("second_name")}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
+        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Primary_Name*</label>
+              <input {...register("first_name", { required: true })} className={inputClass} placeholder="NAME_ALPHA" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Secondary_Name</label>
+              <input {...register("second_name")} className={inputClass} placeholder="NAME_BRAVO" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Surname_A*</label>
+              <input {...register("last_name", { required: true })} className={inputClass} placeholder="SURNAME_ALPHA" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Surname_B</label>
+              <input {...register("second_last_name")} className={inputClass} placeholder="SURNAME_BRAVO" />
+            </div>
+          </div>
 
-          <input
-            placeholder="Apellido"
-            {...register("last_name", { required: "El apellido es obligatorio" })}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-          {errors.last_name && (
-            <span className="text-xs sm:text-sm text-red-600 dark:text-red-400">{errors.last_name.message}</span>
-          )}
+          <div className="space-y-1">
+            <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">National_Identification_UID*</label>
+            <input {...register("national_id", { required: true })} className={inputClass} placeholder="XX.XXX.XXX" />
+          </div>
 
-          <input
-            placeholder="Segundo apellido (opcional)"
-            {...register("second_last_name")}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
+          <div className="grid grid-cols-2 gap-4 border-t border-[var(--palantir-border)] pt-4 mt-2">
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Comms_Phone</label>
+              <input {...register("phone")} className={inputClass} placeholder="+00 000-0000" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Comms_Email</label>
+              <input {...register("email")} className={inputClass} placeholder="SUBJECT@NETWORK.OPS" />
+            </div>
+          </div>
 
-          <input
-            placeholder="Documento (Cédula)"
-            {...register("national_id", { required: "El documento es obligatorio" })}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-          {errors.national_id && (
-            <span className="text-xs sm:text-sm text-red-600 dark:text-red-400">{errors.national_id.message}</span>
-          )}
-
-          <input
-            placeholder="Teléfono"
-            {...register("phone")}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-
-          <input
-            placeholder="Email"
-            {...register("email", {
-              validate: (value) =>
-                !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || "Email inválido",
-            })}
-            className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-          {errors.email && (
-            <span className="text-xs sm:text-sm text-red-600 dark:text-red-400">{errors.email.message}</span>
-          )}
-
-          <div className="flex gap-2 mt-2 sm:mt-3">
+          <div className="flex gap-3 pt-6">
             <button
               type="submit"
               disabled={createPatient.isPending}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm disabled:opacity-50"
+              className="flex-1 bg-[var(--palantir-active)] text-white text-[10px] font-black uppercase tracking-widest py-3 rounded-sm hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/10"
             >
-              {createPatient.isPending ? "Creando..." : "Crear"}
+              {createPatient.isPending ? "Syncing_Data..." : "Commit_Record_to_Mainframe"}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md border border-gray-300 dark:border-gray-600
-                         bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200
-                         hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm"
+              className="px-6 border border-[var(--palantir-border)] text-[var(--palantir-muted)] text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all"
             >
-              Cancelar
+              Abort
             </button>
           </div>
-
-          {createPatient.isError && (
-            <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 mt-2">
-              Error: {(createPatient.error as Error)?.message}
-            </p>
-          )}
         </form>
       </div>
     </div>,

@@ -13,7 +13,6 @@ import Appointments from "./pages/Appointments/Appointments";
 import Payments from "./pages/Payments/Payments";
 import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail";
 import Events from "./pages/Events/Events";
-import AuditDashboard from "./pages/Dashboard/AuditDashboard";
 import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
 import Consultation from "./pages/Consultation/Consultation";
 import Login from "./pages/Auth/Login";
@@ -22,7 +21,7 @@ import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
 
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { queryClient } from "@/lib/reactQuery"; // 🔹 ahora sí existe
+import { queryClient } from "@/lib/reactQuery";
 
 import { NotifyProvider } from "./context/NotifyContext";
 
@@ -33,7 +32,7 @@ import ConfigPage from "./pages/Settings/ConfigPage";
 import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
 
-// Configuración global de axios usando Vite env
+// 🔹 Configuración global de axios
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = localStorage.getItem("authToken");
 if (token) {
@@ -46,11 +45,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <NotifyProvider>
         <BrowserRouter>
           <Routes>
-            {/* Rutas públicas */}
+            {/* 🔹 Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
 
-            {/* Rutas protegidas */}
+            {/* 🔹 Rutas protegidas */}
             <Route element={<ProtectedRoute />}>
               <Route element={<App />}>
                 <Route index element={<DashboardPage />} />
@@ -66,7 +65,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="payments/:id" element={<Payments />} />
                 <Route path="charge-orders/:id" element={<ChargeOrderDetail />} />
                 <Route path="events" element={<Events />} />
-                <Route path="audit-dashboard" element={<AuditDashboard />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
                 <Route path="consultation" element={<Consultation />} />
                 <Route path="reports" element={<ReportsPage />} />

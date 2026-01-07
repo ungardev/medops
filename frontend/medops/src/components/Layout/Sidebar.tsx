@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Clock,
@@ -12,7 +13,6 @@ import {
   ChevronRight,
   X,
 } from "lucide-react";
-import { useState } from "react";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -32,26 +32,6 @@ const navItems = [
   { path: "/settings/config", label: "Configuración", icon: Settings },
 ];
 
-function Tooltip({ label, children }: { label: string; children: React.ReactNode }) {
-  const [visible, setVisible] = useState(false);
-  return (
-    <div
-      className="relative flex items-center"
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-      onTouchStart={() => setVisible(true)}
-      onTouchEnd={() => setVisible(false)}
-    >
-      {children}
-      {visible && (
-        <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-black text-white text-xs shadow-lg z-50">
-          {label}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function Sidebar({
   collapsed,
   setCollapsed,
@@ -59,123 +39,145 @@ export default function Sidebar({
   setMobileOpen,
 }: SidebarProps) {
   const location = useLocation();
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const effectiveCollapsed = mobileOpen ? false : collapsed;
 
-  const itemBase =
-    "group flex items-center px-2 py-2 rounded-md font-medium transition-colors";
-  const itemActive =
-    "bg-gray-100 text-[#0d2c53] dark:bg-gray-800 dark:text-white";
-  const itemIdle =
-    "text-gray-600 hover:bg-gray-100 hover:text-[#0d2c53] dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white";
+  useEffect(() => {
+    const checkTheme = () => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    };
+    checkTheme();
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  const getIconSrc = () => isDarkMode ? "/medopz_logo_blanco_solo.svg" : "/medopz_logo_negro_solo.svg";
+  const getFontSrc = () => isDarkMode ? "/medopz_fuente_blanco.svg" : "/medopz_fuente_negro.svg";
+
+  // Item base con padding ajustado para los iconos más grandes
+  const itemBase = "group flex items-center px-3 py-3 rounded-md font-medium transition-all duration-200 ease-in-out mb-1.5";
+  const itemActive = "bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] shadow-sm ring-1 ring-[var(--palantir-active)]/20";
+  const itemIdle = "text-[var(--palantir-muted)] hover:bg-[var(--palantir-border)] hover:text-[var(--palantir-text)]";
 
   return (
     <aside
-      className={`border-r border-gray-200 dark:border-gray-700 shadow-sm
-        ${effectiveCollapsed ? "w-20" : "w-64"}
-        h-screen bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200
-        flex-shrink-0 overflow-y-auto overflow-x-hidden
+      className={`border-r border-[var(--palantir-border)] transition-all duration-300 ease-in-out
+        ${effectiveCollapsed ? "w-[72px]" : "w-64"}
+        h-screen bg-[var(--palantir-surface)] text-[var(--palantir-text)]
+        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col
       `}
-      style={{ transition: "width 300ms ease-in-out" }}
     >
-      <div className="flex flex-col justify-between h-full pt-2 pb-4 px-4">
-        {/* Toggle (solo desktop) */}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="mb-3 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white transition-colors self-end hidden lg:block"
-        >
-          {effectiveCollapsed ? (
-            <ChevronRight className="w-5 h-5 transition-transform duration-300" />
-          ) : (
-            <ChevronLeft className="w-5 h-5 transition-transform duration-300 rotate-180" />
-          )}
-        </button>
+      <div className="flex flex-col h-full pt-3 pb-4 px-3">
+        <div className="flex flex-col mb-4">
+            <div className={`flex mb-2 ${
+                mobileOpen 
+                ? "flex-col items-center justify-center pt-8 pb-4" 
+                : `items-center h-14 ${effectiveCollapsed ? "justify-center" : "justify-between px-2"}`
+            }`}>
+                
+                <Link 
+                  to="/" 
+                  className={`flex transition-all duration-300 ${
+                    mobileOpen ? "flex-col items-center gap-4" : "items-center gap-2"
+                  }`}
+                >
+                    <img
+                        src={getIconSrc()}
+                        alt="Logo"
+                        className={`transition-all duration-300 object-contain ${
+                            mobileOpen 
+                            ? "h-20 w-20" 
+                            : effectiveCollapsed ? "h-10 w-10" : "h-9 w-9"
+                        }`}
+                    />
+                    
+                    {!effectiveCollapsed && (
+                        <img
+                            src={getFontSrc()}
+                            alt="Medopz"
+                            className={`object-contain opacity-80 transition-all ${
+                                mobileOpen 
+                                ? "h-5 w-auto" 
+                                : "h-3.5 w-auto"
+                            }`}
+                        />
+                    )}
+                </Link>
 
-        {/* Cierre en móviles y tablets */}
-        <button
-          onClick={() => setMobileOpen(false)}
-          className="lg:hidden self-end mb-2 text-gray-500 dark:text-gray-400 hover:text-[#0d2c53] dark:hover:text-white"
-        >
-          <X className="w-5 h-5" />
-        </button>
+                {mobileOpen && (
+                  <button
+                    onClick={() => setMobileOpen(false)}
+                    className="absolute top-4 right-4 p-2 text-[var(--palantir-muted)] hover:text-[var(--palantir-text)]"
+                  >
+                    <X size={22} />
+                  </button>
+                )}
 
-        {/* Branding institucional */}
-        <Link
-          to="/"
-          className={`mb-4 flex justify-center items-center overflow-hidden ${effectiveCollapsed ? "h-20" : "h-16"}`}
-        >
-          {!effectiveCollapsed ? (
-            <>
-              <img
-                src="/logo-medops-light.svg"
-                alt="MedOps"
-                className="max-h-14 w-auto block dark:hidden"
-              />
-              <img
-                src="/logo-medops-dark.svg"
-                alt="MedOps"
-                className="max-h-14 w-auto hidden dark:block"
-              />
-            </>
-          ) : (
-            <>
-              <img
-                src="/logo-icon-light.svg"
-                alt="MedOps"
-                className="max-h-14 w-auto block dark:hidden"
-              />
-              <img
-                src="/logo-icon-dark.svg"
-                alt="MedOps"
-                className="max-h-14 w-auto hidden dark:block"
-              />
-            </>
-          )}
-        </Link>
+                {!effectiveCollapsed && !mobileOpen && (
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="p-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] transition-colors hidden lg:block rounded-md hover:bg-[var(--palantir-border)]"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
+                )}
+            </div>
 
-        {/* Label MENU */}
+            {effectiveCollapsed && (
+                <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="mx-auto mt-2 p-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] transition-colors hidden lg:block rounded-md hover:bg-[var(--palantir-border)]"
+                >
+                    <ChevronRight size={16} />
+                </button>
+            )}
+
+            {!effectiveCollapsed && (
+              <div className="h-[1px] w-full bg-gradient-to-r from-[var(--palantir-border)] to-transparent mb-6 opacity-30" />
+            )}
+        </div>
+
         {!effectiveCollapsed && (
-          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4 px-2">
-            MENU
+          <div className="text-[11px] font-bold text-[var(--palantir-muted)] uppercase tracking-[0.2em] mb-4 px-3 opacity-40">
+            Navegación
           </div>
         )}
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden">
-          <ul className="flex flex-col gap-2">
-            {navItems.map(({ path, label, icon: Icon }) => (
-              <li key={path}>
-                {effectiveCollapsed ? (
-                  <Tooltip label={label}>
-                    <Link
-                      to={path}
-                      className={`${itemBase} ${
-                        location.pathname === path ? itemActive : itemIdle
-                      }`}
-                    >
-                      <div className="w-6 h-6 flex items-center justify-center">
-                        <Icon className="w-5 h-5" />
-                      </div>
-                    </Link>
-                  </Tooltip>
-                ) : (
+        <nav className="flex-1">
+          <ul className="flex flex-col">
+            {navItems.map(({ path, label, icon: Icon }) => {
+              const isActive = location.pathname === path;
+              return (
+                <li key={path}>
                   <Link
                     to={path}
-                    className={`${itemBase} ${
-                      location.pathname === path ? itemActive : itemIdle
-                    }`}
+                    onClick={() => mobileOpen && setMobileOpen(false)}
+                    title={effectiveCollapsed ? label : ""}
+                    className={`${itemBase} ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
                   >
-                    <div className="w-6 h-6 flex items-center justify-center">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <span className="ml-3 transition-all duration-300 origin-left">
-                      {label}
-                    </span>
+                    {/* Iconos ahora son siempre tamaño 24 para máxima consistencia */}
+                    <Icon size={24} className="shrink-0" strokeWidth={isActive ? 2 : 1.5} />
+                    {!effectiveCollapsed && (
+                      <span className="ml-4 text-[15px] tracking-tight font-semibold">
+                        {label}
+                      </span>
+                    )}
                   </Link>
-                )}
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         </nav>
+
+        {!effectiveCollapsed && (
+          <div className="mt-auto pt-4 border-t border-[var(--palantir-border)] px-3">
+            <div className="flex items-center gap-2">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+               <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.15em]">System_Online</span>
+            </div>
+          </div>
+        )}
       </div>
     </aside>
   );

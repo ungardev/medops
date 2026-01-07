@@ -1,35 +1,65 @@
 // tailwind.config.js
 module.exports = {
-  darkMode: "class", // 🔹 habilita dark mode por clase
+  darkMode: "class", 
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Manrope", "ui-sans-serif", "system-ui"], // 🔹 fuente institucional
+        // Inter es el estándar de oro para interfaces médicas y técnicas
+        sans: ["Inter", "Manrope", "ui-sans-serif", "system-ui"],
       },
       screens: {
-        lg: "1280px", // 🔹 desktop real: ≥1280px
+        lg: "1280px", 
       },
       colors: {
-        // 🔹 Tokens claros
-        bgLight: "#f3f4f6",           // fondo claro institucional
-        surfaceLight: "#ffffff",      // tarjetas blancas
-        textLight: "#1f2937",         // texto principal gris oscuro
-        textMuted: "#6b7280",         // texto secundario
-        borderLight: "#e5e7eb",       // borde claro
-
-        // 🔹 Tokens oscuros
-        bgDark: "#111827",            // fondo principal oscuro
-        surfaceDark: "#1f2937",       // tarjetas en dark
-        textDark: "#e5e7eb",          // texto principal en dark
-        textDarkMuted: "#9ca3af",     // texto secundario en dark
-        borderDark: "#374151",        // borde en dark
-
-        // 🔹 Tokens universales
-        primary: "#3b82f6",           // azul institucional
-        muted: "#6b7280",             // texto secundario
-        accentDark: "#f59e0b",        // acento premium en dark
+        // --- SISTEMA DE IDENTIDAD MEDOPZ ---
+        brand: {
+          primary: "#38a1ff",   // Azul institucional MedOps
+          success: "#0f9960",   // Estados positivos / Finalizados
+          error: "#db3737",     // Emergencias / Errores
+          warning: "#d9822b",   // Pendientes / Alertas
+          info: "#215db0",      // Informativo técnico
+        },
+        ui: {
+          // DARK MODE (Elite Deep Palette)
+          dark: {
+            bg: "#0f131a",      // Fondo base profundo
+            surface: "#182026", // Tarjetas y Sidebar
+            header: "#10161a",  // Cabecera anclada
+            border: "#24313c",  // Bordes de alta precisión
+            hover: "#202b33",   // Estados de hover en listas
+          },
+          // LIGHT MODE (Pristine Clinical Palette)
+          light: {
+            bg: "#f5f8fa",      // Fondo gris clínico suave
+            surface: "#ffffff", // Tarjetas blancas puras
+            border: "#d8e1e8",  // Bordes sutiles claros
+            hover: "#ebf1f5",   // Hover claro
+          }
+        },
+        text: {
+          // Tokens de texto para garantizar legibilidad
+          dark: {
+            main: "#f5f8fa",    // Texto principal
+            muted: "#8a9ba8",   // Texto secundario / Meta-data
+            disabled: "#5c7080",
+          },
+          light: {
+            main: "#182026",    // Texto principal
+            muted: "#5c7080",   // Texto secundario
+            disabled: "#a7b6c2",
+          }
+        }
       },
+      boxShadow: {
+        // Ring Elevation: sombras técnicas que no ensucian el diseño
+        'elite-sm': '0 0 0 1px rgba(16, 22, 26, 0.2), 0 1px 1px rgba(16, 22, 26, 0.4)',
+        'elite-md': '0 0 0 1px rgba(16, 22, 26, 0.15), 0 2px 4px rgba(16, 22, 26, 0.3), 0 8px 24px rgba(16, 22, 26, 0.3)',
+      },
+      borderRadius: {
+        // El radio 'elite' elimina el aspecto de "juguete" de los bordes redondos
+        'elite': '2px',
+      }
     },
   },
   plugins: [],

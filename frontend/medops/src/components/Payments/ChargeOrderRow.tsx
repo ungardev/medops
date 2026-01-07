@@ -3,8 +3,13 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PaymentList from "./PaymentList";
 import { ChargeOrder } from "../../types/payments";
-import { useInvalidateChargeOrders } from "../../hooks/payments/useInvalidateChargeOrders";
-import { CreditCard, ArrowUpSquare, Eye } from "lucide-react";
+import { 
+  CreditCardIcon, 
+  EyeIcon, 
+  ArrowDownTrayIcon,
+  ChevronDownIcon,
+  ChevronUpIcon
+} from "@heroicons/react/24/outline";
 
 interface Props {
   order: ChargeOrder;
@@ -15,196 +20,139 @@ interface Props {
 export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }: Props) {
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
-  const invalidateChargeOrders = useInvalidateChargeOrders();
 
+  // --- LÓGICA DE EXPORTACIÓN (Refactorizada a estética industrial) ---
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
       const token = localStorage.getItem("authToken");
-
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/charge-orders/${order.id}/export/`,
         {
           method: "GET",
-          headers: {
-            ...(token ? { Authorization: `Token ${token}` } : {}),
-          },
+          headers: { ...(token ? { Authorization: `Token ${token}` } : {}) },
           credentials: "include",
         }
       );
-
-      if (!response.ok) throw new Error("Error exportando orden");
-
+      if (!response.ok) throw new Error();
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `orden-${order.id}.pdf`;
-      document.body.appendChild(link);
+      link.download = `ORD_${order.id}_RAW_DATA.pdf`;
       link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Error exportando orden", err);
-      alert("No se pudo exportar la orden. Verifica el endpoint en el backend.");
+      console.error("Export failed");
     }
   };
 
-  const handleViewDetail = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigate(`/charge-orders/${order.id}`);
-  };
-
-  const handleRegisterPaymentClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onRegisterPayment?.();
-  };
-
   const formattedDate = order.appointment_date
-    ? new Date(order.appointment_date).toLocaleDateString()
-    : order.issued_at
-    ? new Date(order.issued_at).toLocaleDateString()
+    ? new Date(order.appointment_date).toLocaleDateString('en-GB')
     : "—";
 
-  const formattedAmount =
-    order.total_amount !== undefined
-      ? Number(order.total_amount).toFixed(2)
-      : order.total !== undefined
-      ? Number(order.total).toFixed(2)
-      : "0.00";
+  const formattedAmount = Number(order.total_amount ?? order.total ?? 0).toFixed(2);
+  const patientName = order.patient_detail?.full_name ?? `SUBJECT_ID: ${order.patient}`;
 
-  const patientName =
-    order.patient_detail?.full_name ?? `Paciente #${order.patient}`;
+  // --- CONFIGURACIÓN DE STATUS (Terminal Style) ---
+  const statusConfig = {
+    paid: { label: "SETTLED", class: "text-emerald-400 border-emerald-500/30 bg-emerald-500/5" },
+    open: { label: "UNRESOLVED", class: "text-yellow-500 border-yellow-500/30 bg-yellow-500/5" },
+    partially_paid: { label: "PARTIAL", class: "text-blue-400 border-blue-500/30 bg-blue-500/5" },
+    void: { label: "ANNULLED", class: "text-red-400 border-red-500/30 bg-red-500/5" },
+    default: { label: "UNKNOWN", class: "text-[var(--palantir-muted)] border-white/10" }
+  };
 
-  const statusLabel =
-    order.status === "paid"
-      ? "Pagada"
-      : order.status === "open"
-      ? "Abierta"
-      : order.status === "partially_paid"
-      ? "Parcialmente pagada"
-      : order.status === "void"
-      ? "Anulada"
-      : "—";
-
-  const statusClass =
-    order.status === "paid"
-      ? "bg-green-100 text-green-800 ring-green-200 dark:bg-green-800 dark:text-green-200"
-      : order.status === "open"
-      ? "bg-yellow-100 text-yellow-800 ring-yellow-200 dark:bg-yellow-700 dark:text-yellow-200"
-      : order.status === "partially_paid"
-      ? "bg-blue-100 text-blue-800 ring-blue-200 dark:bg-blue-700 dark:text-blue-200"
-      : order.status === "void"
-      ? "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200"
-      : "bg-gray-100 text-[#0d2c53] ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
-
-  const confirmed = order.payments?.filter(p => p.status === "confirmed")
-    .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
-
-  const pending = order.payments?.filter(p => p.status === "pending")
-    .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
-
-  const rejected = order.payments?.filter(p => p.status === "rejected")
-    .reduce((sum, p) => sum + Number(p.amount), 0) ?? 0;
+  const currentStatus = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.default;
 
   return (
-    <div
-      className={`relative rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 mb-2 sm:mb-3 cursor-pointer 
-        ${isSelected ? "ring-2 ring-[#0d2c53] bg-[#0d2c53]/10 dark:bg-[#0d2c53]/30" : "bg-white dark:bg-gray-900"}`}
-      onClick={() => setExpanded(!expanded)}
+    <div 
+      className={`
+        group border-b border-white/5 transition-all
+        ${expanded ? "bg-white/[0.03]" : "hover:bg-white/[0.02]"}
+        ${isSelected ? "border-l-2 border-l-[var(--palantir-active)]" : "border-l-2 border-l-transparent"}
+      `}
     >
-      {/* Íconos mobile */}
-      <div className="absolute top-2 right-2 sm:hidden flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
-        <span title="Registrar pago">
-          <CreditCard
-            className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
-            onClick={handleRegisterPaymentClick}
-          />
-        </span>
+      {/* FILA PRINCIPAL (GRID) */}
+      <div 
+        className="grid grid-cols-12 gap-4 px-4 sm:px-6 py-4 items-center cursor-pointer"
+        onClick={() => setExpanded(!expanded)}
+      >
+        {/* ID & ICON */}
+        <div className="col-span-1 hidden sm:flex items-center gap-3">
+          {expanded ? <ChevronUpIcon className="w-3 h-3 text-[var(--palantir-muted)]" /> : <ChevronDownIcon className="w-3 h-3 text-[var(--palantir-muted)]" />}
+          <span className="text-[9px] font-mono text-[var(--palantir-muted)]">#{order.id.toString().padStart(4, '0')}</span>
+        </div>
 
-        <span title="Ver detalle">
-          <Eye
-            className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
-            onClick={handleViewDetail}
-          />
-        </span>
+        {/* PACIENTE */}
+        <div className="col-span-11 sm:col-span-4">
+          <p className="text-[10px] font-black uppercase tracking-wider truncate">{patientName}</p>
+          <p className="text-[8px] font-mono text-[var(--palantir-muted)] sm:hidden uppercase mt-1">
+            {formattedDate} • ${formattedAmount}
+          </p>
+        </div>
 
-        <span title="Exportar PDF">
-          <ArrowUpSquare
-            className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
+        {/* FECHA (Desktop) */}
+        <div className="col-span-2 hidden sm:block text-[10px] font-mono text-[var(--palantir-muted)]">
+          {formattedDate}
+        </div>
+
+        {/* MONTO (Desktop) */}
+        <div className="col-span-2 hidden sm:block text-right">
+          <span className="text-[11px] font-black font-mono tracking-tighter text-[var(--palantir-text)]">
+            ${formattedAmount}
+          </span>
+        </div>
+
+        {/* STATUS */}
+        <div className="col-span-12 sm:col-span-2 flex justify-start sm:justify-center items-center">
+          <span className={`px-2 py-0.5 border text-[8px] font-black tracking-[0.1em] rounded-sm ${currentStatus.class}`}>
+            {currentStatus.label}
+          </span>
+        </div>
+
+        {/* ACCIONES (Reveladas en Hover) */}
+        <div className="col-span-1 hidden sm:flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(); }}
+            className="p-1.5 hover:text-emerald-400 transition-colors" title="Post Payment"
+          >
+            <CreditCardIcon className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); navigate(`/charge-orders/${order.id}`); }}
+            className="p-1.5 hover:text-[var(--palantir-active)] transition-colors" title="Deep Inspection"
+          >
+            <EyeIcon className="w-4 h-4" />
+          </button>
+          <button 
             onClick={handleExport}
-          />
-        </span>
-      </div>
-
-      {/* Vista compacta */}
-      <div className="flex flex-col gap-2 text-[11px] text-[#0d2c53] dark:text-gray-100 sm:hidden">
-        <span className="font-semibold">{patientName}</span>
-        <span>{formattedDate}</span>
-        <span>${formattedAmount}</span>
-        <span className={`inline-flex items-center rounded-md px-1 py-0.5 text-[11px] font-medium ring-1 ring-inset max-w-max ${statusClass}`}>
-          {statusLabel}
-        </span>
-      </div>
-            {/* Vista desktop */}
-      <div className="hidden sm:flex justify-between items-center">
-        <div className="flex flex-wrap gap-2 sm:gap-4 items-center text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
-          <span className="font-semibold">{patientName}</span>
-          <span>{formattedDate}</span>
-          <span>${formattedAmount}</span>
-          <span className={`inline-flex items-center rounded-md px-1.5 sm:px-2 py-0.5 sm:py-1 text-[11px] sm:text-xs font-medium ring-1 ring-inset max-w-max ${statusClass}`}>
-            {statusLabel}
-          </span>
-        </div>
-
-        {/* Íconos desktop */}
-        <div className="flex flex-row gap-3 text-[#0d2c53] dark:text-gray-200">
-          <span title="Registrar pago">
-            <CreditCard
-              className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
-              onClick={handleRegisterPaymentClick}
-            />
-          </span>
-
-          <span title="Ver detalle">
-            <Eye
-              className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
-              onClick={handleViewDetail}
-            />
-          </span>
-
-          <span title="Exportar PDF">
-            <ArrowUpSquare
-              className="w-5 h-5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-300"
-              onClick={handleExport}
-            />
-          </span>
+            className="p-1.5 hover:text-white transition-colors" title="Export PDF"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* Expandido */}
+      {/* ÁREA EXPANDIDA: DETALLE DE PAGOS */}
       {expanded && (
-        <div className="mt-2 sm:mt-3">
-          <div className="flex flex-wrap gap-2 sm:hidden text-[11px] mb-2">
-            {[
-              { label: "Total", value: order.total_amount ?? order.total, className: "bg-gray-100 text-[#0d2c53] dark:bg-gray-700 dark:text-gray-200" },
-              { label: "Confirmados", value: confirmed, className: "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200" },
-              { label: "Pendientes", value: pending, className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200" },
-              { label: "Rechazados", value: rejected, className: "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200" },
-            ]
-              .filter(b => b.value !== undefined && Number(b.value) > 0)
-              .map((b, idx) => (
-                <span key={idx} className={`inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset ${b.className}`}>
-                  <strong>{b.label}:</strong> ${Number(b.value).toFixed(2)}
-                </span>
-              ))}
+        <div className="px-6 pb-6 pt-2 bg-black/20 border-t border-white/5 animate-in fade-in slide-in-from-top-1">
+          <div className="flex items-center gap-4 mb-4 opacity-50">
+            <div className="h-[1px] flex-grow bg-white/10"></div>
+            <span className="text-[8px] font-mono uppercase tracking-[0.3em]">Associated_Transactions</span>
+            <div className="h-[1px] flex-grow bg-white/10"></div>
+          </div>
+          
+          <div className="rounded-sm border border-white/5 bg-white/[0.01] overflow-hidden">
+            <PaymentList payments={order.payments || []} hideSummaryBadges={false} />
           </div>
 
-          <div className="sm:hidden">
-            <PaymentList payments={order.payments || []} hideSummaryBadges />
-          </div>
-          <div className="hidden sm:block">
-            <PaymentList payments={order.payments || []} />
+          <div className="mt-4 flex justify-end gap-3">
+             <button 
+                onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(); }}
+                className="text-[9px] font-mono border border-emerald-500/50 text-emerald-500 px-3 py-1 hover:bg-emerald-500/10 transition-all uppercase tracking-widest"
+             >
+               Execute_New_Payment
+             </button>
           </div>
         </div>
       )}

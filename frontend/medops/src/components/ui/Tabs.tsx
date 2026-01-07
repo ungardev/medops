@@ -3,14 +3,14 @@ import { ReactNode } from "react";
 
 interface TabProps {
   id: string;
-  label: string;
+  label: ReactNode; // ✅ CAMBIO: De 'string' a 'ReactNode' para aceptar iconos/JSX
   children: ReactNode;
 }
 
 interface TabsProps {
   children: ReactNode[] | ReactNode;
-  value: string; // ← controlado externamente
-  onChange: (id: string) => void; // ← notifica cambios
+  value: string;
+  onChange: (id: string) => void;
   className?: string;
   layout?: "vertical" | "horizontal";
 }
@@ -18,7 +18,7 @@ interface TabsProps {
 export function Tab({ children }: TabProps) {
   return <>{children}</>;
 }
-Tab.displayName = "Tab"; // 👈 clave para identificar los hijos
+Tab.displayName = "Tab";
 
 export function Tabs({
   children,
@@ -27,59 +27,59 @@ export function Tabs({
   className,
   layout = "vertical",
 }: TabsProps) {
-  // Normalizamos children a array
+  // Aseguramos que children sea un array para poder filtrar
   const childArray = Array.isArray(children) ? children : [children];
-
-  // Filtramos solo los Tab válidos
-  const tabs = childArray.filter((c: any) => c.type?.displayName === "Tab");
+  
+  // Filtramos solo los componentes de tipo Tab
+  const tabs = childArray.filter((c: any) => c?.type?.displayName === "Tab");
 
   return (
-    <div className={className ?? "space-y-3 sm:space-y-4"}>
-      {/* 🔹 Tabs header */}
-      <div className="flex flex-wrap gap-1 sm:gap-2 border-b pb-2 overflow-x-auto">
-        {tabs.map((tab: any) => (
-          <button
-            key={tab.props.id}
-            className={`px-2 sm:px-3 lg:px-4 py-1.5 sm:py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-              value === tab.props.id
-                ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
-                : "bg-gray-100 text-[#0d2c53] hover:bg-gray-200 border border-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600"
-            }`}
-            onClick={() => onChange(tab.props.id)}
-          >
-            {tab.props.label}
-          </button>
-        ))}
+    <div className={className ?? "space-y-4"}>
+      {/* 🛠️ NAVIGATION HEADER */}
+      <div className="flex flex-wrap gap-1 border-b border-[var(--palantir-border)] pb-0 overflow-x-auto scrollbar-hide">
+        {tabs.map((tab: any) => {
+          const isActive = value === tab.props.id;
+          return (
+            <button
+              key={tab.props.id}
+              type="button" // Buena práctica para evitar submit accidentales
+              onClick={() => onChange(tab.props.id)}
+              className={`
+                relative px-4 py-3 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-200
+                ${isActive 
+                  ? "text-[var(--palantir-active)] bg-[var(--palantir-active)]/5" 
+                  : "text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] hover:bg-white/5"}
+              `}
+            >
+              {/* Contenedor flexible para alinear iconos y texto que vengan en el label */}
+              <div className="flex items-center justify-center gap-2">
+                {tab.props.label}
+              </div>
+              
+              {/* 💡 Active Indicator Line */}
+              {isActive && (
+                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[var(--palantir-active)] shadow-[0_0_8px_var(--palantir-active)]" />
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* 🔹 Tabs content */}
-      {layout === "vertical" ? (
-        <div>
-          {tabs.map((tab: any) =>
-            tab.props.id === value ? (
-              <div
-                key={tab.props.id}
-                className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800"
-              >
+      {/* 🧊 CONTENT DISPLAY */}
+      <div className={layout === "horizontal" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
+        {tabs.map((tab: any) =>
+          tab.props.id === value ? (
+            <div
+              key={tab.props.id}
+              className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+            >
+              <div className="bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm p-4 sm:p-6 shadow-xl shadow-black/20">
                 {tab.props.children}
               </div>
-            ) : null
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {tabs.map((tab: any) =>
-            tab.props.id === value ? (
-              <div
-                key={tab.props.id}
-                className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800"
-              >
-                {tab.props.children}
-              </div>
-            ) : null
-          )}
-        </div>
-      )}
+            </div>
+          ) : null
+        )}
+      </div>
     </div>
   );
 }

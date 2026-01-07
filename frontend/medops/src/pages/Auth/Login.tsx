@@ -1,10 +1,10 @@
-// src/pages/Auth/Login.tsx
 import { useState } from "react";
-import { useAuthToken } from "../../hooks/useAuthToken"; // 🔹 ruta relativa corregida
+import { useAuthToken } from "../../hooks/useAuthToken";
 import { useNavigate } from "react-router-dom";
-import { queryClient } from "../../lib/reactQuery"; // 🔹 ruta relativa corregida
-import axios from "axios"; // 🔹 para actualizar headers inmediatamente
-import { api } from "../../lib/apiClient"; // 🔹 cliente institucional
+import { queryClient } from "../../lib/reactQuery";
+import axios from "axios";
+import { api } from "../../lib/apiClient";
+import { Lock, User, Loader2 } from "lucide-react";
 
 export default function Login() {
   const { saveToken } = useAuthToken();
@@ -32,19 +32,11 @@ export default function Login() {
       const data = await res.json();
       if (!data.token) throw new Error("Respuesta inválida del servidor");
 
-      // 🔹 Guardar token en hook/localStorage
       saveToken(data.token);
-
-      // 🔥 Actualizar Axios global inmediatamente con el token
       axios.defaults.headers.common["Authorization"] = `Token ${data.token}`;
-
-      // 🔥 Actualizar cliente institucional api
       api.defaults.headers.common["Authorization"] = `Token ${data.token}`;
-
-      // 🔥 Invalidar notificaciones con token como parte de la clave
       queryClient.invalidateQueries({ queryKey: ["notifications", data.token] });
 
-      // 🔒 Redirigir con delay para asegurar que Axios esté listo
       setTimeout(() => {
         navigate("/");
       }, 100);
@@ -56,56 +48,101 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    // bg-[#0a0c10] asegura el fondo oscuro incluso si la clase 'dark' no está activa en el html
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0c10] text-slate-200 px-4 font-sans">
+      
+      {/* Sección de Marca: Logo e Isotipo */}
+      <div className="flex flex-col items-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <img
+          src="/medopz_logo_blanco_solo.svg"
+          alt="MedOpz Logo"
+          className="h-24 w-24 mb-4 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.15)]"
+        />
+        <img
+          src="/medopz_fuente_blanco.svg"
+          alt="MedOpz"
+          className="h-7 w-auto opacity-90"
+        />
+      </div>
+
+      {/* Tarjeta de Login */}
       <form
         onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-6 py-6 w-full max-w-sm text-center"
+        className="bg-[#11141a] border border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-xl p-8 w-full max-w-md backdrop-blur-md"
       >
-        {/* Logo institucional dentro del contenedor, con margen inferior */}
-        <img
-          src="/logo-medops-light.svg"
-          alt="MedOps Logo"
-          className="mx-auto mb-6 w-24 h-24 object-contain"
-        />
-
-        <div className="mb-4 text-left">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Usuario
-          </label>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold tracking-tight text-white mb-1">
+            Control de Acceso
+          </h2>
+          <p className="text-sm text-slate-400">
+            Introduce tus credenciales operativas.
+          </p>
         </div>
 
-        <div className="mb-4 text-left">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Contraseña
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
+        <div className="space-y-5">
+          {/* Campo Usuario */}
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
+              <User size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Identificador de usuario"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              required
+              className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            />
+          </div>
+
+          {/* Campo Contraseña */}
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
+              <Lock size={18} />
+            </div>
+            <input
+              type="password"
+              placeholder="Contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+            />
+          </div>
         </div>
 
         {error && (
-          <p className="text-red-600 text-sm mb-4 text-center">{error}</p>
+          <div className="mt-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+            <p className="text-red-400 text-xs text-center font-medium">{error}</p>
+          </div>
         )}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#0d2c53] hover:bg-[#143d72] text-white py-2 rounded-md text-sm font-medium transition"
+          className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg text-sm font-bold tracking-widest uppercase transition-all shadow-[0_5px_15px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "Entrando…" : "Entrar"}
+          {loading ? (
+            <>
+              <Loader2 className="animate-spin" size={18} />
+              Autenticando...
+            </>
+          ) : (
+            "Iniciar Sesión"
+          )}
         </button>
+
+        <div className="mt-8 flex items-center justify-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em]">Secure_Terminal_Active</span>
+        </div>
       </form>
+
+      <footer className="mt-12 text-[10px] text-slate-600 uppercase tracking-[0.3em] opacity-60">
+        © 2026 MedOpz Clinical OS // v1.2.0-Stable
+      </footer>
     </div>
   );
 }

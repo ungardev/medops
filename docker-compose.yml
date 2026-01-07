@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    environment:
+      # El frontend compila con esta URL para llamar al backend Django
+      - VITE_API_URL=http://localhost:8000/api/
+      - VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
+    depends_on:
+      - backend
+
+  backend:
+    build: ./backend
+    command: >
+      sh -c "python manage.py migrate &&
+             gunicorn --bind 0.0.0.0:8000 backend.wsgi:application"
+    ports:
+      - "8000:8000"
+    environment:
+      # Seguridad y modo
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DEBUG=${DEBUG}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+      # Base de datos (host es 'db' dentro de Docker)
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+      # Logs y CORS
+      - DJANGO_LOG_FILE=${DJANGO_LOG_FILE}
+      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+    depends_on:
+      - db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:

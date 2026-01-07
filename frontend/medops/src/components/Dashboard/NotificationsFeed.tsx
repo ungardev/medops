@@ -3,12 +3,10 @@ import { useState, useEffect } from "react";
 import { useNotifications } from "@/hooks/dashboard/useNotifications";
 import { NotificationEvent } from "@/types/notifications";
 import moment from "moment";
-import RegisterPaymentModal from "./RegisterPaymentModal";
 import AppointmentDetail from "@/components/Appointments/AppointmentDetail";
 import { useAppointment } from "@/hooks/appointments/useAppointments";
 import NotificationBadge from "@/components/Dashboard/NotificationBadge";
 
-// 🔹 Util institucional para blindar listas
 function toArray<T>(raw: unknown): T[] {
   if (Array.isArray(raw)) return raw as T[];
   if (raw && typeof raw === "object" && Array.isArray((raw as any).results)) {
@@ -17,40 +15,23 @@ function toArray<T>(raw: unknown): T[] {
   return [];
 }
 
-function AppointmentDetailWrapper({
-  appointmentId,
-  onClose,
-}: {
-  appointmentId: number;
-  onClose: () => void;
-}) {
+function AppointmentDetailWrapper({ appointmentId, onClose }: { appointmentId: number; onClose: () => void; }) {
   const { data: appointment, isLoading, isError } = useAppointment(appointmentId);
 
-  if (isLoading) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <p className="bg-white dark:bg-gray-800 p-4 rounded ring-1 ring-gray-200 dark:ring-gray-700 text-sm text-[#0d2c53] dark:text-gray-200">
-          Cargando cita...
-        </p>
-      </div>
-    );
-  }
+  if (isLoading) return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <p className="text-sm text-[var(--palantir-text)] italic">Sincronizando cita...</p>
+    </div>
+  );
 
-  if (isError || !appointment) {
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <p className="bg-white dark:bg-gray-800 p-4 rounded ring-1 ring-gray-200 dark:ring-gray-700 text-sm text-red-600 dark:text-red-400">
-          Error cargando cita
-        </p>
-        <button
-          onClick={onClose}
-          className="ml-2 px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-sm"
-        >
-          Cerrar
-        </button>
+  if (isError || !appointment) return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-[var(--palantir-surface)] p-6 border border-red-500/50 rounded-md text-center">
+        <p className="text-sm text-red-500 mb-4">Error en la carga del registro</p>
+        <button onClick={onClose} className="px-4 py-2 bg-[var(--palantir-border)] text-[var(--palantir-text)] text-xs rounded uppercase font-bold">Cerrar</button>
       </div>
-    );
-  }
+    </div>
+  );
 
   return <AppointmentDetail appointment={appointment} onClose={onClose} onEdit={() => onClose()} />;
 }
@@ -65,90 +46,68 @@ export default function NotificationsFeed() {
     return () => clearTimeout(timeout);
   }, [refetch]);
 
-  console.log("📦 Raw data desde useNotifications:", data);
-
-  const notifications = toArray<NotificationEvent>(data).slice(0, 6);
-
-  console.log("📋 Notificaciones procesadas:", notifications);
+  // Limitamos a 3 notificaciones
+  const notifications = toArray<NotificationEvent>(data).slice(0, 3);
 
   const handleAction = (n: NotificationEvent) => {
-    console.log("🧠 Acción disparada para notificación:", n);
-    if (n.category?.startsWith("appointment") && n.entity_id) {
-      setSelectedAppointmentId(n.entity_id);
-    } else if (n.category?.startsWith("payment") && n.entity_id) {
-      setSelectedChargeOrder(n.entity_id);
-    } else if (n.action_href) {
-      window.location.href = n.action_href;
-    }
+    if (n.category?.startsWith("appointment") && n.entity_id) setSelectedAppointmentId(n.entity_id);
+    else if (n.category?.startsWith("payment") && n.entity_id) setSelectedChargeOrder(n.entity_id);
+    else if (n.action_href) window.location.href = n.action_href;
   };
 
   return (
-    <section className="h-full bg-white dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-md p-3 sm:p-4 flex flex-col">
-      {/* Header compacto */}
-      <div className="h-9 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#0d2c53] dark:text-white">Notificaciones</h3>
+    /* Eliminamos h-full y flex-col innecesario para que el borde cierre al final del contenido */
+    <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-lg shadow-sm overflow-hidden self-start">
+      {/* Header */}
+      <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/30 flex justify-between items-center">
+        <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--palantir-muted)]">Actividad Reciente</h3>
+        <span className="text-[9px] text-[var(--palantir-active)] font-bold animate-pulse">● LIVE</span>
       </div>
 
-      {/* Feed scrollable */}
-      <div className="flex-1 mt-3 overflow-y-auto">
-        <ul className="space-y-2">
+      <div className="p-2">
+        <ul className="space-y-0.5">
           {isLoading ? (
-            <li className="text-sm text-gray-500 dark:text-gray-400">Cargando notificaciones...</li>
+            <li className="p-4 text-center text-xs text-[var(--palantir-muted)] italic font-mono">SYNCING...</li>
           ) : notifications.length === 0 ? (
-            <li className="text-sm text-gray-500 dark:text-gray-400">No hay notificaciones recientes.</li>
+            <li className="p-4 text-center text-xs text-[var(--palantir-muted)] italic">Sin eventos recientes</li>
           ) : (
-            notifications.map((n) => {
-              console.log("🔔 Renderizando notificación:", n);
-              return (
-                <li key={n.id}>
-                  <button
-                    onClick={() => handleAction(n)}
-                    className="w-full text-left p-3 rounded transition flex flex-col gap-1 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <div className="flex items-center gap-2">
-                      <NotificationBadge
-                        action={n.badge_action as "create" | "update" | "delete" | "other"}
-                        severity={n.severity}
-                      />
-                      <span className="truncate text-sm font-medium text-[#0d2c53] dark:text-white">
-                        {n.title}
-                      </span>
-                    </div>
-                    {n.description ? (
-                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                        {n.description}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-                        Sin descripción
-                      </span>
-                    )}
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {moment(n.timestamp).fromNow()}
+            notifications.map((n) => (
+              <li key={n.id}>
+                <button
+                  onClick={() => handleAction(n)}
+                  className="w-full text-left p-2 rounded-md transition-all flex flex-col gap-0.5 hover:bg-[var(--palantir-active)]/5 group"
+                >
+                  <div className="flex items-center gap-2">
+                    <NotificationBadge
+                      action={n.badge_action as any}
+                      severity={n.severity}
+                    />
+                    <span className="truncate text-xs font-bold text-[var(--palantir-text)] uppercase tracking-tight group-hover:text-[var(--palantir-active)] transition-colors">
+                      {n.title}
                     </span>
-                  </button>
-                </li>
-              );
-            })
+                  </div>
+                  {n.description && (
+                    <span className="text-[11px] text-[var(--palantir-muted)] line-clamp-1 ml-6">
+                      {n.description}
+                    </span>
+                  )}
+                  <span className="text-[9px] font-mono text-[var(--palantir-muted)]/50 uppercase ml-6">
+                    {moment(n.timestamp).fromNow()}
+                  </span>
+                </button>
+              </li>
+            ))
           )}
         </ul>
       </div>
 
       {/* Modales */}
-      {selectedChargeOrder && (
-        <RegisterPaymentModal
-          chargeOrderId={selectedChargeOrder}
-          onClose={() => setSelectedChargeOrder(null)}
-          onSuccess={() => setSelectedChargeOrder(null)}
-        />
-      )}
-
       {selectedAppointmentId && (
         <AppointmentDetailWrapper
           appointmentId={selectedAppointmentId}
           onClose={() => setSelectedAppointmentId(null)}
         />
       )}
-    </section>
+    </div>
   );
 }

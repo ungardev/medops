@@ -1,5 +1,5 @@
 // src/components/Patients/VaccinationTab.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   useVaccinations,
   PatientVaccination,
@@ -9,6 +9,7 @@ import {
 } from "../../hooks/patients/useVaccinations";
 import VaccinationModal from "./VaccinationModal";
 import VaccinationMatrixUniversal from "./VaccinationMatrixUniversal";
+import { BeakerIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 
 interface Props {
   patientId: number;
@@ -16,137 +17,158 @@ interface Props {
 }
 
 export default function VaccinationTab({ patientId, onRefresh }: Props) {
-  const { vaccinations: vaccQuery, schedule, create, update, remove } =
-    useVaccinations(patientId);
-
+  const { vaccinations: vaccQuery, schedule, create, update, remove } = useVaccinations(patientId);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PatientVaccination | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const isSaving = create.isPending || update.isPending || remove.isPending;
 
-  const handleSave = (data: PatientVaccinationPayload) => {
+  // ✅ Lógica de guardado corregida para resolver el error de TS(2345)
+  const handleSave = (payload: PatientVaccinationPayload) => {
     setLocalError(null);
 
-    if (editingItem?.id && editingItem.id > 0) {
+    if (editingItem && editingItem.id > 0) {
+      // Flujo de ACTUALIZACIÓN: Se requiere ID explícito
       update.mutate(
-        { ...data, id: editingItem.id },
+        { 
+          ...payload, 
+          id: editingItem.id 
+        },
         {
           onSuccess: () => {
             vaccQuery.refetch();
             onRefresh?.();
             setModalOpen(false);
+            setEditingItem(null);
           },
-          onError: () =>
-            setLocalError("No se pudo actualizar la dosis. Intenta nuevamente."),
+          onError: () => setLocalError("PROTOCOL_ERROR: UPDATE_FAILED")
         }
       );
     } else {
-      create.mutate(data, {
+      // Flujo de CREACIÓN
+      create.mutate(payload, {
         onSuccess: () => {
           vaccQuery.refetch();
           onRefresh?.();
           setModalOpen(false);
+          setEditingItem(null);
         },
-        onError: () =>
-          setLocalError("No se pudo registrar la dosis. Intenta nuevamente."),
+        onError: () => setLocalError("PROTOCOL_ERROR: CREATION_FAILED")
       });
     }
   };
 
-  // 🔐 Blindaje: acepta array plano o paginado
+  // Normalización de datos del esquema
   const schema: VaccinationSchedule[] = Array.isArray(schedule.data)
     ? schedule.data
     : (schedule.data as Paginated<VaccinationSchedule> | undefined)?.results ?? [];
 
-  const applied: PatientVaccination[] = Array.isArray(vaccQuery.data)
-    ? vaccQuery.data
-    : [];
+  const applied: PatientVaccination[] = Array.isArray(vaccQuery.data) ? vaccQuery.data : [];
 
   return (
-    <div
-      id="vaccination-matrix"
-      className="relative p-6 border rounded-lg bg-white dark:bg-gray-800 shadow-sm"
-    >
-      {isSaving && (
-        <div className="absolute inset-0 bg-black/10 dark:bg-black/30 rounded-lg flex items-center justify-center z-10">
-          <div className="px-4 py-2 bg-white dark:bg-gray-900 rounded-md shadow text-sm text-[#0d2c53] dark:text-gray-100">
-            Guardando cambios...
+    <div className="space-y-6">
+      {/* Header Estilizado */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--palantir-surface)]/20 p-4 border border-[var(--palantir-border)] rounded-sm">
+        <div className="flex items-center gap-4">
+          <div className="p-2 bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm">
+            <BeakerIcon className="w-6 h-6 text-[var(--palantir-active)]" />
+          </div>
+          <div>
+            <h2 className="text-[12px] font-black text-[var(--palantir-text)] uppercase tracking-[0.2em]">
+              IMMUNIZATION_PROTOCOL_SVPP
+            </h2>
+            <p className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase mt-0.5">
+              Status: {applied.length >= schema.length ? "PROTOCOL_COMPLETE" : "SYNCING_CLINICAL_DATA"}
+            </p>
           </div>
         </div>
-      )}
-
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold text-[#0d2c53] dark:text-white">
-          Vacunación — Esquema Universal SVPP
-        </h2>
+        
+        <div className="flex gap-4">
+          <div className="flex flex-col items-end">
+            <span className="text-[14px] font-mono font-bold text-[var(--palantir-text)]">{applied.length}</span>
+            <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">Applied_Doses</span>
+          </div>
+        </div>
       </div>
 
       {localError && (
-        <div className="mb-3 text-xs text-red-600 dark:text-red-400">
+        <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-[10px] font-mono uppercase">
           {localError}
         </div>
       )}
 
-      <VaccinationMatrixUniversal
-        schedule={schema}
-        vaccinations={applied}
-        onRegisterDose={(dose: VaccinationSchedule) => {
-          const vaccineFull = {
-            id: dose.vaccine_detail.id,
-            code: dose.vaccine_detail.code,
-            name: dose.vaccine_detail.name,
-            country: dose.vaccine_detail.country,
-            description: dose.vaccine_detail.description ?? undefined,
-          };
+      {/* Matrix Container */}
+      <div className="relative bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm overflow-hidden">
+        {isSaving && (
+          <div className="absolute inset-0 bg-[var(--palantir-bg)]/80 backdrop-blur-sm flex items-center justify-center z-50">
+            <span className="text-[10px] font-mono uppercase tracking-[0.3em] animate-pulse">Writing_Data...</span>
+          </div>
+        )}
+        
+        <VaccinationMatrixUniversal
+          schedule={schema}
+          vaccinations={applied}
+          onRegisterDose={(dose) => {
+            // Buscamos si ya existe una dosis aplicada para este esquema para permitir edición
+            const existing = applied.find(
+              a => a.vaccine_detail.code === dose.vaccine_detail.code && 
+              a.dose_number === dose.dose_number
+            );
 
-          setEditingItem({
-            id: -1,
-            patient: patientId,
-            vaccine: dose.vaccine,
-            vaccine_detail: vaccineFull,
-            dose_number: dose.dose_number,
-            date_administered: "",
-            center: "",
-            lot: "",
-            next_dose_date: undefined,
-          });
-          setModalOpen(true);
-        }}
-      />
+            if (existing) {
+              setEditingItem(existing);
+            } else {
+              setEditingItem({
+                id: -1,
+                patient: patientId,
+                vaccine: dose.vaccine,
+                vaccine_detail: dose.vaccine_detail,
+                dose_number: dose.dose_number,
+                date_administered: "",
+                center: "",
+                lot: "",
+              });
+            }
+            setModalOpen(true);
+          }}
+        />
+      </div>
+
+      {/* Legend & Footer */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
+        <div className="flex flex-wrap gap-6">
+          <LegendItem color="bg-yellow-400/20 border-yellow-400/40" label="Recommended_Dose" />
+          <LegendItem color="bg-emerald-500/30 border-emerald-500/50" label="Validated_Immunity" />
+          <LegendItem color="bg-[var(--palantir-surface)] border-[var(--palantir-border)]" label="Not_Applicable" />
+        </div>
+        
+        <div className="flex items-center gap-2 text-[9px] font-mono text-[var(--palantir-muted)] uppercase">
+          <InformationCircleIcon className="w-3 h-3" />
+          Data based on Venezuelan Society of Childcare and Pediatrics (SVPP)
+        </div>
+      </div>
 
       <VaccinationModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingItem(null);
+        }}
         onSave={handleSave}
         initial={editingItem}
-        vaccines={schema.map((s) => ({
-          id: s.vaccine_detail.id,
-          code: s.vaccine_detail.code,
-          name: s.vaccine_detail.name,
-        }))}
+        vaccines={schema.map(s => ({ ...s.vaccine_detail }))}
         patientId={patientId}
       />
+    </div>
+  );
+}
 
-      {/* Leyenda institucional */}
-      <div className="mt-6 flex flex-wrap gap-4 text-xs text-[#0d2c53] dark:text-gray-100">
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-yellow-100 dark:bg-yellow-700 border border-gray-400 rounded-sm" />
-          <span>Dosis recomendada por el esquema SVPP</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-orange-200 dark:bg-orange-600 border border-gray-400 rounded-sm" />
-          <span>Dosis ya aplicada y registrada</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-gray-100 dark:bg-gray-800 border border-gray-400 rounded-sm" />
-          <span>No requerida en este grupo de edad</span>
-        </div>
-      </div>
-
-      <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-        © 2025 MedOps — Schedule based on SVPP
-      </div>
+function LegendItem({ color, label }: { color: string, label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className={`w-3 h-3 rounded-full ${color} border`} />
+      <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-wider">{label}</span>
     </div>
   );
 }

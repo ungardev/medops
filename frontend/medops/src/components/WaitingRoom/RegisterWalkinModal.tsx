@@ -1,9 +1,11 @@
+// src/components/WaitingRoom/RegisterWalkinModal.tsx
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom";
 import { useForm } from "react-hook-form";
 import { createPatient, searchPatients } from "../../api/patients";
 import { Patient, PatientRef } from "../../types/patients";
 import type { WaitingRoomEntry } from "../../types/waitingRoom";
+import { XMarkIcon, UserPlusIcon, MagnifyingGlassIcon, ArrowLeftIcon, CheckIcon } from "@heroicons/react/24/outline";
 
 interface Props {
   onClose: () => void;
@@ -48,36 +50,12 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         setResults(safeResults);
         setHighlightedIndex(safeResults.length > 0 ? 0 : -1);
       } catch (e) {
-        console.error("Error buscando pacientes:", e);
         setResults([]);
-        setHighlightedIndex(-1);
       }
     };
-    fetchResults();
+    const timer = setTimeout(fetchResults, 300);
+    return () => clearTimeout(timer);
   }, [query]);
-
-  useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      const safeResults = results ?? [];
-      if (mode === "search" && Array.isArray(safeResults) && safeResults.length > 0 && !selectedPatient) {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          setHighlightedIndex((prev) => (prev < safeResults.length - 1 ? prev + 1 : 0));
-        } else if (e.key === "ArrowUp") {
-          e.preventDefault();
-          setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : safeResults.length - 1));
-        } else if (e.key === "Enter" && highlightedIndex >= 0) {
-          e.preventDefault();
-          setSelectedPatient(safeResults[highlightedIndex]);
-          setQuery("");
-          setResults([]);
-        }
-      }
-    };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [mode, results, highlightedIndex, selectedPatient, onClose]);
 
   const onSubmit = async (values: FormValues) => {
     try {
@@ -93,188 +71,140 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         patientId = patient.id;
       }
       onSuccess(patientId);
-      reset();
-      setSelectedPatient(null);
-      setQuery("");
-      setMode("search");
       onClose();
     } catch (e: any) {
-      console.error("Error registrando llegada:", e);
-      alert(e.message || "Error registrando llegada");
+      alert(e.message || "Error en el registro");
     }
   };
 
   const alreadyInWaitingRoom = selectedPatient
-    ? existingEntries.some(
-        (e) =>
-          e.patient.id === selectedPatient.id &&
-          e.status !== "completed" &&
-          e.status !== "canceled"
-      )
+    ? existingEntries.some((e) => e.patient.id === selectedPatient.id && !["completed", "canceled"].includes(e.status))
     : false;
-      return ReactDOM.createPortal(
-    <div
-      className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg p-4 sm:p-6 animate-fade-slide"
+
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 bg-[var(--palantir-bg)]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
+      <div 
+        className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] shadow-2xl w-full max-w-lg rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-4 sm:px-6 space-y-4">
-          <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white">
-            Registrar llegada
-          </h2>
+        {/* Header del Modal */}
+        <div className="px-4 py-3 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/50 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 bg-[var(--palantir-active)] rounded-full shadow-[0_0_5px_var(--palantir-active)]" />
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
+              {mode === "search" ? "IDENTIFY_PATIENT_STREAM" : "INITIALIZE_NEW_RECORD"}
+            </h2>
+          </div>
+          <button onClick={onClose} className="text-[var(--palantir-muted)] hover:text-white transition-colors">
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
 
-          {/* === MODO BÚSQUEDA === */}
+        <div className="p-6 space-y-6">
           {mode === "search" && (
-            <>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-                placeholder="Buscar paciente por nombre o cédula..."
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelectedPatient(null);
-                }}
-              />
+            <div className="space-y-4">
+              {/* Input de Búsqueda Estilizado */}
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-muted)]" />
+                <input
+                  autoFocus
+                  className="w-full pl-10 pr-4 py-2.5 bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm text-sm text-[var(--palantir-text)] placeholder:text-[var(--palantir-muted)]/50 focus:outline-none focus:border-[var(--palantir-active)]/50 transition-all font-mono"
+                  placeholder="BUSCAR POR NOMBRE O IDENTIFICACIÓN..."
+                  value={query}
+                  onChange={(e) => { setQuery(e.target.value); setSelectedPatient(null); }}
+                />
+              </div>
 
-              {Array.isArray(results) && results.length > 0 && !selectedPatient && (
-                <ul className="border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700 max-h-40 overflow-y-auto">
+              {/* Resultados de Búsqueda */}
+              {results.length > 0 && !selectedPatient && (
+                <div className="border border-[var(--palantir-border)] rounded-sm divide-y divide-[var(--palantir-border)]/50 max-h-48 overflow-y-auto bg-[var(--palantir-bg)]/20">
                   {results.map((p, index) => (
-                    <li
+                    <div
                       key={p.id}
-                      className={`px-3 py-2 cursor-pointer text-xs sm:text-sm ${
-                        index === highlightedIndex
-                          ? "bg-[#0d2c53] text-white"
-                          : "text-[#0d2c53] dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      }`}
-                      onClick={() => {
-                        setSelectedPatient(p);
-                        setQuery("");
-                        setResults([]);
-                      }}
+                      className={`px-4 py-2.5 cursor-pointer flex justify-between items-center transition-colors ${index === highlightedIndex ? "bg-[var(--palantir-active)]/20" : "hover:bg-[var(--palantir-active)]/5"}`}
+                      onClick={() => { setSelectedPatient(p); setQuery(""); setResults([]); }}
                     >
-                      {p.full_name} {p.national_id ? `— ${p.national_id}` : ""}
-                    </li>
+                      <span className="text-xs font-bold uppercase tracking-tight text-[var(--palantir-text)]">{p.full_name}</span>
+                      <span className="text-[10px] font-mono text-[var(--palantir-muted)]">{p.national_id || "NO_ID"}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
 
+              {/* Tarjeta de Paciente Seleccionado */}
               {selectedPatient && (
-                <div className="p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-700 text-center">
-                  <h3 className="text-[#0d2c53] dark:text-white font-semibold mb-2 text-sm sm:text-base">
-                    {selectedPatient.full_name}
-                    {selectedPatient.national_id ? ` (${selectedPatient.national_id})` : ""}
-                  </h3>
+                <div className={`p-4 border rounded-sm transition-all ${alreadyInWaitingRoom ? "border-red-500/30 bg-red-500/5" : "border-[var(--palantir-active)]/30 bg-[var(--palantir-active)]/5"}`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest mb-1">Paciente Confirmado</p>
+                      <h3 className="text-lg font-bold text-[var(--palantir-text)] leading-tight">{selectedPatient.full_name}</h3>
+                      <p className="text-xs font-mono text-[var(--palantir-muted)] mt-1">{selectedPatient.national_id}</p>
+                    </div>
+                    {!alreadyInWaitingRoom && <CheckIcon className="w-5 h-5 text-[var(--palantir-active)]" />}
+                  </div>
+
                   {alreadyInWaitingRoom ? (
-                    <p className="text-red-600 font-medium text-xs sm:text-sm">
-                      ⚠️ Este paciente ya está en la sala de espera
-                    </p>
+                    <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-tighter text-center">
+                      ⚠ Registro Activo en Sala de Espera
+                    </div>
                   ) : (
-                    <div className="flex gap-2 justify-center mt-3">
-                      <button
-                        className="px-3 sm:px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
-                        onClick={() => onSubmit({} as FormValues)}
-                      >
-                        Registrar llegada
+                    <div className="flex gap-2 mt-5">
+                      <button onClick={() => onSubmit({} as FormValues)} className="flex-1 bg-[var(--palantir-active)] text-white text-[10px] font-black uppercase py-2 rounded-sm hover:opacity-90 transition-opacity tracking-widest">
+                        PROCEDER_CON_REGISTRO
                       </button>
-                      <button
-                        className="px-3 sm:px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
-                        onClick={() => setSelectedPatient(null)}
-                      >
-                        Cambiar
+                      <button onClick={() => setSelectedPatient(null)} className="px-4 border border-[var(--palantir-border)] text-[var(--palantir-muted)] text-[10px] font-bold uppercase rounded-sm hover:bg-[var(--palantir-bg)] transition-colors">
+                        CANCELAR
                       </button>
                     </div>
                   )}
                 </div>
               )}
 
-              <button
-                className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors w-full text-xs sm:text-sm"
+              <button 
                 onClick={() => setMode("create")}
+                className="w-full py-3 border border-dashed border-[var(--palantir-border)] text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:border-[var(--palantir-active)]/50 transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest"
               >
-                Crear nuevo paciente
+                <UserPlusIcon className="w-4 h-4" />
+                Registrar Nuevo Sujeto
               </button>
-            </>
+            </div>
           )}
 
-          {/* === MODO CREACIÓN === */}
           {mode === "create" && (
-            <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-                placeholder="Nombre"
-                {...register("first_name", { required: "El nombre es obligatorio" })}
-              />
-              {errors.first_name && (
-                <span className="text-red-600 text-xs sm:text-sm">{errors.first_name.message}</span>
-              )}
+            <form className="space-y-4 animate-in slide-in-from-right-4 duration-300" onSubmit={handleSubmit(onSubmit)}>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Primer Nombre</label>
+                  <input {...register("first_name", { required: true })} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Segundo Nombre</label>
+                  <input {...register("second_name")} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                </div>
+              </div>
 
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                placeholder="Segundo nombre (opcional)"
-                {...register("second_name")}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Primer Apellido</label>
+                  <input {...register("last_name", { required: true })} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Segundo Apellido</label>
+                  <input {...register("second_last_name")} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                </div>
+              </div>
 
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-                placeholder="Apellido"
-                {...register("last_name", { required: "El apellido es obligatorio" })}
-              />
-              {errors.last_name && (
-                <span className="text-red-600 text-xs sm:text-sm">{errors.last_name.message}</span>
-              )}
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Documento Nacional (ID)</label>
+                <input {...register("national_id", { required: true })} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+              </div>
 
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                placeholder="Segundo apellido (opcional)"
-                {...register("second_last_name")}
-              />
-
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-                placeholder="Documento (Cédula)"
-                {...register("national_id", { required: "El documento es obligatorio" })}
-              />
-              {errors.national_id && (
-                <span className="text-red-600 text-xs sm:text-sm">{errors.national_id.message}</span>
-              )}
-
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                placeholder="Teléfono"
-                {...register("phone")}
-              />
-
-              <input
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                placeholder="Email"
-                {...register("email", {
-                  pattern: {
-                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                    message: "Email inválido",
-                  },
-                })}
-              />
-              {errors.email && (
-                <span className="text-red-600 text-xs sm:text-sm">{errors.email.message}</span>
-              )}
-
-              <div className="flex gap-2 justify-end mt-4">
-                <button
-                  className="px-3 sm:px-4 py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Creando..." : "Crear y registrar llegada"}
+              <div className="flex gap-3 pt-4 border-t border-[var(--palantir-border)]/30">
+                <button type="submit" disabled={isSubmitting} className="flex-1 bg-[var(--palantir-active)] text-white text-[10px] font-black uppercase py-2.5 rounded-sm hover:opacity-90 disabled:opacity-50 tracking-widest transition-all">
+                  {isSubmitting ? "SYNCING..." : "COMMIT_DATABASE_ENTRY"}
                 </button>
-                <button
-                  className="px-3 sm:px-4 py-2 rounded-md bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
-                  type="button"
-                  onClick={() => setMode("search")}
-                >
-                  Volver
+                <button type="button" onClick={() => setMode("search")} className="px-4 text-[var(--palantir-muted)] text-[10px] font-bold uppercase hover:text-white transition-colors flex items-center gap-2">
+                  <ArrowLeftIcon className="w-3 h-3" /> VOLVER
                 </button>
               </div>
             </form>

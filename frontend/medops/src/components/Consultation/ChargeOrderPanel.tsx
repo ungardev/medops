@@ -1,26 +1,35 @@
 // src/components/Consultation/ChargeOrderPanel.tsx
 import React, { useEffect, useState } from "react";
 import { ChargeOrder, ChargeItem, Payment } from "../../types/payments";
-import {
-  useChargeOrder,
-  useCreatePayment,
-  PaymentPayload,
-} from "../../hooks/consultations/useChargeOrder";
+import { useChargeOrder, useCreatePayment, PaymentPayload } from "../../hooks/consultations/useChargeOrder";
 import axios from "axios";
+import { 
+  CurrencyDollarIcon, 
+  ChevronDownIcon, 
+  ChevronRightIcon, 
+  PlusIcon,
+  TrashIcon,
+  PencilSquareIcon,
+  CheckBadgeIcon,
+  BanknotesIcon,
+  CreditCardIcon,
+  ArrowsRightLeftIcon,
+  ReceiptPercentIcon
+} from "@heroicons/react/24/outline";
 
 export type ChargeOrderPanelProps =
   | { appointmentId: number; readOnly?: boolean }
   | { chargeOrder: ChargeOrder; readOnly?: boolean };
 
-function isAppointmentMode(
-  props: ChargeOrderPanelProps
-): props is { appointmentId: number; readOnly?: boolean } {
+function isAppointmentMode(props: ChargeOrderPanelProps): props is { appointmentId: number; readOnly?: boolean } {
   return (props as any).appointmentId !== undefined;
 }
 
 const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const readOnly = props.readOnly ?? false;
   const [order, setOrder] = useState<ChargeOrder | null>(null);
+  const [showItems, setShowItems] = useState(false);
+  const [showPayments, setShowPayments] = useState(false);
 
   const { data, isLoading, refetch } = isAppointmentMode(props)
     ? useChargeOrder(props.appointmentId)
@@ -39,53 +48,36 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     isAppointmentMode(props) ? props.appointmentId : order?.appointment
   );
 
+  // Estados de Formulario de Pago
   const [amount, setAmount] = useState("");
-  const [method, setMethod] =
-    useState<"cash" | "card" | "transfer" | "other">("cash");
+  const [method, setMethod] = useState<"cash" | "card" | "transfer" | "other">("cash");
   const [reference, setReference] = useState("");
   const [bank, setBank] = useState("");
   const [otherDetail, setOtherDetail] = useState("");
 
-  const [showItems, setShowItems] = useState(false);
-  const [showPayments, setShowPayments] = useState(false);
-
+  // Estados de Edición de Ítems
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [editDescription, setEditDescription] = useState("");
   const [editQty, setEditQty] = useState(1);
   const [editPrice, setEditPrice] = useState(0);
 
-    const handleAddItem = async (e: React.FormEvent) => {
+  const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order) return;
-
-    const codeEl = document.getElementById("charge-item-code") as HTMLInputElement | null;
-    const descEl = document.getElementById("charge-item-desc") as HTMLInputElement | null;
-    const qtyEl = document.getElementById("charge-item-qty") as HTMLInputElement | null;
-    const priceEl = document.getElementById("charge-item-price") as HTMLInputElement | null;
-
-    const code = codeEl?.value?.trim() ?? "";
-    const description = descEl?.value?.trim() ?? "";
-    const qty = Number(qtyEl?.value ?? 0);
-    const unitPrice = Number(priceEl?.value ?? 0);
-
-    if (!code || isNaN(qty) || qty <= 0 || isNaN(unitPrice) || unitPrice < 0) return;
-
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    
     try {
       await axios.post("/charge-items/", {
         order: order.id,
-        code,
-        description,
-        qty,
-        unit_price: unitPrice,
+        code: formData.get("code"),
+        description: formData.get("desc"),
+        qty: Number(formData.get("qty")),
+        unit_price: Number(formData.get("price")),
       });
-      if (codeEl) codeEl.value = "";
-      if (descEl) descEl.value = "";
-      if (qtyEl) qtyEl.value = "";
-      if (priceEl) priceEl.value = "";
+      form.reset();
       void refetch();
-    } catch (err: any) {
-      console.error("Error agregando ítem:", err);
-    }
+    } catch (err) { console.error("Item_Add_Fault:", err); }
   };
 
   const handleUpdateItem = async (id: number) => {
@@ -98,304 +90,189 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       });
       setEditItemId(null);
       void refetch();
-    } catch (err) {
-      console.error("Error actualizando ítem:", err);
-    }
+    } catch (err) { console.error("Update_Fault:", err); }
   };
 
   const handleDeleteItem = async (id: number) => {
-    if (!confirm("¿Seguro que deseas eliminar este ítem?")) return;
+    if (!confirm("Confirm Item Deletion?")) return;
     try {
       await axios.delete(`/charge-items/${id}/`);
       void refetch();
-    } catch (err) {
-      console.error("Error eliminando ítem:", err);
-    }
+    } catch (err) { console.error("Delete_Fault:", err); }
   };
 
   const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
-
-    const payload: PaymentPayload = {
+    createPayment.mutate({
       charge_order: order.id,
       amount: parseFloat(amount),
       method,
       reference_number: reference || null,
       bank_name: method === "transfer" ? bank : null,
       detail: method === "other" ? otherDetail : null,
-    };
-
-    createPayment.mutate(payload, {
+    }, {
       onSuccess: () => {
-        setAmount("");
-        setMethod("cash");
-        setReference("");
-        setBank("");
-        setOtherDetail("");
-        if (isAppointmentMode(props)) void refetch();
-      },
-      onError: (err) => console.error("Error registrando pago:", err),
+        setAmount(""); setReference(""); setBank(""); setOtherDetail("");
+        void refetch();
+      }
     });
   };
 
-  if (isAppointmentMode(props) && isLoading) {
-    return <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando orden...</p>;
-  }
+  if (isAppointmentMode(props) && isLoading) return <div className="animate-pulse h-20 bg-white/5 border border-[var(--palantir-border)]" />;
 
   if (!order) {
     return !readOnly && isAppointmentMode(props) ? (
       <button
         onClick={async () => {
-          try {
-            await axios.post(`/appointments/${props.appointmentId}/charge-order/`);
-            void refetch();
-          } catch (err) {
-            console.error("Error creando orden:", err);
-          }
+          await axios.post(`/appointments/${props.appointmentId}/charge-order/`);
+          void refetch();
         }}
-        className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-[var(--palantir-active)] text-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/10 transition-all text-[10px] font-black uppercase tracking-[0.2em]"
       >
-        + Crear orden de cobro
+        <PlusIcon className="w-4 h-4" /> Initialize_Billing_Order
       </button>
     ) : null;
   }
 
+  const isPaid = Number(order.balance_due) <= 0;
+
   return (
-    <div className="space-y-3">
-      {/* 🔹 Resumen financiero */}
-      <div className="text-xs sm:text-sm bg-gray-50 dark:bg-gray-700 p-2 rounded text-[#0d2c53] dark:text-gray-100">
-        <p><strong>Total:</strong> ${Number(order.total ?? 0).toFixed(2)}</p>
-        <p><strong>Pagado:</strong> ${(Number(order.total ?? 0) - Number(order.balance_due ?? 0)).toFixed(2)}</p>
-        <p><strong>Saldo pendiente:</strong> ${Number(order.balance_due ?? 0).toFixed(2)}</p>
-        <p><strong>Estado:</strong> {order.status}</p>
+    <div className="space-y-4">
+      {/* 01. FINANCIAL SUMMARY CARD */}
+      <div className={`relative overflow-hidden border p-3 ${isPaid ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+        <div className="flex justify-between items-start mb-2">
+          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Financial_Ledger</span>
+          <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${isPaid ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+            {order.status}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-[10px] text-[var(--palantir-muted)] font-mono uppercase">Total_Due</p>
+            <p className="text-lg font-black tracking-tighter">${Number(order.total).toFixed(2)}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] text-[var(--palantir-muted)] font-mono uppercase italic">Balance_Rem</p>
+            <p className={`text-lg font-black tracking-tighter ${isPaid ? 'text-emerald-500' : 'text-red-500'}`}>
+              ${Number(order.balance_due).toFixed(2)}
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Ítems */}
-      <button
-        onClick={() => setShowItems(!showItems)}
-        className="px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
-               dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
-      >
-        {showItems ? "▼ Ítems" : "▶ Ítems"}
-      </button>
-            {showItems && (
-        <div className="space-y-3">
-          {!readOnly && (
-            <form onSubmit={handleAddItem} className="flex flex-col gap-2">
-              <input
-                id="charge-item-code"
-                type="text"
-                placeholder="Código"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                required
-              />
-              <input
-                id="charge-item-desc"
-                type="text"
-                placeholder="Descripción del ítem"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                required
-              />
-              <input
-                id="charge-item-qty"
-                type="number"
-                min={1}
-                step={1}
-                placeholder="Cantidad"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                required
-              />
-              <input
-                id="charge-item-price"
-                type="number"
-                min={0}
-                step={0.01}
-                placeholder="Precio unitario"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                required
-              />
-              <button
-                type="submit"
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition-colors self-start"
-              >
-                + Agregar ítem
-              </button>
-            </form>
-          )}
+      {/* 02. ITEMS SECTION */}
+      <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
+        <button 
+          onClick={() => setShowItems(!showItems)}
+          className="w-full flex items-center justify-between p-2 hover:bg-white/5 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <ReceiptPercentIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Billing_Items</span>
+          </div>
+          {showItems ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
+        </button>
 
-          <ul className="mt-2 space-y-1">
-            {order.items?.length === 0 && (
-              <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin ítems</li>
+        {showItems && (
+          <div className="p-3 space-y-3 border-t border-[var(--palantir-border)]">
+            {!readOnly && (
+              <form onSubmit={handleAddItem} className="grid grid-cols-2 gap-2">
+                <input name="code" placeholder="CODE" className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" required />
+                <input name="price" type="number" step="0.01" placeholder="PRICE" className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" required />
+                <input name="desc" placeholder="DESCRIPTION" className="col-span-2 bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" required />
+                <input name="qty" type="number" defaultValue="1" className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" required />
+                <button type="submit" className="bg-[var(--palantir-active)] text-white text-[9px] font-black uppercase tracking-widest">Add_Item</button>
+              </form>
             )}
-            {order.items?.map((it: ChargeItem) => (
-              <li
-                key={it.id}
-                className="border-b border-gray-200 dark:border-gray-700 py-1 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
-              >
-                {editItemId === it.id ? (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      void handleUpdateItem(it.id);
-                    }}
-                    className="flex flex-col gap-2"
-                  >
-                    <input
-                      type="text"
-                      value={editDescription}
-                      onChange={(e) => setEditDescription(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                    />
-                    <input
-                      type="number"
-                      value={editQty}
-                      onChange={(e) => setEditQty(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={editPrice}
-                      onChange={(e) => setEditPrice(Number(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-xs sm:text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                    />
-                    <div className="flex gap-2">
-                      <button type="submit" className="px-3 py-2 text-xs sm:text-sm bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] rounded">
-                        Guardar
-                      </button>
-                      <button type="button" onClick={() => setEditItemId(null)} className="px-3 py-2 text-xs sm:text-sm bg-gray-400 text-white rounded">
-                        Cancelar
-                      </button>
+            <div className="space-y-1">
+              {order.items?.map((it) => (
+                <div key={it.id} className="group flex items-center justify-between p-2 bg-white/5 border border-transparent hover:border-[var(--palantir-border)] transition-all">
+                  {editItemId === it.id ? (
+                    <div className="w-full space-y-2">
+                      <input value={editDescription} onChange={e => setEditDescription(e.target.value)} className="w-full bg-black p-1 text-[10px] font-mono border border-[var(--palantir-active)]" />
+                      <div className="flex gap-1">
+                        <button onClick={() => handleUpdateItem(it.id)} className="flex-1 bg-emerald-600 text-[8px] font-black py-1">SAVE</button>
+                        <button onClick={() => setEditItemId(null)} className="flex-1 bg-white/10 text-[8px] font-black py-1">VOID</button>
+                      </div>
                     </div>
-                  </form>
-                ) : (
-                  <>
-                    {it.code} — {it.description ?? "Sin descripción"} ({it.qty} × ${Number(it.unit_price).toFixed(2)})
-                    <span className="ml-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">= ${Number(it.subtotal).toFixed(2)}</span>
-                    {!readOnly && (
-                      <>
-                        <button
-                          onClick={() => {
-                            setEditItemId(it.id);
-                            setEditDescription(it.description ?? "");
-                            setEditQty(it.qty ?? 1);
-                            setEditPrice(it.unit_price ?? 0);
-                          }}
-                          className="ml-2 text-xs px-2 py-1 bg-yellow-500 text-white rounded"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          onClick={() => void handleDeleteItem(it.id)}
-                          className="ml-2 text-xs px-2 py-1 bg-red-600 text-white rounded"
-                        >
-                          Eliminar
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-            {/* Pagos */}
-      <button
-        onClick={() => setShowPayments(!showPayments)}
-        className="px-3 py-1 text-xs sm:text-sm rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 
-                   dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600 transition-colors"
-      >
-        {showPayments ? "▼ Pagos" : "▶ Pagos"}
-      </button>
+                  ) : (
+                    <>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-bold truncate uppercase">{it.description}</p>
+                        <p className="text-[8px] font-mono text-[var(--palantir-muted)] italic">
+                          {it.code} // {it.qty}u × ${Number(it.unit_price).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black font-mono">${Number(it.subtotal).toFixed(2)}</span>
+                        {!readOnly && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => { setEditItemId(it.id); setEditDescription(it.description ?? ""); setEditQty(it.qty ?? 1); setEditPrice(it.unit_price ?? 0); }}>
+                              <PencilSquareIcon className="w-3 h-3 text-[var(--palantir-active)]" />
+                            </button>
+                            <button onClick={() => handleDeleteItem(it.id)}>
+                              <TrashIcon className="w-3 h-3 text-red-500" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
-      {showPayments && (
-        <div className="space-y-3">
-          {!readOnly && (
-            <form onSubmit={handleAddPayment} className="flex flex-col gap-2">
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Monto"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-                required
-              />
-              <select
-                value={method}
-                onChange={(e) => setMethod(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              >
-                <option value="cash">Efectivo</option>
-                <option value="card">Tarjeta</option>
-                <option value="transfer">Transferencia</option>
-                <option value="other">Otro</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Referencia"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                           bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-              />
-              {method === "transfer" && (
-                <input
-                  type="text"
-                  placeholder="Banco"
-                  value={bank}
-                  onChange={(e) => setBank(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                             bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                />
-              )}
-              {method === "other" && (
-                <input
-                  type="text"
-                  placeholder="Detalle"
-                  value={otherDetail}
-                  onChange={(e) => setOtherDetail(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                             bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100"
-                />
-              )}
-              <button
-                type="submit"
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors self-start"
-                disabled={createPayment.isPending}
-              >
-                {createPayment.isPending ? "Registrando..." : "+ Registrar pago"}
-              </button>
-            </form>
-          )}
+      {/* 03. PAYMENTS SECTION */}
+      <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
+        <button 
+          onClick={() => setShowPayments(!showPayments)}
+          className="w-full flex items-center justify-between p-2 hover:bg-white/5 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <CheckBadgeIcon className="w-4 h-4 text-emerald-500" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Transaction_Log</span>
+          </div>
+          {showPayments ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
+        </button>
 
-          {/* Lista de pagos */}
-          <ul className="mt-2 space-y-1">
-            {order.payments?.length === 0 && (
-              <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin pagos registrados</li>
+        {showPayments && (
+          <div className="p-3 space-y-3 border-t border-[var(--palantir-border)]">
+            {!readOnly && (
+              <form onSubmit={handleAddPayment} className="space-y-2">
+                <div className="grid grid-cols-2 gap-1">
+                  <input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="AMOUNT_USD" className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none" required />
+                  <select value={method} onChange={e => setMethod(e.target.value as any)} className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none">
+                    <option value="cash">CASH_LIQUID</option>
+                    <option value="card">CARD_POS</option>
+                    <option value="transfer">WIRE_TRANSFER</option>
+                    <option value="other">OTHER_ASSET</option>
+                  </select>
+                </div>
+                <input placeholder="REFERENCE_NUM" value={reference} onChange={e => setReference(e.target.value)} className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none" />
+                <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 text-[9px] font-black uppercase tracking-[0.2em] transition-all">Execute_Payment</button>
+              </form>
             )}
-            {order.payments?.map((p: Payment) => (
-              <li
-                key={p.id}
-                className="border-b border-gray-200 dark:border-gray-700 py-1 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
-              >
-                {p.method} — ${Number(p.amount).toFixed(2)}
-                {p.reference_number && <span className="ml-2">Ref: {p.reference_number}</span>}
-                {p.bank_name && <span className="ml-2">Banco: {p.bank_name}</span>}
-                {p.detail && <span className="ml-2">Detalle: {p.detail}</span>}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+            <div className="space-y-1">
+              {order.payments?.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 p-2 bg-emerald-500/5 border-l-2 border-emerald-500">
+                  {p.method === 'cash' ? <BanknotesIcon className="w-4 h-4" /> : p.method === 'card' ? <CreditCardIcon className="w-4 h-4" /> : <ArrowsRightLeftIcon className="w-4 h-4" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-black uppercase tracking-tighter">${Number(p.amount).toFixed(2)}</span>
+                      <span className="text-[8px] font-mono opacity-50 uppercase">{p.method}</span>
+                    </div>
+                    {p.reference_number && <p className="text-[8px] font-mono truncate">REF: {p.reference_number}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,70 +1,79 @@
-// src/pages/Appointments.tsx
-import { useState, useEffect } from "react";
+// src/pages/Appointments/Appointments.tsx
+import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import moment from "moment";
-import {
-  Appointment,
-  AppointmentInput,
-  AppointmentStatus,
-} from "types/appointments";
+import { Appointment, AppointmentInput, AppointmentStatus } from "types/appointments";
+import { 
+  PlusIcon, 
+  MagnifyingGlassIcon, 
+  FunnelIcon, 
+  ChartBarIcon, 
+  ArrowPathIcon 
+} from "@heroicons/react/24/outline";
 
+// Componentes
 import AppointmentsList from "components/Appointments/AppointmentsList";
 import AppointmentForm from "components/Appointments/AppointmentForm";
 import AppointmentEditForm from "components/Appointments/AppointmentEditForm";
 import CalendarGrid from "components/Appointments/CalendarGrid";
 import AppointmentFilters from "components/Appointments/AppointmentFilters";
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
+import Pagination from "components/Common/Pagination";
 
+// Hooks
 import {
   useCreateAppointment,
   useCancelAppointment,
   useUpdateAppointment,
   useUpdateAppointmentStatus,
 } from "hooks/appointments";
-
 import { useAllAppointments } from "hooks/appointments/useAllAppointments";
 import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch";
-
-import Pagination from "components/Common/Pagination";
 
 export default function Appointments() {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
   const [viewingAppointment, setViewingAppointment] = useState<Appointment | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
-
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
   const [search, setSearch] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // 🔹 Carga completa (calendario + vista ejecutiva)
+  const listRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  // 1. DATA LOADING: Universo completo para el Calendario
   const { data: allData, isLoading, isFetching, error } = useAllAppointments();
   const allAppointments = allData?.list ?? [];
 
-  // 🔹 Buscador institucional (backend)
-  const {
-    data: searchResults = [],
-    isLoading: isSearching,
-  } = useAppointmentsSearch(search);
+  // 2. SEARCH LOADING: Búsqueda específica en Backend
+  const { data: searchResults = [], isLoading: isSearching } = useAppointmentsSearch(search);
 
+  // 3. MUTATIONS
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
   const cancelMutation = useCancelAppointment();
   const statusMutation = useUpdateAppointmentStatus();
 
-  // ⚔️ Overlay institucional activo desde el inicio
-  const [showOverlay, setShowOverlay] = useState(true);
-
+  // Reset de página al filtrar
   useEffect(() => {
-    if (!isLoading && !isFetching && allAppointments && allAppointments.length > 0) {
-      const timeout = setTimeout(() => setShowOverlay(false), 500);
-      return () => clearTimeout(timeout);
+    setCurrentPage(1);
+  }, [search, statusFilter, selectedDate]);
+
+  // Manejo de parámetros de URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const statusParam = params.get("status") as AppointmentStatus | null;
+    if (statusParam) {
+      setStatusFilter(statusParam);
+      setTimeout(() => {
+        listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 300);
     }
-  }, [isLoading, isFetching, allAppointments]);
+  }, [location.search]);
 
   const saveAppointment = (data: AppointmentInput, id?: number) => {
-    if (!window.confirm("¿Desea guardar los cambios de esta cita?")) return;
     if (id) {
       updateMutation.mutate({ id, data });
       setEditingAppointment(null);
@@ -75,165 +84,132 @@ export default function Appointments() {
   };
 
   const deleteAppointmentSafe = (id: number) => {
-    if (window.confirm("¿Está seguro de eliminar esta cita?")) {
+    if (window.confirm("CONFIRM_ACTION: ELIMINATE_RECORD_PERMANENTLY?")) {
       cancelMutation.mutate(id);
     }
   };
 
   // ============================================================
-  // 🔍 LÓGICA INSTITUCIONAL DE BÚSQUEDA
+  // 🔍 LÓGICA DE FILTRADO Y PAGINACIÓN
   // ============================================================
-
   const isSearchingActive = search.trim().length > 0;
 
-  // 🔹 Si hay búsqueda → usar backend
-  const backendAppointments = searchResults;
-
-  // 🔹 Si NO hay búsqueda → aplicar filtros locales
-  const localFilteredAppointments = allAppointments
-    .filter((appt) =>
-      selectedDate
-        ? moment(appt.appointment_date, "YYYY-MM-DD").isSame(selectedDate, "day")
-        : true
+  // Filtrado Local (Se aplica cuando NO hay búsqueda activa)
+  const localFiltered = allAppointments
+    .filter((appt) => 
+      selectedDate ? moment(appt.appointment_date).isSame(selectedDate, "day") : true
     )
-    .filter((appt) =>
-      statusFilter === "all" ? true : appt.status === statusFilter
-    )
+    .filter((appt) => (statusFilter === "all" ? true : appt.status === statusFilter))
     .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
 
-  // 🔹 Selección final según modo
-  const finalAppointments = isSearchingActive
-    ? backendAppointments
-    : localFilteredAppointments;
-
-  // 🔹 Paginación solo cuando NO hay búsqueda
-  const totalItems = isSearchingActive ? finalAppointments.length : localFilteredAppointments.length;
-
-  const paginatedAppointments = isSearchingActive
-    ? finalAppointments // sin paginación
+  // Selección de Data Final
+  const finalAppointments = isSearchingActive ? searchResults : localFiltered;
+  
+  // Paginación: Solo si no estamos buscando (para ver todo el resultado de búsqueda de golpe)
+  const totalItems = finalAppointments.length;
+  const paginatedAppointments = isSearchingActive 
+    ? finalAppointments 
     : finalAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  if (error) return <p className="text-red-600">Error cargando citas</p>;
+  if (error) return (
+    <div className="p-10 border border-red-500 bg-red-500/10 text-red-500 font-mono text-xs uppercase">
+      Critical_Data_Link_Failure // Error loading appointments
+    </div>
+  );
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 relative">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-[#0d2c53] dark:text-gray-100">Citas</h1>
-        <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">
-          {moment().format("dddd, DD [de] MMMM YYYY - HH:mm")}
-        </p>
-      </div>
-
-      {showCreateForm && (
-        <AppointmentForm
-          onSubmit={(data) => saveAppointment(data)}
-          onClose={() => setShowCreateForm(false)}
-        />
-      )}
-
-      {viewingAppointment && (
-        <AppointmentDetail
-          appointment={viewingAppointment}
-          onClose={() => setViewingAppointment(null)}
-          onEdit={(appt) => {
-            setViewingAppointment(null);
-            setEditingAppointment(appt);
-          }}
-        />
-      )}
-
-      {editingAppointment && (
-        <AppointmentEditForm
-          appointment={editingAppointment}
-          onSubmit={(id, data) => saveAppointment(data, id)}
-          onClose={() => setEditingAppointment(null)}
-        />
-      )}
-
-      {/* Vista combinada */}
-      <div className="flex flex-col gap-4 sm:gap-6 mt-4 sm:mt-6">
-        {/* Calendario */}
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
-          <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-2">Calendario</h2>
-          <CalendarGrid
-            appointments={allAppointments}
-            onSelectDate={(date) => setSelectedDate(date)}
-            onSelectAppointment={(appt) => setViewingAppointment(appt)}
-          />
+    <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-8 space-y-6">
+      
+      {/* HEADER */}
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[var(--palantir-border)] pb-6">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <div className={`w-2 h-2 rounded-full animate-pulse ${(isFetching || isSearching) ? 'bg-amber-500' : 'bg-[var(--palantir-active)]'}`} />
+            <span className="text-[10px] font-black text-[var(--palantir-active)] uppercase tracking-[0.4em]">
+              Central_Appointment_Matrix
+            </span>
+          </div>
+          <h1 className="text-3xl font-black uppercase tracking-tighter italic">Registry_Manager</h1>
+          <p className="text-[10px] font-mono text-[var(--palantir-muted)] mt-1 uppercase tracking-widest">
+            {moment().format("YYYY-MM-DD // HH:mm:ss")} // DB_SYNC: {isLoading ? 'INITIALIZING' : 'READY'}
+          </p>
         </div>
 
-        {/* Lista ejecutiva */}
-        <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-gray-100">
-              {selectedDate
-                ? `Citas del ${moment(selectedDate).format("DD/MM/YYYY")}`
-                : "Todas las Citas"}
-            </h2>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="group flex items-center gap-3 bg-[var(--palantir-active)] hover:bg-blue-600 text-white px-6 py-3 shadow-[0_0_20px_rgba(30,136,229,0.3)] transition-all"
+        >
+          <PlusIcon className="w-5 h-5" />
+          <span className="text-xs font-black uppercase tracking-widest">New_Mission_Record</span>
+        </button>
+      </header>
 
-            {selectedDate && !isSearchingActive && (
-              <button
-                onClick={() => setSelectedDate(null)}
-                className="px-2 sm:px-3 py-1 rounded-md border border-gray-300 dark:border-gray-600 
-                           bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                           hover:bg-gray-200 dark:hover:bg-gray-600 transition text-xs sm:text-sm"
-              >
-                Ver todas
-              </button>
-            )}
-          </div>
-
-          {/* Filtros + Nueva Cita */}
-          <div className="flex flex-wrap gap-2 mb-3 sm:mb-4">
-            {!isSearchingActive && (
-              <AppointmentFilters
-                activeFilter={statusFilter}
-                onFilterChange={setStatusFilter}
-              />
-            )}
-
-            <button
-              onClick={() => setShowCreateForm(true)}
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
-            >
-              + Nueva Cita
-            </button>
-          </div>
-
-          {/* Buscador */}
-          <div className="mb-3 sm:mb-4">
-            <input
-              type="text"
-              placeholder="Buscar por paciente, fecha, tipo o nota..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
-                         focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        {/* COLUMNA IZQUIERDA: CALENDARIO (Usa ALL DATA) */}
+        <div className="xl:col-span-5 space-y-6">
+          <section className="border border-[var(--palantir-border)] bg-black/20 p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <ChartBarIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">Temporal_Heatmap</h2>
+            </div>
+            <CalendarGrid
+              appointments={allAppointments} 
+              onSelectDate={(date: Date) => setSelectedDate(date)}
+              onSelectAppointment={(appt: Appointment) => setViewingAppointment(appt)}
             />
+          </section>
+        </div>
 
-            {isSearchingActive && (
-              <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400 mt-1">
-                Mostrando resultados para “{search.trim()}”
-              </p>
-            )}
+        {/* COLUMNA DERECHA: LISTA Y CONTROLES */}
+        <div className="xl:col-span-7 space-y-4" ref={listRef}>
+          <div className="border border-[var(--palantir-border)] bg-black/20 p-4 space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <FunnelIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+                <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">
+                  {selectedDate ? `Filter: ${moment(selectedDate).format("DD_MMM")}` : "Global_Registry"}
+                </h2>
+                {selectedDate && (
+                  <button onClick={() => setSelectedDate(null)} className="text-[8px] border border-red-500/30 text-red-500 px-2 py-0.5 hover:bg-red-500 hover:text-white transition-all">
+                    CLEAR_DATE
+                  </button>
+                )}
+              </div>
+              {!isSearchingActive && (
+                <AppointmentFilters activeFilter={statusFilter} onFilterChange={setStatusFilter} />
+              )}
+            </div>
 
-            {isSearching && (
-              <span className="text-xs sm:text-[#0d2c53] dark:text-gray-400">Buscando…</span>
-            )}
+            <div className="relative group">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-muted)] group-focus-within:text-[var(--palantir-active)]" />
+              <input
+                type="text"
+                placeholder="SEARCH_BY_PATIENT_OR_ID... (BACKEND_QUERY)"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-black/40 border border-[var(--palantir-border)] pl-10 pr-4 py-3 text-xs font-mono tracking-widest focus:border-[var(--palantir-active)] outline-none transition-all placeholder:text-[var(--palantir-muted)]/50 uppercase"
+              />
+              {(isSearching || isFetching) && (
+                <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-active)] animate-spin" />
+              )}
+            </div>
           </div>
 
-          <AppointmentsList
-            appointments={paginatedAppointments}
-            onEdit={(a) => setViewingAppointment(a)}
-            onDelete={(id) => deleteAppointmentSafe(id)}
-            onStatusChange={(id, status) => statusMutation.mutate({ id, status })}
-          />
+          <div className="border border-[var(--palantir-border)] bg-black/10 overflow-hidden min-h-[400px]">
+            <AppointmentsList
+              appointments={paginatedAppointments}
+              onEdit={(a: Appointment) => setViewingAppointment(a)}
+              onDelete={(id: number) => deleteAppointmentSafe(id)}
+              onStatusChange={(id: number, status: AppointmentStatus) => statusMutation.mutate({ id, status })}
+            />
+          </div>
 
-          {/* Paginación solo cuando NO hay búsqueda */}
+          {/* PAGINACIÓN INSTITUCIONAL */}
           {!isSearchingActive && totalItems > 0 && (
-            <div className="flex justify-end mt-3 sm:mt-4">
+            <div className="border border-[var(--palantir-border)] bg-black/20 px-4 py-3 flex justify-between items-center">
+              <div className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
+                Data_Slice: {(currentPage - 1) * pageSize + 1} - {Math.min(currentPage * pageSize, totalItems)} / {totalItems}
+              </div>
               <Pagination
                 currentPage={currentPage}
                 totalItems={totalItems}
@@ -245,13 +221,23 @@ export default function Appointments() {
         </div>
       </div>
 
-      {/* Overlay institucional adaptativo */}
-      {showOverlay && (
-        <div className="absolute inset-0 bg-white/70 dark:bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <span className="text-base text-[#0d2c53] dark:text-white animate-pulse font-semibold">
-            Actualizando citas…
-          </span>
-        </div>
+      {/* MODALS */}
+      {showCreateForm && (
+        <AppointmentForm onSubmit={(data) => saveAppointment(data)} onClose={() => setShowCreateForm(false)} />
+      )}
+      {viewingAppointment && (
+        <AppointmentDetail
+          appointment={viewingAppointment}
+          onClose={() => setViewingAppointment(null)}
+          onEdit={(appt: Appointment) => { setViewingAppointment(null); setEditingAppointment(appt); }}
+        />
+      )}
+      {editingAppointment && (
+        <AppointmentEditForm
+          appointment={editingAppointment}
+          onSubmit={(id, data) => saveAppointment(data, id)}
+          onClose={() => setEditingAppointment(null)}
+        />
       )}
     </div>
   );

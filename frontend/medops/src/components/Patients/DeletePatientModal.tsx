@@ -1,6 +1,7 @@
 // src/components/Patients/DeletePatientModal.tsx
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
+import { AlertOctagon, Trash2, X, Loader2 } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -15,15 +16,12 @@ export default function DeletePatientModal({ open, patientName, onConfirm, onClo
   if (!open) return null;
 
   const handleDelete = async () => {
-    console.log("[MODAL] botón eliminar clicado"); // ⚔️ trazador
     if (submitting) return;
     setSubmitting(true);
     try {
-      console.log("[MODAL] llamando onConfirm…");
       await onConfirm();
-      console.log("[MODAL] onConfirm terminó");
     } catch (err) {
-      console.error("[MODAL] error en onConfirm:", err);
+      console.error("[MODAL] Error al eliminar:", err);
     } finally {
       setSubmitting(false);
     }
@@ -31,45 +29,89 @@ export default function DeletePatientModal({ open, patientName, onConfirm, onClo
 
   return ReactDOM.createPortal(
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-2 sm:px-0"
-      onClick={() => {
-        console.log("[MODAL] overlay clicado");
-        if (!submitting) onClose();
-      }}
+      className="fixed inset-0 flex items-center justify-center z-[1000] p-4 animate-in fade-in duration-300"
+      onClick={() => !submitting && onClose()}
     >
+      {/* Backdrop con desenfoque de peligro */}
+      <div className="absolute inset-0 bg-red-950/20 backdrop-blur-md" />
+
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-md"
+        className="relative bg-[#11141a] border border-red-500/30 shadow-[0_0_50px_rgba(239,68,68,0.2)] rounded-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-base sm:text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
-          ⚠️ Eliminar paciente
-        </h3>
-        <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-300">
-          Estás a punto de eliminar al paciente <strong>{patientName}</strong>.
-          <br />
-          Esta acción es irreversible.
-        </p>
+        {/* Cabecera de Alerta */}
+        <div className="px-6 py-4 border-b border-red-500/20 flex items-center justify-between bg-red-500/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-red-500/10 rounded-lg text-red-500">
+              <AlertOctagon size={20} />
+            </div>
+            <h3 className="text-sm font-bold text-red-500 uppercase tracking-[0.2em]">
+              Alerta de Seguridad
+            </h3>
+          </div>
+          <button 
+            onClick={() => !submitting && onClose()}
+            className="text-slate-500 hover:text-white transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
 
-        <div className="flex flex-col sm:flex-row gap-2 mt-4">
+        {/* Cuerpo del Mensaje */}
+        <div className="p-8">
+          <div className="flex flex-col items-center text-center mb-6">
+            <div className="w-16 h-16 bg-red-500/5 rounded-full flex items-center justify-center mb-4 border border-red-500/10">
+                <Trash2 size={32} className="text-red-500/40" />
+            </div>
+            <h4 className="text-xl font-semibold text-white mb-2 leading-tight">
+              ¿Eliminar registro permanente?
+            </h4>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Estás a punto de eliminar al paciente: <br />
+              <span className="text-white font-bold text-lg block mt-2 underline decoration-red-500/50 underline-offset-4">
+                {patientName}
+              </span>
+            </p>
+          </div>
+
+          <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-4 flex gap-3 items-start">
+             <div className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 animate-pulse shrink-0" />
+             <p className="text-[11px] font-mono text-red-400 uppercase tracking-wider leading-normal">
+                Esta acción es irreversible. Se eliminarán todos los historiales y archivos asociados del servidor central.
+             </p>
+          </div>
+        </div>
+
+        {/* Acciones Críticas */}
+        <div className="px-8 py-6 bg-black/20 border-t border-red-500/10 flex flex-col gap-3">
           <button
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50 text-xs sm:text-sm"
             onClick={handleDelete}
             disabled={submitting}
+            className="w-full py-3.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-sm font-bold uppercase tracking-widest transition-all shadow-lg shadow-red-900/40 flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {submitting ? "Eliminando..." : "Eliminar"}
+            {submitting ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Eliminando del sistema...
+              </>
+            ) : (
+              "Confirmar Eliminación"
+            )}
           </button>
+          
           <button
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md border border-gray-300 dark:border-gray-600
-                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-xs sm:text-sm"
-            onClick={() => {
-              console.log("[MODAL] cancelar clicado");
-              if (!submitting) onClose();
-            }}
+            onClick={() => !submitting && onClose()}
             disabled={submitting}
+            className="w-full py-3 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-white hover:bg-white/5 transition-all"
           >
-            Cancelar
+            Cancelar y Abortar
           </button>
+        </div>
+
+        {/* Footer Técnico */}
+        <div className="px-6 py-2 bg-red-500/10 flex justify-between items-center">
+            <span className="text-[8px] font-mono text-red-500/60 uppercase">Security_Protocol_404</span>
+            <span className="text-[8px] font-mono text-red-500/60 uppercase tracking-[0.2em]">MedOpz_Kernel_Action</span>
         </div>
       </div>
     </div>,

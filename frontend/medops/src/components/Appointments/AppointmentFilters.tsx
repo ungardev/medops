@@ -6,31 +6,49 @@ interface Props {
   onFilterChange: (status: AppointmentStatus | "all") => void;
 }
 
-const FILTERS: { key: AppointmentStatus | "all"; label: string }[] = [
-  { key: "all", label: "Todas" },
-  { key: "pending", label: "Pendientes" },
-  { key: "arrived", label: "Llegados" },
-  { key: "in_consultation", label: "En consulta" },
-  { key: "completed", label: "Completadas" },
-  { key: "canceled", label: "Canceladas" },
+const FILTERS: { key: AppointmentStatus | "all"; label: string; code: string }[] = [
+  { key: "all", label: "All_Records", code: "00" },
+  { key: "pending", label: "Pending", code: "WL" }, // Waiting Lock
+  { key: "arrived", label: "Arrived", code: "SP" }, // Subject Present
+  { key: "in_consultation", label: "Consulting", code: "IP" }, // In Progress
+  { key: "completed", label: "Completed", code: "OC" }, // Op Complete
+  { key: "canceled", label: "Canceled", code: "TR" }, // Terminated
 ];
 
 export default function AppointmentFilters({ activeFilter, onFilterChange }: Props) {
   return (
-    <div className="flex flex-wrap gap-1.5 sm:gap-2">
+    <div className="flex flex-wrap items-center bg-black/20 border border-[var(--palantir-border)] p-1 rounded-sm gap-1">
+      {/* Label de contexto para el operador */}
+      <div className="hidden lg:block px-2 py-1 border-r border-[var(--palantir-border)] mr-1">
+        <span className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">
+          Filter_Stream:
+        </span>
+      </div>
+
       {FILTERS.map((f) => {
         const isActive = activeFilter === f.key;
         return (
           <button
             key={f.key}
             onClick={() => onFilterChange(f.key)}
-            className={`px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm font-medium transition ${
-              isActive
-                ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
-                : "border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
+            className={`
+              relative flex items-center gap-2 px-3 py-1.5 transition-all duration-200
+              ${isActive 
+                ? "bg-[var(--palantir-active)]/10 text-[var(--palantir-active)]" 
+                : "text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] hover:bg-white/5"}
+            `}
           >
-            {f.label}
+            {/* Indicador visual de selección (barra inferior) */}
+            {isActive && (
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--palantir-active)] shadow-[0_-2px_8px_var(--palantir-active)]" />
+            )}
+
+            <span className="text-[8px] font-mono opacity-50 group-hover:opacity-100">
+              [{f.code}]
+            </span>
+            <span className="text-[10px] font-black uppercase tracking-wider">
+              {f.label}
+            </span>
           </button>
         );
       })}

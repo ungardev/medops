@@ -1,233 +1,129 @@
 // src/components/Dashboard/TrendsChart.tsx
-import React, { useState, useRef, useLayoutEffect } from "react";
+import React, { useRef, useLayoutEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  LineElement,
-  PointElement,
-  CategoryScale,
-  LinearScale,
-  Tooltip,
-  Filler,
-  type ChartOptions,
+  LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler, type ChartOptions
 } from "chart.js";
 import { useDashboard } from "@/hooks/dashboard/useDashboard";
-import ButtonGroup from "@/components/Common/ButtonGroup";
+import { useDashboardFilters } from "@/context/DashboardFiltersContext";
 
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Tooltip, Filler);
 
 const TrendsChart: React.FC = () => {
-  const [range, setRange] = useState<"day" | "week" | "month">("month");
-  const [currency, setCurrency] = useState<"USD" | "VES">("USD");
+  const { range, currency } = useDashboardFilters();
   const { data } = useDashboard({ range, currency });
-  const chartRef = useRef<any>(null);
   const [chartData, setChartData] = useState<any>(null);
+
+  const isDark = document.documentElement.classList.contains("dark");
+
+  const palette = {
+    citas: "#38a1ff", 
+    pagos: "#10b981", 
+    grid: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+    text: isDark ? "#8a9ba8" : "#5c7080",
+    tooltipBg: isDark ? "#182026" : "#ffffff",
+    tooltipBorder: isDark ? "#24313c" : "#d8e1e8",
+  };
 
   const citas = data?.appointments_trend || [];
   const pagos = data?.payments_trend || [];
-  const balance = data?.balance_trend || [];
 
-  // Construir rango continuo de fechas
-  const buildContinuousLabels = (start: string, end: string) => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const labels: string[] = [];
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      labels.push(d.toISOString().split("T")[0]);
-    }
-    return labels;
-  };
-
-  // Obtener min/max sin ordenar todo el arreglo dos veces
-  const allDates = [
-    ...citas.map((p: any) => p.date),
-    ...pagos.map((p: any) => p.date),
-    ...balance.map((p: any) => p.date),
-  ].filter(Boolean);
-
+  const allDates = [...citas.map((p: any) => p.date), ...pagos.map((p: any) => p.date)].filter(Boolean);
   let labels: string[] = [];
   if (allDates.length) {
-    const minDate = allDates.reduce((min, d) => (d < min ? d : min), allDates[0]);
-    const maxDate = allDates.reduce((max, d) => (d > max ? d : max), allDates[0]);
-    labels = buildContinuousLabels(minDate, maxDate);
+    const minDate = new Date(Math.min(...allDates.map((d: any) => new Date(d).getTime())));
+    const maxDate = new Date(Math.max(...allDates.map((d: any) => new Date(d).getTime())));
+    for (let d = new Date(minDate); d <= maxDate; d.setDate(d.getDate() + 1)) {
+      labels.push(d.toISOString().split("T")[0]);
+    }
   }
 
-  const hasData = citas.length || pagos.length || balance.length;
-
-  // Colores base en strings
-  const baseColors: Record<string, string> = {
-    citas: "rgba(13,44,83,0.4)",
-    pagos: "rgba(34,197,94,0.4)",
-    balance: "rgba(239,68,68,0.4)",
-  };
-
-  const buildGradient = (ctx: CanvasRenderingContext2D, color: string) => {
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, color);
-    gradient.addColorStop(1, "rgba(255,255,255,0)");
-    return gradient;
-  };
-
-  // Render inicial sin gradientes
   useLayoutEffect(() => {
-    if (hasData && labels.length) {
-      const citasData = labels.map((date) => {
-        const found = citas.find((p: any) => p.date === date);
-        return typeof found?.value === "number" ? found.value : 0;
-      });
-
-      const pagosData = labels.map((date) => {
-        const found = pagos.find((p: any) => p.date === date);
-        return typeof found?.value === "number" ? found.value : 0;
-      });
-
-      const balanceData = labels.map((date) => {
-        const found = balance.find((p: any) => p.date === date);
-        return typeof found?.value === "number" ? found.value : 0;
-      });
-
-      const newChartData = {
+    if (labels.length) {
+      setChartData({
         labels,
         datasets: [
           {
             label: "Citas",
-            data: citasData,
-            borderColor: "#0d2c53",
-            backgroundColor: baseColors.citas,
-            fill: true,
-            tension: 0.5,
-            pointRadius: 0,
+            data: labels.map(d => citas.find((p: any) => p.date === d)?.value ?? 0),
+            borderColor: palette.citas,
+            backgroundColor: (ctx: any) => {
+              const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 200);
+              gradient.addColorStop(0, `${palette.citas}33`);
+              gradient.addColorStop(1, "transparent");
+              return gradient;
+            },
+            fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2,
           },
           {
-            label: `Pagos (${currency})`,
-            data: pagosData,
-            borderColor: "#22c55e",
-            backgroundColor: baseColors.pagos,
-            fill: true,
-            tension: 0.5,
-            pointRadius: 0,
-          },
-          {
-            label: `Balance (${currency})`,
-            data: balanceData,
-            borderColor: "#ef4444",
-            backgroundColor: baseColors.balance,
-            fill: true,
-            tension: 0.5,
-            pointRadius: 0,
-          },
+            label: `Ingresos (${currency})`,
+            data: labels.map(d => pagos.find((p: any) => p.date === d)?.value ?? 0),
+            borderColor: palette.pagos,
+            backgroundColor: "transparent",
+            fill: false, tension: 0.4, pointRadius: 0, borderWidth: 2, borderDash: [5, 5],
+          }
         ],
-      };
-      setChartData(newChartData);
+      });
     }
-  }, [hasData, currency, labels.join("|")]);
-
-  // Inyección de gradientes en caliente
-  useLayoutEffect(() => {
-    const timer = setTimeout(() => {
-      if (chartRef.current && chartRef.current.ctx && chartData) {
-        const ctx = chartRef.current.ctx;
-        const updated = {
-          ...chartData,
-          datasets: [
-            {
-              ...chartData.datasets[0],
-              backgroundColor: buildGradient(ctx, baseColors.citas),
-            },
-            {
-              ...chartData.datasets[1],
-              backgroundColor: buildGradient(ctx, baseColors.pagos),
-            },
-            {
-              ...chartData.datasets[2],
-              backgroundColor: buildGradient(ctx, baseColors.balance),
-            },
-          ],
-        };
-        setChartData(updated);
-      }
-    }, 120);
-
-    return () => clearTimeout(timer);
-  }, [chartData]);
+  }, [data, currency, isDark]);
 
   const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: {
-      duration: 800,
-      easing: "easeOutQuart",
-    },
-    layout: {
-      padding: { top: 16, bottom: 8 },
-    },
     plugins: {
       legend: {
         position: "top",
-        labels: {
-          color: "#374151",
-          font: { size: 12 },
-          boxWidth: 12,
+        align: "end",
+        labels: { 
+            color: palette.text, 
+            font: { size: 9, weight: 'bold' as any }, 
+            boxWidth: 8, 
+            usePointStyle: true,
+            padding: 10
         },
       },
       tooltip: {
-        mode: "index",
-        intersect: false,
-        backgroundColor: "#0d2c53",
-        titleColor: "#fff",
-        bodyColor: "#fff",
-        borderColor: "#fff",
+        backgroundColor: palette.tooltipBg,
+        titleColor: palette.text,
+        bodyColor: palette.text,
+        borderColor: palette.tooltipBorder,
         borderWidth: 1,
-      },
+        padding: 8,
+        bodyFont: { size: 11 },
+      }
     },
     scales: {
-      x: {
-        ticks: { color: "#6b7280" },
-        grid: { display: false },
-      },
-      y: {
-        ticks: { color: "#6b7280" },
-        grid: { color: "#e5e7eb" },
-      },
+      x: { grid: { display: false }, ticks: { color: palette.text, font: { size: 9 } } },
+      y: { grid: { color: palette.grid }, ticks: { color: palette.text, font: { size: 9 } } },
     },
   };
 
   return (
-    <section className="h-full bg-white dark:bg-gray-800 ring-1 ring-gray-200 dark:ring-gray-700 rounded-md p-3 sm:p-4 flex flex-col">
-      {/* Header compacto */}
-      <div className="h-9 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#0d2c53] dark:text-white">Tendencias</h3>
-        <div className="flex gap-2">
-          <ButtonGroup
-            options={["day", "week", "month"]}
-            selected={range}
-            onSelect={(r) => setRange(r as any)}
-          />
-          <ButtonGroup
-            options={["USD", "VES"]}
-            selected={currency}
-            onSelect={(c) => setCurrency(c as any)}
-          />
+    /* h-full para igualar a sus compañeros y rounded-sm para consistencia Palantir */
+    <div className="h-full flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm shadow-sm overflow-hidden">
+      {/* Header compactado */}
+      <div className="px-4 py-2 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/30 flex justify-between items-center">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--palantir-muted)]">Flujo_Operativo_Analytics</h3>
+        <div className="flex gap-2 opacity-50">
+          <div className="w-1 h-1 rounded-full bg-[var(--palantir-active)]"></div>
+          <div className="w-1 h-1 rounded-full bg-emerald-500"></div>
         </div>
       </div>
-
-      {/* Gráfico blindado */}
-      <div className="flex-1 mt-3">
-        {!hasData ? (
-          <div className="h-full flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-            No hay datos disponibles
-          </div>
-        ) : !chartData ? (
-          <div className="h-full flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
-            Cargando tendencias...
-          </div>
+      
+      {/* Ajuste Final: flex-1 permite que el contenedor del gráfico se estire 
+          exactamente lo necesario para coincidir con la altura de OperationalHub.
+      */}
+      <div className="p-4 flex-1 min-h-[200px]">
+        {chartData ? (
+          <Line data={chartData} options={chartOptions} />
         ) : (
-          <div className="relative w-full h-full">
-            <Line ref={chartRef} data={chartData} options={chartOptions} />
+          <div className="h-full flex items-center justify-center text-[10px] text-[var(--palantir-muted)] italic uppercase font-mono tracking-tighter">
+            Calculating_Trends...
           </div>
         )}
       </div>
-    </section>
+    </div>
   );
 };
 

@@ -11,6 +11,15 @@ import PrescriptionBadge from "./PrescriptionBadge";
 import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescription";
 import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescription";
 import MedicationSelector from "./MedicationSelector";
+import { 
+  BeakerIcon, 
+  PlusIcon, 
+  TrashIcon,
+  DocumentTextIcon,
+  ClockIcon,
+  ArrowsRightLeftIcon,
+  ClipboardDocumentCheckIcon
+} from "@heroicons/react/24/outline";
 
 interface Option {
   value: string;
@@ -54,9 +63,9 @@ export interface PrescriptionPanelProps {
   readOnly?: boolean;
   onAdd?: (data: CreatePrescriptionInput) => void;
 }
+
 const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   diagnoses,
-  prescriptions,
   readOnly,
   onAdd,
 }) => {
@@ -73,11 +82,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!diagnosisId || (!medicationCatalogId && !medicationText)) {
-      alert("Debes seleccionar un diagnóstico y un medicamento válido.");
-      return;
-    }
+    if (!diagnosisId || (!medicationCatalogId && !medicationText)) return;
 
     const payload: CreatePrescriptionInput = {
       diagnosis: Number(diagnosisId),
@@ -94,8 +99,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     };
 
     onAdd?.(payload);
-
-    // reset
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
     setMedicationText(undefined);
@@ -106,66 +109,46 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   };
 
   return (
-    <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-      <h3 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2">Prescripciones</h3>
+    <div className="space-y-8">
+      {/* HEADER SECTION */}
+      <div className="flex items-center gap-2 mb-6 border-b border-[var(--palantir-border)] pb-4">
+        <BeakerIcon className="w-5 h-5 text-[var(--palantir-active)]" />
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
+          Pharmacological_Orders
+        </span>
+      </div>
 
-      {/* 🔹 Modo lectura */}
-      {readOnly && (
-        <>
-          {diagnoses.length === 0 && (
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
-          )}
-          {diagnoses.map((d) => (
-            <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200 text-xs sm:text-sm">
-                {d.icd_code} — {d.title || d.description || "Sin descripción"}
-              </h4>
-              <ul className="ml-4 space-y-1">
+      {/* RENDER DIAGNOSES AND THEIR PRESCRIPTIONS */}
+      <div className="space-y-6">
+        {diagnoses.length === 0 ? (
+          <div className="p-8 border border-dashed border-[var(--palantir-border)] text-center opacity-40">
+            <span className="text-[10px] font-mono uppercase italic">Awaiting_Prescription_Data...</span>
+          </div>
+        ) : (
+          diagnoses.map((d) => (
+            <div key={d.id} className="border-l border-[var(--palantir-border)] pl-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-2 py-0.5 rounded text-[9px] font-black font-mono border border-[var(--palantir-active)]/20">
+                  {d.icd_code}
+                </span>
+                <h4 className="text-[11px] font-bold uppercase tracking-tight text-[var(--palantir-text)] opacity-80">
+                  {d.title || d.description || "Untitled_Condition"}
+                </h4>
+              </div>
+
+              <div className="grid gap-2 ml-4">
                 {d.prescriptions && d.prescriptions.length > 0 ? (
                   d.prescriptions.map((p: Prescription) => (
-                    <li key={p.id}>
-                      <PrescriptionBadge
-                        id={p.id}
-                        medication={p.medication_catalog?.name || p.medication_text || "—"}
-                        duration={p.duration ?? undefined}
-                        frequency={p.frequency}
-                        route={p.route}
-                        components={p.components}
-                      />
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
-                )}
-              </ul>
-            </div>
-          ))}
-        </>
-      )}
-
-            {/* 🔹 Modo edición */}
-      {!readOnly && (
-        <>
-          {diagnoses.length === 0 && (
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">No hay diagnósticos registrados</p>
-          )}
-          {diagnoses.map((d) => (
-            <div key={d.id} className="mb-3">
-              <h4 className="font-semibold text-[#0d2c53] dark:text-gray-200 text-xs sm:text-sm">
-                {d.icd_code} — {d.title || d.description || "Sin descripción"}
-              </h4>
-              <ul className="ml-4 space-y-1">
-                {d.prescriptions && d.prescriptions.length > 0 ? (
-                  d.prescriptions.map((p: Prescription) => (
-                    <li key={p.id}>
-                      <PrescriptionBadge
-                        id={p.id}
-                        medication={p.medication_catalog?.name || p.medication_text || "—"}
-                        duration={p.duration ?? undefined}
-                        frequency={p.frequency}
-                        route={p.route}
-                        components={p.components}
-                        onEdit={(id, med, dur, freq, rt, comps) =>
+                    <PrescriptionBadge
+                      key={p.id}
+                      id={p.id}
+                      medication={p.medication_catalog?.name || p.medication_text || "—"}
+                      duration={p.duration ?? undefined}
+                      frequency={p.frequency}
+                      route={p.route}
+                      components={p.components}
+                      {...(!readOnly && {
+                        onEdit: (id, med, dur, freq, rt, comps) =>
                           updatePrescription({
                             id,
                             medication_text: med,
@@ -173,154 +156,186 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                             frequency: freq,
                             route: rt,
                             components: comps || [],
-                          } as UpdatePrescriptionInput)
-                        }
-                        onDelete={(id) => deletePrescription(id)}
-                      />
-                    </li>
+                          } as UpdatePrescriptionInput),
+                        onDelete: (id) => deletePrescription(id),
+                      })}
+                    />
                   ))
                 ) : (
-                  <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin prescripciones</li>
+                  <span className="text-[9px] font-mono uppercase text-[var(--palantir-muted)] italic pl-2">
+                    // No_Active_Prescriptions
+                  </span>
                 )}
-              </ul>
+              </div>
             </div>
-          ))}
+          ))
+        )}
+      </div>
 
-          {/* Formulario de nueva prescripción */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-4">
-            <select
-              value={diagnosisId}
-              onChange={(e) => setDiagnosisId(Number(e.target.value))}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              required
-            >
-              <option value="">Seleccionar diagnóstico</option>
-              {diagnoses.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.icd_code} — {d.title || d.description}
-                </option>
-              ))}
-            </select>
+      {/* NEW PRESCRIPTION FORM */}
+      {!readOnly && diagnoses.length > 0 && (
+        <div className="mt-10 pt-6">
+          <form onSubmit={handleSubmit} className="bg-white/5 border border-[var(--palantir-border)] p-5 space-y-6 rounded-sm shadow-xl">
+            <div className="flex items-center gap-2 mb-2 border-b border-white/5 pb-3">
+              <ClipboardDocumentCheckIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+              <span className="text-[9px] font-black uppercase tracking-widest">New_Prescription_Draft</span>
+            </div>
 
-            <MedicationSelector
-              valueCatalogId={medicationCatalogId}
-              valueText={medicationText}
-              onChange={({ catalogId, text }) => {
-                setMedicationCatalogId(catalogId);
-                setMedicationText(text);
-              }}
-            />
-
-            {/* 🔹 Subform dinámico para componentes */}
-            {components.map((comp, index) => (
-              <div key={index} className="flex flex-wrap gap-2 items-center">
-                <input
-                  type="text"
-                  placeholder="Sustancia"
-                  value={comp.substance}
-                  onChange={(e) => {
-                    const newComps = [...components];
-                    newComps[index].substance = e.target.value;
-                    setComponents(newComps);
-                  }}
-                  className="px-2 py-1 border rounded text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
-                />
-                <input
-                  type="number"
-                  placeholder="Dosis"
-                  value={comp.dosage}
-                  onChange={(e) => {
-                    const newComps = [...components];
-                    newComps[index].dosage = Number(e.target.value);
-                    setComponents(newComps);
-                  }}
-                  className="px-2 py-1 border rounded text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
-                />
+            {/* Top Grid: Diagnosis & Medication */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Condition_Reference</label>
                 <select
-                  value={comp.unit}
-                  onChange={(e) => {
-                    const newComps = [...components];
-                    newComps[index].unit = e.target.value as PrescriptionComponent["unit"];
-                    setComponents(newComps);
-                  }}
-                  className="px-2 py-1 border rounded text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100"
+                  value={diagnosisId}
+                  onChange={(e) => setDiagnosisId(Number(e.target.value))}
+                  required
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none appearance-none text-[var(--palantir-text)]"
                 >
-                  <option value="mg">mg</option>
-                  <option value="ml">ml</option>
-                  <option value="g">g</option>
-                  <option value="tablet">Tableta</option>
-                  <option value="capsule">Cápsula</option>
-                  <option value="drop">Gotas</option>
-                  <option value="puff">Inhalación</option>
-                  <option value="unit">Unidad</option>
-                  <option value="patch">Parche</option>
+                  <option value="">SELECT_DIAGNOSIS</option>
+                  {diagnoses.map((d) => (
+                    <option key={d.id} value={d.id} className="bg-gray-900">
+                      [{d.icd_code}] {d.title || d.description}
+                    </option>
+                  ))}
                 </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Agent_Selector</label>
+                <MedicationSelector
+                  valueCatalogId={medicationCatalogId}
+                  valueText={medicationText}
+                  onChange={({ catalogId, text }) => {
+                    setMedicationCatalogId(catalogId);
+                    setMedicationText(text);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Components Subform */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Molecular_Components</label>
                 <button
                   type="button"
-                  onClick={() => setComponents(components.filter((_, i) => i !== index))}
-                  className="text-red-600 text-xs sm:text-sm"
+                  onClick={() => setComponents([...components, { substance: "", dosage: 0, unit: "mg" }])}
+                  className="flex items-center gap-1 text-[9px] font-black text-[var(--palantir-active)] hover:opacity-80 uppercase transition-all"
                 >
-                  ✕
+                  <PlusIcon className="w-3 h-3" /> Add_Component
                 </button>
               </div>
-            ))}
+              
+              <div className="space-y-2">
+                {components.length === 0 && (
+                  <div className="text-center py-4 bg-black/10 border border-dashed border-white/5 rounded">
+                    <span className="text-[8px] font-mono uppercase text-[var(--palantir-muted)]">No_Components_Defined</span>
+                  </div>
+                )}
+                {components.map((comp, index) => (
+                  <div key={index} className="flex gap-2 items-center bg-black/20 p-2 border border-white/5 animate-in slide-in-from-left-2 duration-200">
+                    <input
+                      type="text"
+                      placeholder="SUBSTANCE"
+                      value={comp.substance}
+                      onChange={(e) => {
+                        const newComps = [...components];
+                        newComps[index].substance = e.target.value;
+                        setComponents(newComps);
+                      }}
+                      className="flex-1 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                    />
+                    <input
+                      type="number"
+                      placeholder="VAL"
+                      value={comp.dosage}
+                      onChange={(e) => {
+                        const newComps = [...components];
+                        newComps[index].dosage = Number(e.target.value);
+                        setComponents(newComps);
+                      }}
+                      className="w-16 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-center text-[var(--palantir-text)]"
+                    />
+                    <select
+                      value={comp.unit}
+                      onChange={(e) => {
+                        const newComps = [...components];
+                        newComps[index].unit = e.target.value as any;
+                        setComponents(newComps);
+                      }}
+                      className="bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none text-[var(--palantir-text)]"
+                    >
+                      <option value="mg" className="bg-gray-900">mg</option>
+                      <option value="ml" className="bg-gray-900">ml</option>
+                      <option value="g" className="bg-gray-900">g</option>
+                      <option value="tablet" className="bg-gray-900">tab</option>
+                      <option value="capsule" className="bg-gray-900">cap</option>
+                      <option value="drop" className="bg-gray-900">gtt</option>
+                      <option value="unit" className="bg-gray-900">UI</option>
+                    </select>
+                    <button type="button" onClick={() => setComponents(components.filter((_, i) => i !== index))} className="text-red-400/60 hover:text-red-400 p-1 transition-colors">
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                setComponents([...components, { substance: "", dosage: 0, unit: "mg" }])
-              }
-              className="mt-2 px-3 py-1 text-xs sm:text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-            >
-              + Agregar componente
-            </button>
+            {/* Dosage Parameters Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
+                  <DocumentTextIcon className="w-3 h-3" /> Time_Duration
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 7_DAYS"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                />
+              </div>
 
-            <input
-              type="text"
-              placeholder="Duración (ej: 7 días)"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-            />
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
+                  <ClockIcon className="w-3 h-3" /> Frequency_Interval
+                </label>
+                <select
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value as any)}
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                >
+                  {frequencyOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value} className="bg-gray-900">{opt.label.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
 
-            <select
-              value={frequency}
-              onChange={(e) =>
-                setFrequency(e.target.value as UpdatePrescriptionInput["frequency"])
-              }
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-            >
-              {frequencyOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={route}
-              onChange={(e) => setRoute(e.target.value as UpdatePrescriptionInput["route"])}
-              className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                         bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-            >
-              {routeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+              <div className="space-y-1">
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
+                  <ArrowsRightLeftIcon className="w-3 h-3" /> Admin_Route
+                </label>
+                <select
+                  value={route}
+                  onChange={(e) => setRoute(e.target.value as any)}
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                >
+                  {routeOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value} className="bg-gray-900">{opt.label.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
 
             <button
               type="submit"
-              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
+              className="w-full bg-[var(--palantir-active)] hover:bg-blue-600 text-white py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20"
             >
-              + Agregar prescripción
+              <PlusIcon className="w-5 h-5" />
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Generate_Medical_Prescription</span>
             </button>
           </form>
-        </>
+        </div>
       )}
     </div>
   );

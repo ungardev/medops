@@ -5,6 +5,15 @@ import {
   useUploadDocument,
 } from "../../hooks/consultations/useDocuments";
 import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
+import { 
+  DocumentArrowUpIcon, 
+  ArrowPathIcon, 
+  DocumentIcon, 
+  CloudArrowUpIcon,
+  ExclamationCircleIcon,
+  TagIcon,
+  IdentificationIcon
+} from "@heroicons/react/24/outline";
 
 export interface DocumentsPanelProps {
   patientId: number;
@@ -35,112 +44,140 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
     );
   };
 
-  // 🔹 Ajuste: consumir `documents` y `errors` del GenerateDocumentsResponse
   const documents: GeneratedDocument[] = (data as GenerateDocumentsResponse)?.documents || [];
   const skipped: string[] = (data as GenerateDocumentsResponse)?.skipped || [];
   const errors: { category: string; error: string }[] = (data as GenerateDocumentsResponse)?.errors || [];
 
   return (
-    <div className="space-y-3">
-      {isLoading && (
-        <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-          Cargando documentos...
-        </p>
-      )}
+    <div className="space-y-6">
+      {/* 01. HEADER STATUS */}
+      <div className="flex items-center justify-between border-b border-[var(--palantir-border)] pb-2">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
+          Repository_Status
+        </span>
+        {isLoading && <ArrowPathIcon className="w-3 h-3 animate-spin text-[var(--palantir-active)]" />}
+      </div>
 
-      <ul className="space-y-1">
-        {documents.length === 0 && !isLoading && (
-          <li className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            Sin documentos
-          </li>
-        )}
-        {documents.map((doc) => (
-          <li
-            key={doc.audit_code}
-            className="border-b border-gray-200 dark:border-gray-700 py-1 text-xs sm:text-sm"
-          >
-            {doc.file_url ? (
-              <a
-                href={doc.file_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block text-[#0d2c53] dark:text-blue-400 hover:underline focus:outline-none"
-                title={`Documento ${doc.category} — ${doc.audit_code}`}
-              >
-                {doc.title || "Documento sin descripción"} ({doc.category}) — Código: {doc.audit_code}
-              </a>
-            ) : (
-              <span className="text-gray-500 dark:text-gray-400">
-                {doc.title || "Documento sin descripción"} ({doc.category}) — Código: {doc.audit_code}
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {skipped.length > 0 && (
-        <p className="text-xs sm:text-sm text-yellow-600 dark:text-yellow-400">
-          No se generaron: {skipped.join(", ")}
-        </p>
-      )}
-
-      {errors.length > 0 && (
-        <div className="space-y-1">
-          {errors.map((err, idx) => (
-            <p
-              key={idx}
-              className="text-xs sm:text-sm text-red-600 dark:text-red-400"
+      {/* 02. DOCUMENT LIST */}
+      <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--palantir-border)] pr-2">
+        {documents.length === 0 && !isLoading ? (
+          <div className="py-8 text-center border border-dashed border-[var(--palantir-border)] opacity-40">
+            <DocumentIcon className="w-8 h-8 mx-auto mb-2" />
+            <p className="text-[10px] font-mono uppercase">Null_Data_Segments</p>
+          </div>
+        ) : (
+          documents.map((doc) => (
+            <div
+              key={doc.audit_code}
+              className="group relative bg-black/20 border border-[var(--palantir-border)] p-3 hover:border-[var(--palantir-active)] transition-all"
             >
-              Error en {err.category}: {err.error}
-            </p>
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-[var(--palantir-active)]/10 text-[var(--palantir-active)]">
+                  <DocumentIcon className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[9px] font-black text-[var(--palantir-active)] uppercase tracking-widest">
+                      {doc.category || "UNCLASSIFIED"}
+                    </span>
+                    <span className="text-[8px] font-mono text-[var(--palantir-muted)]">
+                      AUDIT_{doc.audit_code}
+                    </span>
+                  </div>
+                  
+                  {doc.file_url ? (
+                    <a
+                      href={doc.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-[11px] font-bold text-[var(--palantir-text)] hover:text-[var(--palantir-active)] truncate uppercase tracking-tight"
+                    >
+                      {doc.title || "Untitled_Sequence"}
+                    </a>
+                  ) : (
+                    <span className="block text-[11px] font-bold text-[var(--palantir-muted)] truncate uppercase tracking-tight">
+                      {doc.title || "Pending_Link"}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* 03. EXCEPTIONS & LOGS */}
+      {(skipped.length > 0 || errors.length > 0) && (
+        <div className="p-3 bg-red-500/5 border-l-2 border-red-500 space-y-2">
+          {skipped.map((s, i) => (
+            <div key={i} className="flex items-center gap-2 text-[9px] font-mono text-yellow-500 uppercase">
+              <ExclamationCircleIcon className="w-3 h-3" /> Skipped: {s}
+            </div>
+          ))}
+          {errors.map((err, idx) => (
+            <div key={idx} className="flex items-center gap-2 text-[9px] font-mono text-red-500 uppercase">
+              <ExclamationCircleIcon className="w-3 h-3" /> Fault: {err.category} // {err.error}
+            </div>
           ))}
         </div>
       )}
 
+      {/* 04. UPLOAD PORTAL */}
       {!readOnly && (
-        <form onSubmit={handleUpload} className="flex flex-col gap-2">
-          <input
-            id="file-upload"
-            type="file"
-            className="hidden"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
-          <label
-            htmlFor="file-upload"
-            className="px-3 py-2 rounded-md border border-gray-300 dark:border-gray-600
-                       text-xs sm:text-sm text-[#0d2c53] dark:text-gray-200 bg-gray-100 dark:bg-gray-700
-                       hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer transition-colors"
-          >
-            Elegir archivo
-          </label>
-          <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            {file ? file.name : "Ningún archivo seleccionado"}
-          </span>
+        <form onSubmit={handleUpload} className="pt-4 border-t border-[var(--palantir-border)] space-y-3">
+          <div className="relative">
+            <input
+              id="file-upload"
+              type="file"
+              className="hidden"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+            <label
+              htmlFor="file-upload"
+              className={`flex flex-col items-center justify-center w-full py-4 border-2 border-dashed transition-all cursor-pointer 
+                ${file ? 'border-[var(--palantir-active)] bg-[var(--palantir-active)]/5' : 'border-[var(--palantir-border)] hover:bg-white/5'}`}
+            >
+              <CloudArrowUpIcon className={`w-6 h-6 mb-1 ${file ? 'text-[var(--palantir-active)]' : 'text-[var(--palantir-muted)]'}`} />
+              <span className="text-[10px] font-black uppercase tracking-widest text-center px-2">
+                {file ? file.name : "Initialize_Data_Transfer"}
+              </span>
+            </label>
+          </div>
 
-          <input
-            type="text"
-            placeholder="Descripción"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-          <input
-            type="text"
-            placeholder="Categoría"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm
-                       bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100
-                       focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="relative">
+              <TagIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--palantir-muted)]" />
+              <input
+                type="text"
+                placeholder="TAG_CATEGORY"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full bg-black/40 border border-[var(--palantir-border)] pl-7 pr-2 py-2 text-[10px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)] uppercase"
+              />
+            </div>
+            <div className="relative">
+              <IdentificationIcon className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--palantir-muted)]" />
+              <input
+                type="text"
+                placeholder="DESC_ID"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full bg-black/40 border border-[var(--palantir-border)] pl-7 pr-2 py-2 text-[10px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)] uppercase"
+              />
+            </div>
+          </div>
+
           <button
             type="submit"
-            className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors self-start"
-            disabled={uploadDocument.isPending}
+            disabled={uploadDocument.isPending || !file}
+            className="w-full flex items-center justify-center gap-2 py-2 bg-[var(--palantir-active)] hover:bg-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all shadow-[0_0_15px_rgba(30,136,229,0.2)]"
           >
-            {uploadDocument.isPending ? "Subiendo..." : "+ Subir documento"}
+            {uploadDocument.isPending ? (
+              <ArrowPathIcon className="w-4 h-4 animate-spin" />
+            ) : (
+              <DocumentArrowUpIcon className="w-4 h-4" />
+            )}
+            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Execute_Upload</span>
           </button>
         </form>
       )}

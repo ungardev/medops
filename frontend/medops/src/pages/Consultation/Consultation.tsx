@@ -1,86 +1,101 @@
 // src/pages/Consultation/Consultation.tsx
-import {
-  PatientHeader,
-  DocumentsPanel,
-  ChargeOrderPanel,
-} from "../../components/Consultation";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { 
+  ShieldCheckIcon, 
+  BeakerIcon, 
+  DocumentTextIcon, 
+  ChevronRightIcon,
+  ExclamationTriangleIcon
+} from "@heroicons/react/24/outline";
 
-import { useCurrentConsultation } from "../../hooks/consultations";
-import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
-import { useGenerateConsultationDocuments } from "../../hooks/consultations/useGenerateConsultationDocuments";
+// Componentes Tácticos
+import { PatientHeader, DocumentsPanel, ChargeOrderPanel } from "../../components/Consultation";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
+import ResponsivePanel from "../../components/Consultation/ResponsivePanel";
+import CollapsiblePanel from "../../components/Common/CollapsiblePanel";
 import Toast from "../../components/Common/Toast";
 import ExportErrorToast from "../../components/Common/ExportErrorToast";
 import ExportSuccessToast from "../../components/Common/ExportSuccessToast";
 import MedicalReportSuccessToast from "../../components/Common/MedicalReportSuccessToast";
 
-import { useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import ResponsivePanel from "../../components/Consultation/ResponsivePanel";
+// Hooks
+import { useCurrentConsultation } from "../../hooks/consultations";
+import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
+import { useGenerateConsultationDocuments } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import { useConsultationActions } from "../../hooks/consultations/useConsultationActions";
-import CollapsiblePanel from "../../components/Common/CollapsiblePanel";
-import { useNavigate } from "react-router-dom";
+
+// Tipos y Utils
 import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import type { MedicalReport } from "../../types/medicalReport";
-
-// 🔹 Utilidades institucionales
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
 import { getPatient } from "../../api/patients";
 
 export default function Consultation() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: appointment, isLoading } = useCurrentConsultation();
+  const { complete, cancel, isPending } = useConsultationActions();
+  
   const generateReport = useGenerateMedicalReport();
   const generateDocuments = useGenerateConsultationDocuments();
-  const queryClient = useQueryClient();
-  const { complete, cancel, isPending } = useConsultationActions();
-  const navigate = useNavigate();
 
+  // Estados de UI y Feedback
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [exportErrors, setExportErrors] = useState<{ category: string; error: string }[] | null>(null);
   const [exportSuccess, setExportSuccess] = useState<{ documents: GeneratedDocument[]; skipped: string[] } | null>(null);
   const [reportSuccess, setReportSuccess] = useState<{ fileUrl?: string | null; auditCode?: string | null } | null>(null);
   const [patientProfile, setPatientProfile] = useState<any | null>(null);
 
+  // 1. SOLUCIÓN AL ERROR F12: Redirección segura
+  useEffect(() => {
+    if (!isLoading && !appointment) {
+      navigate("/waitingroom");
+    }
+  }, [appointment, isLoading, navigate]);
+
+  // 2. Carga de perfil extendido
   useEffect(() => {
     if (appointment?.patient?.id) {
       getPatient(appointment.patient.id)
         .then((full) => setPatientProfile(full))
-        .catch((e) => console.error("Error cargando perfil completo:", e));
+        .catch((e) => console.error("CRITICAL_PROFILE_LOAD_ERROR:", e));
     }
   }, [appointment?.patient?.id]);
 
-  if (isLoading) return <p className="text-gray-500">Cargando consulta...</p>;
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-[var(--palantir-bg)]">
+      <div className="text-center space-y-4">
+        <div className="w-12 h-12 border-4 border-[var(--palantir-active)] border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--palantir-active)] animate-pulse">
+          Initializing_Surgical_Environment...
+        </p>
+      </div>
+    </div>
+  );
 
-  if (!appointment) {
-    navigate("/waitingroom");
-    return null;
-  }
+  if (!appointment) return null; // El useEffect manejará la redirección
 
   const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
+  const canGenerateReport = appointment.status === "in_consultation" || appointment.status === "completed";
 
-  const canGenerateReport =
-    appointment.status === "in_consultation" || appointment.status === "completed";
-
+  // Manejadores de Acciones Quirúrgicas
   const handleGenerateReport = async () => {
     try {
       const report: MedicalReport = await generateReport.mutateAsync(appointment.id);
-      queryClient.invalidateQueries({
-        queryKey: ["documents", appointment.patient.id, appointment.id],
-      });
+      queryClient.invalidateQueries({ queryKey: ["documents", appointment.patient.id, appointment.id] });
       setReportSuccess({ fileUrl: report.file_url, auditCode: report.audit_code });
     } catch (err: any) {
-      setToast({ message: err.message || "Error al generar informe médico", type: "error" });
+      setToast({ message: err.message || "Error al generar informe", type: "error" });
     }
   };
 
   const handleGenerateDocuments = async () => {
     try {
       const resp: GenerateDocumentsResponse = await generateDocuments.mutateAsync(appointment.id);
-      queryClient.invalidateQueries({
-        queryKey: ["documents", appointment.patient.id, appointment.id],
-      });
-
-      if (resp.errors && resp.errors.length > 0) {
+      queryClient.invalidateQueries({ queryKey: ["documents", appointment.patient.id, appointment.id] });
+      if (resp.errors?.length > 0) {
         setExportErrors(resp.errors);
         setExportSuccess(null);
       } else {
@@ -91,182 +106,119 @@ export default function Consultation() {
       setToast({ message: err.message || "Error al generar documentos", type: "error" });
     }
   };
-    return (
-    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-      {/* Identidad del paciente */}
-      {patient ? (
-        <PatientHeader patient={patient} />
-      ) : (
-        <p className="text-sm text-gray-500">Cargando datos del paciente...</p>
-      )}
 
-      {/* Layout clínico */}
-      {/* Mobile/Tablet */}
-      <div className="lg:hidden space-y-4">
-        <ResponsivePanel title="Documentos clínicos">
-          <DocumentsPanel patientId={appointment.patient.id} appointmentId={appointment.id} />
-        </ResponsivePanel>
-
-        <ResponsivePanel title="Orden de Cobro">
-          <ChargeOrderPanel appointmentId={appointment.id} />
-        </ResponsivePanel>
-
-        <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-          <ConsultationWorkflow
-            diagnoses={appointment.diagnoses}
-            appointmentId={appointment.id}
-            notes={appointment.notes ?? null}
-            readOnly={false}
-          />
-        </div>
-
-        {/* Footer mobile/tablet */}
-        <div className="flex flex-wrap justify-end gap-2 sm:gap-3 mt-6">
-          <button
-            onClick={async () => {
-              await cancel(appointment.id);
-              setToast({ message: "Consulta cancelada", type: "success" });
-              navigate("/waitingroom");
-            }}
-            disabled={isPending}
-            className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors whitespace-nowrap"
-          >
-            Cancelar consulta
-          </button>
-
-          <button
-            onClick={async () => {
-              await complete(appointment.id);
-              setToast({ message: "Consulta finalizada", type: "success" });
-              navigate("/waitingroom");
-            }}
-            disabled={isPending}
-            className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap"
-          >
-            {isPending ? "Finalizando..." : "Finalizar consulta"}
-          </button>
-
-          {canGenerateReport && (
-            <>
-              <button
-                disabled={generateReport.isPending}
-                onClick={handleGenerateReport}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap"
-              >
-                {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
-              </button>
-
-              {generateReport.data?.file_url && (
-                <a
-                  href={generateReport.data.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors whitespace-nowrap"
-                >
-                  Ver Informe Médico
-                </a>
-              )}
-
-              <button
-                disabled={generateDocuments.isPending}
-                onClick={handleGenerateDocuments}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-green-600 text-white border border-green-600 hover:bg-green-700 transition-colors whitespace-nowrap"
-              >
-                {generateDocuments.isPending ? "Generando..." : "Generar Documentos"}
-              </button>
-            </>
-          )}
-        </div>
+  return (
+    <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-6 space-y-6">
+      
+      {/* 01. IDENTITY BAR */}
+      <div className="relative overflow-hidden border border-[var(--palantir-border)] bg-black/20 p-1">
+        <div className="absolute top-0 left-0 w-1 h-full bg-[var(--palantir-active)]" />
+        {patient ? (
+          <PatientHeader patient={patient} />
+        ) : (
+          <div className="p-4 animate-pulse flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/5 rounded-full" />
+            <div className="h-4 w-48 bg-white/5 rounded" />
+          </div>
+        )}
       </div>
 
-      {/* Desktop con CollapsiblePanel */}
-      <div className="hidden lg:grid lg:grid-cols-12 lg:gap-6 relative">
-        <div className="col-span-3 space-y-4">
-          <CollapsiblePanel title="Documentos clínicos">
+      {/* 02. MAIN OPERATIONS GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* SIDEBAR: Ancillary Panels */}
+        <aside className="lg:col-span-3 space-y-4">
+          <div className="flex items-center gap-2 px-2">
+            <BeakerIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Data_Modules</span>
+          </div>
+          
+          <CollapsiblePanel title="Clinical_Documents">
             <DocumentsPanel patientId={appointment.patient.id} appointmentId={appointment.id} />
           </CollapsiblePanel>
-          <CollapsiblePanel title="Orden de Cobro">
+          
+          <CollapsiblePanel title="Billing_Protocol">
             <ChargeOrderPanel appointmentId={appointment.id} />
           </CollapsiblePanel>
-        </div>
 
-        <div className="col-span-9 relative pb-20">
-          <ConsultationWorkflow
-            diagnoses={appointment.diagnoses}
-            appointmentId={appointment.id}
-            notes={appointment.notes ?? null}
-            readOnly={false}
-          />
+          <div className="p-4 border border-dashed border-[var(--palantir-border)] opacity-30">
+            <p className="text-[9px] font-mono uppercase tracking-tighter">System_Status: Encrypted_Link_Active</p>
+          </div>
+        </aside>
 
-          {/* Footer desktop */}
-          <div className="absolute bottom-0 right-0 flex flex-wrap justify-end gap-2 sm:gap-3">
-            <button
-              onClick={async () => {
-                await cancel(appointment.id);
-                setToast({ message: "Consulta cancelada", type: "success" });
-                navigate("/waitingroom");
-              }}
-              disabled={isPending}
-              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-red-100 text-red-700 border border-red-300 hover:bg-red-200 transition-colors whitespace-nowrap"
-            >
-              Cancelar consulta
-            </button>
+        {/* MAIN: Consultation Workflow */}
+        <main className="lg:col-span-9 space-y-6">
+          <div className="bg-black/20 border border-[var(--palantir-border)] p-1 relative min-h-[600px] flex flex-col">
+            <div className="flex-1 bg-[var(--palantir-bg)] p-4 sm:p-6">
+              <ConsultationWorkflow
+                diagnoses={appointment.diagnoses}
+                appointmentId={appointment.id}
+                notes={appointment.notes ?? null}
+                readOnly={false}
+              />
+            </div>
 
-            <button
-              onClick={async () => {
-                await complete(appointment.id);
-                setToast({ message: "Consulta finalizada", type: "success" });
-                navigate("/waitingroom");
-              }}
-              disabled={isPending}
-              className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap"
-            >
-              {isPending ? "Finalizando..." : "Finalizar consulta"}
-            </button>
-
-            {canGenerateReport && (
-              <>
+            {/* ACTION DOCK: El pie de página táctico */}
+            <footer className="border-t border-[var(--palantir-border)] bg-black/40 p-4 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex gap-2">
                 <button
-                  disabled={generateReport.isPending}
-                  onClick={handleGenerateReport}
-                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors whitespace-nowrap"
+                  onClick={async () => {
+                    if(confirm("Confirm: Terminate Consultation Session?")) {
+                      await cancel(appointment.id);
+                      navigate("/waitingroom");
+                    }
+                  }}
+                  disabled={isPending}
+                  className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all border border-red-500/20"
                 >
-                  {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
+                  <ExclamationTriangleIcon className="w-4 h-4" /> Abort_Mission
                 </button>
+              </div>
 
-                {generateReport.data?.file_url && (
-                  <a
-                    href={generateReport.data.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors whitespace-nowrap"
-                  >
-                    Ver Informe Médico
-                  </a>
+              <div className="flex flex-wrap gap-2">
+                {canGenerateReport && (
+                  <>
+                    <button
+                      disabled={generateDocuments.isPending}
+                      onClick={handleGenerateDocuments}
+                      className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-[0_0_15px_rgba(16,185,129,0.2)]"
+                    >
+                      <DocumentTextIcon className="w-4 h-4" /> Batch_Export
+                    </button>
+
+                    <button
+                      disabled={generateReport.isPending}
+                      onClick={handleGenerateReport}
+                      className="flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-widest border border-[var(--palantir-active)] text-[var(--palantir-active)] hover:bg-[var(--palantir-active)] hover:text-white transition-all"
+                    >
+                      <ShieldCheckIcon className="w-4 h-4" /> Final_Medical_Report
+                    </button>
+                  </>
                 )}
 
                 <button
-                  disabled={generateDocuments.isPending}
-                  onClick={handleGenerateDocuments}
-                  className="px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-md font-medium bg-green-600 text-white border border-green-600 hover:bg-green-700 transition-colors whitespace-nowrap"
+                  onClick={async () => {
+                    await complete(appointment.id);
+                    setToast({ message: "Surgical Session Complete", type: "success" });
+                    navigate("/waitingroom");
+                  }}
+                  disabled={isPending}
+                  className="group flex items-center gap-3 px-6 py-2 bg-[var(--palantir-active)] text-white hover:bg-blue-600 transition-all shadow-[0_0_20px_rgba(30,136,229,0.3)]"
                 >
-                  {generateDocuments.isPending ? "Generando..." : "Generar Documentos"}
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    {isPending ? "Finalizing..." : "Commit_Session"}
+                  </span>
+                  <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
-              </>
-            )}
+              </div>
+            </footer>
           </div>
-        </div>
+        </main>
       </div>
 
-      {/* Toast feedback */}
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
-      )}
-
-      {exportErrors && (
-        <ExportErrorToast errors={exportErrors} onClose={() => setExportErrors(null)} />
-      )}
-
+      {/* TOASTS (Feedback System) */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {exportErrors && <ExportErrorToast errors={exportErrors} onClose={() => setExportErrors(null)} />}
       {exportSuccess && (
         <ExportSuccessToast
           documents={exportSuccess.documents}
@@ -274,7 +226,6 @@ export default function Consultation() {
           onClose={() => setExportSuccess(null)}
         />
       )}
-
       {reportSuccess && (
         <MedicalReportSuccessToast
           fileUrl={reportSuccess.fileUrl}

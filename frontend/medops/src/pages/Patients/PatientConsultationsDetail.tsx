@@ -1,5 +1,6 @@
 // src/pages/Patients/PatientConsultationsDetail.tsx
 import { useParams } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useConsultationById } from "../../hooks/consultations/useConsultationById";
 import {
   PatientHeader,
@@ -7,13 +8,22 @@ import {
   ChargeOrderPanel,
 } from "../../components/Consultation";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
-import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
-import { useGenerateConsultationDocuments } from "../../hooks/consultations/useGenerateConsultationDocuments";
-import Toast from "../../components/Common/Toast";
-import { useState, useEffect } from "react";
-import type { Patient as PatientsPatient } from "../../types/patients";
+import ConsultationDocumentsActions from "../../components/Consultation/ConsultationDocumentsActions";
+import ExportSuccessToast from "../../components/Common/ExportSuccessToast";
+import ExportErrorToast from "../../components/Common/ExportErrorToast";
+import { 
+  LockClosedIcon, 
+  PencilSquareIcon, 
+  CommandLineIcon,
+  ShieldCheckIcon 
+} from "@heroicons/react/24/outline";
 
-// 🔹 Utilidad: calcular edad desde birthdate
+// Importamos el tipo base para la transformación
+import type { Patient as FullPatient } from "../../types/patients";
+
+/**
+ * 🛠️ UTILIDADES DE TRANSFORMACIÓN (Protocolo de Integridad de Datos)
+ */
 function calcAge(birthdate?: string | null): number | null {
   if (!birthdate) return null;
   const d = new Date(birthdate);
@@ -23,337 +33,177 @@ function calcAge(birthdate?: string | null): number | null {
   return Math.abs(ageDate.getUTCFullYear() - 1970);
 }
 
-// 🔹 Normalización segura de campos clínicos
-function normalizeAllergies(allergies: any): string {
-  if (Array.isArray(allergies)) {
-    return allergies
-      .map((a: any) => (typeof a === "string" ? a : a?.name ?? ""))
-      .filter(Boolean)
-      .join(", ");
-  }
-  if (typeof allergies === "object" && allergies !== null) {
-    return allergies.name ?? "";
-  }
-  return String(allergies ?? "");
-}
-
-function normalizeMedicalHistory(medical_history: any): string {
-  if (Array.isArray(medical_history)) {
-    return medical_history
-      .map((m: any) =>
-        typeof m === "string"
-          ? m
-          : m?.condition ?? m?.name ?? m?.title ?? ""
-      )
-      .filter(Boolean)
-      .join(", ");
-  }
-  if (typeof medical_history === "object" && medical_history !== null) {
-    return medical_history.condition ?? medical_history.name ?? medical_history.title ?? "";
-  }
-  return String(medical_history ?? "");
-}
-
-// 🔹 Tipado local para la cadena de dirección (igual al usado en DemographicsSection)
-interface AddressChain {
-  country: string;
-  country_id: number | null;
-  state: string;
-  state_id: number | null;
-  municipality: string;
-  municipality_id: number | null;
-  parish: string;
-  parish_id: number | null;
-  neighborhood: string;
-  neighborhood_id: number | null;
-}
-
-const EMPTY_CHAIN: AddressChain = {
-  country: "",
-  country_id: null,
-  state: "",
-  state_id: null,
-  municipality: "",
-  municipality_id: null,
-  parish: "",
-  parish_id: null,
-  neighborhood: "",
-  neighborhood_id: null,
-};
-
-// 🔹 Normaliza address_chain para evitar undefined y tipos incorrectos
-function normalizeAddressChain(chain: any): AddressChain {
-  if (!chain || typeof chain !== "object") return EMPTY_CHAIN;
-  return {
-    country: String(chain.country ?? ""),
-    country_id: chain.country_id != null ? Number(chain.country_id) : null,
-    state: String(chain.state ?? ""),
-    state_id: chain.state_id != null ? Number(chain.state_id) : null,
-    municipality: String(chain.municipality ?? ""),
-    municipality_id: chain.municipality_id != null ? Number(chain.municipality_id) : null,
-    parish: String(chain.parish ?? ""),
-    parish_id: chain.parish_id != null ? Number(chain.parish_id) : null,
-    neighborhood: String(chain.neighborhood ?? ""),
-    neighborhood_id: chain.neighborhood_id != null ? Number(chain.neighborhood_id) : null,
-  };
-}
-
-// 🔹 Transformación estricta para PatientHeader (incluye address_chain)
-function toPatientHeaderPatient(p: any): PatientsPatient & { balance_due?: number; age?: number | null } {
-  const full_name =
-    p.full_name ??
+const transformToPatientHeader = (p: any): FullPatient & { balance_due?: number; age?: number | null } => {
+  const firstName = p.first_name || "";
+  const lastName = p.last_name || "";
+  
+  // Requisito estricto: full_name debe existir para el tipo FullPatient
+  const full_name = p.full_name ?? 
     [p.first_name, p.middle_name, p.last_name, p.second_last_name].filter(Boolean).join(" ").trim();
 
-  const age = p.age ?? calcAge(p.birthdate ?? null);
-
-  // Pasamos address_chain completo para que PatientHeader construya la dirección como en DemographicsSection
-  const address_chain: AddressChain = normalizeAddressChain(p.address_chain);
-
   return {
+    ...p,
     id: p.id,
-    national_id: p.national_id ?? "",
-    first_name: p.first_name ?? "",
-    middle_name: p.middle_name ?? "",
-    last_name: p.last_name ?? "",
-    second_last_name: p.second_last_name ?? "",
-    birthdate: p.birthdate ?? null,
-    gender: p.gender ?? null,
-    email: p.email ?? "",
-    contact_info: p.contact_info ?? "",
-    address: p.address ?? "",
-    weight: p.weight ?? null,
-    height: p.height ?? null,
-    blood_type: p.blood_type ?? undefined,
-
-    allergies: normalizeAllergies(p.allergies),
-    medical_history: normalizeMedicalHistory(p.medical_history),
-
-    active: p.active ?? true,
-    created_at: p.created_at ?? null,
-    updated_at: p.updated_at ?? null,
     full_name,
-    balance_due: p.balance_due ?? undefined,
-    age,
-
-    // 🔹 clave para la dirección completa
-    address_chain,
-  } as PatientsPatient & { balance_due?: number; age?: number | null };
-}
+    first_name: firstName,
+    last_name: lastName,
+    national_id: p.national_id || "NOT_FOUND",
+    age: p.age ?? calcAge(p.birthdate),
+    balance_due: p.balance_due ?? 0,
+    address_chain: p.address_chain || {},
+    allergies: Array.isArray(p.allergies) ? p.allergies.join(", ") : String(p.allergies || ""),
+    medical_history: Array.isArray(p.medical_history) ? p.medical_history.join(", ") : String(p.medical_history || ""),
+  } as FullPatient & { balance_due?: number; age?: number | null };
+};
 
 export default function PatientConsultationsDetail() {
   const { patientId, appointmentId } = useParams<{ patientId: string; appointmentId: string }>();
-  const patientIdNum = Number(patientId);
   const appointmentIdNum = Number(appointmentId);
 
   const { data: appointment, isLoading, error } = useConsultationById(appointmentIdNum);
-  const generateReport = useGenerateMedicalReport();
-  const generateDocuments = useGenerateConsultationDocuments();
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  
+  // Estados para Feedback de Sistema (Toasts)
+  const [successData, setSuccessData] = useState<{ docs: any[], skipped: string[] } | null>(null);
+  const [errorData, setErrorData] = useState<{ category: string, error: string }[] | null>(null);
 
   const [readOnly, setReadOnly] = useState<boolean>(() => {
     const saved = localStorage.getItem("consultationReadOnly");
     return saved ? JSON.parse(saved) : true;
   });
+
   useEffect(() => {
     localStorage.setItem("consultationReadOnly", JSON.stringify(readOnly));
   }, [readOnly]);
 
-  if (!patientId || !appointmentId || isNaN(patientIdNum) || isNaN(appointmentIdNum)) {
-    return <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">Ruta inválida: parámetros incorrectos</p>;
-  }
+  /**
+   * ESTADOS DE CARGA Y ERROR (Terminal UI)
+   */
+  if (isLoading) return (
+    <div className="min-h-screen bg-[var(--palantir-bg)] p-8 flex items-center gap-3 animate-pulse">
+      <CommandLineIcon className="w-5 h-5 text-[var(--palantir-active)]" />
+      <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
+        Initializing_Data_Stream...
+      </span>
+    </div>
+  );
 
-  if (isLoading) return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">Cargando consulta...</p>;
-  if (error) return <p className="text-xs sm:text-sm text-red-600">Error cargando consulta</p>;
-  if (!appointment) return <p className="text-xs sm:text-sm text-red-600">No se encontró la consulta</p>;
-
-  const canGenerateReport =
-    appointment.status === "in_consultation" || appointment.status === "completed";
-
-  const handleGenerateReport = async () => {
-    try {
-      await generateReport.mutateAsync(appointment.id);
-      setToast({ message: "Informe médico generado correctamente", type: "success" });
-    } catch (err: any) {
-      setToast({ message: err.message || "Error al generar informe médico", type: "error" });
-    }
-  };
-
-  const handleGenerateDocuments = async () => {
-    try {
-      await generateDocuments.mutateAsync(appointment.id);
-      setToast({ message: "Documentos de consulta generados correctamente", type: "success" });
-    } catch (err: any) {
-      setToast({ message: err.message || "Error al generar documentos", type: "error" });
-    }
-  };
+  if (error || !appointment) return (
+    <div className="min-h-screen bg-[var(--palantir-bg)] p-8">
+      <div className="border border-red-900/30 bg-red-950/10 p-4 text-red-500 text-[10px] font-mono uppercase flex items-center gap-3">
+        <ShieldCheckIcon className="w-4 h-4" />
+        Critical_Error: Failed_to_load_session_data_at_id_{appointmentId}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="p-3 sm:p-5 space-y-3 sm:space-y-5">
-      <div
-        className={`p-2 sm:p-3 rounded-md text-center font-semibold shadow-sm ${
-          readOnly
-            ? "bg-gray-100 text-[#0d2c53] dark:bg-gray-800 dark:text-gray-300"
-            : "bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200"
-        }`}
-      >
-        {readOnly
-          ? "Modo lectura — Consulta bloqueada"
-          : "⚠️ Modo edición activa — Cambios en curso"}
-      </div>
-
-      {/* 🔹 Header compacto */}
-      <div className="rounded-lg shadow-md p-3 sm:p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-        <PatientHeader patient={toPatientHeaderPatient(appointment.patient)} />
-      </div>
-
-      {/* 🔹 Mobile/Tablet */}
-      <div className="lg:hidden space-y-3">
-        <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-          <DocumentsPanel
-            patientId={appointment.patient.id}
-            appointmentId={appointment.id}
-            readOnly={readOnly}
-          />
-        </div>
-
-        <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-          <ChargeOrderPanel
-            appointmentId={appointment.id}
-            chargeOrder={appointment.charge_order}
-            readOnly={readOnly}
-          />
-        </div>
-
-        <div className="rounded-lg shadow-lg p-3 sm:p-4 bg-white dark:bg-gray-800">
-          <ConsultationWorkflow
-            diagnoses={appointment.diagnoses}
-            appointmentId={appointment.id}
-            notes={appointment.notes ?? null}
-            readOnly={readOnly}
-          />
-        </div>
-
-        {/* 🔹 Botones */}
-        <div className="flex flex-wrap justify-end gap-2 sm:gap-3 mt-3">
-          {canGenerateReport && (
-            <>
-              <button
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
-                disabled={generateReport.isPending}
-                onClick={handleGenerateReport}
-              >
-                {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
-              </button>
-
-              {generateReport.data?.file_url && (
-                <a
-                  href={generateReport.data.file_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
-                >
-                  Ver Informe Médico
-                </a>
-              )}
-              <button
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors text-xs sm:text-sm"
-                disabled={generateDocuments.isPending}
-                onClick={handleGenerateDocuments}
-              >
-                {generateDocuments.isPending
-                  ? "Generando..."
-                  : "Generar Documentos"}
-              </button>
-            </>
+    <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 lg:p-6 space-y-6">
+      
+      {/* 1. STATUS BAR: LOCK/EDIT OVERRIDE */}
+      <div className={`
+        flex items-center justify-between px-4 py-2 border rounded-sm transition-all duration-500
+        ${readOnly 
+          ? "border-[var(--palantir-border)] bg-white/5" 
+          : "border-yellow-900/50 bg-yellow-950/10 shadow-[0_0_20px_rgba(234,179,8,0.1)]"}
+      `}>
+        <div className="flex items-center gap-3">
+          {readOnly ? (
+            <LockClosedIcon className="w-4 h-4 text-[var(--palantir-muted)]" />
+          ) : (
+            <PencilSquareIcon className="w-4 h-4 text-yellow-500 animate-pulse" />
           )}
-
-          <button
-            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs sm:text-sm"
-            onClick={() => setReadOnly((prev) => !prev)}
-          >
-            {readOnly ? "Activar edición" : "Cerrar edición"}
-          </button>
+          <div className="flex flex-col">
+            <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${readOnly ? "text-[var(--palantir-muted)]" : "text-yellow-500"}`}>
+              {readOnly ? "Session_Locked" : "Write_Access_Enabled"}
+            </span>
+            <span className="text-[7px] font-mono opacity-40 uppercase tracking-tighter">
+              Level_04_Authorization_Required
+            </span>
+          </div>
         </div>
+        
+        <button
+          onClick={() => setReadOnly(!readOnly)}
+          className={`text-[9px] font-mono px-4 py-1.5 border transition-all rounded-sm uppercase tracking-widest ${
+            readOnly 
+            ? "border-[var(--palantir-border)] text-[var(--palantir-muted)] hover:bg-white/5" 
+            : "border-yellow-500/50 text-yellow-500 bg-yellow-500/5 hover:bg-yellow-500/20"
+          }`}
+        >
+          {readOnly ? "[ Open_Session ]" : "[ Lock_Session ]"}
+        </button>
       </div>
 
-      {/* 🔹 Desktop */}
-      <div className="hidden lg:grid lg:grid-cols-12 lg:gap-5">
-        <div className="col-span-3 space-y-4">
-          <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+      {/* 2. CLINICAL_HEADER: PATIENT_CORE_DATA */}
+      <div className="border border-[var(--palantir-border)] bg-[#0c0c0c] rounded-sm shadow-2xl overflow-hidden">
+        <PatientHeader patient={transformToPatientHeader(appointment.patient)} />
+      </div>
+
+      {/* 3. MISSION_CONTROL_GRID */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* LEFT_COLUMN: ASSETS & FINANCE (3-SPAN) */}
+        <div className="lg:col-span-3 space-y-6">
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 opacity-30">
+              <ShieldCheckIcon className="w-3 h-3 text-[var(--palantir-active)]" />
+              <span className="text-[8px] font-mono uppercase tracking-widest text-[var(--palantir-text)]">Vault_Documents</span>
+            </div>
             <DocumentsPanel
               patientId={appointment.patient.id}
               appointmentId={appointment.id}
               readOnly={readOnly}
             />
-          </div>
+          </section>
 
-          <div className="rounded-lg shadow-lg p-4 bg-white dark:bg-gray-800">
+          <section className="space-y-3">
+            <div className="flex items-center gap-2 opacity-30">
+              <CommandLineIcon className="w-3 h-3 text-emerald-500" />
+              <span className="text-[8px] font-mono uppercase tracking-widest text-[var(--palantir-text)]">Transaction_Log</span>
+            </div>
             <ChargeOrderPanel
               appointmentId={appointment.id}
               chargeOrder={appointment.charge_order}
               readOnly={readOnly}
             />
-          </div>
+          </section>
         </div>
 
-        <div className="col-span-9 relative pb-16">
-          <ConsultationWorkflow
-            diagnoses={appointment.diagnoses}
-            appointmentId={appointment.id}
-            notes={appointment.notes ?? null}
-            readOnly={readOnly}
-          />
+        {/* RIGHT_COLUMN: WORKFLOW_CORE (9-SPAN) */}
+        <div className="lg:col-span-9 flex flex-col gap-6">
+          <div className="bg-white/[0.01] border border-[var(--palantir-border)] rounded-sm">
+            <ConsultationWorkflow
+              diagnoses={appointment.diagnoses}
+              appointmentId={appointment.id}
+              notes={appointment.notes ?? null}
+              readOnly={readOnly}
+            />
+          </div>
 
-          {/* 🔹 Botones alineados en esquina inferior derecha */}
-          <div className="absolute bottom-0 right-0 flex flex-wrap justify-end gap-2 sm:gap-3">
-            {canGenerateReport && (
-              <>
-                <button
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444] transition-colors text-xs sm:text-sm"
-                  disabled={generateReport.isPending}
-                  onClick={handleGenerateReport}
-                >
-                  {generateReport.isPending ? "Generando..." : "Generar Informe Médico"}
-                </button>
-
-                {generateReport.data?.file_url && (
-                  <a
-                    href={generateReport.data.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 transition-colors text-xs sm:text-sm"
-                  >
-                    Ver Informe Médico
-                  </a>
-                )}
-
-                <button
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors text-xs sm:text-sm"
-                  disabled={generateDocuments.isPending}
-                  onClick={handleGenerateDocuments}
-                >
-                  {generateDocuments.isPending
-                    ? "Generando..."
-                    : "Generar Documentos"}
-                </button>
-              </>
-            )}
-
-            <button
-              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-md bg-yellow-600 text-white hover:bg-yellow-700 transition-colors text-xs sm:text-sm"
-              onClick={() => setReadOnly((prev) => !prev)}
-            >
-              {readOnly ? "Activar edición" : "Cerrar edición"}
-            </button>
+          {/* EXPORT_ACTIONS_ZONE */}
+          <div className="p-4 bg-gradient-to-r from-white/[0.03] to-transparent border border-white/5 rounded-sm">
+            <div className="mb-4">
+              <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
+                System_Output_Protocols
+              </span>
+            </div>
+            <ConsultationDocumentsActions consultationId={appointment.id} />
           </div>
         </div>
       </div>
 
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
+      {/* 4. OVERLAY_NOTIFICATIONS (Log-style) */}
+      {successData && (
+        <ExportSuccessToast 
+          documents={successData.docs} 
+          skipped={successData.skipped} 
+          onClose={() => setSuccessData(null)} 
+        />
+      )}
+      {errorData && (
+        <ExportErrorToast 
+          errors={errorData} 
+          onClose={() => setErrorData(null)} 
         />
       )}
     </div>

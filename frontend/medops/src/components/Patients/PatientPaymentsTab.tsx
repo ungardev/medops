@@ -1,8 +1,8 @@
 // src/components/Patients/PatientPaymentsTab.tsx
-import React from "react";
 import { PatientTabProps } from "./types";
 import { usePaymentsByPatient } from "../../hooks/patients/usePaymentsByPatient";
 import { Payment } from "../../types/payments";
+import { CurrencyDollarIcon, CalendarIcon, CreditCardIcon, FingerPrintIcon } from "@heroicons/react/24/outline";
 
 export default function PatientPaymentsTab({ patient }: PatientTabProps) {
   const { data, isLoading, error } = usePaymentsByPatient(patient.id);
@@ -11,79 +11,127 @@ export default function PatientPaymentsTab({ patient }: PatientTabProps) {
   const totalAmount = data?.totalAmount ?? 0;
   const isEmpty = !isLoading && !error && payments.length === 0;
 
-  if (isLoading)
-    return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">Cargando pagos...</p>;
-  if (error)
-    return <p className="text-xs sm:text-sm text-red-600 dark:text-red-400">Error: {(error as Error).message}</p>;
-  if (isEmpty)
-    return <p className="text-xs sm:text-sm text-[#0d2c53] dark:text-gray-400">No tiene pagos registrados</p>;
+  if (isLoading) return (
+    <div className="flex items-center gap-3 p-6 text-[10px] font-mono text-[var(--palantir-muted)] uppercase animate-pulse">
+      <div className="w-2 h-2 bg-[var(--palantir-active)] rounded-full" />
+      Querying_Financial_Records...
+    </div>
+  );
+
+  if (error) return (
+    <div className="p-4 border border-red-500/30 bg-red-500/10 text-red-500 text-[10px] font-mono uppercase">
+      Connection_Error: {(error as Error).message}
+    </div>
+  );
+
+  if (isEmpty) return (
+    <div className="p-8 border border-dashed border-[var(--palantir-border)] rounded-sm text-center">
+      <p className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
+        Zero_Balance_History_Detected
+      </p>
+    </div>
+  );
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-3 sm:p-4 bg-white dark:bg-gray-900">
-      <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100 mb-3 sm:mb-4">
-        Pagos registrados
-      </h3>
+    <div className="space-y-6">
+      {/* 📊 Resumen Financiero Estilizado */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-[var(--palantir-active)]/5 border border-[var(--palantir-active)]/20 p-4 rounded-sm flex items-center justify-between">
+          <div>
+            <p className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Total_Revenue_Accumulated</p>
+            <p className="text-2xl font-black text-[var(--palantir-active)] font-mono">
+              ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+          <CurrencyDollarIcon className="w-10 h-10 text-[var(--palantir-active)] opacity-20" />
+        </div>
+        
+        <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] p-4 rounded-sm flex items-center justify-between">
+          <div>
+            <p className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Transaction_Count</p>
+            <p className="text-2xl font-black text-[var(--palantir-text)] font-mono">
+              {payments.length.toString().padStart(2, '0')}
+            </p>
+          </div>
+          <FingerPrintIcon className="w-10 h-10 text-[var(--palantir-muted)] opacity-20" />
+        </div>
+      </div>
 
-      <p className="text-xs sm:text-sm font-medium text-[#0d2c53] dark:text-blue-400 mb-3 sm:mb-4">
-        Total pagado: <span className="font-semibold">{totalAmount}</span>
-      </p>
-
-      {/* 🔹 Vista desktop: tabla (intocable) */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-md">
-          <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
-            <tr>
-              <th className="px-4 py-2 border-b">Fecha</th>
-              <th className="px-4 py-2 border-b">Monto</th>
-              <th className="px-4 py-2 border-b">Método</th>
-              <th className="px-4 py-2 border-b">Estado</th>
+      {/* 🖥️ Desktop View: Ledger Table */}
+      <div className="hidden sm:block overflow-hidden border border-[var(--palantir-border)] rounded-sm bg-[var(--palantir-bg)]">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-[var(--palantir-surface)] border-b border-[var(--palantir-border)]">
+              <th className="px-4 py-3 text-[9px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Received_At</th>
+              <th className="px-4 py-3 text-[9px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Transaction_ID</th>
+              <th className="px-4 py-3 text-[9px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Method</th>
+              <th className="px-4 py-3 text-[9px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Amount</th>
+              <th className="px-4 py-3 text-[9px] font-black text-[var(--palantir-muted)] uppercase tracking-widest text-right">Status</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-[var(--palantir-border)] font-mono">
             {payments.map((p: Payment) => (
-              <tr key={p.id} className="border-b border-gray-200 dark:border-gray-700">
-                <td className="px-4 py-2">
-                  {p.received_at
-                    ? new Date(p.received_at).toLocaleDateString("es-VE")
-                    : "—"}
+              <tr key={p.id} className="hover:bg-[var(--palantir-active)]/5 transition-colors">
+                <td className="px-4 py-3 text-[11px] text-[var(--palantir-text)]">
+                  {p.received_at ? new Date(p.received_at).toLocaleDateString("es-VE") : "---"}
                 </td>
-                <td className="px-4 py-2">{p.amount}</td>
-                <td className="px-4 py-2">{p.method}</td>
-                <td className="px-4 py-2">{p.status}</td>
+                <td className="px-4 py-3 text-[10px] text-[var(--palantir-muted)]">
+                  TXN_{p.id.toString().padStart(6, '0')}
+                </td>
+                <td className="px-4 py-3 text-[11px] uppercase text-[var(--palantir-text)]">
+                  {p.method}
+                </td>
+                <td className="px-4 py-3 text-[12px] font-bold text-[var(--palantir-active)]">
+                  ${Number(p.amount).toFixed(2)}
+                </td>
+                <td className="px-4 py-3 text-right">
+                  <StatusBadge status={p.status} />
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* 🔹 Vista mobile: tarjetas mejoradas */}
-      <div className="sm:hidden space-y-3">
+      {/* 📱 Mobile View: Data Cards */}
+      <div className="sm:hidden space-y-3 font-mono">
         {payments.map((p: Payment) => (
-          <div
-            key={p.id}
-            className="rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 shadow-sm"
-          >
-            <p className="text-sm font-semibold text-[#0d2c53] dark:text-gray-100 mb-2">
-              Pago #{p.id}
-            </p>
-            <div className="text-xs text-[#0d2c53] dark:text-gray-300 space-y-1">
+          <div key={p.id} className="p-4 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm space-y-3">
+            <div className="flex justify-between items-start">
               <div>
-                <strong>Fecha:</strong>{" "}
-                {p.received_at ? new Date(p.received_at).toLocaleDateString("es-VE") : "—"}
+                <p className="text-[9px] text-[var(--palantir-muted)] uppercase">TXN_{p.id}</p>
+                <p className="text-[14px] font-bold text-[var(--palantir-active)]">${p.amount}</p>
               </div>
-              <div>
-                <strong>Monto:</strong> {p.amount}
+              <StatusBadge status={p.status} />
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--palantir-border)]">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
+                <span className="text-[10px] text-[var(--palantir-text)]">
+                  {p.received_at ? new Date(p.received_at).toLocaleDateString("es-VE") : "---"}
+                </span>
               </div>
-              <div>
-                <strong>Método:</strong> {p.method}
-              </div>
-              <div>
-                <strong>Estado:</strong> {p.status}
+              <div className="flex items-center gap-2 justify-end">
+                <CreditCardIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
+                <span className="text-[10px] text-[var(--palantir-text)] uppercase">{p.method}</span>
               </div>
             </div>
           </div>
         ))}
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const isCompleted = status.toLowerCase() === 'completed' || status.toLowerCase() === 'pagado';
+  return (
+    <span className={`px-2 py-0.5 text-[8px] font-black uppercase tracking-tighter border rounded-[2px] ${
+      isCompleted 
+        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500' 
+        : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-500'
+    }`}>
+      {status}
+    </span>
   );
 }

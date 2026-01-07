@@ -1,16 +1,25 @@
+// src/components/Payments/PaymentList.tsx
 import React from "react";
 import { Payment, PaymentStatus, PaymentMethod } from "../../types/payments";
+import { 
+  CheckCircleIcon, 
+  ClockIcon, 
+  XCircleIcon, 
+  NoSymbolIcon 
+} from "@heroicons/react/24/outline";
 
 interface Props {
   payments: Payment[];
-  hideSummaryBadges?: boolean; // 🔹 nueva prop
+  hideSummaryBadges?: boolean;
 }
 
 export default function PaymentList({ payments, hideSummaryBadges = false }: Props) {
   if (!payments || payments.length === 0) {
     return (
-      <div className="text-sm text-[#0d2c53] dark:text-gray-400 italic">
-        No hay pagos registrados para esta orden.
+      <div className="p-6 text-center border border-dashed border-white/10 rounded-sm">
+        <span className="text-[10px] font-mono uppercase tracking-widest text-[var(--palantir-muted)]">
+          Zero_Transaction_History_Detected
+        </span>
       </div>
     );
   }
@@ -19,110 +28,87 @@ export default function PaymentList({ payments, hideSummaryBadges = false }: Pro
     (acc, p) => {
       const amt = parseFloat(p.amount || "0");
       acc.total += isNaN(amt) ? 0 : amt;
-
       switch (p.status) {
-        case PaymentStatus.CONFIRMED:
-          acc.confirmed += amt;
-          break;
-        case PaymentStatus.PENDING:
-          acc.pending += amt;
-          break;
+        case PaymentStatus.CONFIRMED: acc.confirmed += amt; break;
+        case PaymentStatus.PENDING: acc.pending += amt; break;
         case PaymentStatus.REJECTED:
-        case PaymentStatus.VOID:
-          acc.failed += amt;
-          break;
+        case PaymentStatus.VOID: acc.failed += amt; break;
       }
-
       return acc;
     },
     { total: 0, confirmed: 0, pending: 0, failed: 0 }
   );
 
   return (
-    <div className="space-y-4 mt-3">
-      {/* 🔒 Solo mostrar resumen si no se pidió ocultarlo */}
+    <div className="space-y-4">
+      {/* 📊 MINI SUMMARY PANEL (TERMINAL STYLE) */}
       {!hideSummaryBadges && (
-        <div className="flex flex-wrap gap-4 text-xs">
-          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-gray-100 dark:bg-gray-800 text-[#0d2c53] dark:text-gray-100">
-            <strong>Total pagos:</strong> ${totals.total.toFixed(2)}
-          </span>
-          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200">
-            <strong>Confirmados:</strong> ${totals.confirmed.toFixed(2)}
-          </span>
-          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-700 dark:text-yellow-200">
-            <strong>Pendientes:</strong> ${totals.pending.toFixed(2)}
-          </span>
-          <span className="inline-flex items-center rounded-md px-2 py-1 font-medium bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-200">
-            <strong>Rechazados/Anulados:</strong> ${totals.failed.toFixed(2)}
-          </span>
+        <div className="flex flex-wrap gap-3">
+          {[
+            { label: "SUM_TOTAL", val: totals.total, color: "text-white bg-white/5" },
+            { label: "SUM_CONFIRMED", val: totals.confirmed, color: "text-emerald-400 bg-emerald-500/10" },
+            { label: "SUM_PENDING", val: totals.pending, color: "text-yellow-500 bg-yellow-500/10" },
+            { label: "SUM_FAILED", val: totals.failed, color: "text-red-400 bg-red-500/10" }
+          ].map((stat, i) => (
+            <div key={i} className={`px-2 py-1 border border-white/5 rounded-sm flex items-center gap-2 ${stat.color}`}>
+              <span className="text-[8px] font-black uppercase tracking-tighter opacity-60">{stat.label}:</span>
+              <span className="text-[10px] font-mono font-bold">${stat.val.toFixed(2)}</span>
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Tabla real */}
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-x-auto">
-        <table className="w-full text-sm text-left text-[#0d2c53] dark:text-gray-100">
-          <thead className="bg-gray-100 dark:bg-gray-700 text-xs uppercase text-[#0d2c53] dark:text-gray-300">
-            <tr>
-              <th className="px-2 py-1 border-b">Monto</th>
-              <th className="px-2 py-1 border-b">Método</th>
-              <th className="px-2 py-1 border-b">Estatus</th>
-              <th className="px-2 py-1 border-b">Referencia</th>
-              <th className="px-2 py-1 border-b">Fecha</th>
+      {/* 🧾 TRANSACTION LOG TABLE */}
+      <div className="overflow-x-auto border border-white/5 bg-black/40 rounded-sm">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b border-white/10 bg-white/[0.02]">
+              <th className="px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Amt_Credit</th>
+              <th className="px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Method_Type</th>
+              <th className="px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Status_Flag</th>
+              <th className="px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Reference_Log</th>
+              <th className="px-4 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Timestamp</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-white/[0.03]">
             {payments.map((p) => {
               const amount = parseFloat(p.amount || "0");
               const dateStr = p.received_at ?? p.appointment_date;
-              const date = dateStr ? new Date(dateStr).toLocaleDateString() : "—";
+              const date = dateStr ? new Date(dateStr).toLocaleDateString('en-GB') : "---";
 
-              let statusLabel = "";
-              let statusClass = "";
+              // Map de Configuración de Estatus
+              const statusMap = {
+                [PaymentStatus.CONFIRMED]: { label: "CONFIRMED", icon: CheckCircleIcon, color: "text-emerald-400" },
+                [PaymentStatus.PENDING]: { label: "PENDING", icon: ClockIcon, color: "text-yellow-500" },
+                [PaymentStatus.REJECTED]: { label: "REJECTED", icon: XCircleIcon, color: "text-red-400" },
+                [PaymentStatus.VOID]: { label: "VOID", icon: NoSymbolIcon, color: "text-gray-500" },
+              };
 
-              switch (p.status) {
-                case PaymentStatus.CONFIRMED:
-                  statusLabel = "Confirmado";
-                  statusClass =
-                    "bg-green-100 text-green-800 ring-green-200 dark:bg-green-800 dark:text-green-200";
-                  break;
-                case PaymentStatus.PENDING:
-                  statusLabel = "Pendiente";
-                  statusClass =
-                    "bg-yellow-100 text-yellow-800 ring-yellow-200 dark:bg-yellow-700 dark:text-yellow-200";
-                  break;
-                case PaymentStatus.REJECTED:
-                  statusLabel = "Rechazado";
-                  statusClass =
-                    "bg-red-100 text-red-800 ring-red-200 dark:bg-red-800 dark:text-red-200";
-                  break;
-                case PaymentStatus.VOID:
-                  statusLabel = "Anulado";
-                  statusClass =
-                    "bg-gray-100 text-[#0d2c53] ring-gray-200 dark:bg-gray-700 dark:text-gray-200";
-                  break;
-              }
+              const config = statusMap[p.status as keyof typeof statusMap] || statusMap[PaymentStatus.PENDING];
+              const StatusIcon = config.icon;
 
               return (
-                <tr key={p.id} className="border-t border-gray-200 dark:border-gray-700">
-                  <td className="px-2 py-1">${isNaN(amount) ? "0.00" : amount.toFixed(2)}</td>
-                  <td className="px-2 py-1">
-                    {p.method === PaymentMethod.CASH
-                      ? "Efectivo"
-                      : p.method === PaymentMethod.CARD
-                      ? "Tarjeta"
-                      : p.method === PaymentMethod.TRANSFER
-                      ? "Transferencia"
-                      : "Otro"}
+                <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-4 py-2 font-mono text-[11px] font-bold text-white">
+                    ${isNaN(amount) ? "0.00" : amount.toFixed(2)}
                   </td>
-                  <td className="px-2 py-1">
-                    <span
-                      className={`inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusClass}`}
-                    >
-                      {statusLabel}
-                    </span>
+                  <td className="px-4 py-2 text-[10px] uppercase font-mono tracking-tighter text-[var(--palantir-muted)]">
+                    {p.method === PaymentMethod.CASH ? "Cash_Assets" : 
+                     p.method === PaymentMethod.CARD ? "Card_Debit" : 
+                     p.method === PaymentMethod.TRANSFER ? "Wire_Transfer" : "Other_Entry"}
                   </td>
-                  <td className="px-2 py-1">{p.reference_number || "—"}</td>
-                  <td className="px-2 py-1">{date}</td>
+                  <td className="px-4 py-2">
+                    <div className={`flex items-center gap-2 ${config.color}`}>
+                      <StatusIcon className="w-3 h-3" />
+                      <span className="text-[9px] font-black tracking-widest uppercase">{config.label}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2 font-mono text-[9px] text-[var(--palantir-active)]/70">
+                    {p.reference_number || "SYS_GEN_NULL"}
+                  </td>
+                  <td className="px-4 py-2 font-mono text-[9px] text-[var(--palantir-muted)]">
+                    {date}
+                  </td>
                 </tr>
               );
             })}

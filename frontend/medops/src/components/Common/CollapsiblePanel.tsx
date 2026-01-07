@@ -1,6 +1,6 @@
 // src/components/Common/CollapsiblePanel.tsx
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronRightIcon } from "@heroicons/react/20/solid";
 
 interface Props {
   title: string;
@@ -16,42 +16,55 @@ export default function CollapsiblePanel({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div
-      className="
-        border border-gray-200 dark:border-gray-700 rounded-md
-        bg-white dark:bg-gray-900
-      "
-    >
-      {/* Header compacto con pestañita */}
+    <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden transition-all duration-300">
+      {/* Header Estilo Terminal */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="
+        className={`
           w-full flex items-center justify-between
-          px-3 py-2 sm:px-4 sm:py-2.5
-          text-left
-          bg-gray-50 dark:bg-gray-800
-          rounded-t-md
-        "
+          px-4 py-2.5 text-left
+          transition-colors duration-200
+          ${isOpen ? "bg-white/10 border-b border-[var(--palantir-border)]" : "bg-transparent hover:bg-white/5"}
+        `}
       >
-        <h3 className="text-sm sm:text-base font-semibold text-[#0d2c53] dark:text-gray-100">
-          {title}
-        </h3>
-        <ChevronDown
-          className={`w-4 h-4 text-[#0d2c53] dark:text-gray-100 transition-transform ${
-            isOpen ? "rotate-0" : "-rotate-90"
-          }`}
-        />
+        <div className="flex items-center gap-3">
+          {/* Indicador de estado visual (Luz de sistema) */}
+          <div className={`w-1 h-3 transition-all duration-500 ${
+            isOpen 
+              ? "bg-[var(--palantir-active)] shadow-[0_0_8px_var(--palantir-active)]" 
+              : "bg-white/20"
+          }`} />
+          
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
+            {title}
+          </h3>
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* Status Label sutil */}
+          <span className="hidden sm:inline text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
+            {isOpen ? "MODULE_EXPANDED" : "MODULE_PAUSED"}
+          </span>
+          
+          <ChevronRightIcon
+            className={`w-4 h-4 text-[var(--palantir-muted)] transition-transform duration-300 ${
+              isOpen ? "rotate-90 text-[var(--palantir-active)]" : "rotate-0"
+            }`}
+          />
+        </div>
       </button>
 
-      {/* Contenido con transición suave */}
+      {/* Área de Contenido con Animación CSS Nativa */}
       <div
-        className={`transition-all duration-300 ${
-          isOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
-        } overflow-hidden`}
+        className={`grid transition-all duration-300 ease-in-out ${
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
       >
-        <div className="px-3 py-3 sm:px-4 sm:py-4">
-          {children}
+        <div className="overflow-hidden">
+          <div className="px-4 py-4 animate-in fade-in slide-in-from-top-1 duration-500">
+            {children}
+          </div>
         </div>
       </div>
     </div>

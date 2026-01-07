@@ -1,299 +1,160 @@
+// src/components/Patients/sections/DemographicsSection.tsx
 import React, { useState, useEffect } from "react";
-import { Patient, PatientInput } from "types/patients";
+import { Patient, PatientInput } from "../../../types/patients";
 import { useUpdatePatient } from "../../../hooks/patients/useUpdatePatient";
-
-// Auxiliares (definidos arriba para eliminar "Cannot find name")
-interface FieldProps {
-  label: string;
-  value: string;
-  type?: "text" | "date" | "email" | "number";
-  multiline?: boolean;
-  span?: 3 | 4 | 6 | 12;
-  editing: boolean;
-  onChange?: (value: string) => void;
-}
-
-function Field({
-  label,
-  value,
-  type = "text",
-  multiline = false,
-  span = 3,
-  editing,
-  onChange,
-}: FieldProps) {
-  const colClass =
-    span === 12 ? "col-span-12" :
-    span === 6 ? "col-span-6" :
-    span === 4 ? "col-span-4" :
-    "col-span-3";
-
-  return (
-    <div className={colClass}>
-      <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">{label}</label>
-      {editing ? (
-        multiline ? (
-          <textarea
-            rows={3}
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-        ) : (
-          <input
-            type={type}
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-          />
-        )
-      ) : (
-        <p className="text-sm text-[#0d2c53] dark:text-gray-100">{value !== "" ? value : "—"}</p>
-      )}
-    </div>
-  );
-}
-
-interface SelectFieldProps {
-  label: string;
-  options: { id: number; name: string }[];
-  value: string | number;
-  onChange: (value: string) => void;
-}
-
-function SelectField({ label, options, value, onChange }: SelectFieldProps) {
-  const safeOptions = Array.isArray(options) ? options : [];
-  return (
-    <div className="col-span-6">
-      <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-      >
-        <option value="">Seleccione...</option>
-        {safeOptions.map((opt) => (
-          <option key={`${label}-${opt.id}`} value={opt.id}>
-            {opt.name}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-// Helpers
-function normalizeOptions(raw: any[]): any[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.map((x) => ({
-    ...x,
-    id: Number(x.id),
-    name: String(x.name),
-  }));
-}
-
-async function fetchOptions(endpoint: string) {
-  try {
-    const res = await fetch(endpoint, { headers: { Accept: "application/json" } });
-    const data = await res.json();
-    const arr = Array.isArray(data?.results) ? data.results : data;
-    return normalizeOptions(arr);
-  } catch (e) {
-    console.error("[CLIENT] Error:", e);
-    return [];
-  }
-}
-
-interface AddressChainLocal {
-  country: string;
-  country_id: number | null;
-  state: string;
-  state_id: number | null;
-  municipality: string;
-  municipality_id: number | null;
-  parish: string;
-  parish_id: number | null;
-  neighborhood: string;
-  neighborhood_id: number | null;
-}
-
-const EMPTY_CHAIN: AddressChainLocal = {
-  country: "", country_id: null,
-  state: "", state_id: null,
-  municipality: "", municipality_id: null,
-  parish: "", parish_id: null,
-  neighborhood: "", neighborhood_id: null,
-};
+import { 
+  PencilSquareIcon, 
+  CheckIcon, 
+  XMarkIcon,
+  MapPinIcon,
+  UserCircleIcon
+} from "@heroicons/react/24/outline";
 
 interface DemographicsSectionProps {
   patient: Patient;
   onRefresh: () => void;
 }
 
+interface FieldProps {
+  label: string;
+  value: string;
+  type?: "text" | "date" | "email" | "number";
+  multiline?: boolean;
+  span?: 3 | 4 | 6 | 8 | 9 | 12;
+  editing: boolean;
+  onChange?: (value: string) => void;
+}
+
+function Field({ label, value, type = "text", multiline = false, span = 3, editing, onChange }: FieldProps) {
+  const colClasses: Record<number, string> = {
+    3: "md:col-span-3", 4: "md:col-span-4", 6: "md:col-span-6",
+    8: "md:col-span-8", 9: "md:col-span-9", 12: "md:col-span-12"
+  };
+  const colClass = `col-span-12 ${colClasses[span] || "md:col-span-3"}`;
+
+  return (
+    <div className={`${colClass} group`}>
+      <label className="block text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest mb-1 group-focus-within:text-[var(--palantir-active)] transition-colors">
+        {label}
+      </label>
+      {editing ? (
+        multiline ? (
+          <textarea
+            rows={2}
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-xs font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] focus:outline-none focus:ring-1 focus:ring-[var(--palantir-active)]/30 transition-all uppercase"
+          />
+        ) : (
+          <input
+            type={type}
+            value={value}
+            onChange={(e) => onChange?.(e.target.value)}
+            className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-xs font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] focus:outline-none focus:ring-1 focus:ring-[var(--palantir-active)]/30 transition-all uppercase"
+          />
+        )
+      ) : (
+        <div className="min-h-[32px] flex items-center border-b border-transparent group-hover:border-[var(--palantir-border)] transition-all">
+          <p className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
+            {value && value !== "" ? value : <span className="text-[var(--palantir-muted)] opacity-30">NO_DATA_ENTRY</span>}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
-  const chain: AddressChainLocal = (patient.address_chain as AddressChainLocal) ?? EMPTY_CHAIN;
-
-  const [form, setForm] = useState<Partial<PatientInput>>({
-    national_id: patient.national_id ?? undefined,
-    first_name: patient.first_name ?? "",
-    middle_name: patient.middle_name ?? undefined,
-    last_name: patient.last_name ?? "",
-    second_last_name: patient.second_last_name ?? undefined,
-    birthdate: patient.birthdate ?? null,
-    birth_place: patient.birth_place ?? undefined,
-    birth_country: patient.birth_country ?? undefined,
-    gender: patient.gender ?? undefined,
-    email: patient.email ?? undefined,
-    contact_info: patient.contact_info ?? undefined,
-    address: patient.address || "",
-    country_id: chain.country_id ?? undefined,
-    state_id: chain.state_id ?? undefined,
-    municipality_id: chain.municipality_id ?? undefined,
-    parish_id: chain.parish_id ?? undefined,
-    neighborhood_id: chain.neighborhood_id ?? undefined,
-  });
-
-  const [neighborhoodName, setNeighborhoodName] = useState(chain.neighborhood ?? "");
-
-  useEffect(() => {
-    const nextChain: AddressChainLocal = (patient.address_chain as AddressChainLocal) ?? EMPTY_CHAIN;
-    setForm({
-      national_id: patient.national_id ?? undefined,
-      first_name: patient.first_name ?? "",
-      middle_name: patient.middle_name ?? undefined,
-      last_name: patient.last_name ?? "",
-      second_last_name: patient.second_last_name ?? undefined,
-      birthdate: patient.birthdate ?? null,
-      birth_place: patient.birth_place ?? undefined,
-      birth_country: patient.birth_country ?? undefined,
-      gender: patient.gender ?? undefined,
-      email: patient.email ?? undefined,
-      contact_info: patient.contact_info ?? undefined,
-      address: patient.address || "",
-      country_id: nextChain.country_id ?? undefined,
-      state_id: nextChain.state_id ?? undefined,
-      municipality_id: nextChain.municipality_id ?? undefined,
-      parish_id: nextChain.parish_id ?? undefined,
-      neighborhood_id: nextChain.neighborhood_id ?? undefined,
-    });
-    setNeighborhoodName(nextChain.neighborhood ?? "");
-  }, [patient]);
-
+  
+  // ✅ Definimos el tipo de chain para que TS sepa qué propiedades buscar
+  const chain = (patient.address_chain as any) || {};
+  
+  const [form, setForm] = useState<Partial<PatientInput>>({});
   const updatePatient = useUpdatePatient(patient.id);
 
-  const setField = (field: keyof PatientInput, value: any) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  useEffect(() => {
+    // ✅ Usamos ?? "" para convertir null/undefined en strings vacíos y limpiar errores de tipos
+    setForm({
+      national_id: patient.national_id ?? "",
+      first_name: patient.first_name ?? "",
+      middle_name: patient.middle_name ?? "",
+      last_name: patient.last_name ?? "",
+      second_last_name: patient.second_last_name ?? "",
+      birthdate: patient.birthdate ?? "",
+      birth_place: patient.birth_place ?? "",
+      birth_country: patient.birth_country ?? "",
+      email: patient.email ?? "",
+      contact_info: patient.contact_info ?? "",
+      address: patient.address ?? "",
+      country_id: chain.country_id,
+      state_id: chain.state_id,
+      municipality_id: chain.municipality_id,
+      parish_id: chain.parish_id,
+      neighborhood_id: chain.neighborhood_id,
+    });
+  }, [patient, chain]);
 
-  const handleSave = async () => {
-    try {
-      let neighborhoodId = form.neighborhood_id;
-
-      if (neighborhoodName && !neighborhoodId) {
-        const res = await fetch("/api/neighborhoods/", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: neighborhoodName,
-            parish_id: form.parish_id,
-          }),
-        });
-        const data = await res.json();
-        neighborhoodId = data.id;
+  const handleSave = () => {
+    updatePatient.mutate(form as PatientInput, {
+      onSuccess: () => { 
+        setEditing(false); 
+        onRefresh(); 
       }
-
-      updatePatient.mutate(
-        { ...form, neighborhood_id: neighborhoodId } as PatientInput,
-        {
-          onSuccess: () => {
-            setEditing(false);
-            onRefresh();
-          },
-          onError: (err) => console.error("Error al actualizar:", err),
-        }
-      );
-    } catch (err) {
-      console.error("Error creando barrio:", err);
-    }
+    });
   };
 
-  const [countries, setCountries] = useState<any[]>([]);
-  const [states, setStates] = useState<any[]>([]);
-  const [municipalities, setMunicipalities] = useState<any[]>([]);
-  const [parishes, setParishes] = useState<any[]>([]);
+  const direccionCompleta = `${form.address || ""}, ${chain.neighborhood || ""}, ${chain.parish || ""}`.trim().toUpperCase();
 
-  useEffect(() => { fetchOptions("/api/countries/").then(setCountries); }, []);
-  useEffect(() => { form.country_id ? fetchOptions(`/api/states/?country=${form.country_id}`).then(setStates) : setStates([]); }, [form.country_id]);
-  useEffect(() => { form.state_id ? fetchOptions(`/api/municipalities/?state=${form.state_id}`).then(setMunicipalities) : setMunicipalities([]); }, [form.state_id]);
-  useEffect(() => { form.municipality_id ? fetchOptions(`/api/parishes/?municipality=${form.municipality_id}`).then(setParishes) : setParishes([]); }, [form.municipality_id]);
-
-  const direccionTexto = form.address?.trim() || "—";
-  const direccionCompleta = `${direccionTexto}, ${chain.country}, ${chain.state}, ${chain.municipality}, ${chain.parish}, ${chain.neighborhood}`;
-  const direccionCorta = direccionCompleta.length <= 60;
-
-    return (
-    <div className="p-4 border rounded-lg bg-white dark:bg-gray-800 shadow-sm">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white">Datos Personales</h3>
+  return (
+    <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden transition-all duration-500 hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+      <div className="bg-[var(--palantir-border)]/20 px-4 py-2 flex justify-between items-center border-b border-[var(--palantir-border)]">
+        <div className="flex items-center gap-2">
+          <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+          <span className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest">Subject_Demographics</span>
+        </div>
+        
         {editing ? (
           <div className="flex gap-2">
-            <button onClick={handleSave} className="px-4 py-2 bg-[#0d2c53] text-white rounded-md text-sm">Guardar</button>
-            <button onClick={() => setEditing(false)} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-sm rounded-md">Cancelar</button>
+            <button onClick={() => setEditing(false)} className="flex items-center gap-1 px-3 py-1 text-[9px] font-mono text-[var(--palantir-muted)] hover:text-white transition-colors">
+              <XMarkIcon className="w-3 h-3" /> CANCEL
+            </button>
+            <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1 bg-[var(--palantir-active)] text-white text-[9px] font-bold rounded-sm shadow-lg shadow-blue-500/20">
+              <CheckIcon className="w-3 h-3" /> COMMIT_CHANGES
+            </button>
           </div>
         ) : (
-          <button onClick={() => setEditing(true)} className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-sm rounded-md">Editar</button>
+          <button onClick={() => setEditing(true)} className="flex items-center gap-1 px-3 py-1 border border-[var(--palantir-border)] text-[9px] font-mono text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:border-[var(--palantir-active)] transition-all">
+            <PencilSquareIcon className="w-3 h-3" /> EDIT_RECORD
+          </button>
         )}
       </div>
 
-      <div className="grid grid-cols-12 gap-4">
-        <Field label="Cédula" value={form.national_id ? String(form.national_id) : ""} editing={editing} onChange={(v) => setField("national_id", v)} />
-        <Field label="Nombre" value={form.first_name || ""} editing={editing} onChange={(v) => setField("first_name", v)} />
-        <Field label="Segundo nombre" value={form.middle_name || ""} editing={editing} onChange={(v) => setField("middle_name", v)} />
-        <Field label="Apellido" value={form.last_name || ""} editing={editing} onChange={(v) => setField("last_name", v)} />
-        <Field label="Segundo apellido" value={form.second_last_name || ""} editing={editing} onChange={(v) => setField("second_last_name", v)} />
-        <Field label="Fecha de nacimiento" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setField("birthdate", v)} />
-        <Field label="Lugar de nacimiento" value={form.birth_place || ""} editing={editing} onChange={(v) => setField("birth_place", v)} />
-        <Field label="País de nacimiento" value={form.birth_country || ""} editing={editing} onChange={(v) => setField("birth_country", v)} />
-        <Field label="Email" value={form.email || ""} editing={editing} onChange={(v) => setField("email", v)} />
-        <Field label="Teléfono" value={form.contact_info || ""} editing={editing} onChange={(v) => setField("contact_info", v)} />
+      <div className="p-6 grid grid-cols-12 gap-x-8 gap-y-6">
+        {/* Usamos el operador || "" para asegurar que siempre pasamos un string al componente Field */}
+        <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm({...form, national_id: v})} />
+        <Field span={3} label="First_Name" value={form.first_name || ""} editing={editing} onChange={(v) => setForm({...form, first_name: v})} />
+        <Field span={3} label="Last_Name" value={form.last_name || ""} editing={editing} onChange={(v) => setForm({...form, last_name: v})} />
+        <Field span={3} label="Birth_Date" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setForm({...form, birthdate: v})} />
+        
+        <Field span={3} label="Email_Address" value={form.email || ""} editing={editing} onChange={(v) => setForm({...form, email: v})} />
+        <Field span={3} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm({...form, contact_info: v})} />
+        <Field span={6} label="Birth_Location" value={`${form.birth_place || ""}, ${form.birth_country || ""}`} editing={editing} onChange={(v) => setForm({...form, birth_place: v})} />
 
-        {editing ? (
-          <>
-            <SelectField label="País" options={countries} value={form.country_id ?? ""} onChange={(v) => setField("country_id", Number(v))} />
-            <SelectField label="Estado" options={states} value={form.state_id ?? ""} onChange={(v) => setField("state_id", Number(v))} />
-            <SelectField label="Municipio" options={municipalities} value={form.municipality_id ?? ""} onChange={(v) => setField("municipality_id", Number(v))} />
-            <SelectField label="Parroquia" options={parishes} value={form.parish_id ?? ""} onChange={(v) => setField("parish_id", Number(v))} />
+        <div className="col-span-12 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] via-transparent to-transparent my-2" />
 
-            <div className="col-span-6">
-              <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">Barrio</label>
-              <input
-                type="text"
-                value={neighborhoodName}
-                onChange={(e) => setNeighborhoodName(e.target.value)}
-                placeholder="Escriba o busque barrio..."
-                className="w-full px-3 py-2 border rounded-md text-sm bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-              />
-            </div>
-            <Field label="Dirección" value={form.address || ""} editing={editing} multiline span={6} onChange={(v) => setField("address", v)} />
-          </>
+        <div className="col-span-12 flex items-center gap-2 mb-2">
+          <MapPinIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
+          <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em]">Geographic_Location_Data</span>
+        </div>
+
+        {!editing ? (
+          <div className="col-span-12 bg-[var(--palantir-bg)]/50 border border-[var(--palantir-border)] p-3 rounded-sm">
+            <label className="block text-[8px] font-mono text-[var(--palantir-muted)] uppercase mb-1">Primary_Residence_Chain</label>
+            <p className="text-[10px] font-mono text-[var(--palantir-text)] leading-relaxed">{direccionCompleta || "NO_LOCATION_DATA_AVAILABLE"}</p>
+          </div>
         ) : (
-          <>
-            {direccionCorta ? (
-              <>
-                <Field label="Teléfono" value={form.contact_info || "—"} editing={false} />
-                <Field label="Dirección" value={direccionCompleta} editing={false} />
-              </>
-            ) : (
-              <>
-                <Field label="Teléfono" value={form.contact_info || "—"} editing={false} />
-                <div className="col-span-12">
-                  <label className="block text-xs font-medium text-[#0d2c53] dark:text-gray-300 mb-1">Dirección</label>
-                  <p className="text-sm text-[#0d2c53] dark:text-gray-100">{direccionCompleta}</p>
-                </div>
-              </>
-            )}
-          </>
+          <Field span={12} label="Full_Address_Details" value={form.address || ""} editing={editing} multiline onChange={(v) => setForm({...form, address: v})} />
         )}
       </div>
     </div>

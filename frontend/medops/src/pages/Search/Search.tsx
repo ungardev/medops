@@ -1,7 +1,16 @@
+// src/pages/Search/Search.tsx
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Search } from "lucide-react";
+import { 
+  MagnifyingGlassIcon, 
+  UserIcon, 
+  CalendarDaysIcon, 
+  CreditCardIcon,
+  ExclamationTriangleIcon,
+  ChevronRightIcon
+} from "@heroicons/react/24/outline";
 import axios from "axios";
+import PageHeader from "@/components/Common/PageHeader";
 
 interface Patient {
   id: number;
@@ -15,8 +24,8 @@ interface Appointment {
   appointment_date: string;
   status: string;
   patient_name?: string;
-  patient?: { id: number }; // ✅ por si viene anidado
-  patient_id?: number;      // ✅ por si viene plano
+  patient?: { id: number };
+  patient_id?: number;
 }
 
 interface Order {
@@ -27,7 +36,7 @@ interface Order {
   patient_name?: string;
   patient?: { id: number };
   patient_id?: number;
-  appointment?: number; // ✅ necesario para navegar al detalle clínico
+  appointment?: number;
 }
 
 interface SearchResponse {
@@ -39,12 +48,7 @@ interface SearchResponse {
 export default function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
-
-  const [results, setResults] = useState<SearchResponse>({
-    patients: [],
-    appointments: [],
-    orders: [],
-  });
+  const [results, setResults] = useState<SearchResponse>({ patients: [], appointments: [], orders: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,8 +66,7 @@ export default function SearchPage() {
     setLoading(true);
     setError(null);
 
-    axios
-      .get("/search/", { params: { query: query.trim() } })
+    axios.get("/search/", { params: { query: query.trim() } })
       .then((res) => {
         const data = res.data as SearchResponse;
         setResults({
@@ -74,7 +77,7 @@ export default function SearchPage() {
         setLoading(false);
       })
       .catch(() => {
-        setError("No se pudo consultar el buscador institucional.");
+        setError("NETWORK_PROTOCOL_ERROR: Search_Endpoint_Unreachable");
         setLoading(false);
       });
   }, [query]);
@@ -83,164 +86,157 @@ export default function SearchPage() {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm("");
     }
   };
 
+  const totalResults = results.patients.length + results.appointments.length + results.orders.length;
+
   return (
-    <div className="px-3 py-4 sm:p-6">
-      <h1 className="text-lg sm:text-xl font-bold text-[#0d2c53] dark:text-white mb-4 sm:mb-6">
-        Resultados de búsqueda
-      </h1>
+    <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
+      <PageHeader 
+        breadcrumb="SYSTEM // CROSS_REFERENCE // SEARCH"
+        title="INSTITUTIONAL_FINDER"
+        stats={[
+          { label: "QUERY_TERM", value: query || "NULL", color: "text-[var(--palantir-active)]" },
+          { label: "MATCHES_FOUND", value: totalResults.toString().padStart(3, '0') }
+        ]}
+      />
 
-      <form onSubmit={handleSubmit} className="mb-6 flex gap-2">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Buscar pacientes, citas u órdenes..."
-          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm 
-                     bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 
-                     focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
-        >
-          Buscar
-        </button>
-      </form>
+      {/* 🔍 BARRA DE BÚSQUEDA TÉCNICA */}
+      <div className="max-w-4xl mx-auto">
+        <form onSubmit={handleSubmit} className="relative group">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Query: Patient_Name, ID, or Order_Number..."
+            className="w-full bg-white/[0.03] border border-white/10 rounded-sm py-4 pl-12 pr-4 text-sm font-mono text-white placeholder:text-white/20 focus:outline-none focus:border-[var(--palantir-active)]/50 focus:bg-white/[0.05] transition-all"
+          />
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-[var(--palantir-active)] transition-colors" />
+          <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-[var(--palantir-active)] text-black text-[10px] font-black px-4 py-1.5 uppercase tracking-tighter hover:bg-white transition-colors">
+            Execute_Query
+          </button>
+        </form>
+      </div>
 
-      {!query.trim() ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Search className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">
-            Escriba un término en el buscador institucional para comenzar.
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Puede buscar pacientes, citas u órdenes/pagos.
-          </p>
+      <div className="max-w-6xl mx-auto space-y-10">
+        {!query.trim() ? (
+          <EmptyState icon={<MagnifyingGlassIcon className="w-12 h-12 text-white/5" />} title="IDLE_MODE" description="System is waiting for a query parameter to begin cross-reference." />
+        ) : loading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-8 h-8 border-2 border-[var(--palantir-active)]/30 border-t-[var(--palantir-active)] rounded-full animate-spin" />
+            <span className="text-[10px] font-mono text-[var(--palantir-active)] uppercase tracking-[0.3em] animate-pulse">Scanning_Database...</span>
+          </div>
+        ) : error ? (
+          <div className="p-6 border border-red-500/20 bg-red-500/5 flex items-center gap-4">
+            <ExclamationTriangleIcon className="w-6 h-6 text-red-500" />
+            <span className="text-xs font-mono text-red-500">{error}</span>
+          </div>
+        ) : totalResults > 0 ? (
+          <div className="grid grid-cols-1 gap-12">
+            
+            {/* 👥 CATEGORÍA: PACIENTES */}
+            {results.patients.length > 0 && (
+              <section className="space-y-4">
+                <SectionLabel icon={<UserIcon className="w-4 h-4" />} text="Target_Patients" count={results.patients.length} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {results.patients.map((p) => (
+                    <ResultCard key={p.id} to={`/patients/${p.id}`} title={`${p.first_name} ${p.last_name}`} subtitle={`National_ID: ${p.national_id}`} type="PATIENT" />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 📅 CATEGORÍA: CITAS */}
+            {results.appointments.length > 0 && (
+              <section className="space-y-4">
+                <SectionLabel icon={<CalendarDaysIcon className="w-4 h-4" />} text="Consultation_Records" count={results.appointments.length} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {results.appointments.map((c) => (
+                    <ResultCard 
+                      key={c.id} 
+                      to={c.patient?.id || c.patient_id ? `/patients/${c.patient?.id || c.patient_id}/consultations/${c.id}` : "/appointments"}
+                      title={`Date: ${c.appointment_date}`}
+                      subtitle={`Status: ${c.status} // Patient: ${c.patient_name || '---'}`}
+                      type="APPOINTMENT"
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* 💳 CATEGORÍA: ÓRDENES */}
+            {results.orders.length > 0 && (
+              <section className="space-y-4">
+                <SectionLabel icon={<CreditCardIcon className="w-4 h-4" />} text="Financial_Objects" count={results.orders.length} />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {results.orders.map((o) => (
+                    <ResultCard 
+                      key={o.id}
+                      to={o.patient?.id && o.appointment ? `/patients/${o.patient?.id}/consultations/${o.appointment}` : `/charge-orders/${o.id}`}
+                      title={`Order_ID: #${o.id.toString().padStart(4, '0')}`}
+                      subtitle={`Total: $${o.total} // Status: ${o.status}`}
+                      type="FINANCE"
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        ) : (
+          <EmptyState icon={<ExclamationTriangleIcon className="w-12 h-12 text-white/5" />} title="ZERO_MATCHES" description={`No records found matching the query "${query}".`} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- SUB-COMPONENTES INTERNOS ---
+
+function SectionLabel({ icon, text, count }: { icon: React.ReactNode, text: string, count: number }) {
+  return (
+    <div className="flex items-center justify-between border-b border-white/5 pb-2">
+      <div className="flex items-center gap-2 text-[var(--palantir-muted)]">
+        {icon}
+        <span className="text-[10px] font-black uppercase tracking-[0.3em]">{text}</span>
+      </div>
+      <span className="text-[9px] font-mono bg-white/5 px-2 py-0.5 rounded-full text-white/40">{count} matches</span>
+    </div>
+  );
+}
+
+function ResultCard({ to, title, subtitle, type }: { to: string, title: string, subtitle: string, type: string }) {
+  // 🛡️ Corregido: Definición de tipo Record para evitar errores de indexación
+  const colors: Record<string, string> = {
+    PATIENT: "border-blue-500/20 hover:border-blue-500/50",
+    APPOINTMENT: "border-emerald-500/20 hover:border-emerald-500/50",
+    FINANCE: "border-amber-500/20 hover:border-amber-500/50"
+  };
+
+  const borderColor = colors[type] || "border-white/10 hover:border-white/30";
+
+  return (
+    <Link to={to} className={`group block p-4 bg-white/[0.02] border ${borderColor} rounded-sm transition-all hover:bg-white/[0.04]`}>
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <p className="text-[11px] font-bold text-white uppercase tracking-tight">{title}</p>
+          <p className="text-[9px] font-mono text-[var(--palantir-muted)] leading-relaxed">{subtitle}</p>
         </div>
-      ) : loading ? (
-        <p className="text-gray-500 dark:text-gray-400">
-          Buscando “{query}”...
-        </p>
-      ) : error ? (
-        <p className="text-red-600 dark:text-red-400">
-          {error}. Intente nuevamente.
-        </p>
-      ) : results.patients.length > 0 ||
-        results.appointments.length > 0 ||
-        results.orders.length > 0 ? (
-        <div className="space-y-6 sm:space-y-8">
+        <ChevronRightIcon className="w-4 h-4 text-white/10 group-hover:text-white group-hover:translate-x-1 transition-all" />
+      </div>
+      <div className="mt-3 flex gap-2">
+        <span className="text-[7px] font-mono px-1.5 py-0.5 bg-white/5 text-white/30 uppercase tracking-widest">Type: {type}</span>
+      </div>
+    </Link>
+  );
+}
 
-          {/* ✅ PACIENTES */}
-          {results.patients.length > 0 && (
-            <section>
-              <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
-                Pacientes
-              </h2>
-              <ul className="space-y-2">
-                {results.patients.map((p) => (
-                  <li key={p.id}>
-                    <Link
-                      to={`/patients/${p.id}`}
-                      className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                    >
-                      <p className="font-medium text-[#0d2c53] dark:text-white">
-                        {p.first_name} {p.last_name}
-                      </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        Cédula: {p.national_id}
-                      </p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* ✅ CITAS */}
-          {results.appointments.length > 0 && (
-            <section>
-              <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
-                Citas
-              </h2>
-              <ul className="space-y-2">
-                {results.appointments.map((c) => {
-                  const patientId =
-                    c.patient?.id || c.patient_id || null;
-
-                  return (
-                    <li key={c.id}>
-                      <Link
-                        to={
-                          patientId
-                            ? `/patients/${patientId}/consultations/${c.id}`
-                            : "/appointments"
-                        }
-                        className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                      >
-                        <p className="font-medium text-[#0d2c53] dark:text-white">
-                          Fecha: {c.appointment_date}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Estado: {c.status} — Paciente: {c.patient_name || "—"}
-                        </p>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
-          {/* ✅ ÓRDENES / PAGOS */}
-          {results.orders.length > 0 && (
-            <section>
-              <h2 className="text-base sm:text-lg font-semibold text-[#0d2c53] dark:text-white mb-2 sm:mb-3">
-                Órdenes / Pagos
-              </h2>
-              <ul className="space-y-2">
-                {results.orders.map((o) => {
-                  const patientId =
-                    o.patient?.id || o.patient_id || null;
-
-                  return (
-                    <li key={o.id}>
-                      <Link
-                        to={
-                          patientId && o.appointment
-                            ? `/patients/${patientId}/consultations/${o.appointment}`
-                            : `/charge-orders/${o.id}`
-                        }
-                        className="block p-3 sm:p-4 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                      >
-                        <p className="font-medium text-[#0d2c53] dark:text-white">
-                          Orden #{o.id} — Paciente: {o.patient_name || "—"}
-                        </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Monto: ${o.total} — Estado: {o.status}
-                        </p>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <Search className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">
-            No se encontraron resultados para “{query}”.
-          </p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Refina tu búsqueda o intenta con otros términos.
-          </p>
-        </div>
-      )}
+function EmptyState({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-sm">
+      <div className="mb-4">{icon}</div>
+      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">{title}</h3>
+      <p className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase mt-2 max-w-xs">{description}</p>
     </div>
   );
 }

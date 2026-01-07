@@ -1,5 +1,6 @@
 import React from "react";
 import type { Specialty } from "../../types/consultation";
+import { Search, Plus, X, Activity, Loader2 } from "lucide-react";
 
 interface Props {
   value: Specialty[];
@@ -22,7 +23,9 @@ export default function SpecialtyMultiSelectPlain({
 
   const filtered =
     query.length > 0
-      ? options.filter((o) => `${o.name} ${o.code}`.toLowerCase().includes(query.toLowerCase()))
+      ? options.filter((o) =>
+          `${o.name} ${o.code}`.toLowerCase().includes(query.toLowerCase())
+        )
       : options;
 
   const toggle = (id: number) => {
@@ -34,65 +37,96 @@ export default function SpecialtyMultiSelectPlain({
       onChange([...value, target]);
     }
   };
-    return (
-    <div className="flex flex-col gap-2">
-      <input
-        type="text"
-        value={query}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-        placeholder="Buscar especialidades..."
-        className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm 
-                   bg-white dark:bg-gray-700 text-[#0d2c53] dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#0d2c53]"
-      />
 
-      <div className="rounded-md border border-gray-300 dark:border-gray-600 max-h-40 overflow-auto">
-        {loading ? (
-          <div className="px-3 py-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">Cargando...</div>
-        ) : filtered.length === 0 ? (
-          <div className="px-3 py-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400">Sin resultados</div>
-        ) : (
-          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-            {filtered.map((opt) => {
-              const isSelected = selectedIds.has(opt.id);
-              const itemBg = isSelected ? "bg-[#0d2c53]/10 dark:bg-blue-900/20" : "bg-white dark:bg-gray-800";
-              const itemText = "text-[#0d2c53] dark:text-gray-100";
-              const actionClasses = isSelected
-                ? "bg-[#0d2c53] text-white border border-[#0d2c53] hover:bg-[#0b2444]"
-                : "bg-gray-100 text-[#0d2c53] border border-gray-300 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-600";
-
-              return (
-                <li key={opt.id} className={`flex items-center justify-between px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm ${itemBg} ${itemText}`}>
-                  <span>
-                    {opt.name} ({opt.code})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => toggle(opt.id)}
-                    className={`px-2 py-0.5 sm:py-1 rounded-md border text-xs transition-colors ${actionClasses}`}
-                  >
-                    {isSelected ? "Quitar" : "Agregar"}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        )}
+  return (
+    <div className="flex flex-col gap-4 w-full">
+      {/* Input de Búsqueda Estilizado */}
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-[var(--palantir-muted)] group-focus-within:text-[var(--palantir-active)] transition-colors">
+          <Search size={16} />
+        </div>
+        <input
+          type="text"
+          value={query}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+          placeholder="Filtrar especialidades por nombre o código..."
+          className="w-full pl-10 pr-4 py-2.5 bg-[#0d1117]/50 border border-[var(--palantir-border)] rounded-lg text-sm text-white placeholder:text-[var(--palantir-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--palantir-active)]/20 focus:border-[var(--palantir-active)] transition-all"
+        />
       </div>
 
+      {/* Contenedor de Opciones */}
+      <div className="rounded-xl border border-[var(--palantir-border)] bg-[#11141a] overflow-hidden shadow-inner">
+        <div className="max-h-52 overflow-y-auto custom-scrollbar">
+          {loading ? (
+            <div className="flex items-center justify-center py-8 gap-3 text-[var(--palantir-muted)]">
+              <Loader2 size={18} className="animate-spin text-[var(--palantir-active)]" />
+              <span className="text-xs font-mono uppercase tracking-widest">Sincronizando...</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-[var(--palantir-muted)] opacity-50">
+              <Activity size={24} className="mb-2" />
+              <span className="text-xs uppercase tracking-tighter">Sin registros coincidentes</span>
+            </div>
+          ) : (
+            <ul className="divide-y divide-[var(--palantir-border)]/50">
+              {filtered.map((opt) => {
+                const isSelected = selectedIds.has(opt.id);
+                return (
+                  <li
+                    key={opt.id}
+                    className={`flex items-center justify-between px-4 py-3 transition-colors ${
+                      isSelected ? "bg-[var(--palantir-active)]/5" : "hover:bg-white/[0.02]"
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-slate-200">{opt.name}</span>
+                      <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-wider">
+                        Code: {opt.code}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => toggle(opt.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        isSelected
+                          ? "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                          : "bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] border border-[var(--palantir-active)]/20 hover:bg-[var(--palantir-active)]/20"
+                      }`}
+                    >
+                      {isSelected ? <X size={12} /> : <Plus size={12} />}
+                      {isSelected ? "Remover" : "Añadir"}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+
+      {/* Tags de Selección Activa */}
       {value.length > 0 && (
-        <div className="mt-1 flex flex-wrap gap-2">
-          {value.map((s) => (
-            <span key={s.id} className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-[#0d2c53]/10 dark:bg-gray-700 text-xs sm:text-sm text-[#0d2c53] dark:text-gray-100">
-              {s.name} ({s.code})
-              <button
-                type="button"
-                onClick={() => onChange(value.filter((v) => v.id !== s.id))}
-                className="px-2 py-0.5 rounded bg-[#0d2c53] text-white hover:bg-[#0b2444] text-xs sm:text-sm"
+        <div className="flex flex-col gap-2">
+          <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em] ml-1">
+            Seleccionadas ({value.length})
+          </span>
+          <div className="flex flex-wrap gap-2 p-2 rounded-lg bg-white/[0.02] border border-dashed border-[var(--palantir-border)]">
+            {value.map((s) => (
+              <div
+                key={s.id}
+                className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 text-xs text-[var(--palantir-active)] group animate-in zoom-in-90"
               >
-                Quitar
-              </button>
-            </span>
-          ))}
+                <span className="font-medium">{s.name}</span>
+                <button
+                  type="button"
+                  onClick={() => onChange(value.filter((v) => v.id !== s.id))}
+                  className="p-1 rounded-full hover:bg-red-500 hover:text-white transition-all"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
