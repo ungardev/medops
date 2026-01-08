@@ -3,18 +3,31 @@ from django.core.management.base import BaseCommand
 from core.models import State, Municipality, City, Parish, Country
 
 class Command(BaseCommand):
-    help = "Importa estados, municipios, ciudades y parroquias desde CSV exportados de MariaDB"
+    help = "Reinicia e importa estados, municipios, ciudades y parroquias desde CSV exportados de MariaDB"
 
     def handle(self, *args, **options):
-        # Obtener el país Venezuela
-        venezuela = Country.objects.get(name="Venezuela")
+        self.stdout.write(self.style.WARNING("⚠ Reiniciando datos de ubicación..."))
+
+        # Asegurar país Venezuela
+        venezuela, _ = Country.objects.get_or_create(
+            name="Venezuela",
+            defaults={"code": "VE"}
+        )
+
+        # Limpiar tablas dependientes
+        Parish.objects.all().delete()
+        City.objects.all().delete()
+        Municipality.objects.all().delete()
+        State.objects.all().delete()
+
+        self.stdout.write(self.style.WARNING("Tablas limpiadas: State, Municipality, City, Parish"))
 
         # Estados
         with open('/srv/medops/data/estados.csv', newline='', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter='\t')
             next(reader)  # saltar encabezado
             for row in reader:
-                State.objects.get_or_create(
+                State.objects.create(
                     id=row[0],
                     name=row[1],
                     country=venezuela
@@ -25,7 +38,7 @@ class Command(BaseCommand):
             reader = csv.reader(f, delimiter='\t')
             next(reader)
             for row in reader:
-                Municipality.objects.get_or_create(
+                Municipality.objects.create(
                     id=row[0],
                     name=row[2],
                     state_id=row[1]
@@ -36,7 +49,7 @@ class Command(BaseCommand):
             reader = csv.reader(f, delimiter='\t')
             next(reader)
             for row in reader:
-                City.objects.get_or_create(
+                City.objects.create(
                     id=row[0],
                     name=row[2],
                     state_id=row[1]
@@ -47,10 +60,10 @@ class Command(BaseCommand):
             reader = csv.reader(f, delimiter='\t')
             next(reader)
             for row in reader:
-                Parish.objects.get_or_create(
+                Parish.objects.create(
                     id=row[0],
                     name=row[2],
                     municipality_id=row[1]
                 )
 
-        self.stdout.write(self.style.SUCCESS("Datos importados desde CSV de MariaDB"))
+        self.stdout.write(self.style.SUCCESS("✔ Importación completada: Venezuela institucionalizada con estados, municipios, ciudades y parroquias"))
