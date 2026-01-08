@@ -8,7 +8,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.stdout.write(self.style.WARNING("⚠ Reiniciando datos de ubicación..."))
 
-        # Asegurar país Venezuela
+        # Asegurar país Venezuela (se crea si no existe)
         venezuela, _ = Country.objects.get_or_create(
             name="Venezuela",
             defaults={"code": "VE"}
@@ -67,4 +67,5 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write(self.style.SUCCESS("✔ Importación completada: Venezuela institucionalizada con estados, municipios, ciudades y parroquias"))
+
 
