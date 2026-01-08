@@ -32,4 +32,17 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 2000, // sube el límite de warning a 2 MB
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ['react', 'react-dom'],
+          ui: ['@headlessui/react', 'react-hot-toast'],
+          pdf: ['jspdf'],
+          canvas: ['html2canvas'],
+        },
+      },
+    },
+  },
 })
