@@ -60,3 +60,25 @@ pytestcache/
 
 # Build/transpilado de frontend
 frontend/medops/src/**/*.js
+
+# --- TypeScript build info ---
+tsconfig.tsbuildinfo
+
+# --- Backups y datos externos ---
+backups/
+data/
+*.sql
+*.csv
+*.pdf
+*.xlsx
+*.yaml
+*.txt
+
+# --- Archivos de respuesta y reportes temporales ---
+response.*
+reporte.*
+orden.*
+
+# --- Archivos locales no institucionales ---
+bcv.html
+schema.yaml
