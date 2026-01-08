@@ -46,6 +46,7 @@ services:
     volumes:
       - .:/srv/medops              # 👈 monta todo el proyecto dentro del contenedor
       - ./staticfiles:/app/staticfiles   # 👈 backend también comparte staticfiles
+      - ./data:/srv/medops/data    # 👈 monta la carpeta data con los CSV de locations
 
   db:
     image: postgres:15
