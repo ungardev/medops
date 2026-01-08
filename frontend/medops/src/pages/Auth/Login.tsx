@@ -20,21 +20,31 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const apiRoot = import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "/api";
-      const res = await fetch(`${apiRoot}/auth/token/`, {
+      // Normaliza raíz del API: debe terminar en /api
+      const rawRoot = import.meta.env.VITE_API_URL || "/api";
+      const apiRoot = rawRoot.replace(/\/+$/, ""); // quita trailing slash
+      const url = `${apiRoot}/auth/login/`; // ✅ endpoint correcto
+
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
 
-      if (!res.ok) throw new Error("Credenciales inválidas");
+      if (!res.ok) {
+        const msg = res.status === 400 ? "Credenciales inválidas" : `Error ${res.status}`;
+        throw new Error(msg);
+      }
 
       const data = await res.json();
       if (!data.token) throw new Error("Respuesta inválida del servidor");
 
+      // Guarda token y configura headers globales
       saveToken(data.token);
       axios.defaults.headers.common["Authorization"] = `Token ${data.token}`;
       api.defaults.headers.common["Authorization"] = `Token ${data.token}`;
+
+      // Invalida notificaciones (si tu backend las usa por token)
       queryClient.invalidateQueries({ queryKey: ["notifications", data.token] });
 
       setTimeout(() => {
@@ -48,10 +58,7 @@ export default function Login() {
   };
 
   return (
-    // bg-[#0a0c10] asegura el fondo oscuro incluso si la clase 'dark' no está activa en el html
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0c10] text-slate-200 px-4 font-sans">
-      
-      {/* Sección de Marca: Logo e Isotipo */}
       <div className="flex flex-col items-center mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <img
           src="/medopz_logo_blanco_solo.svg"
@@ -65,7 +72,6 @@ export default function Login() {
         />
       </div>
 
-      {/* Tarjeta de Login */}
       <form
         onSubmit={handleSubmit}
         className="bg-[#11141a] border border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-xl p-8 w-full max-w-md backdrop-blur-md"
@@ -80,7 +86,6 @@ export default function Login() {
         </div>
 
         <div className="space-y-5">
-          {/* Campo Usuario */}
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
               <User size={18} />
@@ -96,7 +101,6 @@ export default function Login() {
             />
           </div>
 
-          {/* Campo Contraseña */}
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 group-focus-within:text-blue-400 transition-colors">
               <Lock size={18} />
@@ -135,8 +139,8 @@ export default function Login() {
         </button>
 
         <div className="mt-8 flex items-center justify-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em]">Secure_Terminal_Active</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+          <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em]">Secure_Terminal_Active</span>
         </div>
       </form>
 
