@@ -78,7 +78,7 @@ from .api_views import (
     chargeorder_search_api,
 
     # --- Notificaciones ---
-    notifications_api,   # ⚡ aseguramos que se importe la función correcta
+    notifications_api,
 )
 
 # --- Swagger / OpenAPI ---
@@ -133,7 +133,9 @@ patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
 
 # --- Funciones personalizadas ---
 urlpatterns = [
-    path("auth/token/", api_views.login_view, name="api-login"),
+    # ❌ Eliminado el endpoint legacy de login que causaba CSRF
+    # path("auth/token/", api_views.login_view, name="api-login"),
+
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
     path("reports/", reports_api, name="reports-api"),
@@ -167,7 +169,7 @@ urlpatterns = [
 
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
-    path("notifications/", notifications_api, name="notifications-api"),  # ⚡ ruta explícita y corregida
+    path("notifications/", notifications_api, name="notifications-api"),
     path("audit/aggregates/", api_views.audit_dashboard_api, name="audit-dashboard-api"),
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),
