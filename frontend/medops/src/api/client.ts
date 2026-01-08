@@ -1,6 +1,5 @@
 // src/api/client.ts
-const API_BASE =
-  import.meta.env.VITE_API_URL || "http://127.0.0.1/api"; // ✅ configurable vía .env
+const API_BASE = import.meta.env.VITE_API_URL; // ✅ siempre configurable vía .env
 
 async function doFetch<T>(
   endpoint: string,
