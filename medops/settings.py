@@ -28,7 +28,9 @@ if SECRET_KEY == "inseguro-en-dev":
     raise ValueError("SECRET_KEY insegura: define DJANGO_SECRET_KEY en tu .env")
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+
+# Asegura hosts válidos en dev y docker
+ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
 
 # === Apps ===
 INSTALLED_APPS = [
@@ -64,10 +66,10 @@ MIDDLEWARE = [
 ]
 
 # === DRF / API ===
+# 🔹 Eliminamos SessionAuthentication para evitar CSRF en API.
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -76,7 +78,6 @@ REST_FRAMEWORK = {
     # 🔹 Paginación global
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
-
     # 🔹 Formato global de fechas (ISO con zona horaria)
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
 }
@@ -220,6 +221,7 @@ LOGGING = {
 }
 
 # === CORS / CSRF ===
+# Orígenes permitidos para frontend en dev (Vite y Nginx reverse proxy)
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
@@ -227,6 +229,7 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+# Si en algún flujo usas cookies/CSRF (admin, vistas server-side), confía en estos orígenes
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
