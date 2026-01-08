@@ -44,6 +44,7 @@ services:
     networks:
       - medops_net
     volumes:
+      - .:/srv/medops              # 👈 monta todo el proyecto dentro del contenedor
       - ./staticfiles:/app/staticfiles   # 👈 backend también comparte staticfiles
 
   db:
