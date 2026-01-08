@@ -81,21 +81,19 @@ REST_FRAMEWORK = {
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
 }
 
-
 SPECTACULAR_SETTINGS = {
     "TITLE": "MedOps API",
     "DESCRIPTION": "Documentación de la API de MedOps",
     "VERSION": "1.0.0",
-    "SERVE_INCLUDE_SCHEMA": False,  # en prod puedes ocultar el schema si quieres
+    "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
-    "SCHEMA_PATH_PREFIX": r"/api",  # opcional, si quieres que organice todo bajo /api
+    "SCHEMA_PATH_PREFIX": r"/api",
     "SECURITY": [
-        {"basicAuth": []},           # 👈 login básico
-        {"cookieAuth": []},          # 👈 sesión Django
-        {"tokenAuth": []},           # 👈 token DRF
+        {"basicAuth": []},
+        {"cookieAuth": []},
+        {"tokenAuth": []},
     ],
 }
-
 
 # Seguridad extra (solo efectiva en producción con HTTPS)
 X_FRAME_OPTIONS = "DENY"
@@ -114,7 +112,7 @@ ROOT_URLCONF = 'medops.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "core" / "templates"],  # 👈 añade esta línea
+        'DIRS': [BASE_DIR / "core" / "templates"],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -125,7 +123,6 @@ TEMPLATES = [
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'medops.wsgi.application'
 
@@ -192,10 +189,9 @@ LOGGING = {
             "level": "WARNING",
             "formatter": "verbose",
         },
-        # 🔹 Handler para auditoría
         "audit_file": {
             "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "audit.log",  # o /srv/medops/logs/audit.log
+            "filename": BASE_DIR / "logs" / "audit.log",
             "formatter": "audit",
             "encoding": "utf-8",
         },
@@ -210,27 +206,28 @@ LOGGING = {
             "level": "ERROR",
             "propagate": False,
         },
-        # 🔹 Logger para auditoría
         "audit": {
             "handlers": ["audit_file"],
             "level": "INFO",
             "propagate": False,
         },
-        # 🔹 Logger específico para tu app core
         "core": {
             "handlers": ["console", "file"],
-            "level": "DEBUG",   # así ves mensajes detallados de AppointmentAdmin
+            "level": "DEBUG",
             "propagate": False,
         },
     },
 }
 
+# === CORS / CSRF ===
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://localhost:8080",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
+    "http://localhost:8080",
 ]
