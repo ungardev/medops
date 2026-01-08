@@ -10,6 +10,8 @@ services:
       - VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
     depends_on:
       - backend
+    networks:
+      - medops_net
 
   backend:
     build: .
@@ -36,6 +38,8 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+    networks:
+      - medops_net
 
   db:
     image: postgres:15
@@ -48,6 +52,12 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - medops_net
 
 volumes:
   db_data:
+
+networks:
+  medops_net:
+    driver: bridge
