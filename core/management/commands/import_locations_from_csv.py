@@ -10,8 +10,7 @@ class Command(BaseCommand):
 
         # Asegurar país Venezuela (se crea si no existe)
         venezuela, _ = Country.objects.get_or_create(
-            name="Venezuela",
-            defaults={"code": "VE"}
+            name="Venezuela"
         )
 
         # Limpiar tablas dependientes
@@ -67,5 +66,3 @@ class Command(BaseCommand):
                 )
 
         self.stdout.write(self.style.SUCCESS("✔ Importación completada: Venezuela institucionalizada con estados, municipios, ciudades y parroquias"))
-
-
