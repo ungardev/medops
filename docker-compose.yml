@@ -62,7 +62,6 @@ services:
 
 volumes:
   db_data:
-  staticfiles:   # 👈 volumen declarado para persistencia de estáticos
 
 networks:
   medops_net:
