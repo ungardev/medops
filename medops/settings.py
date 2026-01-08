@@ -227,7 +227,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
 ]
 
-CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_CREDENTIALS = False
 
 # Si en algún flujo usas cookies/CSRF (admin, vistas server-side), confía en estos orígenes
 CSRF_TRUSTED_ORIGINS = [
