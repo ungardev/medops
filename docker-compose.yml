@@ -6,31 +6,27 @@ services:
     ports:
       - "8080:80"
     environment:
-      # El frontend compila con esta URL para llamar al backend Django
       - VITE_API_URL=http://localhost:8000/api/
       - VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
     depends_on:
       - backend
 
   backend:
-    build: ./backend
+    build: .
     command: >
       sh -c "python manage.py migrate &&
-             gunicorn --bind 0.0.0.0:8000 backend.wsgi:application"
+             gunicorn --bind 0.0.0.0:8000 medops.wsgi:application"
     ports:
       - "8000:8000"
     environment:
-      # Seguridad y modo
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DEBUG=${DEBUG}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
-      # Base de datos (host es 'db' dentro de Docker)
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_HOST=db
       - DB_PORT=5432
-      # Logs y CORS
       - DJANGO_LOG_FILE=${DJANGO_LOG_FILE}
       - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
     depends_on:
