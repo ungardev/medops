@@ -30,7 +30,6 @@ class Country(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     class Meta:
-        db_table = "countries"
         verbose_name = "Country"
         verbose_name_plural = "Countries"
 
@@ -43,7 +42,6 @@ class State(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = "estados"
         unique_together = ("country", "name")
         verbose_name = "State"
         verbose_name_plural = "States"
@@ -57,7 +55,6 @@ class Municipality(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = "municipios"
         unique_together = ("state", "name")
         verbose_name = "Municipality"
         verbose_name_plural = "Municipalities"
@@ -71,7 +68,6 @@ class City(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = "ciudades"
         unique_together = ("state", "name")
         verbose_name = "City"
         verbose_name_plural = "Cities"
@@ -91,7 +87,6 @@ class Parish(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = "parroquias"
         verbose_name = "Parish"
         verbose_name_plural = "Parishes"
         constraints = [
@@ -116,7 +111,6 @@ class Neighborhood(models.Model):
     name = models.CharField(max_length=100)
 
     class Meta:
-        db_table = "neighborhoods"
         verbose_name = "Neighborhood"
         verbose_name_plural = "Neighborhoods"
         constraints = [
