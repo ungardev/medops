@@ -1,6 +1,54 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
-from core.services.icd_sync import ICDAPIClient, sync_root_codes, log_update
+from core.models import ICD11Entry, ICD11UpdateLog
+import requests
+
+
+class ICDAPIClient:
+    def __init__(self, client_id, client_secret, base_url):
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.base_url = base_url
+        self.token = None
+
+    def authenticate(self):
+        # TODO: implementar autenticación real contra ICD API
+        # Por ahora dejamos un token simulado
+        self.token = "fake-token"
+
+    def fetch_children(self, root_code, lang="es"):
+        # TODO: implementar llamada real a ICD API
+        # Stub de ejemplo para pruebas
+        return [
+            {"code": f"{root_code}.X", "title": f"Ejemplo hijo de {root_code}", "lang": lang}
+        ]
+
+
+def sync_root_codes(client, roots, lang="es"):
+    stats = {"created": 0, "updated": 0, "errors": 0}
+    for root in roots:
+        children = client.fetch_children(root, lang=lang)
+        for child in children:
+            obj, created = ICD11Entry.objects.update_or_create(
+                icd_code=child["code"],
+                defaults={"title": child["title"], "language": child["lang"]},
+            )
+            if created:
+                stats["created"] += 1
+            else:
+                stats["updated"] += 1
+    return stats
+
+
+def log_update(lang, stats, source):
+    ICD11UpdateLog.objects.create(
+        language=lang,
+        source=source,
+        created_count=stats["created"],
+        updated_count=stats["updated"],
+        error_count=stats["errors"],
+    )
+
 
 class Command(BaseCommand):
     help = "Sincroniza el catálogo ICD-11 en core_icd11entry"
