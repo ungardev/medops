@@ -256,7 +256,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
 ]
 
-# === ICD API Base URLs ===
-ICD_API_BASE_ES = "http://icdapi_es"
-ICD_API_BASE_EN = "http://icdapi_en"
+# === ICD API Credentials & Base URLs ===
+ICD_CLIENT_ID = os.environ.get("ICD_CLIENT_ID")
+ICD_CLIENT_SECRET = os.environ.get("ICD_CLIENT_SECRET")
 
+ICD_API_BASE_ES = os.environ.get("ICD_API_BASE_ES", "http://icdapi_es/icd")
+ICD_API_BASE_EN = os.environ.get("ICD_API_BASE_EN", "http://icdapi_en/icd")
