@@ -959,8 +959,8 @@ class MedicalReport(models.Model):
 
 # --- Catálogo institucional ICD‑11 ---
 class ICD11Entry(models.Model):
-    icd_code = models.CharField(max_length=20, unique=True)   # Ej: "01", "CA23.0"
-    title = models.CharField(max_length=255)                  # Ej: "Asma"
+    icd_code = models.CharField(max_length=20)   # Ej: "01", "CA23.0"
+    title = models.CharField(max_length=255)     # Ej: "Asma"
     foundation_id = models.CharField(max_length=200, blank=True, null=True)  # ID foundation OMS o @id
     definition = models.TextField(blank=True, null=True)      # Texto oficial OMS
     synonyms = models.JSONField(blank=True, null=True)        # Lista de sinónimos
@@ -980,6 +980,7 @@ class ICD11Entry(models.Model):
             models.Index(fields=["icd_code"]),
             models.Index(fields=["title"]),
         ]
+        unique_together = ("icd_code", "language")  # clave compuesta para bilingüe
 
     def __str__(self):
         return f"{self.icd_code} — {self.title}"
