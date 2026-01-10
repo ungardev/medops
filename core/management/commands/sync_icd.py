@@ -40,7 +40,7 @@ def ingest_icd11():
         exclusions = data.get("exclusion", [])
         children = data.get("child", [])
 
-        obj, created = ICD11Entry.objects.update_or_create(
+        ICD11Entry.objects.update_or_create(
             icd_code=code or entity_id,
             defaults={
                 "title": title,
@@ -52,14 +52,18 @@ def ingest_icd11():
                 "language": "en"
             }
         )
-        if created:
+
+        if code:
             added += 1
         else:
             updated += 1
 
-        # Encolar hijos
+        # Encolar hijos válidos (evitar nodos especiales)
         for child in children:
-            queue.append(child.split("/")[-1])
+            child_id = child.split("/")[-1]
+            if child_id in ("unspecified", "other"):
+                continue
+            queue.append(child_id)
 
     ICD11UpdateLog.objects.create(
         source=BASE_URL,
