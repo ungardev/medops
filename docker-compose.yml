@@ -38,8 +38,13 @@ services:
       - DB_PORT=5432
       - DJANGO_LOG_FILE=${DJANGO_LOG_FILE}
       - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
+      # 👇 variables para apuntar a los contenedores ICD-API internos
+      - ICD_API_BASE_ES=http://icdapi_es/icd
+      - ICD_API_BASE_EN=http://icdapi_en/icd
     depends_on:
       - db
+      - icdapi_es
+      - icdapi_en
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
       interval: 10s
@@ -63,6 +68,30 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - medops_net
+
+  icdapi_es:
+    image: whoicd/icd-api
+    container_name: icdapi_es
+    ports:
+      - "8081:80"
+    environment:
+      - acceptLicense=true
+      - saveAnalytics=false
+      - include=2025-01_es
+    networks:
+      - medops_net
+
+  icdapi_en:
+    image: whoicd/icd-api
+    container_name: icdapi_en
+    ports:
+      - "8082:80"
+    environment:
+      - acceptLicense=true
+      - saveAnalytics=false
+      - include=2025-01_en
     networks:
       - medops_net
 
