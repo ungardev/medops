@@ -40,9 +40,12 @@ services:
       - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
       # 👇 variables ICD-API ya no se hardcodean, se leen directo de .env.production
     depends_on:
-      - db
-      - icdapi_es
-      - icdapi_en
+      db:
+        condition: service_started
+      icdapi_es:
+        condition: service_healthy
+      icdapi_en:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
       interval: 10s
@@ -80,6 +83,12 @@ services:
       - include=2025-01_es
     networks:
       - medops_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/icd/release/11/2025-01/mms"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
   icdapi_en:
     image: whoicd/icd-api
@@ -92,6 +101,12 @@ services:
       - include=2025-01_en
     networks:
       - medops_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/icd/release/11/2025-01/mms"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
 
 volumes:
   db_data:
