@@ -4,7 +4,7 @@ from core.models import ICD11Entry, ICD11UpdateLog
 
 TOKEN_URL = "https://icdaccessmanagement.who.int/connect/token"
 API_BASE = "https://id.who.int/icd"
-RELEASE = "2025-01/mms"
+RELEASE = "11/2025-01/mms"   # 👈 corregido: incluye el prefijo 11/
 
 class Command(BaseCommand):
     help = "Importa catálogo ICD-11 completo desde ICD-API"
@@ -27,7 +27,7 @@ class Command(BaseCommand):
         seen, added, updated = set(), 0, 0
 
         def fetch_entity(entity_id, parent_code=None):
-            url = f"{API_BASE}/release/{RELEASE}/entity/{entity_id}"
+            url = f"{API_BASE}/entity/{entity_id}"   # 👈 corregido: ya no lleva /release
             r = requests.get(url, headers=headers)
             r.raise_for_status()
             payload = r.json()
@@ -62,17 +62,17 @@ class Command(BaseCommand):
             time.sleep(0.05)
 
             # Recorrer hijos
-            children_url = f"{API_BASE}/release/{RELEASE}/entity/{entity_id}/children"
+            children_url = f"{API_BASE}/entity/{entity_id}/children"   # 👈 corregido
             rc = requests.get(children_url, headers=headers)
             if rc.status_code == 200:
-                for child in rc.json().get("children", []):
+                for child in rc.json().get("child", []):   # 👈 la clave es "child"
                     fetch_entity(child["id"], parent_code=code)
 
-        # Recorrer capítulos raíz
-        chapters_url = f"{API_BASE}/release/{RELEASE}/chapters"
-        r = requests.get(chapters_url, headers=headers)
+        # Recorrer capítulos raíz desde el release
+        release_url = f"{API_BASE}/release/{RELEASE}"
+        r = requests.get(release_url, headers=headers)
         r.raise_for_status()
-        for ch in r.json().get("chapters", []):
+        for ch in r.json().get("child", []):   # 👈 la clave es "child"
             fetch_entity(ch["id"])
 
         removed = ICD11Entry.objects.exclude(icd_code__in=seen).count()
