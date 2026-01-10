@@ -20,9 +20,7 @@ services:
 
   backend:
     build: .
-    command: >
-      sh -c "python manage.py migrate &&
-             gunicorn --bind 0.0.0.0:8000 medops.wsgi:application"
+    command: gunicorn --bind 0.0.0.0:8000 medops.wsgi:application   # 👈 solo Gunicorn, migraciones aparte
     ports:
       - "8000:8000"
     env_file:
@@ -48,10 +46,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 20s
+      interval: 30s
       timeout: 10s
-      retries: 10
-      start_period: 60s   # 👈 espera más larga antes de chequear, da tiempo a migraciones + gunicorn
+      retries: 5
+      start_period: 60s   # 👈 espera más larga antes de chequear, Gunicorn arranca rápido sin migraciones
     networks:
       - medops_net
     volumes:
