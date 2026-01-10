@@ -38,9 +38,9 @@ services:
       - DB_PORT=5432
       - DJANGO_LOG_FILE=${DJANGO_LOG_FILE}
       - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
-      # 👇 variables para apuntar a los contenedores ICD-API internos
-      - ICD_API_BASE_ES=http://icdapi_es/icd
-      - ICD_API_BASE_EN=http://icdapi_en/icd
+      # 👇 variables para apuntar a los contenedores ICD-API internos (ahora desde .env.production)
+      - ICD_API_BASE_ES=${ICD_API_BASE_ES}
+      - ICD_API_BASE_EN=${ICD_API_BASE_EN}
     depends_on:
       - db
       - icdapi_es
