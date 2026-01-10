@@ -3,7 +3,8 @@ import requests
 from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
 
-BASE_URL = "http://localhost:8081/icd/release/11/2025-01/mms"
+# Usar el nombre del contenedor ICD-API en la red interna de Docker
+BASE_URL = "http://icdapi_es:80/icd/release/11/2025-01/mms"
 HEADERS = {
     "Accept": "application/json",
     "API-Version": "v2",
