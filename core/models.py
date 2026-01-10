@@ -986,6 +986,7 @@ class ICD11Entry(models.Model):
         return f"{self.icd_code} — {self.title}"
 
 
+
 class ICD11UpdateLog(models.Model):
     run_at = models.DateTimeField(auto_now_add=True)
     source = models.CharField(max_length=255, blank=True, null=True)   # URL/archivo/hash de origen
