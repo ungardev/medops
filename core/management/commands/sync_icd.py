@@ -8,35 +8,57 @@ class ICDAPIClient:
     def __init__(self, client_id, client_secret, base_url):
         self.client_id = client_id
         self.client_secret = client_secret
-        self.base_url = base_url
+        self.base_url = base_url.rstrip("/")
         self.token = None
 
     def authenticate(self):
-        # TODO: implementar autenticación real contra ICD API
-        # Por ahora dejamos un token simulado
-        self.token = "fake-token"
+        # Autenticación real contra ICD API (OAuth2 client_credentials)
+        resp = requests.post(
+            "https://icdaccessmanagement.who.int/connect/token",
+            data={
+                "client_id": self.client_id,
+                "client_secret": self.client_secret,
+                "scope": "icdapi_access",
+                "grant_type": "client_credentials",
+            },
+        )
+        resp.raise_for_status()
+        self.token = resp.json()["access_token"]
 
     def fetch_children(self, root_code, lang="es"):
-        # TODO: implementar llamada real a ICD API
-        # Stub de ejemplo para pruebas
-        return [
-            {"code": f"{root_code}.X", "title": f"Ejemplo hijo de {root_code}", "lang": lang}
-        ]
+        if not self.token:
+            raise CommandError("No se ha autenticado contra ICD API.")
+        headers = {"Authorization": f"Bearer {self.token}"}
+        url = f"{self.base_url}/entity/{root_code}/children?lang={lang}"
+        resp = requests.get(url, headers=headers)
+        resp.raise_for_status()
+        data = resp.json()
+        children = []
+        for child in data.get("child", []):
+            code = child["id"].split("/")[-1]
+            title = ""
+            if "title" in child and isinstance(child["title"], dict):
+                title = child["title"].get("@value", "")
+            children.append({"code": code, "title": title, "lang": lang})
+        return children
 
 
 def sync_root_codes(client, roots, lang="es"):
     stats = {"created": 0, "updated": 0, "errors": 0}
     for root in roots:
-        children = client.fetch_children(root, lang=lang)
-        for child in children:
-            obj, created = ICD11Entry.objects.update_or_create(
-                icd_code=child["code"],
-                defaults={"title": child["title"], "language": child["lang"]},
-            )
-            if created:
-                stats["created"] += 1
-            else:
-                stats["updated"] += 1
+        try:
+            children = client.fetch_children(root, lang=lang)
+            for child in children:
+                obj, created = ICD11Entry.objects.update_or_create(
+                    icd_code=child["code"],
+                    defaults={"title": child["title"], "language": child["lang"]},
+                )
+                if created:
+                    stats["created"] += 1
+                else:
+                    stats["updated"] += 1
+        except Exception as e:
+            stats["errors"] += 1
     return stats
 
 
@@ -46,7 +68,7 @@ def log_update(lang, stats, source):
         source=source,
         added=stats.get("created", 0),
         updated=stats.get("updated", 0),
-        removed=stats.get("errors", 0),  # usamos 'errors' como 'removed' para trazabilidad
+        removed=stats.get("errors", 0),
     )
 
 
