@@ -255,3 +255,8 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
 ]
+
+# === ICD API Base URLs ===
+ICD_API_BASE_ES = "http://icdapi_es"
+ICD_API_BASE_EN = "http://icdapi_en"
+
