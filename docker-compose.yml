@@ -41,9 +41,9 @@ services:
       db:
         condition: service_started
       icdapi_es:
-        condition: service_healthy
+        condition: service_started
       icdapi_en:
-        condition: service_healthy
+        condition: service_started
     networks:
       - medops_net
     volumes:
