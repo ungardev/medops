@@ -47,11 +47,11 @@ services:
       icdapi_en:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 40s   # 👈 espera antes de empezar a chequear, da tiempo a migraciones + gunicorn
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s   # 👈 espera más larga antes de chequear, da tiempo a migraciones + gunicorn
     networks:
       - medops_net
     volumes:
