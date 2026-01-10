@@ -41,12 +41,12 @@ def sync_root_codes(client, roots, lang="es"):
 
 
 def log_update(lang, stats, source):
+    # Ajustado a los campos reales del modelo ICD11UpdateLog
     ICD11UpdateLog.objects.create(
-        language=lang,
         source=source,
-        created_count=stats["created"],
-        updated_count=stats["updated"],
-        error_count=stats["errors"],
+        added=stats.get("created", 0),
+        updated=stats.get("updated", 0),
+        removed=stats.get("errors", 0),  # usamos 'errors' como 'removed' para trazabilidad
     )
 
 
