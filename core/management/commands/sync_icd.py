@@ -8,7 +8,7 @@ BASE_URL = "http://icdapi_es:80/icd/release/11/2025-01/mms"
 HEADERS = {
     "Accept": "application/json",
     "API-Version": "v2",
-    "Accept-Language": "en"
+    "Accept-Language": "es"  # ahora pedimos el corpus en español
 }
 
 def fetch_entity(entity_id=""):
@@ -42,14 +42,14 @@ def ingest_icd11():
 
         ICD11Entry.objects.update_or_create(
             icd_code=code or entity_id,
+            language="es",  # clave bilingüe: cada código tendrá versión en español
             defaults={
                 "title": title,
                 "foundation_id": foundation_id,
                 "definition": definition,
                 "synonyms": synonyms,
                 "exclusions": exclusions,
-                "children": children,
-                "language": "en"
+                "children": children
             }
         )
 
@@ -73,9 +73,9 @@ def ingest_icd11():
     )
 
 class Command(BaseCommand):
-    help = "Sincroniza ICD-11 desde el contenedor local ICD-API"
+    help = "Sincroniza ICD-11 en español desde el contenedor local ICD-API"
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.NOTICE("Iniciando sincronización ICD-11..."))
+        self.stdout.write(self.style.NOTICE("Iniciando sincronización ICD-11 (español)..."))
         ingest_icd11()
-        self.stdout.write(self.style.SUCCESS("Sincronización completada."))
+        self.stdout.write(self.style.SUCCESS("Sincronización completada (español)."))
