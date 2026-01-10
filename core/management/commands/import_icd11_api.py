@@ -4,7 +4,7 @@ from core.models import ICD11Entry, ICD11UpdateLog
 
 TOKEN_URL = "https://icdaccessmanagement.who.int/connect/token"
 API_BASE = "https://id.who.int/icd"
-RELEASE = "11/2025-01"   # 👈 release sin /mms
+RELEASE = "11/2025-01"   # release sin /mms
 
 class Command(BaseCommand):
     help = "Importa catálogo ICD-11 completo desde ICD-API"
@@ -22,7 +22,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         token = self.get_token()
-        headers = {"Authorization": f"Bearer {token}", "Accept": "application/json"}
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+            "Accept-Language": "en"   # 👈 idioma correcto en header
+        }
 
         seen, added, updated = set(), 0, 0
 
@@ -68,8 +72,8 @@ class Command(BaseCommand):
                 for child in rc.json().get("child", []):   # clave correcta: "child"
                     fetch_entity(child["id"], parent_code=code)
 
-        # Recorrer capítulos raíz desde el release MMS en inglés
-        release_url = f"{API_BASE}/release/{RELEASE}/mms/en"   # 👈 endpoint correcto con idioma
+        # Recorrer capítulos raíz desde el release MMS
+        release_url = f"{API_BASE}/release/{RELEASE}/mms"
         r = requests.get(release_url, headers=headers)
         r.raise_for_status()
         for ch in r.json().get("child", []):   # clave correcta: "child"
@@ -79,7 +83,7 @@ class Command(BaseCommand):
         ICD11Entry.objects.exclude(icd_code__in=seen).delete()
 
         ICD11UpdateLog.objects.create(
-            source=f"{API_BASE}/release/{RELEASE}/mms/en",
+            source=f"{API_BASE}/release/{RELEASE}/mms",
             added=added,
             updated=updated,
             removed=removed,
