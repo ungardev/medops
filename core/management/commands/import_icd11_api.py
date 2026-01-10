@@ -3,8 +3,8 @@ from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
 
 # Contenedores locales ICD-API (ajustados sin /icd)
-API_BASE_ES = os.getenv("ICD_API_BASE_ES", "http://icdapi_es")
-API_BASE_EN = os.getenv("ICD_API_BASE_EN", "http://icdapi_en")
+API_BASE_ES = os.getenv("ICD_API_BASE_ES", "http://icdapi_es/icd")
+API_BASE_EN = os.getenv("ICD_API_BASE_EN", "http://icdapi_en/icd")
 RELEASE = "2025-01"   # release cargado en los contenedores
 
 class Command(BaseCommand):
@@ -14,8 +14,12 @@ class Command(BaseCommand):
         seen, added, updated = set(), 0, 0
 
         def fetch_entity(api_base, entity_id, parent_code=None, lang="en"):
-            headers = {"Accept": "application/json", "Accept-Language": lang}
-            url = f"{api_base}/entity/{entity_id}"
+            headers = {
+                "Accept": "application/json",
+                "Accept-Language": lang,
+                "API-Version": "v2",
+            }
+            url = f"{api_base}/entity/{entity_id}?releaseId={RELEASE}"
             r = requests.get(url, headers=headers)
             r.raise_for_status()
             payload = r.json()
@@ -50,15 +54,19 @@ class Command(BaseCommand):
             time.sleep(0.02)
 
             # Recorrer hijos
-            children_url = f"{api_base}/entity/{entity_id}/children"
+            children_url = f"{api_base}/entity/{entity_id}/children?releaseId={RELEASE}"
             rc = requests.get(children_url, headers=headers)
             if rc.status_code == 200:
                 for child in rc.json().get("child", []):
                     fetch_entity(api_base, child["id"], parent_code=code, lang=lang)
 
         def import_linearization(api_base, lang):
-            headers = {"Accept": "application/json", "Accept-Language": lang}
-            release_url = f"{api_base}/release/11/{RELEASE}/mms"
+            headers = {
+                "Accept": "application/json",
+                "Accept-Language": lang,
+                "API-Version": "v2",
+            }
+            release_url = f"{api_base}/entity?releaseId={RELEASE}"
             r = requests.get(release_url, headers=headers)
             r.raise_for_status()
             for ch in r.json().get("child", []):
@@ -72,7 +80,7 @@ class Command(BaseCommand):
         ICD11Entry.objects.exclude(icd_code__in=seen).delete()
 
         ICD11UpdateLog.objects.create(
-            source=f"{API_BASE_ES} + {API_BASE_EN} /release/11/{RELEASE}/mms",
+            source=f"{API_BASE_ES} + {API_BASE_EN} /entity?releaseId={RELEASE}",
             added=added,
             updated=updated,
             removed=removed,
