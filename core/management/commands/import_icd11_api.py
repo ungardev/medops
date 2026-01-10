@@ -24,14 +24,13 @@ class Command(BaseCommand):
         token = self.get_token()
         headers = {
             "Authorization": f"Bearer {token}",
-            "Accept": "application/json",
-            "Accept-Language": "en"   # 👈 idioma correcto en header
+            "Accept": "application/json"
         }
 
         seen, added, updated = set(), 0, 0
 
         def fetch_entity(entity_id, parent_code=None):
-            url = f"{API_BASE}/entity/{entity_id}"   # endpoint correcto para entidades
+            url = f"{API_BASE}/entity/{entity_id}"
             r = requests.get(url, headers=headers)
             r.raise_for_status()
             payload = r.json()
@@ -66,24 +65,24 @@ class Command(BaseCommand):
             time.sleep(0.05)
 
             # Recorrer hijos
-            children_url = f"{API_BASE}/entity/{entity_id}/children"
+            children_url = f"{API_BASE}/entity/{entity_id}/children?lang=en"
             rc = requests.get(children_url, headers=headers)
             if rc.status_code == 200:
-                for child in rc.json().get("child", []):   # clave correcta: "child"
+                for child in rc.json().get("child", []):
                     fetch_entity(child["id"], parent_code=code)
 
-        # Recorrer capítulos raíz desde el release MMS
-        release_url = f"{API_BASE}/release/{RELEASE}/mms"
+        # Recorrer capítulos raíz desde el release MMS en inglés
+        release_url = f"{API_BASE}/release/{RELEASE}/mms?lang=en"
         r = requests.get(release_url, headers=headers)
         r.raise_for_status()
-        for ch in r.json().get("child", []):   # clave correcta: "child"
+        for ch in r.json().get("child", []):
             fetch_entity(ch["id"])
 
         removed = ICD11Entry.objects.exclude(icd_code__in=seen).count()
         ICD11Entry.objects.exclude(icd_code__in=seen).delete()
 
         ICD11UpdateLog.objects.create(
-            source=f"{API_BASE}/release/{RELEASE}/mms",
+            source=f"{API_BASE}/release/{RELEASE}/mms?lang=en",
             added=added,
             updated=updated,
             removed=removed,
