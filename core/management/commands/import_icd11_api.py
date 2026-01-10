@@ -2,7 +2,7 @@ import os, time, requests
 from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
 
-# Contenedores locales ICD-API (ajustados sin /icd)
+# Contenedores locales ICD-API (ajustados con /icd)
 API_BASE_ES = os.getenv("ICD_API_BASE_ES", "http://icdapi_es/icd")
 API_BASE_EN = os.getenv("ICD_API_BASE_EN", "http://icdapi_en/icd")
 RELEASE = "2025-01"   # release cargado en los contenedores
@@ -66,11 +66,11 @@ class Command(BaseCommand):
                 "Accept-Language": lang,
                 "API-Version": "v2",
             }
-            release_url = f"{api_base}/entity?releaseId={RELEASE}"
+            release_url = f"{api_base}/release/11/{RELEASE}/mms"
             r = requests.get(release_url, headers=headers)
             r.raise_for_status()
             for ch in r.json().get("child", []):
-                fetch_entity(api_base, ch["id"], lang=lang)
+                fetch_entity(api_base, ch, lang=lang)
 
         # Importar primero español, luego inglés
         import_linearization(API_BASE_ES, "es")
@@ -80,7 +80,7 @@ class Command(BaseCommand):
         ICD11Entry.objects.exclude(icd_code__in=seen).delete()
 
         ICD11UpdateLog.objects.create(
-            source=f"{API_BASE_ES} + {API_BASE_EN} /entity?releaseId={RELEASE}",
+            source=f"{API_BASE_ES} + {API_BASE_EN} /release/11/{RELEASE}/mms",
             added=added,
             updated=updated,
             removed=removed,
