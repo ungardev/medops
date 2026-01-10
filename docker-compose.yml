@@ -44,12 +44,6 @@ services:
         condition: service_healthy
       icdapi_en:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s   # 👈 espera más larga antes de chequear, Gunicorn arranca rápido sin migraciones
     networks:
       - medops_net
     volumes:
