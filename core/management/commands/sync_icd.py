@@ -1,7 +1,7 @@
 # core/management/commands/sync_icd.py
 import requests
-from django.utils import timezone
-from myapp.models import ICD11Entry, ICD11UpdateLog
+from django.core.management.base import BaseCommand
+from core.models import ICD11Entry, ICD11UpdateLog
 
 BASE_URL = "http://localhost:8081/icd/release/11/2025-01/mms"
 HEADERS = {
@@ -66,3 +66,11 @@ def ingest_icd11():
         updated=updated,
         removed=0
     )
+
+class Command(BaseCommand):
+    help = "Sincroniza ICD-11 desde el contenedor local ICD-API"
+
+    def handle(self, *args, **options):
+        self.stdout.write(self.style.NOTICE("Iniciando sincronización ICD-11..."))
+        ingest_icd11()
+        self.stdout.write(self.style.SUCCESS("Sincronización completada."))
