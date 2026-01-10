@@ -959,12 +959,15 @@ class MedicalReport(models.Model):
 
 # --- Catálogo institucional ICD‑11 ---
 class ICD11Entry(models.Model):
-    icd_code = models.CharField(max_length=20, unique=True)          # Ej: "CA23.0"
-    title = models.CharField(max_length=255)                         # Ej: "Asma"
-    foundation_id = models.CharField(max_length=100, blank=True, null=True)  # ID foundation OMS
-    definition = models.TextField(blank=True, null=True)             # Texto oficial OMS
-    synonyms = models.JSONField(blank=True, null=True)               # Lista de sinónimos
+    icd_code = models.CharField(max_length=20, unique=True)   # Ej: "01", "CA23.0"
+    title = models.CharField(max_length=255)                  # Ej: "Asma"
+    foundation_id = models.CharField(max_length=200, blank=True, null=True)  # ID foundation OMS o @id
+    definition = models.TextField(blank=True, null=True)      # Texto oficial OMS
+    synonyms = models.JSONField(blank=True, null=True)        # Lista de sinónimos
     parent_code = models.CharField(max_length=20, blank=True, null=True)     # Jerarquía inmediata
+    exclusions = models.JSONField(blank=True, null=True)      # Exclusiones (lista de dicts)
+    children = models.JSONField(blank=True, null=True)        # Hijos (lista de URLs o códigos)
+    language = models.CharField(max_length=5, default="es")   # Idioma del entry
 
     # Auditoría mínima del catálogo
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
