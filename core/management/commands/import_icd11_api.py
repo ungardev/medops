@@ -2,9 +2,9 @@ import os, time, requests
 from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
 
-# Contenedores locales ICD-API
-API_BASE_ES = os.getenv("ICD_API_BASE_ES", "http://localhost:8081/icd")
-API_BASE_EN = os.getenv("ICD_API_BASE_EN", "http://localhost:8082/icd")
+# Contenedores locales ICD-API (ajustados sin /icd)
+API_BASE_ES = os.getenv("ICD_API_BASE_ES", "http://icdapi_es")
+API_BASE_EN = os.getenv("ICD_API_BASE_EN", "http://icdapi_en")
 RELEASE = "2025-01"   # release cargado en los contenedores
 
 class Command(BaseCommand):
