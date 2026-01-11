@@ -889,11 +889,25 @@ class ChargeItem(models.Model):
 
 
 class InstitutionSettings(models.Model):
-    name = models.CharField(max_length=255)         # Nombre del centro médico
-    address = models.CharField(max_length=255)      # Dirección institucional
-    phone = models.CharField(max_length=50)         # Teléfono de contacto
-    logo = models.ImageField(upload_to="logos/")    # Logo institucional
-    tax_id = models.CharField(max_length=50)        # RIF / NIT / identificación fiscal
+    name = models.CharField(max_length=255, verbose_name="Nombre del centro médico")
+    phone = models.CharField(max_length=50, verbose_name="Teléfono de contacto")
+    logo = models.ImageField(upload_to="logos/", verbose_name="Logo institucional")
+    tax_id = models.CharField(max_length=50, verbose_name="RIF / NIT / identificación fiscal")
+
+    # ⚔️ Dirección institucional con jerarquía
+    neighborhood = models.ForeignKey(
+        "core.Neighborhood",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Urbanización / Barrio"
+    )
+    address = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Dirección detallada"
+    )
 
     # Auditoría
     created_at = models.DateTimeField(auto_now_add=True)
