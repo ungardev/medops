@@ -5,14 +5,11 @@ import {
   Country, State, Municipality, Parish, Neighborhood 
 } from "@/types/config";
 
-/**
- * Hook de Élite para la gestión de data geográfica en cascada.
- * Corregido para usar las rutas reales del Backend (sin el prefijo 'core/').
- */
 export function useLocationData() {
   
   /**
-   * 🛡️ Purificador de IDs "Anti-Corrupción"
+   * 🛡️ Purificador de IDs
+   * Extrae solo los números. Si recibe ":1", devuelve "1".
    */
   const sanitize = (id: string | number | null | undefined): string | null => {
     if (id === null || id === undefined || id === "" || id === "undefined" || id === "null") {
@@ -22,18 +19,17 @@ export function useLocationData() {
     return cleanId !== '' ? cleanId : null;
   };
 
-  // 🔹 Obtener Países: /api/countries/
+  // 🔹 Países: /api/countries/
   const useCountries = () => useQuery({
     queryKey: ["geo", "countries"],
     queryFn: async () => {
-      // ✅ ELIMINADO 'core/' - Ruta real confirmada por prueba de navegador
       const res = await api.get<Country[]>("countries/");
       return res.data;
     },
     staleTime: Infinity,
   });
 
-  // 🔹 Obtener Estados por País: /api/countries/{id}/states/
+  // 🔹 Estados: /api/countries/{id}/states/
   const useStates = (countryId?: string | number | null) => {
     const cleanId = sanitize(countryId);
     return useQuery({
@@ -48,7 +44,7 @@ export function useLocationData() {
     });
   };
 
-  // 🔹 Obtener Municipios por Estado: /api/states/{id}/municipalities/
+  // 🔹 Municipios: /api/states/{id}/municipalities/
   const useMunicipalities = (stateId?: string | number | null) => {
     const cleanId = sanitize(stateId);
     return useQuery({
@@ -63,7 +59,7 @@ export function useLocationData() {
     });
   };
 
-  // 🔹 Obtener Parroquias por Municipio: /api/municipalities/{id}/parishes/
+  // 🔹 Parroquias: /api/municipalities/{id}/parishes/
   const useParishes = (municipalityId?: string | number | null) => {
     const cleanId = sanitize(municipalityId);
     return useQuery({
@@ -78,7 +74,7 @@ export function useLocationData() {
     });
   };
 
-  // 🔹 Obtener Urbanizaciones por Parroquia: /api/parishes/{id}/neighborhoods/
+  // 🔹 Urbanizaciones: /api/parishes/{id}/neighborhoods/
   const useNeighborhoods = (parishId?: string | number | null) => {
     const cleanId = sanitize(parishId);
     return useQuery({
@@ -94,10 +90,6 @@ export function useLocationData() {
   };
 
   return {
-    useCountries,
-    useStates,
-    useMunicipalities,
-    useParishes,
-    useNeighborhoods,
+    useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods,
   };
 }
