@@ -80,5 +80,22 @@ export function useLocationData() {
     });
   };
 
-  return { useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods };
+  // 🔹 Crear Nueva Urbanización (POST)
+  // Esta función se usará si el usuario escribe un nombre que no existe
+  const createNeighborhood = async (name: string, parishId: number) => {
+    const res = await api.post<Neighborhood>("neighborhoods/", {
+      name: name,
+      parish: parishId
+    });
+    return res.data;
+  };
+
+  return { 
+    useCountries, 
+    useStates, 
+    useMunicipalities, 
+    useParishes, 
+    useNeighborhoods,
+    createNeighborhood // Exportamos la función para crear
+  };
 }

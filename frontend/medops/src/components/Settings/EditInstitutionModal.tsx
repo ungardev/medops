@@ -8,6 +8,7 @@ import {
   GlobeAltIcon
 } from "@heroicons/react/24/outline";
 import { useInstitutionSettings } from "../../hooks/settings/useInstitutionSettings";
+import { useLocationData } from "../../hooks/settings/useLocationData";
 import LocationSelector from "./LocationSelector";
 
 interface Props {
@@ -17,13 +18,15 @@ interface Props {
 
 export default function EditInstitutionModal({ open, onClose }: Props) {
   const { data: settings, updateInstitution, isUpdating } = useInstitutionSettings();
+  const { createNeighborhood } = useLocationData();
   
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     tax_id: "",
     address: "",
-    neighborhood: null as number | null,
+    neighborhood: null as number | string | null, // Puede ser ID o Nombre nuevo
+    parishId: null as number | null, // Necesario para crear un neighborhood nuevo
     logo: null as File | null
   });
 
@@ -47,6 +50,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         tax_id: settings.tax_id || "",
         address: settings.address || "",
         neighborhood: finalId, 
+        parishId: null, // Se llenará al interactuar con el LocationSelector
         logo: null
       });
       
@@ -65,11 +69,33 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.neighborhood) return;
+
     try {
-      await updateInstitution(formData);
+      let finalNeighborhoodId: number;
+
+      // ⚡ LÓGICA DE CREACIÓN DINÁMICA
+      // Si el neighborhood es un string, significa que el usuario escribió uno nuevo
+      if (typeof formData.neighborhood === 'string') {
+        if (!formData.parishId) {
+          alert("ERROR: PARISH_ID_REQUIRED_FOR_NEW_NEIGHBORHOOD");
+          return;
+        }
+        // Creamos el sector en el backend antes de actualizar la institución
+        const newNB = await createNeighborhood(formData.neighborhood, formData.parishId);
+        finalNeighborhoodId = newNB.id;
+      } else {
+        finalNeighborhoodId = formData.neighborhood;
+      }
+
+      // Sincronizamos con el backend usando el ID definitivo
+      await updateInstitution({
+        ...formData,
+        neighborhood: finalNeighborhoodId
+      });
+      
       onClose();
     } catch (err) {
-      console.error("CRITICAL_SYSTEM_ERROR", err);
+      console.error("CRITICAL_SYNC_ERROR", err);
     }
   };
 
@@ -140,8 +166,8 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
             <div className="border-t border-[var(--palantir-border)]/10 pt-8">
                <LocationSelector 
-                initialNeighborhoodId={formData.neighborhood ?? undefined}
-                onLocationChange={(id) => setFormData({...formData, neighborhood: id})}
+                initialNeighborhoodId={typeof formData.neighborhood === 'number' ? formData.neighborhood : undefined}
+                onLocationChange={(val, parishId) => setFormData({...formData, neighborhood: val, parishId: parishId})}
               />
             </div>
 
