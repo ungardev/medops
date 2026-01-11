@@ -12,7 +12,11 @@ RUN npm run build
 
 # Etapa 2: servir con Nginx
 FROM nginx:alpine
+
+# Copiar el resultado del build (ajusta según tu framework: dist/ o build/)
 COPY --from=build /app/dist /usr/share/nginx/html
+
+# Configuración Nginx para SPA con fallback a index.html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

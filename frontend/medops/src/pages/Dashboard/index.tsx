@@ -5,6 +5,7 @@ import TrendsChart from "@/components/Dashboard/TrendsChart";
 import NotificationsFeed from "@/components/Dashboard/NotificationsFeed";
 import AuditLog from "@/components/Dashboard/AuditLog";
 import OperationalHub from "@/components/Dashboard/OperationalHub";
+import PageHeader from "@/components/Common/PageHeader"; // Importamos el nuevo Header
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { queryClient } from "@/lib/reactQuery";
 import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
@@ -21,44 +22,44 @@ export default function Dashboard() {
 
   return (
     <DashboardFiltersProvider>
-      {/* Reducido py-4 a py-2 para ganar espacio vertical superior e inferior */}
-      <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-3 animate-in fade-in duration-700">
+      <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-6 animate-in fade-in duration-700">
         
-        {/* 🔹 Sección Superior: Título y Filtros */}
-        <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[var(--palantir-border)]/20 pb-2">
-          <div className="space-y-0.5">
-            <h2 className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)] leading-none opacity-80 italic">
-              Medical_Operative_System
-            </h2>
-            <p className="text-xl font-bold text-[var(--palantir-text)] tracking-tight">Panel de Control</p>
-          </div>
-          <DashboardButtonGroup />
-        </section>
+        {/* 🔹 PageHeader Elite: Centralizamos Título, Breadcrumb y Acciones */}
+        <PageHeader 
+          title="Panel de Control" 
+          breadcrumb="MEDOPS // MEDICAL_OPERATIVE_SYSTEM"
+          actions={<DashboardButtonGroup />}
+          // Puedes pasar stats aquí si quieres ver métricas críticas en el header
+          // stats={[
+          //   { label: "Status", value: "ONLINE", color: "text-emerald-500" },
+          //   { label: "Encrypted", value: "AES-256", color: "text-[var(--palantir-active)]" }
+          // ]}
+        />
 
-        {/* 🔹 Fila de Métricas */}
-        <section>
+        {/* 🔹 Fila de Métricas: Ahora respira mejor bajo el nuevo Header */}
+        <section className="animate-in slide-in-from-bottom-2 duration-700 delay-100">
           <MetricsRow />
         </section>
 
-        {/* 🔹 Triada Operacional: Alineación perfecta de base */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+        {/* 🔹 Triada Operacional: Alineación técnica de alto rendimiento */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 border border-[var(--palantir-border)]/10 bg-black/5 rounded-sm p-1">
             <OperationalHub />
           </div>
 
-          <div className="lg:col-span-6">
+          <div className="lg:col-span-6 border border-[var(--palantir-border)]/10 bg-black/5 rounded-sm p-1">
             <TrendsChart />
           </div>
 
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3 border border-[var(--palantir-border)]/10 bg-black/5 rounded-sm p-1">
             <NotificationsFeed />
           </div>
 
         </section>
 
-        {/* 🔹 Auditoría: Sin encabezado y con padding superior mínimo para eliminar scroll */}
-        <section className="pt-1">
+        {/* 🔹 Auditoría: Registro de eventos del sistema */}
+        <section className="border-t border-[var(--palantir-border)]/20 pt-4">
           <AuditLog />
         </section>
 

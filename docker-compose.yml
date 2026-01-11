@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   frontend:
-    build: ./frontend/medops
+    build:
+      context: ./frontend/medops
+    image: medops_frontend:latest
     ports:
       - "8080:80"
     env_file:
@@ -15,8 +17,10 @@ services:
     networks:
       - medops_net
     volumes:
+      # Monta el resultado del build en Nginx
       - ./frontend/medops/dist:/usr/share/nginx/html
-      - ./staticfiles:/app/staticfiles   # 👈 añadido para servir estáticos Django/DRF
+      # Comparte estáticos con backend
+      - ./staticfiles:/app/staticfiles
 
   backend:
     build: .
