@@ -1,20 +1,11 @@
 // src/hooks/settings/useLocationData.ts
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
-import { 
-  Country, State, Municipality, Parish, Neighborhood 
-} from "@/types/config";
+import { Country, State, Municipality, Parish, Neighborhood } from "@/types/config";
 
 export function useLocationData() {
-  
-  /**
-   * 🛡️ Purificador de IDs
-   * Extrae solo los números. Si recibe ":1", devuelve "1".
-   */
-  const sanitize = (id: string | number | null | undefined): string | null => {
-    if (id === null || id === undefined || id === "" || id === "undefined" || id === "null") {
-      return null;
-    }
+  const sanitize = (id: any): string | null => {
+    if (!id || id === "undefined" || id === "null") return null;
     const cleanId = String(id).replace(/[^0-9]/g, '');
     return cleanId !== '' ? cleanId : null;
   };
@@ -29,67 +20,65 @@ export function useLocationData() {
     staleTime: Infinity,
   });
 
-  // 🔹 Estados: /api/countries/{id}/states/
-  const useStates = (countryId?: string | number | null) => {
+  // 🔹 Estados: /api/states/?country=1
+  const useStates = (countryId?: any) => {
     const cleanId = sanitize(countryId);
     return useQuery({
       queryKey: ["geo", "states", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<State[]>(`countries/${cleanId}/states/`);
+        const res = await api.get<State[]>(`states/?country=${cleanId}`);
         return res.data;
       },
-      enabled: cleanId !== null,
+      enabled: !!cleanId,
       staleTime: Infinity,
     });
   };
 
-  // 🔹 Municipios: /api/states/{id}/municipalities/
-  const useMunicipalities = (stateId?: string | number | null) => {
+  // 🔹 Municipios: /api/municipalities/?state=1
+  const useMunicipalities = (stateId?: any) => {
     const cleanId = sanitize(stateId);
     return useQuery({
       queryKey: ["geo", "municipalities", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<Municipality[]>(`states/${cleanId}/municipalities/`);
+        const res = await api.get<Municipality[]>(`municipalities/?state=${cleanId}`);
         return res.data;
       },
-      enabled: cleanId !== null,
+      enabled: !!cleanId,
       staleTime: Infinity,
     });
   };
 
-  // 🔹 Parroquias: /api/municipalities/{id}/parishes/
-  const useParishes = (municipalityId?: string | number | null) => {
+  // 🔹 Parroquias: /api/parishes/?municipality=1
+  const useParishes = (municipalityId?: any) => {
     const cleanId = sanitize(municipalityId);
     return useQuery({
       queryKey: ["geo", "parishes", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<Parish[]>(`municipalities/${cleanId}/parishes/`);
+        const res = await api.get<Parish[]>(`parishes/?municipality=${cleanId}`);
         return res.data;
       },
-      enabled: cleanId !== null,
+      enabled: !!cleanId,
       staleTime: Infinity,
     });
   };
 
-  // 🔹 Urbanizaciones: /api/parishes/{id}/neighborhoods/
-  const useNeighborhoods = (parishId?: string | number | null) => {
+  // 🔹 Urbanizaciones: /api/neighborhoods/?parish=1
+  const useNeighborhoods = (parishId?: any) => {
     const cleanId = sanitize(parishId);
     return useQuery({
       queryKey: ["geo", "neighborhoods", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<Neighborhood[]>(`parishes/${cleanId}/neighborhoods/`);
+        const res = await api.get<Neighborhood[]>(`neighborhoods/?parish=${cleanId}`);
         return res.data;
       },
-      enabled: cleanId !== null,
+      enabled: !!cleanId,
       staleTime: Infinity,
     });
   };
 
-  return {
-    useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods,
-  };
+  return { useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods };
 }
