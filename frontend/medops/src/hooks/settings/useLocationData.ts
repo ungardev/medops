@@ -81,11 +81,11 @@ export function useLocationData() {
   };
 
   // 🔹 Crear Nueva Urbanización (POST)
-  // Esta función se usará si el usuario escribe un nombre que no existe
+  // Corregido: Se usa 'parish_id' para coincidir con la validación del backend
   const createNeighborhood = async (name: string, parishId: number) => {
     const res = await api.post<Neighborhood>("neighborhoods/", {
-      name: name,
-      parish: parishId
+      name: name.trim(),
+      parish_id: Number(parishId) // ⚡ Cambio clave aquí
     });
     return res.data;
   };
@@ -96,6 +96,6 @@ export function useLocationData() {
     useMunicipalities, 
     useParishes, 
     useNeighborhoods,
-    createNeighborhood // Exportamos la función para crear
+    createNeighborhood 
   };
 }
