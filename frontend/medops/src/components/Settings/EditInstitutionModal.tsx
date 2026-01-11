@@ -25,8 +25,8 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     phone: "",
     tax_id: "",
     address: "",
-    neighborhood: null as number | string | null, // Puede ser ID o Nombre nuevo
-    parishId: null as number | null, // Necesario para crear un neighborhood nuevo
+    neighborhood: null as number | string | null,
+    parishId: null as number | null,
     logo: null as File | null
   });
 
@@ -35,12 +35,13 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
   useEffect(() => {
     if (open && settings) {
       let finalId: number | null = null;
-      const rawId = typeof settings.neighborhood === 'object' 
-        ? settings.neighborhood?.id 
-        : settings.neighborhood;
-
-      if (rawId !== null && rawId !== undefined) {
-        const cleaned = String(rawId).replace(/[^0-9]/g, '');
+      
+      // Normalización robusta del neighborhood inicial para extraer solo el ID
+      const rawNB = settings.neighborhood;
+      if (rawNB && typeof rawNB === 'object') {
+        finalId = (rawNB as any).id;
+      } else if (rawNB) {
+        const cleaned = String(rawNB).replace(/[^0-9]/g, '');
         finalId = cleaned ? Number(cleaned) : null;
       }
 
@@ -50,7 +51,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         tax_id: settings.tax_id || "",
         address: settings.address || "",
         neighborhood: finalId, 
-        parishId: null, // Se llenará al interactuar con el LocationSelector
+        parishId: null,
         logo: null
       });
       
@@ -68,32 +69,48 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Validamos que exista un valor en neighborhood antes de proceder
     if (!formData.neighborhood) return;
 
     try {
       let finalNeighborhoodId: number;
 
-      // ⚡ LÓGICA DE CREACIÓN DINÁMICA
-      // Si el neighborhood es un string, significa que el usuario escribió uno nuevo
+      // 1. Si el valor es String, es un sector nuevo que hay que crear
       if (typeof formData.neighborhood === 'string') {
         if (!formData.parishId) {
-          alert("ERROR: PARISH_ID_REQUIRED_FOR_NEW_NEIGHBORHOOD");
+          alert("SISTEMA: SE REQUIERE SELECCIONAR UNA PARROQUIA PARA NUEVOS SECTORES");
           return;
         }
-        // Creamos el sector en el backend antes de actualizar la institución
         const newNB = await createNeighborhood(formData.neighborhood, formData.parishId);
         finalNeighborhoodId = newNB.id;
       } else {
+        // Si ya es un número (ID existente)
         finalNeighborhoodId = formData.neighborhood;
       }
 
-      // Sincronizamos con el backend usando el ID definitivo
-      await updateInstitution({
-        ...formData,
-        neighborhood: finalNeighborhoodId
-      });
+      // 2. Construcción de FormData para envío multipart (soporta archivos y texto)
+      const submissionData = new FormData();
+      submissionData.append("name", formData.name);
+      submissionData.append("phone", formData.phone);
+      submissionData.append("tax_id", formData.tax_id);
+      submissionData.append("address", formData.address);
+      
+      // Enviamos el ID del sector como string (pero el backend lo recibirá como entero)
+      submissionData.append("neighborhood", String(finalNeighborhoodId));
+
+      if (formData.logo) {
+        submissionData.append("logo", formData.logo);
+      }
+
+      // 3. Envío al servidor usando Type Casting para evitar errores de TS
+      // El hook useInstitutionSettings procesará este FormData
+      await updateInstitution(submissionData as any);
       
       onClose();
+      
+      // Forzamos recarga para que toda la jerarquía de la app se actualice con la nueva data
+      window.location.reload(); 
+
     } catch (err) {
       console.error("CRITICAL_SYNC_ERROR", err);
     }
@@ -111,7 +128,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
             <GlobeAltIcon className="w-5 h-5 text-[var(--palantir-active)]" />
             <div>
               <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--palantir-text)]">Institution_Profile_Editor</h2>
-              <p className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">System: MEDOPS // IDENTITY_VAULT</p>
+              <p className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">Status: {isUpdating ? 'SYNCHRONIZING...' : 'IDENTITY_VAULT'}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-white/5 rounded-full transition-colors cursor-crosshair">
@@ -122,6 +139,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         <div className="flex-1 overflow-y-auto custom-modal-scroll bg-black/5">
           <form onSubmit={handleSubmit} className="p-8 space-y-12" id="institution-form">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+              {/* Logo Section */}
               <div className="md:col-span-3 flex flex-col items-center gap-4">
                 <div className="relative group w-32 h-32 border border-[var(--palantir-border)] bg-black/40 p-1 shadow-inner overflow-hidden">
                   {preview ? <img src={preview} alt="Logo" className="w-full h-full object-contain" /> : <PhotoIcon className="w-8 h-8 opacity-20" />}
@@ -132,6 +150,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                 </div>
               </div>
 
+              {/* Identity Fields */}
               <div className="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block px-1">Center_Name</label>
@@ -139,7 +158,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                     type="text"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all focus:ring-1 focus:ring-[var(--palantir-active)]/20"
+                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none"
                     required
                   />
                 </div>
@@ -164,13 +183,15 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </div>
             </div>
 
+            {/* Geographic Cluster Selector */}
             <div className="border-t border-[var(--palantir-border)]/10 pt-8">
                <LocationSelector 
                 initialNeighborhoodId={typeof formData.neighborhood === 'number' ? formData.neighborhood : undefined}
-                onLocationChange={(val, parishId) => setFormData({...formData, neighborhood: val, parishId: parishId})}
+                onLocationChange={(val, parishId) => setFormData(prev => ({...prev, neighborhood: val, parishId: parishId}))}
               />
             </div>
 
+            {/* Metadata / Address */}
             <div className="space-y-3 pb-10">
               <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block px-1">Full_Street_Address_Metadata</label>
               <textarea 
@@ -178,17 +199,17 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                 onChange={e => setFormData({...formData, address: e.target.value})}
                 rows={3}
                 className="w-full bg-black/40 border border-[var(--palantir-border)] p-4 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none resize-none"
-                placeholder="Details: Building, Floor, Office, Landmarks..."
               />
             </div>
           </form>
         </div>
 
+        {/* Action Footer */}
         <div className="p-6 border-t border-[var(--palantir-border)]/30 bg-black/60 flex items-center justify-between shrink-0 z-10">
           <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${formData.neighborhood ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]' : 'bg-amber-500 shadow-[0_0_8px_#f59e0b]'}`} />
+            <div className={`w-2 h-2 rounded-full ${formData.neighborhood ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500 shadow-[0_0_8px_#f59e0b]'}`} />
             <span className="text-[8px] font-mono font-black text-[var(--palantir-muted)] uppercase tracking-widest">
-              {formData.neighborhood ? 'System_Ready // Identity_Verified' : 'Incomplete_Geographic_Chain'}
+              {formData.neighborhood ? 'System_Verified' : 'Incomplete_Geographic_Chain'}
             </span>
           </div>
 

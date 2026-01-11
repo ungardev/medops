@@ -6,7 +6,6 @@ import { InstitutionSettings } from "@/types/config";
 export function useInstitutionSettings() {
   const queryClient = useQueryClient();
 
-  // 🔹 GET: Recibe la configuración con el objeto Neighborhood expandido
   const query = useQuery<InstitutionSettings>({
     queryKey: ["config", "institution"],
     queryFn: async () => {
@@ -15,37 +14,40 @@ export function useInstitutionSettings() {
     },
   });
 
-  // 🔹 PATCH: Actualización con FormData para soportar archivos y IDs relacionales
   const mutation = useMutation({
-    mutationFn: async (newSettings: Partial<InstitutionSettings>) => {
-      const formData = new FormData();
-      
-      // Mapeo de campos simples
-      if (newSettings.name) formData.append("name", newSettings.name);
-      if (newSettings.address) formData.append("address", newSettings.address);
-      if (newSettings.phone) formData.append("phone", newSettings.phone);
-      if (newSettings.tax_id) formData.append("tax_id", newSettings.tax_id);
+    // Cambiamos el tipo para aceptar FormData directamente o el objeto parcial
+    mutationFn: async (payload: FormData | Partial<InstitutionSettings>) => {
+      let finalData: FormData;
 
-      // ⚔️ Lógica de Neighborhood: Extraer ID si es objeto, o usar el número directamente
-      if (newSettings.neighborhood) {
-        const neighborhoodId = typeof newSettings.neighborhood === 'object' 
-          ? newSettings.neighborhood.id 
-          : newSettings.neighborhood;
-        formData.append("neighborhood", neighborhoodId.toString());
+      if (payload instanceof FormData) {
+        // Si ya viene como FormData del componente, lo usamos directamente
+        finalData = payload;
+      } else {
+        // Si viene como objeto, construimos el FormData aquí (compatibilidad)
+        finalData = new FormData();
+        if (payload.name) finalData.append("name", payload.name);
+        if (payload.address) finalData.append("address", payload.address);
+        if (payload.phone) finalData.append("phone", payload.phone);
+        if (payload.tax_id) finalData.append("tax_id", payload.tax_id);
+
+        if (payload.neighborhood) {
+          const neighborhoodId = typeof payload.neighborhood === 'object' 
+            ? (payload.neighborhood as any).id 
+            : payload.neighborhood;
+          finalData.append("neighborhood", String(neighborhoodId));
+        }
+
+        if (payload.logo && payload.logo instanceof File) {
+          finalData.append("logo", payload.logo);
+        }
       }
 
-      // Manejo del Logo
-      if (newSettings.logo && newSettings.logo instanceof File) {
-        formData.append("logo", newSettings.logo);
-      }
-
-      const res = await api.patch("config/institution/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Nota: No es necesario poner "multipart/form-data" manualmente, 
+      // Axios lo detecta y configura el boundary automáticamente.
+      const res = await api.patch("config/institution/", finalData);
       return res.data;
     },
     onSuccess: (data) => {
-      // Invalidar para forzar el refresco de la jerarquía completa en la UI
       queryClient.invalidateQueries({ queryKey: ["config", "institution"] });
       queryClient.setQueryData(["config", "institution"], data);
     },
