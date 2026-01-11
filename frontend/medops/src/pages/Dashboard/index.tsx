@@ -5,7 +5,7 @@ import TrendsChart from "@/components/Dashboard/TrendsChart";
 import NotificationsFeed from "@/components/Dashboard/NotificationsFeed";
 import AuditLog from "@/components/Dashboard/AuditLog";
 import OperationalHub from "@/components/Dashboard/OperationalHub";
-import PageHeader from "@/components/Common/PageHeader"; // Importamos el nuevo Header
+import PageHeader from "@/components/Common/PageHeader"; 
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { queryClient } from "@/lib/reactQuery";
 import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
@@ -22,44 +22,47 @@ export default function Dashboard() {
 
   return (
     <DashboardFiltersProvider>
-      <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-6 animate-in fade-in duration-700">
+      {/* Mantenemos el contenedor principal con un padding superior controlado (py-2) 
+         para que el PageHeader pegue lo más arriba posible sin tocar el buscador global.
+      */}
+      <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6 animate-in fade-in duration-700">
         
-        {/* 🔹 PageHeader Elite: Centralizamos Título, Breadcrumb y Acciones */}
+        {/* ORDEN 01: PAGE HEADER (Elite & Institutional)
+           Este es el componente que debe renderizarse primero. 
+           Inyectamos el DashboardButtonGroup directamente en la prop 'actions'.
+        */}
         <PageHeader 
           title="Panel de Control" 
           breadcrumb="MEDOPS // MEDICAL_OPERATIVE_SYSTEM"
           actions={<DashboardButtonGroup />}
-          // Puedes pasar stats aquí si quieres ver métricas críticas en el header
-          // stats={[
-          //   { label: "Status", value: "ONLINE", color: "text-emerald-500" },
-          //   { label: "Encrypted", value: "AES-256", color: "text-[var(--palantir-active)]" }
-          // ]}
+          stats={[
+            { label: "OPS_NODE", value: "CENTRAL_SBY", color: "text-emerald-500" },
+            { label: "DATA_RELAY", value: "STABLE", color: "text-[var(--palantir-active)]" }
+          ]}
         />
 
-        {/* 🔹 Fila de Métricas: Ahora respira mejor bajo el nuevo Header */}
-        <section className="animate-in slide-in-from-bottom-2 duration-700 delay-100">
+        {/* ORDEN 02: MÉTRICAS (Resumen de Impacto) */}
+        <section className="animate-in slide-in-from-bottom-2 duration-700 delay-150">
           <MetricsRow />
         </section>
 
-        {/* 🔹 Triada Operacional: Alineación técnica de alto rendimiento */}
+        {/* ORDEN 03: TRIADA OPERACIONAL (Visualización Compleja) */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          
-          <div className="lg:col-span-3 border border-[var(--palantir-border)]/10 bg-black/5 rounded-sm p-1">
+          <div className="lg:col-span-3">
             <OperationalHub />
           </div>
 
-          <div className="lg:col-span-6 border border-[var(--palantir-border)]/10 bg-black/5 rounded-sm p-1">
+          <div className="lg:col-span-6">
             <TrendsChart />
           </div>
 
-          <div className="lg:col-span-3 border border-[var(--palantir-border)]/10 bg-black/5 rounded-sm p-1">
+          <div className="lg:col-span-3">
             <NotificationsFeed />
           </div>
-
         </section>
 
-        {/* 🔹 Auditoría: Registro de eventos del sistema */}
-        <section className="border-t border-[var(--palantir-border)]/20 pt-4">
+        {/* ORDEN 04: LOG DE AUDITORÍA (Base de la página) */}
+        <section className="pt-2 border-t border-[var(--palantir-border)]/20">
           <AuditLog />
         </section>
 
