@@ -3,9 +3,9 @@ import React, { useState, useEffect } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
-import { InstitutionSettings, DoctorConfig } from "@/types/config";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
+import EditInstitutionModal from "@/components/Settings/EditInstitutionModal";
 import type { Specialty } from "@/types/consultation";
 import { 
   BuildingOfficeIcon, 
@@ -13,7 +13,8 @@ import {
   PencilSquareIcon,
   CloudArrowUpIcon,
   FingerPrintIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  MapPinIcon
 } from "@heroicons/react/24/outline";
 
 type DoctorForm = {
@@ -28,27 +29,41 @@ type DoctorForm = {
 };
 
 export default function ConfigPage() {
-  const { data: inst, updateInstitution, isLoading: instLoading, handleLogoChange } = useInstitutionSettings();
+  // 🔹 Hooks de Datos
+  // Nota: Extraemos solo lo necesario para evitar errores de propiedad inexistente
+  const { data: inst, isLoading: instLoading } = useInstitutionSettings();
   const { data: doc, updateDoctor, isLoading: docLoading, handleSignatureChange } = useDoctorConfig();
   const { data: specialties = [] } = useSpecialtyChoices();
 
-  const [instForm, setInstForm] = useState<Partial<InstitutionSettings>>(inst || {});
-  const [docForm, setDocForm] = useState<DoctorForm>({
-    id: undefined, full_name: "", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
-  });
-
-  const [editingInstitution, setEditingInstitution] = useState(false);
+  // 🔹 Estados de UI
+  const [isInstModalOpen, setIsInstModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(false);
   const [initializedDoctor, setInitializedDoctor] = useState(false);
-  const [logoPreview, setLogoPreview] = useState<string>("");
   const [signaturePreview, setSignaturePreview] = useState<string>("");
 
-  useEffect(() => { if (inst) setInstForm(inst); }, [inst]);
+  const [docForm, setDocForm] = useState<DoctorForm>({
+    id: undefined, 
+    full_name: "", 
+    colegiado_id: "", 
+    specialties: [], 
+    license: "", 
+    email: "", 
+    phone: "", 
+    signature: null,
+  });
 
+  // 🔹 Sincronización Profesional (Doctor + Especialidades)
   useEffect(() => {
+    // Solo inicializamos si tenemos datos del doctor y el catálogo de especialidades está cargado
     if (!doc || specialties.length === 0 || initializedDoctor) return;
-    const ids = Array.isArray((doc as any).specialty_ids) ? (doc as any).specialty_ids.map((id: number) => Number(id)) : [];
+    
+    // Mapeamos los IDs que vienen del backend a objetos completos de Specialty
+    const ids = Array.isArray((doc as any).specialty_ids) 
+      ? (doc as any).specialty_ids.map((id: number) => Number(id)) 
+      : [];
+    
     const matched = specialties.filter((s) => ids.includes(s.id));
+    
     setDocForm({
       id: doc.id,
       full_name: doc.full_name || "",
@@ -61,14 +76,6 @@ export default function ConfigPage() {
     });
     setInitializedDoctor(true);
   }, [doc, specialties, initializedDoctor]);
-
-  const handleLogoChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      const file = e.target.files[0];
-      setLogoPreview(handleLogoChange(file));
-      setInstForm({ ...instForm, logo: file });
-    }
-  };
 
   const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -92,7 +99,7 @@ export default function ConfigPage() {
         ]}
       />
 
-      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* 🏢 INSTITUTIONAL VAULT */}
         <section className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
@@ -101,57 +108,70 @@ export default function ConfigPage() {
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Institutional_Identity</h3>
           </div>
 
-          <div className="bg-white/[0.02] border border-[var(--palantir-border)] p-6 rounded-sm backdrop-blur-md relative overflow-hidden group">
+          <div className="bg-white/[0.02] border border-[var(--palantir-border)] p-6 rounded-sm backdrop-blur-md relative overflow-hidden">
             {instLoading ? (
-              <div className="animate-pulse flex space-y-4 flex-col">
+              <div className="animate-pulse space-y-4">
                 <div className="h-4 bg-white/5 w-3/4 rounded"></div>
                 <div className="h-20 bg-white/5 w-full rounded"></div>
               </div>
-            ) : !editingInstitution ? (
+            ) : (
               <div className="space-y-6">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="opacity-80">
-                    <span className={labelStyles}>Entity_Name</span>
-                    <p className="text-sm font-semibold text-white">{instForm.name || "---"}</p>
-                  </div>
-                  <div>
-                    <span className={labelStyles}>Fiscal_Identifier</span>
-                    <p className="text-xs font-mono text-[var(--palantir-muted)]">{instForm.tax_id || "NOT_SET"}</p>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/5 pt-4">
-                  <span className={labelStyles}>Institutional_Logo</span>
-                  <div className="mt-2 h-24 w-40 bg-black/40 border border-dashed border-white/10 flex items-center justify-center overflow-hidden">
-                    {instForm.logo ? (
-                      <img src="/logo-medops-light.svg" className="h-16 object-contain" alt="Logo" />
+                <div className="flex flex-col md:flex-row gap-6 items-start">
+                  <div className="w-24 h-24 bg-black/40 border border-[var(--palantir-border)] p-2 flex items-center justify-center">
+                    {inst?.logo ? (
+                      <img src={typeof inst.logo === 'string' ? inst.logo : "/logo-placeholder.svg"} className="max-h-full object-contain" alt="Logo" />
                     ) : (
                       <CloudArrowUpIcon className="w-6 h-6 text-white/10" />
                     )}
                   </div>
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <span className={labelStyles}>Entity_Name</span>
+                      <p className="text-sm font-bold text-white uppercase tracking-tight">{inst?.name || "UNNAMED_ENTITY"}</p>
+                    </div>
+                    <div>
+                      <span className={labelStyles}>Fiscal_Identifier</span>
+                      <p className="text-xs font-mono text-[var(--palantir-active)]">{inst?.tax_id || "MISSING_RIF"}</p>
+                    </div>
+                  </div>
                 </div>
 
-                <button onClick={() => setEditingInstitution(true)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--palantir-active)] hover:text-white transition-colors">
+                {/* 📍 Despliegue de Dirección Jerárquica */}
+                <div className="border-t border-white/5 pt-5 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <MapPinIcon className="w-4 h-4 text-[var(--palantir-muted)] mt-0.5" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Region_Hierarchy</span>
+                        <div className="text-[10px] font-mono text-white leading-relaxed uppercase">
+                          {typeof inst?.neighborhood === 'object' && inst.neighborhood?.parish ? (
+                            <>
+                              {inst.neighborhood.parish.municipality?.state?.country?.name} <br/>
+                              {inst.neighborhood.parish.municipality?.state?.name} <br/>
+                              {inst.neighborhood.parish.municipality?.name} / {inst.neighborhood.parish.name}
+                            </>
+                          ) : "GEOGRAPHIC_CHAIN_NOT_DEFINED"}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Local_Address</span>
+                        <div className="text-[10px] font-mono text-white uppercase italic">
+                          <span className="text-[var(--palantir-active)]">[{typeof inst?.neighborhood === 'object' ? inst.neighborhood?.name : 'N/A'}]</span>
+                          <br />
+                          {inst?.address || "STREET_DATA_MISSING"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setIsInstModalOpen(true)} 
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--palantir-active)] hover:text-white transition-colors pt-2"
+                >
                   <PencilSquareIcon className="w-3.5 h-3.5" /> Modify_Record
                 </button>
               </div>
-            ) : (
-              <form onSubmit={(e) => { e.preventDefault(); updateInstitution(instForm).then(() => setEditingInstitution(false)); }} className="space-y-4">
-                <div><label className={labelStyles}>Entity_Name</label><input className={inputStyles} value={instForm.name || ""} onChange={(e) => setInstForm({...instForm, name: e.target.value})} /></div>
-                <div><label className={labelStyles}>Address_Primary</label><input className={inputStyles} value={instForm.address || ""} onChange={(e) => setInstForm({...instForm, address: e.target.value})} /></div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className={labelStyles}>Contact_Phone</label><input className={inputStyles} value={instForm.phone || ""} onChange={(e) => setInstForm({...instForm, phone: e.target.value})} /></div>
-                  <div><label className={labelStyles}>Tax_ID</label><input className={inputStyles} value={instForm.tax_id || ""} onChange={(e) => setInstForm({...instForm, tax_id: e.target.value})} /></div>
-                </div>
-                <div>
-                  <label className={labelStyles}>Upload_New_Logo</label>
-                  <input type="file" onChange={handleLogoChangeInput} className="text-[10px] text-[var(--palantir-muted)] file:bg-white/5 file:border-none file:text-white file:px-3 file:py-1 file:mr-4 file:rounded-sm" />
-                </div>
-                <div className="flex gap-4 pt-4">
-                  <button type="submit" className="bg-[var(--palantir-active)] text-black text-[10px] font-black px-6 py-2 uppercase tracking-tighter hover:bg-white transition-colors">Update_Identity</button>
-                  <button type="button" onClick={() => setEditingInstitution(false)} className="text-[10px] font-black uppercase tracking-tighter text-[var(--palantir-muted)]">Cancel</button>
-                </div>
-              </form>
             )}
           </div>
         </section>
@@ -172,7 +192,7 @@ export default function ConfigPage() {
                   </div>
                   <div>
                     <h4 className="text-white font-bold">{docForm.full_name || "NOT_ASSIGNED"}</h4>
-                    <p className="text-[10px] font-mono text-[var(--palantir-muted)]">LICENSE: {docForm.license || "PENDING"}</p>
+                    <p className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">LICENSE: {docForm.license || "PENDING"}</p>
                   </div>
                 </div>
 
@@ -223,7 +243,13 @@ export default function ConfigPage() {
                 <div><label className={labelStyles}>Signature_Upload</label><input type="file" onChange={handleSignatureUpload} className="text-[10px] text-[var(--palantir-muted)] file:bg-white/5 file:border-none file:text-white file:px-3 file:py-1" /></div>
 
                 <div className="flex gap-4 pt-4">
-                  <button type="submit" className="bg-[var(--palantir-active)] text-black text-[10px] font-black px-6 py-2 uppercase tracking-tighter">Commit_Changes</button>
+                  <button 
+                    type="submit" 
+                    disabled={docLoading}
+                    className="bg-[var(--palantir-active)] text-black text-[10px] font-black px-6 py-2 uppercase tracking-tighter hover:bg-white transition-colors disabled:opacity-50"
+                  >
+                    {docLoading ? 'SYNCING...' : 'Commit_Changes'}
+                  </button>
                   <button type="button" onClick={() => setEditingDoctor(false)} className="text-[10px] font-black uppercase tracking-tighter text-[var(--palantir-muted)]">Abort</button>
                 </div>
               </form>
@@ -231,6 +257,12 @@ export default function ConfigPage() {
           </div>
         </section>
       </div>
+
+      {/* 🚀 Modal de Institución Externo */}
+      <EditInstitutionModal 
+        open={isInstModalOpen} 
+        onClose={() => setIsInstModalOpen(false)} 
+      />
 
       <footer className="mt-12 opacity-10 flex justify-center">
         <div className="text-[8px] font-mono uppercase tracking-[0.5em] text-center">
