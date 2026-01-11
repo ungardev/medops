@@ -3,29 +3,124 @@
 
 @layer base {
   :root {
-    /* MODO LIGHT (Lo dejamos listo pero enfocado en limpieza) */
     --palantir-bg: #f5f8fa;
     --palantir-surface: #ffffff;
     --palantir-border: #d8e1e8;
     --palantir-text: #182026;
     --palantir-muted: #5c7080;
+    --palantir-active: #38a1ff;
     --palantir-accent: #38a1ff;
   }
 
   .dark {
-    /* MODO OSCURO UNIFICADO MEDOPS */
-    --palantir-bg: #0f131a;        /* Fondo total */
-    --palantir-surface: #182026;   /* Cards, Sidebar, Header */
-    --palantir-border: #24313c;    /* Divisores y bordes de botones */
-    --palantir-text: #f5f8fa;      /* Texto principal */
-    --palantir-muted: #8a9ba8;     /* Texto secundario/etiquetas */
-    --palantir-accent: #38a1ff;    /* Azul MedOps */
-    --palantir-accent-soft: rgba(56, 161, 255, 0.1);
+    /* MODO OSCURO UNIFICADO MEDOPS - ELITE EDITION */
+    --palantir-bg: #0b0e14;         /* Fondo más profundo para resaltar el brillo */
+    --palantir-surface: #12181f;    /* Superficies premium */
+    --palantir-border: #1e272e;     /* Bordes sutiles */
+    --palantir-text: #f5f8fa;       
+    --palantir-muted: #5c7080;      /* Silenciamos más el texto secundario */
+    --palantir-active: #00f2ff;     /* Cyan eléctrico para mayor contraste */
+    --palantir-accent: #38a1ff;     
+    --palantir-accent-soft: rgba(0, 242, 255, 0.05);
+    --glow-color: rgba(0, 242, 255, 0.4);
   }
 
   body {
     background-color: var(--palantir-bg);
     color: var(--palantir-text);
-    transition: background-color 0.3s ease;
+    font-feature-settings: "tnum" on, "lnum" on; /* Cifras tabulares para el look mono */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    cursor: default;
+  }
+
+  /* -----------------------------------------------------------
+     1. SCROLLBAR ANNIHILATION (ELITE CUSTOM SCROLL)
+  ----------------------------------------------------------- */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--palantir-active) transparent;
+  }
+
+  /* Contenedores con scroll personalizado */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--palantir-active);
+    border-radius: 0px;
+    /* Efecto de hilo de luz */
+    box-shadow: 0 0 8px var(--glow-color);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ffffff;
+    box-shadow: 0 0 12px #ffffff;
+  }
+
+  /* -----------------------------------------------------------
+     2. PRECISION CURSORS & INTERACTION
+  ----------------------------------------------------------- */
+  button, a, label {
+    cursor: crosshair; /* Cursor de precisión quirúrgica */
+  }
+
+  /* -----------------------------------------------------------
+     3. ELITE UI CLASSES (UTILIDADES PROPIETARIAS)
+  ----------------------------------------------------------- */
+  
+  /* Inputs con resplandor focal */
+  input:focus, textarea:focus {
+    box-shadow: 0 0 15px var(--palantir-accent-soft);
+    border-color: var(--palantir-active) !important;
+  }
+
+  /* Efecto de escaneo para loadings */
+  .medops-scanning {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .medops-scanning::after {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, transparent, var(--palantir-active), transparent);
+    opacity: 0.1;
+    animation: scan 3s linear infinite;
+  }
+
+  @keyframes scan {
+    0% { top: -100%; }
+    100% { top: 100%; }
+  }
+
+  /* Máscara de desvanecimiento para modales (Elite Edge) */
+  .custom-modal-scroll {
+    mask-image: linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent);
+  }
+}
+
+@layer components {
+  /* Botón de Sincronización Estilo Palantir */
+  .btn-sync {
+    @apply relative overflow-hidden transition-all duration-300;
+    background: var(--palantir-active);
+    box-shadow: 0 0 10px var(--glow-color);
+  }
+  
+  .btn-sync:hover {
+    @apply brightness-110;
+    box-shadow: 0 0 20px var(--palantir-active);
   }
 }
