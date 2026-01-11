@@ -7,7 +7,9 @@ import {
   MagnifyingGlassIcon, 
   EyeIcon, 
   TrashIcon,
-  CpuChipIcon
+  CpuChipIcon,
+  ServerIcon,
+  FingerPrintIcon
 } from "@heroicons/react/24/outline";
 
 // Hooks
@@ -15,15 +17,15 @@ import { usePatients } from "../../hooks/patients/usePatients";
 import { usePatientsSearch } from "../../hooks/patients/usePatientsSearch";
 import { useDeletePatient } from "../../hooks/patients/useDeletePatient";
 
-// ✅ Importación corregida a Common
+// Componentes de Common
 import PageHeader from "../../components/Common/PageHeader";
+import Pagination from "../../components/Common/Pagination";
+import EmptyState from "../../components/Common/EmptyState";
+import { EmptyStateRegistry } from "../../components/Common/EmptyStateRegistry";
 
 // Components
 import NewPatientModal from "../../components/Patients/NewPatientModal";
 import PatientsTable from "../../components/Patients/PatientsTable";
-import Pagination from "../../components/Common/Pagination";
-import EmptyState from "../../components/Common/EmptyState";
-import { EmptyStateRegistry } from "../../components/Common/EmptyStateRegistry";
 
 // Types
 import { Patient } from "../../types/patients";
@@ -52,7 +54,7 @@ export default function Patients() {
   const handleView = (id: number) => navigate(`/patients/${id}`);
 
   const handleDelete = (p: Patient) => {
-    if (window.confirm(`⚠️ CRITICAL: ¿Confirmar eliminación del registro ${p.id}?`)) {
+    if (window.confirm(`⚠️ CRITICAL_NOTICE: ¿Confirmar purga del registro #${p.id}? Esta operación es irreversible.`)) {
       deletePatient(p.id, {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["patients"] });
@@ -62,133 +64,161 @@ export default function Patients() {
   };
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
-      {/* Header técnico con el PageHeader de Common */}
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-[var(--palantir-bg)] min-h-screen">
+      
+      {/* 🛠️ HEADER TÉCNICO CON MÉTRICAS DE BASE DE DATOS */}
       <PageHeader 
-        title="Directorio de Pacientes" 
+        title="Subject Directory" 
         breadcrumb="MEDOPS // DATABASE // SUBJECT_RECORDS"
+        stats={[
+          { 
+            label: "Total_Records", 
+            value: paged?.total?.toString().padStart(4, '0') || "----" 
+          },
+          { 
+            label: "Data_Stream", 
+            value: isLoadingPaged || isSearching ? "SCANNING" : "STABLE",
+            color: isLoadingPaged || isSearching ? "text-amber-500 animate-pulse" : "text-emerald-500"
+          },
+          { 
+            label: "Current_View", 
+            value: list.length.toString().padStart(2, '0'),
+            color: "text-[var(--palantir-active)]"
+          }
+        ]}
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 bg-[var(--palantir-active)] hover:bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 rounded-sm transition-all shadow-lg shadow-blue-500/20"
+          >
+            <UserPlusIcon className="w-4 h-4" />
+            New_Subject_Entry
+          </button>
+        }
       />
 
-      {/* Barra de Herramientas (Search & Create) */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <div className="md:col-span-9 relative group">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-[var(--palantir-active)] animate-pulse' : 'text-[var(--palantir-muted)]'}`} />
-          </div>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => {
-                setQuery(e.target.value);
-                setCurrentPage(1); // Reset de página al buscar
-            }}
-            placeholder="ACCESS_DATABASE: BUSCAR POR NOMBRE O FOLIO..."
-            className="w-full bg-[var(--palantir-surface)] border border-[var(--palantir-border)] text-[var(--palantir-text)] text-xs font-mono py-3 pl-10 pr-4 rounded-sm focus:outline-none focus:border-[var(--palantir-active)] transition-all placeholder:text-[var(--palantir-muted)]/30 uppercase"
-          />
+      {/* 🔍 ACCESO A MAINFRAME (BÚSQUEDA) */}
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+          <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-[var(--palantir-active)] animate-pulse' : 'text-[var(--palantir-muted)]'}`} />
         </div>
-
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="md:col-span-3 flex items-center justify-center gap-2 bg-[var(--palantir-active)] hover:bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-3 rounded-sm transition-all shadow-lg shadow-blue-500/10"
-        >
-          <UserPlusIcon className="w-4 h-4" />
-          New_Subject_Entry
-        </button>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => {
+              setQuery(e.target.value);
+              setCurrentPage(1);
+          }}
+          placeholder="ACCESS_CENTRAL_DATABASE: BUSCAR POR NOMBRE, UID O FOLIO..."
+          className="w-full bg-[var(--palantir-surface)] border border-[var(--palantir-border)] text-[var(--palantir-text)] text-xs font-mono py-4 pl-12 pr-4 rounded-sm focus:outline-none focus:border-[var(--palantir-active)] transition-all placeholder:text-[var(--palantir-muted)]/30 uppercase tracking-[0.1em] shadow-inner"
+        />
+        {(isSearching || query.length > 0) && (
+          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <CpuChipIcon className={`w-4 h-4 ${isSearching ? 'text-[var(--palantir-active)] animate-spin' : 'text-[var(--palantir-muted)] opacity-20'}`} />
+          </div>
+        )}
       </div>
 
-      {/* Indicador de proceso de búsqueda */}
-      {query.trim().length > 0 && (
-        <div className="flex items-center gap-2 px-1">
-          <CpuChipIcon className="w-4 h-4 text-[var(--palantir-active)] animate-spin-slow" />
-          <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
-            Filtering_Results: <span className="text-[var(--palantir-text)]">"{query}"</span> — Found {list.length} matches
-          </span>
+      {/* 🖥️ SUBJECT_GRID_CONTROLLER */}
+      <div className="border border-[var(--palantir-border)] bg-[var(--palantir-surface)] rounded-sm overflow-hidden shadow-2xl backdrop-blur-sm">
+        <PatientsTable
+          headers={["UID_Index", "Identity_Subject", "National_ID", "Class_Status", "Comm_Link", "Actions"]}
+          isLoading={isLoadingPaged && query.length === 0}
+        >
+          {list.length === 0 ? (
+            <tr>
+              <td colSpan={6}>
+                <EmptyState
+                  icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-12 h-12 text-[var(--palantir-muted)] opacity-20" })}
+                  title={EmptyStateRegistry.pacientes.title}
+                  message={query.trim().length > 0 ? "No matches found in the current data slice." : EmptyStateRegistry.pacientes.message}
+                />
+              </td>
+            </tr>
+          ) : (
+            list.map((p) => (
+              <tr 
+                key={p.id} 
+                className="border-b border-[var(--palantir-border)]/30 hover:bg-[var(--palantir-active)]/[0.03] transition-colors group"
+              >
+                {/* ID con formato de terminal */}
+                <td className="px-4 py-4 text-[11px] font-mono text-[var(--palantir-active)] font-bold">
+                  #{String(p.id).padStart(5, '0')}
+                </td>
+                
+                {/* Nombre Completo con estilización de "registro" */}
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    <FingerPrintIcon className="w-3 h-3 text-[var(--palantir-muted)] opacity-30" />
+                    <div className="text-[11px] font-black text-[var(--palantir-text)] uppercase tracking-tight group-hover:text-[var(--palantir-active)] transition-colors">
+                      {p.full_name}
+                    </div>
+                  </div>
+                </td>
+
+                {/* Documento de Identidad */}
+                <td className="px-4 py-4 text-[11px] font-mono text-[var(--palantir-muted)]">
+                  {p.national_id || "NOT_ASSIGNED"}
+                </td>
+
+                {/* Género/Status */}
+                <td className="px-4 py-4">
+                  <span className="text-[9px] px-2 py-0.5 border border-[var(--palantir-border)] text-[var(--palantir-muted)] font-mono uppercase bg-black/20">
+                    {p.gender || "UDF"}
+                  </span>
+                </td>
+
+                {/* Info de Contacto */}
+                <td className="px-4 py-4 text-[10px] font-mono text-[var(--palantir-muted)] truncate max-w-[180px]">
+                  {p.contact_info || "---"}
+                </td>
+
+                {/* Acciones Rápidas */}
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => handleView(p.id)}
+                      className="flex items-center gap-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-all group/btn"
+                    >
+                      <EyeIcon className="w-4 h-4" />
+                      <span className="text-[8px] font-black uppercase hidden group-hover/btn:inline">Access</span>
+                    </button>
+                    <button 
+                      disabled={isDeleting}
+                      onClick={() => handleDelete(p)}
+                      className="text-red-500/30 hover:text-red-500 transition-colors"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          )}
+        </PatientsTable>
+
+        {/* 📟 PANEL DE PAGINACIÓN TÉCNICA */}
+        <div className="flex items-center justify-between p-4 border-t border-[var(--palantir-border)]/30 bg-black/20">
+          <div className="flex items-center gap-3">
+            <ServerIcon className="w-4 h-4 text-[var(--palantir-active)]/40" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
+                Data_Slice: {((currentPage - 1) * pageSize) + 1} — {Math.min(currentPage * pageSize, paged?.total ?? 0)}
+              </span>
+              <span className="text-[7px] font-mono text-[var(--palantir-active)]/30 uppercase">Integrity_Verified: 100%</span>
+            </div>
+          </div>
+          
+          {query.trim().length === 0 && (paged?.total ?? 0) > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalItems={paged?.total ?? 0}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+            />
+          )}
         </div>
-      )}
-
-      {/* Grid de Datos Principal */}
-      <PatientsTable
-        headers={["ID", "Subject_Name", "Identity_UID", "Status", "Contact_Info", "Actions"]}
-        isLoading={isLoadingPaged && query.length === 0}
-      >
-        {list.length === 0 ? (
-          <tr>
-            <td colSpan={6}>
-              <EmptyState
-                icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-12 h-12 text-[var(--palantir-muted)] opacity-20" })}
-                title={EmptyStateRegistry.pacientes.title}
-                message={query.trim().length > 0 ? "No se encontraron coincidencias en el mainframe." : EmptyStateRegistry.pacientes.message}
-              />
-            </td>
-          </tr>
-        ) : (
-          list.map((p) => (
-            <React.Fragment key={p.id}>
-              {/* ID con formato de terminal */}
-              <td className="px-4 py-3 text-[11px] font-mono text-[var(--palantir-active)] font-bold">
-                #{String(p.id).padStart(4, '0')}
-              </td>
-              
-              {/* Nombre Completo */}
-              <td className="px-4 py-3">
-                <div className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
-                  {p.full_name}
-                </div>
-              </td>
-
-              {/* Documento de Identidad */}
-              <td className="px-4 py-3 text-[11px] font-mono text-[var(--palantir-muted)]">
-                {p.national_id || "NOT_ASSIGNED"}
-              </td>
-
-              {/* Género/Status */}
-              <td className="px-4 py-3">
-                <span className="text-[9px] px-2 py-0.5 border border-[var(--palantir-border)] text-[var(--palantir-muted)] font-mono uppercase">
-                  {p.gender || "Undefined"}
-                </span>
-              </td>
-
-              {/* Info de Contacto (Usando contact_info para evitar error de tipos) */}
-              <td className="px-4 py-3 text-[10px] font-mono text-[var(--palantir-muted)] truncate max-w-[150px]">
-                {p.contact_info || "NO_COMM_DATA"}
-              </td>
-
-              {/* Acciones Rápidas */}
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => handleView(p.id)}
-                    className="p-1 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors"
-                    title="Open Record"
-                  >
-                    <EyeIcon className="w-4 h-4" />
-                  </button>
-                  <button 
-                    disabled={isDeleting}
-                    onClick={() => handleDelete(p)}
-                    className="p-1 text-red-500/40 hover:text-red-500 transition-colors"
-                    title="Purge Record"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
-              </td>
-            </React.Fragment>
-          ))
-        )}
-      </PatientsTable>
-
-      {/* Paginación (Se oculta si el usuario está buscando) */}
-      {query.trim().length === 0 && (paged?.total ?? 0) > 0 && (
-        <div className="pt-2">
-          <Pagination
-            currentPage={currentPage}
-            totalItems={paged?.total ?? 0}
-            pageSize={pageSize}
-            onPageChange={setCurrentPage}
-          />
-        </div>
-      )}
+      </div>
 
       <NewPatientModal
         open={showCreateModal}
