@@ -33,11 +33,13 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   const [preview, setPreview] = useState<string | null>(null);
 
-  // Sincronización inicial con Aplanamiento de Jerarquía (Elite Tier)
+  /**
+   * FIX DE SINCRONIZACIÓN (Elite Tier):
+   * Purifica el neighborhood_id para que sea un número puro antes de pasarlo al selector.
+   */
   useEffect(() => {
     if (open && settings) {
-      // Extraemos el ID del objeto neighborhood de forma segura
-      // Esto evita pasar objetos completos a los hooks de Location
+      // Aplanamiento de la jerarquía: extraemos solo el ID numérico
       const nId = typeof settings.neighborhood === 'object' 
         ? settings.neighborhood?.id 
         : settings.neighborhood;
@@ -47,7 +49,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         phone: settings.phone || "",
         tax_id: settings.tax_id || "",
         address: settings.address || "",
-        neighborhood: nId ?? null,
+        neighborhood: nId ? Number(nId) : null,
         logo: null
       });
       setPreview(typeof settings.logo === 'string' ? settings.logo : null);
@@ -64,7 +66,6 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // No permitimos el commit si la ubicación no está verificada
     if (!formData.neighborhood) return;
 
     try {
@@ -78,14 +79,16 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-4xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-300">
+      
+      {/* 🚀 FIX DE SCROLL: Altura fija (90vh), flex-col y overflow-hidden en el contenedor principal */}
+      <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-4xl h-[90vh] shadow-2xl relative flex flex-col overflow-hidden">
         
         {/* Decoración de Terminal superior */}
-        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[var(--palantir-active)] to-transparent opacity-50"></div>
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[var(--palantir-active)] to-transparent opacity-50 z-20"></div>
 
-        {/* Header - FIJO */}
-        <div className="flex justify-between items-center p-4 border-b border-[var(--palantir-border)] bg-black/20 shrink-0">
+        {/* Header - FIJO (shrink-0) */}
+        <div className="flex justify-between items-center p-5 border-b border-[var(--palantir-border)] bg-black/40 shrink-0 z-10">
           <div className="flex items-center gap-3">
             <GlobeAltIcon className="w-5 h-5 text-[var(--palantir-active)]" />
             <div>
@@ -102,11 +105,11 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Cuerpo del Formulario con Máscara de Desvanecimiento y Scroll Custom */}
-        <div className="relative flex-1 overflow-hidden">
+        {/* 🚀 Cuerpo del Formulario con Scroll Real (flex-1 y overflow-y-auto) */}
+        <div className="flex-1 overflow-y-auto custom-modal-scroll bg-black/5">
           <form 
             onSubmit={handleSubmit} 
-            className="p-8 space-y-10 overflow-y-auto h-full custom-modal-scroll"
+            className="p-8 space-y-12"
             id="institution-form"
           >
             
@@ -131,17 +134,17 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
               <div className="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Center_Name</label>
+                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block px-1">Center_Name</label>
                   <input 
                     type="text"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all focus:ring-1 focus:ring-[var(--palantir-active)]/20"
+                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all focus:ring-1 focus:ring-[var(--palantir-active)]/20 uppercase"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Phone_Comm_Line</label>
+                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block px-1">Phone_Comm_Line</label>
                   <input 
                     type="text"
                     value={formData.phone}
@@ -150,7 +153,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                   />
                 </div>
                 <div className="sm:col-span-2 space-y-2">
-                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Tax_Registry_ID (RIF / NIT)</label>
+                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block px-1">Tax_Registry_ID (RIF / NIT)</label>
                   <input 
                     type="text"
                     value={formData.tax_id}
@@ -161,7 +164,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </div>
             </div>
 
-            {/* Fila 2: Selector de Ubicación Jerárquica (Lógica de Cascada) */}
+            {/* Fila 2: Selector de Ubicación Jerárquica */}
             <div className="border-t border-[var(--palantir-border)]/10 pt-8">
                <LocationSelector 
                 initialNeighborhoodId={formData.neighborhood ?? undefined}
@@ -170,8 +173,8 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
             </div>
 
             {/* Fila 3: Dirección Detallada */}
-            <div className="space-y-3 pb-6">
-              <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Full_Street_Address_Metadata</label>
+            <div className="space-y-3 pb-10">
+              <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest block px-1">Full_Street_Address_Metadata</label>
               <textarea 
                 value={formData.address}
                 onChange={e => setFormData({...formData, address: e.target.value})}
@@ -183,8 +186,8 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           </form>
         </div>
 
-        {/* Footer - FIJO con Status Indicators */}
-        <div className="p-6 border-t border-[var(--palantir-border)]/30 bg-black/40 flex items-center justify-between shrink-0">
+        {/* Footer - FIJO (shrink-0) */}
+        <div className="p-6 border-t border-[var(--palantir-border)]/30 bg-black/60 flex items-center justify-between shrink-0 z-10">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${formData.neighborhood ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]' : 'bg-amber-500'}`} />
             <span className="text-[8px] font-mono font-black text-[var(--palantir-muted)] uppercase tracking-widest">
