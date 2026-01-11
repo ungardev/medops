@@ -7,59 +7,55 @@ import {
 
 /**
  * Hook de Élite para la gestión de data geográfica en cascada.
- * Blindado contra parámetros corruptos mediante sanitización por Regex 
- * y optimizado con caché persistente (staleTime: Infinity).
+ * Corregido para usar las rutas reales del Backend (sin el prefijo 'core/').
  */
 export function useLocationData() {
   
   /**
    * 🛡️ Purificador de IDs "Anti-Corrupción"
-   * Elimina cualquier carácter que no sea numérico (adiós a ":1", "id:1", etc.)
    */
   const sanitize = (id: string | number | null | undefined): string | null => {
     if (id === null || id === undefined || id === "" || id === "undefined" || id === "null") {
       return null;
     }
-    // Regex: Mantiene solo dígitos. Si el resultado es vacío, retorna null.
     const cleanId = String(id).replace(/[^0-9]/g, '');
     return cleanId !== '' ? cleanId : null;
   };
 
-  // 🔹 Obtener Países (Base de la cadena)
+  // 🔹 Obtener Países: /api/countries/
   const useCountries = () => useQuery({
     queryKey: ["geo", "countries"],
     queryFn: async () => {
-      // URL limpia sin parámetros para evitar herencia de basura
-      const res = await api.get<Country[]>("core/countries/");
+      // ✅ ELIMINADO 'core/' - Ruta real confirmada por prueba de navegador
+      const res = await api.get<Country[]>("countries/");
       return res.data;
     },
     staleTime: Infinity,
   });
 
-  // 🔹 Obtener Estados por País
+  // 🔹 Obtener Estados por País: /api/countries/{id}/states/
   const useStates = (countryId?: string | number | null) => {
     const cleanId = sanitize(countryId);
     return useQuery({
       queryKey: ["geo", "states", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<State[]>(`core/countries/${cleanId}/states/`);
+        const res = await api.get<State[]>(`countries/${cleanId}/states/`);
         return res.data;
       },
-      // Solo se activa si el ID sanitizado existe
       enabled: cleanId !== null,
       staleTime: Infinity,
     });
   };
 
-  // 🔹 Obtener Municipios por Estado
+  // 🔹 Obtener Municipios por Estado: /api/states/{id}/municipalities/
   const useMunicipalities = (stateId?: string | number | null) => {
     const cleanId = sanitize(stateId);
     return useQuery({
       queryKey: ["geo", "municipalities", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<Municipality[]>(`core/states/${cleanId}/municipalities/`);
+        const res = await api.get<Municipality[]>(`states/${cleanId}/municipalities/`);
         return res.data;
       },
       enabled: cleanId !== null,
@@ -67,14 +63,14 @@ export function useLocationData() {
     });
   };
 
-  // 🔹 Obtener Parroquias por Municipio
+  // 🔹 Obtener Parroquias por Municipio: /api/municipalities/{id}/parishes/
   const useParishes = (municipalityId?: string | number | null) => {
     const cleanId = sanitize(municipalityId);
     return useQuery({
       queryKey: ["geo", "parishes", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<Parish[]>(`core/municipalities/${cleanId}/parishes/`);
+        const res = await api.get<Parish[]>(`municipalities/${cleanId}/parishes/`);
         return res.data;
       },
       enabled: cleanId !== null,
@@ -82,14 +78,14 @@ export function useLocationData() {
     });
   };
 
-  // 🔹 Obtener Urbanizaciones por Parroquia
+  // 🔹 Obtener Urbanizaciones por Parroquia: /api/parishes/{id}/neighborhoods/
   const useNeighborhoods = (parishId?: string | number | null) => {
     const cleanId = sanitize(parishId);
     return useQuery({
       queryKey: ["geo", "neighborhoods", cleanId],
       queryFn: async () => {
         if (!cleanId) return [];
-        const res = await api.get<Neighborhood[]>(`core/parishes/${cleanId}/neighborhoods/`);
+        const res = await api.get<Neighborhood[]>(`parishes/${cleanId}/neighborhoods/`);
         return res.data;
       },
       enabled: cleanId !== null,
