@@ -30,7 +30,6 @@ type DoctorForm = {
 
 export default function ConfigPage() {
   // 🔹 Hooks de Datos
-  // Nota: Extraemos solo lo necesario para evitar errores de propiedad inexistente
   const { data: inst, isLoading: instLoading } = useInstitutionSettings();
   const { data: doc, updateDoctor, isLoading: docLoading, handleSignatureChange } = useDoctorConfig();
   const { data: specialties = [] } = useSpecialtyChoices();
@@ -54,10 +53,8 @@ export default function ConfigPage() {
 
   // 🔹 Sincronización Profesional (Doctor + Especialidades)
   useEffect(() => {
-    // Solo inicializamos si tenemos datos del doctor y el catálogo de especialidades está cargado
     if (!doc || specialties.length === 0 || initializedDoctor) return;
     
-    // Mapeamos los IDs que vienen del backend a objetos completos de Specialty
     const ids = Array.isArray((doc as any).specialty_ids) 
       ? (doc as any).specialty_ids.map((id: number) => Number(id)) 
       : [];
@@ -90,6 +87,28 @@ export default function ConfigPage() {
 
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
+      
+      {/* 🛠️ INYECCIÓN DE ESTILO PARA EL SCROLL PERSONALIZADO */}
+      <style>{`
+        /* Barra de scroll para el Modal y contenedores con la clase custom-modal-scroll */
+        .custom-modal-scroll::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-modal-scroll::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.3);
+        }
+        .custom-modal-scroll::-webkit-scrollbar-thumb {
+          background: var(--palantir-active);
+          border-radius: 10px;
+          box-shadow: 0 0 10px var(--palantir-active);
+        }
+        /* Compatibilidad con Firefox */
+        .custom-modal-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: var(--palantir-active) rgba(0, 0, 0, 0.3);
+        }
+      `}</style>
+
       <PageHeader
         breadcrumb="SYSTEM // PARAMETERS // IDENTITY"
         title="CONFIGURATION_VAULT"

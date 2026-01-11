@@ -33,7 +33,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   const [preview, setPreview] = useState<string | null>(null);
 
-  // Sincronización inicial corregida para evitar error de tipado (undefined)
+  // Sincronización inicial
   useEffect(() => {
     if (open && settings) {
       setFormData({
@@ -41,7 +41,6 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         phone: settings.phone || "",
         tax_id: settings.tax_id || "",
         address: settings.address || "",
-        // FIX: El operador ?? null asegura que si el resultado es undefined, se asigne null
         neighborhood: (typeof settings.neighborhood === 'object' 
           ? settings.neighborhood?.id 
           : settings.neighborhood) ?? null,
@@ -61,7 +60,6 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Impedir envío si la jerarquía geográfica no está completa
     if (!formData.neighborhood) return;
 
     try {
@@ -76,13 +74,13 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-      <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-4xl shadow-2xl relative overflow-hidden">
+      <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-4xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
         
         {/* Decoración de Terminal superior */}
         <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[var(--palantir-active)] to-transparent opacity-50"></div>
 
-        {/* Header */}
-        <div className="flex justify-between items-center p-4 border-b border-[var(--palantir-border)] bg-black/20">
+        {/* Header - FIJO */}
+        <div className="flex justify-between items-center p-4 border-b border-[var(--palantir-border)] bg-black/20 shrink-0">
           <div className="flex items-center gap-3">
             <GlobeAltIcon className="w-5 h-5 text-[var(--palantir-active)]" />
             <div>
@@ -99,12 +97,16 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-8 overflow-y-auto max-h-[85vh]">
+        {/* Cuerpo del Formulario con Scroll Elegante */}
+        <form 
+          onSubmit={handleSubmit} 
+          className="p-6 pr-6 space-y-8 overflow-y-auto flex-1 custom-modal-scroll"
+        >
           
           {/* Fila 1: Logo e Identidad Básica */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             <div className="md:col-span-3 flex flex-col items-center gap-4">
-              <div className="relative group w-32 h-32 border border-[var(--palantir-border)] bg-black/40 p-1">
+              <div className="relative group w-32 h-32 border border-[var(--palantir-border)] bg-black/40 p-1 shadow-inner">
                 {preview ? (
                   <img src={preview} alt="Logo Preview" className="w-full h-full object-contain" />
                 ) : (
@@ -159,7 +161,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           />
 
           {/* Fila 3: Dirección Detallada */}
-          <div className="space-y-2">
+          <div className="space-y-2 pb-4">
             <label className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">Full_Street_Address_Metadata</label>
             <textarea 
               value={formData.address}
@@ -169,43 +171,43 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               placeholder="EDIFICIO, PISO, LOCAL, PUNTO DE REFERENCIA..."
             />
           </div>
-
-          {/* Footer de Acciones */}
-          <div className="pt-6 border-t border-[var(--palantir-border)]/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShieldCheckIcon className={`w-4 h-4 ${formData.neighborhood ? 'text-emerald-500' : 'text-amber-500'}`} />
-              <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
-                {formData.neighborhood ? 'Ready_for_deployment' : 'Validation_pending_location'}
-              </span>
-            </div>
-
-            <div className="flex gap-4">
-              <button 
-                type="button" 
-                onClick={onClose}
-                className="px-6 py-2 text-[10px] font-mono text-[var(--palantir-muted)] hover:text-white transition-colors uppercase"
-              >
-                Abort_Changes
-              </button>
-              <button 
-                type="submit"
-                disabled={isUpdating || !formData.neighborhood}
-                className={`
-                  flex items-center gap-2 px-8 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all
-                  ${formData.neighborhood 
-                    ? 'bg-[var(--palantir-active)] text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20' 
-                    : 'bg-white/5 text-[var(--palantir-muted)] cursor-not-allowed'}
-                `}
-              >
-                {isUpdating ? (
-                  <ArrowPathIcon className="w-3 h-3 animate-spin" />
-                ) : (
-                  'Synchronize_Database'
-                )}
-              </button>
-            </div>
-          </div>
         </form>
+
+        {/* Footer - FIJO */}
+        <div className="p-6 border-t border-[var(--palantir-border)]/30 bg-black/20 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <ShieldCheckIcon className={`w-4 h-4 ${formData.neighborhood ? 'text-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]' : 'text-amber-500'}`} />
+            <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
+              {formData.neighborhood ? 'Ready_for_deployment' : 'Validation_pending_location'}
+            </span>
+          </div>
+
+          <div className="flex gap-4">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="px-6 py-2 text-[10px] font-mono text-[var(--palantir-muted)] hover:text-white transition-colors uppercase"
+            >
+              Abort_Changes
+            </button>
+            <button 
+              type="submit"
+              disabled={isUpdating || !formData.neighborhood}
+              className={`
+                flex items-center gap-2 px-8 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all
+                ${formData.neighborhood 
+                  ? 'bg-[var(--palantir-active)] text-black hover:bg-white shadow-lg shadow-cyan-500/20' 
+                  : 'bg-white/5 text-[var(--palantir-muted)] cursor-not-allowed'}
+              `}
+            >
+              {isUpdating ? (
+                <ArrowPathIcon className="w-3 h-3 animate-spin" />
+              ) : (
+                'Synchronize_Database'
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
