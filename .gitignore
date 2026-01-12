@@ -82,3 +82,5 @@ orden.*
 # --- Archivos locales no institucionales ---
 bcv.html
 schema.yaml
+nginx.conf
+core/migrations/0001_initial.py
