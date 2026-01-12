@@ -36,7 +36,6 @@ const SessionTimer = ({ startTime }: { startTime: string | undefined | null }) =
   const [elapsed, setElapsed] = useState("00:00");
 
   useEffect(() => {
-    // Si no hay startTime (la consulta no ha "iniciado" realmente), el reloj queda en standby
     if (!startTime) {
       setElapsed("STANDBY");
       return;
@@ -71,7 +70,6 @@ export default function Consultation() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  // Usamos el hook unificado que contiene query y mutaciones
   const { consultationQuery, updateStatus } = useCurrentConsultation();
   const { data: appointment, isLoading } = consultationQuery;
   
@@ -84,14 +82,12 @@ export default function Consultation() {
   const [reportSuccess, setReportSuccess] = useState<{ fileUrl?: string | null; auditCode?: string | null } | null>(null);
   const [patientProfile, setPatientProfile] = useState<any | null>(null);
 
-  // Redirección si no hay consulta activa
   useEffect(() => {
     if (!isLoading && !appointment) {
       navigate("/waitingroom");
     }
   }, [appointment, isLoading, navigate]);
 
-  // Carga de perfil extendido del paciente
   useEffect(() => {
     if (appointment?.patient?.id) {
       getPatient(appointment.patient.id)
@@ -154,7 +150,6 @@ export default function Consultation() {
           },
           { 
             label: "ELAPSED_TIME", 
-            // ⚡️ CAMBIO CLAVE: Usamos started_at en lugar de created_at
             value: <SessionTimer startTime={appointment.started_at} />,
             color: "text-emerald-400 font-bold"
           },
@@ -214,6 +209,7 @@ export default function Consultation() {
                   onClick={async () => {
                     if(confirm("Confirm: Abort and Discard Session?")) {
                       await updateStatus.mutateAsync({ id: appointment.id, status: "canceled" });
+                      // El backend sincroniza automáticamente WaitingRoomEntry a 'canceled'
                       navigate("/waitingroom");
                     }
                   }}
@@ -246,6 +242,7 @@ export default function Consultation() {
 
                 <button
                   onClick={async () => {
+                    // Al actualizar a "completed", el Backend sincroniza automáticamente la Sala de Espera
                     await updateStatus.mutateAsync({ id: appointment.id, status: "completed" });
                     setToast({ message: "Surgical Session Complete", type: "success" });
                     navigate("/waitingroom");

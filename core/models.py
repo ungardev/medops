@@ -10,6 +10,7 @@ from django.core.validators import FileExtensionValidator
 from django.db.models import Sum
 from decimal import Decimal
 from django.utils import timezone
+from django.apps import apps
 from django.conf import settings
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES
 
@@ -261,10 +262,7 @@ class Appointment(models.Model):
     )
     notes = models.TextField(blank=True, null=True)
 
-    # --- Trazabilidad Temporal ---
-    # Registra cuando el doctor inicia la atención real
     started_at = models.DateTimeField(blank=True, null=True, verbose_name="Inicio de consulta")
-    # Registra cuando se finaliza la atención
     completed_at = models.DateTimeField(blank=True, null=True, verbose_name="Finalización de consulta")
 
     history = HistoricalRecords()
@@ -291,11 +289,26 @@ class Appointment(models.Model):
     def is_fully_paid(self):
         return self.balance_due() == Decimal('0.00')
 
-    def set_expected_amount_by_type(self):
-        if self.appointment_type == 'general':
-            self.expected_amount = Decimal('50.00')
-        elif self.appointment_type == 'specialized':
-            self.expected_amount = Decimal('100.00')
+    # --- Lógica de Sincronización Automática ---
+    def sync_waiting_room_status(self):
+        """
+        Actualiza el estado de la Sala de Espera basándose en el estado de la Cita.
+        """
+        # Aunque vivan en el mismo archivo, apps.get_model evita errores 
+        # si WaitingRoomEntry está definido más abajo.
+        WR_Entry = apps.get_model('core', 'WaitingRoomEntry')
+        
+        status_map = {
+            'arrived': 'waiting',
+            'in_consultation': 'in_consultation',
+            'completed': 'completed',
+            'canceled': 'canceled'
+        }
+
+        if self.status in status_map:
+            new_wr_status = status_map[self.status]
+            # Actualizamos todas las entradas de sala de espera ligadas a esta cita
+            WR_Entry.objects.filter(appointment=self).update(status=new_wr_status)
 
     # --- Flujo de estados ---
     def can_transition(self, new_status: str) -> bool:
@@ -308,22 +321,27 @@ class Appointment(models.Model):
         }
         return new_status in valid_transitions[self.status]
 
+    def save(self, *args, **kwargs):
+        # Lógica de negocio antes de guardar
+        if self.status == 'arrived' and not self.arrival_time:
+            self.arrival_time = timezone.now().time()
+
+        # Guardamos la cita
+        super().save(*args, **kwargs)
+        
+        # Sincronizamos la sala de espera inmediatamente después
+        self.sync_waiting_room_status()
+
     def update_status(self, new_status: str):
-        """
-        Actualiza el estado de la cita y registra los timestamps correspondientes.
-        """
         if not self.can_transition(new_status):
             raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
 
         self.status = new_status
         updated_fields = ["status"]
 
-        # Si entra a consulta, marcamos el inicio real para el cronómetro del front
         if new_status == "in_consultation":
             self.started_at = timezone.now()
             updated_fields.append("started_at")
-        
-        # Si finaliza, marcamos el cierre
         elif new_status == "completed":
             self.completed_at = timezone.now()
             updated_fields.append("completed_at")
@@ -336,9 +354,9 @@ class Appointment(models.Model):
             self.arrival_time = timezone.now().time()
             self.save(update_fields=["status", "arrival_time"])
             
-            # Importación local para evitar circularidad si fuera necesario
-            from .models import WaitingRoomEntry 
-            WaitingRoomEntry.objects.get_or_create(
+            # Crear la entrada inicial en sala de espera si no existe
+            WR_Entry = apps.get_model('core', 'WaitingRoomEntry')
+            WR_Entry.objects.get_or_create(
                 appointment=self,
                 patient=self.patient,
                 defaults={
@@ -350,9 +368,6 @@ class Appointment(models.Model):
             )
 
     def mark_completed(self):
-        """
-        Mantiene compatibilidad con llamadas directas pero usa la lógica centralizada.
-        """
         self.update_status('completed')
 
 
