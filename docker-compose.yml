@@ -8,7 +8,7 @@ services:
     ports:
       - "8080:80"
     env_file:
-      - .env.production        # 👈 ahora también puede leer variables desde .env.production
+      - .env.production
     environment:
       - VITE_API_URL=http://localhost:8000/api/
       - VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
@@ -19,16 +19,20 @@ services:
     volumes:
       # Monta el resultado del build en Nginx
       - ./frontend/medops/dist:/usr/share/nginx/html
+      # Monta el archivo de configuración corregido de Nginx
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
       # Comparte estáticos con backend
       - ./staticfiles:/app/staticfiles
+      # 👇 SHARED MEDIA VOLUME: Permite a Nginx servir las imágenes
+      - ./media:/app/media:ro
 
   backend:
     build: .
-    command: gunicorn --bind 0.0.0.0:8000 medops.wsgi:application   # 👈 solo Gunicorn, migraciones aparte
+    command: gunicorn --bind 0.0.0.0:8000 medops.wsgi:application
     ports:
       - "8000:8000"
     env_file:
-      - .env.production        # 👈 aquí indicamos que lea el archivo .env.production
+      - .env.production
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
       - DEBUG=${DEBUG}
@@ -40,7 +44,6 @@ services:
       - DB_PORT=5432
       - DJANGO_LOG_FILE=${DJANGO_LOG_FILE}
       - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
-      # 👇 variables ICD-API ya no se hardcodean, se leen directo de .env.production
     depends_on:
       db:
         condition: service_started
@@ -51,9 +54,11 @@ services:
     networks:
       - medops_net
     volumes:
-      - .:/srv/medops              # 👈 monta todo el proyecto dentro del contenedor
-      - ./staticfiles:/app/staticfiles   # 👈 backend también comparte staticfiles
-      - ./data:/srv/medops/data    # 👈 monta la carpeta data con los CSV de locations
+      - .:/srv/medops
+      - ./staticfiles:/app/staticfiles
+      # 👇 SHARED MEDIA VOLUME: Donde Django guarda las imágenes reales
+      - ./media:/srv/medops/media
+      - ./data:/srv/medops/data
 
   db:
     image: postgres:15
