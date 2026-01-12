@@ -1,4 +1,3 @@
-// src/pages/Settings/ConfigPage.tsx
 import React, { useState, useEffect } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
@@ -29,6 +28,9 @@ type DoctorForm = {
 };
 
 export default function ConfigPage() {
+  // 🔹 Base URL para activos multimedia
+  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
   // 🔹 Hooks de Datos
   const { data: inst, isLoading: instLoading } = useInstitutionSettings();
   const { data: doc, updateDoctor, isLoading: docLoading, handleSignatureChange } = useDoctorConfig();
@@ -82,27 +84,38 @@ export default function ConfigPage() {
     }
   };
 
+  // 🔹 Helper para renderizar el logo sin que se rompa
+  const renderLogo = () => {
+    if (!inst?.logo) return <CloudArrowUpIcon className="w-6 h-6 text-white/10" />;
+    
+    const logoUrl = typeof inst.logo === 'string' 
+      ? (inst.logo.startsWith('http') ? inst.logo : `${API_BASE}${inst.logo}`)
+      : "/logo-placeholder.svg";
+
+    return (
+      <img 
+        src={logoUrl} 
+        className="max-h-full object-contain" 
+        alt="Institution Logo"
+        onError={(e) => { (e.target as HTMLImageElement).src = "/logo-placeholder.svg"; }}
+      />
+    );
+  };
+
   const inputStyles = `w-full bg-black/20 border border-white/10 rounded-sm px-4 py-2.5 text-[11px] font-mono text-white focus:outline-none focus:border-[var(--palantir-active)]/50 transition-all`;
   const labelStyles = `text-[9px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)] mb-1.5 block`;
 
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
       
-      {/* 🛠️ INYECCIÓN DE ESTILO PARA EL SCROLL PERSONALIZADO */}
       <style>{`
-        /* Barra de scroll para el Modal y contenedores con la clase custom-modal-scroll */
-        .custom-modal-scroll::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-modal-scroll::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.3);
-        }
+        .custom-modal-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-modal-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
         .custom-modal-scroll::-webkit-scrollbar-thumb {
           background: var(--palantir-active);
           border-radius: 10px;
           box-shadow: 0 0 10px var(--palantir-active);
         }
-        /* Compatibilidad con Firefox */
         .custom-modal-scroll {
           scrollbar-width: thin;
           scrollbar-color: var(--palantir-active) rgba(0, 0, 0, 0.3);
@@ -136,12 +149,8 @@ export default function ConfigPage() {
             ) : (
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6 items-start">
-                  <div className="w-24 h-24 bg-black/40 border border-[var(--palantir-border)] p-2 flex items-center justify-center">
-                    {inst?.logo ? (
-                      <img src={typeof inst.logo === 'string' ? inst.logo : "/logo-placeholder.svg"} className="max-h-full object-contain" alt="Logo" />
-                    ) : (
-                      <CloudArrowUpIcon className="w-6 h-6 text-white/10" />
-                    )}
+                  <div className="w-24 h-24 bg-black/40 border border-[var(--palantir-border)] p-2 flex items-center justify-center overflow-hidden">
+                    {renderLogo()}
                   </div>
                   <div className="flex-1 space-y-4">
                     <div>
@@ -155,7 +164,6 @@ export default function ConfigPage() {
                   </div>
                 </div>
 
-                {/* 📍 Despliegue de Dirección Jerárquica */}
                 <div className="border-t border-white/5 pt-5 space-y-4">
                   <div className="flex items-start gap-3">
                     <MapPinIcon className="w-4 h-4 text-[var(--palantir-muted)] mt-0.5" />
@@ -277,7 +285,6 @@ export default function ConfigPage() {
         </section>
       </div>
 
-      {/* 🚀 Modal de Institución Externo */}
       <EditInstitutionModal 
         open={isInstModalOpen} 
         onClose={() => setIsInstModalOpen(false)} 

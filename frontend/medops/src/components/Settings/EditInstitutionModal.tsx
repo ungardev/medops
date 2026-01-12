@@ -34,15 +34,9 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (open && settings) {
-      let finalId: number | null = null;
-      
+      // Normalización robusta del neighborhood inicial
       const rawNB = settings.neighborhood;
-      if (rawNB && typeof rawNB === 'object') {
-        finalId = (rawNB as any).id;
-      } else if (rawNB) {
-        const cleaned = String(rawNB).replace(/[^0-9]/g, '');
-        finalId = cleaned ? Number(cleaned) : null;
-      }
+      const finalId = rawNB && typeof rawNB === 'object' ? (rawNB as any).id : rawNB;
 
       setFormData({
         name: settings.name || "",
@@ -54,7 +48,15 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         logo: null
       });
       
-      setPreview(typeof settings.logo === 'string' ? settings.logo : null);
+      // Corregir icono roto: Asegurar que la URL sea absoluta
+      if (typeof settings.logo === 'string' && settings.logo) {
+        const fullUrl = settings.logo.startsWith('http') 
+          ? settings.logo 
+          : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${settings.logo}`;
+        setPreview(fullUrl);
+      } else {
+        setPreview(null);
+      }
     }
   }, [open, settings]);
 
@@ -73,53 +75,38 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     try {
       let finalNeighborhoodId: number;
 
-      // 1. Creación de sector si es nuevo (Igual que en pacientes)
+      // 1. Manejo de sectores nuevos (creación previa)
       if (typeof formData.neighborhood === 'string') {
-        if (!formData.parishId) {
-          alert("SISTEMA: SE REQUIERE SELECCIONAR UNA PARROQUIA");
-          return;
-        }
-        const newNB = await createNeighborhood(formData.neighborhood, formData.parishId);
+        const newNB = await createNeighborhood(formData.neighborhood, formData.parishId!);
         finalNeighborhoodId = newNB.id;
       } else {
         finalNeighborhoodId = formData.neighborhood;
       }
 
-      /**
-       * SOLUCIÓN CRÍTICA: 
-       * Si hay un logo (File), usamos FormData. 
-       * Si NO hay logo, enviamos un objeto JSON puro (como en DemographicsSection) 
-       * para asegurar que Django procese la relación del neighborhood correctamente.
-       */
+      // 2. ENVÍO DE DATOS (JSON): Igual que en DemographicsSection para asegurar persistencia
+      const plainData = {
+        name: formData.name.toUpperCase(),
+        phone: formData.phone,
+        tax_id: formData.tax_id.toUpperCase(),
+        address: formData.address.toUpperCase(),
+        neighborhood: finalNeighborhoodId, // Enviado como número
+      };
       
-      if (formData.logo) {
-        const submissionData = new FormData();
-        submissionData.append("name", formData.name);
-        submissionData.append("phone", formData.phone);
-        submissionData.append("tax_id", formData.tax_id);
-        submissionData.append("address", formData.address);
-        submissionData.append("neighborhood", String(finalNeighborhoodId));
-        submissionData.append("logo", formData.logo);
+      await updateInstitution(plainData);
 
-        await updateInstitution(submissionData as any);
-      } else {
-        // Enviamos objeto plano exactamente igual que en DemographicsSection
-        const plainData = {
-          name: formData.name,
-          phone: formData.phone,
-          tax_id: formData.tax_id,
-          address: formData.address,
-          neighborhood: finalNeighborhoodId, // Enviado como número, no como string
-        };
-        await updateInstitution(plainData as any);
+      // 3. ENVÍO DE LOGO (Solo si cambió): En una petición separada para evitar conflictos
+      if (formData.logo instanceof File) {
+        const logoForm = new FormData();
+        logoForm.append("logo", formData.logo);
+        await updateInstitution(logoForm);
       }
       
       onClose();
-      // Solo recargamos si es estrictamente necesario para el Layout
-      window.location.reload(); 
+      // Pequeño delay antes de recargar para que el backend asiente los archivos
+      setTimeout(() => window.location.reload(), 500);
 
     } catch (err) {
-      console.error("CRITICAL_SYNC_ERROR", err);
+      console.error("ERROR_EN_SINCRONIZACION:", err);
     }
   };
 
@@ -127,16 +114,16 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
-      <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-4xl h-[90vh] shadow-2xl relative flex flex-col overflow-hidden font-mono">
+      <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-4xl h-[90vh] shadow-2xl relative flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="flex justify-between items-center p-5 border-b border-[var(--palantir-border)] bg-black/40">
+        <div className="flex justify-between items-center p-5 border-b border-[var(--palantir-border)] bg-black/40 shrink-0">
           <div className="flex items-center gap-3">
             <GlobeAltIcon className="w-5 h-5 text-[var(--palantir-active)]" />
             <div>
               <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--palantir-text)]">Institution_Profile_Editor</h2>
-              <p className="text-[8px] text-[var(--palantir-muted)] uppercase tracking-widest">
-                {isUpdating ? 'SYNCHRONIZING_DATA...' : 'CORE_IDENTITY_VAULT'}
+              <p className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
+                {isUpdating ? 'SYNCHRONIZING_CORE_DATA...' : 'IDENTITY_VAULT_ACTIVE'}
               </p>
             </div>
           </div>
@@ -145,62 +132,62 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Form Body */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-12 bg-black/5">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-10 bg-black/5">
           <form onSubmit={handleSubmit} id="institution-form">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
               
               {/* Logo Asset */}
-              <div className="md:col-span-3 flex flex-col items-center">
-                <div className="relative group w-32 h-32 border border-[var(--palantir-border)] bg-black/40 p-1">
+              <div className="md:col-span-3 flex flex-col items-center gap-4">
+                <div className="relative group w-32 h-32 border border-[var(--palantir-border)] bg-black/40 p-1 overflow-hidden">
                   {preview ? (
-                    <img src={preview} alt="Logo" className="w-full h-full object-contain" />
+                    <img src={preview} alt="Preview" className="w-full h-full object-contain" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center opacity-20">
-                      <PhotoIcon className="w-10 h-10" />
+                    <div className="w-full h-full flex items-center justify-center opacity-20 border border-dashed border-[var(--palantir-border)]">
+                      <PhotoIcon className="w-8 h-8" />
                     </div>
                   )}
                   <label className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-[var(--palantir-active)]/50">
-                    <span className="text-[9px] font-black uppercase text-white">Upload_Asset</span>
+                    <span className="text-[9px] font-black uppercase text-white">Update_Asset</span>
                     <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                   </label>
                 </div>
               </div>
 
-              {/* Data Fields */}
+              {/* Information Fields */}
               <div className="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Center_Name</label>
+                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase px-1">Center_Identity_Name</label>
                   <input 
                     type="text"
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})}
-                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[11px] text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all uppercase"
+                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none uppercase"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Phone_Line</label>
+                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase px-1">Comm_Phone_Line</label>
                   <input 
                     type="text"
                     value={formData.phone}
                     onChange={e => setFormData({...formData, phone: e.target.value})}
-                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[11px] text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none"
+                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none"
                   />
                 </div>
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Fiscal_Registry_ID</label>
+                  <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase px-1">Fiscal_Identifier (RIF/NIT)</label>
                   <input 
                     type="text"
                     value={formData.tax_id}
                     onChange={e => setFormData({...formData, tax_id: e.target.value.toUpperCase()})}
-                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[11px] text-[var(--palantir-active)] focus:border-[var(--palantir-active)] outline-none font-bold tracking-widest uppercase"
+                    className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[11px] font-mono text-[var(--palantir-active)] focus:border-[var(--palantir-active)] outline-none font-bold tracking-widest uppercase"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Geographics */}
+            {/* Geography Section */}
             <div className="mt-12 pt-8 border-t border-[var(--palantir-border)]/20">
                <LocationSelector 
                 initialNeighborhoodId={typeof formData.neighborhood === 'number' ? formData.neighborhood : undefined}
@@ -208,35 +195,35 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               />
             </div>
 
-            {/* Detailed Address */}
+            {/* Address Metadata */}
             <div className="mt-8 space-y-2">
-              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest block">Full_Street_Address_Metadata</label>
+              <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase px-1">Local_Address_Metadata</label>
               <textarea 
                 value={formData.address}
                 onChange={e => setFormData({...formData, address: e.target.value.toUpperCase()})}
                 rows={3}
-                className="w-full bg-black/40 border border-[var(--palantir-border)] p-4 text-[11px] text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none resize-none uppercase"
+                className="w-full bg-black/40 border border-[var(--palantir-border)] p-4 text-[11px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none resize-none uppercase"
               />
             </div>
           </form>
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-[var(--palantir-border)]/30 bg-black/60 flex items-center justify-between">
+        {/* Action Footer */}
+        <div className="p-6 border-t border-[var(--palantir-border)]/30 bg-black/60 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`w-2 h-2 rounded-full ${formData.neighborhood ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-            <span className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">
-              {formData.neighborhood ? 'LOCATION_VERIFIED' : 'GEOGRAPHIC_CHAIN_INCOMPLETE'}
+            <div className={`w-2 h-2 rounded-full ${formData.neighborhood ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`} />
+            <span className="text-[8px] font-mono font-black text-[var(--palantir-muted)] uppercase tracking-widest">
+              {formData.neighborhood ? 'GEOGRAPHIC_CHAIN_STABLE' : 'GEOGRAPHIC_CHAIN_BROKEN'}
             </span>
           </div>
 
           <div className="flex gap-4">
-            <button type="button" onClick={onClose} className="px-6 py-2 text-[10px] text-[var(--palantir-muted)] hover:text-white transition-colors uppercase">Abort</button>
+            <button type="button" onClick={onClose} className="px-6 py-2 text-[10px] font-mono font-bold text-[var(--palantir-muted)] hover:text-white transition-colors uppercase">Abort</button>
             <button 
               form="institution-form" type="submit" disabled={isUpdating || !formData.neighborhood}
-              className={`flex items-center gap-3 px-10 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all ${formData.neighborhood ? 'bg-[var(--palantir-active)] text-black hover:bg-white shadow-[0_0_20px_rgba(0,242,255,0.4)]' : 'bg-white/5 text-[var(--palantir-muted)] cursor-not-allowed'}`}
+              className={`flex items-center gap-3 px-10 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all ${formData.neighborhood ? 'bg-[var(--palantir-active)] text-black hover:bg-white shadow-[0_0_20px_rgba(0,242,255,0.3)]' : 'bg-white/5 text-[var(--palantir-muted)] cursor-not-allowed'}`}
             >
-              {isUpdating ? <ArrowPathIcon className="w-3 h-3 animate-spin" /> : <><ShieldCheckIcon className="w-4 h-4" /> COMMIT_SYNC</>}
+              {isUpdating ? <ArrowPathIcon className="w-3 h-3 animate-spin" /> : <><ShieldCheckIcon className="w-4 h-4" /> Synchronize</>}
             </button>
           </div>
         </div>
