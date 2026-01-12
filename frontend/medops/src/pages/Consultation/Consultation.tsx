@@ -33,37 +33,34 @@ import type { MedicalReport } from "../../types/medicalReport";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
 import { getPatient } from "../../api/patients";
 
-// 🕒 SUB-COMPONENTE: CRONÓMETRO DE SESIÓN (Versión Ultra-Robusta)
+// 🕒 SUB-COMPONENTE: CRONÓMETRO DE SESIÓN (Sincronización Reforzada)
 const SessionTimer = ({ startTime }: { startTime: string | undefined }) => {
   const [elapsed, setElapsed] = useState("00:00");
 
   useEffect(() => {
+    // Si no hay startTime, el reloj se queda en 00:00
     if (!startTime) return;
 
-    const calculateTime = () => {
+    const calculate = () => {
       const start = new Date(startTime).getTime();
       const now = new Date().getTime();
       
-      // Si la fecha es inválida o el cálculo falla, evitamos el NaN
-      if (isNaN(start)) return "00:00";
-
+      // Si la fecha es inválida o el futuro (error de sync servidor), marcamos 00:01 para indicar actividad
+      if (isNaN(start)) return "ERR_DATE";
+      
       const diff = Math.max(0, now - start);
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const s = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
 
       return h > 0 
         ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
         : `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
-    // Actualización inmediata para evitar el salto visual
-    setElapsed(calculateTime());
-
-    const timer = setInterval(() => {
-      setElapsed(calculateTime());
-    }, 1000);
-
+    setElapsed(calculate());
+    const timer = setInterval(() => setElapsed(calculate()), 1000);
     return () => clearInterval(timer);
   }, [startTime]);
 
@@ -84,6 +81,17 @@ export default function Consultation() {
   const [exportSuccess, setExportSuccess] = useState<{ documents: GeneratedDocument[]; skipped: string[] } | null>(null);
   const [reportSuccess, setReportSuccess] = useState<{ fileUrl?: string | null; auditCode?: string | null } | null>(null);
   const [patientProfile, setPatientProfile] = useState<any | null>(null);
+
+  // 🛠 DEBUG: Monitoreo de datos de entrada para el reloj
+  useEffect(() => {
+    if (appointment) {
+      console.log("CLOCK_SYNC_DEBUG:", {
+        raw_created_at: appointment.created_at,
+        parsed_date: new Date(appointment.created_at).toString(),
+        is_valid: !isNaN(new Date(appointment.created_at).getTime())
+      });
+    }
+  }, [appointment]);
 
   useEffect(() => {
     if (!isLoading && !appointment) {
@@ -144,10 +152,10 @@ export default function Consultation() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-6 space-y-6">
       
-      {/* 🚀 PAGE_HEADER: HUB DE OPERACIONES CLÍNICAS ACTUALIZADO */}
+      {/* 🚀 PAGE_HEADER: TÍTULO CORREGIDO A CONSULTATION */}
       <PageHeader 
-        title={patient?.full_name || "LOADING_SUBJECT..."}
-        breadcrumb={`MEDOPS // OPERATIVE_SYSTEM // CLINICAL_SESSION // ID_${appointment.id.toString().padStart(6, '0')}`}
+        title="CONSULTATION"
+        breadcrumb={`MEDOPS // OPERATIVE_SYSTEM // SESSION_ID_${appointment.id.toString().padStart(6, '0')}`}
         stats={[
           { 
             label: "SESSION_ID", 
@@ -160,12 +168,12 @@ export default function Consultation() {
             color: "text-emerald-400 font-bold"
           },
           { 
-            label: "SESSION_STATUS", 
+            label: "STATUS", 
             value: appointment.status.toUpperCase(),
             color: appointment.status === 'in_consultation' ? "text-emerald-500" : "text-amber-500"
           },
           { 
-            label: "UPLINK_QUALITY", 
+            label: "UPLINK", 
             value: "ENCRYPTED_LIVE",
             color: "text-blue-400"
           }
@@ -176,7 +184,7 @@ export default function Consultation() {
               <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Auth_Practitioner</span>
               <span className="text-[10px] font-black text-[var(--palantir-active)] uppercase">DR_ROOT_VERIFIED</span>
             </div>
-            <div className="h-10 w-10 flex items-center justify-center bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm shadow-[0_0_15px_rgba(var(--palantir-active-rgb),0.1)]">
+            <div className="h-10 w-10 flex items-center justify-center bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm">
               <FingerPrintIcon className="w-5 h-5 text-[var(--palantir-active)] animate-pulse" />
             </div>
           </div>
@@ -195,9 +203,7 @@ export default function Consultation() {
         )}
       </div>
 
-      {/* 02. MAIN OPERATIONS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
         {/* SIDEBAR */}
         <aside className="lg:col-span-3 space-y-4">
           <div className="flex items-center gap-2 px-2 py-1 border-l-2 border-[var(--palantir-active)]">
