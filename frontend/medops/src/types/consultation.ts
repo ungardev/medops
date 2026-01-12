@@ -1,4 +1,3 @@
-// src/types/consultation.ts
 import type { ChargeOrder } from "./payments";
 
 // --- Diagnóstico ---
@@ -156,6 +155,8 @@ export interface Appointment {
   patient: Patient;
   appointment_date?: string;
   arrival_time?: string | null;
+  // ⚡️ NUEVO CAMPO: Sincronizado con la base de datos para cronómetro
+  started_at: string | null; 
   status: "pending" | "arrived" | "in_consultation" | "completed" | "canceled";
   notes?: string | null;
   diagnoses: Diagnosis[];

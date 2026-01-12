@@ -16,6 +16,8 @@ export interface AppointmentUI {
   status: AppointmentStatus;
   appointment_date?: string;
   arrival_time?: string | null;
+  // ⚡️ Campo crucial para el cronómetro
+  started_at: string | null; 
   created_at: string;
   updated_at: string;
 
@@ -40,7 +42,7 @@ export function normalizeStatus(status: string | null | undefined): AppointmentS
     case "in_consultation":
     case "completed":
     case "canceled":
-      return status;
+      return status as AppointmentStatus;
     default:
       return "pending";
   }
@@ -52,6 +54,8 @@ export function mapAppointment(clinical: ClinicalAppointment): AppointmentUI {
     status: normalizeStatus(clinical.status),
     appointment_date: clinical.appointment_date ?? undefined,
     arrival_time: clinical.arrival_time ?? null,
+    // ⚡️ Mapeamos el campo del backend al objeto de la UI
+    started_at: clinical.started_at ?? null, 
     created_at: clinical.created_at,
     updated_at: clinical.updated_at,
 

@@ -1,4 +1,3 @@
-// src/types/appointments.ts
 import { PatientRef } from "./patients";
 import { Payment, ChargeOrder } from "./payments";
 import {
@@ -49,8 +48,20 @@ export interface Appointment {
   created_at?: string;
   updated_at?: string;
 
-  // 🔹 Nuevo campo para trazabilidad de finalización
+  // 🔹 ⚡️ CAMPOS DE TIEMPO OPERATIVO
+  // started_at: Hora real de inicio (activa el cronómetro)
+  // completed_at: Hora de finalización técnica
+  started_at?: string | null; 
   completed_at?: string | null;
+}
+
+/**
+ * 🔹 AppointmentUI
+ * Interfaz normalizada para los componentes de la interfaz de usuario.
+ * Garantiza que started_at esté presente para el SessionTimer.
+ */
+export interface AppointmentUI extends Appointment {
+  started_at: string | null;
 }
 
 // --- Datos de entrada para crear/editar cita

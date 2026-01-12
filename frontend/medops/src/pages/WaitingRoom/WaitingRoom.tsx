@@ -1,4 +1,3 @@
-// src/pages/WaitingRoom/WaitingRoom.tsx
 import { useState, useEffect } from "react";
 import RegisterWalkinModal from "../../components/WaitingRoom/RegisterWalkinModal";
 import ConfirmCloseDayModal from "../../components/WaitingRoom/ConfirmCloseDayModal";
@@ -21,12 +20,10 @@ import {
   PlusIcon, 
   PowerIcon, 
   ClockIcon, 
-  UserGroupIcon 
+  UserGroupIcon,
+  CheckCircleIcon
 } from "@heroicons/react/24/outline";
 
-/**
- * Renders technical status badges following MedOps aesthetic
- */
 const renderStatusBadge = (status: string) => {
   const base = "inline-flex items-center justify-center px-2 py-0.5 text-[9px] rounded-sm font-bold uppercase tracking-tighter border whitespace-nowrap transition-all";
 
@@ -35,10 +32,8 @@ const renderStatusBadge = (status: string) => {
       return <span className={`${base} bg-amber-500/10 text-amber-500 border-amber-500/20`}>In_Queue</span>;
     case "in_consultation":
       return <span className={`${base} bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] border-[var(--palantir-active)]/20 animate-pulse`}>In_Consult</span>;
-    case "pending":
-      return <span className={`${base} bg-slate-500/10 text-slate-400 border-slate-500/20`}>Pending</span>;
     case "completed":
-      return <span className={`${base} bg-emerald-500/10 text-emerald-500 border-emerald-500/20`}>Resolved</span>;
+      return <span className={`${base} bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.1)]`}>Resolved</span>;
     case "canceled":
       return <span className={`${base} bg-red-500/10 text-red-500 border-red-500/20`}>Aborted</span>;
     default:
@@ -46,12 +41,19 @@ const renderStatusBadge = (status: string) => {
   }
 };
 
-/**
- * Calculates and formats waiting time in a mono font
- */
-const renderWaitTime = (arrival_time: string | null) => {
-  if (!arrival_time) return "-";
-  const minutes = Math.floor((Date.now() - new Date(arrival_time).getTime()) / 60000);
+const renderWaitTime = (entry: WaitingRoomEntry) => {
+  if (!entry.arrival_time) return "-";
+  
+  if (entry.status === 'completed') {
+    return (
+      <div className="flex items-center gap-1 font-mono text-[9px] text-emerald-500/60 uppercase">
+        <CheckCircleIcon className="w-3 h-3" />
+        <span>Session_Finalized</span>
+      </div>
+    );
+  }
+
+  const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime()) / 60000);
   return (
     <div className="flex items-center gap-1 font-mono text-[10px] text-[var(--palantir-muted)]">
       <ClockIcon className="w-3 h-3 text-amber-500/70" />
@@ -112,19 +114,16 @@ export default function WaitingRoom() {
     }
   };
 
-  const inConsultationCount = orderedGroup.filter(e => e.status === 'in_consultation').length;
-
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-6 relative min-h-[80vh]">
       
-      {/* HEADER INTEGRADO */}
       <PageHeader 
         breadcrumb="MEDOPS // OPS_CENTRAL // WAITING_ROOM"
         title="Gestión de Sala"
         stats={[
           { label: "En Espera", value: orderedGroup.filter(e => e.status === 'waiting').length },
-          { label: "En Consulta", value: inConsultationCount, color: inConsultationCount > 0 ? "text-[var(--palantir-active)]" : "text-[var(--palantir-muted)]" },
-          { label: "Pendientes", value: pendingAppointmentsToday.length }
+          { label: "En Consulta", value: orderedGroup.filter(e => e.status === 'in_consultation').length },
+          { label: "Finalizados", value: orderedGroup.filter(e => e.status === 'completed').length, color: "text-emerald-500" }
         ]}
         actions={
           <div className="flex gap-2">
@@ -146,7 +145,6 @@ export default function WaitingRoom() {
         }
       />
 
-      {/* OVERLAY DE SINCRONIZACIÓN */}
       {showOverlay && (
         <div className="absolute inset-0 bg-[var(--palantir-bg)]/40 backdrop-blur-[1px] flex items-center justify-center z-10 animate-in fade-in duration-300">
            <div className="flex items-center gap-3 px-4 py-2 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] shadow-xl rounded-sm">
@@ -157,8 +155,6 @@ export default function WaitingRoom() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* PANEL PRINCIPAL: LIVE QUEUE */}
         <div className="lg:col-span-8 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm">
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/30 flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -175,17 +171,34 @@ export default function WaitingRoom() {
               </div>
             ) : (
               <div className="divide-y divide-[var(--palantir-border)]/40">
-                {orderedGroup.map((entry) => (
-                  <div key={entry.id} className="group flex justify-between items-center px-4 py-3 hover:bg-[var(--palantir-active)]/[0.03] transition-colors border-l-2 border-transparent hover:border-l-[var(--palantir-active)]">
-                    <div className="flex flex-col gap-0.5">
-                      <p className="text-[13px] font-black text-[var(--palantir-text)] uppercase tracking-tight">{entry.patient.full_name}</p>
-                      {renderWaitTime(entry.arrival_time)}
+                {orderedGroup.map((entry, index) => (
+                  <div 
+                    key={entry.id} 
+                    className={`group flex justify-between items-center px-4 py-3 transition-colors border-l-2 ${
+                      entry.status === 'completed' 
+                        ? 'bg-emerald-500/5 border-emerald-500/20 opacity-80' 
+                        : 'hover:bg-[var(--palantir-active)]/[0.03] border-transparent hover:border-l-[var(--palantir-active)]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-4">
+                      {/* Numeración Secuencial */}
+                      <span className="mt-1 font-mono text-xs font-bold text-[var(--palantir-muted)] opacity-50">
+                        {String(index + 1).padStart(2, '0')}.
+                      </span>
+                      
+                      <div className="flex flex-col gap-0.5">
+                        <p className={`text-[13px] font-black uppercase tracking-tight ${entry.status === 'completed' ? 'text-emerald-800/80 dark:text-emerald-400/80' : 'text-[var(--palantir-text)]'}`}>
+                          {entry.patient.full_name}
+                        </p>
+                        {renderWaitTime(entry)}
+                      </div>
                     </div>
 
                     <div className="flex items-center gap-6">
                       {renderStatusBadge(entry.status)}
                       
                       <div className="flex items-center gap-1">
+                        {/* Botón Play solo para iniciar consulta (de waiting a in_consultation) */}
                         {entry.status === 'waiting' && (
                           <button 
                             onClick={() => handleStatusChange(entry, "in_consultation")}
@@ -195,22 +208,25 @@ export default function WaitingRoom() {
                             <PlayIcon className="w-5 h-5 fill-current" />
                           </button>
                         )}
-                        {entry.status === 'in_consultation' && (
+                        
+                        {/* El botón de 'completed' ha sido eliminado de aquí */}
+
+                        {/* Botón de Cancelar: Siempre disponible excepto si ya se completó */}
+                        {entry.status !== 'completed' && (
                           <button 
-                            onClick={() => handleStatusChange(entry, "completed")}
-                            className="p-1.5 text-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/10 rounded-sm transition-all"
-                            title="Finalizar"
+                            onClick={() => setEntryToCancel(entry)}
+                            className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-sm transition-all"
+                            title="Abortar Proceso"
                           >
-                            <PlayIcon className="w-5 h-5 fill-current rotate-90" />
+                            <XMarkIcon className="w-5 h-5" />
                           </button>
                         )}
-                        <button 
-                          onClick={() => setEntryToCancel(entry)}
-                          className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-sm transition-all"
-                          title="Abortar Proceso"
-                        >
-                          <XMarkIcon className="w-5 h-5" />
-                        </button>
+
+                        {entry.status === 'completed' && (
+                           <div className="p-1.5 text-emerald-500/40">
+                              <CheckCircleIcon className="w-5 h-5" />
+                           </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -220,7 +236,6 @@ export default function WaitingRoom() {
           </div>
         </div>
 
-        {/* PANEL LATERAL: PENDING VERIFICATION */}
         <div className="lg:col-span-4 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm">
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/30">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">Pending_Verification</h3>
@@ -264,7 +279,6 @@ export default function WaitingRoom() {
         </div>
       </div>
 
-      {/* MODALES TÉCNICOS */}
       {showModal && (
         <RegisterWalkinModal 
           onClose={() => setShowModal(false)} 
