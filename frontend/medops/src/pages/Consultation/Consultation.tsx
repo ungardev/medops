@@ -7,13 +7,15 @@ import {
   BeakerIcon, 
   DocumentTextIcon, 
   ChevronRightIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  UserCircleIcon,
+  FingerPrintIcon
 } from "@heroicons/react/24/outline";
 
 // Componentes Tácticos
 import { PatientHeader, DocumentsPanel, ChargeOrderPanel } from "../../components/Consultation";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
-import ResponsivePanel from "../../components/Consultation/ResponsivePanel";
+import PageHeader from "../../components/Common/PageHeader";
 import CollapsiblePanel from "../../components/Common/CollapsiblePanel";
 import Toast from "../../components/Common/Toast";
 import ExportErrorToast from "../../components/Common/ExportErrorToast";
@@ -41,21 +43,18 @@ export default function Consultation() {
   const generateReport = useGenerateMedicalReport();
   const generateDocuments = useGenerateConsultationDocuments();
 
-  // Estados de UI y Feedback
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [exportErrors, setExportErrors] = useState<{ category: string; error: string }[] | null>(null);
   const [exportSuccess, setExportSuccess] = useState<{ documents: GeneratedDocument[]; skipped: string[] } | null>(null);
   const [reportSuccess, setReportSuccess] = useState<{ fileUrl?: string | null; auditCode?: string | null } | null>(null);
   const [patientProfile, setPatientProfile] = useState<any | null>(null);
 
-  // 1. SOLUCIÓN AL ERROR F12: Redirección segura
   useEffect(() => {
     if (!isLoading && !appointment) {
       navigate("/waitingroom");
     }
   }, [appointment, isLoading, navigate]);
 
-  // 2. Carga de perfil extendido
   useEffect(() => {
     if (appointment?.patient?.id) {
       getPatient(appointment.patient.id)
@@ -75,12 +74,11 @@ export default function Consultation() {
     </div>
   );
 
-  if (!appointment) return null; // El useEffect manejará la redirección
+  if (!appointment) return null;
 
   const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
   const canGenerateReport = appointment.status === "in_consultation" || appointment.status === "completed";
 
-  // Manejadores de Acciones Quirúrgicas
   const handleGenerateReport = async () => {
     try {
       const report: MedicalReport = await generateReport.mutateAsync(appointment.id);
@@ -110,8 +108,41 @@ export default function Consultation() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-6 space-y-6">
       
-      {/* 01. IDENTITY BAR */}
-      <div className="relative overflow-hidden border border-[var(--palantir-border)] bg-black/20 p-1">
+      {/* 🚀 ELITE_PAGE_HEADER: CONSULTATION_SESSION */}
+      <PageHeader 
+        title={patient?.full_name || "LOADING_SUBJECT..."}
+        breadcrumb={`MEDOPS // OPERATIVE_SYSTEM // CLINICAL_SESSION // ID_${appointment.id.toString().padStart(6, '0')}`}
+        stats={[
+          { 
+            label: "SESSION_STATUS", 
+            value: appointment.status.toUpperCase(),
+            color: "text-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+          },
+          { 
+            label: "DATA_RELAY", 
+            value: "STABLE",
+            color: "text-[var(--palantir-active)]"
+          },
+          { 
+            label: "FINANCIAL_LEDGER", 
+            value: "CREDIT_CLEAR" 
+          }
+        ]}
+        actions={
+          <div className="flex items-center gap-4">
+            <div className="hidden md:flex flex-col items-end px-3 border-r border-[var(--palantir-border)]/40">
+              <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Practitioner_ID</span>
+              <span className="text-[10px] font-black text-[var(--palantir-active)]">ROOT_USER</span>
+            </div>
+            <div className="h-10 w-10 flex items-center justify-center bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm">
+              <FingerPrintIcon className="w-5 h-5 text-[var(--palantir-active)]" />
+            </div>
+          </div>
+        }
+      />
+
+      {/* 01. PATIENT_TELEMETRY_STRIP */}
+      <div className="relative overflow-hidden border border-[var(--palantir-border)] bg-[var(--palantir-surface)] p-1 shadow-lg">
         <div className="absolute top-0 left-0 w-1 h-full bg-[var(--palantir-active)]" />
         {patient ? (
           <PatientHeader patient={patient} />
@@ -128,9 +159,9 @@ export default function Consultation() {
         
         {/* SIDEBAR: Ancillary Panels */}
         <aside className="lg:col-span-3 space-y-4">
-          <div className="flex items-center gap-2 px-2">
+          <div className="flex items-center gap-2 px-2 py-1 border-l-2 border-[var(--palantir-active)]">
             <BeakerIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Data_Modules</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">Data_Modules</span>
           </div>
           
           <CollapsiblePanel title="Clinical_Documents">
@@ -141,15 +172,19 @@ export default function Consultation() {
             <ChargeOrderPanel appointmentId={appointment.id} />
           </CollapsiblePanel>
 
-          <div className="p-4 border border-dashed border-[var(--palantir-border)] opacity-30">
-            <p className="text-[9px] font-mono uppercase tracking-tighter">System_Status: Encrypted_Link_Active</p>
+          <div className="p-4 border border-dashed border-[var(--palantir-border)]/40 bg-black/10 rounded-sm">
+            <p className="text-[8px] font-mono uppercase text-[var(--palantir-muted)] leading-relaxed">
+              System_Encrypted: AES-256<br/>
+              Node: CENTRAL_SBY<br/>
+              Location: LA_GUAIRA_VE
+            </p>
           </div>
         </aside>
 
         {/* MAIN: Consultation Workflow */}
         <main className="lg:col-span-9 space-y-6">
-          <div className="bg-black/20 border border-[var(--palantir-border)] p-1 relative min-h-[600px] flex flex-col">
-            <div className="flex-1 bg-[var(--palantir-bg)] p-4 sm:p-6">
+          <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] p-1 relative min-h-[600px] flex flex-col shadow-2xl">
+            <div className="flex-1 bg-[var(--palantir-bg)]/50 p-4 sm:p-6">
               <ConsultationWorkflow
                 diagnoses={appointment.diagnoses}
                 appointmentId={appointment.id}
@@ -158,7 +193,7 @@ export default function Consultation() {
               />
             </div>
 
-            {/* ACTION DOCK: El pie de página táctico */}
+            {/* ACTION DOCK: Tactical Footer */}
             <footer className="border-t border-[var(--palantir-border)] bg-black/40 p-4 flex flex-wrap items-center justify-between gap-4">
               <div className="flex gap-2">
                 <button
