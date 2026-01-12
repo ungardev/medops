@@ -229,7 +229,6 @@ class Patient(models.Model):
         self.save(update_fields=["active"])
 
 
-
 class Appointment(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -262,8 +261,11 @@ class Appointment(models.Model):
     )
     notes = models.TextField(blank=True, null=True)
 
-    # 👇 Nuevo campo para trazabilidad de finalización
-    completed_at = models.DateTimeField(blank=True, null=True)
+    # --- Trazabilidad Temporal ---
+    # Registra cuando el doctor inicia la atención real
+    started_at = models.DateTimeField(blank=True, null=True, verbose_name="Inicio de consulta")
+    # Registra cuando se finaliza la atención
+    completed_at = models.DateTimeField(blank=True, null=True, verbose_name="Finalización de consulta")
 
     history = HistoricalRecords()
 
@@ -307,22 +309,35 @@ class Appointment(models.Model):
         return new_status in valid_transitions[self.status]
 
     def update_status(self, new_status: str):
-        if self.can_transition(new_status):
-            self.status = new_status
-            # 👇 si pasa a completed, registramos fecha/hora
-            if new_status == "completed":
-                self.completed_at = timezone.now()
-                self.save(update_fields=["status", "completed_at"])
-            else:
-                self.save(update_fields=["status"])
-        else:
+        """
+        Actualiza el estado de la cita y registra los timestamps correspondientes.
+        """
+        if not self.can_transition(new_status):
             raise ValueError(f"No se puede pasar de {self.status} a {new_status}")
+
+        self.status = new_status
+        updated_fields = ["status"]
+
+        # Si entra a consulta, marcamos el inicio real para el cronómetro del front
+        if new_status == "in_consultation":
+            self.started_at = timezone.now()
+            updated_fields.append("started_at")
+        
+        # Si finaliza, marcamos el cierre
+        elif new_status == "completed":
+            self.completed_at = timezone.now()
+            updated_fields.append("completed_at")
+
+        self.save(update_fields=updated_fields)
 
     def mark_arrived(self, priority: str = "normal", source_type: str = "scheduled"):
         if self.status == "pending":
             self.status = "arrived"
             self.arrival_time = timezone.now().time()
             self.save(update_fields=["status", "arrival_time"])
+            
+            # Importación local para evitar circularidad si fuera necesario
+            from .models import WaitingRoomEntry 
             WaitingRoomEntry.objects.get_or_create(
                 appointment=self,
                 patient=self.patient,
@@ -335,9 +350,10 @@ class Appointment(models.Model):
             )
 
     def mark_completed(self):
-        self.status = 'completed'
-        self.completed_at = timezone.now()  # 👈 registramos fecha/hora real
-        self.save(update_fields=['status', 'completed_at'])
+        """
+        Mantiene compatibilidad con llamadas directas pero usa la lógica centralizada.
+        """
+        self.update_status('completed')
 
 
 # --- Señal para crear automáticamente la orden de cobro ---

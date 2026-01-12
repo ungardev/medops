@@ -958,12 +958,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "patient",
-            "patient_name",      # ✅ añadido
+            "patient_name",
             "appointment_date",
             "appointment_type",
             "expected_amount",
             "status",
             "arrival_time",
+            "started_at",      # ✅ Añadido para el cronómetro real
             "completed_at",
             "notes",
             "charge_order",
@@ -1549,7 +1550,7 @@ class ChoicesSerializer(serializers.Serializer):
 
 class AppointmentDetailSerializer(AppointmentSerializer):
     diagnoses = DiagnosisSerializer(many=True, read_only=True)
-    # 🔹 agregados
+    # 🔹 campos inyectados por métodos
     treatments = serializers.SerializerMethodField()
     prescriptions = serializers.SerializerMethodField()
     charge_order = serializers.SerializerMethodField()
@@ -1558,15 +1559,15 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     balance_due = serializers.SerializerMethodField()
 
     class Meta(AppointmentSerializer.Meta):
+        # Hereda los campos de AppointmentSerializer (incluyendo started_at)
         fields = AppointmentSerializer.Meta.fields + [
             "diagnoses",
             "treatments",
             "prescriptions",
-            "charge_order",
             "medical_tests",
             "referrals",
             "balance_due",
-            "notes",
+            # "notes" ya está en el padre, pero se mantiene aquí si se requiere asegurar el orden
         ]
 
     def get_balance_due(self, obj):
