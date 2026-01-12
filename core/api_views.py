@@ -2328,23 +2328,25 @@ def reports_export_api(request):
 @api_view(["GET", "PUT", "PATCH"])
 @permission_classes([IsAuthenticated])
 def institution_settings_api(request):
-    """
-    GET → devuelve la configuración institucional actual
-    PUT/PATCH → actualiza la configuración institucional
-    """
+    # Obtenemos el registro único (ID=1)
     settings_obj, _ = InstitutionSettings.objects.get_or_create(id=1)
 
     if request.method == "GET":
         serializer = InstitutionSettingsSerializer(settings_obj)
         return Response(serializer.data)
 
-    # PUT o PATCH → actualización parcial
+    # El PATCH procesará el neighborhood_id y el logo sin problemas
     serializer = InstitutionSettingsSerializer(
         settings_obj, data=request.data, partial=True
     )
-    serializer.is_valid(raise_exception=True)
-    serializer.save(updated_by=request.user)
-    return Response(serializer.data)
+    
+    if serializer.is_valid():
+        # Pasamos el updated_by directamente al save
+        serializer.save(updated_by=request.user)
+        return Response(serializer.data)
+    
+    # Si hay error (ej: ID de sector no existe), lo veremos aquí
+    return Response(serializer.errors, status=400)
 
 
 @api_view(["GET", "PUT", "PATCH"])

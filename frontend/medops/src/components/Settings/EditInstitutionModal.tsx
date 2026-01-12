@@ -34,7 +34,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (open && settings) {
-      // Normalización robusta del neighborhood inicial
+      // 🔹 Normalización de neighborhood: si es objeto, extraemos el ID
       const rawNB = settings.neighborhood;
       const finalId = rawNB && typeof rawNB === 'object' ? (rawNB as any).id : rawNB;
 
@@ -43,16 +43,17 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         phone: settings.phone || "",
         tax_id: settings.tax_id || "",
         address: settings.address || "",
-        neighborhood: finalId, 
+        neighborhood: finalId || null, 
         parishId: null,
         logo: null
       });
       
-      // Corregir icono roto: Asegurar que la URL sea absoluta
+      // 🔹 Normalización del Logo para evitar icono roto
       if (typeof settings.logo === 'string' && settings.logo) {
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
         const fullUrl = settings.logo.startsWith('http') 
           ? settings.logo 
-          : `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${settings.logo}`;
+          : `${baseUrl}${settings.logo}`;
         setPreview(fullUrl);
       } else {
         setPreview(null);
@@ -75,7 +76,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     try {
       let finalNeighborhoodId: number;
 
-      // 1. Manejo de sectores nuevos (creación previa)
+      // 1. Manejo de sectores nuevos (creación dinámica si el usuario escribió un nombre)
       if (typeof formData.neighborhood === 'string') {
         const newNB = await createNeighborhood(formData.neighborhood, formData.parishId!);
         finalNeighborhoodId = newNB.id;
@@ -83,18 +84,20 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         finalNeighborhoodId = formData.neighborhood;
       }
 
-      // 2. ENVÍO DE DATOS (JSON): Igual que en DemographicsSection para asegurar persistencia
+      // 2. PRIMER ENVÍO: Datos de texto y Geografía (JSON)
+      // Esto garantiza que el campo 'neighborhood' se guarde correctamente en el backend
       const plainData = {
         name: formData.name.toUpperCase(),
         phone: formData.phone,
         tax_id: formData.tax_id.toUpperCase(),
         address: formData.address.toUpperCase(),
-        neighborhood: finalNeighborhoodId, // Enviado como número
+        neighborhood: Number(finalNeighborhoodId), // Forzamos tipo número para el Serializer
       };
       
       await updateInstitution(plainData);
 
-      // 3. ENVÍO DE LOGO (Solo si cambió): En una petición separada para evitar conflictos
+      // 3. SEGUNDO ENVÍO: Solo el Logo (FormData)
+      // Se hace por separado para evitar que el multipart/form-data cause errores con IDs numéricos
       if (formData.logo instanceof File) {
         const logoForm = new FormData();
         logoForm.append("logo", formData.logo);
@@ -102,11 +105,11 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       }
       
       onClose();
-      // Pequeño delay antes de recargar para que el backend asiente los archivos
-      setTimeout(() => window.location.reload(), 500);
+      // Pequeño delay para que el backend asiente los datos y React Query invalide
+      setTimeout(() => window.location.reload(), 600);
 
     } catch (err) {
-      console.error("ERROR_EN_SINCRONIZACION:", err);
+      console.error("CRITICAL_SYNC_ERROR:", err);
     }
   };
 
@@ -132,12 +135,12 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-10 bg-black/5">
+        {/* Form Content */}
+        <div className="flex-1 overflow-y-auto p-8 space-y-10 custom-modal-scroll">
           <form onSubmit={handleSubmit} id="institution-form">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
               
-              {/* Logo Asset */}
+              {/* Logo Preview Section */}
               <div className="md:col-span-3 flex flex-col items-center gap-4">
                 <div className="relative group w-32 h-32 border border-[var(--palantir-border)] bg-black/40 p-1 overflow-hidden">
                   {preview ? (
@@ -154,7 +157,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                 </div>
               </div>
 
-              {/* Information Fields */}
+              {/* Text Fields */}
               <div className="md:col-span-9 grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-1">
                   <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase px-1">Center_Identity_Name</label>
@@ -187,7 +190,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </div>
             </div>
 
-            {/* Geography Section */}
+            {/* Selector de Ubicación Jerárquico */}
             <div className="mt-12 pt-8 border-t border-[var(--palantir-border)]/20">
                <LocationSelector 
                 initialNeighborhoodId={typeof formData.neighborhood === 'number' ? formData.neighborhood : undefined}
@@ -195,7 +198,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               />
             </div>
 
-            {/* Address Metadata */}
+            {/* Dirección Detallada */}
             <div className="mt-8 space-y-2">
               <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase px-1">Local_Address_Metadata</label>
               <textarea 
@@ -208,7 +211,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           </form>
         </div>
 
-        {/* Action Footer */}
+        {/* Modal Footer */}
         <div className="p-6 border-t border-[var(--palantir-border)]/30 bg-black/60 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${formData.neighborhood ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`} />
@@ -220,7 +223,9 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           <div className="flex gap-4">
             <button type="button" onClick={onClose} className="px-6 py-2 text-[10px] font-mono font-bold text-[var(--palantir-muted)] hover:text-white transition-colors uppercase">Abort</button>
             <button 
-              form="institution-form" type="submit" disabled={isUpdating || !formData.neighborhood}
+              form="institution-form" 
+              type="submit" 
+              disabled={isUpdating || !formData.neighborhood}
               className={`flex items-center gap-3 px-10 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all ${formData.neighborhood ? 'bg-[var(--palantir-active)] text-black hover:bg-white shadow-[0_0_20px_rgba(0,242,255,0.3)]' : 'bg-white/5 text-[var(--palantir-muted)] cursor-not-allowed'}`}
             >
               {isUpdating ? <ArrowPathIcon className="w-3 h-3 animate-spin" /> : <><ShieldCheckIcon className="w-4 h-4" /> Synchronize</>}

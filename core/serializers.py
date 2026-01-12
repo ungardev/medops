@@ -1136,12 +1136,49 @@ class ReportExportSerializer(serializers.Serializer):
 
 
 class InstitutionSettingsSerializer(serializers.ModelSerializer):
-    # 🔹 Logo opcional con URL completa
     logo = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    
+    # Usamos el PrimaryKeyRelatedField para que el PATCH acepte un número (ID)
+    neighborhood = serializers.PrimaryKeyRelatedField(
+        queryset=Neighborhood.objects.all(),
+        required=False,
+        allow_null=True
+    )
 
     class Meta:
         model = InstitutionSettings
-        fields = ["id", "name", "address", "phone", "logo", "tax_id"]
+        fields = ["id", "name", "address", "phone", "logo", "tax_id", "neighborhood"]
+
+    def to_representation(self, instance):
+        """
+        Inflamos el objeto para que el Frontend vea la jerarquía completa
+        y la cadena geográfica pase a verde (STABLE).
+        """
+        response = super().to_representation(instance)
+        n = instance.neighborhood
+        
+        if n:
+            response['neighborhood'] = {
+                'id': n.id,
+                'name': n.name,
+                'parish': {
+                    'id': n.parish.id,
+                    'name': n.parish.name,
+                    'municipality': {
+                        'id': n.parish.municipality.id,
+                        'name': n.parish.municipality.name,
+                        'state': {
+                            'id': n.parish.municipality.state.id,
+                            'name': n.parish.municipality.state.name,
+                            'country': {
+                                'id': n.parish.municipality.state.country.id,
+                                'name': n.parish.municipality.state.country.name,
+                            }
+                        }
+                    }
+                }
+            }
+        return response
 
 
 class SpecialtySerializer(serializers.ModelSerializer):
