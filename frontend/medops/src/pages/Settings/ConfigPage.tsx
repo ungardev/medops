@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react"; // 🔹 Añadido useMemo
+// src/pages/Settings/ConfigPage.tsx
+import React, { useState, useEffect, useMemo, memo } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
@@ -15,6 +16,34 @@ import {
   ShieldCheckIcon,
   MapPinIcon
 } from "@heroicons/react/24/outline";
+
+// 🔹 COMPONENTE DE LOGO ESTABLE (Evita el parpadeo infinito)
+const StableLogo = memo(({ url }: { url: string | null }) => {
+  const [imgSrc, setImgSrc] = useState<string>(url || "/logo-placeholder.svg");
+
+  useEffect(() => {
+    // Solo actualizamos el estado si la URL entrante es distinta a la que ya mostramos
+    const targetUrl = url || "/logo-placeholder.svg";
+    if (targetUrl !== imgSrc) {
+      setImgSrc(targetUrl);
+    }
+  }, [url]);
+
+  return (
+    <img 
+      src={imgSrc} 
+      className="max-h-full object-contain" 
+      alt="Logo"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        // Evitamos bucles si el placeholder también falla
+        if (target.src !== window.location.origin + "/logo-placeholder.svg") {
+          target.src = "/logo-placeholder.svg";
+        }
+      }}
+    />
+  );
+});
 
 type DoctorForm = {
   id?: number;
@@ -50,11 +79,9 @@ export default function ConfigPage() {
     signature: null,
   });
 
-  // 🔹 SOLUCIÓN AL TITILEO: Memoizar la URL del logo
-  // Solo se recalcula si 'inst.logo' cambia, evitando peticiones infinitas
+  // 🔹 MEMOIZACIÓN DE URL: Solo cambia si inst.logo cambia físicamente
   const memoizedLogoUrl = useMemo(() => {
     if (!inst?.logo) return null;
-    
     if (typeof inst.logo === 'string') {
       return inst.logo.startsWith('http') 
         ? inst.logo 
@@ -136,20 +163,8 @@ export default function ConfigPage() {
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6 items-start">
                   <div className="w-24 h-24 bg-black/40 border border-[var(--palantir-border)] p-2 flex items-center justify-center overflow-hidden">
-                    {/* 🔹 Renderizado de logo corregido y estable */}
-                    {memoizedLogoUrl ? (
-                      <img 
-                        src={memoizedLogoUrl} 
-                        className="max-h-full object-contain" 
-                        alt="Institution Logo"
-                        onError={(e) => { 
-                          (e.target as HTMLImageElement).onerror = null; // Evita bucle infinito en el error
-                          (e.target as HTMLImageElement).src = "/logo-placeholder.svg"; 
-                        }}
-                      />
-                    ) : (
-                      <CloudArrowUpIcon className="w-6 h-6 text-white/10" />
-                    )}
+                    {/* 🔹 LOGO BLINDADO AQUÍ */}
+                    <StableLogo url={memoizedLogoUrl} />
                   </div>
                   <div className="flex-1 space-y-4">
                     <div>
@@ -170,7 +185,6 @@ export default function ConfigPage() {
                       <div className="space-y-1">
                         <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Region_Hierarchy</span>
                         <div className="text-[10px] font-mono text-white leading-relaxed uppercase">
-                          {/* 🔹 Verificación robusta del objeto neighborhood */}
                           {inst?.neighborhood && typeof inst.neighborhood === 'object' && inst.neighborhood.parish ? (
                             <>
                               {inst.neighborhood.parish.municipality?.state?.country?.name} <br/>
@@ -207,7 +221,7 @@ export default function ConfigPage() {
           </div>
         </section>
 
-        {/* 👨‍⚕️ PROFESSIONAL VAULT - SECCIÓN DOCTOR */}
+        {/* 👨‍⚕️ PROFESSIONAL VAULT */}
         <section className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
           <div className="flex items-center gap-2 px-1">
             <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
@@ -302,4 +316,3 @@ export default function ConfigPage() {
     </div>
   );
 }
-

@@ -1,11 +1,10 @@
 // src/components/settings/LocationSelector.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CpuChipIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useLocationData } from '../../hooks/settings/useLocationData';
 
 interface LocationSelectorProps {
   initialNeighborhoodId?: number;
-  // Modificado para devolver el valor (ID o nombre) y el ID de la parroquia padre
   onLocationChange: (value: number | string, parishId: number | null) => void;
 }
 
@@ -18,38 +17,52 @@ export default function LocationSelector({ initialNeighborhoodId, onLocationChan
   const [selectedParish, setSelectedParish] = useState<number | null>(null);
   const [neighborhoodInput, setNeighborhoodInput] = useState("");
 
+  // 🔹 Referencia para evitar el bucle infinito de inicialización
+  const hasInitialized = useRef(false);
+
   const { data: countries = [], isLoading: loadingCountries } = useCountries();
   const { data: states = [], isLoading: loadingStates } = useStates(selectedCountry);
   const { data: municipalities = [], isLoading: loadingMunis } = useMunicipalities(selectedState);
   const { data: parishes = [], isLoading: loadingParishes } = useParishes(selectedMunicipality);
   const { data: neighborhoods = [], isLoading: loadingHoods } = useNeighborhoods(selectedParish);
 
-  // Efecto para cargar el nombre inicial si existe un ID previo
+  // 🔹 Efecto corregido: Solo se ejecuta para cargar el valor inicial una vez
   useEffect(() => {
-    if (initialNeighborhoodId && neighborhoods.length > 0) {
+    if (initialNeighborhoodId && neighborhoods.length > 0 && !hasInitialized.current) {
       const initial = neighborhoods.find(n => n.id === initialNeighborhoodId);
-      if (initial) setNeighborhoodInput(initial.name);
+      if (initial) {
+        setNeighborhoodInput(initial.name);
+        // Marcamos como inicializado para que cambios posteriores en 'neighborhoods'
+        // no vuelvan a disparar setNeighborhoodInput y rompan el renderizado
+        hasInitialized.current = true;
+      }
     }
   }, [initialNeighborhoodId, neighborhoods]);
 
   const handleCountryChange = (val: string) => {
     const id = val ? Number(val) : null;
     setSelectedCountry(id);
-    setSelectedState(null); setSelectedMunicipality(null); setSelectedParish(null); setNeighborhoodInput("");
+    setSelectedState(null); 
+    setSelectedMunicipality(null); 
+    setSelectedParish(null); 
+    setNeighborhoodInput("");
     onLocationChange("", null);
   };
 
   const handleStateChange = (val: string) => {
     const id = val ? Number(val) : null;
     setSelectedState(id);
-    setSelectedMunicipality(null); setSelectedParish(null); setNeighborhoodInput("");
+    setSelectedMunicipality(null); 
+    setSelectedParish(null); 
+    setNeighborhoodInput("");
     onLocationChange("", null);
   };
 
   const handleMuniChange = (val: string) => {
     const id = val ? Number(val) : null;
     setSelectedMunicipality(id);
-    setSelectedParish(null); setNeighborhoodInput("");
+    setSelectedParish(null); 
+    setNeighborhoodInput("");
     onLocationChange("", null);
   };
 
@@ -57,17 +70,19 @@ export default function LocationSelector({ initialNeighborhoodId, onLocationChan
     const id = val ? Number(val) : null;
     setSelectedParish(id);
     setNeighborhoodInput("");
-    onLocationChange("", id); // Notificamos el cambio de parroquia
+    // Importante: No marcamos inicializado aquí para permitir que si el usuario
+    // cambia la parroquia, el flujo siga siendo manual
+    onLocationChange("", id); 
   };
 
   const handleNeighborhoodInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNeighborhoodInput(value);
     
-    // Buscamos si el texto ingresado coincide exactamente con uno de la lista
+    // Si el usuario escribe manualmente, bloqueamos la inicialización automática
+    hasInitialized.current = true;
+
     const match = neighborhoods.find(n => n.name.toLowerCase() === value.toLowerCase());
-    
-    // Si hay coincidencia mandamos el ID, si no, mandamos el texto (nuevo sector)
     onLocationChange(match ? match.id : value, selectedParish);
   };
 
@@ -100,7 +115,6 @@ export default function LocationSelector({ initialNeighborhoodId, onLocationChan
         {RenderSelect("Municipality", selectedMunicipality, municipalities, handleMuniChange, !selectedState, loadingMunis)}
         {RenderSelect("Parish", selectedParish, parishes, handleParishChange, !selectedMunicipality, loadingParishes)}
         
-        {/* Campo de Neighborhood con entrada libre y datalist */}
         <div className={`flex flex-col gap-1.5 flex-1 min-w-[200px] ${!selectedParish ? 'opacity-30' : 'opacity-100'}`}>
           <label className="text-[8px] font-black font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em] flex items-center justify-between px-1">
             <span>Neighborhood / Sector</span>
@@ -121,7 +135,6 @@ export default function LocationSelector({ initialNeighborhoodId, onLocationChan
               ))}
             </datalist>
 
-            {/* Indicador de que es un sector nuevo */}
             {neighborhoodInput && !neighborhoods.some(n => n.name.toLowerCase() === neighborhoodInput.toLowerCase()) && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
                 <span className="text-[7px] font-black text-[var(--palantir-active)] uppercase tracking-tighter animate-pulse">New_Entry</span>
