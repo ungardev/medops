@@ -33,25 +33,35 @@ import type { MedicalReport } from "../../types/medicalReport";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
 import { getPatient } from "../../api/patients";
 
-// 🕒 SUB-COMPONENTE: CRONÓMETRO DE SESIÓN
-const SessionTimer = ({ startTime }: { startTime: string }) => {
+// 🕒 SUB-COMPONENTE: CRONÓMETRO DE SESIÓN (Versión Ultra-Robusta)
+const SessionTimer = ({ startTime }: { startTime: string | undefined }) => {
   const [elapsed, setElapsed] = useState("00:00");
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    if (!startTime) return;
+
+    const calculateTime = () => {
       const start = new Date(startTime).getTime();
       const now = new Date().getTime();
-      const diff = Math.max(0, now - start);
+      
+      // Si la fecha es inválida o el cálculo falla, evitamos el NaN
+      if (isNaN(start)) return "00:00";
 
+      const diff = Math.max(0, now - start);
       const h = Math.floor(diff / (1000 * 60 * 60));
       const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const s = Math.floor((diff % (1000 * 60)) / 1000);
 
-      const timeString = h > 0 
+      return h > 0 
         ? `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
         : `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-      
-      setElapsed(timeString);
+    };
+
+    // Actualización inmediata para evitar el salto visual
+    setElapsed(calculateTime());
+
+    const timer = setInterval(() => {
+      setElapsed(calculateTime());
     }, 1000);
 
     return () => clearInterval(timer);
@@ -134,10 +144,10 @@ export default function Consultation() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-6 space-y-6">
       
-      {/* 🚀 PAGE_HEADER: HUB DE OPERACIONES CLÍNICAS */}
+      {/* 🚀 PAGE_HEADER: HUB DE OPERACIONES CLÍNICAS ACTUALIZADO */}
       <PageHeader 
-        title="CLINICAL_SESSION_TERMINAL"
-        breadcrumb={`MEDOPS // OPERATIVE_SYSTEM // SESSION_${appointment.id}`}
+        title={patient?.full_name || "LOADING_SUBJECT..."}
+        breadcrumb={`MEDOPS // OPERATIVE_SYSTEM // CLINICAL_SESSION // ID_${appointment.id.toString().padStart(6, '0')}`}
         stats={[
           { 
             label: "SESSION_ID", 
@@ -147,7 +157,7 @@ export default function Consultation() {
           { 
             label: "ELAPSED_TIME", 
             value: <SessionTimer startTime={appointment.created_at} />,
-            color: "text-emerald-400"
+            color: "text-emerald-400 font-bold"
           },
           { 
             label: "SESSION_STATUS", 
@@ -155,7 +165,7 @@ export default function Consultation() {
             color: appointment.status === 'in_consultation' ? "text-emerald-500" : "text-amber-500"
           },
           { 
-            label: "UPLINK", 
+            label: "UPLINK_QUALITY", 
             value: "ENCRYPTED_LIVE",
             color: "text-blue-400"
           }
@@ -164,22 +174,22 @@ export default function Consultation() {
           <div className="flex items-center gap-4 px-3">
             <div className="hidden md:flex flex-col items-end">
               <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Auth_Practitioner</span>
-              <span className="text-[10px] font-black text-[var(--palantir-active)] uppercase">Root_User</span>
+              <span className="text-[10px] font-black text-[var(--palantir-active)] uppercase">DR_ROOT_VERIFIED</span>
             </div>
-            <div className="h-10 w-10 flex items-center justify-center bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm">
+            <div className="h-10 w-10 flex items-center justify-center bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm shadow-[0_0_15px_rgba(var(--palantir-active-rgb),0.1)]">
               <FingerPrintIcon className="w-5 h-5 text-[var(--palantir-active)] animate-pulse" />
             </div>
           </div>
         }
       />
 
-      {/* 01. PATIENT_TELEMETRY_STRIP (Identidad del Sujeto) */}
+      {/* 01. PATIENT_TELEMETRY_STRIP */}
       <div className="relative overflow-hidden border border-[var(--palantir-border)] bg-[var(--palantir-surface)] p-1 shadow-lg group">
-        <div className="absolute top-0 left-0 w-1 h-full bg-[var(--palantir-active)] group-hover:shadow-[0_0_15px_var(--palantir-active)] transition-all" />
+        <div className="absolute top-0 left-0 w-1 h-full bg-[var(--palantir-active)] group-hover:shadow-[0_0_15px_var(--palantir-active)] transition-all duration-500" />
         {patient ? (
           <PatientHeader patient={patient} />
         ) : (
-          <div className="p-10 text-center animate-pulse border border-dashed border-[var(--palantir-border)]">
+          <div className="p-10 text-center animate-pulse border border-dashed border-[var(--palantir-border)] bg-black/10">
             <span className="text-[10px] font-mono uppercase tracking-[0.5em] text-[var(--palantir-muted)]">Awaiting_Subject_BioData...</span>
           </div>
         )}
@@ -207,7 +217,7 @@ export default function Consultation() {
             <p className="text-[8px] font-mono uppercase text-[var(--palantir-muted)] leading-relaxed">
               Security_Node: CENTRAL_SBY<br/>
               Session_Encryption: AES_256_GCM<br/>
-              Status: SECURE_LINK
+              Status: SECURE_LINK_STABLE
             </p>
           </div>
         </aside>

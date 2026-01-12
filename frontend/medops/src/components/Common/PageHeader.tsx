@@ -1,10 +1,9 @@
-// src/components/Common/PageHeader.tsx
 import React, { useEffect, useState } from "react";
 import moment from "moment";
 
 interface PageStat {
   label: string;
-  value: React.ReactNode; // Cambiado de string | number para soportar componentes dinámicos
+  value: React.ReactNode; 
   color?: string; 
 }
 
