@@ -1,9 +1,10 @@
+// src/components/Common/PageHeader.tsx
 import React, { useEffect, useState } from "react";
 import moment from "moment";
 
 interface PageStat {
   label: string;
-  value: string | number;
+  value: React.ReactNode; // Cambiado de string | number para soportar componentes dinámicos
   color?: string; 
 }
 
@@ -30,7 +31,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <section className="relative flex flex-col gap-4 mb-6 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
       
-      {/* 1. TOP BAR: Metadatos de Sistema con Glitch Sutil */}
+      {/* 1. TOP BAR: Metadatos de Sistema */}
       <div className="flex items-center justify-between border-b border-[var(--palantir-border)]/20 pb-1.5">
         <div className="flex items-center gap-2.5">
           <div className="relative flex h-1.5 w-1.5">
@@ -51,7 +52,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
       </div>
 
-      {/* 2. MAIN CORE: Título con efecto de Escaneo (Scanning) */}
+      {/* 2. MAIN CORE */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         
         <div className="flex flex-col gap-3">
@@ -59,14 +60,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <h1 className="text-3xl md:text-4xl font-black text-[var(--palantir-text)] tracking-tighter uppercase italic leading-none relative z-10">
               {title}
             </h1>
-            {/* Subrayado con Glow dinámico */}
             <div className="w-16 h-[2px] bg-[var(--palantir-active)] shadow-[0_0_15px_var(--palantir-active)] transition-all group-hover/title:w-full duration-500" />
-            
-            {/* Reflejo de escaneo diagonal interno */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--palantir-active)]/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover/title:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
           </div>
 
-          {/* 3. ESTRUCTURA DE DATOS (Stats) - Diseño de Grilla Militar */}
+          {/* 3. ESTRUCTURA DE DATOS (Stats) */}
           {stats && stats.length > 0 && (
             <div className="flex flex-wrap items-center gap-0 border border-[var(--palantir-border)]/10 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
               {stats.map((stat, i) => (
@@ -79,11 +77,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                   <span className="text-[7px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)] group-hover/stat:text-[var(--palantir-active)] transition-colors">
                     {stat.label}
                   </span>
-                  <span className={`text-xs font-mono font-black tracking-widest ${stat.color || "text-[var(--palantir-active)]"} drop-shadow-[0_0_5px_currentColor]`}>
+                  <div className={`text-xs font-mono font-black tracking-widest ${stat.color || "text-[var(--palantir-active)]"} drop-shadow-[0_0_5px_currentColor]`}>
                     {stat.value}
-                  </span>
-                  
-                  {/* Indicador de celda activa (esquina) */}
+                  </div>
                   <div className="absolute top-0 right-0 w-1 h-1 border-t border-r border-[var(--palantir-active)] opacity-0 group-hover/stat:opacity-100 transition-opacity" />
                 </div>
               ))}
@@ -91,7 +87,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           )}
         </div>
 
-        {/* 4. CONTROL INTERFACE (Acciones) */}
+        {/* 4. CONTROL INTERFACE */}
         {actions && (
           <div className="flex items-center gap-2 self-start lg:self-center p-2 bg-white/[0.02] border border-[var(--palantir-border)]/20 rounded-sm backdrop-blur-xl shadow-[inner_0_0_20px_rgba(0,0,0,0.5)]">
             {actions}
@@ -99,7 +95,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         )}
       </div>
 
-      {/* Decoración Final: Línea de Horizonte Infinito */}
       <div className="absolute -bottom-[2px] left-0 w-full h-[1px] bg-gradient-to-r from-[var(--palantir-active)] via-[var(--palantir-active)]/10 to-transparent opacity-40" />
     </section>
   );
