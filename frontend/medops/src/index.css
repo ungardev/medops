@@ -8,44 +8,46 @@
     --palantir-border: #d8e1e8;
     --palantir-text: #182026;
     --palantir-muted: #5c7080;
-    --palantir-active: #38a1ff;
+    --palantir-active: #2d5d8a; /* Azul corporativo reservado */
     --palantir-accent: #38a1ff;
   }
 
   .dark {
-    /* MODO OSCURO UNIFICADO MEDOPS - ELITE EDITION */
-    --palantir-bg: #0b0e14;         /* Fondo más profundo para resaltar el brillo */
-    --palantir-surface: #12181f;    /* Superficies premium */
-    --palantir-border: #1e272e;     /* Bordes sutiles */
-    --palantir-text: #f5f8fa;       
-    --palantir-muted: #5c7080;      /* Silenciamos más el texto secundario */
-    --palantir-active: #00f2ff;     /* Cyan eléctrico para mayor contraste */
-    --palantir-accent: #38a1ff;     
-    --palantir-accent-soft: rgba(0, 242, 255, 0.05);
-    --glow-color: rgba(0, 242, 255, 0.4);
+    /* MODO PALANTIR: INTELLIGENCE & PRECISION */
+    --palantir-bg: #090b0f;         /* Negro obsidiana, no azulado */
+    --palantir-surface: #11141a;    /* Superficies de comando */
+    --palantir-border: #232a31;     /* Bordes de acero frío */
+    --palantir-text: #e1e8ed;       /* Blanco roto para no cansar la vista */
+    --palantir-muted: #667785;      /* Texto secundario profesional */
+    
+    /* El cambio clave: Un azul acero (Steel Blue) que es elegante, no chillon */
+    --palantir-active: #394b59;     /* Color de estado activo (gris azulado) */
+    --palantir-accent: #4a90e2;     /* Azul de acción contenido */
+    
+    --palantir-accent-soft: rgba(74, 144, 226, 0.08);
+    --glow-color: rgba(74, 144, 226, 0.15); /* Brillo casi imperceptible */
   }
 
   body {
     background-color: var(--palantir-bg);
     color: var(--palantir-text);
-    font-feature-settings: "tnum" on, "lnum" on; /* Cifras tabulares para el look mono */
+    font-feature-settings: "tnum" on, "lnum" on;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em; /* Más condensado, más técnico */
     cursor: default;
   }
 
   /* -----------------------------------------------------------
-     1. SCROLLBAR ANNIHILATION (ELITE CUSTOM SCROLL)
+     1. GHOST SCROLL (Elegancia Palantir)
   ----------------------------------------------------------- */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--palantir-active) transparent;
+    scrollbar-color: var(--palantir-border) transparent;
   }
 
-  /* Contenedores con scroll personalizado */
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 3px; /* Más fino aún */
+    height: 3px;
   }
 
   ::-webkit-scrollbar-track {
@@ -53,35 +55,34 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--palantir-active);
+    background: var(--palantir-border);
     border-radius: 0px;
-    /* Efecto de hilo de luz */
-    box-shadow: 0 0 8px var(--glow-color);
+    /* Eliminamos el box-shadow de neón */
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #ffffff;
-    box-shadow: 0 0 12px #ffffff;
+    background: var(--palantir-muted);
   }
 
   /* -----------------------------------------------------------
-     2. PRECISION CURSORS & INTERACTION
+     2. PRECISION & INTERFACE
   ----------------------------------------------------------- */
   button, a, label {
-    cursor: crosshair; /* Cursor de precisión quirúrgica */
+    cursor: pointer; /* Volvemos al puntero estándar pero fino */
   }
 
   /* -----------------------------------------------------------
-     3. ELITE UI CLASSES (UTILIDADES PROPIETARIAS)
+     3. UTILITIES
   ----------------------------------------------------------- */
   
-  /* Inputs con resplandor focal */
+  /* Inputs sin resplandor excesivo */
   input:focus, textarea:focus {
-    box-shadow: 0 0 15px var(--palantir-accent-soft);
-    border-color: var(--palantir-active) !important;
+    outline: none;
+    box-shadow: 0 0 0 1px var(--palantir-accent); /* Borde simple, no glow */
+    border-color: var(--palantir-accent) !important;
   }
 
-  /* Efecto de escaneo para loadings */
+  /* Efecto de carga sutil (Efecto Doppler) */
   .medops-scanning {
     position: relative;
     overflow: hidden;
@@ -90,37 +91,37 @@
   .medops-scanning::after {
     content: "";
     position: absolute;
-    top: -100%;
-    left: 0;
+    top: 0;
+    left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, transparent, var(--palantir-active), transparent);
-    opacity: 0.1;
-    animation: scan 3s linear infinite;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    animation: scan-horizontal 2s ease-in-out infinite;
   }
 
-  @keyframes scan {
-    0% { top: -100%; }
-    100% { top: 100%; }
+  @keyframes scan-horizontal {
+    0% { left: -100%; }
+    100% { left: 100%; }
   }
 
-  /* Máscara de desvanecimiento para modales (Elite Edge) */
-  .custom-modal-scroll {
-    mask-image: linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent);
-    -webkit-mask-image: linear-gradient(to bottom, transparent, black 40px, black calc(100% - 40px), transparent);
+  /* Especial para el Sidebar: Quitar el brillo de Tron */
+  .sidebar-active-indicator {
+    box-shadow: none !important;
+    border-right: 2px solid var(--palantir-accent);
   }
 }
 
 @layer components {
-  /* Botón de Sincronización Estilo Palantir */
+  /* Botón estilo Military-Grade */
   .btn-sync {
-    @apply relative overflow-hidden transition-all duration-300;
-    background: var(--palantir-active);
-    box-shadow: 0 0 10px var(--glow-color);
+    @apply relative overflow-hidden transition-all duration-200 uppercase tracking-widest text-[10px] font-bold;
+    background: var(--palantir-surface);
+    border: 1px solid var(--palantir-border);
+    color: var(--palantir-text);
   }
   
   .btn-sync:hover {
-    @apply brightness-110;
-    box-shadow: 0 0 20px var(--palantir-active);
+    background: var(--palantir-border);
+    border-color: var(--palantir-muted);
   }
 }
