@@ -14,16 +14,29 @@ export default function PatientsTable({
   isLoading = false,
   isError = false,
 }: PatientsTableProps) {
+  
+  // Mapeo de anchos para que coincidan EXACTAMENTE con Patients.tsx
+  const getHeaderWidth = (header: string) => {
+    const h = header.toUpperCase();
+    if (h.includes("UID")) return "w-[120px]";
+    if (h.includes("IDENTITY")) return "min-w-[280px]";
+    if (h.includes("NATIONAL")) return "w-[160px]";
+    if (h.includes("STATUS")) return "w-[130px]";
+    if (h.includes("COMM")) return "max-w-[220px]";
+    if (h.includes("ACTIONS")) return "w-[110px] text-right";
+    return "";
+  };
+
   return (
     <div className="w-full overflow-hidden border border-[var(--palantir-border)] bg-[var(--palantir-surface)] shadow-2xl">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+        <table className="w-full text-left border-collapse table-fixed lg:table-auto">
           <thead>
             <tr className="bg-[var(--palantir-bg)] border-b border-[var(--palantir-border)]">
               {headers.map((h, idx) => (
                 <th
                   key={idx}
-                  className="px-4 py-3 text-[10px] font-black text-[var(--palantir-muted)] uppercase tracking-[0.2em]"
+                  className={`px-4 py-3 text-[10px] font-black text-[var(--palantir-muted)] uppercase tracking-[0.2em] ${getHeaderWidth(h)}`}
                 >
                   {h.replace(/ /g, "_")}
                 </th>
@@ -46,11 +59,11 @@ export default function PatientsTable({
                 </td>
               </tr>
             ) : (
-              React.Children.map(children, (child) => (
-                <tr className="hover:bg-[var(--palantir-active)]/5 transition-colors group">
-                  {child}
-                </tr>
-              ))
+              /* CORRECCIÓN CRÍTICA: 
+                 No envolvemos el 'child' en un <tr> porque 'child' ya es un <tr> 
+                 que viene desde Patients.tsx. Lo renderizamos directamente.
+              */
+              children
             )}
           </tbody>
         </table>
