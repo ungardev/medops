@@ -13,14 +13,17 @@ import PatientEventsTab from "../../components/Patients/PatientEventsTab";
 import VaccinationTab from "../../components/Patients/VaccinationTab";
 import SurgeriesTab from "../../components/Patients/SurgeriesTab";
 
+// Componentes de Common
+import PageHeader from "../../components/Common/PageHeader";
+
 // Iconos para el Header
 import { 
   IdentificationIcon, 
   HeartIcon, 
   BeakerIcon, 
-  GlobeAltIcon, 
-  ChevronRightIcon 
-} from "@heroicons/react/24/solid";
+  GlobeAltIcon,
+  UserIcon
+} from "@heroicons/react/24/outline";
 
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
@@ -74,79 +77,65 @@ export default function PatientDetail() {
   );
 
   return (
-    <div className="max-w-[1400px] mx-auto p-4 lg:p-6 space-y-6">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-[var(--palantir-bg)] min-h-screen">
       
-      {/* 🚀 PATIENT IDENTITY HEADER */}
-      <header className="relative overflow-hidden bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm p-6 shadow-2xl">
-        {/* Decorative Grid Background */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-             style={{ backgroundImage: 'radial-gradient(var(--palantir-active) 1px, transparent 0)', backgroundSize: '20px 20px' }} />
-        
-        <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-3">
-            {/* Status & ID Badge */}
-            <div className="flex items-center gap-3">
-              <div className={`h-2 w-2 rounded-full animate-pulse ${patient.active ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-red-500'}`} />
-              <span className="text-[10px] font-mono text-[var(--palantir-active)] uppercase tracking-widest">
-                {patient.active ? 'Subject_Active' : 'Subject_Inactive'} // UID_{patient.id.toString().padStart(6, '0')}
-              </span>
-            </div>
-
-            {/* Main Identity */}
-            <h1 className="text-2xl md:text-4xl font-black text-[var(--palantir-text)] uppercase tracking-tight leading-none">
-              {patient.full_name}
-            </h1>
-
-            {/* Vital Metadata Grid */}
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-[11px] font-mono text-[var(--palantir-muted)] uppercase">
-              <span className="flex items-center gap-1.5">
-                <IdentificationIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-                {patient.national_id || "NO_ID_RECORDED"}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <HeartIcon className="w-4 h-4 text-red-500/70" />
-                D.O.B: {patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <BeakerIcon className="w-4 h-4 text-blue-500/70" />
-                Type: {patient.blood_type || '--'}
-              </span>
-              {patient.birth_country && (
-                <span className="flex items-center gap-1.5 opacity-80">
-                  <GlobeAltIcon className="w-4 h-4" />
-                  {patient.birth_country}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Stats Telemetry */}
-          <div className="flex gap-2">
-             <div className="px-4 py-2 border border-[var(--palantir-border)] bg-black/20 rounded-sm min-w-[90px] text-center">
-                <p className="text-[8px] text-[var(--palantir-muted)] uppercase font-black mb-1">Weight</p>
-                <p className="text-[14px] font-mono font-bold text-[var(--palantir-text)]">
-                  {patient.weight || '--'} <span className="text-[9px] text-[var(--palantir-active)]">KG</span>
-                </p>
+      {/* 🚀 ELITE_PAGE_HEADER: IDENTITY & TELEMETRY */}
+      <PageHeader 
+        title={patient.full_name}
+        breadcrumb={`MEDOPS // DATABASE // SUBJECT_FILE // UID_${patient.id.toString().padStart(6, '0')}`}
+        stats={[
+          { 
+            label: "Subject_Status", 
+            value: patient.active ? "ACTIVE" : "INACTIVE",
+            color: patient.active ? "text-emerald-500" : "text-red-500"
+          },
+          { 
+            label: "System_Age", 
+            value: `${patient.age || '--'} YRS`,
+            color: "text-[var(--palantir-active)]"
+          },
+          { 
+            label: "Weight_Metrics", 
+            value: `${patient.weight || '--'} KG` 
+          },
+          { 
+            label: "Height_Metrics", 
+            value: `${patient.height || '--'} CM` 
+          }
+        ]}
+        actions={
+          <div className="flex items-center gap-3">
+             <div className="flex flex-col items-end px-3 border-r border-[var(--palantir-border)]/50">
+                <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">Blood_Type</span>
+                <span className="text-xs font-black text-red-500/80">{patient.blood_type || 'N/A'}</span>
              </div>
-             <div className="px-4 py-2 border border-[var(--palantir-border)] bg-black/20 rounded-sm min-w-[90px] text-center">
-                <p className="text-[8px] text-[var(--palantir-muted)] uppercase font-black mb-1">Height</p>
-                <p className="text-[14px] font-mono font-bold text-[var(--palantir-text)]">
-                  {patient.height || '--'} <span className="text-[9px] text-[var(--palantir-active)]">CM</span>
-                </p>
-             </div>
-             <div className="hidden lg:flex px-4 py-2 border border-[var(--palantir-border)] bg-[var(--palantir-active)]/10 rounded-sm items-center gap-3 group cursor-pointer">
-                <div className="text-right">
-                  <p className="text-[8px] text-[var(--palantir-active)] uppercase font-black">System_Age</p>
-                  <p className="text-[14px] font-mono font-bold text-[var(--palantir-text)]">{patient.age || '--'}Y</p>
-                </div>
-                <ChevronRightIcon className="w-4 h-4 text-[var(--palantir-active)] group-hover:translate-x-1 transition-transform" />
+             <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-[var(--palantir-border)] bg-[var(--palantir-surface)]">
+                <UserIcon className="w-5 h-5 text-[var(--palantir-active)]" />
              </div>
           </div>
-        </div>
-      </header>
+        }
+      />
+
+      {/* 📊 SUB-METADATA BAR (DNI, DOB, COUNTRY) */}
+      <div className="flex flex-wrap items-center gap-6 px-6 py-3 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest shadow-inner">
+        <span className="flex items-center gap-2">
+          <IdentificationIcon className="w-3.5 h-3.5 text-[var(--palantir-active)]/50" />
+          ID: <span className="text-[var(--palantir-text)]">{patient.national_id || "NOT_ASSIGNED"}</span>
+        </span>
+        <span className="flex items-center gap-2">
+          <HeartIcon className="w-3.5 h-3.5 text-red-500/40" />
+          DOB: <span className="text-[var(--palantir-text)]">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}</span>
+        </span>
+        {patient.birth_country && (
+          <span className="flex items-center gap-2">
+            <GlobeAltIcon className="w-3.5 h-3.5 text-blue-500/40" />
+            Origin: <span className="text-[var(--palantir-text)]">{patient.birth_country}</span>
+          </span>
+        )}
+      </div>
 
       {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
-      <div className="bg-transparent">
+      <div className="border border-[var(--palantir-border)] bg-[var(--palantir-surface)] rounded-sm overflow-hidden shadow-2xl">
         <Tabs
           value={currentTab}
           onChange={setTab}
