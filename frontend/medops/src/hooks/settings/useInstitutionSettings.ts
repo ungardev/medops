@@ -15,16 +15,15 @@ export function useInstitutionSettings() {
   });
 
   const mutation = useMutation({
-    // Cambiamos el tipo para aceptar FormData directamente o el objeto parcial
     mutationFn: async (payload: FormData | Partial<InstitutionSettings>) => {
       let finalData: FormData;
 
       if (payload instanceof FormData) {
-        // Si ya viene como FormData del componente, lo usamos directamente
         finalData = payload;
       } else {
-        // Si viene como objeto, construimos el FormData aquí (compatibilidad)
         finalData = new FormData();
+        
+        // Mapeo seguro: Solo agregamos si hay valor
         if (payload.name) finalData.append("name", payload.name);
         if (payload.address) finalData.append("address", payload.address);
         if (payload.phone) finalData.append("phone", payload.phone);
@@ -34,31 +33,42 @@ export function useInstitutionSettings() {
           const neighborhoodId = typeof payload.neighborhood === 'object' 
             ? (payload.neighborhood as any).id 
             : payload.neighborhood;
+          
+          // Enviamos ambas para mayor compatibilidad con Serializers de Django
           finalData.append("neighborhood", String(neighborhoodId));
+          finalData.append("neighborhood_id", String(neighborhoodId));
         }
 
-        if (payload.logo && payload.logo instanceof File) {
+        if (payload.logo instanceof File) {
           finalData.append("logo", payload.logo);
         }
       }
 
-      // Nota: No es necesario poner "multipart/form-data" manualmente, 
-      // Axios lo detecta y configura el boundary automáticamente.
-      const res = await api.patch("config/institution/", finalData);
+      // DEBUG: Ver qué sale exactamente hacia el servidor
+      console.log("--- OUTGOING PAYLOAD DEBUG ---");
+      finalData.forEach((value, key) => {
+        console.log(`${key}:`, value);
+      });
+
+      // No forzamos Content-Type para que Axios/Browser manejen el boundary del FormData
+      const res = await api.patch<InstitutionSettings>("config/institution/", finalData);
       return res.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["config", "institution"] });
+      // Forzamos actualización inmediata del cache
       queryClient.setQueryData(["config", "institution"], data);
+      queryClient.invalidateQueries({ queryKey: ["config", "institution"] });
     },
+    onError: (error) => {
+      console.error("INSTITUTION_UPDATE_FAILED:", error);
+    }
   });
-
-  const handleLogoChange = (file: File) => URL.createObjectURL(file);
 
   return {
     ...query,
     updateInstitution: mutation.mutateAsync,
     isUpdating: mutation.isPending,
-    handleLogoChange,
+    // Helper para generar URL temporal de archivos locales
+    generatePreviewUrl: (file: File) => URL.createObjectURL(file),
   };
 }
