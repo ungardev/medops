@@ -119,83 +119,87 @@ export default function Patients() {
         )}
       </div>
 
-      {/* 🖥️ SUBJECT_GRID_CONTROLLER */}
+      {/* 🖥️ SUBJECT_GRID_CONTROLLER - ARQUITECTURA DE TABLA CORREGIDA */}
       <div className="border border-[var(--palantir-border)] bg-[var(--palantir-surface)] rounded-sm overflow-hidden shadow-2xl backdrop-blur-sm">
-        <PatientsTable
-          headers={["UID_Index", "Identity_Subject", "National_ID", "Class_Status", "Comm_Link", "Actions"]}
-          isLoading={isLoadingPaged && query.length === 0}
-        >
-          {list.length === 0 ? (
-            <tr>
-              <td colSpan={6}>
-                <EmptyState
-                  icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-12 h-12 text-[var(--palantir-muted)] opacity-20" })}
-                  title={EmptyStateRegistry.pacientes.title}
-                  message={query.trim().length > 0 ? "No matches found in the current data slice." : EmptyStateRegistry.pacientes.message}
-                />
-              </td>
-            </tr>
-          ) : (
-            list.map((p) => (
-              <tr 
-                key={p.id} 
-                className="border-b border-[var(--palantir-border)]/30 hover:bg-[var(--palantir-active)]/[0.03] transition-colors group"
-              >
-                {/* ID con formato de terminal */}
-                <td className="px-4 py-4 text-[11px] font-mono text-[var(--palantir-active)] font-bold">
-                  #{String(p.id).padStart(5, '0')}
-                </td>
-                
-                {/* Nombre Completo con estilización de "registro" */}
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-2">
-                    <FingerPrintIcon className="w-3 h-3 text-[var(--palantir-muted)] opacity-30" />
-                    <div className="text-[11px] font-black text-[var(--palantir-text)] uppercase tracking-tight group-hover:text-[var(--palantir-active)] transition-colors">
-                      {p.full_name}
-                    </div>
-                  </div>
-                </td>
-
-                {/* Documento de Identidad */}
-                <td className="px-4 py-4 text-[11px] font-mono text-[var(--palantir-muted)]">
-                  {p.national_id || "NOT_ASSIGNED"}
-                </td>
-
-                {/* Género/Status */}
-                <td className="px-4 py-4">
-                  <span className="text-[9px] px-2 py-0.5 border border-[var(--palantir-border)] text-[var(--palantir-muted)] font-mono uppercase bg-black/20">
-                    {p.gender || "UDF"}
-                  </span>
-                </td>
-
-                {/* Info de Contacto */}
-                <td className="px-4 py-4 text-[10px] font-mono text-[var(--palantir-muted)] truncate max-w-[180px]">
-                  {p.contact_info || "---"}
-                </td>
-
-                {/* Acciones Rápidas */}
-                <td className="px-4 py-4">
-                  <div className="flex items-center gap-4">
-                    <button 
-                      onClick={() => handleView(p.id)}
-                      className="flex items-center gap-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-all group/btn"
-                    >
-                      <EyeIcon className="w-4 h-4" />
-                      <span className="text-[8px] font-black uppercase hidden group-hover/btn:inline">Access</span>
-                    </button>
-                    <button 
-                      disabled={isDeleting}
-                      onClick={() => handleDelete(p)}
-                      className="text-red-500/30 hover:text-red-500 transition-colors"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
+        <div className="overflow-x-auto">
+          <PatientsTable
+            headers={["UID_Index", "Identity_Subject", "National_ID", "Class_Status", "Comm_Link", "Actions"]}
+            isLoading={isLoadingPaged && query.length === 0}
+          >
+            {list.length === 0 ? (
+              <tr>
+                <td colSpan={6}>
+                  <EmptyState
+                    icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-12 h-12 text-[var(--palantir-muted)] opacity-20" })}
+                    title={EmptyStateRegistry.pacientes.title}
+                    message={query.trim().length > 0 ? "No matches found in the current data slice." : EmptyStateRegistry.pacientes.message}
+                  />
                 </td>
               </tr>
-            ))
-          )}
-        </PatientsTable>
+            ) : (
+              list.map((p) => (
+                <tr 
+                  key={p.id} 
+                  className="border-b border-[var(--palantir-border)]/30 hover:bg-[var(--palantir-active)]/[0.03] transition-colors group"
+                >
+                  {/* UID: Ancho fijo controlado */}
+                  <td className="px-4 py-4 text-[11px] font-mono text-[var(--palantir-active)] font-bold w-[120px]">
+                    #{String(p.id).padStart(5, '0')}
+                  </td>
+                  
+                  {/* Identity: Expansión flexible con límite de línea */}
+                  <td className="px-4 py-4 min-w-[280px]">
+                    <div className="flex items-center gap-2">
+                      <FingerPrintIcon className="w-3 h-3 text-[var(--palantir-muted)] opacity-30 shrink-0" />
+                      <div className="text-[11px] font-black text-[var(--palantir-text)] uppercase tracking-tight group-hover:text-[var(--palantir-active)] transition-colors line-clamp-1">
+                        {p.full_name}
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* National ID: Ancho fijo */}
+                  <td className="px-4 py-4 text-[11px] font-mono text-[var(--palantir-muted)] w-[160px]">
+                    {p.national_id || "NOT_ASSIGNED"}
+                  </td>
+
+                  {/* Gender/Status: Ancho fijo y centrado */}
+                  <td className="px-4 py-4 w-[130px]">
+                    <span className="text-[9px] px-2 py-0.5 border border-[var(--palantir-border)] text-[var(--palantir-muted)] font-mono uppercase bg-black/20 block text-center truncate">
+                      {p.gender || "UDF"}
+                    </span>
+                  </td>
+
+                  {/* Comm_Link: Truncado para evitar desbordamiento */}
+                  <td className="px-4 py-4 text-[10px] font-mono text-[var(--palantir-muted)] max-w-[220px]">
+                    <div className="truncate" title={p.contact_info || ""}>
+                      {p.contact_info || "---"}
+                    </div>
+                  </td>
+
+                  {/* Acciones: Ancho fijo y alineación final */}
+                  <td className="px-4 py-4 w-[110px]">
+                    <div className="flex items-center gap-4 justify-end">
+                      <button 
+                        onClick={() => handleView(p.id)}
+                        className="flex items-center gap-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-all group/btn"
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                        <span className="text-[8px] font-black uppercase hidden group-hover/btn:inline">Access</span>
+                      </button>
+                      <button 
+                        disabled={isDeleting}
+                        onClick={() => handleDelete(p)}
+                        className="text-red-500/30 hover:text-red-500 transition-colors"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </PatientsTable>
+        </div>
 
         {/* 📟 PANEL DE PAGINACIÓN TÉCNICA */}
         <div className="flex items-center justify-between p-4 border-t border-[var(--palantir-border)]/30 bg-black/20">
