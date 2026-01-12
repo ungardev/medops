@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react"; // 🔹 Añadido useMemo
 import PageHeader from "@/components/Common/PageHeader";
 import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
@@ -28,15 +28,12 @@ type DoctorForm = {
 };
 
 export default function ConfigPage() {
-  // 🔹 Base URL para activos multimedia
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-  // 🔹 Hooks de Datos
   const { data: inst, isLoading: instLoading } = useInstitutionSettings();
   const { data: doc, updateDoctor, isLoading: docLoading, handleSignatureChange } = useDoctorConfig();
   const { data: specialties = [] } = useSpecialtyChoices();
 
-  // 🔹 Estados de UI
   const [isInstModalOpen, setIsInstModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(false);
   const [initializedDoctor, setInitializedDoctor] = useState(false);
@@ -53,7 +50,19 @@ export default function ConfigPage() {
     signature: null,
   });
 
-  // 🔹 Sincronización Profesional (Doctor + Especialidades)
+  // 🔹 SOLUCIÓN AL TITILEO: Memoizar la URL del logo
+  // Solo se recalcula si 'inst.logo' cambia, evitando peticiones infinitas
+  const memoizedLogoUrl = useMemo(() => {
+    if (!inst?.logo) return null;
+    
+    if (typeof inst.logo === 'string') {
+      return inst.logo.startsWith('http') 
+        ? inst.logo 
+        : `${API_BASE}${inst.logo}`;
+    }
+    return null;
+  }, [inst?.logo, API_BASE]);
+
   useEffect(() => {
     if (!doc || specialties.length === 0 || initializedDoctor) return;
     
@@ -84,30 +93,11 @@ export default function ConfigPage() {
     }
   };
 
-  // 🔹 Helper para renderizar el logo sin que se rompa
-  const renderLogo = () => {
-    if (!inst?.logo) return <CloudArrowUpIcon className="w-6 h-6 text-white/10" />;
-    
-    const logoUrl = typeof inst.logo === 'string' 
-      ? (inst.logo.startsWith('http') ? inst.logo : `${API_BASE}${inst.logo}`)
-      : "/logo-placeholder.svg";
-
-    return (
-      <img 
-        src={logoUrl} 
-        className="max-h-full object-contain" 
-        alt="Institution Logo"
-        onError={(e) => { (e.target as HTMLImageElement).src = "/logo-placeholder.svg"; }}
-      />
-    );
-  };
-
   const inputStyles = `w-full bg-black/20 border border-white/10 rounded-sm px-4 py-2.5 text-[11px] font-mono text-white focus:outline-none focus:border-[var(--palantir-active)]/50 transition-all`;
   const labelStyles = `text-[9px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)] mb-1.5 block`;
 
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
-      
       <style>{`
         .custom-modal-scroll::-webkit-scrollbar { width: 4px; }
         .custom-modal-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
@@ -115,10 +105,6 @@ export default function ConfigPage() {
           background: var(--palantir-active);
           border-radius: 10px;
           box-shadow: 0 0 10px var(--palantir-active);
-        }
-        .custom-modal-scroll {
-          scrollbar-width: thin;
-          scrollbar-color: var(--palantir-active) rgba(0, 0, 0, 0.3);
         }
       `}</style>
 
@@ -150,7 +136,20 @@ export default function ConfigPage() {
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6 items-start">
                   <div className="w-24 h-24 bg-black/40 border border-[var(--palantir-border)] p-2 flex items-center justify-center overflow-hidden">
-                    {renderLogo()}
+                    {/* 🔹 Renderizado de logo corregido y estable */}
+                    {memoizedLogoUrl ? (
+                      <img 
+                        src={memoizedLogoUrl} 
+                        className="max-h-full object-contain" 
+                        alt="Institution Logo"
+                        onError={(e) => { 
+                          (e.target as HTMLImageElement).onerror = null; // Evita bucle infinito en el error
+                          (e.target as HTMLImageElement).src = "/logo-placeholder.svg"; 
+                        }}
+                      />
+                    ) : (
+                      <CloudArrowUpIcon className="w-6 h-6 text-white/10" />
+                    )}
                   </div>
                   <div className="flex-1 space-y-4">
                     <div>
@@ -171,19 +170,24 @@ export default function ConfigPage() {
                       <div className="space-y-1">
                         <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Region_Hierarchy</span>
                         <div className="text-[10px] font-mono text-white leading-relaxed uppercase">
-                          {typeof inst?.neighborhood === 'object' && inst.neighborhood?.parish ? (
+                          {/* 🔹 Verificación robusta del objeto neighborhood */}
+                          {inst?.neighborhood && typeof inst.neighborhood === 'object' && inst.neighborhood.parish ? (
                             <>
                               {inst.neighborhood.parish.municipality?.state?.country?.name} <br/>
                               {inst.neighborhood.parish.municipality?.state?.name} <br/>
                               {inst.neighborhood.parish.municipality?.name} / {inst.neighborhood.parish.name}
                             </>
-                          ) : "GEOGRAPHIC_CHAIN_NOT_DEFINED"}
+                          ) : (
+                            <span className="text-amber-500/50 italic">GEOGRAPHIC_CHAIN_NOT_DEFINED</span>
+                          )}
                         </div>
                       </div>
                       <div className="space-y-1">
                         <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Local_Address</span>
                         <div className="text-[10px] font-mono text-white uppercase italic">
-                          <span className="text-[var(--palantir-active)]">[{typeof inst?.neighborhood === 'object' ? inst.neighborhood?.name : 'N/A'}]</span>
+                          <span className="text-[var(--palantir-active)]">
+                            [{inst?.neighborhood && typeof inst.neighborhood === 'object' ? inst.neighborhood.name : 'N/A'}]
+                          </span>
                           <br />
                           {inst?.address || "STREET_DATA_MISSING"}
                         </div>
@@ -203,7 +207,7 @@ export default function ConfigPage() {
           </div>
         </section>
 
-        {/* 👨‍⚕️ PROFESSIONAL VAULT */}
+        {/* 👨‍⚕️ PROFESSIONAL VAULT - SECCIÓN DOCTOR */}
         <section className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
           <div className="flex items-center gap-2 px-1">
             <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
