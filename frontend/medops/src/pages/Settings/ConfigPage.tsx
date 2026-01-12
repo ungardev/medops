@@ -17,7 +17,7 @@ import {
   MapPinIcon
 } from "@heroicons/react/24/outline";
 
-// 🔹 COMPONENTE DE LOGO ESTABLE (Evita el parpadeo infinito)
+// 🔹 COMPONENTE DE LOGO ESTABLE (Blindado contra parpadeos y errores de carga)
 const StableLogo = memo(({ url }: { url: string | null }) => {
   const [imgSrc, setImgSrc] = useState<string>(url || "/logo-placeholder.svg");
 
@@ -36,7 +36,7 @@ const StableLogo = memo(({ url }: { url: string | null }) => {
       alt="Logo"
       onError={(e) => {
         const target = e.target as HTMLImageElement;
-        // Evitamos bucles si el placeholder también falla
+        // Evitamos bucles infinitos si el placeholder también falla
         if (target.src !== window.location.origin + "/logo-placeholder.svg") {
           target.src = "/logo-placeholder.svg";
         }
@@ -79,13 +79,18 @@ export default function ConfigPage() {
     signature: null,
   });
 
-  // 🔹 MEMOIZACIÓN DE URL: Solo cambia si inst.logo cambia físicamente
+  // 🔹 MEMOIZACIÓN DE URL REFORZADA:
+  // Detecta si el hook ya entregó la URL completa o si necesita prefijo manual.
   const memoizedLogoUrl = useMemo(() => {
     if (!inst?.logo) return null;
+    
     if (typeof inst.logo === 'string') {
-      return inst.logo.startsWith('http') 
-        ? inst.logo 
-        : `${API_BASE}${inst.logo}`;
+      // Si ya es una URL absoluta, usarla
+      if (inst.logo.startsWith('http')) return inst.logo;
+      
+      // Si es una ruta relativa, normalizar con API_BASE
+      const cleanPath = inst.logo.startsWith('/') ? inst.logo : `/${inst.logo}`;
+      return `${API_BASE}${cleanPath}`;
     }
     return null;
   }, [inst?.logo, API_BASE]);
@@ -163,7 +168,6 @@ export default function ConfigPage() {
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6 items-start">
                   <div className="w-24 h-24 bg-black/40 border border-[var(--palantir-border)] p-2 flex items-center justify-center overflow-hidden">
-                    {/* 🔹 LOGO BLINDADO AQUÍ */}
                     <StableLogo url={memoizedLogoUrl} />
                   </div>
                   <div className="flex-1 space-y-4">

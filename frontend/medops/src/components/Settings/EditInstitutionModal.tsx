@@ -34,7 +34,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (open && settings) {
-      // Normalización de neighborhood: extraemos el ID si viene como objeto
+      // 1. Normalización de neighborhood: extraemos el ID si viene como objeto
       const rawNB = settings.neighborhood;
       const finalId = rawNB && typeof rawNB === 'object' ? (rawNB as any).id : rawNB;
 
@@ -44,16 +44,19 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         tax_id: settings.tax_id || "",
         address: settings.address || "",
         neighborhood: finalId || null, 
-        parishId: (rawNB as any)?.parish?.id || null, // Guardamos la parroquia actual por si se crea un sector nuevo
+        parishId: (rawNB as any)?.parish?.id || null, // Guardamos la parroquia para creación dinámica
         logo: null
       });
       
-      // Normalización del Logo
-      if (typeof settings.logo === 'string' && settings.logo) {
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      // 2. Normalización del Logo para previsualización (Blindaje contra iconos rotos)
+      if (settings.logo && typeof settings.logo === 'string') {
+        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        
+        // Si ya es una URL completa (http), la usamos. Si no, concatenamos la base.
         const fullUrl = settings.logo.startsWith('http') 
           ? settings.logo 
-          : `${baseUrl}${settings.logo}`;
+          : `${API_BASE}${settings.logo.startsWith('/') ? '' : '/'}${settings.logo}`;
+          
         setPreview(fullUrl);
       } else {
         setPreview(null);
@@ -95,7 +98,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       
       await updateInstitution(plainData);
 
-      // 3. SEGUNDO ENVÍO: Solo el Logo
+      // 3. SEGUNDO ENVÍO: Solo el Logo (Multipart)
       if (formData.logo instanceof File) {
         const logoForm = new FormData();
         logoForm.append("logo", formData.logo);
@@ -103,6 +106,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       }
       
       onClose();
+      // Pequeño delay para asegurar que el backend persista antes de refrescar
       setTimeout(() => window.location.reload(), 600);
 
     } catch (err) {
