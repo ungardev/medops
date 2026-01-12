@@ -34,7 +34,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
 
   useEffect(() => {
     if (open && settings) {
-      // 🔹 Normalización de neighborhood: si es objeto, extraemos el ID
+      // Normalización de neighborhood: extraemos el ID si viene como objeto
       const rawNB = settings.neighborhood;
       const finalId = rawNB && typeof rawNB === 'object' ? (rawNB as any).id : rawNB;
 
@@ -44,11 +44,11 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         tax_id: settings.tax_id || "",
         address: settings.address || "",
         neighborhood: finalId || null, 
-        parishId: null,
+        parishId: (rawNB as any)?.parish?.id || null, // Guardamos la parroquia actual por si se crea un sector nuevo
         logo: null
       });
       
-      // 🔹 Normalización del Logo para evitar icono roto
+      // Normalización del Logo
       if (typeof settings.logo === 'string' && settings.logo) {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
         const fullUrl = settings.logo.startsWith('http') 
@@ -76,7 +76,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     try {
       let finalNeighborhoodId: number;
 
-      // 1. Manejo de sectores nuevos (creación dinámica si el usuario escribió un nombre)
+      // 1. Manejo de sectores nuevos
       if (typeof formData.neighborhood === 'string') {
         const newNB = await createNeighborhood(formData.neighborhood, formData.parishId!);
         finalNeighborhoodId = newNB.id;
@@ -84,20 +84,18 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         finalNeighborhoodId = formData.neighborhood;
       }
 
-      // 2. PRIMER ENVÍO: Datos de texto y Geografía (JSON)
-      // Esto garantiza que el campo 'neighborhood' se guarde correctamente en el backend
+      // 2. PRIMER ENVÍO: Datos de texto y Geografía
       const plainData = {
         name: formData.name.toUpperCase(),
         phone: formData.phone,
         tax_id: formData.tax_id.toUpperCase(),
         address: formData.address.toUpperCase(),
-        neighborhood: Number(finalNeighborhoodId), // Forzamos tipo número para el Serializer
+        neighborhood: Number(finalNeighborhoodId),
       };
       
       await updateInstitution(plainData);
 
-      // 3. SEGUNDO ENVÍO: Solo el Logo (FormData)
-      // Se hace por separado para evitar que el multipart/form-data cause errores con IDs numéricos
+      // 3. SEGUNDO ENVÍO: Solo el Logo
       if (formData.logo instanceof File) {
         const logoForm = new FormData();
         logoForm.append("logo", formData.logo);
@@ -105,7 +103,6 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       }
       
       onClose();
-      // Pequeño delay para que el backend asiente los datos y React Query invalide
       setTimeout(() => window.location.reload(), 600);
 
     } catch (err) {
@@ -190,10 +187,16 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </div>
             </div>
 
-            {/* Selector de Ubicación Jerárquico */}
+            {/* Selector de Ubicación Jerárquico con Persistencia */}
             <div className="mt-12 pt-8 border-t border-[var(--palantir-border)]/20">
                <LocationSelector 
-                initialNeighborhoodId={typeof formData.neighborhood === 'number' ? formData.neighborhood : undefined}
+                initialData={{
+                  countryId: (settings?.neighborhood as any)?.parish?.municipality?.state?.country?.id,
+                  stateId: (settings?.neighborhood as any)?.parish?.municipality?.state?.id,
+                  municipalityId: (settings?.neighborhood as any)?.parish?.municipality?.id,
+                  parishId: (settings?.neighborhood as any)?.parish?.id,
+                  neighborhoodId: (settings?.neighborhood as any)?.id
+                }}
                 onLocationChange={(val, parishId) => setFormData(prev => ({...prev, neighborhood: val, parishId: parishId}))}
               />
             </div>

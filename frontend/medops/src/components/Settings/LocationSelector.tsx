@@ -4,40 +4,46 @@ import { CpuChipIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { useLocationData } from '../../hooks/settings/useLocationData';
 
 interface LocationSelectorProps {
-  initialNeighborhoodId?: number;
+  // Ahora aceptamos un objeto opcional con la cadena completa de IDs
+  initialData?: {
+    countryId?: number;
+    stateId?: number;
+    municipalityId?: number;
+    parishId?: number;
+    neighborhoodId?: number;
+  };
   onLocationChange: (value: number | string, parishId: number | null) => void;
 }
 
-export default function LocationSelector({ initialNeighborhoodId, onLocationChange }: LocationSelectorProps) {
+export default function LocationSelector({ initialData, onLocationChange }: LocationSelectorProps) {
   const { useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
 
-  const [selectedCountry, setSelectedCountry] = useState<number | null>(null);
-  const [selectedState, setSelectedState] = useState<number | null>(null);
-  const [selectedMunicipality, setSelectedMunicipality] = useState<number | null>(null);
-  const [selectedParish, setSelectedParish] = useState<number | null>(null);
+  // Inicializamos los estados directamente con los IDs que vienen de la base de datos
+  const [selectedCountry, setSelectedCountry] = useState<number | null>(initialData?.countryId || null);
+  const [selectedState, setSelectedState] = useState<number | null>(initialData?.stateId || null);
+  const [selectedMunicipality, setSelectedMunicipality] = useState<number | null>(initialData?.municipalityId || null);
+  const [selectedParish, setSelectedParish] = useState<number | null>(initialData?.parishId || null);
   const [neighborhoodInput, setNeighborhoodInput] = useState("");
 
-  // 🔹 Referencia para evitar el bucle infinito de inicialización
   const hasInitialized = useRef(false);
 
+  // Hooks de datos (React Query cargará las listas basadas en los IDs iniciales)
   const { data: countries = [], isLoading: loadingCountries } = useCountries();
   const { data: states = [], isLoading: loadingStates } = useStates(selectedCountry);
   const { data: municipalities = [], isLoading: loadingMunis } = useMunicipalities(selectedState);
   const { data: parishes = [], isLoading: loadingParishes } = useParishes(selectedMunicipality);
   const { data: neighborhoods = [], isLoading: loadingHoods } = useNeighborhoods(selectedParish);
 
-  // 🔹 Efecto corregido: Solo se ejecuta para cargar el valor inicial una vez
+  // Efecto para cargar el nombre del barrio inicial
   useEffect(() => {
-    if (initialNeighborhoodId && neighborhoods.length > 0 && !hasInitialized.current) {
-      const initial = neighborhoods.find(n => n.id === initialNeighborhoodId);
+    if (initialData?.neighborhoodId && neighborhoods.length > 0 && !hasInitialized.current) {
+      const initial = neighborhoods.find(n => n.id === initialData.neighborhoodId);
       if (initial) {
         setNeighborhoodInput(initial.name);
-        // Marcamos como inicializado para que cambios posteriores en 'neighborhoods'
-        // no vuelvan a disparar setNeighborhoodInput y rompan el renderizado
         hasInitialized.current = true;
       }
     }
-  }, [initialNeighborhoodId, neighborhoods]);
+  }, [initialData?.neighborhoodId, neighborhoods]);
 
   const handleCountryChange = (val: string) => {
     const id = val ? Number(val) : null;
@@ -70,17 +76,13 @@ export default function LocationSelector({ initialNeighborhoodId, onLocationChan
     const id = val ? Number(val) : null;
     setSelectedParish(id);
     setNeighborhoodInput("");
-    // Importante: No marcamos inicializado aquí para permitir que si el usuario
-    // cambia la parroquia, el flujo siga siendo manual
     onLocationChange("", id); 
   };
 
   const handleNeighborhoodInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNeighborhoodInput(value);
-    
-    // Si el usuario escribe manualmente, bloqueamos la inicialización automática
-    hasInitialized.current = true;
+    hasInitialized.current = true; // El usuario tomó control manual
 
     const match = neighborhoods.find(n => n.name.toLowerCase() === value.toLowerCase());
     onLocationChange(match ? match.id : value, selectedParish);
