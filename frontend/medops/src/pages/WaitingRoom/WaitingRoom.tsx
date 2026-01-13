@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import RegisterWalkinModal from "../../components/WaitingRoom/RegisterWalkinModal";
-import ConfirmCloseDayModal from "../../components/WaitingRoom/ConfirmCloseDayModal";
-import ConfirmGenericModal from "../../components/Common/ConfirmGenericModal";
-import Toast from "../../components/Common/Toast";
-import PageHeader from "../../components/Common/PageHeader";
+import RegisterWalkinModal from "@/components/WaitingRoom/RegisterWalkinModal";
+import ConfirmCloseDayModal from "@/components/WaitingRoom/ConfirmCloseDayModal";
+import ConfirmGenericModal from "@/components/Common/ConfirmGenericModal";
+import Toast from "@/components/Common/Toast";
+import PageHeader from "@/components/Common/PageHeader";
 
-import { useWaitingRoomEntriesToday } from "../../hooks/waitingroom/useWaitingRoomEntriesToday";
-import { useUpdateWaitingRoomStatus } from "../../hooks/waitingroom/useUpdateWaitingRoomStatus";
-import { useRegisterArrival } from "../../hooks/waitingroom/useRegisterArrival";
-import { useUpdateAppointmentStatus } from "../../hooks/appointments/useUpdateAppointmentStatus";
+import { useWaitingRoomEntriesToday } from "@/hooks/waitingroom/useWaitingRoomEntriesToday";
+import { useUpdateWaitingRoomStatus } from "@/hooks/waitingroom/useUpdateWaitingRoomStatus";
+import { useRegisterArrival } from "@/hooks/waitingroom/useRegisterArrival";
+import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
 
-import type { WaitingRoomEntry, WaitingRoomStatus } from "../../types/waitingRoom";
-import type { Appointment } from "../../types/appointments";
+import type { WaitingRoomEntry, WaitingRoomStatus } from "@/types/waitingRoom";
+import type { Appointment } from "@/types/appointments";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
@@ -118,11 +118,16 @@ export default function WaitingRoom() {
     <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-6 relative min-h-[80vh]">
       
       <PageHeader 
-        breadcrumb="MEDOPS // OPS_CENTRAL // WAITING_ROOM"
         title="Gestión de Sala"
+        subtitle="MONITOREO DE FLUJO DE PACIENTES // TIEMPO REAL"
+        breadcrumbs={[
+          { label: "MEDOPS", path: "/" },
+          { label: "OPS_CENTRAL", path: "/operations" },
+          { label: "WAITING_ROOM", active: true }
+        ]}
         stats={[
-          { label: "En Espera", value: orderedGroup.filter(e => e.status === 'waiting').length },
-          { label: "En Consulta", value: orderedGroup.filter(e => e.status === 'in_consultation').length },
+          { label: "En Espera", value: orderedGroup.filter(e => e.status === 'waiting').length, color: "text-amber-500" },
+          { label: "En Consulta", value: orderedGroup.filter(e => e.status === 'in_consultation').length, color: "text-white" },
           { label: "Finalizados", value: orderedGroup.filter(e => e.status === 'completed').length, color: "text-emerald-500" }
         ]}
         actions={
@@ -159,7 +164,7 @@ export default function WaitingRoom() {
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-white/[0.02] flex justify-between items-center">
             <div className="flex items-center gap-2">
               <UserGroupIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)]" />
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">Live_Queue_Stream</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Live_Queue_Stream</h3>
             </div>
             <span className="text-[9px] font-mono text-[var(--palantir-muted)] opacity-50 uppercase">Active_Link</span>
           </div>
@@ -216,12 +221,6 @@ export default function WaitingRoom() {
                             <XMarkIcon className="w-5 h-5" />
                           </button>
                         )}
-
-                        {entry.status === 'completed' && (
-                           <div className="p-1.5 text-emerald-500/40">
-                              <CheckCircleIcon className="w-5 h-5" />
-                           </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -233,7 +232,7 @@ export default function WaitingRoom() {
 
         <div className="lg:col-span-4 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm">
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-white/[0.02]">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">Pending_Verification</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Pending_Verification</h3>
           </div>
 
           <div className="bg-black/20 min-h-[200px]">

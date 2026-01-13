@@ -1,4 +1,3 @@
-// src/components/Common/ButtonGroup.tsx
 import React from "react";
 
 interface SegmentedItem {
@@ -14,7 +13,7 @@ interface ButtonGroupProps {
 
 export default function ButtonGroup({ items, selected, onSelect }: ButtonGroupProps) {
   return (
-    <div className="inline-flex bg-[var(--palantir-bg)] p-0.5 rounded-[3px] border border-[var(--palantir-border)]">
+    <div className="inline-flex bg-black/40 p-1 rounded-sm border border-white/5 backdrop-blur-md">
       {items.map((item) => {
         const isActive = selected === item.value;
         return (
@@ -22,13 +21,16 @@ export default function ButtonGroup({ items, selected, onSelect }: ButtonGroupPr
             key={item.value}
             onClick={() => onSelect(item.value)}
             className={`
-              px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest transition-all duration-200
+              relative px-4 py-1 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300
               ${isActive
-                ? "bg-[var(--palantir-active)] text-white shadow-[0_0_10px_rgba(var(--palantir-active-rgb),0.3)] rounded-[2px]"
-                : "text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] hover:bg-[var(--palantir-border)]/30"}
+                ? "bg-white/10 text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.05)] border border-white/10 rounded-[2px]"
+                : "text-white/30 hover:text-white/60 hover:bg-white/5 border border-transparent"}
             `}
           >
             {item.label}
+            {isActive && (
+              <span className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white]" />
+            )}
           </button>
         );
       })}
