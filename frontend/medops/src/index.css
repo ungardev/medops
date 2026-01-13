@@ -3,42 +3,34 @@
 
 @layer base {
   :root {
-    --palantir-bg: #f5f8fa;
-    --palantir-surface: #ffffff;
-    --palantir-border: #d8e1e8;
-    --palantir-text: #182026;
-    --palantir-muted: #5c7080;
-    --palantir-active: #2d5d8a; /* Azul corporativo reservado */
-    --palantir-accent: #38a1ff;
-  }
-
-  .dark {
-    /* MODO PALANTIR: INTELLIGENCE & PRECISION */
-    --palantir-bg: #090b0f;         /* Negro obsidiana, no azulado */
-    --palantir-surface: #11141a;    /* Superficies de comando */
-    --palantir-border: #232a31;     /* Bordes de acero frío */
-    --palantir-text: #e1e8ed;       /* Blanco roto para no cansar la vista */
-    --palantir-muted: #667785;      /* Texto secundario profesional */
+    /* BLACK PROTOCOL: HIGH-PRECISION INTERFACE */
+    --palantir-bg: #050608;          /* Fondo absoluto para máxima profundidad */
+    --palantir-surface: #0c0e12;     /* Superficies de comando */
+    --palantir-border: #1a1e23;      /* Bordes estructurales */
+    --palantir-text: #e1e8ed;        /* Texto principal (Off-white) */
+    --palantir-muted: #4a5568;       /* Texto descriptivo técnico */
     
-    /* El cambio clave: Un azul acero (Steel Blue) que es elegante, no chillon */
-    --palantir-active: #394b59;     /* Color de estado activo (gris azulado) */
-    --palantir-accent: #4a90e2;     /* Azul de acción contenido */
+    /* ACCENTS */
+    --palantir-active: #38a1ff;      /* Azul operativo principal */
+    --palantir-active-rgb: 56, 161, 255;
+    --palantir-accent: #4a90e2; 
     
-    --palantir-accent-soft: rgba(74, 144, 226, 0.08);
-    --glow-color: rgba(74, 144, 226, 0.15); /* Brillo casi imperceptible */
+    --palantir-panel-bg: rgba(12, 14, 18, 0.7);
   }
 
   body {
     background-color: var(--palantir-bg);
     color: var(--palantir-text);
-    font-feature-settings: "tnum" on, "lnum" on;
+    font-feature-settings: "tnum" on, "lnum" on, "cv01" on;
     -webkit-font-smoothing: antialiased;
-    letter-spacing: -0.01em; /* Más condensado, más técnico */
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.015em;
     cursor: default;
+    overflow-x: hidden;
   }
 
   /* -----------------------------------------------------------
-     1. GHOST SCROLL (Elegancia Palantir)
+      1. GHOST SCROLL (Terminal Aesthetic)
   ----------------------------------------------------------- */
   * {
     scrollbar-width: thin;
@@ -46,7 +38,7 @@
   }
 
   ::-webkit-scrollbar {
-    width: 3px; /* Más fino aún */
+    width: 3px;
     height: 3px;
   }
 
@@ -57,37 +49,27 @@
   ::-webkit-scrollbar-thumb {
     background: var(--palantir-border);
     border-radius: 0px;
-    /* Eliminamos el box-shadow de neón */
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--palantir-muted);
+    background: var(--palantir-active);
   }
 
   /* -----------------------------------------------------------
-     2. PRECISION & INTERFACE
-  ----------------------------------------------------------- */
-  button, a, label {
-    cursor: pointer; /* Volvemos al puntero estándar pero fino */
-  }
-
-  /* -----------------------------------------------------------
-     3. UTILITIES
+      2. OPERATIONAL ANIMATIONS
   ----------------------------------------------------------- */
   
-  /* Inputs sin resplandor excesivo */
-  input:focus, textarea:focus {
-    outline: none;
-    box-shadow: 0 0 0 1px var(--palantir-accent); /* Borde simple, no glow */
-    border-color: var(--palantir-accent) !important;
+  /* Animación de barra de carga infinita (utilizada en WaitingRoom) */
+  @keyframes infinite-loading {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
   }
 
-  /* Efecto de carga sutil (Efecto Doppler) */
-  .medops-scanning {
-    position: relative;
-    overflow: hidden;
+  .animate-infinite-loading {
+    animation: infinite-loading 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
-  
+
+  /* Escaneo horizontal de datos */
   .medops-scanning::after {
     content: "";
     position: absolute;
@@ -95,8 +77,8 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-    animation: scan-horizontal 2s ease-in-out infinite;
+    background: linear-gradient(90deg, transparent, rgba(56, 161, 255, 0.05), transparent);
+    animation: scan-horizontal 3s linear infinite;
   }
 
   @keyframes scan-horizontal {
@@ -104,24 +86,68 @@
     100% { left: 100%; }
   }
 
-  /* Especial para el Sidebar: Quitar el brillo de Tron */
-  .sidebar-active-indicator {
-    box-shadow: none !important;
-    border-right: 2px solid var(--palantir-accent);
+  /* Efecto de pulso técnico para estados 'Live' */
+  @keyframes tech-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.95); }
+  }
+
+  .animate-tech-pulse {
+    animation: tech-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* -----------------------------------------------------------
+      3. PRECISION INPUTS
+  ----------------------------------------------------------- */
+  input, textarea, select {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--palantir-border) !important;
+    transition: all 0.2s ease;
+  }
+
+  input:focus, textarea:focus {
+    outline: none;
+    background-color: rgba(56, 161, 255, 0.02) !important;
+    border-color: var(--palantir-active) !important;
+    box-shadow: 0 0 15px rgba(56, 161, 255, 0.05);
+  }
+
+  /* -----------------------------------------------------------
+      4. UTILITIES
+  ----------------------------------------------------------- */
+  .glass-panel {
+    background: var(--palantir-panel-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--palantir-border);
+  }
+
+  .text-shadow-active {
+    text-shadow: 0 0 10px rgba(var(--palantir-active-rgb), 0.3);
   }
 }
 
 @layer components {
-  /* Botón estilo Military-Grade */
-  .btn-sync {
-    @apply relative overflow-hidden transition-all duration-200 uppercase tracking-widest text-[10px] font-bold;
+  /* Botón Táctico */
+  .btn-tactical {
+    @apply relative overflow-hidden transition-all duration-200 uppercase tracking-[0.2em] text-[10px] font-black px-4 py-2 rounded-sm;
     background: var(--palantir-surface);
     border: 1px solid var(--palantir-border);
     color: var(--palantir-text);
   }
   
-  .btn-sync:hover {
+  .btn-tactical:hover {
     background: var(--palantir-border);
     border-color: var(--palantir-muted);
+    @apply translate-y-[-1px];
+  }
+
+  .btn-tactical:active {
+    @apply translate-y-[0px] brightness-90;
+  }
+
+  /* Indicador de Sidebar */
+  .sidebar-active-indicator {
+    box-shadow: 4px 0 15px -3px rgba(var(--palantir-active-rgb), 0.2);
+    border-right: 2px solid var(--palantir-active);
   }
 }
