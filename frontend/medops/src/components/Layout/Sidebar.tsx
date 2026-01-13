@@ -1,3 +1,4 @@
+// src/components/Sidebar.tsx
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -55,26 +56,30 @@ export default function Sidebar({
   const getIconSrc = () => isDarkMode ? "/medopz_logo_blanco_solo.svg" : "/medopz_logo_negro_solo.svg";
   const getFontSrc = () => isDarkMode ? "/medopz_fuente_blanco.svg" : "/medopz_fuente_negro.svg";
 
-  // --- REFINAMIENTO MONOCROMÁTICO MEDOPS ---
-  const itemBase = "group flex items-center px-4 py-3 rounded-md font-medium transition-all duration-200 ease-in-out mb-1";
+  /**
+   * REFINAMIENTO DE ESTILOS MEDOPZ V2
+   * Elevando el contraste de los grises para eliminar el look "apagado"
+   */
+  const itemBase = "group relative flex items-center px-4 py-3 transition-all duration-300 ease-out mb-1.5 overflow-hidden";
   
-  // Activo: Sin bordes de color, solo un gris acero que resalta el blanco del texto
-  const itemActive = "bg-white/10 text-white shadow-[0_1px_1px_rgba(255,255,255,0.05)]";
+  // Activo: Blanco puro con glow sutil y fondo de cristal
+  const itemActive = "bg-white/[0.08] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.02)]";
   
-  // Reposo: Gris claro (disponible) -> Blanco al hover
-  const itemIdle = "text-[#A0AEC0] hover:bg-white/5 hover:text-white";
+  // Reposo: Gris "Plata" (más brillante que el anterior) -> Blanco total al hover
+  const itemIdle = "text-white/40 hover:text-white hover:bg-white/[0.04]";
 
   return (
     <aside
-      className={`border-r border-[var(--palantir-border)] transition-all duration-300 ease-in-out
-        ${effectiveCollapsed ? "w-[72px]" : "w-64"}
-        h-screen bg-[var(--palantir-surface)] text-[var(--palantir-text)]
-        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col
+      className={`border-r border-white/5 transition-all duration-500 ease-in-out
+        ${effectiveCollapsed ? "w-[78px]" : "w-64"}
+        h-screen bg-[#0a0a0b] text-white
+        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-50
       `}
     >
-      <div className="flex flex-col h-full pt-3 pb-4 px-2">
-        <div className="flex flex-col mb-4">
-            <div className={`flex mb-2 ${
+      <div className="flex flex-col h-full pt-4 pb-6 px-3">
+        {/* LOGO AREA */}
+        <div className="flex flex-col mb-8">
+            <div className={`flex mb-4 ${
                 mobileOpen 
                 ? "flex-col items-center justify-center pt-8 pb-4" 
                 : `items-center h-14 ${effectiveCollapsed ? "justify-center" : "justify-between px-2"}`
@@ -82,16 +87,16 @@ export default function Sidebar({
                 
                 <Link 
                   to="/" 
-                  className={`flex transition-all duration-300 ${
-                    mobileOpen ? "flex-col items-center gap-4" : "items-center gap-2"
-                  }`}
+                  className={`flex items-center transition-all duration-500 hover:opacity-100 ${
+                    mobileOpen ? "flex-col gap-4" : "gap-3"
+                  } ${isActive("/") ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
                 >
                     <img
                         src={getIconSrc()}
                         alt="Logo"
-                        className={`transition-all duration-300 object-contain ${
+                        className={`transition-all duration-500 drop-shadow-[0_0_8px_rgba(255,255,255,0.1)] ${
                             mobileOpen 
-                            ? "h-20 w-20" 
+                            ? "h-16 w-16" 
                             : effectiveCollapsed ? "h-10 w-10" : "h-9 w-9"
                         }`}
                     />
@@ -100,10 +105,8 @@ export default function Sidebar({
                         <img
                             src={getFontSrc()}
                             alt="Medopz"
-                            className={`object-contain opacity-95 transition-all ${
-                                mobileOpen 
-                                ? "h-5 w-auto" 
-                                : "h-3.5 w-auto"
+                            className={`object-contain transition-all duration-500 ${
+                                mobileOpen ? "h-5 w-auto" : "h-4 w-auto"
                             }`}
                         />
                     )}
@@ -112,16 +115,16 @@ export default function Sidebar({
                 {mobileOpen && (
                   <button
                     onClick={() => setMobileOpen(false)}
-                    className="absolute top-4 right-4 p-2 text-[var(--palantir-muted)] hover:text-white"
+                    className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors"
                   >
-                    <X size={22} />
+                    <X size={24} />
                   </button>
                 )}
 
                 {!effectiveCollapsed && !mobileOpen && (
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className="p-1.5 text-[var(--palantir-muted)] hover:text-white transition-colors hidden lg:block rounded-md hover:bg-white/5"
+                        className="p-1.5 text-white/20 hover:text-white transition-all hidden lg:block rounded-md border border-transparent hover:border-white/10 hover:bg-white/5"
                     >
                         <ChevronLeft size={16} />
                     </button>
@@ -131,25 +134,26 @@ export default function Sidebar({
             {effectiveCollapsed && (
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="mx-auto mt-2 p-1.5 text-[var(--palantir-muted)] hover:text-white transition-colors hidden lg:block rounded-md hover:bg-white/5"
+                    className="mx-auto mt-2 p-2 text-white/20 hover:text-white transition-all hidden lg:block rounded-md border border-white/5 bg-white/5 hover:bg-white/10"
                 >
                     <ChevronRight size={16} />
                 </button>
             )}
-
-            {!effectiveCollapsed && (
-              <div className="h-[1px] w-full bg-gradient-to-r from-[var(--palantir-border)] to-transparent mb-6 opacity-20" />
-            )}
         </div>
 
+        {/* SECTION LABEL */}
         {!effectiveCollapsed && (
-          <div className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 px-4">
-            Navegación
+          <div className="flex items-center gap-2 mb-4 px-4">
+            <div className="h-[1px] w-4 bg-[var(--palantir-active)] shadow-[0_0_8px_var(--palantir-active)]"></div>
+            <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.4em]">
+              Sistemas_Core
+            </div>
           </div>
         )}
 
+        {/* NAVIGATION */}
         <nav className="flex-1">
-          <ul className="flex flex-col">
+          <ul className="flex flex-col space-y-1">
             {navItems.map(({ path, label, icon: Icon }) => {
               const isActive = location.pathname === path;
               return (
@@ -158,18 +162,27 @@ export default function Sidebar({
                     to={path}
                     onClick={() => mobileOpen && setMobileOpen(false)}
                     title={effectiveCollapsed ? label : ""}
-                    className={`${itemBase} ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
+                    className={`${itemBase} rounded-sm ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
                   >
+                    {/* Indicador Táctico Activo */}
+                    {isActive && (
+                      <div className="absolute left-0 top-0 h-full w-[3px] bg-[var(--palantir-active)] shadow-[0_0_12px_var(--palantir-active)] animate-pulse" />
+                    )}
+                    
                     <Icon 
-                      size={20} 
-                      className={`shrink-0 transition-colors ${isActive ? "text-white" : "group-hover:text-white"}`} 
-                      strokeWidth={isActive ? 2.5 : 2} 
+                      size={19} 
+                      className={`shrink-0 transition-all duration-300 ${isActive ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" : "group-hover:text-white"}`} 
+                      strokeWidth={isActive ? 2.5 : 1.5} 
                     />
+                    
                     {!effectiveCollapsed && (
-                      <span className="ml-4 text-[14px] tracking-wide font-medium">
+                      <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase transition-all duration-300 ${isActive ? "text-white" : "opacity-80 group-hover:opacity-100"}`}>
                         {label}
                       </span>
                     )}
+
+                    {/* Efecto de Escaneo al Hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] to-transparent translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
                   </Link>
                 </li>
               );
@@ -177,15 +190,31 @@ export default function Sidebar({
           </ul>
         </nav>
 
-        {!effectiveCollapsed && (
-          <div className="mt-auto pt-4 border-t border-[var(--palantir-border)]/30 px-4">
-            <div className="flex items-center gap-3">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.3)]"></div>
-               <span className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">System_Online</span>
-            </div>
-          </div>
-        )}
+        {/* FOOTER: SYSTEM STATUS */}
+        <div className="mt-auto pt-6 border-t border-white/5">
+            {!effectiveCollapsed ? (
+              <div className="flex flex-col gap-2 px-4">
+                <div className="flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
+                   <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">Medopz_Live_Link</span>
+                </div>
+                <div className="text-[7px] font-mono text-white/10 uppercase tracking-tighter">
+                    Terminal_ID: {Math.random().toString(36).substring(7).toUpperCase()}
+                </div>
+              </div>
+            ) : (
+                <div className="flex justify-center">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
+                </div>
+            )}
+        </div>
       </div>
     </aside>
   );
+}
+
+// Función auxiliar para detectar ruta activa (si no la tienes importada)
+function isActive(path: string) {
+    const location = useLocation();
+    return location.pathname === path;
 }
