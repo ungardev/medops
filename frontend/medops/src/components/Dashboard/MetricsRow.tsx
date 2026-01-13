@@ -5,48 +5,73 @@ import { useDashboardFilters } from "@/context/DashboardFiltersContext";
 import { metricsConfig } from "./metricsConfig";
 
 const MetricsRow: React.FC = () => {
-  // 🔹 Consumimos el contexto
   const { range, currency } = useDashboardFilters();
-
-  // 🔹 Pasamos filtros al hook de datos
   const { metrics } = useDashboard({ range, currency });
+
+  // Función para formatear números grandes o moneda
+  const formatValue = (key: string, value: number) => {
+    if (key.includes('revenue') || key.includes('total') || key.includes('income')) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: currency || 'MXN',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
+    return value.toLocaleString();
+  };
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
       {metrics &&
         Object.entries(metricsConfig).map(([key, cfg]) => {
           const Icon = cfg.icon;
+          const value = metrics[key as keyof typeof metrics] ?? 0;
+
           return (
             <div
               key={key}
-              className="group relative rounded-sm bg-[var(--palantir-surface)] border border-[var(--palantir-border)] p-3 
-                         flex flex-col items-start justify-center gap-1.5
-                         hover:border-[var(--palantir-active)]/50 transition-all duration-200 cursor-pointer"
+              className="group relative rounded-sm bg-[#0c0e12] border border-white/[0.05] p-3 
+                         flex flex-col items-start justify-center gap-1
+                         hover:border-[var(--palantir-active)]/40 hover:bg-white/[0.02] 
+                         transition-all duration-300 cursor-pointer overflow-hidden"
               onClick={() => {
                 if (cfg.href) window.location.href = cfg.href;
               }}
             >
-              {/* Decoración superior sutil al estilo Palantir */}
-              <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[var(--palantir-active)]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              {/* Línea de acento superior estilo "Active Module" */}
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-[var(--palantir-active)] opacity-0 group-hover:opacity-100 transition-all duration-500 shadow-[0_0_8px_var(--palantir-active)]" />
 
-              <div className="flex items-center gap-2 w-full overflow-hidden">
-                <div className={`p-1 rounded-[2px] bg-gray-500/5 ${cfg.color.replace('text-', 'text-opacity-80')}`}>
-                  <Icon className="h-3.5 w-3.5" />
+              {/* Header de la Card */}
+              <div className="flex items-center gap-2 w-full">
+                <div className={`p-1 rounded-sm bg-white/[0.03] border border-white/5 ${cfg.color} group-hover:border-[var(--palantir-active)]/20 transition-colors`}>
+                  <Icon className="h-3 w-3" />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--palantir-muted)] truncate">
+                <span className="text-[9px] font-black uppercase tracking-[0.15em] text-white/40 group-hover:text-white/60 transition-colors truncate">
                   {cfg.label}
                 </span>
               </div>
 
-              <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold tracking-tight text-[var(--palantir-text)] group-hover:text-[var(--palantir-active)] transition-colors font-mono">
-                  {metrics[key as keyof typeof metrics] ?? 0}
-                </span>
-                {/* Opcional: Pequeño indicador de unidad o tendencia si existiera */}
-                <span className="text-[9px] font-mono text-[var(--palantir-muted)] opacity-50 uppercase">
-                  stat
+              {/* Valor Principal */}
+              <div className="flex items-baseline gap-1.5 mt-1">
+                <span className="text-lg font-mono font-bold tracking-tighter text-white group-hover:text-[var(--palantir-active)] transition-colors">
+                  {formatValue(key, value)}
                 </span>
               </div>
+
+              {/* Metadatos de Pie de Card */}
+              <div className="flex justify-between items-center w-full mt-1 pt-1 border-t border-white/[0.03]">
+                <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter">
+                  ID: {key.slice(0, 5)}
+                </span>
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 rounded-full bg-emerald-500/50 animate-pulse"></div>
+                  <span className="text-[7px] font-mono text-emerald-500/50 uppercase">Live</span>
+                </div>
+              </div>
+
+              {/* Corner Decorator (Solo visible en hover) */}
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[var(--palantir-active)]/5 rotate-45 translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform"></div>
             </div>
           );
         })}

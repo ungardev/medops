@@ -19,16 +19,19 @@ function AppointmentDetailWrapper({ appointmentId, onClose }: { appointmentId: n
   const { data: appointment, isLoading, isError } = useAppointment(appointmentId);
 
   if (isLoading) return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <p className="text-sm text-[var(--palantir-text)] italic">Sincronizando cita...</p>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200]">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-[var(--palantir-active)]/20 border-t-[var(--palantir-active)] rounded-full animate-spin" />
+        <p className="text-[10px] text-white/40 font-mono uppercase tracking-[0.2em]">Sincronizando_Registro...</p>
+      </div>
     </div>
   );
 
   if (isError || !appointment) return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-[var(--palantir-surface)] p-6 border border-red-500/50 rounded-md text-center">
-        <p className="text-sm text-red-500 mb-4">Error en la carga del registro</p>
-        <button onClick={onClose} className="px-4 py-2 bg-[var(--palantir-border)] text-[var(--palantir-text)] text-xs rounded uppercase font-bold">Cerrar</button>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200]">
+      <div className="bg-[#0c0e12] p-6 border border-red-500/30 rounded-sm text-center shadow-2xl">
+        <p className="text-[10px] font-mono text-red-500 mb-4 uppercase tracking-widest">Error_en_la_Carga_DataNode</p>
+        <button onClick={onClose} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[9px] rounded-sm uppercase font-black tracking-widest transition-all">Abortar</button>
       </div>
     </div>
   );
@@ -38,7 +41,6 @@ function AppointmentDetailWrapper({ appointmentId, onClose }: { appointmentId: n
 
 export default function NotificationsFeed() {
   const { data, isLoading, refetch } = useNotifications();
-  const [selectedChargeOrder, setSelectedChargeOrder] = useState<number | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -46,54 +48,57 @@ export default function NotificationsFeed() {
     return () => clearTimeout(timeout);
   }, [refetch]);
 
-  // Limitamos a 3 notificaciones
   const notifications = toArray<NotificationEvent>(data).slice(0, 3);
 
   const handleAction = (n: NotificationEvent) => {
     if (n.category?.startsWith("appointment") && n.entity_id) setSelectedAppointmentId(n.entity_id);
-    else if (n.category?.startsWith("payment") && n.entity_id) setSelectedChargeOrder(n.entity_id);
     else if (n.action_href) window.location.href = n.action_href;
   };
 
   return (
-    /* Eliminamos h-full y flex-col innecesario para que el borde cierre al final del contenido */
-    <div className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-lg shadow-sm overflow-hidden self-start">
-      {/* Header */}
-      <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/30 flex justify-between items-center">
-        <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--palantir-muted)]">Actividad Reciente</h3>
-        <span className="text-[9px] text-[var(--palantir-active)] font-bold animate-pulse">● LIVE</span>
+    <div className="bg-[#0c0e12] border border-white/[0.05] rounded-sm shadow-2xl overflow-hidden self-start group">
+      {/* Header Estilo Consola */}
+      <div className="px-4 py-2 border-b border-white/[0.05] bg-white/[0.02] flex justify-between items-center group-hover:bg-white/[0.04] transition-colors">
+        <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40">Actividad_Stream</h3>
+        <div className="flex items-center gap-2">
+            <span className="text-[8px] text-[var(--palantir-active)] font-black tracking-tighter opacity-80 uppercase italic">Real-Time</span>
+            <span className="w-1.5 h-1.5 bg-[var(--palantir-active)] rounded-full animate-pulse shadow-[0_0_5px_var(--palantir-active)]" />
+        </div>
       </div>
 
-      <div className="p-2">
-        <ul className="space-y-0.5">
+      <div className="p-1.5">
+        <ul className="space-y-1">
           {isLoading ? (
-            <li className="p-4 text-center text-xs text-[var(--palantir-muted)] italic font-mono">SYNCING...</li>
+            <li className="p-8 text-center text-[9px] text-white/20 italic font-mono tracking-widest animate-pulse">FETCHING_DATA_STREAM...</li>
           ) : notifications.length === 0 ? (
-            <li className="p-4 text-center text-xs text-[var(--palantir-muted)] italic">Sin eventos recientes</li>
+            <li className="p-8 text-center text-[9px] text-white/20 italic font-mono uppercase tracking-widest underline decoration-white/5 underline-offset-4">Null_Event_Log</li>
           ) : (
             notifications.map((n) => (
               <li key={n.id}>
                 <button
                   onClick={() => handleAction(n)}
-                  className="w-full text-left p-2 rounded-md transition-all flex flex-col gap-0.5 hover:bg-[var(--palantir-active)]/5 group"
+                  className="w-full text-left p-2.5 rounded-sm transition-all flex flex-col gap-1 hover:bg-white/[0.03] border border-transparent hover:border-white/[0.05] group/item"
                 >
                   <div className="flex items-center gap-2">
                     <NotificationBadge
                       action={n.badge_action as any}
                       severity={n.severity}
                     />
-                    <span className="truncate text-xs font-bold text-[var(--palantir-text)] uppercase tracking-tight group-hover:text-[var(--palantir-active)] transition-colors">
+                    <span className="truncate text-[10px] font-black text-white/80 uppercase tracking-tight group-hover/item:text-[var(--palantir-active)] transition-colors">
                       {n.title}
                     </span>
                   </div>
                   {n.description && (
-                    <span className="text-[11px] text-[var(--palantir-muted)] line-clamp-1 ml-6">
+                    <span className="text-[10px] text-white/30 line-clamp-1 ml-0 font-medium">
                       {n.description}
                     </span>
                   )}
-                  <span className="text-[9px] font-mono text-[var(--palantir-muted)]/50 uppercase ml-6">
-                    {moment(n.timestamp).fromNow()}
-                  </span>
+                  <div className="flex justify-between items-center mt-1">
+                      <span className="text-[8px] font-mono text-white/10 uppercase font-black">
+                        {moment(n.timestamp).fromNow()}
+                      </span>
+                      <span className="text-[7px] font-mono text-[var(--palantir-active)] opacity-0 group-hover/item:opacity-100 transition-opacity">EXECUTE_ACTION →</span>
+                  </div>
                 </button>
               </li>
             ))
@@ -101,7 +106,6 @@ export default function NotificationsFeed() {
         </ul>
       </div>
 
-      {/* Modales */}
       {selectedAppointmentId && (
         <AppointmentDetailWrapper
           appointmentId={selectedAppointmentId}
