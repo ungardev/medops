@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+// src/components/Common/PageHeader.tsx
+import React, { useEffect, useState, ReactNode } from "react";
 import moment from "moment";
+import { Link } from "react-router-dom";
 
 interface PageStat {
   label: string;
@@ -7,18 +9,31 @@ interface PageStat {
   color?: string; 
 }
 
+interface BreadcrumbItem {
+  label: string;
+  path?: string;
+  active?: boolean;
+}
+
 interface PageHeaderProps {
-  breadcrumb: string;
+  // Soporte para ambos estilos: string simple (legacy) o array de objetos (nuevo)
+  breadcrumb?: string; 
+  breadcrumbs?: BreadcrumbItem[];
   title: string;
+  subtitle?: string;
   stats?: PageStat[];
-  actions?: React.ReactNode;
+  actions?: ReactNode;
+  children?: ReactNode; // Para inyectar componentes personalizados como los contadores
 }
 
 const PageHeader: React.FC<PageHeaderProps> = ({ 
   breadcrumb, 
+  breadcrumbs,
   title, 
+  subtitle,
   stats, 
-  actions 
+  actions,
+  children 
 }) => {
   const [now, setNow] = useState(moment());
 
@@ -30,7 +45,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <section className="relative flex flex-col gap-4 mb-6 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
       
-      {/* 1. TOP BAR: Metadatos de Sistema */}
+      {/* 1. TOP BAR: Metadatos de Sistema / Breadcrumbs */}
       <div className="flex items-center justify-between border-b border-[var(--palantir-border)]/20 pb-1.5">
         <div className="flex items-center gap-2.5">
           <div className="relative flex h-1.5 w-1.5">
@@ -38,9 +53,34 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--palantir-active)] shadow-[0_0_8px_var(--palantir-active)]"></span>
           </div>
           
-          <h2 className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)] italic leading-none">
-            {breadcrumb}
-          </h2>
+          {/* Lógica Dual para Breadcrumbs */}
+          <nav className="flex items-center gap-1.5">
+            {breadcrumbs ? (
+              breadcrumbs.map((item, idx) => (
+                <React.Fragment key={idx}>
+                  {item.path ? (
+                    <Link 
+                      to={item.path} 
+                      className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)] hover:text-white transition-colors italic"
+                    >
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <span className={`text-[9px] font-black uppercase tracking-[0.3em] italic ${item.active ? "text-white/80" : "text-[var(--palantir-muted)]"}`}>
+                      {item.label}
+                    </span>
+                  )}
+                  {idx < breadcrumbs.length - 1 && (
+                    <span className="text-[8px] text-[var(--palantir-border)] opacity-50 font-mono">/</span>
+                  )}
+                </React.Fragment>
+              ))
+            ) : (
+              <h2 className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)] italic leading-none">
+                {breadcrumb}
+              </h2>
+            )}
+          </nav>
         </div>
 
         <div className="hidden sm:flex items-center gap-3 font-mono text-[8px] tracking-[0.2em] text-[var(--palantir-muted)]">
@@ -59,8 +99,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <h1 className="text-3xl md:text-4xl font-black text-[var(--palantir-text)] tracking-tighter uppercase italic leading-none relative z-10">
               {title}
             </h1>
+            {subtitle && (
+                <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-[var(--palantir-muted)] opacity-60">
+                    {subtitle}
+                </p>
+            )}
             <div className="w-16 h-[2px] bg-[var(--palantir-active)] shadow-[0_0_15px_var(--palantir-active)] transition-all group-hover/title:w-full duration-500" />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[var(--palantir-active)]/5 to-transparent -skew-x-12 translate-x-[-100%] group-hover/title:translate-x-[100%] transition-transform duration-1000 ease-in-out" />
           </div>
 
           {/* 3. ESTRUCTURA DE DATOS (Stats) */}
@@ -86,9 +130,10 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           )}
         </div>
 
-        {/* 4. CONTROL INTERFACE */}
-        {actions && (
-          <div className="flex items-center gap-2 self-start lg:self-center p-2 bg-white/[0.02] border border-[var(--palantir-border)]/20 rounded-sm backdrop-blur-xl shadow-[inner_0_0_20px_rgba(0,0,0,0.5)]">
+        {/* 4. CONTROL INTERFACE & CHILDREN (Aquí caen tus contadores de Sesión) */}
+        {(actions || children) && (
+          <div className="flex items-center gap-4 self-start lg:self-center p-2 bg-white/[0.02] border border-[var(--palantir-border)]/20 rounded-sm backdrop-blur-xl">
+            {children}
             {actions}
           </div>
         )}
