@@ -1,3 +1,4 @@
+// src/components/Common/ButtonGroup.tsx
 import React from "react";
 
 interface SegmentedItem {
@@ -21,15 +22,16 @@ export default function ButtonGroup({ items, selected, onSelect }: ButtonGroupPr
             key={item.value}
             onClick={() => onSelect(item.value)}
             className={`
-              relative px-4 py-1 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300
+              relative px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300
               ${isActive
-                ? "bg-white/10 text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.05)] border border-white/10 rounded-[2px]"
+                ? "bg-white/15 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] rounded-[2px]"
                 : "text-white/30 hover:text-white/60 hover:bg-white/5 border border-transparent"}
             `}
           >
             {item.label}
+            {/* Indicador inferior táctico */}
             {isActive && (
-              <span className="absolute -bottom-[5px] left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_8px_white]" />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_5px_white]" />
             )}
           </button>
         );
