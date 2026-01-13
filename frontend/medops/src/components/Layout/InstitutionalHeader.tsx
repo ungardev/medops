@@ -61,22 +61,18 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  
-  // Forzamos Dark Mode por defecto en el estado inicial
   const [darkMode, setDarkMode] = useState(true);
 
   const notifRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
-  // EFECTO CRÍTICO: Asegurar Dark Mode al montar
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "light") {
         document.documentElement.classList.remove("dark");
         setDarkMode(false);
     } else {
-        // Por defecto o si es 'dark', inyectamos la clase
         document.documentElement.classList.add("dark");
         localStorage.setItem("theme", "dark");
         setDarkMode(true);
@@ -95,23 +91,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   }, []);
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      setLoadingNotifications(true);
-      try {
-        const res = await api.get<Notification[]>("/notifications/");
-        setNotifications(Array.isArray(res.data) ? res.data.slice(0, 8) : []);
-      } catch {
-        setNotifications([]);
-      } finally {
-        setLoadingNotifications(false);
-      }
-    };
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
       if (notifRef.current && !notifRef.current.contains(target)) setShowNotifications(false);
@@ -121,15 +100,19 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (query.trim()) {
+      navigate(`/search?query=${encodeURIComponent(query.trim())}`);
+      setQuery("");
+      searchInputRef.current?.blur();
+    }
+  };
+
   const toggleTheme = () => {
     const next = !darkMode;
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
+    document.documentElement.classList.toggle("dark", next);
+    localStorage.setItem("theme", next ? "dark" : "light");
     setDarkMode(next);
   };
 
@@ -140,7 +123,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
 
   return (
     <div className="w-full flex items-center justify-between h-full bg-[#0c0e12] px-6 border-b border-white/[0.05] shadow-2xl">
-      {/* SECCIÓN BUSCADOR */}
       <div className="flex items-center gap-6 flex-1">
         <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 text-white/40 hover:text-white transition-colors">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,7 +130,8 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
           </svg>
         </button>
 
-        <div className="relative w-full max-w-lg group">
+        {/* BUSCADOR RESTAURADO CON FORM PARA CAPTURAR ENTER */}
+        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-lg group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="w-3.5 h-3.5 text-white/20 group-focus-within:text-[var(--palantir-active)] transition-colors" />
           </div>
@@ -160,37 +143,26 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
             onChange={(e) => setQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-1.5 bg-white/[0.02] border border-white/10 rounded-sm text-[10px] text-white font-mono tracking-wider focus:outline-none focus:border-[var(--palantir-active)]/40 focus:bg-white/[0.04] transition-all placeholder:text-white/10"
           />
+          {/* Botón invisible para permitir el submit con Enter */}
+          <button type="submit" className="hidden" />
           <div className="absolute inset-y-0 right-3 flex items-center">
             <span className="text-[8px] font-black text-white/20 border border-white/5 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Secure_Node</span>
           </div>
-        </div>
+        </form>
       </div>
 
-      {/* SECCIÓN ACCIONES */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={toggleTheme}
-          className="p-2 text-white/30 hover:text-[var(--palantir-active)] hover:bg-white/5 rounded-sm transition-all border border-transparent"
-        >
+        <button onClick={toggleTheme} className="p-2 text-white/30 hover:text-[var(--palantir-active)] hover:bg-white/5 rounded-sm transition-all border border-transparent">
           {darkMode ? <Sun size={15} /> : <Moon size={15} />}
         </button>
 
-        {/* Notificaciones */}
         <div className="relative" ref={notifRef}>
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className={`p-2 rounded-sm transition-all border ${
-              showNotifications 
-                ? "bg-[var(--palantir-active)]/10 border-[var(--palantir-active)]/30 text-[var(--palantir-active)]" 
-                : "text-white/30 hover:text-white border-transparent hover:bg-white/5"
-            }`}
-          >
+          <button onClick={() => setShowNotifications(!showNotifications)} className={`p-2 rounded-sm transition-all border ${showNotifications ? "bg-[var(--palantir-active)]/10 border-[var(--palantir-active)]/30 text-[var(--palantir-active)]" : "text-white/30 hover:text-white border-transparent hover:bg-white/5"}`}>
             <Bell size={15} strokeWidth={2.5} />
             {notifications.length > 0 && (
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(239,68,68,1)]"></span>
             )}
           </button>
-
           {showNotifications && (
             <div className="absolute right-0 mt-3 w-80 bg-[#0c0e12] border border-white/10 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,1)] z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2">
               <div className="px-4 py-2.5 border-b border-white/5 bg-white/[0.02] flex justify-between items-center">
@@ -207,9 +179,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
                           <span className="text-[10px] font-bold text-white uppercase tracking-tight">{n.actor}</span>
                           <span className="text-[8px] font-mono text-white/20">[{formatRelative(n.timestamp)}]</span>
                         </div>
-                        <p className="text-[10px] text-white/40 leading-tight mt-0.5">
-                          {n.action.replace(/_/g, ' ')} → <span className="text-white/70 italic">{n.entity}</span>
-                        </p>
+                        <p className="text-[10px] text-white/40 leading-tight mt-0.5">{n.action.replace(/_/g, ' ')} → <span className="text-white/70 italic">{n.entity}</span></p>
                       </div>
                     </div>
                   </li>
@@ -221,26 +191,19 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
 
         <div className="h-4 w-[1px] bg-white/5 mx-1"></div>
 
-        {/* Perfil */}
         <div className="relative" ref={userMenuRef}>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className={`flex items-center gap-3 p-1 pl-2 pr-3 rounded-sm transition-all border ${
-                menuOpen ? 'bg-white/5 border-white/20' : 'border-transparent hover:bg-white/5'
-            }`}
-          >
+          <button onClick={() => setMenuOpen(!menuOpen)} className={`flex items-center gap-3 p-1 pl-2 pr-3 rounded-sm transition-all border ${menuOpen ? 'bg-white/5 border-white/20' : 'border-transparent hover:bg-white/5'}`}>
             <div className="relative">
-                <div className="w-6 h-6 bg-white/5 rounded-sm flex items-center justify-center border border-white/10 transition-all">
-                   <UserCircle size={16} className="text-white/40" />
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#0c0e12]"></span>
+              <div className="w-6 h-6 bg-white/5 rounded-sm flex items-center justify-center border border-white/10 transition-all">
+                <UserCircle size={16} className="text-white/40" />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#0c0e12]"></span>
             </div>
             <div className="hidden sm:block text-left">
               <p className="text-[9px] font-black text-white uppercase tracking-widest">ROOT_USER</p>
               <p className="text-[7px] text-[var(--palantir-active)] font-black uppercase tracking-tighter opacity-60">Admin_Lvl_01</p>
             </div>
           </button>
-
           {menuOpen && (
             <div className="absolute right-0 mt-3 w-48 bg-[#0c0e12] border border-white/10 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,1)] z-[100] p-1.5 animate-in fade-in zoom-in-95">
               <button onClick={() => { navigate("/settings/config"); setMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2 text-[9px] text-white/50 hover:text-white hover:bg-white/5 rounded-sm transition-all font-black uppercase tracking-widest">
