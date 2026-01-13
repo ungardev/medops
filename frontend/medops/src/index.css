@@ -3,17 +3,17 @@
 
 @layer base {
   :root {
-    /* BLACK PROTOCOL: HIGH-PRECISION INTERFACE */
-    --palantir-bg: #050608;          /* Fondo absoluto para máxima profundidad */
-    --palantir-surface: #0c0e12;     /* Superficies de comando */
+    /* BLACK PROTOCOL: HIGH-PRECISION INTERFACE - NO BLUE PURGE */
+    --palantir-bg: #050608;          /* Fondo absoluto */
+    --palantir-surface: #0c0e12;     /* Superficies */
     --palantir-border: #1a1e23;      /* Bordes estructurales */
-    --palantir-text: #e1e8ed;        /* Texto principal (Off-white) */
-    --palantir-muted: #4a5568;       /* Texto descriptivo técnico */
+    --palantir-text: #e1e8ed;        /* Off-white */
+    --palantir-muted: #4a5568;       /* Texto descriptivo */
     
-    /* ACCENTS */
-    --palantir-active: #38a1ff;      /* Azul operativo principal */
-    --palantir-active-rgb: 56, 161, 255;
-    --palantir-accent: #4a90e2; 
+    /* ACCENTS: ACHROMATIC (PURE WHITE) */
+    --palantir-active: #ffffff;      
+    --palantir-active-rgb: 255, 255, 255;
+    --palantir-accent: #f8f9fa; 
     
     --palantir-panel-bg: rgba(12, 14, 18, 0.7);
   }
@@ -59,7 +59,6 @@
       2. OPERATIONAL ANIMATIONS
   ----------------------------------------------------------- */
   
-  /* Animación de barra de carga infinita (utilizada en WaitingRoom) */
   @keyframes infinite-loading {
     0% { transform: translateX(-100%); }
     100% { transform: translateX(200%); }
@@ -69,7 +68,7 @@
     animation: infinite-loading 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
-  /* Escaneo horizontal de datos */
+  /* Escaneo horizontal de datos - AHORA EN BLANCO */
   .medops-scanning::after {
     content: "";
     position: absolute;
@@ -77,7 +76,7 @@
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(56, 161, 255, 0.05), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
     animation: scan-horizontal 3s linear infinite;
   }
 
@@ -86,7 +85,6 @@
     100% { left: 100%; }
   }
 
-  /* Efecto de pulso técnico para estados 'Live' */
   @keyframes tech-pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.5; transform: scale(0.95); }
@@ -97,7 +95,7 @@
   }
 
   /* -----------------------------------------------------------
-      3. PRECISION INPUTS
+      3. PRECISION INPUTS - PURGE BLUE FOCUS
   ----------------------------------------------------------- */
   input, textarea, select {
     background-color: rgba(255, 255, 255, 0.02) !important;
@@ -107,9 +105,9 @@
 
   input:focus, textarea:focus {
     outline: none;
-    background-color: rgba(56, 161, 255, 0.02) !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
     border-color: var(--palantir-active) !important;
-    box-shadow: 0 0 15px rgba(56, 161, 255, 0.05);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
   }
 
   /* -----------------------------------------------------------
@@ -145,9 +143,9 @@
     @apply translate-y-[0px] brightness-90;
   }
 
-  /* Indicador de Sidebar */
+  /* Indicador de Sidebar - WHITE ACCENT */
   .sidebar-active-indicator {
-    box-shadow: 4px 0 15px -3px rgba(var(--palantir-active-rgb), 0.2);
+    box-shadow: 4px 0 15px -3px rgba(255, 255, 255, 0.1);
     border-right: 2px solid var(--palantir-active);
   }
 }
