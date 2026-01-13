@@ -56,16 +56,9 @@ export default function Sidebar({
   const getIconSrc = () => isDarkMode ? "/medopz_logo_blanco_solo.svg" : "/medopz_logo_negro_solo.svg";
   const getFontSrc = () => isDarkMode ? "/medopz_fuente_blanco.svg" : "/medopz_fuente_negro.svg";
 
-  /**
-   * REFINAMIENTO DE ESTILOS MEDOPZ V2
-   * Elevando el contraste de los grises para eliminar el look "apagado"
-   */
+  // Estilos de los ítems
   const itemBase = "group relative flex items-center px-4 py-3 transition-all duration-300 ease-out mb-1.5 overflow-hidden";
-  
-  // Activo: Blanco puro con glow sutil y fondo de cristal
   const itemActive = "bg-white/[0.08] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.02)]";
-  
-  // Reposo: Gris "Plata" (más brillante que el anterior) -> Blanco total al hover
   const itemIdle = "text-white/40 hover:text-white hover:bg-white/[0.04]";
 
   return (
@@ -89,7 +82,7 @@ export default function Sidebar({
                   to="/" 
                   className={`flex items-center transition-all duration-500 hover:opacity-100 ${
                     mobileOpen ? "flex-col gap-4" : "gap-3"
-                  } ${isActive("/") ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+                  } ${location.pathname === "/" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
                 >
                     <img
                         src={getIconSrc()}
@@ -144,7 +137,7 @@ export default function Sidebar({
         {/* SECTION LABEL */}
         {!effectiveCollapsed && (
           <div className="flex items-center gap-2 mb-4 px-4">
-            <div className="h-[1px] w-4 bg-[var(--palantir-active)] shadow-[0_0_8px_var(--palantir-active)]"></div>
+            <div className="h-[1px] w-4 bg-white/20 shadow-[0_0_8px_rgba(255,255,255,0.1)]"></div>
             <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.4em]">
               Sistemas_Core
             </div>
@@ -164,10 +157,7 @@ export default function Sidebar({
                     title={effectiveCollapsed ? label : ""}
                     className={`${itemBase} rounded-sm ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
                   >
-                    {/* Indicador Táctico Activo */}
-                    {isActive && (
-                      <div className="absolute left-0 top-0 h-full w-[3px] bg-[var(--palantir-active)] shadow-[0_0_12px_var(--palantir-active)] animate-pulse" />
-                    )}
+                    {/* SE ELIMINÓ EL INDICADOR TÁCTICO FLUORESCENTE AQUÍ */}
                     
                     <Icon 
                       size={19} 
@@ -199,7 +189,7 @@ export default function Sidebar({
                    <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">Medopz_Live_Link</span>
                 </div>
                 <div className="text-[7px] font-mono text-white/10 uppercase tracking-tighter">
-                    Terminal_ID: {Math.random().toString(36).substring(7).toUpperCase()}
+                   TERMINAL_STATION_V4.0
                 </div>
               </div>
             ) : (
@@ -211,10 +201,4 @@ export default function Sidebar({
       </div>
     </aside>
   );
-}
-
-// Función auxiliar para detectar ruta activa (si no la tienes importada)
-function isActive(path: string) {
-    const location = useLocation();
-    return location.pathname === path;
 }
