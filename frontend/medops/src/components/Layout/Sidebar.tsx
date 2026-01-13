@@ -55,10 +55,14 @@ export default function Sidebar({
   const getIconSrc = () => isDarkMode ? "/medopz_logo_blanco_solo.svg" : "/medopz_logo_negro_solo.svg";
   const getFontSrc = () => isDarkMode ? "/medopz_fuente_blanco.svg" : "/medopz_fuente_negro.svg";
 
-  // Item base con padding ajustado para los iconos más grandes
-  const itemBase = "group flex items-center px-3 py-3 rounded-md font-medium transition-all duration-200 ease-in-out mb-1.5";
-  const itemActive = "bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] shadow-sm ring-1 ring-[var(--palantir-active)]/20";
-  const itemIdle = "text-[var(--palantir-muted)] hover:bg-[var(--palantir-border)] hover:text-[var(--palantir-text)]";
+  // --- REFINAMIENTO DE ESTILOS PALANTIR ELITE ---
+  const itemBase = "group flex items-center px-4 py-3 rounded-sm font-medium transition-all duration-200 ease-in-out mb-1";
+  
+  // Activo: Texto brillante con fondo sutil de la identidad
+  const itemActive = "bg-[var(--palantir-active)]/20 text-white border-l-2 border-[var(--palantir-accent)] shadow-[inset_4px_0_10px_rgba(0,0,0,0.2)]";
+  
+  // Reposo: Texto blanco roto (no gris oscuro) para que se sienta disponible
+  const itemIdle = "text-[#A0AEC0] hover:bg-[var(--palantir-border)]/40 hover:text-white";
 
   return (
     <aside
@@ -68,7 +72,7 @@ export default function Sidebar({
         flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col
       `}
     >
-      <div className="flex flex-col h-full pt-3 pb-4 px-3">
+      <div className="flex flex-col h-full pt-3 pb-4 px-2">
         <div className="flex flex-col mb-4">
             <div className={`flex mb-2 ${
                 mobileOpen 
@@ -96,7 +100,7 @@ export default function Sidebar({
                         <img
                             src={getFontSrc()}
                             alt="Medopz"
-                            className={`object-contain opacity-80 transition-all ${
+                            className={`object-contain opacity-95 transition-all ${
                                 mobileOpen 
                                 ? "h-5 w-auto" 
                                 : "h-3.5 w-auto"
@@ -108,7 +112,7 @@ export default function Sidebar({
                 {mobileOpen && (
                   <button
                     onClick={() => setMobileOpen(false)}
-                    className="absolute top-4 right-4 p-2 text-[var(--palantir-muted)] hover:text-[var(--palantir-text)]"
+                    className="absolute top-4 right-4 p-2 text-[var(--palantir-muted)] hover:text-white"
                   >
                     <X size={22} />
                   </button>
@@ -117,7 +121,7 @@ export default function Sidebar({
                 {!effectiveCollapsed && !mobileOpen && (
                     <button
                         onClick={() => setCollapsed(!collapsed)}
-                        className="p-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] transition-colors hidden lg:block rounded-md hover:bg-[var(--palantir-border)]"
+                        className="p-1.5 text-[var(--palantir-muted)] hover:text-white transition-colors hidden lg:block rounded-md hover:bg-[var(--palantir-border)]"
                     >
                         <ChevronLeft size={16} />
                     </button>
@@ -127,19 +131,19 @@ export default function Sidebar({
             {effectiveCollapsed && (
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="mx-auto mt-2 p-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] transition-colors hidden lg:block rounded-md hover:bg-[var(--palantir-border)]"
+                    className="mx-auto mt-2 p-1.5 text-[var(--palantir-muted)] hover:text-white transition-colors hidden lg:block rounded-md hover:bg-[var(--palantir-border)]"
                 >
                     <ChevronRight size={16} />
                 </button>
             )}
 
             {!effectiveCollapsed && (
-              <div className="h-[1px] w-full bg-gradient-to-r from-[var(--palantir-border)] to-transparent mb-6 opacity-30" />
+              <div className="h-[1px] w-full bg-gradient-to-r from-[var(--palantir-border)] to-transparent mb-6 opacity-20" />
             )}
         </div>
 
         {!effectiveCollapsed && (
-          <div className="text-[11px] font-bold text-[var(--palantir-muted)] uppercase tracking-[0.2em] mb-4 px-3 opacity-40">
+          <div className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] mb-4 px-4">
             Navegación
           </div>
         )}
@@ -156,10 +160,9 @@ export default function Sidebar({
                     title={effectiveCollapsed ? label : ""}
                     className={`${itemBase} ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
                   >
-                    {/* Iconos ahora son siempre tamaño 24 para máxima consistencia */}
-                    <Icon size={24} className="shrink-0" strokeWidth={isActive ? 2 : 1.5} />
+                    <Icon size={20} className={`shrink-0 transition-colors ${isActive ? "text-[var(--palantir-accent)]" : "group-hover:text-white"}`} strokeWidth={isActive ? 2.5 : 2} />
                     {!effectiveCollapsed && (
-                      <span className="ml-4 text-[15px] tracking-tight font-semibold">
+                      <span className="ml-4 text-[14px] tracking-wide font-medium">
                         {label}
                       </span>
                     )}
@@ -171,10 +174,10 @@ export default function Sidebar({
         </nav>
 
         {!effectiveCollapsed && (
-          <div className="mt-auto pt-4 border-t border-[var(--palantir-border)] px-3">
-            <div className="flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-               <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.15em]">System_Online</span>
+          <div className="mt-auto pt-4 border-t border-[var(--palantir-border)]/30 px-4">
+            <div className="flex items-center gap-3">
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+               <span className="text-[9px] font-mono text-white/40 uppercase tracking-[0.2em]">System_Online</span>
             </div>
           </div>
         )}
