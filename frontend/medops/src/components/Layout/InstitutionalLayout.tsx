@@ -37,7 +37,6 @@ export default function InstitutionalLayout() {
 
   // Forzar redibujado de gráficos/tablas al colapsar
   useEffect(() => {
-    // Pequeño delay para esperar a que termine la transición del sidebar
     const timer = setTimeout(() => {
       window.dispatchEvent(new Event("resize"));
     }, 300);
@@ -47,9 +46,9 @@ export default function InstitutionalLayout() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] antialiased flex flex-col transition-colors duration-300">
       
-      {/* 🔹 Overlay móvil: Usamos el fondo oscuro puro para el desenfoque */}
+      {/* 🔹 Overlay móvil: Backdrop desenfocado */}
       <div
-        className={`lg:hidden fixed inset-0 bg-[var(--palantir-bg)]/60 z-40 transition-opacity duration-300 backdrop-blur-md ${
+        className={`lg:hidden fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 backdrop-blur-md ${
           mobileSidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setMobileSidebarOpen(false)}
@@ -57,11 +56,16 @@ export default function InstitutionalLayout() {
 
       <div className="relative flex flex-1 overflow-hidden">
         
-        {/* 🔹 Sidebar Container */}
+        {/* 🔹 Sidebar Container: Corregido para desaparición total en móvil */}
         <aside
-          className={`fixed top-0 left-0 h-screen z-50 transition-all duration-300 ease-in-out border-r border-[var(--palantir-border)] bg-[var(--palantir-surface)] ${
-            mobileSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          } ${collapsed ? "w-[68px]" : "w-60"}`}
+          className={`fixed top-0 left-0 h-screen z-50 transition-all duration-300 ease-in-out border-white/5 bg-[#0a0a0b] overflow-hidden
+            ${mobileSidebarOpen 
+              ? "translate-x-0 w-64 border-r" 
+              : "-translate-x-full w-0 lg:w-auto lg:translate-x-0 lg:border-r"
+            } 
+            ${!mobileSidebarOpen && !collapsed ? "lg:w-60" : ""}
+            ${!mobileSidebarOpen && collapsed ? "lg:w-[78px]" : ""}
+          `}
         >
           <Sidebar
             collapsed={collapsed}
@@ -74,10 +78,10 @@ export default function InstitutionalLayout() {
         {/* 🔹 Área de Contenido Principal */}
         <div
           className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
-            collapsed ? "lg:ml-[68px]" : "lg:ml-60"
+            collapsed ? "lg:ml-[78px]" : "lg:ml-60"
           }`}
         >
-          {/* 🔹 Header: Fondo de superficie, sin sombras pesadas, solo borde sutil */}
+          {/* 🔹 Header */}
           <header className="h-16 border-b border-[var(--palantir-border)] bg-[var(--palantir-surface)] sticky top-0 z-30 flex items-center transition-colors duration-300">
             <InstitutionalHeader
               setCollapsed={setCollapsed}
@@ -85,7 +89,7 @@ export default function InstitutionalLayout() {
             />
           </header>
 
-          {/* 🔹 Main Content: El fondo aquí es var(--palantir-bg) para que las tarjetas resalten */}
+          {/* 🔹 Main Content */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar">
             <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
               <Outlet />
@@ -96,7 +100,7 @@ export default function InstitutionalLayout() {
         </div>
       </div>
 
-      {/* 🔹 Toaster: Unificado con el Azul MedOps y la paleta industrial */}
+      {/* 🔹 Toaster */}
       <Toaster
         position="top-right"
         toastOptions={{
