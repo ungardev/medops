@@ -47,9 +47,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
       {/* 1. TOP BAR: Metadatos de Sistema / Breadcrumbs con Vida */}
       <div className="flex items-center justify-between border-b border-white/10 pb-2">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--palantir-active)] opacity-40"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--palantir-active)] shadow-[0_0_10px_var(--palantir-active)]"></span>
+          <div className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-40"></span>
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
           </div>
           
           <nav className="flex items-center gap-2">
@@ -59,7 +59,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                   {item.path ? (
                     <Link 
                       to={item.path} 
-                      className="text-[10px] font-black uppercase tracking-[0.25em] text-white/40 hover:text-[var(--palantir-active)] hover:drop-shadow-[0_0_8px_rgba(var(--palantir-active-rgb),0.5)] transition-all duration-300 italic"
+                      className="text-[10px] font-black uppercase tracking-[0.25em] text-white/40 hover:text-white transition-all duration-300 italic"
                     >
                       {item.label}
                     </Link>
@@ -82,41 +82,41 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
 
         <div className="hidden sm:flex items-center gap-4 font-mono text-[9px] tracking-[0.15em]">
-          <span className="text-white/20 uppercase">Core_Link_Active</span>
+          <span className="text-white/20 uppercase tracking-[0.3em]">System_Clock</span>
           <span className="text-white/80 font-bold tabular-nums bg-white/5 px-2 py-0.5 rounded-sm border border-white/10">
             {now.format("HH:mm:ss").toUpperCase()} <span className="text-white/30 ml-1">{now.format("ZZ")}</span>
           </span>
         </div>
       </div>
 
-      {/* 2. MAIN CORE: Título y Subtítulo con Contraste */}
+      {/* 2. MAIN CORE: Título y Subtítulo */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         
         <div className="flex flex-col gap-2">
-          <div className="relative medops-scanning group/title">
+          <div className="relative group/title">
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
               {title}
             </h1>
             {subtitle && (
-                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-[var(--palantir-active)] opacity-80 mt-1">
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mt-2">
                     {subtitle}
                 </p>
             )}
-            <div className="w-20 h-[3px] bg-[var(--palantir-active)] shadow-[0_0_20px_var(--palantir-active)] mt-2 transition-all group-hover/title:w-full duration-700 ease-out" />
+            <div className="w-16 h-[2px] bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.2)] mt-3 transition-all group-hover/title:w-32 duration-700 ease-out" />
           </div>
 
-          {/* 3. ESTRUCTURA DE DATOS (Stats) Refinada */}
+          {/* 3. ESTRUCTURA DE DATOS (Stats) - Estilo Glassmorphism Palantir */}
           {stats && stats.length > 0 && (
-            <div className="flex flex-wrap items-center gap-0 border border-white/10 bg-white/[0.02] backdrop-blur-xl rounded-sm overflow-hidden mt-2 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+            <div className="flex flex-wrap items-center gap-0 border border-white/5 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden mt-4 shadow-xl">
               {stats.map((stat, i) => (
                 <div 
                   key={i} 
-                  className={`flex flex-col px-6 py-3 min-w-[130px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat`}
+                  className={`flex flex-col px-6 py-3 min-w-[140px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat`}
                 >
-                  <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/30 group-hover/stat:text-white/60 transition-colors">
+                  <span className="text-[8px] font-black uppercase tracking-[0.25em] text-white/20 group-hover/stat:text-white/40 transition-colors">
                     {stat.label}
                   </span>
-                  <div className={`text-sm font-mono font-black tracking-widest ${stat.color || "text-white"} drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]`}>
+                  <div className={`text-[13px] font-mono font-black tracking-[0.1em] mt-0.5 ${stat.color || "text-white"} drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]`}>
                     {stat.value}
                   </div>
                 </div>
@@ -125,15 +125,18 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           )}
         </div>
 
-        {/* 4. CONTROL INTERFACE & CHILDREN */}
+        {/* 4. CONTROL INTERFACE (Actions & Children) - Estilo ButtonGroup Container */}
         {(actions || children) && (
-          <div className="flex items-center gap-4 self-start lg:self-center p-3 bg-white/5 border border-white/10 rounded-sm backdrop-blur-2xl shadow-inner">
-            <div className="flex items-center gap-3">
-               {children}
-            </div>
+          <div className="flex items-center gap-4 self-start lg:self-center p-1.5 bg-black/40 border border-white/5 rounded-sm backdrop-blur-xl shadow-2xl">
+            {children && (
+              <div className="flex items-center gap-3 px-2">
+                 {children}
+              </div>
+            )}
+            
             {actions && (
               <>
-                <div className="w-[1px] h-8 bg-white/10 mx-1" />
+                {children && <div className="w-[1px] h-6 bg-white/10 mx-1" />}
                 <div className="flex items-center gap-2">
                    {actions}
                 </div>
@@ -144,9 +147,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
       </div>
 
       {/* Línea de base decorativa táctica */}
-      <div className="absolute -bottom-4 left-0 w-full flex items-center gap-2 opacity-20">
-         <div className="h-[1px] flex-1 bg-gradient-to-r from-[var(--palantir-active)] to-transparent" />
-         <div className="text-[7px] font-mono text-white/40 tracking-[0.5em]">MEDOPZ_OS_V2.6</div>
+      <div className="absolute -bottom-6 left-0 w-full flex items-center gap-3 opacity-20 pointer-events-none">
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-white/40 to-transparent" />
+          <div className="text-[7px] font-mono text-white/40 tracking-[0.8em] uppercase">Medopz_Protocol_Terminal</div>
       </div>
     </section>
   );
