@@ -70,8 +70,7 @@ export default function Patients() {
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPS", path: "/" },
-          { label: "DATABASE", path: "/patients" },
-          { label: "SUBJECT_RECORDS", active: true }
+          { label: "PATIENTS", active: true }
         ]}
         stats={[
           { 

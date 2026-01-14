@@ -53,8 +53,7 @@ export default function Payments() {
       <PageHeader
         breadcrumbs={[
           { label: "MEDOPS", path: "/" },
-          { label: "FINANCIAL_SYSTEM", path: "/payments" },
-          { label: "ASSET_MANAGEMENT", active: true }
+          { label: "PAYMENTS", active: true }
         ]}
         stats={[
           { 

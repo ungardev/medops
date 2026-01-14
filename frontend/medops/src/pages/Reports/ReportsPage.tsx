@@ -31,8 +31,7 @@ export default function ReportsPage() {
       <PageHeader
         breadcrumbs={[
           { label: "MEDOPS", path: "/" },
-          { label: "ANALYTICS", path: "/analytics" },
-          { label: "DATA_MINING", active: true }
+          { label: "REPORTS", active: true }
         ]}
         stats={[
           { 

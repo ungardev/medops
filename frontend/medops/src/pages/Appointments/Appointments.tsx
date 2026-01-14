@@ -121,7 +121,7 @@ export default function Appointments() {
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPS", path: "/" },
-          { label: "CENTRAL_APPOINTMENT_MATRIX", active: true }
+          { label: "APPOINTMENTS", active: true }
         ]}
         stats={[
           { 

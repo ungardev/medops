@@ -115,8 +115,7 @@ export default function ConfigPage() {
       <PageHeader
         breadcrumbs={[
           { label: "SYSTEM", path: "/" },
-          { label: "PARAMETERS", path: "/settings" },
-          { label: "IDENTITY_VAULT", active: true }
+          { label: "CONFIGURATION", active: true }
         ]}
         stats={[
           { label: "ACCESS_LEVEL", value: "ROOT_ADMIN", color: "text-blue-500" },

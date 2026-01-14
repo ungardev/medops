@@ -31,8 +31,7 @@ export default function Dashboard() {
         */}
         <PageHeader 
           breadcrumbs={[
-            { label: "MEDOPS", path: "/" },
-            { label: "MEDICAL_OPERATIVE_SYSTEM", active: true }
+            { label: "MEDOPS", active: true }
           ]}
           actions={<DashboardButtonGroup />}
           stats={[
