@@ -96,7 +96,6 @@ export default function SearchPage() {
       <PageHeader 
         breadcrumbs={[
           { label: "SYSTEM", path: "/" },
-          { label: "CROSS_REFERENCE", path: "/operations" },
           { label: "SEARCH", active: true }
         ]}
         stats={[
