@@ -17,13 +17,9 @@ services:
     networks:
       - medops_net
     volumes:
-      # Monta el resultado del build en Nginx
       - ./frontend/medops/dist:/usr/share/nginx/html
-      # Monta el archivo de configuración de Nginx (debe estar en la raíz)
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      # Comparte estáticos con backend
       - ./staticfiles:/app/staticfiles
-      # 👇 SHARED MEDIA VOLUME: Nginx lee desde /app/media
       - ./media:/app/media:ro
 
   backend:
@@ -54,10 +50,8 @@ services:
     networks:
       - medops_net
     volumes:
-      # 👇 CORRECCIÓN: Ahora coincide con el WORKDIR /app del Dockerfile
       - .:/app
       - ./staticfiles:/app/staticfiles
-      # 👇 CORRECCIÓN: Django escribe en /app/media, que ahora es persistente en tu host
       - ./media:/app/media
       - ./data:/app/data
 
@@ -71,7 +65,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      # CAMBIO CLAVE: Ahora los datos viven en la carpeta física 'postgres_data'
+      - ./postgres_data:/var/lib/postgresql/data
     networks:
       - medops_net
 
@@ -111,8 +106,7 @@ services:
       retries: 10
       start_period: 30s
 
-volumes:
-  db_data:
+# El bloque de volumes se ha eliminado ya que usamos rutas relativas (./)
 
 networks:
   medops_net:
