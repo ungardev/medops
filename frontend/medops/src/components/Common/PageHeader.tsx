@@ -2,11 +2,12 @@
 import React, { useEffect, useState, ReactNode } from "react";
 import moment from "moment";
 import { Link } from "react-router-dom";
+import { ChevronRightIcon, HomeIcon } from "@heroicons/react/20/solid";
 
 interface PageStat {
   label: string;
-  value: React.ReactNode; 
-  color?: string; 
+  value: React.ReactNode;
+  color?: string;
 }
 
 interface BreadcrumbItem {
@@ -16,23 +17,23 @@ interface BreadcrumbItem {
 }
 
 interface PageHeaderProps {
-  breadcrumb?: string; 
+  breadcrumb?: string;
   breadcrumbs?: BreadcrumbItem[];
   title: string;
   subtitle?: string;
   stats?: PageStat[];
   actions?: ReactNode;
-  children?: ReactNode; 
+  children?: ReactNode;
 }
 
-const PageHeader: React.FC<PageHeaderProps> = ({ 
-  breadcrumb, 
+const PageHeader: React.FC<PageHeaderProps> = ({
+  breadcrumb,
   breadcrumbs,
-  title, 
+  title,
   subtitle,
-  stats, 
+  stats,
   actions,
-  children 
+  children,
 }) => {
   const [now, setNow] = useState(moment());
 
@@ -44,40 +45,66 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   return (
     <section className="relative flex flex-col gap-4 mb-8 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
       
-      {/* 1. TOP BAR: Metadatos de Sistema / Breadcrumbs con Vida */}
+      {/* 1. TOP BAR: Breadcrumbs (Tailwind UI Style) & System Clock */}
       <div className="flex items-center justify-between border-b border-white/10 pb-2">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className="relative flex h-1.5 w-1.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-40"></span>
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
           </div>
-          
-          <nav className="flex items-center gap-2">
-            {breadcrumbs ? (
-              breadcrumbs.map((item, idx) => (
-                <React.Fragment key={idx}>
-                  {item.path ? (
-                    <Link 
-                      to={item.path} 
-                      className="text-[10px] font-black uppercase tracking-[0.25em] text-white/40 hover:text-white transition-all duration-300 italic"
-                    >
-                      {item.label}
-                    </Link>
-                  ) : (
-                    <span className={`text-[10px] font-black uppercase tracking-[0.25em] italic ${item.active ? "text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]" : "text-white/30"}`}>
-                      {item.label}
-                    </span>
-                  )}
-                  {idx < breadcrumbs.length - 1 && (
-                    <span className="text-[9px] text-white/10 font-mono font-bold">/</span>
-                  )}
-                </React.Fragment>
-              ))
-            ) : (
-              <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-white/60 italic leading-none">
-                {breadcrumb}
-              </h2>
-            )}
+
+          <nav className="flex" aria-label="Breadcrumb">
+            <ol role="list" className="flex items-center space-x-2">
+              <li>
+                <div>
+                  <Link to="/" className="text-white/40 hover:text-white transition-colors">
+                    <HomeIcon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                    <span className="sr-only">Home</span>
+                  </Link>
+                </div>
+              </li>
+              
+              {breadcrumbs ? (
+                breadcrumbs.map((item, idx) => (
+                  <li key={idx}>
+                    <div className="flex items-center">
+                      <ChevronRightIcon
+                        className="h-4 w-4 flex-shrink-0 text-white/10"
+                        aria-hidden="true"
+                      />
+                      {item.path ? (
+                        <Link
+                          to={item.path}
+                          className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-all duration-300 italic"
+                        >
+                          {item.label}
+                        </Link>
+                      ) : (
+                        <span
+                          className={`ml-2 text-[10px] font-black uppercase tracking-[0.2em] italic ${
+                            item.active
+                              ? "text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]"
+                              : "text-white/30"
+                          }`}
+                          aria-current={item.active ? "page" : undefined}
+                        >
+                          {item.label}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                ))
+              ) : (
+                <li>
+                  <div className="flex items-center">
+                    <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/10" aria-hidden="true" />
+                    <h2 className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 italic leading-none">
+                      {breadcrumb}
+                    </h2>
+                  </div>
+                </li>
+              )}
+            </ol>
           </nav>
         </div>
 
@@ -91,27 +118,26 @@ const PageHeader: React.FC<PageHeaderProps> = ({
 
       {/* 2. MAIN CORE: Título y Subtítulo */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        
         <div className="flex flex-col gap-2">
           <div className="relative group/title">
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
               {title}
             </h1>
             {subtitle && (
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mt-2">
-                    {subtitle}
-                </p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mt-2">
+                {subtitle}
+              </p>
             )}
             <div className="w-16 h-[2px] bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.2)] mt-3 transition-all group-hover/title:w-32 duration-700 ease-out" />
           </div>
 
-          {/* 3. ESTRUCTURA DE DATOS (Stats) - Estilo Glassmorphism Palantir */}
+          {/* 3. ESTRUCTURA DE DATOS (Stats) */}
           {stats && stats.length > 0 && (
             <div className="flex flex-wrap items-center gap-0 border border-white/5 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden mt-4 shadow-xl">
               {stats.map((stat, i) => (
-                <div 
-                  key={i} 
-                  className={`flex flex-col px-6 py-3 min-w-[140px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat`}
+                <div
+                  key={i}
+                  className="flex flex-col px-6 py-3 min-w-[140px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat"
                 >
                   <span className="text-[8px] font-black uppercase tracking-[0.25em] text-white/20 group-hover/stat:text-white/40 transition-colors">
                     {stat.label}
@@ -125,12 +151,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           )}
         </div>
 
-        {/* 4. CONTROL INTERFACE (Actions & Children) - Estilo ButtonGroup Container */}
+        {/* 4. CONTROL INTERFACE (Actions & Children) */}
         {(actions || children) && (
           <div className="flex items-center gap-4 self-start lg:self-center p-1.5 bg-black/40 border border-white/5 rounded-sm backdrop-blur-xl shadow-2xl">
             {children && (
               <div className="flex items-center gap-3 px-2">
-                 {children}
+                {children}
               </div>
             )}
             
@@ -138,7 +164,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
               <>
                 {children && <div className="w-[1px] h-6 bg-white/10 mx-1" />}
                 <div className="flex items-center gap-2">
-                   {actions}
+                  {actions}
                 </div>
               </>
             )}
@@ -148,8 +174,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
 
       {/* Línea de base decorativa táctica */}
       <div className="absolute -bottom-6 left-0 w-full flex items-center gap-3 opacity-20 pointer-events-none">
-          <div className="h-[1px] flex-1 bg-gradient-to-r from-white/40 to-transparent" />
-          <div className="text-[7px] font-mono text-white/40 tracking-[0.8em] uppercase">Medopz_Protocol_Terminal</div>
+        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/40 to-transparent" />
+        <div className="text-[7px] font-mono text-white/40 tracking-[0.8em] uppercase">Medopz_Protocol_Terminal</div>
       </div>
     </section>
   );
