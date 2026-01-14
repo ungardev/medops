@@ -5,7 +5,6 @@ import PageHeader from "@/components/Common/PageHeader";
 import PaymentList from "@/components/Payments/PaymentList";
 import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
 import { useState } from "react";
-// IMPORTANTE: Importamos el Enum para la comparación
 import { ChargeOrder, ChargeOrderStatus } from "@/types/payments"; 
 import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders";
 import { apiFetch } from "@/api/client";
@@ -83,15 +82,16 @@ export default function ChargeOrderDetail() {
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen max-w-7xl mx-auto">
       
-      {/* 🛠 HEADER TÉCNICO CORREGIDO */}
       <PageHeader
-        breadcrumb={`MEDOPS // FINANCE // ORDER_DET_#${order.id}`}
-        title={`ORD_REF_${order.id.toString().padStart(5, '0')}`}
+        breadcrumbs={[
+          { label: "MEDOPS", path: "/" },
+          { label: "FINANCE", path: "/payments" },
+          { label: `ORDER_DET_#${order.id}`, active: true }
+        ]}
         stats={[
           { 
             label: "STATUS", 
             value: order.status?.toUpperCase() || "UNKNOWN", 
-            // Comparación usando el Enum para evitar el error ts(2367)
             color: order.status === ChargeOrderStatus.PAID ? "text-emerald-400" : "text-yellow-500" 
           },
           { label: "BALANCE", value: `$${pending.toFixed(2)}`, color: pending > 0 ? "text-red-400" : "text-emerald-400" }
@@ -103,7 +103,6 @@ export default function ChargeOrderDetail() {
         }
       />
 
-      {/* 📊 MATRIZ FINANCIERA */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[var(--palantir-border)] border border-[var(--palantir-border)] shadow-2xl">
         {[
           { label: "GROSS_TOTAL", val: total, color: "text-white" },
@@ -120,9 +119,7 @@ export default function ChargeOrderDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* COLUMNA IZQUIERDA: ITEMS Y PAGOS */}
         <div className="lg:col-span-8 space-y-8">
-          
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
               <HashtagIcon className="w-4 h-4 text-[var(--palantir-active)]" />
@@ -159,14 +156,11 @@ export default function ChargeOrderDetail() {
               <ClockIcon className="w-4 h-4 text-emerald-400" />
               <h3 className="text-[10px] font-black tracking-[0.2em] uppercase opacity-70">Payment_Registry_History</h3>
             </div>
-            {/* OJO: Aquí podrías necesitar pasar props adicionales a PaymentList si lo personalizamos más tarde */}
             <PaymentList payments={order.payments || []} />
           </section>
         </div>
 
-        {/* COLUMNA DERECHA: TIMELINE Y ACCIONES */}
         <div className="lg:col-span-4 space-y-8">
-          
           <section className="p-6 bg-white/[0.02] border border-white/5 space-y-4 rounded-sm shadow-xl">
             <h3 className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--palantir-muted)]">Operations_Panel</h3>
             <div className="grid grid-cols-1 gap-2">

@@ -27,10 +27,13 @@ export default function ReportsPage() {
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen text-[var(--palantir-text)]">
       
-      {/* 📡 CABECERA DE OPERACIONES ANALÍTICAS */}
+      {/* 📡 CABECERA DE OPERACIONES ANALÍTICAS - CORREGIDA */}
       <PageHeader
-        breadcrumb="MEDOPS // ANALYTICS // DATA_MINING"
-        title="SYSTEM_REPORTS"
+        breadcrumbs={[
+          { label: "MEDOPS", path: "/" },
+          { label: "ANALYTICS", path: "/analytics" },
+          { label: "DATA_MINING", active: true }
+        ]}
         stats={[
           { 
             label: "ENGINE_STATUS", 
@@ -39,7 +42,8 @@ export default function ReportsPage() {
           },
           { 
             label: "TOTAL_RECORDS", 
-            value: data.length.toString().padStart(4, '0') 
+            value: data.length.toString().padStart(4, '0'),
+            color: "text-white"
           }
         ]}
         actions={
