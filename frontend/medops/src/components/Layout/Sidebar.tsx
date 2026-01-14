@@ -69,11 +69,11 @@ export default function Sidebar({
       `}
     >
       <div className="flex flex-col h-full pt-4 pb-6 px-3">
-        {/* LOGO AREA - SIMETRÍA INSTITUCIONAL */}
+        {/* LOGO AREA - ENCAJE QUIRÚRGICO */}
         <div className="flex flex-col mb-6">
             <div className={`flex relative ${
                 mobileOpen 
-                ? "flex-col items-center justify-center pt-1 pb-8" 
+                ? "flex-col items-center justify-center pt-2 pb-8" 
                 : `items-center h-14 ${effectiveCollapsed ? "justify-center" : "justify-between px-2"}`
             }`}>
                 
@@ -89,7 +89,7 @@ export default function Sidebar({
                 <Link 
                   to="/" 
                   className={`flex items-center transition-all duration-500 hover:opacity-100 ${
-                    mobileOpen ? "flex-col gap-4" : "gap-3"
+                    mobileOpen ? "flex-col gap-1" : "gap-3"
                   } ${location.pathname === "/" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
                 >
                     <img
@@ -108,7 +108,7 @@ export default function Sidebar({
                             alt="Medopz"
                             className={`object-contain transition-all duration-500 ${
                                 mobileOpen 
-                                ? "h-7 w-auto -ml-1.5 opacity-95" // Aumentado a h-7 para llenar el espacio simétricamente
+                                ? "h-[22px] w-auto -mt-2 -ml-1 opacity-95" // Altura controlada y margen negativo para el encaje en D-O
                                 : "h-4 w-auto"
                             }`}
                         />
