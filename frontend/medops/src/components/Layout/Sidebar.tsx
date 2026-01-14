@@ -72,24 +72,24 @@ export default function Sidebar({
       <div className="flex flex-col h-full pt-4 pb-6 px-3">
         {/* LOGO AREA */}
         <div className="flex flex-col mb-8">
-            <div className={`flex mb-4 ${
+            <div className={`flex relative ${
                 mobileOpen 
-                ? "flex-col items-center justify-center pt-8 pb-4" 
+                ? "flex-col items-center justify-center pt-12 pb-8" 
                 : `items-center h-14 ${effectiveCollapsed ? "justify-center" : "justify-between px-2"}`
             }`}>
                 
                 <Link 
                   to="/" 
                   className={`flex items-center transition-all duration-500 hover:opacity-100 ${
-                    mobileOpen ? "flex-col gap-4" : "gap-3"
+                    mobileOpen ? "flex-col gap-6" : "gap-3"
                   } ${location.pathname === "/" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
                 >
                     <img
                         src={getIconSrc()}
                         alt="Logo"
-                        className={`transition-all duration-500 drop-shadow-[0_0_8px_rgba(255,255,255,0.1)] ${
+                        className={`transition-all duration-500 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] ${
                             mobileOpen 
-                            ? "h-16 w-16" 
+                            ? "h-24 w-24" 
                             : effectiveCollapsed ? "h-10 w-10" : "h-9 w-9"
                         }`}
                     />
@@ -99,7 +99,9 @@ export default function Sidebar({
                             src={getFontSrc()}
                             alt="Medopz"
                             className={`object-contain transition-all duration-500 ${
-                                mobileOpen ? "h-5 w-auto" : "h-4 w-auto"
+                                mobileOpen 
+                                ? "h-8 w-auto -ml-1.5" 
+                                : "h-4 w-auto"
                             }`}
                         />
                     )}
@@ -108,9 +110,9 @@ export default function Sidebar({
                 {mobileOpen && (
                   <button
                     onClick={() => setMobileOpen(false)}
-                    className="absolute top-4 right-4 p-2 text-white/40 hover:text-white transition-colors"
+                    className="absolute top-6 right-6 p-2 text-white/40 hover:text-white transition-colors"
                   >
-                    <X size={24} />
+                    <X size={28} />
                   </button>
                 )}
 
@@ -157,8 +159,6 @@ export default function Sidebar({
                     title={effectiveCollapsed ? label : ""}
                     className={`${itemBase} rounded-sm ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
                   >
-                    {/* SE ELIMINÓ EL INDICADOR TÁCTICO FLUORESCENTE AQUÍ */}
-                    
                     <Icon 
                       size={19} 
                       className={`shrink-0 transition-all duration-300 ${isActive ? "text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]" : "group-hover:text-white"}`} 
