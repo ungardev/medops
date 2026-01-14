@@ -140,7 +140,7 @@ export default function Sidebar({
           <div className="flex items-center gap-2 mb-4 px-4">
             <div className="h-[1px] w-4 bg-white/20"></div>
             <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.4em]">
-              Sistemas_Core
+              Menu
             </div>
           </div>
         )}
