@@ -28,7 +28,6 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<FormValues>();
 
   const [mode, setMode] = useState<"search" | "create">("search");
@@ -65,7 +64,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
       } else {
         const payload: any = {};
         Object.entries(values).forEach(([key, value]) => {
-          if (value && value.trim() !== "") payload[key] = value.trim();
+          if (value && value.trim() !== "") payload[key] = (value as string).trim();
         });
         const patient: Patient = await createPatient(payload);
         patientId = patient.id;
@@ -82,20 +81,20 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
     : false;
 
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-[var(--palantir-bg)]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={onClose}>
       <div 
-        className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] shadow-2xl w-full max-w-lg rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="bg-[#0a0a0a] border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-lg rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header del Modal */}
-        <div className="px-4 py-3 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/50 flex justify-between items-center">
+        <div className="px-4 py-3 border-b border-white/5 bg-white/5 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-[var(--palantir-active)] rounded-full shadow-[0_0_5px_var(--palantir-active)]" />
-            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]" />
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/70">
               {mode === "search" ? "IDENTIFY_PATIENT_STREAM" : "INITIALIZE_NEW_RECORD"}
             </h2>
           </div>
-          <button onClick={onClose} className="text-[var(--palantir-muted)] hover:text-white transition-colors">
+          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors">
             <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
@@ -103,56 +102,59 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         <div className="p-6 space-y-6">
           {mode === "search" && (
             <div className="space-y-4">
-              {/* Input de Búsqueda Estilizado */}
               <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-muted)]" />
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                 <input
                   autoFocus
-                  className="w-full pl-10 pr-4 py-2.5 bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm text-sm text-[var(--palantir-text)] placeholder:text-[var(--palantir-muted)]/50 focus:outline-none focus:border-[var(--palantir-active)]/50 transition-all font-mono"
+                  className="w-full pl-10 pr-4 py-3 bg-black border border-white/10 rounded-sm text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-all font-mono"
                   placeholder="BUSCAR POR NOMBRE O IDENTIFICACIÓN..."
                   value={query}
                   onChange={(e) => { setQuery(e.target.value); setSelectedPatient(null); }}
                 />
               </div>
 
-              {/* Resultados de Búsqueda */}
               {results.length > 0 && !selectedPatient && (
-                <div className="border border-[var(--palantir-border)] rounded-sm divide-y divide-[var(--palantir-border)]/50 max-h-48 overflow-y-auto bg-[var(--palantir-bg)]/20">
+                <div className="border border-white/10 rounded-sm divide-y divide-white/5 max-h-48 overflow-y-auto bg-black">
                   {results.map((p, index) => (
                     <div
                       key={p.id}
-                      className={`px-4 py-2.5 cursor-pointer flex justify-between items-center transition-colors ${index === highlightedIndex ? "bg-[var(--palantir-active)]/20" : "hover:bg-[var(--palantir-active)]/5"}`}
+                      className={`px-4 py-3 cursor-pointer flex justify-between items-center transition-colors ${index === highlightedIndex ? "bg-white/10" : "hover:bg-white/5"}`}
                       onClick={() => { setSelectedPatient(p); setQuery(""); setResults([]); }}
                     >
-                      <span className="text-xs font-bold uppercase tracking-tight text-[var(--palantir-text)]">{p.full_name}</span>
-                      <span className="text-[10px] font-mono text-[var(--palantir-muted)]">{p.national_id || "NO_ID"}</span>
+                      <span className="text-xs font-bold uppercase tracking-tight text-white">{p.full_name}</span>
+                      <span className="text-[10px] font-mono text-white/40">{p.national_id || "NO_ID"}</span>
                     </div>
                   ))}
                 </div>
               )}
 
-              {/* Tarjeta de Paciente Seleccionado */}
               {selectedPatient && (
-                <div className={`p-4 border rounded-sm transition-all ${alreadyInWaitingRoom ? "border-red-500/30 bg-red-500/5" : "border-[var(--palantir-active)]/30 bg-[var(--palantir-active)]/5"}`}>
+                <div className={`p-5 border rounded-sm transition-all ${alreadyInWaitingRoom ? "border-red-500/30 bg-red-500/5" : "border-white/20 bg-white/5"}`}>
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest mb-1">Paciente Confirmado</p>
-                      <h3 className="text-lg font-bold text-[var(--palantir-text)] leading-tight">{selectedPatient.full_name}</h3>
-                      <p className="text-xs font-mono text-[var(--palantir-muted)] mt-1">{selectedPatient.national_id}</p>
+                      <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] mb-1">Sujeto Identificado</p>
+                      <h3 className="text-lg font-black text-white leading-tight italic uppercase tracking-tighter">{selectedPatient.full_name}</h3>
+                      <p className="text-xs font-mono text-white/50 mt-1">{selectedPatient.national_id}</p>
                     </div>
-                    {!alreadyInWaitingRoom && <CheckIcon className="w-5 h-5 text-[var(--palantir-active)]" />}
+                    {!alreadyInWaitingRoom && <CheckIcon className="w-6 h-6 text-white" />}
                   </div>
 
                   {alreadyInWaitingRoom ? (
-                    <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-tighter text-center">
-                      ⚠ Registro Activo en Sala de Espera
+                    <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest text-center">
+                      ⚠ REGISTRO ACTIVO EN SISTEMA
                     </div>
                   ) : (
-                    <div className="flex gap-2 mt-5">
-                      <button onClick={() => onSubmit({} as FormValues)} className="flex-1 bg-[var(--palantir-active)] text-white text-[10px] font-black uppercase py-2 rounded-sm hover:opacity-90 transition-opacity tracking-widest">
-                        PROCEDER_CON_REGISTRO
+                    <div className="flex gap-2 mt-6">
+                      <button 
+                        onClick={() => onSubmit({} as FormValues)} 
+                        className="flex-1 bg-white text-black text-[10px] font-black uppercase py-2.5 rounded-sm hover:bg-white/90 transition-all tracking-[0.2em]"
+                      >
+                        PROCEDER_REGISTRO
                       </button>
-                      <button onClick={() => setSelectedPatient(null)} className="px-4 border border-[var(--palantir-border)] text-[var(--palantir-muted)] text-[10px] font-bold uppercase rounded-sm hover:bg-[var(--palantir-bg)] transition-colors">
+                      <button 
+                        onClick={() => setSelectedPatient(null)} 
+                        className="px-4 border border-white/10 text-white/60 text-[10px] font-bold uppercase rounded-sm hover:bg-white/5 transition-colors"
+                      >
                         CANCELAR
                       </button>
                     </div>
@@ -162,7 +164,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
 
               <button 
                 onClick={() => setMode("create")}
-                className="w-full py-3 border border-dashed border-[var(--palantir-border)] text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:border-[var(--palantir-active)]/50 transition-all flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest"
+                className="w-full py-4 border border-dashed border-white/10 text-white/40 hover:text-white hover:border-white/30 hover:bg-white/[0.02] transition-all flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.3em]"
               >
                 <UserPlusIcon className="w-4 h-4" />
                 Registrar Nuevo Sujeto
@@ -174,37 +176,45 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
             <form className="space-y-4 animate-in slide-in-from-right-4 duration-300" onSubmit={handleSubmit(onSubmit)}>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Primer Nombre</label>
-                  <input {...register("first_name", { required: true })} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                  <label className="text-[9px] font-black text-white/30 uppercase ml-1">Primer Nombre</label>
+                  <input {...register("first_name", { required: true })} className="w-full bg-black border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white focus:outline-none focus:border-white/40 transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Segundo Nombre</label>
-                  <input {...register("second_name")} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                  <label className="text-[9px] font-black text-white/30 uppercase ml-1">Segundo Nombre</label>
+                  <input {...register("second_name")} className="w-full bg-black border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white focus:outline-none focus:border-white/40 transition-all" />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Primer Apellido</label>
-                  <input {...register("last_name", { required: true })} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                  <label className="text-[9px] font-black text-white/30 uppercase ml-1">Primer Apellido</label>
+                  <input {...register("last_name", { required: true })} className="w-full bg-black border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white focus:outline-none focus:border-white/40 transition-all" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Segundo Apellido</label>
-                  <input {...register("second_last_name")} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+                  <label className="text-[9px] font-black text-white/30 uppercase ml-1">Segundo Apellido</label>
+                  <input {...register("second_last_name")} className="w-full bg-black border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white focus:outline-none focus:border-white/40 transition-all" />
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase ml-1">Documento Nacional (ID)</label>
-                <input {...register("national_id", { required: true })} className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-[var(--palantir-active)]/50" />
+              <div className="space-y-1 pb-4">
+                <label className="text-[9px] font-black text-white/30 uppercase ml-1">Documento Nacional (ID)</label>
+                <input {...register("national_id", { required: true })} className="w-full bg-black border border-white/10 rounded-sm px-3 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-white/40 transition-all placeholder:text-white/10" placeholder="V-00000000" />
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-[var(--palantir-border)]/30">
-                <button type="submit" disabled={isSubmitting} className="flex-1 bg-[var(--palantir-active)] text-white text-[10px] font-black uppercase py-2.5 rounded-sm hover:opacity-90 disabled:opacity-50 tracking-widest transition-all">
-                  {isSubmitting ? "SYNCING..." : "COMMIT_DATABASE_ENTRY"}
+              <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting} 
+                  className="w-full bg-white text-black text-[11px] font-black uppercase py-3 rounded-sm hover:bg-white/90 disabled:opacity-50 tracking-[0.3em] transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                >
+                  {isSubmitting ? "SYNCING_DATA..." : "COMMIT_DATABASE_ENTRY"}
                 </button>
-                <button type="button" onClick={() => setMode("search")} className="px-4 text-[var(--palantir-muted)] text-[10px] font-bold uppercase hover:text-white transition-colors flex items-center gap-2">
-                  <ArrowLeftIcon className="w-3 h-3" /> VOLVER
+                <button 
+                  type="button" 
+                  onClick={() => setMode("search")} 
+                  className="w-full py-2 text-white/40 text-[9px] font-black uppercase hover:text-white transition-colors flex items-center justify-center gap-2 tracking-widest"
+                >
+                  <ArrowLeftIcon className="w-3 h-3" /> VOLVER AL BUSCADOR
                 </button>
               </div>
             </form>

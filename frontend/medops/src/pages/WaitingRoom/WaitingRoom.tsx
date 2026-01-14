@@ -134,14 +134,14 @@ export default function WaitingRoom() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowConfirmClose(true)}
-              className="px-3 py-1.5 text-[10px] font-black uppercase border border-red-500/30 text-red-500/80 rounded-sm hover:bg-red-500/5 flex items-center gap-2 transition-all"
+              className="px-3 py-1.5 text-[10px] font-black uppercase border border-red-500/40 bg-red-500/5 text-red-500 rounded-sm hover:bg-red-500/20 flex items-center gap-2 transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
             >
               <PowerIcon className="w-3.5 h-3.5" />
               Cerrar Jornada
             </button>
             <button
               onClick={() => setShowModal(true)}
-              className="px-3 py-1.5 text-[10px] font-black uppercase bg-white text-black rounded-sm hover:bg-white/90 flex items-center gap-2 shadow-sm transition-all"
+              className="px-3 py-1.5 text-[10px] font-black uppercase bg-black border border-white/20 text-white rounded-sm hover:bg-white/10 hover:border-white/40 flex items-center gap-2 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)]"
             >
               <PlusIcon className="w-3.5 h-3.5 stroke-[3px]" />
               Registrar Llegada
