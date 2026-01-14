@@ -69,35 +69,35 @@ export default function Sidebar({
       `}
     >
       <div className="flex flex-col h-full pt-4 pb-6 px-3">
-        {/* LOGO AREA - OPTIMIZED FOR MOBILE SYMMETRY */}
+        {/* LOGO AREA - SIMETRÍA INSTITUCIONAL */}
         <div className="flex flex-col mb-6">
             <div className={`flex relative ${
                 mobileOpen 
-                ? "flex-col items-center justify-center pt-2 pb-6" // pt-2 para subir todo al tope
+                ? "flex-col items-center justify-center pt-1 pb-8" 
                 : `items-center h-14 ${effectiveCollapsed ? "justify-center" : "justify-between px-2"}`
             }`}>
                 
                 {mobileOpen && (
                   <button
                     onClick={() => setMobileOpen(false)}
-                    className="absolute -top-1 -right-1 p-2 text-white/20 hover:text-white transition-colors"
+                    className="absolute -top-3 -right-1 p-2 text-white/20 hover:text-white transition-colors"
                   >
-                    <X size={22} />
+                    <X size={24} />
                   </button>
                 )}
 
                 <Link 
                   to="/" 
                   className={`flex items-center transition-all duration-500 hover:opacity-100 ${
-                    mobileOpen ? "flex-col gap-3" : "gap-3"
+                    mobileOpen ? "flex-col gap-4" : "gap-3"
                   } ${location.pathname === "/" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
                 >
                     <img
                         src={getIconSrc()}
                         alt="Logo"
-                        className={`transition-all duration-500 drop-shadow-[0_0_20px_rgba(255,255,255,0.15)] ${
+                        className={`transition-all duration-500 drop-shadow-[0_0_25px_rgba(255,255,255,0.18)] ${
                             mobileOpen 
-                            ? "h-28 w-28" // Rombo grande y dominante
+                            ? "h-28 w-28" 
                             : effectiveCollapsed ? "h-10 w-10" : "h-9 w-9"
                         }`}
                     />
@@ -108,7 +108,7 @@ export default function Sidebar({
                             alt="Medopz"
                             className={`object-contain transition-all duration-500 ${
                                 mobileOpen 
-                                ? "h-5 w-auto -ml-1.5 opacity-90" // Fuente más pequeña y centrada ópticamente entre D y O
+                                ? "h-7 w-auto -ml-1.5 opacity-95" // Aumentado a h-7 para llenar el espacio simétricamente
                                 : "h-4 w-auto"
                             }`}
                         />
