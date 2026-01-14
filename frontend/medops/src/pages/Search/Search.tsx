@@ -94,11 +94,14 @@ export default function SearchPage() {
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
       <PageHeader 
-        breadcrumb="SYSTEM // CROSS_REFERENCE // SEARCH"
-        title="INSTITUTIONAL_FINDER"
+        breadcrumbs={[
+          { label: "SYSTEM", path: "/" },
+          { label: "CROSS_REFERENCE", path: "/operations" },
+          { label: "SEARCH", active: true }
+        ]}
         stats={[
           { label: "QUERY_TERM", value: query || "NULL", color: "text-[var(--palantir-active)]" },
-          { label: "MATCHES_FOUND", value: totalResults.toString().padStart(3, '0') }
+          { label: "MATCHES_FOUND", value: totalResults.toString().padStart(3, '0'), color: "text-white" }
         ]}
       />
 
@@ -206,7 +209,6 @@ function SectionLabel({ icon, text, count }: { icon: React.ReactNode, text: stri
 }
 
 function ResultCard({ to, title, subtitle, type }: { to: string, title: string, subtitle: string, type: string }) {
-  // 🛡️ Corregido: Definición de tipo Record para evitar errores de indexación
   const colors: Record<string, string> = {
     PATIENT: "border-blue-500/20 hover:border-blue-500/50",
     APPOINTMENT: "border-emerald-500/20 hover:border-emerald-500/50",

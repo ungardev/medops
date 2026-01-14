@@ -19,8 +19,6 @@ interface BreadcrumbItem {
 interface PageHeaderProps {
   breadcrumb?: string;
   breadcrumbs?: BreadcrumbItem[];
-  title: string;
-  subtitle?: string;
   stats?: PageStat[];
   actions?: ReactNode;
   children?: ReactNode;
@@ -29,8 +27,6 @@ interface PageHeaderProps {
 const PageHeader: React.FC<PageHeaderProps> = ({
   breadcrumb,
   breadcrumbs,
-  title,
-  subtitle,
   stats,
   actions,
   children,
@@ -43,9 +39,9 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   }, []);
 
   return (
-    <section className="relative flex flex-col gap-4 mb-8 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
+    <section className="relative flex flex-col gap-6 mb-8 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
       
-      {/* 1. TOP BAR: Breadcrumbs (Tailwind UI Style) & System Clock */}
+      {/* 1. TOP BAR: Breadcrumbs (Elite Navigation) & System Clock */}
       <div className="flex items-center justify-between border-b border-white/10 pb-2">
         <div className="flex items-center gap-4">
           <div className="relative flex h-1.5 w-1.5">
@@ -57,7 +53,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <ol role="list" className="flex items-center space-x-2">
               <li>
                 <div>
-                  <Link to="/" className="text-white/40 hover:text-white transition-colors">
+                  <Link to="/" className="text-white/30 hover:text-white transition-colors">
                     <HomeIcon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
                     <span className="sr-only">Home</span>
                   </Link>
@@ -69,19 +65,19 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                   <li key={idx}>
                     <div className="flex items-center">
                       <ChevronRightIcon
-                        className="h-4 w-4 flex-shrink-0 text-white/10"
+                        className="h-4 w-4 flex-shrink-0 text-white/40" // Chevron ahora es claramente visible
                         aria-hidden="true"
                       />
                       {item.path ? (
                         <Link
                           to={item.path}
-                          className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-all duration-300 italic"
+                          className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-all duration-300"
                         >
                           {item.label}
                         </Link>
                       ) : (
                         <span
-                          className={`ml-2 text-[10px] font-black uppercase tracking-[0.2em] italic ${
+                          className={`ml-2 text-[10px] font-black uppercase tracking-[0.2em] ${
                             item.active
                               ? "text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]"
                               : "text-white/30"
@@ -97,8 +93,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
               ) : (
                 <li>
                   <div className="flex items-center">
-                    <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/10" aria-hidden="true" />
-                    <h2 className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 italic leading-none">
+                    <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/40" aria-hidden="true" />
+                    <h2 className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 leading-none">
                       {breadcrumb}
                     </h2>
                   </div>
@@ -108,6 +104,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </nav>
         </div>
 
+        {/* System Clock - Refined */}
         <div className="hidden sm:flex items-center gap-4 font-mono text-[9px] tracking-[0.15em]">
           <span className="text-white/20 uppercase tracking-[0.3em]">System_Clock</span>
           <span className="text-white/80 font-bold tabular-nums bg-white/5 px-2 py-0.5 rounded-sm border border-white/10">
@@ -116,42 +113,31 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
       </div>
 
-      {/* 2. MAIN CORE: Título y Subtítulo */}
+      {/* 2. OPERATIONAL CORE: Stats & Actions (Layout simplificado) */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-        <div className="flex flex-col gap-2">
-          <div className="relative group/title">
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase italic leading-none relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-              {title}
-            </h1>
-            {subtitle && (
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 mt-2">
-                {subtitle}
-              </p>
-            )}
-            <div className="w-16 h-[2px] bg-white/40 shadow-[0_0_15px_rgba(255,255,255,0.2)] mt-3 transition-all group-hover/title:w-32 duration-700 ease-out" />
-          </div>
-
-          {/* 3. ESTRUCTURA DE DATOS (Stats) */}
-          {stats && stats.length > 0 && (
-            <div className="flex flex-wrap items-center gap-0 border border-white/5 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden mt-4 shadow-xl">
-              {stats.map((stat, i) => (
-                <div
-                  key={i}
-                  className="flex flex-col px-6 py-3 min-w-[140px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat"
-                >
-                  <span className="text-[8px] font-black uppercase tracking-[0.25em] text-white/20 group-hover/stat:text-white/40 transition-colors">
-                    {stat.label}
-                  </span>
-                  <div className={`text-[13px] font-mono font-black tracking-[0.1em] mt-0.5 ${stat.color || "text-white"} drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]`}>
-                    {stat.value}
-                  </div>
+        
+        {/* Statistics Section */}
+        {stats && stats.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-0 border border-white/5 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-xl">
+            {stats.map((stat, i) => (
+              <div
+                key={i}
+                className="flex flex-col px-6 py-2.5 min-w-[130px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat"
+              >
+                <span className="text-[8px] font-black uppercase tracking-[0.25em] text-white/20 group-hover/stat:text-white/40 transition-colors">
+                  {stat.label}
+                </span>
+                <div className={`text-[12px] font-mono font-black tracking-[0.1em] mt-0.5 ${stat.color || "text-white"} drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]`}>
+                  {stat.value}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex-1" /> // Spacer si no hay stats
+        )}
 
-        {/* 4. CONTROL INTERFACE (Actions & Children) */}
+        {/* Control Interface: Actions & Children (Buttons suben aquí) */}
         {(actions || children) && (
           <div className="flex items-center gap-4 self-start lg:self-center p-1.5 bg-black/40 border border-white/5 rounded-sm backdrop-blur-xl shadow-2xl">
             {children && (
@@ -172,7 +158,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         )}
       </div>
 
-      {/* Línea de base decorativa táctica */}
+      {/* Decorative Tactical Baseline */}
       <div className="absolute -bottom-6 left-0 w-full flex items-center gap-3 opacity-20 pointer-events-none">
         <div className="h-[1px] flex-1 bg-gradient-to-r from-white/40 to-transparent" />
         <div className="text-[7px] font-mono text-white/40 tracking-[0.8em] uppercase">Medopz_Protocol_Terminal</div>

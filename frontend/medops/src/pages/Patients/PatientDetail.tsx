@@ -20,7 +20,6 @@ import PageHeader from "../../components/Common/PageHeader";
 import { 
   IdentificationIcon, 
   HeartIcon, 
-  BeakerIcon, 
   GlobeAltIcon,
   UserIcon
 } from "@heroicons/react/24/outline";
@@ -62,8 +61,8 @@ export default function PatientDetail() {
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-2 border-[var(--palantir-active)] border-t-transparent rounded-full animate-spin" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-[var(--palantir-active)]">Syncing_Subject_Data...</p>
+        <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-500">Syncing_Subject_Data...</p>
       </div>
     </div>
   );
@@ -77,78 +76,83 @@ export default function PatientDetail() {
   );
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-[var(--palantir-bg)] min-h-screen">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       
       {/* 🚀 ELITE_PAGE_HEADER: IDENTITY & TELEMETRY */}
       <PageHeader 
-        title={patient.full_name}
-        breadcrumb={`MEDOPS // DATABASE // SUBJECT_FILE // UID_${patient.id.toString().padStart(6, '0')}`}
+        breadcrumbs={[
+          { label: "MEDOPS", path: "/" },
+          { label: "DATABASE", path: "/patients" },
+          { label: `SUBJECT_ID_${patient.id.toString().padStart(6, '0')}`, active: true }
+        ]}
         stats={[
           { 
-            label: "Subject_Status", 
+            label: "RECORD_STATE", 
             value: patient.active ? "ACTIVE" : "INACTIVE",
             color: patient.active ? "text-emerald-500" : "text-red-500"
           },
           { 
-            label: "System_Age", 
+            label: "BIOMETRIC_AGE", 
             value: `${patient.age || '--'} YRS`,
-            color: "text-[var(--palantir-active)]"
+            color: "text-blue-500"
           },
           { 
-            label: "Weight_Metrics", 
-            value: `${patient.weight || '--'} KG` 
+            label: "MASS_INDEX", 
+            value: `${patient.weight || '--'} KG`,
+            color: "text-white/60"
           },
           { 
-            label: "Height_Metrics", 
-            value: `${patient.height || '--'} CM` 
+            label: "HEIGHT_INDEX", 
+            value: `${patient.height || '--'} CM`,
+            color: "text-white/60"
           }
         ]}
         actions={
           <div className="flex items-center gap-3">
-             <div className="flex flex-col items-end px-3 border-r border-[var(--palantir-border)]/50">
-                <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">Blood_Type</span>
-                <span className="text-xs font-black text-red-500/80">{patient.blood_type || 'N/A'}</span>
+             <div className="flex flex-col items-end px-3 border-r border-white/10">
+                <span className="text-[8px] font-mono text-white/30 uppercase tracking-tighter">Blood_Group</span>
+                <span className="text-xs font-black text-red-500">{patient.blood_type || 'N/A'}</span>
              </div>
-             <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-[var(--palantir-border)] bg-[var(--palantir-surface)]">
-                <UserIcon className="w-5 h-5 text-[var(--palantir-active)]" />
+             <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
+                <UserIcon className="w-5 h-5 text-blue-500" />
              </div>
           </div>
         }
       />
 
       {/* 📊 SUB-METADATA BAR (DNI, DOB, COUNTRY) */}
-      <div className="flex flex-wrap items-center gap-6 px-6 py-3 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest shadow-inner">
-        <span className="flex items-center gap-2">
-          <IdentificationIcon className="w-3.5 h-3.5 text-[var(--palantir-active)]/50" />
-          ID: <span className="text-[var(--palantir-text)]">{patient.national_id || "NOT_ASSIGNED"}</span>
+      <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest backdrop-blur-md">
+        <span className="flex items-center gap-2.5">
+          <IdentificationIcon className="w-4 h-4 text-blue-500/40" />
+          <span className="text-white/10">DNI:</span> <span className="text-white/80 font-bold">{patient.national_id || "NOT_ASSIGNED"}</span>
         </span>
-        <span className="flex items-center gap-2">
-          <HeartIcon className="w-3.5 h-3.5 text-red-500/40" />
-          DOB: <span className="text-[var(--palantir-text)]">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}</span>
+        <span className="flex items-center gap-2.5">
+          <HeartIcon className="w-4 h-4 text-red-500/30" />
+          <span className="text-white/10">DOB:</span> <span className="text-white/80 font-bold">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}</span>
         </span>
         {patient.birth_country && (
-          <span className="flex items-center gap-2">
-            <GlobeAltIcon className="w-3.5 h-3.5 text-blue-500/40" />
-            Origin: <span className="text-[var(--palantir-text)]">{patient.birth_country}</span>
+          <span className="flex items-center gap-2.5">
+            <GlobeAltIcon className="w-4 h-4 text-emerald-500/30" />
+            <span className="text-white/10">ORIGIN:</span> <span className="text-white/80 font-bold">{patient.birth_country}</span>
           </span>
         )}
       </div>
 
       {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
-      <div className="border border-[var(--palantir-border)] bg-[var(--palantir-surface)] rounded-sm overflow-hidden shadow-2xl">
+      <div className="border border-white/10 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
         <Tabs
           value={currentTab}
           onChange={setTab}
         >
-          <Tab id="info" label="Identity">
+          <Tab id="info" label="Identity_Core">
             <PatientInfoTab patientId={patientId} />
           </Tab>
 
-          <Tab id="consultas" label="Clinical_History">
+          <Tab id="consultas" label="Clinical_Ledger">
             <PatientConsultationsTab patient={patient} />
           </Tab>
 
-          <Tab id="documentos" label="Archives">
+          <Tab id="documentos" label="Archive_Vault">
             <PatientDocumentsTab patient={patient} />
           </Tab>
 
@@ -156,15 +160,15 @@ export default function PatientDetail() {
             <VaccinationTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
 
-          <Tab id="cirugias" label="Surgical">
+          <Tab id="cirugias" label="Surgical_Ops">
             <SurgeriesTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
 
-          <Tab id="citas" label="Schedule">
+          <Tab id="citas" label="Logistics_Schedule">
             <PatientPendingAppointmentsTab patient={patient} />
           </Tab>
 
-          <Tab id="pagos" label="Financial">
+          <Tab id="pagos" label="Financial_Flow">
             <PatientPaymentsTab patient={patient} />
           </Tab>
 

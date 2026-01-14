@@ -19,7 +19,7 @@ import CalendarGrid from "components/Appointments/CalendarGrid";
 import AppointmentFilters from "components/Appointments/AppointmentFilters";
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
 import Pagination from "components/Common/Pagination";
-import PageHeader from "../../components/Common/PageHeader"; // ✅ Integrado
+import PageHeader from "../../components/Common/PageHeader"; 
 
 // Hooks
 import {
@@ -117,10 +117,12 @@ export default function Appointments() {
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       
-      {/* HEADER ESTANDARIZADO CON STATS DINÁMICOS */}
+      {/* HEADER ELITE: Sin título/subtítulo, enfoque en navegación y datos */}
       <PageHeader 
-        title="Registry Manager" 
-        breadcrumb="MEDOPS // CENTRAL_APPOINTMENT_MATRIX"
+        breadcrumbs={[
+          { label: "MEDOPS", path: "/" },
+          { label: "CENTRAL_APPOINTMENT_MATRIX", active: true }
+        ]}
         stats={[
           { 
             label: "Daily_Load", 
@@ -129,7 +131,7 @@ export default function Appointments() {
           { 
             label: "Global_Pending", 
             value: pendingCount,
-            color: pendingCount > 0 ? "text-amber-500" : "text-[var(--palantir-muted)]"
+            color: pendingCount > 0 ? "text-amber-500" : "text-white/40"
           },
           { 
             label: "Sync_Status", 
@@ -140,7 +142,7 @@ export default function Appointments() {
         actions={
           <button
             onClick={() => setShowCreateForm(true)}
-            className="flex items-center gap-2 bg-[var(--palantir-active)] hover:bg-blue-600 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 rounded-sm transition-all shadow-lg shadow-blue-500/10"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 rounded-sm transition-all shadow-lg shadow-blue-500/10 border border-blue-400/20"
           >
             <PlusIcon className="w-4 h-4" />
             New_Mission_Record
@@ -151,10 +153,10 @@ export default function Appointments() {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* COLUMNA IZQUIERDA: CALENDARIO */}
         <div className="xl:col-span-5 space-y-6">
-          <section className="border border-[var(--palantir-border)] bg-[var(--palantir-surface)] p-4 rounded-sm shadow-inner">
-            <div className="flex items-center gap-2 mb-4 border-b border-[var(--palantir-border)]/30 pb-3">
-              <ChartBarIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">Temporal_Heatmap</h2>
+          <section className="border border-white/10 bg-black/20 backdrop-blur-md p-4 rounded-sm shadow-inner">
+            <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+              <ChartBarIcon className="w-4 h-4 text-blue-500" />
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Temporal_Heatmap</h2>
             </div>
             <CalendarGrid
               appointments={allAppointments} 
@@ -166,10 +168,10 @@ export default function Appointments() {
 
         {/* COLUMNA DERECHA: LISTA Y CONTROLES */}
         <div className="xl:col-span-7 space-y-4" ref={listRef}>
-          <div className="border border-[var(--palantir-border)] bg-[var(--palantir-surface)] p-4 space-y-4 rounded-sm">
+          <div className="border border-white/10 bg-black/20 backdrop-blur-md p-4 space-y-4 rounded-sm">
             <div className="flex flex-col sm:flex-row justify-between gap-4 items-center">
               <div className="flex items-center gap-3">
-                <FunnelIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+                <FunnelIcon className="w-4 h-4 text-blue-500" />
                 <h2 className="text-[10px] font-black uppercase tracking-[0.2em]">
                   {selectedDate ? `Filter: ${moment(selectedDate).format("DD_MMM")}` : "Global_Registry"}
                 </h2>
@@ -185,21 +187,21 @@ export default function Appointments() {
             </div>
 
             <div className="relative group">
-              <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-[var(--palantir-active)] animate-pulse' : 'text-[var(--palantir-muted)]'}`} />
+              <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-blue-500 animate-pulse' : 'text-white/20'}`} />
               <input
                 type="text"
-                placeholder="SEARCH_BY_PATIENT_OR_ID... (BACKEND_QUERY)"
+                placeholder="SEARCH_BY_PATIENT_OR_ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-black/20 border border-[var(--palantir-border)] pl-10 pr-10 py-3 text-[11px] font-mono tracking-widest focus:border-[var(--palantir-active)] outline-none transition-all placeholder:text-[var(--palantir-muted)]/30 uppercase rounded-sm"
+                className="w-full bg-black/40 border border-white/10 pl-10 pr-10 py-3 text-[11px] font-mono tracking-widest focus:border-blue-500/50 outline-none transition-all placeholder:text-white/10 uppercase rounded-sm"
               />
               {(isSearching || isFetching) && (
-                <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--palantir-active)] animate-spin" />
+                <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 animate-spin" />
               )}
             </div>
           </div>
 
-          <div className="border border-[var(--palantir-border)] bg-black/10 overflow-hidden min-h-[450px] rounded-sm">
+          <div className="border border-white/10 bg-black/10 overflow-hidden min-h-[450px] rounded-sm">
             <AppointmentsList
               appointments={paginatedAppointments}
               onEdit={(a: Appointment) => setViewingAppointment(a)}
@@ -210,9 +212,9 @@ export default function Appointments() {
 
           {/* PAGINACIÓN TÉCNICA */}
           {!isSearchingActive && totalItems > 0 && (
-            <div className="border border-[var(--palantir-border)] bg-[var(--palantir-surface)] px-4 py-3 flex justify-between items-center rounded-sm">
-              <div className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">
-                Data_Slice: <span className="text-[var(--palantir-text)]">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalItems)}</span> // Total: {totalItems}
+            <div className="border border-white/10 bg-black/20 backdrop-blur-md px-4 py-3 flex justify-between items-center rounded-sm">
+              <div className="text-[10px] font-mono text-white/20 uppercase tracking-widest">
+                Data_Slice: <span className="text-white/80">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalItems)}</span> // Total: {totalItems}
               </div>
               <Pagination
                 currentPage={currentPage}

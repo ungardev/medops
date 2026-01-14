@@ -118,8 +118,6 @@ export default function WaitingRoom() {
     <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-6 relative min-h-[80vh]">
       
       <PageHeader 
-        title="Gestión de Sala"
-        subtitle="MONITOREO DE FLUJO DE PACIENTES // TIEMPO REAL"
         breadcrumbs={[
           { label: "MEDOPS", path: "/" },
           { label: "OPS_CENTRAL", path: "/operations" },
@@ -134,14 +132,14 @@ export default function WaitingRoom() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowConfirmClose(true)}
-              className="px-3 py-1.5 text-[10px] font-black uppercase border border-red-500/40 bg-red-500/5 text-red-500 rounded-sm hover:bg-red-500/20 flex items-center gap-2 transition-all duration-300 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+              className="px-3 py-1.5 text-[10px] font-black uppercase border border-red-500/40 bg-red-500/5 text-red-500 rounded-sm hover:bg-red-500/20 flex items-center gap-2 transition-all duration-300"
             >
               <PowerIcon className="w-3.5 h-3.5" />
               Cerrar Jornada
             </button>
             <button
               onClick={() => setShowModal(true)}
-              className="px-3 py-1.5 text-[10px] font-black uppercase bg-black border border-white/20 text-white rounded-sm hover:bg-white/10 hover:border-white/40 flex items-center gap-2 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+              className="px-3 py-1.5 text-[10px] font-black uppercase bg-white text-black border border-white rounded-sm hover:bg-white/90 flex items-center gap-2 transition-all duration-300"
             >
               <PlusIcon className="w-3.5 h-3.5 stroke-[3px]" />
               Registrar Llegada
@@ -160,13 +158,13 @@ export default function WaitingRoom() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* LISTA PRINCIPAL */}
         <div className="lg:col-span-8 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm">
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-white/[0.02] flex justify-between items-center">
             <div className="flex items-center gap-2">
               <UserGroupIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)]" />
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Live_Queue_Stream</h3>
             </div>
-            <span className="text-[9px] font-mono text-[var(--palantir-muted)] opacity-50 uppercase">Active_Link</span>
           </div>
 
           <div className="min-h-[400px]">
@@ -189,7 +187,6 @@ export default function WaitingRoom() {
                       <span className="mt-1 font-mono text-xs font-bold text-[var(--palantir-muted)] opacity-50">
                         {String(index + 1).padStart(2, '0')}.
                       </span>
-                      
                       <div className="flex flex-col gap-0.5">
                         <p className={`text-[13px] font-black uppercase tracking-tight ${entry.status === 'completed' ? 'text-white/40' : 'text-white'}`}>
                           {entry.patient.full_name}
@@ -200,23 +197,19 @@ export default function WaitingRoom() {
 
                     <div className="flex items-center gap-6">
                       {renderStatusBadge(entry.status)}
-                      
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {entry.status === 'waiting' && (
                           <button 
                             onClick={() => handleStatusChange(entry, "in_consultation")}
-                            className="p-1.5 text-white hover:bg-white/10 rounded-sm transition-all"
-                            title="Iniciar Consulta"
+                            className="p-1.5 text-white hover:bg-white/10 rounded-sm"
                           >
                             <PlayIcon className="w-5 h-5 fill-current" />
                           </button>
                         )}
-                        
                         {entry.status !== 'completed' && (
                           <button 
                             onClick={() => setEntryToCancel(entry)}
-                            className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-sm transition-all"
-                            title="Abortar Proceso"
+                            className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-sm"
                           >
                             <XMarkIcon className="w-5 h-5" />
                           </button>
@@ -230,12 +223,12 @@ export default function WaitingRoom() {
           </div>
         </div>
 
-        <div className="lg:col-span-4 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm">
+        {/* COLUMNA DERECHA */}
+        <div className="lg:col-span-4 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm h-fit">
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-white/[0.02]">
             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Pending_Verification</h3>
           </div>
-
-          <div className="bg-black/20 min-h-[200px]">
+          <div className="bg-black/20">
             {pendingAppointmentsToday.length === 0 ? (
               <div className="p-10 text-center opacity-40">
                 <p className="text-[10px] font-mono italic">STREAMS_CLEAN</p>
@@ -245,24 +238,15 @@ export default function WaitingRoom() {
                 {pendingAppointmentsToday.map((appt) => (
                   <div key={appt.id} className="px-4 py-3 flex justify-between items-center group hover:bg-white/[0.01]">
                     <div className="flex flex-col">
-                      <p className="text-xs font-bold text-white uppercase tracking-tight truncate max-w-[140px]">{appt.patient.full_name}</p>
+                      <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
                       <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
                     </div>
-
                     <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => updateAppointmentStatus.mutate({ id: appt.id, status: "waiting" })}
                         className="p-1 text-emerald-500 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-sm"
-                        title="Validar Llegada"
                       >
                         <PlayIcon className="w-4 h-4 fill-current" />
-                      </button>
-                      <button 
-                        onClick={() => updateAppointmentStatus.mutate({ id: appt.id, status: "canceled" })}
-                        className="p-1 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 border border-red-500/20 rounded-sm"
-                        title="Cancelar"
-                      >
-                        <XMarkIcon className="w-4 h-4" />
                       </button>
                     </div>
                   </div>

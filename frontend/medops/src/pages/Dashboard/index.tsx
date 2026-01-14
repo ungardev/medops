@@ -25,13 +25,11 @@ export default function Dashboard() {
       <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6 animate-in fade-in duration-700">
         
         {/* EVOLUCIÓN ELITE: 
-           1. Cambiamos breadcrumb (string) por breadcrumbs (array funcional).
-           2. Subtítulo dinámico para mayor contexto operativo.
-           3. Stats con colores de alta visibilidad.
+            1. Eliminados title y subtitle: La ubicación se lee en Breadcrumbs.
+            2. DashboardButtonGroup se renderiza a la derecha de las Stats.
+            3. Stats de sistema en el eje central de visualización.
         */}
         <PageHeader 
-          title="Panel de Control" 
-          subtitle="MONITOREO DE SISTEMA OPERATIVO MÉDICO // NIVEL 01"
           breadcrumbs={[
             { label: "MEDOPS", path: "/" },
             { label: "MEDICAL_OPERATIVE_SYSTEM", active: true }
@@ -41,12 +39,12 @@ export default function Dashboard() {
             { 
               label: "OPS_NODE", 
               value: "CENTRAL_SBY", 
-              color: "text-emerald-400" // Verde esmeralda vibrante
+              color: "text-emerald-400" 
             },
             { 
               label: "DATA_RELAY", 
               value: "STABLE", 
-              color: "text-cyan-400" // Cian eléctrico
+              color: "text-cyan-400" 
             },
             { 
               label: "ENCRYPT_LEVEL", 
@@ -56,7 +54,7 @@ export default function Dashboard() {
           ]}
         />
 
-        {/* MÉTRICAS: Se benefician del nuevo espaciado del Header */}
+        {/* MÉTRICAS: Elevadas gracias a la reducción de altura del Header */}
         <section className="animate-in slide-in-from-bottom-2 duration-700 delay-150">
           <MetricsRow />
         </section>
@@ -81,7 +79,7 @@ export default function Dashboard() {
         {/* LOG DE AUDITORÍA: Reforzado con un separador más visible */}
         <section className="pt-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-4">
-             <div className="w-1 h-1 bg-[var(--palantir-active)] rounded-full animate-pulse" />
+             <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
              <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Auditoría_Operacional_Live</span>
           </div>
           <AuditLog />

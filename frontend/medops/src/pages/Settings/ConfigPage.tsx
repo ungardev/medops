@@ -11,32 +11,28 @@ import {
   BuildingOfficeIcon, 
   UserCircleIcon, 
   PencilSquareIcon,
-  CloudArrowUpIcon,
   FingerPrintIcon,
   ShieldCheckIcon,
-  MapPinIcon
+  MapPinIcon,
+  KeyIcon
 } from "@heroicons/react/24/outline";
 
-// 🔹 COMPONENTE DE LOGO ESTABLE (Blindado contra parpadeos y errores de carga)
+// 🔹 COMPONENTE DE LOGO ESTABLE (Blindado contra parpadeos)
 const StableLogo = memo(({ url }: { url: string | null }) => {
   const [imgSrc, setImgSrc] = useState<string>(url || "/logo-placeholder.svg");
 
   useEffect(() => {
-    // Solo actualizamos el estado si la URL entrante es distinta a la que ya mostramos
     const targetUrl = url || "/logo-placeholder.svg";
-    if (targetUrl !== imgSrc) {
-      setImgSrc(targetUrl);
-    }
+    if (targetUrl !== imgSrc) setImgSrc(targetUrl);
   }, [url]);
 
   return (
     <img 
       src={imgSrc} 
-      className="max-h-full object-contain" 
-      alt="Logo"
+      className="max-h-full object-contain filter brightness-90 contrast-125" 
+      alt="Core_Identity_Logo"
       onError={(e) => {
         const target = e.target as HTMLImageElement;
-        // Evitamos bucles infinitos si el placeholder también falla
         if (target.src !== window.location.origin + "/logo-placeholder.svg") {
           target.src = "/logo-placeholder.svg";
         }
@@ -66,29 +62,16 @@ export default function ConfigPage() {
   const [isInstModalOpen, setIsInstModalOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState(false);
   const [initializedDoctor, setInitializedDoctor] = useState(false);
-  const [signaturePreview, setSignaturePreview] = useState<string>("");
+  const [, setSignaturePreview] = useState<string>("");
 
   const [docForm, setDocForm] = useState<DoctorForm>({
-    id: undefined, 
-    full_name: "", 
-    colegiado_id: "", 
-    specialties: [], 
-    license: "", 
-    email: "", 
-    phone: "", 
-    signature: null,
+    id: undefined, full_name: "", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
   });
 
-  // 🔹 MEMOIZACIÓN DE URL REFORZADA:
-  // Detecta si el hook ya entregó la URL completa o si necesita prefijo manual.
   const memoizedLogoUrl = useMemo(() => {
     if (!inst?.logo) return null;
-    
     if (typeof inst.logo === 'string') {
-      // Si ya es una URL absoluta, usarla
       if (inst.logo.startsWith('http')) return inst.logo;
-      
-      // Si es una ruta relativa, normalizar con API_BASE
       const cleanPath = inst.logo.startsWith('/') ? inst.logo : `/${inst.logo}`;
       return `${API_BASE}${cleanPath}`;
     }
@@ -97,11 +80,9 @@ export default function ConfigPage() {
 
   useEffect(() => {
     if (!doc || specialties.length === 0 || initializedDoctor) return;
-    
     const ids = Array.isArray((doc as any).specialty_ids) 
       ? (doc as any).specialty_ids.map((id: number) => Number(id)) 
       : [];
-    
     const matched = specialties.filter((s) => ids.includes(s.id));
     
     setDocForm({
@@ -125,100 +106,101 @@ export default function ConfigPage() {
     }
   };
 
-  const inputStyles = `w-full bg-black/20 border border-white/10 rounded-sm px-4 py-2.5 text-[11px] font-mono text-white focus:outline-none focus:border-[var(--palantir-active)]/50 transition-all`;
-  const labelStyles = `text-[9px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)] mb-1.5 block`;
+  const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-white/10`;
+  const labelStyles = `text-[9px] font-black uppercase tracking-[0.25em] text-white/30 mb-2 block`;
 
   return (
-    <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
-      <style>{`
-        .custom-modal-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-modal-scroll::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.3); }
-        .custom-modal-scroll::-webkit-scrollbar-thumb {
-          background: var(--palantir-active);
-          border-radius: 10px;
-          box-shadow: 0 0 10px var(--palantir-active);
-        }
-      `}</style>
-
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-8 space-y-10 bg-black min-h-screen">
+      
       <PageHeader
-        breadcrumb="SYSTEM // PARAMETERS // IDENTITY"
-        title="CONFIGURATION_VAULT"
-        stats={[
-          { label: "AUTH_LEVEL", value: "ADMIN", color: "text-[var(--palantir-active)]" },
-          { label: "SYNC_STATUS", value: "ENCRYPTED" }
+        breadcrumbs={[
+          { label: "SYSTEM", path: "/" },
+          { label: "PARAMETERS", path: "/settings" },
+          { label: "IDENTITY_VAULT", active: true }
         ]}
+        stats={[
+          { label: "ACCESS_LEVEL", value: "ROOT_ADMIN", color: "text-blue-500" },
+          { label: "SECURITY_STATUS", value: "ENCRYPTED", color: "text-emerald-500" },
+          { label: "LAST_SYNC", value: "STABLE", color: "text-white/40" }
+        ]}
+        actions={
+          <div className="flex h-10 w-10 items-center justify-center bg-blue-500/10 border border-blue-500/20 rounded-sm">
+            <KeyIcon className="w-5 h-5 text-blue-500" />
+          </div>
+        }
       />
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         
         {/* 🏢 INSTITUTIONAL VAULT */}
-        <section className="space-y-4 animate-in fade-in slide-in-from-left-4 duration-500">
-          <div className="flex items-center gap-2 px-1">
-            <BuildingOfficeIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Institutional_Identity</h3>
+        <section className="space-y-4">
+          <div className="flex items-center gap-3 px-1 border-l-2 border-blue-500 ml-1">
+            <BuildingOfficeIcon className="w-4 h-4 text-blue-500" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Core_Organization_Identity</h3>
           </div>
 
-          <div className="bg-white/[0.02] border border-[var(--palantir-border)] p-6 rounded-sm backdrop-blur-md relative overflow-hidden">
+          <div className="bg-white/[0.02] border border-white/10 p-8 rounded-sm backdrop-blur-xl relative overflow-hidden shadow-2xl">
             {instLoading ? (
-              <div className="animate-pulse space-y-4">
-                <div className="h-4 bg-white/5 w-3/4 rounded"></div>
-                <div className="h-20 bg-white/5 w-full rounded"></div>
+              <div className="animate-pulse space-y-6">
+                <div className="h-24 bg-white/5 w-24 rounded-sm" />
+                <div className="h-6 bg-white/5 w-full rounded-sm" />
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="flex flex-col md:flex-row gap-6 items-start">
-                  <div className="w-24 h-24 bg-black/40 border border-[var(--palantir-border)] p-2 flex items-center justify-center overflow-hidden">
+              <div className="space-y-8">
+                <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+                  <div className="w-32 h-32 bg-black border border-white/10 p-4 flex items-center justify-center shadow-inner relative group">
+                    <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <StableLogo url={memoizedLogoUrl} />
                   </div>
-                  <div className="flex-1 space-y-4">
+                  <div className="flex-1 space-y-5 text-center md:text-left">
                     <div>
-                      <span className={labelStyles}>Entity_Name</span>
-                      <p className="text-sm font-bold text-white uppercase tracking-tight">{inst?.name || "UNNAMED_ENTITY"}</p>
+                      <span className={labelStyles}>Legal_Entity_Name</span>
+                      <p className="text-lg font-black text-white uppercase tracking-tight leading-none">{inst?.name || "UNNAMED_ENTITY"}</p>
                     </div>
                     <div>
-                      <span className={labelStyles}>Fiscal_Identifier</span>
-                      <p className="text-xs font-mono text-[var(--palantir-active)]">{inst?.tax_id || "MISSING_RIF"}</p>
+                      <span className={labelStyles}>Fiscal_Identification_UID</span>
+                      <p className="text-xs font-mono text-blue-500 font-bold bg-blue-500/5 px-3 py-1 inline-block rounded-sm">{inst?.tax_id || "NOT_DEFINED"}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-white/5 pt-5 space-y-4">
-                  <div className="flex items-start gap-3">
-                    <MapPinIcon className="w-4 h-4 text-[var(--palantir-muted)] mt-0.5" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                      <div className="space-y-1">
-                        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Region_Hierarchy</span>
-                        <div className="text-[10px] font-mono text-white leading-relaxed uppercase">
-                          {inst?.neighborhood && typeof inst.neighborhood === 'object' && inst.neighborhood.parish ? (
-                            <>
-                              {inst.neighborhood.parish.municipality?.state?.country?.name} <br/>
-                              {inst.neighborhood.parish.municipality?.state?.name} <br/>
-                              {inst.neighborhood.parish.municipality?.name} / {inst.neighborhood.parish.name}
-                            </>
-                          ) : (
-                            <span className="text-amber-500/50 italic">GEOGRAPHIC_CHAIN_NOT_DEFINED</span>
-                          )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
+                  <div className="space-y-2">
+                    <span className="flex items-center gap-2 text-[8px] font-mono text-white/20 uppercase tracking-[0.2em]">
+                      <MapPinIcon className="w-3 h-3" /> Node_Hierarchy
+                    </span>
+                    <div className="text-[10px] font-mono text-white/80 leading-relaxed uppercase bg-black/20 p-4 border border-white/5 rounded-sm">
+                      {inst?.neighborhood && typeof inst.neighborhood === 'object' ? (
+                        <div className="space-y-1">
+                          <p className="opacity-40">{(inst.neighborhood as any).parish?.municipality?.state?.country?.name || "N/A"}</p>
+                          <p className="opacity-60">{(inst.neighborhood as any).parish?.municipality?.state?.name || "N/A"}</p>
+                          <p className="font-bold text-blue-400">
+                            {(inst.neighborhood as any).parish?.municipality?.name} // {(inst.neighborhood as any).parish?.name}
+                          </p>
                         </div>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">Local_Address</span>
-                        <div className="text-[10px] font-mono text-white uppercase italic">
-                          <span className="text-[var(--palantir-active)]">
-                            [{inst?.neighborhood && typeof inst.neighborhood === 'object' ? inst.neighborhood.name : 'N/A'}]
-                          </span>
-                          <br />
-                          {inst?.address || "STREET_DATA_MISSING"}
-                        </div>
-                      </div>
+                      ) : (
+                        <span className="text-amber-500/50 italic font-bold">MISSING_GEODATA</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <span className="flex items-center gap-2 text-[8px] font-mono text-white/20 uppercase tracking-[0.2em]">
+                      <FingerPrintIcon className="w-3 h-3" /> Sector_Location
+                    </span>
+                    <div className="text-[10px] font-mono text-white/80 leading-relaxed uppercase bg-black/20 p-4 border border-white/5 rounded-sm h-full">
+                      <span className="text-blue-500 font-bold">
+                        [{inst?.neighborhood && typeof inst.neighborhood === 'object' ? (inst.neighborhood as any).name : 'N/A'}]
+                      </span>
+                      <p className="mt-2 italic text-white/60">{inst?.address || "STREET_ADDRESS_NOT_REGISTERED"}</p>
                     </div>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setIsInstModalOpen(true)} 
-                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--palantir-active)] hover:text-white transition-colors pt-2"
+                  className="w-full flex items-center justify-center gap-3 py-4 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 transition-all rounded-sm shadow-lg shadow-blue-500/5"
                 >
-                  <PencilSquareIcon className="w-3.5 h-3.5" /> Modify_Record
+                  <PencilSquareIcon className="w-4 h-4" /> Open_Identity_Editor
                 </button>
               </div>
             )}
@@ -226,45 +208,51 @@ export default function ConfigPage() {
         </section>
 
         {/* 👨‍⚕️ PROFESSIONAL VAULT */}
-        <section className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
-          <div className="flex items-center gap-2 px-1">
-            <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Practitioner_Profile</h3>
+        <section className="space-y-4">
+          <div className="flex items-center gap-3 px-1 border-l-2 border-emerald-500 ml-1">
+            <UserCircleIcon className="w-4 h-4 text-emerald-500" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Practitioner_Service_Record</h3>
           </div>
 
-          <div className="bg-white/[0.02] border border-[var(--palantir-border)] p-6 rounded-sm backdrop-blur-md relative">
+          <div className="bg-white/[0.02] border border-white/10 p-8 rounded-sm backdrop-blur-xl relative shadow-2xl">
             {!editingDoctor ? (
-              <div className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-[var(--palantir-active)]/20 to-transparent border border-[var(--palantir-active)]/30 flex items-center justify-center">
-                    <FingerPrintIcon className="w-8 h-8 text-[var(--palantir-active)] opacity-40" />
+              <div className="space-y-8">
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-transparent border border-emerald-500/30 flex items-center justify-center rounded-sm">
+                    <FingerPrintIcon className="w-10 h-10 text-emerald-500 opacity-40" />
                   </div>
                   <div>
-                    <h4 className="text-white font-bold">{docForm.full_name || "NOT_ASSIGNED"}</h4>
-                    <p className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">LICENSE: {docForm.license || "PENDING"}</p>
+                    <h4 className="text-xl font-black text-white uppercase tracking-tighter">{docForm.full_name || "SUBJECT_NAME_PENDING"}</h4>
+                    <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.2em] mt-1 font-bold">PROTOCOL_ID: {docForm.license || "NONE"}</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 border-y border-white/5 py-4">
-                  <div className="flex justify-between text-[10px] uppercase">
-                    <span className="text-[var(--palantir-muted)]">Specialties:</span>
-                    <span className="text-white text-right font-bold">{docForm.specialties.map(s => s.name).join(" // ") || "---"}</span>
+                <div className="space-y-4 border-y border-white/5 py-6">
+                  <div className="flex justify-between items-center text-[10px] uppercase">
+                    <span className="text-white/30 font-bold tracking-widest font-mono">Deploy_Specialties:</span>
+                    <span className="text-white text-right font-black bg-white/5 px-3 py-1">{docForm.specialties.map(s => s.name).join(" // ") || "---"}</span>
                   </div>
-                  <div className="flex justify-between text-[10px] uppercase">
-                    <span className="text-[var(--palantir-muted)]">Board_ID:</span>
-                    <span className="text-white font-mono">{docForm.colegiado_id || "---"}</span>
-                  </div>
-                </div>
-
-                <div>
-                  <span className={labelStyles}>Digital_Signature_Active</span>
-                  <div className="mt-2 h-16 w-full bg-white/5 border border-white/5 flex items-center px-4 grayscale opacity-50">
-                    {docForm.signature ? <span className="text-[9px] font-mono">[ SIGNATURE_BLOB_LOADED ]</span> : <span className="text-[9px] italic">No signature found</span>}
+                  <div className="flex justify-between items-center text-[10px] uppercase">
+                    <span className="text-white/30 font-bold tracking-widest font-mono">Medical_Board_UID:</span>
+                    <span className="text-emerald-500 font-mono font-bold">{docForm.colegiado_id || "UNVERIFIED"}</span>
                   </div>
                 </div>
 
-                <button onClick={() => setEditingDoctor(true)} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--palantir-active)] hover:text-white transition-colors">
-                  <ShieldCheckIcon className="w-3.5 h-3.5" /> Authorization_Required
+                <div className="space-y-3">
+                  <span className={labelStyles}>Digital_Validation_Signature</span>
+                  <div className="h-24 w-full bg-black/40 border border-white/5 flex items-center justify-center grayscale opacity-30 border-dashed">
+                    {docForm.signature ? 
+                      <span className="text-[9px] font-mono tracking-[0.4em]">[ ENCRYPTED_SIGNATURE_BLOB ]</span> : 
+                      <span className="text-[9px] italic opacity-50">NULL_POINTER: NO_SIGNATURE_DATA</span>
+                    }
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setEditingDoctor(true)} 
+                  className="w-full flex items-center justify-center gap-3 py-4 border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 transition-all rounded-sm"
+                >
+                  <ShieldCheckIcon className="w-4 h-4" /> Request_Access_Override
                 </button>
               </div>
             ) : (
@@ -272,16 +260,16 @@ export default function ConfigPage() {
                 e.preventDefault();
                 const payload = { ...docForm, specialty_ids: docForm.specialties.map(s => s.id) };
                 updateDoctor(payload).then(() => setEditingDoctor(false));
-              }} className="space-y-4">
-                <div><label className={labelStyles}>Full_Legal_Name</label><input className={inputStyles} value={docForm.full_name} onChange={(e) => setDocForm({...docForm, full_name: e.target.value})} /></div>
+              }} className="space-y-6">
+                <div><label className={labelStyles}>Full_System_Name</label><input className={inputStyles} value={docForm.full_name} onChange={(e) => setDocForm({...docForm, full_name: e.target.value})} /></div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div><label className={labelStyles}>License_Number</label><input className={inputStyles} value={docForm.license} onChange={(e) => setDocForm({...docForm, license: e.target.value})} /></div>
+                <div className="grid grid-cols-2 gap-6">
+                  <div><label className={labelStyles}>License_UID</label><input className={inputStyles} value={docForm.license} onChange={(e) => setDocForm({...docForm, license: e.target.value})} /></div>
                   <div><label className={labelStyles}>Board_ID</label><input className={inputStyles} value={docForm.colegiado_id} onChange={(e) => setDocForm({...docForm, colegiado_id: e.target.value})} /></div>
                 </div>
 
                 <div className="z-20 relative">
-                  <label className={labelStyles}>Core_Specialties</label>
+                  <label className={labelStyles}>Clinical_Specialties_Array</label>
                   <SpecialtyComboboxElegante
                     value={docForm.specialties}
                     onChange={(next) => setDocForm({ ...docForm, specialties: next })}
@@ -289,17 +277,20 @@ export default function ConfigPage() {
                   />
                 </div>
 
-                <div><label className={labelStyles}>Signature_Upload</label><input type="file" onChange={handleSignatureUpload} className="text-[10px] text-[var(--palantir-muted)] file:bg-white/5 file:border-none file:text-white file:px-3 file:py-1" /></div>
+                <div className="bg-black/40 p-6 border border-white/5 rounded-sm">
+                  <label className={labelStyles}>Signature_Blob_Import</label>
+                  <input type="file" onChange={handleSignatureUpload} className="w-full text-[10px] text-white/40 file:bg-blue-600 file:border-none file:text-white file:px-4 file:py-2 file:text-[9px] file:font-black file:uppercase file:rounded-sm file:mr-4 file:hover:bg-white file:hover:text-black transition-all" />
+                </div>
 
                 <div className="flex gap-4 pt-4">
                   <button 
                     type="submit" 
                     disabled={docLoading}
-                    className="bg-[var(--palantir-active)] text-black text-[10px] font-black px-6 py-2 uppercase tracking-tighter hover:bg-white transition-colors disabled:opacity-50"
+                    className="flex-1 bg-blue-600 text-white text-[10px] font-black px-6 py-4 uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all disabled:opacity-50 rounded-sm shadow-xl shadow-blue-600/10"
                   >
-                    {docLoading ? 'SYNCING...' : 'Commit_Changes'}
+                    {docLoading ? 'DATA_SYNC...' : 'Push_To_Mainframe'}
                   </button>
-                  <button type="button" onClick={() => setEditingDoctor(false)} className="text-[10px] font-black uppercase tracking-tighter text-[var(--palantir-muted)]">Abort</button>
+                  <button type="button" onClick={() => setEditingDoctor(false)} className="px-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors">Abort</button>
                 </div>
               </form>
             )}
@@ -307,15 +298,15 @@ export default function ConfigPage() {
         </section>
       </div>
 
-      <EditInstitutionModal 
-        open={isInstModalOpen} 
-        onClose={() => setIsInstModalOpen(false)} 
-      />
+      <EditInstitutionModal open={isInstModalOpen} onClose={() => setIsInstModalOpen(false)} />
 
-      <footer className="mt-12 opacity-10 flex justify-center">
-        <div className="text-[8px] font-mono uppercase tracking-[0.5em] text-center">
-          SYSTEM_IDENTITY_VERIFIED // SECURE_CONFIG_V2 // ENCRYPTION: AES_256
+      <footer className="mt-16 py-10 border-t border-white/5 flex flex-col items-center gap-4">
+        <div className="flex items-center gap-8 opacity-20">
+            <div className="h-px w-24 bg-gradient-to-l from-white to-transparent" />
+            <div className="text-[9px] font-mono uppercase tracking-[0.8em] text-white">SYSTEM_CORE_V2.4</div>
+            <div className="h-px w-24 bg-gradient-to-r from-white to-transparent" />
         </div>
+        <div className="text-[7px] font-mono text-blue-500/40 uppercase tracking-[0.4em]">AES_256_ENCRYPTED_CONNECTION // SESSION_ID: {Math.random().toString(36).substring(7).toUpperCase()}</div>
       </footer>
     </div>
   );
