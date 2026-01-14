@@ -66,7 +66,7 @@ export default function Patients() {
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       
-      {/* HEADER TÉCNICO: Navegación y métricas de registros */}
+      {/* HEADER TÉCNICO */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -80,29 +80,31 @@ export default function Patients() {
           { 
             label: "DATA_STREAM", 
             value: isLoadingPaged || isSearching ? "SCANNING" : "STABLE",
-            color: isLoadingPaged || isSearching ? "text-amber-500 animate-pulse" : "text-emerald-500"
+            color: isLoadingPaged || isSearching ? "text-white animate-pulse" : "text-emerald-500"
           },
           { 
             label: "VIEW_COUNT", 
             value: list.length.toString().padStart(2, '0'),
-            color: "text-blue-500"
+            color: "text-white"
           }
         ]}
         actions={
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2.5 rounded-sm transition-all shadow-lg shadow-blue-500/10 border border-blue-400/20"
-          >
-            <UserPlusIcon className="w-4 h-4" />
-            New_Subject_Entry
-          </button>
+          <div className="flex bg-[#111] border border-white/10 p-1 rounded-sm shadow-xl">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] px-6 py-2.5 rounded-sm transition-all border border-white/5 active:scale-[0.98]"
+            >
+              <UserPlusIcon className="w-4 h-4 opacity-50" />
+              NEW PATIENT
+            </button>
+          </div>
         }
       />
 
-      {/* 🔍 MAINFRAME SEARCH */}
+      {/* 🔍 MAINFRAME SEARCH - Neutralizado */}
       <div className="relative group">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-          <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-blue-500 animate-pulse' : 'text-white/20'}`} />
+          <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/20'}`} />
         </div>
         <input
           type="text"
@@ -112,17 +114,17 @@ export default function Patients() {
               setCurrentPage(1);
           }}
           placeholder="ACCESS_CENTRAL_DATABASE: BUSCAR POR NOMBRE, UID O FOLIO..."
-          className="w-full bg-black/40 border border-white/10 text-white text-xs font-mono py-4 pl-12 pr-4 rounded-sm focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-white/10 uppercase tracking-[0.1em] shadow-inner"
+          className="w-full bg-black/40 border border-white/10 text-white text-xs font-mono py-4 pl-12 pr-4 rounded-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 uppercase tracking-[0.1em] shadow-inner"
         />
         {(isSearching || query.length > 0) && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <CpuChipIcon className={`w-4 h-4 ${isSearching ? 'text-blue-500 animate-spin' : 'text-white/10'}`} />
+            <CpuChipIcon className={`w-4 h-4 ${isSearching ? 'text-white animate-spin opacity-40' : 'text-white/10'}`} />
           </div>
         )}
       </div>
 
       {/* 🖥️ SUBJECT_GRID_CONTROLLER */}
-      <div className="border border-white/10 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
+      <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <PatientsTable
             headers={["UID_Index", "Identity_Subject", "National_ID", "Class_Status", "Comm_Link", "Actions"]}
@@ -132,7 +134,7 @@ export default function Patients() {
               <tr>
                 <td colSpan={6}>
                   <EmptyState
-                    icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-12 h-12 text-white/10" })}
+                    icon={React.createElement(EmptyStateRegistry.pacientes.icon, { className: "w-12 h-12 text-white/5" })}
                     title={EmptyStateRegistry.pacientes.title}
                     message={query.trim().length > 0 ? "No matches found in the current data slice." : EmptyStateRegistry.pacientes.message}
                   />
@@ -142,16 +144,16 @@ export default function Patients() {
               list.map((p) => (
                 <tr 
                   key={p.id} 
-                  className="border-b border-white/5 hover:bg-blue-500/[0.03] transition-colors group"
+                  className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group"
                 >
-                  <td className="px-4 py-4 text-[11px] font-mono text-blue-400 font-bold w-[120px]">
+                  <td className="px-4 py-4 text-[11px] font-mono text-white font-bold w-[120px]">
                     #{String(p.id).padStart(5, '0')}
                   </td>
                   
                   <td className="px-4 py-4 min-w-[280px]">
                     <div className="flex items-center gap-2">
                       <FingerPrintIcon className="w-3 h-3 text-white/20 shrink-0" />
-                      <div className="text-[11px] font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors line-clamp-1">
+                      <div className="text-[11px] font-black text-white uppercase tracking-tight group-hover:text-emerald-400 transition-colors line-clamp-1">
                         {p.full_name}
                       </div>
                     </div>
@@ -177,7 +179,7 @@ export default function Patients() {
                     <div className="flex items-center gap-4 justify-end">
                       <button 
                         onClick={() => handleView(p.id)}
-                        className="flex items-center gap-1.5 text-white/20 hover:text-blue-400 transition-all group/btn"
+                        className="flex items-center gap-1.5 text-white/20 hover:text-white transition-all group/btn"
                       >
                         <EyeIcon className="w-4 h-4" />
                         <span className="text-[8px] font-black uppercase hidden group-hover/btn:inline">Access</span>
@@ -185,7 +187,7 @@ export default function Patients() {
                       <button 
                         disabled={isDeleting}
                         onClick={() => handleDelete(p)}
-                        className="text-red-500/20 hover:text-red-500 transition-colors"
+                        className="text-white/10 hover:text-red-500 transition-colors"
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
@@ -198,14 +200,14 @@ export default function Patients() {
         </div>
 
         {/* 📟 PANEL DE PAGINACIÓN */}
-        <div className="flex items-center justify-between p-4 border-t border-white/5 bg-black/40 backdrop-blur-md">
+        <div className="flex items-center justify-between p-4 border-t border-white/5 bg-black/40">
           <div className="flex items-center gap-3">
-            <ServerIcon className="w-4 h-4 text-blue-500/40" />
+            <ServerIcon className="w-4 h-4 text-white/20" />
             <div className="flex flex-col">
               <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">
                 Data_Slice: {((currentPage - 1) * pageSize) + 1} — {Math.min(currentPage * pageSize, paged?.total ?? 0)}
               </span>
-              <span className="text-[7px] font-mono text-blue-500/30 uppercase">Integrity_Verified: 100%</span>
+              <span className="text-[7px] font-mono text-emerald-500/30 uppercase">Integrity_Verified: 100%</span>
             </div>
           </div>
           

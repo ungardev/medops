@@ -17,7 +17,7 @@ import {
   KeyIcon
 } from "@heroicons/react/24/outline";
 
-// 🔹 COMPONENTE DE LOGO ESTABLE (Blindado contra parpadeos)
+// 🔹 COMPONENTE DE LOGO ESTABLE
 const StableLogo = memo(({ url }: { url: string | null }) => {
   const [imgSrc, setImgSrc] = useState<string>(url || "/logo-placeholder.svg");
 
@@ -29,7 +29,7 @@ const StableLogo = memo(({ url }: { url: string | null }) => {
   return (
     <img 
       src={imgSrc} 
-      className="max-h-full object-contain filter brightness-90 contrast-125" 
+      className="max-h-full object-contain filter grayscale brightness-125 contrast-125" 
       alt="Core_Identity_Logo"
       onError={(e) => {
         const target = e.target as HTMLImageElement;
@@ -106,7 +106,7 @@ export default function ConfigPage() {
     }
   };
 
-  const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-blue-500/50 transition-all placeholder:text-white/10`;
+  const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10`;
   const labelStyles = `text-[9px] font-black uppercase tracking-[0.25em] text-white/30 mb-2 block`;
 
   return (
@@ -118,13 +118,13 @@ export default function ConfigPage() {
           { label: "CONFIGURATION", active: true }
         ]}
         stats={[
-          { label: "ACCESS_LEVEL", value: "ROOT_ADMIN", color: "text-blue-500" },
-          { label: "SECURITY_STATUS", value: "ENCRYPTED", color: "text-emerald-500" },
+          { label: "ACCESS_LEVEL", value: "ROOT_ADMIN", color: "text-white/80 font-mono" },
+          { label: "SECURITY_STATUS", value: "ENCRYPTED", color: "text-emerald-500/70" },
           { label: "LAST_SYNC", value: "STABLE", color: "text-white/40" }
         ]}
         actions={
-          <div className="flex h-10 w-10 items-center justify-center bg-blue-500/10 border border-blue-500/20 rounded-sm">
-            <KeyIcon className="w-5 h-5 text-blue-500" />
+          <div className="flex h-10 w-10 items-center justify-center bg-white/5 border border-white/10 rounded-sm">
+            <KeyIcon className="w-4 h-4 text-white/40" />
           </div>
         }
       />
@@ -133,12 +133,12 @@ export default function ConfigPage() {
         
         {/* 🏢 INSTITUTIONAL VAULT */}
         <section className="space-y-4">
-          <div className="flex items-center gap-3 px-1 border-l-2 border-blue-500 ml-1">
-            <BuildingOfficeIcon className="w-4 h-4 text-blue-500" />
+          <div className="flex items-center gap-3 px-1 border-l-2 border-white/10 ml-1">
+            <BuildingOfficeIcon className="w-4 h-4 text-white/20" />
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Core_Organization_Identity</h3>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/10 p-8 rounded-sm backdrop-blur-xl relative overflow-hidden shadow-2xl">
+          <div className="bg-[#080808] border border-white/10 p-8 rounded-sm backdrop-blur-xl relative overflow-hidden shadow-2xl">
             {instLoading ? (
               <div className="animate-pulse space-y-6">
                 <div className="h-24 bg-white/5 w-24 rounded-sm" />
@@ -148,7 +148,7 @@ export default function ConfigPage() {
               <div className="space-y-8">
                 <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
                   <div className="w-32 h-32 bg-black border border-white/10 p-4 flex items-center justify-center shadow-inner relative group">
-                    <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     <StableLogo url={memoizedLogoUrl} />
                   </div>
                   <div className="flex-1 space-y-5 text-center md:text-left">
@@ -158,7 +158,7 @@ export default function ConfigPage() {
                     </div>
                     <div>
                       <span className={labelStyles}>Fiscal_Identification_UID</span>
-                      <p className="text-xs font-mono text-blue-500 font-bold bg-blue-500/5 px-3 py-1 inline-block rounded-sm">{inst?.tax_id || "NOT_DEFINED"}</p>
+                      <p className="text-xs font-mono text-white/60 bg-white/5 px-3 py-1 inline-block rounded-sm border border-white/5">{inst?.tax_id || "NOT_DEFINED"}</p>
                     </div>
                   </div>
                 </div>
@@ -173,7 +173,7 @@ export default function ConfigPage() {
                         <div className="space-y-1">
                           <p className="opacity-40">{(inst.neighborhood as any).parish?.municipality?.state?.country?.name || "N/A"}</p>
                           <p className="opacity-60">{(inst.neighborhood as any).parish?.municipality?.state?.name || "N/A"}</p>
-                          <p className="font-bold text-blue-400">
+                          <p className="font-bold text-white/90">
                             {(inst.neighborhood as any).parish?.municipality?.name} // {(inst.neighborhood as any).parish?.name}
                           </p>
                         </div>
@@ -187,17 +187,17 @@ export default function ConfigPage() {
                       <FingerPrintIcon className="w-3 h-3" /> Sector_Location
                     </span>
                     <div className="text-[10px] font-mono text-white/80 leading-relaxed uppercase bg-black/20 p-4 border border-white/5 rounded-sm h-full">
-                      <span className="text-blue-500 font-bold">
+                      <span className="text-white font-bold opacity-70">
                         [{inst?.neighborhood && typeof inst.neighborhood === 'object' ? (inst.neighborhood as any).name : 'N/A'}]
                       </span>
-                      <p className="mt-2 italic text-white/60">{inst?.address || "STREET_ADDRESS_NOT_REGISTERED"}</p>
+                      <p className="mt-2 italic text-white/40">{inst?.address || "STREET_ADDRESS_NOT_REGISTERED"}</p>
                     </div>
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setIsInstModalOpen(true)} 
-                  className="w-full flex items-center justify-center gap-3 py-4 border border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10 text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 transition-all rounded-sm shadow-lg shadow-blue-500/5"
+                  className="w-full flex items-center justify-center gap-3 py-4 border border-white/10 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-white/60 hover:text-white transition-all rounded-sm shadow-lg"
                 >
                   <PencilSquareIcon className="w-4 h-4" /> Open_Identity_Editor
                 </button>
@@ -208,32 +208,32 @@ export default function ConfigPage() {
 
         {/* 👨‍⚕️ PROFESSIONAL VAULT */}
         <section className="space-y-4">
-          <div className="flex items-center gap-3 px-1 border-l-2 border-emerald-500 ml-1">
-            <UserCircleIcon className="w-4 h-4 text-emerald-500" />
+          <div className="flex items-center gap-3 px-1 border-l-2 border-emerald-500/50 ml-1">
+            <UserCircleIcon className="w-4 h-4 text-emerald-500/50" />
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Practitioner_Service_Record</h3>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/10 p-8 rounded-sm backdrop-blur-xl relative shadow-2xl">
+          <div className="bg-[#080808] border border-white/10 p-8 rounded-sm backdrop-blur-xl relative shadow-2xl">
             {!editingDoctor ? (
               <div className="space-y-8">
                 <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-gradient-to-br from-emerald-500/20 to-transparent border border-emerald-500/30 flex items-center justify-center rounded-sm">
-                    <FingerPrintIcon className="w-10 h-10 text-emerald-500 opacity-40" />
+                  <div className="w-20 h-20 bg-emerald-500/[0.03] border border-emerald-500/20 flex items-center justify-center rounded-sm">
+                    <FingerPrintIcon className="w-8 h-8 text-emerald-500/30" />
                   </div>
                   <div>
                     <h4 className="text-xl font-black text-white uppercase tracking-tighter">{docForm.full_name || "SUBJECT_NAME_PENDING"}</h4>
-                    <p className="text-[10px] font-mono text-emerald-500 uppercase tracking-[0.2em] mt-1 font-bold">PROTOCOL_ID: {docForm.license || "NONE"}</p>
+                    <p className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-[0.2em] mt-1 font-bold">PROTOCOL_ID: {docForm.license || "NONE"}</p>
                   </div>
                 </div>
 
                 <div className="space-y-4 border-y border-white/5 py-6">
                   <div className="flex justify-between items-center text-[10px] uppercase">
                     <span className="text-white/30 font-bold tracking-widest font-mono">Deploy_Specialties:</span>
-                    <span className="text-white text-right font-black bg-white/5 px-3 py-1">{docForm.specialties.map(s => s.name).join(" // ") || "---"}</span>
+                    <span className="text-white/80 text-right font-black bg-white/5 px-3 py-1">{docForm.specialties.map(s => s.name).join(" // ") || "---"}</span>
                   </div>
                   <div className="flex justify-between items-center text-[10px] uppercase">
                     <span className="text-white/30 font-bold tracking-widest font-mono">Medical_Board_UID:</span>
-                    <span className="text-emerald-500 font-mono font-bold">{docForm.colegiado_id || "UNVERIFIED"}</span>
+                    <span className="text-emerald-500/60 font-mono font-bold">{docForm.colegiado_id || "UNVERIFIED"}</span>
                   </div>
                 </div>
 
@@ -241,15 +241,15 @@ export default function ConfigPage() {
                   <span className={labelStyles}>Digital_Validation_Signature</span>
                   <div className="h-24 w-full bg-black/40 border border-white/5 flex items-center justify-center grayscale opacity-30 border-dashed">
                     {docForm.signature ? 
-                      <span className="text-[9px] font-mono tracking-[0.4em]">[ ENCRYPTED_SIGNATURE_BLOB ]</span> : 
-                      <span className="text-[9px] italic opacity-50">NULL_POINTER: NO_SIGNATURE_DATA</span>
+                      <span className="text-[9px] font-mono tracking-[0.4em] text-white/40">[ ENCRYPTED_SIGNATURE_BLOB ]</span> : 
+                      <span className="text-[9px] italic text-white/20">NULL_POINTER: NO_SIGNATURE_DATA</span>
                     }
                   </div>
                 </div>
 
                 <button 
                   onClick={() => setEditingDoctor(true)} 
-                  className="w-full flex items-center justify-center gap-3 py-4 border border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 transition-all rounded-sm"
+                  className="w-full flex items-center justify-center gap-3 py-4 border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/50 hover:text-emerald-500 transition-all rounded-sm"
                 >
                   <ShieldCheckIcon className="w-4 h-4" /> Request_Access_Override
                 </button>
@@ -278,14 +278,14 @@ export default function ConfigPage() {
 
                 <div className="bg-black/40 p-6 border border-white/5 rounded-sm">
                   <label className={labelStyles}>Signature_Blob_Import</label>
-                  <input type="file" onChange={handleSignatureUpload} className="w-full text-[10px] text-white/40 file:bg-blue-600 file:border-none file:text-white file:px-4 file:py-2 file:text-[9px] file:font-black file:uppercase file:rounded-sm file:mr-4 file:hover:bg-white file:hover:text-black transition-all" />
+                  <input type="file" onChange={handleSignatureUpload} className="w-full text-[10px] text-white/20 file:bg-white/10 file:border-none file:text-white/60 file:px-4 file:py-2 file:text-[9px] file:font-black file:uppercase file:rounded-sm file:mr-4 file:hover:bg-white file:hover:text-black transition-all" />
                 </div>
 
                 <div className="flex gap-4 pt-4">
                   <button 
                     type="submit" 
                     disabled={docLoading}
-                    className="flex-1 bg-blue-600 text-white text-[10px] font-black px-6 py-4 uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all disabled:opacity-50 rounded-sm shadow-xl shadow-blue-600/10"
+                    className="flex-1 bg-white text-black text-[10px] font-black px-6 py-4 uppercase tracking-[0.3em] hover:bg-emerald-500 hover:text-white transition-all disabled:opacity-50 rounded-sm"
                   >
                     {docLoading ? 'DATA_SYNC...' : 'Push_To_Mainframe'}
                   </button>
@@ -305,7 +305,7 @@ export default function ConfigPage() {
             <div className="text-[9px] font-mono uppercase tracking-[0.8em] text-white">SYSTEM_CORE_V2.4</div>
             <div className="h-px w-24 bg-gradient-to-r from-white to-transparent" />
         </div>
-        <div className="text-[7px] font-mono text-blue-500/40 uppercase tracking-[0.4em]">AES_256_ENCRYPTED_CONNECTION // SESSION_ID: {Math.random().toString(36).substring(7).toUpperCase()}</div>
+        <div className="text-[7px] font-mono text-white/10 uppercase tracking-[0.4em]">AES_256_ENCRYPTED_CONNECTION // SESSION_ID: {Math.random().toString(36).substring(7).toUpperCase()}</div>
       </footer>
     </div>
   );

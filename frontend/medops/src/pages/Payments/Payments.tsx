@@ -69,13 +69,13 @@ export default function Payments() {
           { 
             label: "CORE_STATUS", 
             value: loading ? "SYNCING" : "STABLE",
-            color: loading ? "animate-pulse text-blue-500" : "text-emerald-500/50"
+            color: loading ? "animate-pulse text-white" : "text-emerald-500/50"
           }
         ]}
         actions={
-          <div className="flex items-center gap-3 px-4 py-2 bg-white/5 border border-white/10 rounded-sm shadow-inner">
-            <ShieldCheckIcon className="w-3.5 h-3.5 text-emerald-500/70" />
-            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/40">
+          <div className="flex items-center gap-3 px-4 py-2 bg-[#111] border border-white/10 rounded-sm shadow-xl">
+            <ShieldCheckIcon className="w-3.5 h-3.5 text-white/40" />
+            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/60">
               Auth: Secure_Vault_Primary
             </span>
           </div>
@@ -84,8 +84,8 @@ export default function Payments() {
 
       {/* 📊 PANEL DE MÉTRICAS GLOBALES */}
       <section className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-        <div className="flex items-center gap-2 px-1 border-l-2 border-blue-600 ml-1">
-          <CircleStackIcon className="w-3.5 h-3.5 text-blue-500" />
+        <div className="flex items-center gap-2 px-1 border-l-2 border-white/10 ml-1">
+          <CircleStackIcon className="w-3.5 h-3.5 text-white/20" />
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
             Capital_Flow_Analysis
           </h3>
@@ -97,14 +97,14 @@ export default function Payments() {
       <section className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
-            <BanknotesIcon className="w-3.5 h-3.5 text-blue-500" />
+            <BanknotesIcon className="w-3.5 h-3.5 text-white/20" />
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
               Transaction_Buffer_Stream
             </h3>
           </div>
         </div>
 
-        <div className="border border-white/10 bg-black/40 rounded-sm overflow-hidden shadow-2xl backdrop-blur-md">
+        <div className="border border-white/10 bg-[#0a0a0b] rounded-sm overflow-hidden shadow-2xl backdrop-blur-md">
           <ChargeOrderList
             orders={orders}
             loading={loading}
@@ -124,26 +124,26 @@ export default function Payments() {
                 <button
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                  className="group flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-[0.2em] transition-all rounded-sm text-white/60"
+                  className="group flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono border border-white/10 hover:border-white/30 hover:bg-white/5 disabled:opacity-10 disabled:cursor-not-allowed uppercase tracking-[0.2em] transition-all rounded-sm text-white/60"
                 >
-                  <ChevronLeftIcon className="w-3.5 h-3.5" />
+                  <ChevronLeftIcon className="w-3.5 h-3.5 opacity-50" />
                   Block_Prev
                 </button>
                 <button
                   disabled={endIdx >= totalCount}
                   onClick={() => setCurrentPage((p) => p + 1)}
-                  className="group flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono border border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 disabled:opacity-20 disabled:cursor-not-allowed uppercase tracking-[0.2em] transition-all rounded-sm text-white/60"
+                  className="group flex items-center gap-2 px-4 py-2.5 text-[10px] font-mono border border-white/10 hover:border-white/30 hover:bg-white/5 disabled:opacity-10 disabled:cursor-not-allowed uppercase tracking-[0.2em] transition-all rounded-sm text-white/60"
                 >
                   Block_Next
-                  <ChevronRightIcon className="w-3.5 h-3.5" />
+                  <ChevronRightIcon className="w-3.5 h-3.5 opacity-50" />
                 </button>
               </div>
 
               <div className="hidden sm:flex flex-col items-end text-right">
                 <span className="text-[10px] font-mono text-white/20 tracking-tighter">
-                  TRANSACTION_INDEX: <span className="text-blue-500">{startIdx.toString().padStart(4, '0')}</span> - {endIdx.toString().padStart(4, '0')} // TOTAL_SET: {totalCount}
+                  TRANSACTION_INDEX: <span className="text-white/80">{startIdx.toString().padStart(4, '0')}</span> - {endIdx.toString().padStart(4, '0')} // TOTAL_SET: {totalCount}
                 </span>
-                <span className="text-[7px] font-mono text-blue-500/30 uppercase tracking-[0.3em] mt-1">
+                <span className="text-[7px] font-mono text-white/10 uppercase tracking-[0.3em] mt-1">
                   Secure_Ledger_Transmission_Verified
                 </span>
               </div>
