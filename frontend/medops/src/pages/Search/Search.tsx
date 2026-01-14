@@ -95,7 +95,7 @@ export default function SearchPage() {
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
       <PageHeader 
         breadcrumbs={[
-          { label: "SYSTEM", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "SEARCH", active: true }
         ]}
         stats={[

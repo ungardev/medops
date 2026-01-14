@@ -84,8 +84,8 @@ export default function ChargeOrderDetail() {
       
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
-          { label: "FINANCE", path: "/payments" },
+          { label: "MEDOPZ", path: "/" },
+          { label: "PAYMENTS", path: "/payments" },
           { label: `ORDER_DET_#${order.id}`, active: true }
         ]}
         stats={[

@@ -31,7 +31,7 @@ export default function Dashboard() {
         */}
         <PageHeader 
           breadcrumbs={[
-            { label: "MEDOPS", active: true }
+            { label: "MEDOPZ", active: true }
           ]}
           actions={<DashboardButtonGroup />}
           stats={[

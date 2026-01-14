@@ -114,7 +114,7 @@ export default function ConfigPage() {
       
       <PageHeader
         breadcrumbs={[
-          { label: "SYSTEM", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "CONFIGURATION", active: true }
         ]}
         stats={[

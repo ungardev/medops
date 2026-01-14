@@ -52,7 +52,7 @@ export default function Payments() {
       {/* 🚀 HEADER TÉCNICO: Navegación Financiera */}
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "PAYMENTS", active: true }
         ]}
         stats={[

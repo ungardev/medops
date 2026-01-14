@@ -95,8 +95,8 @@ export default function PatientConsultationsDetail() {
       {/* 🚀 HEADER: Navegación de Carpeta Clínica */}
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
-          { label: "DATABASE", path: "/patients" },
+          { label: "MEDOPZ", path: "/" },
+          { label: "PATIENTS", path: "/patients" },
           { label: patientFullName, path: `/patients/${patientId}` },
           { label: `CONSULTATION_SESS_${appointment.id}`, active: true }
         ]}

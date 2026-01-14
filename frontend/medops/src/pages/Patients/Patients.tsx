@@ -69,7 +69,7 @@ export default function Patients() {
       {/* HEADER TÉCNICO: Navegación y métricas de registros */}
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "PATIENTS", active: true }
         ]}
         stats={[

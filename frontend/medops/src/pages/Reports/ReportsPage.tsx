@@ -30,7 +30,7 @@ export default function ReportsPage() {
       {/* 📡 CABECERA DE OPERACIONES ANALÍTICAS - CORREGIDA */}
       <PageHeader
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "REPORTS", active: true }
         ]}
         stats={[

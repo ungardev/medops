@@ -140,9 +140,8 @@ export default function Consultation() {
       {/* HEADER TÁCTICO: Foco en Metadatos de Sesión */}
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
-          { label: "OPERATIVE_SYSTEM", path: "/operations" },
-          { label: `SESSION_ID_${appointment.id.toString().padStart(6, '0')}`, active: true }
+          { label: "MEDOPZ", path: "/" },
+          { label: "CONSULTATION", active: true }
         ]}
         stats={[
           { 

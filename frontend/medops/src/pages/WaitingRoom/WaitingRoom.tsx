@@ -119,7 +119,7 @@ export default function WaitingRoom() {
       
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "WAITING_ROOM", active: true }
         ]}
         stats={[

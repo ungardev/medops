@@ -81,8 +81,8 @@ export default function PatientDetail() {
       {/* 🚀 ELITE_PAGE_HEADER: IDENTITY & TELEMETRY */}
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
-          { label: "DATABASE", path: "/patients" },
+          { label: "MEDOPZ", path: "/" },
+          { label: "PATIENTS", path: "/patients" },
           { label: `SUBJECT_ID_${patient.id.toString().padStart(6, '0')}`, active: true }
         ]}
         stats={[

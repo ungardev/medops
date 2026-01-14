@@ -120,7 +120,7 @@ export default function Appointments() {
       {/* HEADER ELITE: Sin título/subtítulo, enfoque en navegación y datos */}
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "APPOINTMENTS", active: true }
         ]}
         stats={[
