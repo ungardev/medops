@@ -29,8 +29,8 @@ if SECRET_KEY == "inseguro-en-dev":
 
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-# Asegura hosts válidos en dev y docker
-ALLOWED_HOSTS = [h for h in os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+# Ajuste para Docker: 'web' es el nombre del servicio en docker-compose, '0.0.0.0' para Gunicorn
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,web,0.0.0.0").split(",")
 
 # === Apps ===
 INSTALLED_APPS = [
@@ -60,7 +60,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # 👈 Debe ir arriba de CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',  # <--- Siempre arriba de CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -69,8 +69,11 @@ MIDDLEWARE = [
     'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
+# === Ajustes Críticos para CORS y Docker ===
+APPEND_SLASH = False # Evita redirecciones 301 que rompen el pre-flight de CORS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") # Necesario para Nginx
+
 # === DRF / API ===
-# Se utiliza TokenAuthentication para el flujo con el frontend (React/Vite)
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -84,7 +87,7 @@ REST_FRAMEWORK = {
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
 }
 
-# Configuración de Documentación OpenAPI
+# Configuración OpenAPI
 SPECTACULAR_SETTINGS = {
     "TITLE": "MedOps API",
     "DESCRIPTION": "Documentación de la API de MedOps - Sistema de Gestión Médica",
@@ -101,13 +104,11 @@ SPECTACULAR_SETTINGS = {
 }
 
 # === Seguridad Extra ===
-# Configuraciones recomendadas para entornos médicos e integridad de datos
 X_FRAME_OPTIONS = "DENY"
 SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_SSL_REDIRECT = not DEBUG
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
@@ -132,25 +133,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'medops.wsgi.application'
 
-# === Base de Datos (PostgreSQL) ===
+# === Base de Datos (PostgreSQL en Docker) ===
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASSWORD"),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "HOST": os.environ.get("DB_HOST", "db"), # Generalmente 'db' en docker-compose
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
-
-# === Validación de Contraseñas ===
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
-]
 
 # === Internacionalización ===
 LANGUAGE_CODE = 'es-ve'
@@ -168,11 +161,9 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
 
-# === Primary key por defecto ===
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# === Logging y Auditoría ===
-# Nota: Asegúrate de que el directorio 'logs' exista en BASE_DIR
+# === Logging ===
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -181,70 +172,40 @@ LOGGING = {
             "format": "[{asctime}] {levelname} {name}: {message}",
             "style": "{",
         },
-        "audit": {
-            "format": "%(asctime)s [%(levelname)s] %(message)s",
-        },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "verbose",
         },
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": os.environ.get("DJANGO_LOG_FILE", BASE_DIR / "django.log"),
-            "level": "WARNING",
-            "formatter": "verbose",
-        },
-        "audit_file": {
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "audit.log" if os.path.exists(BASE_DIR / "logs") else BASE_DIR / "audit.log",
-            "formatter": "audit",
-            "encoding": "utf-8",
-        },
     },
     "root": {
-        "handlers": ["console", "file"],
+        "handlers": ["console"],
         "level": "INFO",
-    },
-    "loggers": {
-        "django.request": {
-            "handlers": ["file"],
-            "level": "ERROR",
-            "propagate": False,
-        },
-        "audit": {
-            "handlers": ["audit_file"],
-            "level": "INFO",
-            "propagate": False,
-        },
-        "core": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG",
-            "propagate": False,
-        },
     },
 }
 
-# === CORS / CSRF ===
+# === CORS / CSRF CONFIGURATION ===
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", # Vite Dev Server
     "http://localhost:8080", # Producción local / Nginx
     "http://127.0.0.1:8080",
+    "http://127.0.0.1:5173",
 ]
 
-CORS_ALLOW_CREDENTIALS = False
+# Permitir credenciales (importante para Auth Tokens y Cookies)
+CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 CORS_ALLOW_HEADERS = [
+    "accept",
     "authorization",
     "content-type",
-    "accept",
-    "origin",
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    "origin",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -253,7 +214,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8080",
 ]
 
-# === ICD API (CIE-11) Credentials & Base URLs ===
+# === ICD API (CIE-11) ===
 ICD_CLIENT_ID = os.environ.get("ICD_CLIENT_ID")
 ICD_CLIENT_SECRET = os.environ.get("ICD_CLIENT_SECRET")
 ICD_API_BASE_ES = os.environ.get("ICD_API_BASE_ES", "http://icdapi_es/icd")
