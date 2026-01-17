@@ -44,15 +44,13 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         tax_id: settings.tax_id || "",
         address: settings.address || "",
         neighborhood: finalId || null, 
-        parishId: (rawNB as any)?.parish?.id || null, // Guardamos la parroquia para creación dinámica
+        parishId: (rawNB as any)?.parish?.id || null,
         logo: null
       });
       
-      // 2. Normalización del Logo para previsualización (Blindaje contra iconos rotos)
+      // 2. Normalización del Logo para previsualización
       if (settings.logo && typeof settings.logo === 'string') {
         const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        
-        // Si ya es una URL completa (http), la usamos. Si no, concatenamos la base.
         const fullUrl = settings.logo.startsWith('http') 
           ? settings.logo 
           : `${API_BASE}${settings.logo.startsWith('/') ? '' : '/'}${settings.logo}`;
@@ -79,7 +77,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     try {
       let finalNeighborhoodId: number;
 
-      // 1. Manejo de sectores nuevos
+      // 1. Manejo de sectores nuevos (Dinámicos)
       if (typeof formData.neighborhood === 'string') {
         const newNB = await createNeighborhood(formData.neighborhood, formData.parishId!);
         finalNeighborhoodId = newNB.id;
@@ -87,26 +85,20 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         finalNeighborhoodId = formData.neighborhood;
       }
 
-      // 2. PRIMER ENVÍO: Datos de texto y Geografía
-      const plainData = {
+      // 2. ENVÍO ÚNICO (ELITE WAY): 
+      // Enviamos un objeto plano. El hook se encargará de convertirlo a FormData 
+      // si detecta que 'logo' es una instancia de File.
+      await updateInstitution({
         name: formData.name.toUpperCase(),
         phone: formData.phone,
         tax_id: formData.tax_id.toUpperCase(),
         address: formData.address.toUpperCase(),
         neighborhood: Number(finalNeighborhoodId),
-      };
-      
-      await updateInstitution(plainData);
-
-      // 3. SEGUNDO ENVÍO: Solo el Logo (Multipart)
-      if (formData.logo instanceof File) {
-        const logoForm = new FormData();
-        logoForm.append("logo", formData.logo);
-        await updateInstitution(logoForm);
-      }
+        logo: formData.logo // Si es null, el hook enviará JSON. Si es File, enviará Multipart.
+      });
       
       onClose();
-      // Pequeño delay para asegurar que el backend persista antes de refrescar
+      // Delay para asegurar persistencia antes de refrescar la UI
       setTimeout(() => window.location.reload(), 600);
 
     } catch (err) {
@@ -191,7 +183,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </div>
             </div>
 
-            {/* Selector de Ubicación Jerárquico con Persistencia */}
+            {/* Location Selector */}
             <div className="mt-12 pt-8 border-t border-[var(--palantir-border)]/20">
                <LocationSelector 
                 initialData={{
@@ -205,7 +197,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               />
             </div>
 
-            {/* Dirección Detallada */}
+            {/* Address */}
             <div className="mt-8 space-y-2">
               <label className="text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase px-1">Local_Address_Metadata</label>
               <textarea 
