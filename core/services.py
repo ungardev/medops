@@ -63,7 +63,7 @@ from .models import (
     MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, 
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, 
     PatientVaccination, Allergy, MedicalHistory, ClinicalAlert, Country, State, 
-    Municipality, City, Parish, Neighborhood, VitalSigns
+    Municipality, City, Parish, Neighborhood, VitalSigns, ClinicalNote
 )
 
 # 7. Serializadores Locales
@@ -912,4 +912,198 @@ def get_daily_metrics() -> Dict[str, Any]:
             .annotate(total=Sum("amount"))
         ),
     }
+
+
+def check_patient_safety(patient_id: int) -> List[Dict[str, Any]]:
+    """
+    Analiza el perfil del paciente para generar alertas preventivas inmediatas.
+    """
+    alerts = []
+    patient = Patient.objects.get(pk=patient_id)
     
+    # 1. Verificación de Alergias Críticas
+    allergies = patient.allergies.all()
+    if allergies.exists():
+        msg = f"Alergias detectadas: {', '.join([a.name for a in allergies])}."
+        alerts.append({"type": "danger", "message": msg, "icon": "ExclamationTriangleIcon"})
+
+    # 2. Alerta de Antecedentes Genéticos
+    genetic_risks = patient.genetic_predispositions.all()
+    if genetic_risks.exists():
+        alerts.append({
+            "type": "warning", 
+            "message": f"Riesgo genético: {', '.join([g.name for g in genetic_risks])}",
+            "icon": "FingerPrintIcon"
+        })
+
+    # 3. Alerta de Signos Vitales (última toma)
+    last_vitals = VitalSigns.objects.filter(patient=patient).order_by('-created_at').first()
+    if last_vitals and last_vitals.is_abnormal: # Asumiendo lógica en el modelo
+        alerts.append({
+            "type": "critical",
+            "message": "Últimos signos vitales fuera de rango normal.",
+            "icon": "HeartIcon"
+        })
+
+    return alerts
+
+def lock_consultation_integrity(appointment_id: int):
+    """
+    Cierra la consulta y genera un sello de integridad médico-legal.
+    """
+    with transaction.atomic():
+        note = ClinicalNote.objects.get(appointment_id=appointment_id)
+        if not note.is_locked:
+            note.is_locked = True
+            note.locked_at = timezone.now()
+            # Generar un hash único de la nota para prevenir alteraciones en DB
+            content_block = f"{note.subjective}{note.objective}{note.analysis}{note.plan}"
+            note.security_hash = hashlib.sha256(content_block.encode()).hexdigest()
+            note.save()
+            
+            # Actualizar estado de la cita
+            note.appointment.status = "completed"
+            note.appointment.save()
+    return note
+
+
+def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]:
+    """
+    Fábrica universal de PDFs médicos con QR de auditoría.
+    Soporta: prescriptions, treatments, referrals, medical_tests.
+    """
+    # 1. Preparar datos base
+    patient = instance.patient
+    appointment = instance.appointment
+    doctor = appointment.doctor if appointment else None
+    # Obtenemos la configuración de la clínica (Logo, Dirección, etc.)
+    institution = InstitutionSettings.objects.first()
+    
+    # 2. Generar Código de Auditoría Único (Sello de autenticidad inalterable)
+    raw_code = f"{category}-{instance.id}-{timezone.now().timestamp()}"
+    audit_code = hashlib.sha256(raw_code.encode()).hexdigest()[:12].upper()
+
+    # 3. Generar QR de Verificación
+    # Cambiamos 'format' por 'kind' para solucionar el error de Pylance
+    qr = qrcode.QRCode(box_size=10, border=2)
+    qr.add_data(f"VERIFY_DOC:{audit_code}")
+    qr.make(fit=True)
+    img_qr = qr.make_image(fill_color="black", back_color="white")
+    
+    buffer = BytesIO()
+    img_qr.save(buffer, kind="PNG") # Fix Pylance: usando kind en lugar de format
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    # 4. Selección Dinámica de Plantilla HTML
+    template_map = {
+        'prescriptions': 'pdf/prescription_template.html',
+        'treatments': 'pdf/treatment_template.html',
+        'referrals': 'pdf/referral_template.html',
+        'medical_tests': 'pdf/medical_test_template.html',
+    }
+    template_path = template_map.get(category, 'pdf/generic_medical_doc.html')
+
+    # 5. Renderizado de PDF con WeasyPrint
+    context = {
+        "data": instance,
+        "patient": patient,
+        "doctor": doctor,
+        "institution": institution,
+        "audit_code": audit_code,
+        "qr_code_url": f"data:image/png;base64,{qr_base64}",
+        "generated_at": timezone.now(),
+    }
+
+    html_string = render_to_string(template_path, context)
+    
+    # Generar los bytes del PDF con WeasyPrint
+    pdf_bytes = HTML(
+        string=html_string, 
+        base_url=settings.MEDIA_ROOT
+    ).write_pdf() or b""
+
+    filename = f"{category}_{instance.id}_{audit_code}.pdf"
+    
+    return pdf_bytes, filename, audit_code
+
+
+def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
+    """
+    Genera automáticamente todos los documentos PDF de una cita.
+    Incluye un sistema de protección contra fallos (Fail-safe).
+    """
+    generated_files = []
+    errors = []
+    
+    # Mapeo de categorías y sus respectivos QuerySets vinculados a la cita
+    generators = {
+        'prescriptions': appointment.prescriptions.all(),
+        'treatments': appointment.treatments.all(),
+        'referrals': appointment.referrals.all(),
+        'medical_tests': appointment.medical_tests.all(),
+    }
+    
+    for category, queryset in generators.items():
+        for item in queryset:
+            try:
+                # Ejecutamos la fábrica de PDFs
+                pdf_bytes, filename, audit_code = generate_generic_pdf(item, category) 
+                
+                # Guardamos el registro en la base de datos (MedicalDocument)
+                doc = MedicalDocument.objects.create(
+                    patient=appointment.patient,
+                    appointment=appointment,
+                    user=user,
+                    file_name=filename,
+                    category=category,
+                    audit_code=audit_code,
+                    origin_panel="bulk_generator"
+                )
+                
+                # Guardamos el archivo físico en el almacenamiento (Media)
+                doc.file.save(filename, ContentFile(pdf_bytes))
+                
+                generated_files.append({
+                    "id": doc.id, 
+                    "name": filename, 
+                    "category": category,
+                    "url": doc.file.url if doc.file else None
+                })
+            except Exception as e:
+                # Si un documento falla, lo registramos pero permitimos que los demás continúen
+                errors.append(f"Error en {category} (ID: {item.id}): {str(e)}")
+
+    return {
+        "status": "success" if not errors else "partial_success",
+        "total_generated": len(generated_files),
+        "documents": generated_files,
+        "errors": errors if errors else None
+    }
+
+
+def get_advanced_metrics() -> Dict[str, Any]:
+    today = localdate()
+    yesterday = today - timedelta(days=1)
+    
+    # Métricas actuales
+    current_patients = Patient.objects.count()
+    current_revenue = Payment.objects.filter(payment_date=today).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Cálculo de tendencia (Growth %)
+    prev_patients = Patient.objects.filter(created_at__date=yesterday).count()
+    growth = ((current_patients - prev_patients) / prev_patients * 100) if prev_patients > 0 else 100
+
+    return {
+        "summary": {
+            "totalPatients": current_patients,
+            "todayRevenue": float(current_revenue),
+            "patientGrowth": round(growth, 2),
+            "pendingPayments": Payment.objects.filter(status="pending").count(),
+        },
+        "appointmentVolume": list(
+            Appointment.objects.filter(appointment_date__range=[today - timedelta(days=7), today])
+            .values('appointment_date')
+            .annotate(count=Count('id'))
+            .order_by('appointment_date')
+        )
+    }

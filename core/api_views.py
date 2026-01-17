@@ -1969,3 +1969,26 @@ def documents_api(request):
     # CORRECCIÓN: Uso de MedicalDocumentReadSerializer
     serializer = MedicalDocumentReadSerializer(qs, many=True, context={'request': request})
     return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def patient_safety_check_api(request, patient_id):
+    """Endpoint para que la UI muestre alertas rojas/amarillas al abrir un paciente."""
+    alerts = services.check_patient_safety(patient_id)
+    return Response(alerts)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def finalize_consultation_api(request, appointment_id):
+    """Cierre formal de la consulta con sello de seguridad."""
+    try:
+        note = services.lock_consultation_integrity(appointment_id)
+        return Response({
+            "message": "Consulta finalizada y sellada.",
+            "locked_at": note.locked_at,
+            "security_hash": note.security_hash
+        })
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)

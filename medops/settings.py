@@ -40,33 +40,37 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
+    # Herramientas de Terceros
     'rest_framework',
-    "rest_framework.authtoken",
-    'core.apps.CoreConfig',
-    "rangefilter",
+    'rest_framework.authtoken',
+    'corsheaders',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
+    'django_filters',
+    'django_extensions',
     'simple_history',
-    "corsheaders",
-    "drf_spectacular",
-    "drf_spectacular_sidecar",
-    "django_filters",
-    "django_extensions",
+    'rangefilter',
+    
+    # App Principal
+    'core.apps.CoreConfig',
 ]
 
 # === Middleware ===
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    "corsheaders.middleware.CorsMiddleware",   # 👈 debe ir arriba de CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',  # 👈 Debe ir arriba de CommonMiddleware
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware'
+    'simple_history.middleware.HistoryRequestMiddleware',
 ]
 
 # === DRF / API ===
-# 🔹 Eliminamos SessionAuthentication para evitar CSRF en API.
+# Se utiliza TokenAuthentication para el flujo con el frontend (React/Vite)
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -75,28 +79,29 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
-    # 🔹 Paginación global
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
-    # 🔹 Formato global de fechas (ISO con zona horaria)
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
 }
 
+# Configuración de Documentación OpenAPI
 SPECTACULAR_SETTINGS = {
     "TITLE": "MedOps API",
-    "DESCRIPTION": "Documentación de la API de MedOps",
+    "DESCRIPTION": "Documentación de la API de MedOps - Sistema de Gestión Médica",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,
     "SCHEMA_PATH_PREFIX": r"/api",
     "SECURITY": [
-        {"basicAuth": []},
-        {"cookieAuth": []},
         {"tokenAuth": []},
     ],
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
 }
 
-# Seguridad extra (solo efectiva en producción con HTTPS)
+# === Seguridad Extra ===
+# Configuraciones recomendadas para entornos médicos e integridad de datos
 X_FRAME_OPTIONS = "DENY"
 SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = not DEBUG
@@ -127,19 +132,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'medops.wsgi.application'
 
-# === Base de datos ===
+# === Base de Datos (PostgreSQL) ===
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "ClaveSegura123!"),
+        "PASSWORD": os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST", "localhost"),
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
 
-# === Validación de contraseñas ===
+# === Validación de Contraseñas ===
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -148,12 +153,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # === Internacionalización ===
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-ve'
 TIME_ZONE = 'America/Caracas'
 USE_I18N = True
 USE_TZ = True
 
-# === Archivos estáticos y media ===
+# === Archivos Estáticos y Media ===
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "frontend" / "medops" / "dist" / "assets",
@@ -166,7 +171,8 @@ MEDIA_ROOT = BASE_DIR / "media"
 # === Primary key por defecto ===
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# === Logging básico ===
+# === Logging y Auditoría ===
+# Nota: Asegúrate de que el directorio 'logs' exista en BASE_DIR
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -192,7 +198,7 @@ LOGGING = {
         },
         "audit_file": {
             "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "audit.log",
+            "filename": BASE_DIR / "logs" / "audit.log" if os.path.exists(BASE_DIR / "logs") else BASE_DIR / "audit.log",
             "formatter": "audit",
             "encoding": "utf-8",
         },
@@ -221,23 +227,15 @@ LOGGING = {
 }
 
 # === CORS / CSRF ===
-# Orígenes permitidos para frontend en dev (Vite y Nginx reverse proxy)
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:8080",
+    "http://localhost:5173", # Vite Dev Server
+    "http://localhost:8080", # Producción local / Nginx
     "http://127.0.0.1:8080",
 ]
 
 CORS_ALLOW_CREDENTIALS = False
 
-CORS_ALLOW_METHODS = [
-    "GET",
-    "POST",
-    "PUT",
-    "PATCH",
-    "DELETE",
-    "OPTIONS",
-]
+CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 
 CORS_ALLOW_HEADERS = [
     "authorization",
@@ -249,16 +247,14 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
 ]
 
-# Si en algún flujo usas cookies/CSRF (admin, vistas server-side), confía en estos orígenes
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
 ]
 
-# === ICD API Credentials & Base URLs ===
+# === ICD API (CIE-11) Credentials & Base URLs ===
 ICD_CLIENT_ID = os.environ.get("ICD_CLIENT_ID")
 ICD_CLIENT_SECRET = os.environ.get("ICD_CLIENT_SECRET")
-
 ICD_API_BASE_ES = os.environ.get("ICD_API_BASE_ES", "http://icdapi_es/icd")
 ICD_API_BASE_EN = os.environ.get("ICD_API_BASE_EN", "http://icdapi_en/icd")
