@@ -6,13 +6,17 @@ from .models import (
     ChargeOrder, ChargeItem, InstitutionSettings, DoctorOperator, MedicalReport,
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
-    Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood
+    Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
+    ClinicalNote, VitalSigns, MedicalTestCatalog
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
 from typing import Optional, Any, cast
 from decimal import Decimal, InvalidOperation
 from django.db import models
+from django.utils import timezone
+from typing import Dict, Any, cast
+import hashlib
 
 # --- Pacientes ---
 class GeneticPredispositionSerializer(serializers.ModelSerializer):
@@ -26,10 +30,67 @@ class AllergySerializer(serializers.ModelSerializer):
         model = Allergy
         fields = ["id", "name", "severity", "source", "notes", "created_at", "updated_at"]
 
+
 class MedicalHistorySerializer(serializers.ModelSerializer):
+    """
+    Serializer Élite para Antecedentes Médicos (Problemas/Condiciones Crónicas).
+    Gestiona la persistencia de la salud del paciente fuera de las citas.
+    """
+    # Representaciones amigables para el Frontend
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+
     class Meta:
         model = MedicalHistory
-        fields = ["id", "condition", "status", "source", "notes", "created_at", "updated_at"]
+        fields = [
+            "id", 
+            "patient", 
+            "patient_name",
+            "condition",     # Ej: "Hipertensión Arterial"
+            "status",        # active, resolved, suspected, remission, permanent
+            "status_display",
+            "source",        # Fuente: diagnóstico oficial, referencia externa, etc.
+            "notes",         
+            "onset_date",    # Fecha de inicio o diagnóstico inicial
+            "created_at", 
+            "updated_at"
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_onset_date(self, value):
+        """Validación de integridad temporal: No aceptamos viajeros del futuro."""
+        if value and value > timezone.now().date():
+            raise serializers.ValidationError("La fecha de aparición no puede ser futura.")
+        return value
+
+    def validate(self, attrs):
+        """
+        Validación de Negocio: Blindaje contra duplicidad de condiciones activas.
+        """
+        # Obtenemos los datos ya sea de la creación (attrs) o de la instancia (si es un update)
+        instance = self.instance
+        patient = attrs.get('patient', instance.patient if instance else None)
+        condition = attrs.get('condition', instance.condition if instance else None)
+        status = attrs.get('status', instance.status if instance else None)
+
+        # Lógica de Prevención: No duplicar enfermedades activas iguales
+        if status == 'active':
+            queryset = MedicalHistory.objects.filter(
+                patient=patient, 
+                condition__iexact=condition, 
+                status='active'
+            )
+            
+            # Si estamos editando, excluimos el registro actual de la búsqueda
+            if instance:
+                queryset = queryset.exclude(id=instance.id)
+            
+            if queryset.exists():
+                raise serializers.ValidationError({
+                    "condition": f"Ya existe un registro de '{condition}' marcado como activo para este paciente."
+                })
+
+        return attrs
 
 
 class CountrySerializer(serializers.ModelSerializer):
@@ -105,6 +166,10 @@ class NeighborhoodSerializer(serializers.ModelSerializer):
 
 # 🔹 Serializer para crear/actualizar pacientes (sin campo active)
 class PatientWriteSerializer(serializers.ModelSerializer):
+    """
+    Optimizado para creación y edición.
+    Maneja la relación Many-to-Many de predisposiciones y la jerarquía geográfica.
+    """
     genetic_predispositions = serializers.PrimaryKeyRelatedField(
         queryset=GeneticPredisposition.objects.all(),
         many=True,
@@ -120,83 +185,41 @@ class PatientWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = [
-            "id",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "second_last_name",
-            "national_id",
-            "birthdate",
-            "birth_place",
-            "birth_country",
-            "gender",
-            "contact_info",
-            "email",
-            "address",                # ⚡ campo libre de dirección
-            "weight",
-            "height",
-            "blood_type",
-            "genetic_predispositions",
-            "neighborhood_id",        # ⚡ enlace barrio/parroquia/municipio/estado/país
+            "id", "first_name", "middle_name", "last_name", "second_last_name",
+            "national_id", "birthdate", "birth_place", "birth_country",
+            "gender", "contact_info", "email", "address", 
+            "weight", "height", "blood_type", "genetic_predispositions", "neighborhood_id",
         ]
-        extra_kwargs = {
-            "birthdate": {"required": False, "allow_null": True},
-            "birth_place": {"required": False, "allow_blank": True},
-            "birth_country": {"required": False, "allow_blank": True},
-            "gender": {"required": False, "allow_null": True},
-            "email": {"required": False, "allow_blank": True},
-            "address": {"required": False, "allow_blank": True},  # ⚡ opcional
-            "weight": {"required": False, "allow_null": True},
-            "height": {"required": False, "allow_null": True},
-            "blood_type": {"required": False, "allow_null": True},
-            "genetic_predispositions": {"required": False},
-        }
 
-    def create(self, validated_data):
-        preds = validated_data.pop("genetic_predispositions", None)
-        instance = super().create(validated_data)
+    def validate_birthdate(self, value):
+        if value and value > date.today():
+            raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
+        return value
 
-        # ⚡ Persistir address explícitamente
-        if "address" in validated_data:
-            instance.address = validated_data.get("address", "") or ""
-
-        instance.save()
-
-        if preds is not None:
-            instance.genetic_predispositions.set(preds)
-
-        return instance
-
-    def update(self, instance, validated_data):
-        preds = validated_data.pop("genetic_predispositions", None)
-
-        # ⚡ Persistir address siempre como string
-        if "address" in validated_data:
-            instance.address = validated_data.get("address", "") or ""
-        elif "address" not in validated_data and instance.address is None:
-            # Si no viene en el payload y está en None, lo dejamos como string vacío
-            instance.address = ""
-
-        # ⚡ Actualizar el resto de los campos
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        instance.save()
-
-        if preds is not None:
-            instance.genetic_predispositions.set(preds)
-
-        return instance
+    def save(self, **kwargs):
+        # Aseguramos que address nunca sea None para evitar errores de concatenación
+        v_data = cast(Dict[str, Any], self.validated_data)
+        if v_data.get('address') is None:
+            v_data['address'] = ""
+        return super().save(**kwargs)
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
+    # Usamos ReadOnlyField si el modelo tiene la property 'full_name'
+    # de lo contrario, mantenemos el MethodField (he dejado el método abajo por seguridad)
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
-    allergies = AllergySerializer(many=True, read_only=True)
+    
+    # --- Relaciones de Élite ---
+    # medical_history ahora incluye todo (patologías, alergias, cirugías)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
-    neighborhood = NeighborhoodSerializer(read_only=True)   # ⚡ detalle barrio/parroquia/municipio/estado/país
-    address_chain = serializers.SerializerMethodField()     # ⚡ cadena compacta con IDs
-    address = serializers.SerializerMethodField()           # ⚡ blindamos campo libre
+    
+    # Nuevo bloque de Alertas Críticas (Alergias severas, riesgos, etc.)
+    alerts = serializers.SerializerMethodField()
+    
+    # Ubicación geográfica
+    neighborhood = NeighborhoodSerializer(read_only=True)
+    address_chain = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
@@ -207,212 +230,156 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "email",
             "age",
             "gender",
-            "birthdate",       # 👈 añadido
-            "contact_info",    # 👈 añadido
-            "address",         # ⚡ campo libre de dirección
-            "allergies",
-            "medical_history",
+            "birthdate",
+            "contact_info",
+            "address",
+            "blood_type",
+            "medical_history", # Historia unificada
+            "alerts",          # Alertas visuales inmediatas
             "neighborhood",
             "address_chain",
         ]
 
     @extend_schema_field(serializers.CharField())
     def get_full_name(self, obj) -> str:
-        """Construye el nombre completo, devolviendo 'SIN-NOMBRE' si no hay datos."""
-        if not obj:
-            return "SIN-NOMBRE"
-        parts = [
-            getattr(obj, "first_name", None),
-            getattr(obj, "middle_name", None),
-            getattr(obj, "last_name", None),
-            getattr(obj, "second_last_name", None),
-        ]
-        full_name = " ".join(filter(None, parts)).strip()
-        return full_name if full_name else "SIN-NOMBRE"
+        if not obj: return "SIN-NOMBRE"
+        # Intenta usar la property del modelo, si no, concatena
+        if hasattr(obj, 'full_name'):
+            return obj.full_name
+        parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
+        name = " ".join(filter(None, parts)).strip()
+        return name if name else "SIN-NOMBRE"
 
     @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_age(self, obj) -> Optional[int]:
-        """Calcula la edad si hay fecha de nacimiento válida."""
         if not obj or not obj.birthdate:
             return None
         today = date.today()
-        age = today.year - obj.birthdate.year - (
+        return today.year - obj.birthdate.year - (
             (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
         )
-        return age if age >= 0 else None
+
+    @extend_schema_field(serializers.ListField(child=serializers.DictField()))
+    def get_alerts(self, obj):
+        """
+        Extrae alertas críticas para que el frontend pinte banners de advertencia.
+        """
+        if not hasattr(obj, 'alerts'):
+            return []
+        # Solo enviamos alertas activas
+        active_alerts = obj.alerts.filter(is_active=True)
+        return [
+            {"type": a.type, "message": a.message} 
+            for a in active_alerts
+        ]
 
     def get_address_chain(self, obj):
-        """Devuelve la cadena jerárquica completa de dirección con IDs."""
+        """Devuelve la cadena jerárquica compacta."""
         n = obj.neighborhood
         if not n:
-            return {
-                "neighborhood": "SIN-BARRIO", "neighborhood_id": None,
-                "parish": "SIN-PARROQUIA", "parish_id": None,
-                "municipality": "SIN-MUNICIPIO", "municipality_id": None,
-                "state": "SIN-ESTADO", "state_id": None,
-                "country": "SIN-PAÍS", "country_id": None,
-            }
-        p = n.parish
-        m = p.municipality if p else None
-        s = m.state if m else None
-        c = s.country if s else None
-        return {
-            "neighborhood": n.name, "neighborhood_id": n.id,
-            "parish": p.name if p else "SIN-PARROQUIA", "parish_id": p.id if p else None,
-            "municipality": m.name if m else "SIN-MUNICIPIO", "municipality_id": m.id if m else None,
-            "state": s.name if s else "SIN-ESTADO", "state_id": s.id if s else None,
-            "country": c.name if c else "SIN-PAÍS", "country_id": c.id if c else None,
-        }
+            return {"neighborhood": "N/A", "country": "N/A"}
+        
+        # Navegación segura hacia arriba en la jerarquía
+        p = getattr(n, 'parish', None)
+        m = getattr(p, 'municipality', None) if p else None
+        s = getattr(m, 'state', None) if m else None
+        c = getattr(s, 'country', None) if s else None
 
-    def get_address(self, obj):
-        """Devuelve siempre string, nunca null."""
-        return obj.address or ""
+        return {
+            "neighborhood": n.name,
+            "neighborhood_id": n.id,
+            "parish": getattr(p, 'name', "N/A"),
+            "municipality": getattr(m, 'name', "N/A"),
+            "state": getattr(s, 'name', "N/A"),
+            "country": getattr(c, 'name', "N/A"),
+        }
 
 
 class PatientListSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
+    """
+    Diseñado para tablas y búsquedas. 
+    Carga lo mínimo necesario para una respuesta rápida.
+    """
+    full_name = serializers.ReadOnlyField() # Usando la property del modelo
     age = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
-    allergies = AllergySerializer(many=True, read_only=True)
-    medical_history = MedicalHistorySerializer(many=True, read_only=True)
 
     class Meta:
         model = Patient
         fields = [
-            "id",
-            "full_name",
-            "age",
-            "gender",
-            "contact_info",
-            "full_address",     # ⚡ dirección compacta (jerárquica + libre)
-            "allergies",
-            "medical_history",
+            "id", "full_name", "national_id", "age", "gender", 
+            "contact_info", "full_address", "active"
         ]
-
-    def get_full_name(self, obj) -> str:
-        parts = [
-            getattr(obj, "first_name", None),
-            getattr(obj, "middle_name", None),
-            getattr(obj, "last_name", None),
-            getattr(obj, "second_last_name", None),
-        ]
-        full_name = " ".join(filter(None, parts)).strip()
-        return full_name if full_name else "SIN-NOMBRE"
 
     def get_age(self, obj) -> Optional[int]:
-        if not obj or not obj.birthdate:
-            return None
+        if not obj.birthdate: return None
         today = date.today()
-        age = today.year - obj.birthdate.year - (
+        return today.year - obj.birthdate.year - (
             (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
         )
-        return age if age >= 0 else None
 
-    def get_full_address(self, obj) -> Optional[str]:
+    def get_full_address(self, obj) -> str:
         parts = []
-        # ⚡ primero la jerarquía
-        n = getattr(obj, "neighborhood", None)
+        if obj.address: parts.append(obj.address)
+        n = obj.neighborhood
         if n:
-            parts.append(n.name)
-            if n.parish:
-                parts.append(n.parish.name)
-                if n.parish.municipality:
-                    parts.append(n.parish.municipality.name)
-                    if n.parish.municipality.state:
-                        parts.append(n.parish.municipality.state.name)
-                        if n.parish.municipality.state.country:
-                            parts.append(n.parish.municipality.state.country.name)
-        # ⚡ luego el campo libre
-        if getattr(obj, "address", None):
-            parts.insert(0, obj.address)  # lo pongo al inicio para máxima visibilidad
-        return ", ".join(parts) if parts else None
+            parts.extend([n.name, n.parish.name, n.parish.municipality.state.name])
+        return ", ".join(parts) if parts else "Sin dirección"
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
+    """
+    La "Joyas de la Corona": Devuelve la visión 360° del paciente.
+    Incluye alertas críticas, historia unificada y geolocalización.
+    """
+    full_name = serializers.ReadOnlyField()
     age = serializers.SerializerMethodField()
-    genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
-    allergies = AllergySerializer(many=True, read_only=True)
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
-    neighborhood = NeighborhoodSerializer(read_only=True)   # ⚡ detalle barrio/parroquia/municipio/estado/país
-    address_chain = serializers.SerializerMethodField()     # ⚡ cadena jerárquica con IDs
-    address = serializers.SerializerMethodField()           # ⚡ blindamos campo libre
+    genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
+    alerts = serializers.SerializerMethodField()
+    address_chain = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
         fields = [
-            "id",
-            "full_name",
-            "age",
-            "national_id",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "second_last_name",
-            "birthdate",
-            "gender",
-            "contact_info",
-            "email",
-            "address",              # ⚡ campo libre de dirección
-            "weight",
-            "height",
-            "blood_type",
-            "allergies",            # array de objetos
-            "medical_history",      # array de objetos
-            "genetic_predispositions",
-            "neighborhood",         # ⚡ detalle barrio
-            "address_chain",        # ⚡ cadena jerárquica con IDs
-            "active",
-            "created_at",
-            "updated_at",
+            "id", "full_name", "national_id", "age", "gender", "birthdate",
+            "email", "contact_info", "blood_type", "weight", "height",
+            "medical_history", "genetic_predispositions", "alerts",
+            "address", "address_chain", "active", "created_at", "updated_at"
         ]
 
-    def get_full_name(self, obj) -> str:
-        parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
-        return " ".join(filter(None, parts)) or "SIN-NOMBRE"
+    def get_age(self, obj):
+        if not obj.birthdate: return None
+        return (date.today() - obj.birthdate).days // 365
 
-    def get_age(self, obj) -> Optional[int]:
-        if not obj or not obj.birthdate:
-            return None
-        today = date.today()
-        age = today.year - obj.birthdate.year - (
-            (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
-        )
-        return age if age >= 0 else None
+    def get_alerts(self, obj):
+        """Extrae alertas de seguridad: Alergias severas o riesgos clínicos."""
+        if not hasattr(obj, 'alerts'): return []
+        return [{"type": a.type, "message": a.message} for a in obj.alerts.filter(is_active=True)]
 
     def get_address_chain(self, obj):
-        """Devuelve la cadena jerárquica completa de dirección con IDs y nombres."""
-        try:
-            n = getattr(obj, "neighborhood", None)
-            p = getattr(n, "parish", None) if n else None
-            m = getattr(p, "municipality", None) if p else None
-            s = getattr(m, "state", None) if m else None
-            c = getattr(s, "country", None) if s else None
+        """Navegación segura por la jerarquía geográfica."""
+        n = obj.neighborhood
+        p = getattr(n, 'parish', None)
+        m = getattr(p, 'municipality', None)
+        s = getattr(m, 'state', None)
+        return {
+            "neighborhood": getattr(n, 'name', "N/A"),
+            "parish": getattr(p, 'name', "N/A"),
+            "municipality": getattr(m, 'name', "N/A"),
+            "state": getattr(s, 'name', "N/A"),
+            "country": getattr(s.country, 'name', "N/A") if s else "N/A"
+        }
 
-            return {
-                "neighborhood": getattr(n, "name", "SIN-BARRIO"),
-                "neighborhood_id": getattr(n, "id", None),
-                "parish": getattr(p, "name", "SIN-PARROQUIA"),
-                "parish_id": getattr(p, "id", None),
-                "municipality": getattr(m, "name", "SIN-MUNICIPIO"),
-                "municipality_id": getattr(m, "id", None),
-                "state": getattr(s, "name", "SIN-ESTADO"),
-                "state_id": getattr(s, "id", None),
-                "country": getattr(c, "name", "SIN-PAÍS"),
-                "country_id": getattr(c, "id", None),
-            }
-        except Exception:
-            return {
-                "neighborhood": "SIN-BARRIO", "neighborhood_id": None,
-                "parish": "SIN-PARROQUIA", "parish_id": None,
-                "municipality": "SIN-MUNICIPIO", "municipality_id": None,
-                "state": "SIN-ESTADO", "state_id": None,
-                "country": "SIN-PAÍS", "country_id": None,
-            }
 
-    def get_address(self, obj):
-        """Devuelve siempre string, nunca null."""
-        return obj.address or ""
+class MedicationCatalogSerializer(serializers.ModelSerializer):
+    """Catálogo maestro de medicamentos"""
+    class Meta:
+        model = MedicationCatalog
+        fields = [
+            "id", "name", "generic_name", "presentation", 
+            "concentration", "route", "unit", "is_controlled"
+        ]
 
 
 class PrescriptionComponentSerializer(serializers.ModelSerializer):
@@ -427,26 +394,22 @@ class PrescriptionComponentSerializer(serializers.ModelSerializer):
 class PrescriptionSerializer(serializers.ModelSerializer):
     route_display = serializers.CharField(source="get_route_display", read_only=True)
     frequency_display = serializers.CharField(source="get_frequency_display", read_only=True)
-
-    medication_catalog = serializers.StringRelatedField(read_only=True)
-    medication_text = serializers.CharField(read_only=True)
-
     components = PrescriptionComponentSerializer(many=True, read_only=True)
+    medication_name = serializers.SerializerMethodField()
+    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
 
     class Meta:
         model = Prescription
         fields = [
-            "id",
-            "diagnosis",
-            "medication_catalog",
-            "medication_text",
-            "route",
-            "route_display",
-            "frequency",
-            "frequency_display",
-            "duration",
-            "components",   # 🔹 lista de sustancias activas
+            "id", "diagnosis", "medication_catalog", "medication_text", "medication_name",
+            "dosage_form", "route", "route_display", "frequency", "frequency_display",
+            "duration", "indications", "components", "doctor_name", "issued_at"
         ]
+
+    def get_medication_name(self, obj):
+        if obj.medication_catalog:
+            return f"{obj.medication_catalog.name} ({obj.medication_catalog.generic_name})"
+        return obj.medication_text
 
 
 class PrescriptionComponentWriteSerializer(serializers.ModelSerializer):
@@ -456,14 +419,8 @@ class PrescriptionComponentWriteSerializer(serializers.ModelSerializer):
 
 
 class PrescriptionWriteSerializer(serializers.ModelSerializer):
-    medication_catalog = serializers.PrimaryKeyRelatedField(
-        queryset=MedicationCatalog.objects.all(),
-        required=False,
-        allow_null=True
-    )
-    medication_text = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-
-    components = PrescriptionComponentWriteSerializer(many=True)
+    # Definimos los componentes para permitir la creación de la receta y sus fármacos en un solo JSON
+    components = PrescriptionComponentSerializer(many=True)
 
     class Meta:
         model = Prescription
@@ -472,34 +429,62 @@ class PrescriptionWriteSerializer(serializers.ModelSerializer):
             "diagnosis",
             "medication_catalog",
             "medication_text",
+            "dosage_form",  # 👈 Nuevo: Tableta, Jarabe, Ampolla...
             "route",
             "frequency",
             "duration",
-            "components",   # 🔹 escritura múltiple
+            "indications",  # 👈 Nuevo: Instrucciones para el paciente
+            "components",   # Lista de sustancias activas
         ]
 
+    def validate(self, data):
+        """Validación de integridad: Debe haber una fuente de medicamento."""
+        if not data.get("medication_catalog") and not data.get("medication_text"):
+            raise serializers.ValidationError(
+                "Debe seleccionar un medicamento del catálogo o escribir uno manualmente."
+            )
+        return data
+
     def create(self, validated_data):
+        """Crea la receta y sus componentes en una transacción atómica."""
         components_data = validated_data.pop("components", [])
-        prescription = Prescription.objects.create(**validated_data)
-        for comp in components_data:
-            PrescriptionComponent.objects.create(prescription=prescription, **comp)
+        
+        # Usamos atomic para asegurar que si falla un componente, no se cree la receta vacía
+        from django.db import transaction
+        with transaction.atomic():
+            prescription = Prescription.objects.create(**validated_data)
+            for comp in components_data:
+                PrescriptionComponent.objects.create(prescription=prescription, **comp)
         return prescription
 
     def update(self, instance, validated_data):
+        """Actualiza la receta y refresca la lista de componentes."""
         components_data = validated_data.pop("components", None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        if components_data is not None:
-            instance.components.all().delete()
-            for comp in components_data:
-                PrescriptionComponent.objects.create(prescription=instance, **comp)
+
+        from django.db import transaction
+        with transaction.atomic():
+            # Actualizamos los campos básicos de la receta
+            instance = super().update(instance, validated_data)
+
+            # Si se enviaron componentes, reemplazamos los anteriores (Lógica de reemplazo total)
+            if components_data is not None:
+                instance.components.all().delete()
+                for comp_data in components_data:
+                    PrescriptionComponent.objects.create(prescription=instance, **comp_data)
+        
         return instance
 
 
 class TreatmentSerializer(serializers.ModelSerializer):
+    """
+    Serializer de Lectura: Optimizado para mostrar la información completa 
+    en la línea de tiempo del paciente.
+    """
     treatment_type_display = serializers.CharField(source="get_treatment_type_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    
+    # Útil para el Frontend: indica si el tratamiento sigue vigente hoy
+    is_active_now = serializers.SerializerMethodField()
 
     class Meta:
         model = Treatment
@@ -508,193 +493,282 @@ class TreatmentSerializer(serializers.ModelSerializer):
             "diagnosis",
             "treatment_type",
             "treatment_type_display",
-            "plan",
+            "title",          # 👈 Nuevo en Models: Título breve del plan
+            "plan",           # Instrucciones detalladas
             "start_date",
             "end_date",
+            "is_permanent",   # 👈 Nuevo en Models: Para tratamientos crónicos
             "status",
             "status_display",
+            "notes",          # 👈 Nuevo en Models: Observaciones del médico
+            "is_active_now",
         ]
+
+    def get_is_active_now(self, obj) -> bool:
+        from django.utils import timezone
+        today = timezone.now().date()
+        if obj.status != 'active':
+            return False
+        if obj.is_permanent:
+            return True
+        if obj.end_date and obj.end_date < today:
+            return False
+        return True
 
 
 class TreatmentWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer de Escritura: Limpio y con validaciones de integridad temporal.
+    """
     class Meta:
         model = Treatment
         fields = [
             "id",
             "diagnosis",
             "treatment_type",
+            "title",
             "plan",
             "start_date",
             "end_date",
+            "is_permanent",
             "status",
+            "notes",
         ]
+
+    def validate(self, data):
+        """
+        Validación Élite: Integridad de fechas.
+        """
+        start_date = data.get('start_date')
+        end_date = data.get('end_date')
+        is_permanent = data.get('is_permanent', False)
+
+        # 1. Si no es permanente, debe tener fin o lógica de revisión
+        if not is_permanent and not end_date and data.get('status') == 'active':
+            # Opcional: Podrías lanzar error o simplemente dejarlo pasar según tu regla de negocio
+            pass
+
+        # 2. El fin no puede ser antes que el inicio
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError({
+                "end_date": "La fecha de finalización no puede ser anterior a la de inicio."
+            })
+
+        return data
 
 
 class DiagnosisSerializer(serializers.ModelSerializer):
+    """
+    Serializer de LECTURA: Completo para el historial clínico.
+    Muestra relaciones anidadas y etiquetas legibles.
+    """
     treatments = TreatmentSerializer(many=True, read_only=True)
     prescriptions = PrescriptionSerializer(many=True, read_only=True)
+    
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
+    doctor_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
 
     class Meta:
         model = Diagnosis
         fields = [
-            "id",
-            "icd_code",       # código ICD-11
-            "title",          # descripción oficial OMS
-            "foundation_id",  # ID único ICD-11
-            "description",    # notas adicionales
-            "treatments",
-            "prescriptions",
+            "id", "appointment", "icd_code", "title", "foundation_id", 
+            "description", "type", "type_display", "status", "status_display", 
+            "clinical_certainty", "treatments", "prescriptions", 
+            "created_by", "doctor_name", "created_at", "updated_at",
         ]
 
 
 class DiagnosisWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer de ESCRITURA: Optimizado y Seguro.
+    Se encarga de la validación del catálogo y asignación de autoría.
+    """
     class Meta:
         model = Diagnosis
         fields = [
-            "id",
-            "appointment",   # 👈 necesario para crear
-            "icd_code",
-            "title",
-            "foundation_id",
-            "description",
+            "id", "appointment", "icd_code", "title", "foundation_id",
+            "description", "type", "status", "clinical_certainty"
         ]
+
+    def validate_icd_code(self, value):
+        """Valida que el código exista en el catálogo maestro CIE-11."""
+        if not ICD11Entry.objects.filter(icd_code=value).exists():
+            raise serializers.ValidationError(
+                f"El código '{value}' no es válido en el catálogo institucional."
+            )
+        return value
+
+    def validate(self, data):
+        """Lógica de integridad: Coherencia entre estatus y certeza."""
+        status = data.get('status')
+        certainty = data.get('clinical_certainty')
+
+        if status == 'confirmed' and certainty is not None and certainty < 80:
+            raise serializers.ValidationError({
+                "clinical_certainty": "Un diagnóstico confirmado no puede tener una certeza menor al 80%."
+            })
+        return data
+
+    def create(self, validated_data):
+        """Asigna automáticamente al médico que realiza el diagnóstico."""
+        request = self.context.get('request')
+        if request and request.user:
+            validated_data['created_by'] = request.user
+        return super().create(validated_data)
 
 
 # --- Pagos ---
 class PaymentSerializer(serializers.ModelSerializer):
-    appointment_date = serializers.DateField(
-        source="appointment.appointment_date", read_only=True
-    )
-    patient = PatientReadSerializer(source="appointment.patient", read_only=True)
+    # --- Lectura Inflada (UI Friendly) ---
+    patient_name = serializers.CharField(source="appointment.patient.full_name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    method_display = serializers.CharField(source="get_method_display", read_only=True)
+    
+    # Campo para ver la respuesta técnica de la API (solo para auditoría)
+    gateway_response_raw = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Payment
         fields = [
             "id",
+            "institution",
             "appointment",
-            "appointment_date",
-            "patient",
             "charge_order",
+            "patient_name",
             "amount",
             "currency",
             "method",
+            "method_display",
             "status",
+            "status_display",
+            # Trazabilidad Fintech
+            "gateway_transaction_id",
             "reference_number",
-            "bank_name",
+            "gateway_response_raw",
+            # Auditoría
             "received_by",
             "received_at",
+            "cleared_at",
             "idempotency_key",
         ]
-        read_only_fields = (
+        read_only_fields = [
             "id",
-            "appointment",      # 👈 ahora solo lectura
-            "charge_order",     # 👈 ahora solo lectura
-            "appointment_date",
-            "patient",
             "status",
             "received_at",
-        )
-
-    def validate(self, attrs):
-        amount = attrs.get("amount")
-        # obtenemos la orden desde attrs o desde la instancia
-        order = attrs.get("charge_order") or (
-            self.instance.charge_order if self.instance else None
-        )
-
-        if amount is None or amount <= Decimal("0.00"):
-            raise serializers.ValidationError("El monto debe ser mayor a 0.")
-
-        if order and order.status == "void":
-            raise serializers.ValidationError("No se puede pagar una orden anulada.")
-
-        if order:
-            order.recalc_totals()
-            if amount > order.balance_due:
-                raise serializers.ValidationError(
-                    "El monto excede el saldo pendiente de la orden."
-                )
-
-        return attrs
-
-
-class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
-    patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all())
-    appointment = serializers.PrimaryKeyRelatedField(
-        queryset=Appointment.objects.all(),
-        required=False,
-        allow_null=True
-    )
-    diagnosis = serializers.PrimaryKeyRelatedField(
-        queryset=Diagnosis.objects.all(),
-        required=False,
-        allow_null=True
-    )
-
-    class Meta:
-        model = MedicalDocument
-        fields = [
-            "id",
-            "patient",
-            "appointment",
-            "diagnosis",
-            "description",
-            "category",
-            "file",
+            "cleared_at",
+            "gateway_response_raw",
+            "received_by",
         ]
-        read_only_fields = ["id"]
 
     def validate(self, attrs):
         """
-        Blindaje institucional:
-        - Categorías operativas requieren appointment.
-        - Prescription y Treatment requieren además diagnosis.
-        - Reportes generales y 'other' pueden omitirse.
+        Validación Blindada: 
+        Aseguramos que el pago sea coherente con la deuda y la pasarela.
+        """
+        amount = attrs.get("amount")
+        order = attrs.get("charge_order") or (self.instance.charge_order if self.instance else None)
+        method = attrs.get("method")
+        ref = attrs.get("reference_number")
+
+        # 1. Validación de Monto Básico
+        if amount is None or amount <= Decimal("0.00"):
+            raise serializers.ValidationError({"amount": "El monto debe ser un valor positivo."})
+
+        # 2. Validación de Estado de Orden
+        if order:
+            if order.status in ["void", "waived"]:
+                raise serializers.ValidationError(
+                    {"charge_order": f"No se pueden procesar pagos para órdenes en estado: {order.get_status_display()}"}
+                )
+
+            # 3. Validación de Saldo (Prevenir sobrepagos)
+            # Nota: Recalculamos antes de validar para tener el dato real en caliente
+            order.recalc_totals()
+            if amount > order.balance_due:
+                raise serializers.ValidationError(
+                    {"amount": f"El monto ({amount}) excede el saldo pendiente ({order.balance_due})."}
+                )
+
+        # 4. Validación de Referencia para Métodos Digitales/Nacionales
+        # Si es transferencia, pago móvil o Zelle, la referencia es OBLIGATORIA
+        if method in ['transfer', 'card', 'zelle'] and not ref:
+            raise serializers.ValidationError(
+                {"reference_number": "Los pagos electrónicos requieren un número de referencia bancaria."}
+            )
+
+        return attrs
+
+    def create(self, validated_data):
+        """
+        Inyectamos el usuario que recibe el pago automáticamente desde el request.
+        """
+        request = self.context.get('request')
+        if request and request.user:
+            validated_data['received_by'] = request.user
+        return super().create(validated_data)
+
+
+class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer de ESCRITURA: Gestiona la carga segura de archivos.
+    Calcula automáticamente metadatos de integridad y auditoría.
+    """
+    class Meta:
+        model = MedicalDocument
+        fields = [
+            "id", "patient", "appointment", "diagnosis", "category",
+            "description", "file", "mime_type", "size_bytes", "checksum_sha256"
+        ]
+        read_only_fields = ["id", "mime_type", "size_bytes", "checksum_sha256"]
+
+    def validate(self, attrs):
+        """
+        Validación de Integridad Clínica: Asegura que el documento 
+        esté anclado al contexto médico correcto.
         """
         category = attrs.get("category")
         appointment = attrs.get("appointment")
         diagnosis = attrs.get("diagnosis")
 
-        required_categories = {
-            "prescription",
-            "treatment",
-            "medical_test_order",
-            "medical_referral",
-        }
-
-        if category in required_categories and not appointment:
+        # Regla de Oro: Documentos clínicos requieren una Cita
+        clinical_types = ["prescription", "treatment", "medical_test_order", "medical_referral"]
+        
+        if category in clinical_types and not appointment:
             raise serializers.ValidationError({
-                "appointment": f"La categoría '{category}' requiere una cita (appointment)."
+                "appointment": f"Los documentos de tipo '{category}' deben generarse dentro de una cita médica."
             })
 
-        if category in {"prescription", "treatment"} and not diagnosis:
+        # Regla de Precisión: Recetas y Tratamientos requieren un Diagnóstico
+        if category in ["prescription", "treatment"] and not diagnosis:
             raise serializers.ValidationError({
-                "diagnosis": f"La categoría '{category}' requiere un diagnóstico asociado."
+                "diagnosis": "Para emitir una prescripción o tratamiento debe seleccionar el diagnóstico asociado."
             })
 
         return attrs
 
     def create(self, validated_data):
+        """
+        Inyección de metadatos de auditoría y seguridad.
+        """
         request = self.context.get("request")
-        user = getattr(request, "user", None)
-
-        # Calcular metadatos del archivo
         file = validated_data.get("file")
+
         if file:
-            validated_data["mime_type"] = file.content_type or "application/octet-stream"
+            # 1. Metadatos automáticos del archivo
+            validated_data["mime_type"] = getattr(file, "content_type", "application/octet-stream")
             validated_data["size_bytes"] = file.size
-            import hashlib
+            
+            # 2. Generar Checksum SHA256 (Pilar de No Repudio)
             sha256 = hashlib.sha256()
             for chunk in file.chunks():
                 sha256.update(chunk)
             validated_data["checksum_sha256"] = sha256.hexdigest()
 
-        # Setear metadatos institucionales
-        validated_data["source"] = "user_uploaded"
-        validated_data["origin_panel"] = "consultation_or_patient"
-        validated_data["template_version"] = "v1.0"
-        validated_data["uploaded_by"] = user if user and user.is_authenticated else None
-        validated_data["generated_by"] = user if user and user.is_authenticated else None
+        # 3. Datos de Auditoría
+        if request and request.user.is_authenticated:
+            validated_data["uploaded_by"] = request.user
+            validated_data["source"] = "user_uploaded"
 
         return super().create(validated_data)
 
@@ -788,42 +862,56 @@ class EventSerializer(serializers.ModelSerializer):
 
 # --- Sala de espera (básico) ---
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
-    patient = serializers.SerializerMethodField()
-    appointment_id = serializers.SerializerMethodField()
-    appointment_status = serializers.SerializerMethodField()
+    """
+    Serializer de LISTADO: Optimizado para el tablero de control de recepción.
+    Muestra quién está en fila, su prioridad y cuánto tiempo lleva esperando.
+    """
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    patient_id_number = serializers.CharField(source='patient.national_id', read_only=True)
+    appointment_status = serializers.CharField(source='appointment.status', read_only=True)
+    waiting_time_minutes = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
         model = WaitingRoomEntry
         fields = [
-            "id",
-            "patient",
-            "appointment_id",
+            "id", 
+            "patient", 
+            "patient_name", 
+            "patient_id_number",
+            "appointment", 
             "appointment_status",
-            "arrival_time",
-            "status",
-            "priority",
-            "source_type",
-            "order",
+            "arrival_time", 
+            "waiting_time_minutes",
+            "status", 
+            "status_display",
+            "priority", 
+            "source_type", 
+            "order"
         ]
 
-    def get_patient(self, obj):
-        """
-        Devuelve siempre un objeto paciente válido.
-        """
-        if obj.patient:
-            return PatientReadSerializer(obj.patient).data
-        return {"id": None, "full_name": "SIN-NOMBRE"}
+    def get_waiting_time_minutes(self, obj) -> int:
+        """Calcula el tiempo transcurrido desde la llegada en tiempo real."""
+        if obj.status == 'waiting' and obj.arrival_time:
+            delta = timezone.now() - obj.arrival_time
+            return int(delta.total_seconds() // 60)
+        return 0
 
-    def get_appointment_id(self, obj):
-        return obj.appointment.id if obj.appointment else None
 
-    def get_appointment_status(self, obj):
-        if obj.appointment:
-            status = obj.appointment.status
-            if status == "arrived":
-                return "waiting"
-            return status
-        return obj.status
+class WaitingRoomEntryWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer de ESCRITURA: Para registrar llegadas (Check-in).
+    """
+    class Meta:
+        model = WaitingRoomEntry
+        fields = ["patient", "appointment", "priority", "source_type", "notes"]
+
+    def validate(self, attrs):
+        # Evitar duplicados: Un paciente no puede estar dos veces en espera activa
+        patient = attrs.get('patient')
+        if WaitingRoomEntry.objects.filter(patient=patient, status='waiting').exists():
+            raise serializers.ValidationError("El paciente ya se encuentra en la sala de espera.")
+        return attrs
 
 
 # --- Citas pendientes con pagos ---
@@ -945,84 +1033,199 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
         return " ".join([x for x in parts if x])
 
 
+class VitalSignsSerializer(serializers.ModelSerializer):
+    """
+    Serializer para Signos Vitales con lógica de semaforización.
+    Calcula el IMC y evalúa si los rangos son normales o críticos.
+    """
+    # Propiedad calculada en el modelo
+    bmi = serializers.ReadOnlyField()
+    
+    # Campo inyectado para alertas en el Frontend
+    vitals_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VitalSigns
+        fields = [
+            'id', 
+            'appointment',
+            'weight', 
+            'height', 
+            'temperature', 
+            'bp_systolic', 
+            'bp_diastolic', 
+            'heart_rate', 
+            'respiratory_rate', 
+            'oxygen_saturation', 
+            'bmi',
+            'vitals_status'
+        ]
+
+    @extend_schema_field(serializers.DictField())
+    def get_vitals_status(self, obj):
+        """
+        Retorna un mapa de alertas para que el Frontend pinte de colores.
+        Ej: 'high', 'low', 'normal'.
+        """
+        status = {
+            "bp": "normal",
+            "temp": "normal",
+            "o2": "normal"
+        }
+        
+        # Lógica de Presión Arterial (Simplificada)
+        if obj.bp_systolic and obj.bp_systolic >= 140:
+            status["bp"] = "high"
+        elif obj.bp_systolic and obj.bp_systolic <= 90:
+            status["bp"] = "low"
+            
+        # Lógica de Temperatura
+        if obj.temperature and obj.temperature >= 38.0:
+            status["temp"] = "high"
+        elif obj.temperature and obj.temperature <= 35.5:
+            status["temp"] = "low"
+            
+        # Lógica de Oxigenación
+        if obj.oxygen_saturation and obj.oxygen_saturation < 92:
+            status["o2"] = "critical"
+            
+        return status
+
+class ClinicalNoteSerializer(serializers.ModelSerializer):
+    """
+    Serializer para la Nota Médica (SOAP).
+    Implementa el 'Sello de Seguridad' que impide la alteración de registros
+    una vez finalizada la consulta.
+    """
+    # Campos informativos para la interfaz
+    is_editable = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ClinicalNote
+        fields = [
+            'id', 
+            'appointment', 
+            'subjective', 
+            'objective', 
+            'analysis', 
+            'plan', 
+            'is_locked', 
+            'locked_at',
+            'created_at',
+            'updated_at',
+            'is_editable'
+        ]
+        read_only_fields = ['locked_at', 'created_at', 'updated_at']
+
+    def get_is_editable(self, obj) -> bool:
+        """Helper para que el Frontend bloquee los campos visualmente."""
+        return not obj.is_locked
+
+    def validate(self, data):
+        """
+        Regla de Oro de Integridad Médica:
+        Si la nota ya está bloqueada, se prohíbe cualquier cambio via API.
+        """
+        if self.instance and self.instance.is_locked:
+            # Solo permitimos la validación si no se está intentando cambiar nada 
+            # (evita errores en validaciones de serializadores anidados)
+            raise serializers.ValidationError(
+                "Esta nota clínica cuenta con un cierre médico (firmada/bloqueada). "
+                "Cualquier corrección debe hacerse mediante una nota de evolución posterior."
+            )
+        return data
+
+    def update(self, instance, validated_data):
+        """
+        Lógica de Cierre de Nota:
+        Al activar is_locked, se estampa el timestamp y se guarda el estado.
+        """
+        was_locked = instance.is_locked
+        is_locking_now = validated_data.get('is_locked', False)
+
+        if is_locking_now and not was_locked:
+            instance.locked_at = timezone.now()
+            # Aquí se podría disparar una señal para generar el PDF del MedicalReport automáticamente
+        
+        return super().update(instance, validated_data)
+
+
 # --- Citas ---
 class AppointmentSerializer(serializers.ModelSerializer):
-    patient = PatientReadSerializer(read_only=True)
-    charge_order = ChargeOrderSerializer(read_only=True)
-
-    # ✅ Campo plano para Search.tsx y otros endpoints
-    patient_name = serializers.SerializerMethodField()
+    """
+    Serializer de LISTADO y ESCRITURA: Optimizado para el calendario y la 
+    gestión administrativa de citas.
+    """
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    appointment_type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
 
     class Meta:
         model = Appointment
         fields = [
-            "id",
-            "patient",
-            "patient_name",
-            "appointment_date",
-            "appointment_type",
-            "expected_amount",
-            "status",
-            "arrival_time",
-            "started_at",      # ✅ Añadido para el cronómetro real
-            "completed_at",
-            "notes",
-            "charge_order",
+            "id", "institution", "doctor", "patient", "patient_name",
+            "appointment_date", "start_time", "appointment_type",
+            "appointment_type_display", "status", "status_display",
+            "expected_amount", "arrival_time", "created_at",
         ]
-
-    def get_patient_name(self, obj):
-        p = obj.patient
-        if not p:
-            return "SIN-NOMBRE"
-        parts = [
-            p.first_name,
-            p.middle_name,
-            p.last_name,
-            p.second_last_name,
-        ]
-        return " ".join([x for x in parts if x])
+        read_only_fields = ["id", "created_at"]
 
 
 # --- Documentos clínicos ---
 class MedicalDocumentReadSerializer(serializers.ModelSerializer):
-    patient = PatientReadSerializer(read_only=True)
-    appointment = AppointmentSerializer(read_only=True)
-    diagnosis = DiagnosisSerializer(read_only=True)
-    uploaded_by = serializers.StringRelatedField(read_only=True)
-    generated_by = serializers.StringRelatedField(read_only=True)
+    """
+    Serializer de LECTURA: Proporciona la trazabilidad completa del documento.
+    Diseñado para auditoría legal y visualización de expedientes.
+    """
+    # 1. Identidad del Paciente
+    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    
+    # 2. Etiquetas legibles para la UI
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    source_display = serializers.CharField(source='get_source_display', read_only=True)
+    
+    # 3. Trazabilidad de Usuarios (Full Name desde el modelo User)
+    uploaded_by_name = serializers.CharField(source='uploaded_by.get_full_name', read_only=True)
+    generated_by_name = serializers.CharField(source='generated_by.get_full_name', read_only=True)
 
     class Meta:
         model = MedicalDocument
         fields = [
-            "id",
-            "patient",
-            "appointment",
+            "id", 
+            "patient", "patient_name", 
+            "appointment", 
             "diagnosis",
-            "description",
-            "category",
-            "source",
-            "origin_panel",
-            "template_version",
-            "is_signed",
-            "signer_name",
-            "signer_registration",
-            "uploaded_at",
-            "uploaded_by",
-            "generated_by",
-            "file",
-            "mime_type",
+            "category", "category_display", 
+            "source", "source_display",
+            "origin_panel", 
+            "description", 
+            "file", 
+            "mime_type", 
             "size_bytes",
-            "checksum_sha256",
-            "storage_key",
+            "checksum_sha256", 
+            "audit_code", 
+            "is_signed", 
+            "signer_name",
+            "signer_registration", 
+            "template_version", 
+            "uploaded_at",
+            "uploaded_by_name", 
+            "generated_by_name",
         ]
-        read_only_fields = fields  # todo es solo lectura en el serializer de salida
+        # Garantiza que el frontend no pueda modificar registros históricos de auditoría
+        read_only_fields = fields
 
 
 # --- Sala de espera (detallado con cita completa) ---
 class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
+    """
+    Serializer de DETALLE: Proporciona el contexto completo del paciente
+    y la cita asociada para el médico o la enfermera de triaje.
+    """
     patient = PatientReadSerializer(read_only=True)
     appointment = AppointmentSerializer(read_only=True)
     effective_status = serializers.SerializerMethodField()
+    priority_display = serializers.CharField(source='get_priority_display', read_only=True)
 
     class Meta:
         model = WaitingRoomEntry
@@ -1032,21 +1235,29 @@ class WaitingRoomEntryDetailSerializer(serializers.ModelSerializer):
             "appointment",
             "arrival_time",
             "status",
+            "effective_status",
             "priority",
+            "priority_display",
             "source_type",
             "order",
-            "effective_status",  # 👈 añadido para consistencia
+            "created_at",
         ]
 
     def get_effective_status(self, obj):
         """
-        Igual que en el serializer básico: arrived → waiting.
+        Lógica de estado unificada: Si la cita está en 'arrived', 
+        para la sala de espera el estado efectivo es 'waiting'.
         """
         if obj.appointment:
             status = obj.appointment.status
-            if status == "arrived":
-                return "waiting"
-            return status
+            # Mapeo de estados de cita a estados de flujo de sala
+            mapping = {
+                "arrived": "waiting",
+                "in_consultation": "called",
+                "completed": "finished",
+                "cancelled": "removed"
+            }
+            return mapping.get(status, status)
         return obj.status
 
 
@@ -1139,7 +1350,10 @@ class ReportExportSerializer(serializers.Serializer):
 class InstitutionSettingsSerializer(serializers.ModelSerializer):
     logo = serializers.ImageField(required=False, allow_null=True, use_url=True)
     
-    # Usamos el PrimaryKeyRelatedField para que el PATCH acepte un número (ID)
+    # Representación de lectura para la dirección completa (Propiedad del modelo)
+    full_address = serializers.ReadOnlyField()
+
+    # Usamos PrimaryKeyRelatedField para que el Frontend envíe solo el ID en POST/PATCH
     neighborhood = serializers.PrimaryKeyRelatedField(
         queryset=Neighborhood.objects.all(),
         required=False,
@@ -1148,16 +1362,38 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = InstitutionSettings
-        fields = ["id", "name", "address", "phone", "logo", "tax_id", "neighborhood"]
+        fields = [
+            "id", 
+            "name", 
+            "tax_id", 
+            "logo", 
+            "phone", 
+            "address", 
+            "neighborhood", 
+            "full_address",
+            "is_active",
+            # --- CAMPOS FINTECH UNIVERSALES ---
+            "active_gateway", 
+            "gateway_api_key", 
+            "gateway_api_secret", 
+            "settlement_bank_name", 
+            "settlement_account_id", 
+            "is_gateway_test_mode"
+        ]
+        # Seguridad Elite: El secreto de la API se puede escribir pero nunca leer desde el Frontend
+        extra_kwargs = {
+            'gateway_api_secret': {'write_only': True}
+        }
 
     def to_representation(self, instance):
         """
-        Inflamos el objeto para que el Frontend vea la jerarquía completa
-        y la cadena geográfica pase a verde (STABLE).
+        Inflamos el objeto para que el Frontend vea la jerarquía geográfica completa
+        y la configuración de pagos sea fácil de procesar.
         """
         response = super().to_representation(instance)
-        n = instance.neighborhood
         
+        # --- Lógica de Jerarquía Geográfica ---
+        n = instance.neighborhood
         if n:
             response['neighborhood'] = {
                 'id': n.id,
@@ -1179,13 +1415,24 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
                     }
                 }
             }
+        
+        # --- Lógica de Seguridad para el Frontend ---
+        # Si existe un secret, enviamos un indicador pero no el valor real
+        if instance.gateway_api_secret:
+            response['has_api_secret_configured'] = True
+        else:
+            response['has_api_secret_configured'] = False
+            
         return response
 
 
 class SpecialtySerializer(serializers.ModelSerializer):
+    """Especialidades médicas con soporte para jerarquía"""
+    subspecialties = serializers.StringRelatedField(many=True, read_only=True)
+    
     class Meta:
         model = Specialty
-        fields = ["id", "code", "name"]
+        fields = ["id", "code", "name", "category", "parent", "subspecialties", "icon_name"]
 
 
 class DoctorOperatorSerializer(serializers.ModelSerializer):
@@ -1378,47 +1625,36 @@ class ICD11EntrySerializer(serializers.ModelSerializer):
         fields = ["icd_code", "title", "definition", "synonyms", "parent_code"]
 
 
+class MedicalTestCatalogSerializer(serializers.ModelSerializer):
+    """Catálogo maestro de exámenes (Laboratorio/Imagen)"""
+    class Meta:
+        model = MedicalTestCatalog
+        fields = ["id", "name", "code", "category", "base_price", "is_active"]
+
+
 # --- Exámenes médicos (lectura) ---
 class MedicalTestSerializer(serializers.ModelSerializer):
     test_type_display = serializers.CharField(source="get_test_type_display", read_only=True)
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
+    catalog_detail = MedicalTestCatalogSerializer(source='catalog_item', read_only=True)
+    display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = MedicalTest
         fields = [
-            "id",
-            "appointment",
-            "diagnosis",
-            "test_type",
-            "test_type_display",
-            "urgency",
-            "urgency_display",
-            "status",
-            "status_display",
-            "description",
+            "id", "appointment", "diagnosis", "catalog_item", "catalog_detail",
+            "test_type", "test_type_display", "test_name_override", "display_name",
+            "urgency", "urgency_display", "status", "status_display", "description",
         ]
 
-    def validate_test_type(self, value):
-        valid_values = [choice[0] for choice in MedicalTest.TEST_TYPE_CHOICES]
-        if value not in valid_values:
-            raise serializers.ValidationError("Tipo de examen inválido.")
-        return value
+    def get_display_name(self, obj):
+        return obj.test_name_override or (obj.catalog_item.name if obj.catalog_item else obj.get_test_type_display())
 
 
 # --- Exámenes médicos (escritura) ---
 class MedicalTestWriteSerializer(serializers.ModelSerializer):
-    appointment = serializers.PrimaryKeyRelatedField(
-        queryset=Appointment.objects.all(),
-        required=True
-    )
-    diagnosis = serializers.PrimaryKeyRelatedField(
-        queryset=Diagnosis.objects.all(),
-        required=False,
-        allow_null=True
-    )
-
-    # 🔹 Incluimos displays para que la respuesta al POST sea usable directamente en la UI
+    # Los displays se mantienen para que el Frontend reciba los textos tras el POST/PATCH
     test_type_display = serializers.CharField(source="get_test_type_display", read_only=True)
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -1429,8 +1665,10 @@ class MedicalTestWriteSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "diagnosis",
+            "catalog_item",       # 👈 Agregamos el vínculo al catálogo maestro
             "test_type",
             "test_type_display",
+            "test_name_override", # 👈 Para nombres manuales si no está en catálogo
             "urgency",
             "urgency_display",
             "status",
@@ -1438,51 +1676,28 @@ class MedicalTestWriteSerializer(serializers.ModelSerializer):
             "description",
         ]
 
-    def validate_test_type(self, value):
-        valid_values = [choice[0] for choice in MedicalTest.TEST_TYPE_CHOICES]
-        if value not in valid_values:
-            raise serializers.ValidationError("Tipo de examen inválido.")
-        return value
-
-    def validate_status(self, value):
-        valid_values = [choice[0] for choice in MedicalTest.STATUS_CHOICES]
-        if value not in valid_values:
-            raise serializers.ValidationError("Estado inválido para el examen médico.")
-        return value
-
     def validate(self, data):
-        # 🔹 Blindaje: debe existir al menos appointment o diagnosis
+        """
+        Mantenemos solo la validación de integridad de negocio.
+        DRF ya valida automáticamente que test_type y status sean opciones válidas.
+        """
         if not data.get("appointment") and not data.get("diagnosis"):
             raise serializers.ValidationError(
-                "Debe asociar el examen a una cita o a un diagnóstico."
+                "Debe asociar el examen a una cita o a un diagnóstico (Integridad Médica)."
             )
         return data
-
-    def create(self, validated_data):
-        # 🔹 Garantizamos que appointment se setee correctamente
-        test = MedicalTest.objects.create(**validated_data)
-        return test
-
-    def update(self, instance, validated_data):
-        # 🔹 Actualizamos campos simples
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
 
 
 # --- Referencias médicas ---
 class MedicalReferralSerializer(serializers.ModelSerializer):
-    # 🔹 Especialidades: lectura y escritura
+    """
+    Serializer de LECTURA: Proporciona toda la información necesaria para 
+    visualizar la referencia en el portal del paciente o del médico receptor.
+    """
+    # Relaciones de lectura detalladas
     specialties = SpecialtySerializer(many=True, read_only=True)
-    specialty_ids = serializers.PrimaryKeyRelatedField(
-        queryset=Specialty.objects.all(),
-        many=True,
-        write_only=True,
-        source="specialties"
-    )
-
-    # 🔹 Displays para choices
+    
+    # Etiquetas legibles para el Frontend
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
 
@@ -1492,55 +1707,56 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "diagnosis",
-            "referred_to",       # 👈 ahora sí existe en el modelo
-            "reason",
-            "specialties",       # lectura
-            "specialty_ids",     # escritura
+            "referred_to",       # Institución o médico específico
+            "reason",            # Motivo clínico
+            "specialties",       # Lista completa de objetos de especialidad
             "urgency",
             "urgency_display",
             "status",
             "status_display",
+            "created_at",
+            "updated_at",
         ]
-
-    def validate_status(self, value):
-        valid_values = [choice[0] for choice in MedicalReferral.STATUS_CHOICES]
-        if value not in valid_values:
-            raise serializers.ValidationError("Estado inválido para la referencia médica.")
-        return value
-
-    def validate_urgency(self, value):
-        valid_values = [choice[0] for choice in MedicalReferral.URGENCY_CHOICES]
-        if value not in valid_values:
-            raise serializers.ValidationError("Urgencia inválida para la referencia médica.")
-        return value
 
 
 # --- Referencias médicas (escritura) ---
 class MedicalReferralWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer de ESCRITURA: Optimizado para manejar la relación M2M 
+    con especialidades de forma sencilla.
+    """
+    # Permitimos enviar una lista de IDs de especialidades
+    specialty_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Specialty.objects.all(),
+        many=True,
+        write_only=True,
+        source="specialties",
+        required=True
+    )
+
     class Meta:
         model = MedicalReferral
         fields = [
             "id",
             "appointment",
             "diagnosis",
-            "specialty",
-            "urgency",
+            "referred_to",
             "reason",
+            "specialty_ids",  # Se mapea automáticamente a 'specialties' en el modelo
+            "urgency",
             "status",
         ]
 
-    def validate_specialty(self, value):
-        valid_values = [choice[0] for choice in MedicalReferral.SPECIALTY_CHOICES]
-        if value not in valid_values:
-            raise serializers.ValidationError("Especialidad inválida para la referencia médica.")
-        return value
+    def validate(self, data):
+        """
+        Validación institucional: Asegura que la referencia tenga un destino claro.
+        """
+        if not data.get("specialties") and not data.get("referred_to"):
+            raise serializers.ValidationError(
+                "Debe indicar al menos una especialidad o un médico/centro de destino."
+            )
+        return data
 
-    def validate_status(self, value):
-        valid_values = [choice[0] for choice in MedicalReferral.STATUS_CHOICES]
-        if value not in valid_values:
-            raise serializers.ValidationError("Estado inválido para la referencia médica.")
-        return value
-    
 
 # --- Serializador genérico para exponer choices ---
 class ChoicesSerializer(serializers.Serializer):
@@ -1549,59 +1765,113 @@ class ChoicesSerializer(serializers.Serializer):
 
 
 class AppointmentDetailSerializer(AppointmentSerializer):
+    """
+    EL MOTOR DE LA CONSULTA:
+    Ensambla diagnósticos, planes de tratamiento, recetas, órdenes de laboratorio
+    y el estado financiero en una única respuesta de alto rendimiento.
+    """
+    # 1. Relaciones Clínicas Directas
     diagnoses = DiagnosisSerializer(many=True, read_only=True)
-    # 🔹 campos inyectados por métodos
-    treatments = serializers.SerializerMethodField()
-    prescriptions = serializers.SerializerMethodField()
-    charge_order = serializers.SerializerMethodField()
     medical_tests = MedicalTestSerializer(many=True, read_only=True)
     referrals = MedicalReferralSerializer(many=True, read_only=True)
+    vital_signs = VitalSignsSerializer(read_only=True)
+    note = ClinicalNoteSerializer(read_only=True)
+    patient = PatientReadSerializer(read_only=True)
+
+    # 2. Lógica de Negocio Inyectada (Tratamientos y Recetas)
+    treatments = serializers.SerializerMethodField()
+    prescriptions = serializers.SerializerMethodField()
+    
+    # 3. Bloque Financiero y de Auditoría
+    charge_order = serializers.SerializerMethodField()
     balance_due = serializers.SerializerMethodField()
 
     class Meta(AppointmentSerializer.Meta):
-        # Hereda los campos de AppointmentSerializer (incluyendo started_at)
         fields = AppointmentSerializer.Meta.fields + [
             "diagnoses",
             "treatments",
             "prescriptions",
             "medical_tests",
             "referrals",
+            "vital_signs",
+            "note",
+            "charge_order",
             "balance_due",
-            # "notes" ya está en el padre, pero se mantiene aquí si se requiere asegurar el orden
+            "started_at",
+            "completed_at",
+            "notes",  # Notas administrativas
+        ]
+        read_only_fields = AppointmentSerializer.Meta.read_only_fields + [
+            "started_at", "completed_at"
         ]
 
-    def get_balance_due(self, obj):
+    @extend_schema_field(serializers.FloatField())
+    def get_balance_due(self, obj) -> float:
+        """Extrae el saldo pendiente directamente de la lógica del modelo."""
         try:
             return float(obj.balance_due())
-        except Exception:
+        except (AttributeError, TypeError, InvalidOperation):
             return 0.0
 
-    # 🔹 Treatments: todas las de los diagnósticos de esta cita
     def get_treatments(self, obj):
+        """
+        Obtiene tratamientos vinculados a los diagnósticos de esta cita.
+        Optimizado para evitar el problema N+1.
+        """
         qs = Treatment.objects.filter(diagnosis__appointment=obj).select_related("diagnosis")
         return TreatmentSerializer(qs, many=True).data
 
-    # 🔹 Prescriptions: todas las de los diagnósticos de esta cita
     def get_prescriptions(self, obj):
-        qs = Prescription.objects.filter(diagnosis__appointment=obj).select_related("diagnosis", "medication_catalog")
+        """
+        Obtiene recetas y sus componentes (medicamentos) asociados a la cita.
+        """
+        qs = Prescription.objects.filter(diagnosis__appointment=obj).prefetch_related("components")
         return PrescriptionSerializer(qs, many=True).data
 
-    # 🔹 Charge order: la orden activa más relevante (paid/partially_paid/open), ignorando void
     def get_charge_order(self, obj):
-        order = (
-            obj.charge_orders.exclude(status="void")
-            .order_by(
-                models.Case(
-                    models.When(status="paid", then=0),
-                    models.When(status="partially_paid", then=1),
-                    default=2,
-                    output_field=models.IntegerField(),
-                ),
-                "-issued_at",
-            )
-            .first()
-        )
-        return ChargeOrderSerializer(order).data if order else None
+        """
+        Devuelve la orden de cobro principal de la cita con lógica de prioridad.
+        Prioriza: Pagada > Parcial > Abierta.
+        """
+        order = obj.charge_orders.exclude(status="void").order_by(
+            models.Case(
+                models.When(status="paid", then=0),
+                models.When(status="partially_paid", then=1),
+                models.When(status="open", then=2),
+                default=3,
+                output_field=models.IntegerField(),
+            ),
+            "-created_at"
+        ).first()
+        
+        if order:
+            return {
+                "id": order.id,
+                "status": order.status,
+                "total_amount": float(order.total_amount),
+                "order_number": getattr(order, 'order_number', f"ORD-{order.id}")
+            }
+        return None
+
+    def to_representation(self, instance):
+        """
+        Añade indicadores de estado para el Frontend.
+        """
+        representation = super().to_representation(instance)
+        
+        # Flags de UI
+        representation['has_vitals'] = hasattr(instance, 'vital_signs')
+        
+        # Estado de la Nota Médica
+        note = getattr(instance, 'note', None)
+        representation['is_locked'] = note.is_locked if note else False
+        
+        # Métricas de tiempo de consulta
+        if instance.started_at and instance.completed_at:
+            delta = instance.completed_at - instance.started_at
+            representation['duration_seconds'] = delta.total_seconds()
+            
+        return representation
 
 
 class PersonalHistorySerializer(serializers.ModelSerializer):
@@ -1722,160 +1992,95 @@ class PatientVaccinationSerializer(serializers.ModelSerializer):
 
 
 class PatientClinicalProfileSerializer(serializers.ModelSerializer):
-    surgeries = SurgerySerializer(many=True, read_only=True)
-    habits = HabitSerializer(many=True, read_only=True)
-    vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
-    allergies = AllergySerializer(many=True, read_only=True)
+    # Relaciones Unificadas
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
-
-    clinical_background = serializers.SerializerMethodField()
+    vaccinations = PatientVaccinationSerializer(many=True, read_only=True)
+    alerts = serializers.SerializerMethodField()
+    
+    # Metadatos del Paciente
+    full_name = serializers.ReadOnlyField()
+    age = serializers.SerializerMethodField()
+    
+    # Ubicación Jerárquica
+    address_chain = serializers.SerializerMethodField()
     full_address = serializers.SerializerMethodField()
-    address_chain = serializers.SerializerMethodField()   # ⚡ añadido
-    address = serializers.SerializerMethodField()         # ⚡ campo libre añadido
 
     class Meta:
         model = Patient
         fields = [
-            "id",
-            "national_id",
-            "first_name",
-            "middle_name",
-            "last_name",
-            "second_last_name",
-            "birthdate",
-            "birth_place",
-            "birth_country",
-            "gender",
-            "email",
-            "contact_info",
-            "weight",
-            "height",
-            "blood_type",
-            # campos raíz
-            "allergies",
-            "medical_history",
-            "surgeries",
-            "habits",
+            "id", "full_name", "national_id", "age", "gender", "blood_type",
+            "weight", "height", "email", "contact_info",
+            "birthdate", "birth_place", "birth_country",
+            "medical_history", # Aquí vienen Personales, Familiares, Quirúrgicos, etc.
             "vaccinations",
-            # campos calculados
-            "clinical_background",
-            "full_address",
-            "address_chain",   # ⚡ añadido
-            "address",         # ⚡ campo libre añadido
+            "alerts",          # Para ver alergias y riesgos críticos de un vistazo
+            "address",         # Campo libre
+            "full_address",    # Cadena de texto legible
+            "address_chain",   # Estructura de IDs para el frontend
         ]
 
-    def get_clinical_background(self, obj):
-        # personales
-        try:
-            personales_qs = PersonalHistory.objects.filter(patient=obj)
-        except Exception:
-            personales_qs = []
+    def get_age(self, obj) -> Optional[int]:
+        if not obj.birthdate: return None
+        today = date.today()
+        return today.year - obj.birthdate.year - (
+            (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
+        )
 
-        personales = [
-            {
-                "id": getattr(ph, "id", None),
-                "type": "personal",
-                "condition": getattr(ph, "description", None) or getattr(ph, "condition", None),
-                "status": getattr(ph, "status", "active"),
-                "notes": getattr(ph, "notes", None),
-                "source": "historia_clinica",
-            }
-            for ph in personales_qs
-        ]
-
-        # familiares
-        try:
-            familiares_qs = FamilyHistory.objects.filter(patient=obj)
-        except Exception:
-            familiares_qs = []
-
-        familiares = [
-            {
-                "id": getattr(fh, "id", None),
-                "type": "family",
-                "condition": getattr(fh, "condition", None),
-                "status": getattr(fh, "status", "positive"),
-                "relative": getattr(fh, "relative", None),
-                "notes": getattr(fh, "notes", None),
-                "source": "historia_clinica",
-            }
-            for fh in familiares_qs
-        ]
-
-        # genéticos
-        try:
-            geneticos_qs = getattr(obj, "genetic_predispositions", None)
-            geneticos_qs = geneticos_qs.all() if geneticos_qs else []
-        except Exception:
-            geneticos_qs = []
-
-        geneticos = [
-            {
-                "id": getattr(gp, "id", None),
-                "type": "genetic",
-                "condition": getattr(gp, "name", None),
-                "status": "positive",
-                "notes": getattr(gp, "description", None),
-                "source": "prueba_genetica",
-            }
-            for gp in geneticos_qs
-        ]
-
-        # NO incluir alergias aquí — se exponen como campo raíz
-        return personales + familiares + geneticos
+    def get_alerts(self, obj):
+        """Muestra alertas críticas (alergias, condiciones de riesgo)"""
+        if not hasattr(obj, 'alerts'): return []
+        return [{"type": a.type, "message": a.message} for a in obj.alerts.filter(is_active=True)]
 
     def get_full_address(self, obj):
+        """Construye una dirección legible combinando la jerarquía"""
         parts = []
-        if getattr(obj, "neighborhood", None):
-            parts.append(obj.neighborhood.name)
-        if getattr(obj, "parish", None):
-            parts.append(obj.parish.name)
-        if getattr(obj, "city", None):
-            parts.append(obj.city.name)
-        if getattr(obj, "municipality", None):
-            parts.append(obj.municipality.name)
-        if getattr(obj, "state", None):
-            parts.append(obj.state.name)
-        if getattr(obj, "country", None):
-            parts.append(obj.country.name)
-        return ", ".join(parts) if parts else None
+        n = obj.neighborhood
+        if n:
+            parts.extend([n.name, n.parish.name, n.parish.municipality.name, n.parish.municipality.state.name])
+        if obj.address: # Añadimos el campo libre al final
+            parts.append(obj.address)
+        return ", ".join(parts) if parts else "Dirección no registrada"
 
     def get_address_chain(self, obj):
-        """Devuelve la cadena jerárquica completa de dirección con IDs y nombres."""
-        try:
-            n = getattr(obj, "neighborhood", None)
-            p = getattr(n, "parish", None) if n else getattr(obj, "parish", None)
-            m = getattr(p, "municipality", None) if p else getattr(obj, "municipality", None)
-            s = getattr(m, "state", None) if m else getattr(obj, "state", None)
-            c = getattr(s, "country", None) if s else getattr(obj, "country", None)
+        """Mantiene la compatibilidad con el selector geográfico del Frontend"""
+        n = obj.neighborhood
+        if not n:
+            return {"neighborhood": "N/A", "country": "N/A"}
+        
+        p = n.parish
+        m = p.municipality if p else None
+        s = m.state if m else None
+        c = s.country if s else None
 
-            return {
-                "neighborhood": getattr(n, "name", "SIN-BARRIO"),
-                "neighborhood_id": getattr(n, "id", None),
-                "parish": getattr(p, "name", "SIN-PARROQUIA"),
-                "parish_id": getattr(p, "id", None),
-                "municipality": getattr(m, "name", "SIN-MUNICIPIO"),
-                "municipality_id": getattr(m, "id", None),
-                "state": getattr(s, "name", "SIN-ESTADO"),
-                "state_id": getattr(s, "id", None),
-                "country": getattr(c, "name", "SIN-PAÍS"),
-                "country_id": getattr(c, "id", None),
-            }
-        except Exception:
-            return {
-                "neighborhood": "SIN-BARRIO", "neighborhood_id": None,
-                "parish": "SIN-PARROQUIA", "parish_id": None,
-                "municipality": "SIN-MUNICIPIO", "municipality_id": None,
-                "state": "SIN-ESTADO", "state_id": None,
-                "country": "SIN-PAÍS", "country_id": None,
-            }
-
-    def get_address(self, obj):
-        """Devuelve siempre string, nunca null."""
-        return obj.address or ""
+        return {
+            "neighborhood": n.name, "neighborhood_id": n.id,
+            "parish": getattr(p, 'name', "N/A"), "parish_id": getattr(p, 'id', None),
+            "municipality": getattr(m, 'name', "N/A"), "municipality_id": getattr(m, 'id', None),
+            "state": getattr(s, 'name', "N/A"), "state_id": getattr(s, 'id', None),
+            "country": getattr(c, 'name', "N/A"), "country_id": getattr(c, 'id', None),
+        }
 
 
 class ClinicalAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClinicalAlert
         fields = ["id", "patient", "type", "message", "created_at", "updated_at"]
+
+
+# --- Serializers auxiliares para PATCH/POST ---
+class AppointmentStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.CharField()
+
+class AppointmentNotesUpdateSerializer(serializers.Serializer):
+    notes = serializers.CharField()
+
+class WaitingRoomStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.CharField()
+
+class RegisterArrivalSerializer(serializers.Serializer):
+    patient_id = serializers.IntegerField()
+    appointment_id = serializers.IntegerField(required=False)
+    is_emergency = serializers.BooleanField(required=False)
+
+class RegisterWalkinSerializer(serializers.Serializer):
+    patient_id = serializers.IntegerField()

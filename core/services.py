@@ -1,0 +1,915 @@
+import os
+import io
+from io import BytesIO
+import re
+import time
+import base64
+import hashlib
+import logging
+import tempfile
+import traceback
+import calendar
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from datetime import datetime, date, timedelta
+from typing import Dict, Any, cast, Optional, List, Tuple, Union
+#from PIL import Image as PILImage
+from reportlab.platypus import Image as RLImage
+
+# 2. Django Core
+from django.conf import settings
+from django.core.files import File
+from django.core.files.base import ContentFile
+from django.core.paginator import Paginator
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Count, Sum, Q, F, Value, CharField
+from django.db.models.functions import TruncDate, TruncMonth, TruncWeek, Coalesce, Cast, Concat
+from django.http import JsonResponse, FileResponse
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.utils.timezone import now, localdate, make_aware
+
+# 3. Herramientas de Terceros (Scraping, QR, Excel)
+import requests
+import qrcode
+from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
+from weasyprint import HTML
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.drawing.image import Image as XLImage
+
+# 4. ReportLab (Motor de PDF para Reportes Estructurados)
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import (
+    SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image as RLImage
+)
+from reportlab.lib.styles import getSampleStyleSheet
+
+# 5. Django Rest Framework (DRF)
+# Solo lo mínimo necesario para tipos en la capa de servicios
+from rest_framework import status
+from rest_framework.response import Response
+
+# 6. Modelos Locales
+from .models import (
+    Patient, Appointment, Payment, Event, WaitingRoomEntry, GeneticPredisposition, 
+    MedicalDocument, Diagnosis, Treatment, Prescription, ChargeOrder, ChargeItem, 
+    InstitutionSettings, DoctorOperator, BCVRateCache, MedicalReport, ICD11Entry, 
+    MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, 
+    PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, 
+    PatientVaccination, Allergy, MedicalHistory, ClinicalAlert, Country, State, 
+    Municipality, City, Parish, Neighborhood, VitalSigns
+)
+
+# 7. Serializadores Locales
+from .serializers import (
+    PatientDetailSerializer, AppointmentDetailSerializer, DashboardSummarySerializer,
+    PatientReadSerializer, PatientWriteSerializer, PatientListSerializer, 
+    AppointmentSerializer, PaymentSerializer, WaitingRoomEntrySerializer, 
+    WaitingRoomEntryDetailSerializer, GeneticPredispositionSerializer, 
+    MedicalDocumentReadSerializer, MedicalDocumentWriteSerializer,
+    AppointmentPendingSerializer, DiagnosisSerializer, TreatmentSerializer, 
+    PrescriptionSerializer, ChargeOrderSerializer, ChargeItemSerializer, 
+    ChargeOrderPaymentSerializer, EventSerializer, ReportRowSerializer, 
+    ReportFiltersSerializer, ReportExportSerializer, InstitutionSettingsSerializer, 
+    DoctorOperatorSerializer, MedicalReportSerializer, ICD11EntrySerializer, 
+    DiagnosisWriteSerializer, MedicalTestSerializer, MedicalReferralSerializer, 
+    PrescriptionWriteSerializer, TreatmentWriteSerializer, MedicalTestWriteSerializer, 
+    MedicalReferralWriteSerializer, SpecialtySerializer, PersonalHistorySerializer, 
+    FamilyHistorySerializer, SurgerySerializer, HabitSerializer, VaccineSerializer, 
+    VaccinationScheduleSerializer, PatientVaccinationSerializer, 
+    PatientClinicalProfileSerializer, AllergySerializer, MedicalHistorySerializer, 
+    ClinicalAlertSerializer, CountrySerializer, StateSerializer, MunicipalitySerializer,
+    CitySerializer, ParishSerializer, NeighborhoodSerializer, VitalSignsSerializer
+)
+
+# 8. Utils y Choices Locales
+from core.utils.search_normalize import normalize, normalize_token
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
+
+# Configuración de Logging
+#logger = logging.getLogger(__name__)
+
+
+audit = logging.getLogger("audit")
+
+
+def get_doctor_context() -> dict:
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+    return {
+        "full_name": doctor.full_name if doctor else "",
+        "colegiado_id": doctor.colegiado_id if doctor else "",
+        "specialties": specialties if specialties else ["No especificadas"],
+        "signature": doctor.signature if (doctor and doctor.signature) else None,
+    }
+
+def get_patient_serialized(patient) -> dict:
+    return dict(PatientDetailSerializer(patient).data)
+
+def make_qr_data_uri(payload: str) -> str:
+    img = qrcode.make(payload)
+    buf = BytesIO()
+    img.save(buf, "PNG")
+    return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('utf-8')}"
+
+
+def safe_json(value):
+    return float(value) if isinstance(value, Decimal) else value
+
+
+def generate_audit_code(appointment, patient):
+    """
+    Genera un código de auditoría único y trazable para documentos clínicos.
+    Combina ID de consulta, ID de paciente y timestamp.
+    """
+    raw = f"{appointment.id}-{patient.id}-{timezone.now().isoformat()}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]  # 12 caracteres
+
+
+def get_bcv_rate_logic():
+    """
+    SERVICIO PURO: Gestiona la obtención de la tasa BCV.
+    Implementa: Cache -> Scraping Real -> Fallback al último valor.
+    """
+    today = timezone.localdate()
+    
+    # 1. Intentar obtener de la caché de hoy
+    cache = BCVRateCache.objects.filter(date=today).first()
+    if cache:
+        return {
+            "value": float(cache.value),
+            "date": str(today),
+            "source": "BCV_CACHE",
+            "is_fallback": False
+        }
+
+    # 2. Si no hay caché, ejecutamos el Scraping con Playwright
+    html = None
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--disable-blink-features=AutomationControlled", "--no-sandbox"]
+            )
+            context = browser.new_context(
+                user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                locale="es-VE"
+            )
+            page = context.new_page()
+            page.goto("https://www.bcv.org.ve/", wait_until="networkidle", timeout=30000)
+            page.wait_for_selector("#dolar .centrado strong", timeout=15000)
+            html = page.content()
+            browser.close()
+    except Exception as e:
+        print(f"DEBUG: Error en Playwright: {str(e)}")
+
+    # 3. Extraer y procesar el dato
+    if html:
+        soup = BeautifulSoup(html, "html.parser")
+        dolar_elem = soup.select_one("#dolar .centrado strong")
+        raw_val = dolar_elem.get_text(strip=True) if dolar_elem else None
+        
+        if raw_val:
+            try:
+                # Normalización venezolana: 36,45 -> 36.45
+                normalized = raw_val.replace(".", "").replace(",", ".")
+                rate_decimal = Decimal(normalized)
+                
+                # Guardar nuevo valor en caché
+                BCVRateCache.objects.update_or_create(
+                    date=today,
+                    defaults={'value': rate_decimal}
+                )
+                
+                return {
+                    "value": float(rate_decimal),
+                    "date": str(today),
+                    "source": "BCV_LIVE",
+                    "is_fallback": False
+                }
+            except Exception:
+                pass
+
+    # 4. ULTIMO RECURSO (Resiliencia Extrema)
+    last_known = BCVRateCache.objects.order_by("-date").first()
+    if last_known:
+        return {
+            "value": float(last_known.value),
+            "date": str(last_known.date),
+            "source": "BCV_HISTORY_FALLBACK",
+            "is_fallback": True,
+            "warning": "No se pudo conectar con el BCV, usando última tasa conocida"
+        }
+    
+    raise RuntimeError("No hay conexión con el BCV ni datos históricos disponibles.")
+
+
+def get_bcv_rate():
+    """ 
+    FUNCIÓN PUENTE: Mantiene compatibilidad con el resto del sistema 
+    devolviendo directamente un Decimal.
+    """
+    try:
+        data = get_bcv_rate_logic()
+        return Decimal(str(data["value"]))
+    except Exception:
+        # Fallback de seguridad extrema
+        obj = BCVRateCache.objects.order_by("-date").first()
+        return obj.value if obj else Decimal("1.0")
+
+
+def get_dashboard_summary_data(start_date=None, end_date=None, range_param=None, currency="USD", status_param=None):
+    """
+    Músculo estadístico de Medopz.
+    Calcula finanzas, citas y tendencias sin depender de la capa web.
+    """
+    today = localdate()
+
+    # --- 1. Lógica de Fechas (Independiente) ---
+    def parse_d(d):
+        try:
+            return parse_date(str(d)) if d else None
+        except:
+            return None
+
+    if range_param == "day":
+        start = end = today
+    elif range_param == "week":
+        start = today - timedelta(days=today.weekday())
+        end = start + timedelta(days=6)
+    elif range_param == "month":
+        start = today.replace(day=1)
+        end = date(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+    else:
+        start = parse_d(start_date) or (today - timedelta(days=6))
+        end = parse_d(end_date) or today
+
+    # --- 2. Finanzas (Agregaciones) ---
+    orders_qs = ChargeOrder.objects.exclude(status="void")
+    total_amount = orders_qs.aggregate(s=Sum("total")).get("s") or Decimal("0")
+    confirmed_amount = Payment.objects.filter(status="confirmed").aggregate(s=Sum("amount")).get("s") or Decimal("0")
+    balance_due = orders_qs.aggregate(s=Sum("balance_due")).get("s") or Decimal("0")
+
+    waived_qs = ChargeOrder.objects.filter(status="waived")
+    
+    # --- 3. Clínico-operativo ---
+    appt_qs = Appointment.objects.filter(appointment_date__range=(start, end))
+    if status_param:
+        appt_qs = appt_qs.filter(status=status_param)
+
+    # --- 4. Tendencias (QuerySets optimizados) ---
+    appt_trend = list(
+        Appointment.objects.filter(appointment_date__range=(start, end), status="completed")
+        .annotate(date=TruncDate("appointment_date"))
+        .values("date")
+        .annotate(value=Count("id"))
+        .order_by("date")
+    )
+
+    pay_trend = list(
+        Payment.objects.filter(status="confirmed", received_at__date__range=(start, end))
+        .annotate(date=TruncDate("received_at"))
+        .values("date")
+        .annotate(value=Sum("amount"))
+        .order_by("date")
+    )
+
+    # --- 5. Tasa BCV (Usando el servicio interno si existe o el Cache) ---
+    latest_rate = BCVRateCache.objects.order_by("-created_at").first()
+    rate_val = float(latest_rate.value) if latest_rate else 1.0
+    
+    def convert(amount):
+        return float(amount) * rate_val if currency == "VES" else float(amount)
+
+    # --- Payload Final ---
+    return {
+        "total_patients": Patient.objects.count(),
+        "total_appointments": appt_qs.count(),
+        "completed_appointments": appt_qs.filter(status="completed").count(),
+        "pending_appointments": appt_qs.filter(status="pending").count(),
+        "active_consultations": appt_qs.filter(status="in_consultation").count(),
+        "waiting_room_count": WaitingRoomEntry.objects.filter(arrival_time__date__range=(start, end), status="waiting").count(),
+        "total_payments_amount": convert(confirmed_amount),
+        "financial_balance": convert(max(total_amount - balance_due, Decimal("0"))),
+        "appointments_trend": [{"date": str(r["date"]), "value": int(r["value"])} for r in appt_trend],
+        "payments_trend": [{"date": str(r["date"]), "value": float(r["value"])} for r in pay_trend],
+        "bcv_rate": {
+            "value": rate_val,
+            "unit": "VES_per_USD",
+            "is_fallback": latest_rate is None
+        }
+    }
+
+
+def get_daily_appointments() -> List[Dict[str, Any]]:
+    today = localdate()
+    appointments = (
+        Appointment.objects
+        .filter(appointment_date=today)
+        .select_related("patient")
+        .order_by("arrival_time")
+    )
+    return cast(List[Dict[str, Any]], AppointmentSerializer(appointments, many=True).data)
+
+
+def get_current_consultation() -> Optional[Dict[str, Any]]:
+    today = localdate()
+    appointment = (
+        Appointment.objects
+        .filter(appointment_date=today, status="in_consultation")
+        .select_related("patient")
+        .prefetch_related("diagnoses__treatments", "diagnoses__prescriptions")
+        .first()
+    )
+    if not appointment:
+        return None
+    return cast(Dict[str, Any], AppointmentDetailSerializer(appointment).data)
+
+
+def get_waitingroom_groups_today() -> Dict[str, Any]:
+    today = localdate()
+    groups_by_status = (
+        WaitingRoomEntry.objects.filter(arrival_time__date=today)
+        .values("status").annotate(total=Count("id")).order_by("status")
+    )
+    groups_by_priority = (
+        WaitingRoomEntry.objects.filter(arrival_time__date=today)
+        .values("priority").annotate(total=Count("id")).order_by("priority")
+    )
+    return {
+        "by_status": list(groups_by_status),
+        "by_priority": list(groups_by_priority),
+    }
+
+
+def recalc_appointment_status(appointment: Appointment):
+    expected = Decimal(appointment.expected_amount or 0)
+    total_paid = Payment.objects.filter(
+        appointment=appointment, status="paid"
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+
+    if total_paid >= expected and expected > 0:
+        appointment.status = "paid"
+    else:
+        appointment.status = "pending"
+    appointment.save(update_fields=["status"])
+
+
+# --- Funciones auxiliares para escalar imágenes ---
+def scaled_image(path: str, max_width: int, max_height: int) -> RLImage:
+    """Escala una imagen para ReportLab manteniendo la proporción."""
+    img = RLImage(path)
+    iw, ih = img.drawWidth, img.drawHeight
+    scale = min(max_width / iw, max_height / ih)
+    img.drawWidth = iw * scale
+    img.drawHeight = ih * scale
+    return img
+
+def scaled_excel_image(path: str, max_width: int, max_height: int) -> XLImage:
+    img = XLImage(path)
+    iw, ih = img.width, img.height
+    scale = min(max_width / iw, max_height / ih)
+    img.width = int(iw * scale)
+    img.height = int(ih * scale)
+    return img
+
+
+def export_institutional_report(
+    data_serialized: List[Dict[str, Any]], 
+    export_format: str, 
+    filters: Any, 
+    target_currency: str, 
+    user_name: str
+) -> Tuple[io.BytesIO, str, str]:
+    """
+    SERVICIO: Genera el archivo binario (PDF o Excel) para exportaciones institucionales.
+    Garantiza un retorno de (buffer, content_type, filename).
+    """
+    inst = InstitutionSettings.objects.first()
+    doc_op = DoctorOperator.objects.first()
+    
+    # 1. Obtener tasa si es necesario
+    rate = Decimal("1.0")
+    if target_currency == "VES":
+        # Asegúrate de que get_bcv_rate esté accesible o importada
+        from .services import get_bcv_rate
+        rate = get_bcv_rate()
+
+    # 2. Preparar especialidades
+    specialty_str = ""
+    if doc_op and hasattr(doc_op, "specialties"):
+        try:
+            specialty_str = ", ".join([str(s) for s in doc_op.specialties.all()])
+        except Exception:
+            specialty_str = "No especificadas"
+
+    buffer = io.BytesIO()
+
+    # --- LÓGICA PDF ---
+    if export_format == "pdf":
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        if inst:
+            elements.append(Paragraph(f"<b>{inst.name or ''}</b>", styles["Title"]))
+            elements.append(Paragraph(f"Dirección: {inst.address or ''}", styles["Normal"]))
+            elements.append(Paragraph(f"Tel: {inst.phone or ''} • RIF: {inst.tax_id or ''}", styles["Normal"]))
+            elements.append(Spacer(1, 12))
+
+        if doc_op:
+            elements.append(Paragraph(
+                f"Médico operador: {doc_op.full_name or ''} • Colegiado: {doc_op.colegiado_id or ''} • {specialty_str}",
+                styles["Normal"]
+            ))
+            elements.append(Spacer(1, 8))
+
+        elements.append(Paragraph("<b>Reporte Institucional</b>", styles["Heading2"]))
+        elements.append(Paragraph(f"Filtros: {str(filters)}", styles["Normal"]))
+        elements.append(Paragraph(f"Tasa aplicada: {rate} Bs/USD", styles["Italic"]))
+        elements.append(Spacer(1, 12))
+
+        table_data = [["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"]]
+        for r in data_serialized:
+            raw_date = r.get("date")
+            date_str = str(raw_date)[:10] if raw_date else ""
+            
+            amount_dec = Decimal(str(r.get("amount") or "0"))
+            amount_val = (amount_dec * rate).quantize(Decimal("0.01"), ROUND_HALF_UP)
+
+            table_data.append([
+                str(r.get("id") or ""),
+                date_str,
+                str(r.get("type") or ""),
+                str(r.get("entity") or ""),
+                str(r.get("status") or ""),
+                f"{float(amount_val):.2f}",
+                target_currency,
+            ])
+
+        table = Table(table_data, hAlign="LEFT")
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ]))
+        elements.append(table)
+        
+        elements.append(Spacer(1, 24))
+        elements.append(Paragraph(f"Generado por: {user_name}", styles["Normal"]))
+        elements.append(Paragraph(f"Fecha: {timezone.now().strftime('%Y-%m-%d %H:%M')}", styles["Normal"]))
+
+        doc.build(elements)
+        buffer.seek(0)
+        return buffer, "application/pdf", "reporte.pdf"
+
+    # --- LÓGICA EXCEL ---
+    elif export_format == "excel":
+        wb = Workbook()
+        # 🔹 CAST para que Pylance reconozca ws como Worksheet y no como None
+        from openpyxl.worksheet.worksheet import Worksheet
+        ws = cast(Worksheet, wb.active)
+        
+        ws.title = "Reporte"
+
+        if inst:
+            # Acceso directo por celda tipado
+            ws["A1"] = str(inst.name)
+            ws["A1"].font = Font(bold=True, size=14)
+        
+        ws.append(["ID", "Fecha", "Tipo", "Entidad", "Estado", "Monto", "Moneda"])
+        
+        for r in data_serialized:
+            raw_date = r.get("date")
+            amount_dec = Decimal(str(r.get("amount") or "0"))
+            amount_val = float((amount_dec * rate).quantize(Decimal("0.01"), ROUND_HALF_UP))
+            
+            ws.append([
+                str(r.get("id") or ""), 
+                str(raw_date)[:10] if raw_date else "", 
+                str(r.get("type") or ""),
+                str(r.get("entity") or ""), 
+                str(r.get("status") or ""), 
+                amount_val, 
+                target_currency
+            ])
+
+        wb.save(buffer)
+        buffer.seek(0)
+        return buffer, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "reporte.xlsx"
+
+    # Si llegamos aquí sin retorno, lanzamos error para que la vista no reciba None
+    raise ValueError(f"Formato de exportación no soportado: {export_format}")
+
+
+def generate_pdf_from_html(html: str, filename: str = "informe.pdf") -> File:
+    """
+    Convierte HTML en PDF y retorna un archivo Django File listo para guardar en un FileField.
+    - Usa archivo temporal seguro.
+    - Compatible con MedicalDocument.file.
+    """
+    from weasyprint import HTML
+    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+        # Renderizar PDF desde HTML
+        HTML(string=html).write_pdf(tmp.name)
+        tmp.seek(0)
+        # Retornar como File listo para guardar
+        return File(tmp, name=filename)
+
+
+def generate_pdf_document(category: str, queryset, appointment):
+    patient = appointment.patient
+    institution = InstitutionSettings.objects.first()
+    doctor = DoctorOperator.objects.first()
+    specialties = list(doctor.specialties.values_list("name", flat=True)) if doctor else []
+
+    # Paciente serializado
+    patient_serialized = dict(PatientDetailSerializer(patient).data)
+
+    # Generar audit code y QR
+    audit_code = generate_audit_code(appointment, patient)
+    qr_payload = f"Consulta:{appointment.id}|Category:{category}|Audit:{audit_code}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
+
+    # Helper defensivo
+    def safe(val, default=""):
+        return val if val is not None else default
+
+    # Normalización de items según categoría
+    items = []
+    lab_tests, image_tests = [], []
+
+    if category == "prescription":
+        # Usar constantes globales, no atributos inexistentes en Prescription
+        def route_label(val): return dict(ROUTE_CHOICES).get(val, val)
+        def freq_label(val): return dict(FREQUENCY_CHOICES).get(val, val)
+        def unit_label(val): return dict(UNIT_CHOICES).get(val, val)
+
+        for p in queryset:
+            med_name = ""
+            if getattr(p, "medication_catalog", None):
+                med_name = getattr(p.medication_catalog, "name", "") or getattr(p.medication_catalog, "title", "")
+            if not med_name:
+                med_name = safe(getattr(p, "medication_text", None))
+
+            components = []
+            for c in p.components.all():
+                components.append({
+                    "substance": c.substance,
+                    "dosage": c.dosage,
+                    "unit": unit_label(safe(c.unit)),
+                })
+
+            items.append({
+                "medication": med_name or "Medicamento no especificado",
+                "components": components,
+                "route": route_label(safe(p.route)),
+                "frequency": freq_label(safe(p.frequency)),
+                "duration": safe(p.duration),
+            })
+
+    elif category == "treatment":
+        for t in queryset:
+            items.append({
+                "description": safe(getattr(t, "plan", None)) or safe(getattr(t, "description", None)),
+                "notes": safe(getattr(t, "notes", None)),
+            })
+
+    elif category == "medical_test_order":
+        def urgency_label(val): return dict(MedicalTest.URGENCY_CHOICES).get(val, val)
+        def status_label(val): return dict(MedicalTest.STATUS_CHOICES).get(val, val)
+        def type_label(val): return dict(MedicalTest.TEST_TYPE_CHOICES).get(val, val)
+        for t in queryset:
+            row = {
+                "type": type_label(safe(t.test_type)),
+                "description": safe(t.description, "Sin descripción"),
+                "urgency": urgency_label(safe(t.urgency)),
+                "status": status_label(safe(t.status)),
+            }
+            if t.test_type in ["blood_test", "urine_test", "stool_test", "microbiology_culture", "biopsy", "genetic_test"]:
+                lab_tests.append(row)
+            elif t.test_type in ["xray", "ultrasound", "ct_scan", "mri", "ecg"]:
+                image_tests.append(row)
+
+    elif category == "medical_referral":
+        for r in queryset:
+            spec_names = [s.name for s in r.specialties.all()] if hasattr(r, "specialties") else []
+            items.append({
+                "notes": safe(r.reason) or safe(getattr(r, "notes", None)),
+                "referred_to": safe(r.referred_to),
+                "urgency": getattr(r, "get_urgency_display", lambda: safe(r.urgency))(),
+                "status": getattr(r, "get_status_display", lambda: safe(r.status))(),
+                "specialties": spec_names or [],
+            })
+
+    # Mapear categoría a template real
+    template_map = {
+        "treatment": "documents/treatment.html",
+        "prescription": "documents/prescription.html",
+        "medical_test_order": "documents/medical_test_order.html",
+        "medical_referral": "documents/medical_referral.html",
+    }
+    tpl = template_map.get(category)
+    if not tpl:
+        raise ValueError(f"No existe template para la categoría {category}")
+
+    context = {
+        "appointment": appointment,
+        "patient": patient_serialized,
+        "institution": institution,
+        "doctor": {
+            "full_name": doctor.full_name if doctor else "",
+            "colegiado_id": doctor.colegiado_id if doctor else "",
+            "specialties": specialties if specialties else ["No especificadas"],
+            "signature": doctor.signature if (doctor and doctor.signature) else None,
+        },
+        "items": items,
+        "lab_tests": lab_tests,
+        "image_tests": image_tests,
+        "generated_at": timezone.now(),
+        "audit_code": audit_code,
+        "qr_code_url": qr_code_url,
+    }
+
+    html_string = render_to_string(tpl, context)
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+
+    # ✅ Devuelve siempre un tuple (pdf_file, audit_code)
+    return ContentFile(pdf_bytes or b"", name=f"{category}_{appointment.id}.pdf"), audit_code
+
+
+def get_audit_logic(
+    entity: Optional[str] = None,
+    entity_id: Optional[Union[int, str]] = None,
+    patient_id: Optional[Union[int, str]] = None,
+    limit: Optional[int] = None,
+    split_by_category: bool = False,
+    filters: Optional[Dict[str, Any]] = None
+) -> Any:
+    """
+    SERVICIO MAESTRO DE AUDITORÍA: Centraliza 7 métodos en uno solo.
+    Devuelve datos puros (dicts/lists), sin Response ni Request.
+    """
+    from .serializers import EventSerializer
+    
+    # 1. Base Query optimizada
+    qs = Event.objects.all().order_by("-timestamp")
+
+    # 2. Filtros de Identidad (ID de paciente en metadata es clave para rendimiento)
+    if patient_id:
+        qs = qs.filter(metadata__contains={"patient_id": int(patient_id)})
+    if entity:
+        qs = qs.filter(entity=entity)
+    if entity_id:
+        qs = qs.filter(entity_id=entity_id)
+
+    # 3. Filtros Dinámicos (vienen de request.GET)
+    if filters:
+        if filters.get("start_date"):
+            qs = qs.filter(timestamp__date__gte=filters["start_date"])
+        if filters.get("end_date"):
+            qs = qs.filter(timestamp__date__lte=filters["end_date"])
+        if filters.get("severity"):
+            qs = qs.filter(severity=filters["severity"])
+        if filters.get("actor"):
+            qs = qs.filter(actor__icontains=filters["actor"])
+
+    # 4. Lógica de Categorización (Para Dashboards o Resúmenes)
+    if split_by_category:
+        lim = limit or 10
+        clinical = qs.filter(entity__in=["Prescription", "Treatment"])[:lim]
+        financial = qs.filter(entity__in=["Payment", "ChargeOrder"])[:lim]
+        general = qs.filter(entity__in=["Patient", "Appointment", "WaitingRoomEntry"])[:lim]
+        
+        return {
+            "clinical_events": EventSerializer(clinical, many=True).data,
+            "financial_events": EventSerializer(financial, many=True).data,
+            "general_events": EventSerializer(general, many=True).data,
+            "all_events": EventSerializer(qs[:30], many=True).data
+        }
+
+    # 5. Dashboard Estadístico (Totalizaciones)
+    if filters and filters.get("dashboard_stats"):
+        return {
+            "total_events": Event.objects.count(),
+            "by_entity": list(Event.objects.values("entity").annotate(total=Count("id"))),
+            "by_action": list(Event.objects.values("action").annotate(total=Count("id"))),
+        }
+
+    # 6. Retorno Simple (con o sin límite)
+    if limit:
+        qs = qs[:limit]
+        
+    return cast(List[Dict[str, Any]], EventSerializer(qs, many=True).data)
+
+
+def get_payment_summary() -> List[Dict[str, Any]]:
+    return list(Payment.objects.values("method").annotate(total=Sum("amount")))
+
+def get_waived_consultations():
+    return Payment.objects.filter(status="waived")
+
+def get_waitingroom_today_data():
+    today = timezone.localdate()
+    return WaitingRoomEntry.objects.filter(
+        Q(appointment__appointment_date=today) | 
+        Q(arrival_time__date=today) | 
+        Q(created_at__date=today)
+    ).select_related("patient", "appointment").order_by("order", "arrival_time")
+
+def get_pending_appointments():
+    # Mueve aquí la lógica de cálculo de saldo que estaba en la vista
+    appointments = Appointment.objects.select_related("patient").prefetch_related("payments")
+    pending = []
+    for appt in appointments:
+        expected = float(appt.expected_amount or 0)
+        total_paid = sum(float(p.amount or 0) for p in appt.payments.all() if p.status == "confirmed")
+        if expected > total_paid:
+            pending.append(appt)
+    return pending
+
+
+def get_report_data(report_type: str, start: Optional[date], end: Optional[date]) -> List[Dict[str, Any]]:
+    # Aquí mueves los bloques 'if report_type == "financial"...' 
+    # Retornando la lista de diccionarios 'data' que armaste en la vista original.
+    ...
+
+def update_institution_settings(data: Dict[str, Any], user) -> InstitutionSettings:
+    """Actualiza la configuración de la institución y registra el evento."""
+    settings_obj, _ = InstitutionSettings.objects.get_or_create(id=1)
+    
+    for key, value in data.items():
+        if hasattr(settings_obj, key):
+            setattr(settings_obj, key, value)
+    
+    settings_obj.save()
+    
+    Event.objects.create(
+        entity="InstitutionSettings",
+        entity_id=settings_obj.id,
+        action="update_settings",
+        actor=str(user),
+        severity="info"
+    )
+    return settings_obj
+
+
+def create_medical_document(
+    patient, appointment, file_content, filename, category, user, **kwargs
+) -> MedicalDocument:
+    """Encapsula la creación del registro MedicalDocument y el guardado en disco."""
+    # 1. Calcular Hash
+    sha256 = hashlib.sha256(file_content).hexdigest()
+    
+    # 2. Guardar archivo físicamente
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "wb") as f:
+        f.write(file_content)
+
+    # 3. Crear registro en BD
+    return MedicalDocument.objects.create(
+        patient=patient,
+        appointment=appointment,
+        file=File(open(full_path, "rb"), name=filename),
+        checksum_sha256=sha256,
+        uploaded_by=user,
+        category=category,
+        **kwargs
+    )
+
+
+def create_medical_document_from_pdf(
+    patient, appointment, pdf_bytes, filename, category, user, 
+    diagnosis=None, description=None, audit_code=None, origin_panel="consultation"
+) -> MedicalDocument:
+    """Servicio para persistir un PDF generado como MedicalDocument."""
+    file_path = os.path.join("medical_documents", filename)
+    full_path = os.path.join(settings.MEDIA_ROOT, file_path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    
+    with open(full_path, "wb") as f:
+        f.write(pdf_bytes)
+
+    django_file = File(open(full_path, "rb"), name=filename)
+    
+    sha256 = hashlib.sha256()
+    for chunk in django_file.chunks():
+        sha256.update(chunk)
+
+    doc = MedicalDocument.objects.create(
+        patient=patient,
+        appointment=appointment,
+        diagnosis=diagnosis,
+        description=description or f"Documento {category} generado automáticamente",
+        category=category,
+        source="system_generated",
+        origin_panel=origin_panel,
+        template_version="v1.1",
+        generated_by=user,
+        uploaded_by=user,
+        file=django_file,
+        mime_type="application/pdf",
+        size_bytes=django_file.size,
+        checksum_sha256=sha256.hexdigest(),
+        audit_code=audit_code
+    )
+    
+    Event.objects.create(
+        entity="MedicalDocument",
+        entity_id=doc.id,
+        action=f"generate_{category}",
+        actor=str(user),
+        metadata={"appointment_id": appointment.id, "category": category},
+        severity="info",
+        notify=True
+    )
+    return doc
+
+def build_referral_pdf(referral, user) -> Tuple[bytes, str]:
+    """Genera los bytes del PDF de una referencia médica."""
+    context = {
+        "referral": referral,
+        "diagnosis": referral.diagnosis,
+        "appointment": referral.appointment,
+        "patient": referral.appointment.patient,
+        "doctor": user,
+        "institution": InstitutionSettings.objects.first(),
+    }
+    html_string = render_to_string("pdf/referral.html", context)
+    # Pylance fix: or b"" garantiza que siempre sea bytes
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf() or b""
+    filename = f"referral_{referral.id}.pdf"
+    return pdf_bytes, filename
+
+def build_chargeorder_pdf(charge_order, user) -> Tuple[bytes, str, str]:
+    """Genera bytes de PDF de orden de cobro, QR y código de auditoría."""
+    charge_order.recalc_totals()
+    charge_order.save()
+
+    patient = charge_order.patient
+    appointment = charge_order.appointment
+    doctor = DoctorOperator.objects.first()
+    institution = InstitutionSettings.objects.first()
+    audit_code = generate_audit_code(appointment, patient)
+
+    # Generar QR
+    qr_payload = f"Consulta:{appointment.id}|ChargeOrder:{charge_order.id}|Audit:{audit_code}"
+    qr_img = qrcode.make(qr_payload)
+    buffer = BytesIO()
+    qr_img.save(buffer, "PNG")
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    qr_code_url = f"data:image/png;base64,{qr_base64}"
+
+    context = {
+        "charge_order": charge_order,
+        "patient": patient,
+        "appointment": appointment,
+        "doctor": doctor,
+        "institution": institution,
+        "audit_code": audit_code,
+        "qr_code_url": qr_code_url,
+        "generated_at": timezone.now(),
+    }
+
+    html_string = render_to_string("pdf/charge_order.html", context)
+    pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf() or b""
+    filename = f"chargeorder_{charge_order.id}.pdf"
+    
+    return pdf_bytes, filename, audit_code
+
+
+def get_daily_metrics() -> Dict[str, Any]:
+    """
+    Calcula y retorna las métricas institucionales del día actual.
+    """
+    today = localdate()
+    
+    return {
+        "totalPatients": Patient.objects.count(),
+        "todayAppointments": Appointment.objects.filter(appointment_date=today).count(),
+        "pendingPayments": Payment.objects.filter(status="pending").count(),
+        "waivedConsultations": Payment.objects.filter(status="waived").count(),
+        "appointmentStatusToday": list(
+            Appointment.objects.filter(appointment_date=today)
+            .values("status")
+            .annotate(total=Count("id"))
+        ),
+        "paymentMethodsTotals": list(
+            Payment.objects.values("method")
+            .annotate(total=Sum("amount"))
+        ),
+    }
+    
