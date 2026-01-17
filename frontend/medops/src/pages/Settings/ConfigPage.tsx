@@ -6,7 +6,7 @@ import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
 import EditInstitutionModal from "@/components/Settings/EditInstitutionModal";
-import type { Specialty } from "@/types/consultation";
+import type { Specialty } from "@/types/config"; // Corregido import
 import { 
   BuildingOfficeIcon, 
   UserCircleIcon, 
@@ -14,7 +14,8 @@ import {
   FingerPrintIcon,
   ShieldCheckIcon,
   MapPinIcon,
-  KeyIcon
+  KeyIcon,
+  BanknotesIcon // Nuevo icono para fintech
 } from "@heroicons/react/24/outline";
 
 // 🔹 COMPONENTE DE LOGO ESTABLE
@@ -44,6 +45,7 @@ const StableLogo = memo(({ url }: { url: string | null }) => {
 type DoctorForm = {
   id?: number;
   full_name: string;
+  gender: 'M' | 'F' | 'O'; // 👈 Nuevo
   colegiado_id: string;
   specialties: Specialty[];
   license: string;
@@ -65,7 +67,7 @@ export default function ConfigPage() {
   const [, setSignaturePreview] = useState<string>("");
 
   const [docForm, setDocForm] = useState<DoctorForm>({
-    id: undefined, full_name: "", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
+    id: undefined, full_name: "", gender: "M", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
   });
 
   const memoizedLogoUrl = useMemo(() => {
@@ -88,6 +90,7 @@ export default function ConfigPage() {
     setDocForm({
       id: doc.id,
       full_name: doc.full_name || "",
+      gender: doc.gender || "M",
       colegiado_id: doc.colegiado_id || "",
       specialties: matched,
       license: doc.license || "",
@@ -118,9 +121,8 @@ export default function ConfigPage() {
           { label: "CONFIGURATION", active: true }
         ]}
         stats={[
-          { label: "ACCESS_LEVEL", value: "ROOT_ADMIN", color: "text-white/80 font-mono" },
-          { label: "SECURITY_STATUS", value: "ENCRYPTED", color: "text-emerald-500/70" },
-          { label: "LAST_SYNC", value: "STABLE", color: "text-white/40" }
+          { label: "NODE_STATUS", value: inst?.is_active ? "OPERATIONAL" : "OFFLINE", color: inst?.is_active ? "text-emerald-500" : "text-red-500" },
+          { label: "GATEWAY", value: inst?.active_gateway !== 'none' ? inst?.active_gateway.toUpperCase() : "MANUAL_MODE", color: "text-blue-400" }
         ]}
         actions={
           <div className="flex h-10 w-10 items-center justify-center bg-white/5 border border-white/10 rounded-sm">
@@ -146,6 +148,7 @@ export default function ConfigPage() {
               </div>
             ) : (
               <div className="space-y-8">
+                {/* Cabecera de la Institución */}
                 <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
                   <div className="w-32 h-32 bg-black border border-white/10 p-4 flex items-center justify-center shadow-inner relative group">
                     <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -156,13 +159,27 @@ export default function ConfigPage() {
                       <span className={labelStyles}>Legal_Entity_Name</span>
                       <p className="text-lg font-black text-white uppercase tracking-tight leading-none">{inst?.name || "UNNAMED_ENTITY"}</p>
                     </div>
-                    <div>
-                      <span className={labelStyles}>Fiscal_Identification_UID</span>
-                      <p className="text-xs font-mono text-white/60 bg-white/5 px-3 py-1 inline-block rounded-sm border border-white/5">{inst?.tax_id || "NOT_DEFINED"}</p>
+                    <div className="flex gap-4">
+                        <div>
+                            <span className={labelStyles}>Fiscal_UID</span>
+                            <p className="text-xs font-mono text-white/60 bg-white/5 px-3 py-1 inline-block rounded-sm border border-white/5">{inst?.tax_id || "NOT_DEFINED"}</p>
+                        </div>
+                        {/* Nuevo indicador Fintech */}
+                        {inst?.active_gateway !== 'none' && (
+                            <div>
+                                <span className={labelStyles}>Fintech_Engine</span>
+                                <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-sm">
+                                    <BanknotesIcon className="w-3 h-3 text-blue-400" />
+                                    <span className="text-[10px] font-mono text-blue-400 uppercase">{inst?.active_gateway}</span>
+                                    {inst?.is_gateway_test_mode && <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1 rounded">SANDBOX</span>}
+                                </div>
+                            </div>
+                        )}
                     </div>
                   </div>
                 </div>
 
+                {/* Bloque Geográfico y Dirección */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
                   <div className="space-y-2">
                     <span className="flex items-center gap-2 text-[8px] font-mono text-white/20 uppercase tracking-[0.2em]">
@@ -221,8 +238,17 @@ export default function ConfigPage() {
                     <FingerPrintIcon className="w-8 h-8 text-emerald-500/30" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-black text-white uppercase tracking-tighter">{docForm.full_name || "SUBJECT_NAME_PENDING"}</h4>
+                    {/* Renderizado de Título Formal */}
+                    <h4 className="text-xl font-black text-white uppercase tracking-tighter">
+                        <span className="text-emerald-500/50 mr-2">{doc?.gender === 'F' ? 'Dra.' : 'Dr.'}</span>
+                        {docForm.full_name || "SUBJECT_NAME_PENDING"}
+                    </h4>
                     <p className="text-[10px] font-mono text-emerald-500/70 uppercase tracking-[0.2em] mt-1 font-bold">PROTOCOL_ID: {docForm.license || "NONE"}</p>
+                    {doc?.is_verified && (
+                        <div className="mt-2 inline-flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded text-[8px] text-emerald-400 font-bold tracking-wider border border-emerald-500/20">
+                            <ShieldCheckIcon className="w-3 h-3" /> VERIFIED_OPERATOR
+                        </div>
+                    )}
                   </div>
                 </div>
 
@@ -239,9 +265,9 @@ export default function ConfigPage() {
 
                 <div className="space-y-3">
                   <span className={labelStyles}>Digital_Validation_Signature</span>
-                  <div className="h-24 w-full bg-black/40 border border-white/5 flex items-center justify-center grayscale opacity-30 border-dashed">
+                  <div className="h-24 w-full bg-black/40 border border-white/5 flex items-center justify-center grayscale opacity-80 border-dashed relative overflow-hidden">
                     {docForm.signature ? 
-                      <span className="text-[9px] font-mono tracking-[0.4em] text-white/40">[ ENCRYPTED_SIGNATURE_BLOB ]</span> : 
+                      <img src={docForm.signature as string} alt="Signature" className="h-full object-contain invert opacity-60" /> : 
                       <span className="text-[9px] italic text-white/20">NULL_POINTER: NO_SIGNATURE_DATA</span>
                     }
                   </div>
@@ -260,7 +286,24 @@ export default function ConfigPage() {
                 const payload = { ...docForm, specialty_ids: docForm.specialties.map(s => s.id) };
                 updateDoctor(payload).then(() => setEditingDoctor(false));
               }} className="space-y-6">
-                <div><label className={labelStyles}>Full_System_Name</label><input className={inputStyles} value={docForm.full_name} onChange={(e) => setDocForm({...docForm, full_name: e.target.value})} /></div>
+                
+                <div className="grid grid-cols-4 gap-4">
+                    <div className="col-span-1">
+                        <label className={labelStyles}>Title</label>
+                        <select 
+                            className={inputStyles} 
+                            value={docForm.gender} 
+                            onChange={(e) => setDocForm({...docForm, gender: e.target.value as any})}
+                        >
+                            <option value="M">Dr.</option>
+                            <option value="F">Dra.</option>
+                        </select>
+                    </div>
+                    <div className="col-span-3">
+                        <label className={labelStyles}>Full_System_Name</label>
+                        <input className={inputStyles} value={docForm.full_name} onChange={(e) => setDocForm({...docForm, full_name: e.target.value})} />
+                    </div>
+                </div>
                 
                 <div className="grid grid-cols-2 gap-6">
                   <div><label className={labelStyles}>License_UID</label><input className={inputStyles} value={docForm.license} onChange={(e) => setDocForm({...docForm, license: e.target.value})} /></div>

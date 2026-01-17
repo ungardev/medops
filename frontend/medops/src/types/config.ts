@@ -1,6 +1,6 @@
 // src/types/config.ts
 
-// 🔹 Jerarquía Geográfica para Direcciones
+// 🔹 Jerarquía Geográfica "Deep Structure"
 export interface Country { id: number; name: string; }
 export interface State { id: number; name: string; country: number; }
 export interface Municipality { id: number; name: string; state: number; }
@@ -24,34 +24,52 @@ export interface Neighborhood {
   };
 }
 
-// 🔹 Configuración institucional
+// 🔹 Configuración Institucional (Fintech Ready)
 export interface InstitutionSettings {
   id?: number;
   name: string;
   phone: string;
-  tax_id: string;
+  tax_id: string; // RIF/NIT/Fiscal ID
   logo?: string | File | null;
   
   // ⚔️ Nueva Estructura Geográfica
   neighborhood?: number | Neighborhood | null; 
-  address: string; // Dirección detallada
+  address: string; // Dirección detallada (Calle/Av/Local)
+
+  // 💰 Motor Financiero
+  active_gateway: 'none' | 'mercantil_ve' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
+  is_gateway_test_mode: boolean; // Sandbox vs Production
+  settlement_bank_name?: string;
+  settlement_account_id?: string;
+  
+  // Estado del Nodo
+  is_active: boolean;
 }
 
-// 🔹 Especialidad del médico (Sin cambios)
+// 🔹 Especialidad Clínica
 export interface Specialty {
   id: number;
   code: string;
   name: string;
 }
 
-// 🔹 Configuración del médico operador (Sin cambios)
+// 🔹 Configuración del Médico Operador (Identity v2.0)
 export interface DoctorConfig {
   id?: number;
   full_name?: string;
+  gender: 'M' | 'F' | 'O'; // 👈 Nuevo: Discriminador de título formal
+  
+  // Credenciales
   colegiado_id?: string;
+  license?: string;
+  is_verified: boolean; // Estado de validación del colegio
+
+  // Alcance
   specialty_ids?: number[];
   specialties?: Specialty[];
-  license?: string;
+  institutions?: number[]; // IDs de las sedes donde opera
+
+  // Contacto & Firma
   email?: string;
   phone?: string;
   signature?: string | File | null;
