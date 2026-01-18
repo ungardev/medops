@@ -2084,3 +2084,29 @@ class RegisterArrivalSerializer(serializers.Serializer):
 
 class RegisterWalkinSerializer(serializers.Serializer):
     patient_id = serializers.IntegerField()
+
+
+class NeighborhoodFullDetailSerializer(serializers.Serializer):
+    """
+    Serializer de solo lectura para reconstruir la jerarquía completa 
+    de una dirección desde el sector (Neighborhood).
+    """
+    def to_representation(self, instance):
+        n = instance
+        p = n.parish
+        m = p.municipality if p else None
+        s = m.state if m else None
+        c = s.country if s else None
+
+        return {
+            "neighborhood": n.name,
+            "neighborhood_id": n.id,
+            "parish": p.name if p else "N/A",
+            "parish_id": p.id if p else None,
+            "municipality": m.name if m else "N/A",
+            "municipality_id": m.id if m else None,
+            "state": s.name if s else "N/A",
+            "state_id": s.id if s else None,
+            "country": c.name if c else "N/A",
+            "country_id": c.id if c else None,
+        }
