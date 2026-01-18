@@ -1107,3 +1107,114 @@ def get_advanced_metrics() -> Dict[str, Any]:
             .order_by('appointment_date')
         )
     }
+
+
+# ==========================================
+# SERVICIOS DE CONFIGURACIÓN
+# ==========================================
+def get_institution_settings() -> Dict[str, Any]:
+    """
+    Obtiene la configuración de la institución (singleton).
+    Retorna None si no existe configuración.
+    """
+    institution = InstitutionSettings.objects.first()
+    if not institution:
+        return {}
+    return cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data)
+
+
+def update_institution_settings_ext(
+    data: Dict[str, Any], 
+    user, 
+    files: Optional[Dict[str, Any]] = None
+) -> InstitutionSettings:
+    """
+    Actualiza la configuración de la institución.
+    Soporta FormData (con archivos) o JSON (sin archivos).
+    """
+    settings_obj, _ = InstitutionSettings.objects.get_or_create(id=1)
+    
+    # Actualización de campos básicos
+    for key, value in data.items():
+        if key in ["neighborhood_id", "neighborhood"]:
+            if value and value != "":
+                settings_obj.neighborhood_id = value
+        elif hasattr(settings_obj, key):
+            setattr(settings_obj, key, value)
+    
+    # Procesar archivos (logo, etc.)
+    if files:
+        for field_name, file_obj in files.items():
+            if hasattr(settings_obj, field_name):
+                setattr(settings_obj, field_name, file_obj)
+    
+    settings_obj.save()
+    
+    # Log de auditoría
+    Event.objects.create(
+        entity="InstitutionSettings",
+        entity_id=settings_obj.id,
+        action="update_settings",
+        actor=str(user),
+        metadata={k: str(v) for k, v in data.items()},
+        severity="info"
+    )
+    
+    return settings_obj
+def get_doctor_config() -> Optional[Dict[str, Any]]:
+    """
+    Obtiene la configuración del médico operador (singleton).
+    Retorna None si no existe médico configurado.
+    """
+    doctor = DoctorOperator.objects.first()
+    if not doctor:
+        return None
+    
+    return cast(Dict[str, Any], DoctorOperatorSerializer(doctor).data)
+def update_doctor_config(
+    data: Dict[str, Any], 
+    user, 
+    files: Optional[Dict[str, Any]] = None
+) -> DoctorOperator:
+    """
+    Actualiza la configuración del médico operador.
+    Soporta FormData (con signature) o JSON.
+    Maneja relaciones M2M (specialties, institutions).
+    """
+    # Crear o obtener médico (singleton)
+    doctor_obj, _ = DoctorOperator.objects.get_or_create(
+        defaults={
+            "full_name": "Operador Por Defecto",
+            "gender": "M",
+        }
+    )
+    
+    # Actualización de campos básicos
+    for key, value in data.items():
+        if hasattr(doctor_obj, key):
+            setattr(doctor_obj, key, value)
+    
+    # Manejo de especialidades (M2M)
+    specialty_ids = data.get("specialty_ids")
+    if specialty_ids is not None:
+        doctor_obj.specialties.set(specialty_ids)
+    
+    # Procesar archivos (signature)
+    if files:
+        for field_name, file_obj in files.items():
+            if hasattr(doctor_obj, field_name):
+                setattr(doctor_obj, field_name, file_obj)
+    
+    doctor_obj.save()
+    
+    # Log de auditoría
+    Event.objects.create(
+        entity="DoctorOperator",
+        entity_id=doctor_obj.id,
+        action="update_config",
+        actor=str(user),
+        metadata={k: str(v) for k, v in data.items()},
+        severity="info"
+    )
+    
+    return doctor_obj
