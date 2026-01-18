@@ -41,7 +41,7 @@ class CityViewSet(viewsets.ModelViewSet): queryset = City.objects.all(); seriali
 class ParishViewSet(viewsets.ModelViewSet): queryset = Parish.objects.all(); serializer_class = ParishSerializer
 class NeighborhoodViewSet(viewsets.ModelViewSet): queryset = Neighborhood.objects.all(); serializer_class = NeighborhoodSerializer
 
-# Otros ViewSets
+# Otros ViewSets Requeridos por api_urls.py
 class PaymentViewSet(viewsets.ModelViewSet): queryset = Payment.objects.all(); serializer_class = PaymentSerializer
 class PersonalHistoryViewSet(viewsets.ModelViewSet): queryset = PersonalHistory.objects.all(); serializer_class = PersonalHistorySerializer
 class FamilyHistoryViewSet(viewsets.ModelViewSet): queryset = FamilyHistory.objects.all(); serializer_class = FamilyHistorySerializer
@@ -67,12 +67,13 @@ class SpecialtyViewSet(viewsets.ModelViewSet): queryset = Specialty.objects.all(
 class GeneticPredispositionViewSet(viewsets.ModelViewSet): queryset = GeneticPredisposition.objects.all(); serializer_class = GeneticPredispositionSerializer
 
 # ==========================================
-# 2. VISTAS DE CLASE (Address System)
+# 2. VISTAS DE CLASE (Sistema de Direcciones)
 # ==========================================
 
 class AddressChainView(views.APIView):
     def get(self, request):
         neighborhood_id = request.query_params.get('neighborhood_id')
+        if not neighborhood_id: return Response({"error": "ID required"}, status=400)
         neighborhood = get_object_or_404(Neighborhood, id=neighborhood_id)
         serializer = NeighborhoodDetailSerializer(neighborhood)
         return Response(serializer.data)
@@ -85,16 +86,18 @@ class NeighborhoodSearchView(views.APIView):
         return Response(serializer.data)
 
 # ==========================================
-# 3. FUNCIONES (MOCKS Y ACTUALES)
+# 3. FUNCIONES (MOCKS PARA DESBLOQUEAR URLS)
 # ==========================================
 
-# Funciones de búsqueda e información
-@api_view(['GET'])
-def daily_appointments_api(request): return Response([])
+# Dashboards y Métricas
 @api_view(['GET'])
 def dashboard_summary_api(request): return Response({})
 @api_view(['GET'])
 def metrics_api(request): return Response({})
+@api_view(['GET'])
+def payment_summary_api(request): return Response({}) # <--- ESTE ES EL QUE TE FALLÓ AHORA
+
+# Búsquedas
 @api_view(['GET'])
 def patient_search_api(request): return Response([])
 @api_view(['GET'])
@@ -106,7 +109,7 @@ def icd_search_api(request): return Response([])
 @api_view(['GET'])
 def search(request): return Response([])
 
-# Funciones de configuración y tasas
+# Configuraciones
 @api_view(['GET'])
 def bcv_rate_api(request):
     try: return Response({"rate": services.get_bcv_rate()})
@@ -122,7 +125,7 @@ def doctor_operator_settings_api(request):
     doctor = DoctorOperator.objects.first()
     return Response(DoctorOperatorSerializer(doctor).data if doctor else {})
 
-# Acciones y actualizaciones
+# Acciones de Citas y Sala de Espera
 @api_view(['POST'])
 def update_appointment_status(request, pk): return Response({"ok": True})
 @api_view(['POST'])
@@ -134,7 +137,7 @@ def register_arrival(request): return Response({"ok": True})
 @api_view(['POST'])
 def finalize_consultation_api(request, appointment_id): return Response({"ok": True})
 
-# Auditoría y registros
+# Auditoría y Logs
 @api_view(['GET'])
 def audit_by_appointment(request, appointment_id): return Response([])
 @api_view(['GET'])
@@ -142,7 +145,9 @@ def audit_by_patient(request, patient_id): return Response([])
 @api_view(['GET'])
 def audit_log_api(request): return Response([])
 
-# Consultas específicas
+# Listados y Detalles
+@api_view(['GET'])
+def daily_appointments_api(request): return Response([])
 @api_view(['GET'])
 def waitingroom_entries_today_api(request): return Response([])
 @api_view(['GET'])
