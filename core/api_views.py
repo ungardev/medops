@@ -233,3 +233,21 @@ def chargeorder_search_api(request): return Response([])
 def notifications_api(request): return Response([])
 @api_view(['GET'])
 def specialty_choices_api(request): return Response([])
+
+@api_view(['GET'])
+def metrics_api(request):
+    """
+    Endpoint para las métricas del dashboard. 
+    Usamos el servicio get_advanced_metrics si existe, sino devolvemos un mock.
+    """
+    try:
+        # Intentamos usar la lógica de services si está implementada
+        data = services.get_advanced_metrics()
+        return Response(data)
+    except Exception as e:
+        logger.error(f"Error en metrics_api: {str(e)}")
+        # Mock de respaldo para que la UI no rompa mientras tanto
+        return Response({
+            "summary": {"totalPatients": 0, "todayRevenue": 0},
+            "appointmentVolume": []
+        })
