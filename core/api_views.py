@@ -271,9 +271,12 @@ def doctor_operator_settings_api(request):
 
 @api_view(['GET'])
 def specialty_choices_api(request):
-    specialties = Specialty.objects.all().order_by('name')
-    serializer = SpecialtySerializer(specialties, many=True)
-    return Response(serializer.data)
+    try:
+        specialties = Specialty.objects.all().order_by('name')
+        serializer = SpecialtySerializer(specialties, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 @api_view(['GET'])
