@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ==========================================
-# 1. VIEWSETS PRINCIPALES
+# 1. VIEWSETS (Cruciales para el Router)
 # ==========================================
 
 class PatientViewSet(viewsets.ModelViewSet):
@@ -33,54 +33,15 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
             return MedicalDocumentReadSerializer
         return MedicalDocumentWriteSerializer
 
-# ==========================================
-# 2. SISTEMA DE DIRECCIONES
-# ==========================================
+# ViewSets de Direcciones
+class CountryViewSet(viewsets.ModelViewSet): queryset = Country.objects.all(); serializer_class = CountrySerializer
+class StateViewSet(viewsets.ModelViewSet): queryset = State.objects.all(); serializer_class = StateSerializer
+class MunicipalityViewSet(viewsets.ModelViewSet): queryset = Municipality.objects.all(); serializer_class = MunicipalitySerializer
+class CityViewSet(viewsets.ModelViewSet): queryset = City.objects.all(); serializer_class = CitySerializer
+class ParishViewSet(viewsets.ModelViewSet): queryset = Parish.objects.all(); serializer_class = ParishSerializer
+class NeighborhoodViewSet(viewsets.ModelViewSet): queryset = Neighborhood.objects.all(); serializer_class = NeighborhoodSerializer
 
-class CountryViewSet(viewsets.ModelViewSet):
-    queryset = Country.objects.all()
-    serializer_class = CountrySerializer
-
-class StateViewSet(viewsets.ModelViewSet):
-    queryset = State.objects.all()
-    serializer_class = StateSerializer
-
-class MunicipalityViewSet(viewsets.ModelViewSet):
-    queryset = Municipality.objects.all()
-    serializer_class = MunicipalitySerializer
-
-class CityViewSet(viewsets.ModelViewSet):
-    queryset = City.objects.all()
-    serializer_class = CitySerializer
-
-class ParishViewSet(viewsets.ModelViewSet):
-    queryset = Parish.objects.all()
-    serializer_class = ParishSerializer
-
-class NeighborhoodViewSet(viewsets.ModelViewSet):
-    queryset = Neighborhood.objects.all()
-    serializer_class = NeighborhoodSerializer
-
-class AddressChainView(views.APIView):
-    def get(self, request):
-        neighborhood_id = request.query_params.get('neighborhood_id')
-        if not neighborhood_id:
-            return Response({"error": "neighborhood_id is required"}, status=400)
-        neighborhood = get_object_or_404(Neighborhood, id=neighborhood_id)
-        serializer = NeighborhoodDetailSerializer(neighborhood)
-        return Response(serializer.data)
-
-class NeighborhoodSearchView(views.APIView):
-    def get(self, request):
-        q = request.query_params.get('q', '')
-        neighborhoods = Neighborhood.objects.filter(name__icontains=q)[:10]
-        serializer = NeighborhoodSerializer(neighborhoods, many=True)
-        return Response(serializer.data)
-
-# ==========================================
-# 3. OTROS VIEWSETS CLÍNICOS Y ADMINISTRATIVOS
-# ==========================================
-
+# Otros ViewSets
 class PaymentViewSet(viewsets.ModelViewSet): queryset = Payment.objects.all(); serializer_class = PaymentSerializer
 class PersonalHistoryViewSet(viewsets.ModelViewSet): queryset = PersonalHistory.objects.all(); serializer_class = PersonalHistorySerializer
 class FamilyHistoryViewSet(viewsets.ModelViewSet): queryset = FamilyHistory.objects.all(); serializer_class = FamilyHistorySerializer
@@ -106,32 +67,34 @@ class SpecialtyViewSet(viewsets.ModelViewSet): queryset = Specialty.objects.all(
 class GeneticPredispositionViewSet(viewsets.ModelViewSet): queryset = GeneticPredisposition.objects.all(); serializer_class = GeneticPredispositionSerializer
 
 # ==========================================
-# 4. FUNCIONES API EXIGIDAS POR api_urls.py
+# 2. VISTAS DE CLASE (Address System)
 # ==========================================
 
-@api_view(['GET'])
-def dashboard_summary_api(request):
-    return Response({"summary": "Dashboard data"})
+class AddressChainView(views.APIView):
+    def get(self, request):
+        neighborhood_id = request.query_params.get('neighborhood_id')
+        neighborhood = get_object_or_404(Neighborhood, id=neighborhood_id)
+        serializer = NeighborhoodDetailSerializer(neighborhood)
+        return Response(serializer.data)
 
-@api_view(['GET'])
-def metrics_api(request):
-    return Response({"metrics": "Advanced metrics"})
+class NeighborhoodSearchView(views.APIView):
+    def get(self, request):
+        q = request.query_params.get('q', '')
+        neighborhoods = Neighborhood.objects.filter(name__icontains=q)[:10]
+        serializer = NeighborhoodSerializer(neighborhoods, many=True)
+        return Response(serializer.data)
 
-@api_view(['GET'])
-def bcv_rate_api(request):
-    try: return Response({"rate": services.get_bcv_rate()})
-    except: return Response({"rate": 0})
+# ==========================================
+# 3. FUNCIONES (MOCKS Y ACTUALES)
+# ==========================================
 
+# Funciones de búsqueda e información
 @api_view(['GET'])
-def institution_settings_api(request):
-    config = InstitutionSettings.objects.first()
-    return Response(InstitutionSettingsSerializer(config).data if config else {"error": "No config"})
-
+def daily_appointments_api(request): return Response([])
 @api_view(['GET'])
-def doctor_operator_settings_api(request):
-    doctor = DoctorOperator.objects.first()
-    return Response(DoctorOperatorSerializer(doctor).data if doctor else {"error": "No doctor"})
-
+def dashboard_summary_api(request): return Response({})
+@api_view(['GET'])
+def metrics_api(request): return Response({})
 @api_view(['GET'])
 def patient_search_api(request): return Response([])
 @api_view(['GET'])
@@ -143,15 +106,35 @@ def icd_search_api(request): return Response([])
 @api_view(['GET'])
 def search(request): return Response([])
 
-@api_view(['POST'])
-def update_appointment_status(request, pk): return Response({"status": "ok"})
-@api_view(['POST'])
-def update_appointment_notes(request, pk): return Response({"status": "ok"})
-@api_view(['POST'])
-def update_waitingroom_status(request, pk): return Response({"status": "ok"})
-@api_view(['POST'])
-def register_arrival(request): return Response({"status": "ok"})
+# Funciones de configuración y tasas
+@api_view(['GET'])
+def bcv_rate_api(request):
+    try: return Response({"rate": services.get_bcv_rate()})
+    except: return Response({"rate": 0})
 
+@api_view(['GET'])
+def institution_settings_api(request):
+    config = InstitutionSettings.objects.first()
+    return Response(InstitutionSettingsSerializer(config).data if config else {})
+
+@api_view(['GET'])
+def doctor_operator_settings_api(request):
+    doctor = DoctorOperator.objects.first()
+    return Response(DoctorOperatorSerializer(doctor).data if doctor else {})
+
+# Acciones y actualizaciones
+@api_view(['POST'])
+def update_appointment_status(request, pk): return Response({"ok": True})
+@api_view(['POST'])
+def update_appointment_notes(request, pk): return Response({"ok": True})
+@api_view(['POST'])
+def update_waitingroom_status(request, pk): return Response({"ok": True})
+@api_view(['POST'])
+def register_arrival(request): return Response({"ok": True})
+@api_view(['POST'])
+def finalize_consultation_api(request, appointment_id): return Response({"ok": True})
+
+# Auditoría y registros
 @api_view(['GET'])
 def audit_by_appointment(request, appointment_id): return Response([])
 @api_view(['GET'])
@@ -159,6 +142,7 @@ def audit_by_patient(request, patient_id): return Response([])
 @api_view(['GET'])
 def audit_log_api(request): return Response([])
 
+# Consultas específicas
 @api_view(['GET'])
 def waitingroom_entries_today_api(request): return Response([])
 @api_view(['GET'])
@@ -175,7 +159,10 @@ def reports_export_api(request): return Response({})
 def documents_api(request): return Response([])
 @api_view(['GET'])
 def notifications_api(request): return Response([])
+@api_view(['GET'])
+def patient_safety_check_api(request, patient_id): return Response([])
 
+# Generación de PDF/Documentos
 @api_view(['POST', 'GET'])
 def generate_medical_report(request, pk): return Response({"url": ""})
 @api_view(['POST', 'GET'])
@@ -189,6 +176,7 @@ def generate_chargeorder_pdf(request, pk): return Response({"url": ""})
 @api_view(['POST', 'GET'])
 def generate_used_documents(request, pk): return Response({"url": ""})
 
+# Opciones de selección (Choices)
 @api_view(['GET'])
 def treatment_choices_api(request): return Response([])
 @api_view(['GET'])
