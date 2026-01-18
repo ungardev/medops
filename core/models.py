@@ -1233,7 +1233,6 @@ class InstitutionSettings(models.Model):
     )
     logo = models.ImageField(upload_to="logos/", verbose_name="Logo institucional")
     phone = models.CharField(max_length=50, verbose_name="Teléfono de contacto")
-
     # --- CONFIGURACIÓN DE PASARELA UNIVERSAL (FINTECH READY) ---
     GATEWAY_PROVIDERS = [
         ('none', 'Manual / Registro Interno'),
@@ -1243,14 +1242,12 @@ class InstitutionSettings(models.Model):
         ('binance_pay', 'Binance Pay'),
         ('paypal', 'PayPal Business'),
     ]
-
     active_gateway = models.CharField(
         max_length=50, 
         choices=GATEWAY_PROVIDERS, 
         default='none',
         verbose_name="Pasarela de Pagos Activa"
     )
-
     # Credenciales Genéricas: Se mapean dinámicamente según el proveedor
     gateway_api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name="Client ID / API Key")
     gateway_api_secret = models.CharField(max_length=255, blank=True, null=True, verbose_name="Client Secret / Token")
@@ -1269,10 +1266,8 @@ class InstitutionSettings(models.Model):
         verbose_name="Modo Sandbox / Pruebas",
         help_text="Si está activo, no procesará dinero real."
     )
-
     # --- STATUS OPERATIVO ---
     is_active = models.BooleanField(default=True, verbose_name="Nodo Activo")
-
     # --- DIRECCIÓN ---
     neighborhood = models.ForeignKey(
         "core.Neighborhood",
@@ -1280,7 +1275,6 @@ class InstitutionSettings(models.Model):
         null=True, blank=True
     )
     address = models.CharField(max_length=255, blank=True, null=True)
-
     # --- AUDITORÍA ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1290,16 +1284,33 @@ class InstitutionSettings(models.Model):
         null=True, blank=True,
         related_name="institution_updates"
     )
-
     history = HistoricalRecords()
-
     class Meta:
         verbose_name = "Configuración de Sede"
         verbose_name_plural = "Configuraciones de Sedes"
         ordering = ['name']
-
     def __str__(self):
         return f"{self.name} ({self.tax_id})"
+    @property
+    def full_address(self):
+        """Genera la dirección completa incluyendo jerarquía geográfica."""
+        parts = []
+        
+        # Dirección detallada
+        if self.address:
+            parts.append(self.address)
+        
+        # Jerarquía geográfica
+        if self.neighborhood:
+            parts.append(self.neighborhood.name)
+            if self.neighborhood.parish:
+                parts.append(self.neighborhood.parish.name)
+                if self.neighborhood.parish.municipality:
+                    parts.append(self.neighborhood.parish.municipality.name)
+                    if self.neighborhood.parish.municipality.state:
+                        parts.append(self.neighborhood.parish.municipality.state.name)
+        
+        return ", ".join(parts) if parts else "Sin dirección"
 
 
 class DoctorOperator(models.Model):

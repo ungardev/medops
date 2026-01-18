@@ -182,33 +182,50 @@ class PatientWriteSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    
+    # ✅ Para lectura - objeto completo
+    neighborhood = NeighborhoodSerializer(read_only=True, required=False)
+    
+    # ✅ Para escritura - solo ID
     neighborhood_id = serializers.PrimaryKeyRelatedField(
         queryset=Neighborhood.objects.all(),
         required=False,
         allow_null=True,
         source="neighborhood"
     )
-
     class Meta:
         model = Patient
         fields = [
-            "id", "first_name", "middle_name", "last_name", "second_last_name",
-            "national_id", "birth_date", "birth_place", "birth_country",
-            "gender", "phone_number", "email", "address_detail", "institution",
-            "weight", "height", "blood_type", "genetic_predispositions", "neighborhood_id",
+            "id", 
+            "first_name", 
+            "middle_name", 
+            "last_name", 
+            "second_last_name",
+            "national_id", 
+            "birth_date", 
+            "birth_place", 
+            "birth_country",
+            "gender", 
+            "phone_number", 
+            "email", 
+            "address",       # ✅ CAMBIADO de address_detail a address
+            "neighborhood",  # ✅ AGREGADO para lectura
+            "neighborhood_id",  # ✅ Para escritura
+            "weight", 
+            "height", 
+            "blood_type", 
+            "genetic_predispositions", 
             "active"
         ]
-
     def validate_birth_date(self, value):
         if value and value > date.today():
             raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
         return value
-
     def save(self, **kwargs):
-        # Aseguramos consistencia en campos de texto
         v_data = cast(Dict[str, Any], self.validated_data)
-        if v_data.get('address_detail') is None:
-            v_data['address_detail'] = ""
+        # ✅ CAMBIADO de address_detail a address
+        if v_data.get('address') is None:
+            v_data['address'] = ""
         return super().save(**kwargs)
 
 
@@ -1306,14 +1323,12 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
     
     # Representación de lectura para la dirección completa (Propiedad del modelo)
     full_address = serializers.ReadOnlyField()
-
     # Usamos PrimaryKeyRelatedField para que el Frontend envíe solo el ID en POST/PATCH
     neighborhood = serializers.PrimaryKeyRelatedField(
         queryset=Neighborhood.objects.all(),
         required=False,
         allow_null=True
     )
-
     class Meta:
         model = InstitutionSettings
         fields = [
@@ -1338,7 +1353,6 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'gateway_api_secret': {'write_only': True}
         }
-
     def to_representation(self, instance):
         """
         Inflamos el objeto para que el Frontend vea la jerarquía geográfica completa
@@ -1349,26 +1363,52 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
         # --- Lógica de Jerarquía Geográfica ---
         n = instance.neighborhood
         if n:
-            response['neighborhood'] = {
+            # ✅ MANEJO DEFENSIVO usando getattr()
+            p = getattr(n, 'parish', None)
+            m = getattr(p, 'municipality', None) if p else None
+            s = getattr(m, 'state', None) if m else None
+            c = getattr(s, 'country', None) if s else None
+            
+            neighborhood_data = {
                 'id': n.id,
                 'name': n.name,
-                'parish': {
-                    'id': n.parish.id,
-                    'name': n.parish.name,
-                    'municipality': {
-                        'id': n.parish.municipality.id,
-                        'name': n.parish.municipality.name,
-                        'state': {
-                            'id': n.parish.municipality.state.id,
-                            'name': n.parish.municipality.state.name,
-                            'country': {
-                                'id': n.parish.municipality.state.country.id,
-                                'name': n.parish.municipality.state.country.name,
-                            }
-                        }
-                    }
-                }
+                'parish': None,
+                'municipality': None,
+                'state': None,
+                'country': None
             }
+            
+            if p:
+                neighborhood_data['parish'] = {
+                    'id': p.id,
+                    'name': p.name,
+                    'municipality': None,
+                    'state': None,
+                    'country': None
+                }
+                
+                if m:
+                    neighborhood_data['parish']['municipality'] = {
+                        'id': m.id,
+                        'name': m.name,
+                        'state': None,
+                        'country': None
+                    }
+                    
+                    if s:
+                        neighborhood_data['parish']['municipality']['state'] = {
+                            'id': s.id,
+                            'name': s.name,
+                            'country': None
+                        }
+                        
+                        if c:
+                            neighborhood_data['parish']['municipality']['state']['country'] = {
+                                'id': c.id,
+                                'name': c.name
+                            }
+            
+            response['neighborhood'] = neighborhood_data
         
         # --- Lógica de Seguridad para el Frontend ---
         # Si existe un secret, enviamos un indicador pero no el valor real
@@ -1392,7 +1432,6 @@ class SpecialtySerializer(serializers.ModelSerializer):
 class DoctorOperatorSerializer(serializers.ModelSerializer):
     # 🔹 Firma opcional con URL completa
     signature = serializers.ImageField(required=False, allow_null=True, use_url=True)
-
     # 🔹 Especialidades: lectura y escritura
     specialties = SpecialtySerializer(many=True, read_only=True)
     specialty_ids = serializers.PrimaryKeyRelatedField(
@@ -1401,21 +1440,32 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         write_only=True,
         source="specialties"
     )
-
+    # 🔹 Instituciones: lectura (objetos completos) y escritura (IDs)
+    institutions = serializers.PrimaryKeyRelatedField(
+        queryset=InstitutionSettings.objects.all(),
+        many=True,
+        required=False,
+        allow_null=True
+    )
+    # 🔹 Títulos formales para lectura
+    formal_title = serializers.CharField(read_only=True)
     class Meta:
         model = DoctorOperator
         fields = [
             "id",
             "full_name",
+            "gender",           # ✅ AGREGADO
+            "is_verified",      # ✅ AGREGADO
             "colegiado_id",
+            "license",
             "specialties",      # lectura como objetos {id, code, name}
             "specialty_ids",    # escritura como lista de IDs
-            "license",
+            "institutions",     # ✅ AGREGADO
             "email",
             "phone",
             "signature",
+            "formal_title",     # ✅ AGREGADO
         ]
-
     def to_representation(self, instance):
         """
         Extiende la representación para incluir también los IDs de especialidades
@@ -1423,42 +1473,41 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         """
         rep = super().to_representation(instance)
         rep["specialty_ids"] = list(instance.specialties.values_list("id", flat=True))
+        rep["institution_ids"] = list(instance.institutions.values_list("id", flat=True))
         return rep
-
     def update(self, instance, validated_data):
         """
         ✅ FIX DEFINITIVO:
-        - Maneja specialties y specialty_ids correctamente
+        - Maneja specialties, specialty_ids, e institutions correctamente
         - Permite enviar [] para borrar todas
         - Evita el bug del OR que destruía la lógica
         """
-
         specialties = None
-
+        institutions = None
         # ✅ Si vienen specialties (por source="specialties")
         if "specialties" in validated_data:
             specialties = validated_data.pop("specialties")
-
         # ✅ Si vienen specialty_ids directamente
         if "specialty_ids" in validated_data:
             specialties = validated_data.pop("specialty_ids")
-
+        # ✅ Si vienen instituciones
+        if "institutions" in validated_data:
+            institutions = validated_data.pop("institutions")
         # ✅ Actualizar campos simples
         for attr, val in validated_data.items():
             setattr(instance, attr, val)
-
         instance.save()
-
-        # ✅ Actualizar ManyToMany correctamente
+        # ✅ Actualizar ManyToMany de especialidades
         if specialties is not None:
-            # specialties puede ser lista de IDs o lista de objetos
             if all(isinstance(s, int) or isinstance(s, str) for s in specialties):
                 ids = [int(s) for s in specialties]
                 qs = Specialty.objects.filter(id__in=ids)
                 instance.specialties.set(qs)
             else:
                 instance.specialties.set(specialties)
-
+        # ✅ Actualizar ManyToMany de instituciones
+        if institutions is not None:
+            instance.institutions.set(institutions)
         return instance
 
 
@@ -2041,22 +2090,23 @@ class NeighborhoodDetailSerializer(serializers.Serializer):
     """
     def to_representation(self, instance):
         n = instance
-        p = n.parish
-        m = p.municipality if p else None
-        s = m.state if m else None
-        c = s.country if s else None
-
+        
+        # ✅ MANEJO DEFENSIVO usando getattr()
+        p = getattr(n, 'parish', None)
+        m = getattr(p, 'municipality', None) if p else None
+        s = getattr(m, 'state', None) if m else None
+        c = getattr(s, 'country', None) if s else None
         return {
-            "neighborhood": n.name,
-            "neighborhood_id": n.id,
-            "parish": p.name if p else "N/A",
-            "parish_id": p.id if p else None,
-            "municipality": m.name if m else "N/A",
-            "municipality_id": m.id if m else None,
-            "state": s.name if s else "N/A",
-            "state_id": s.id if s else None,
-            "country": c.name if c else "N/A",
-            "country_id": c.id if c else None,
+            "neighborhood": getattr(n, 'name', 'N/A'),
+            "neighborhood_id": getattr(n, 'id', None),
+            "parish": getattr(p, 'name', 'N/A') if p else 'N/A',
+            "parish_id": getattr(p, 'id', None) if p else None,
+            "municipality": getattr(m, 'name', 'N/A') if m else 'N/A',
+            "municipality_id": getattr(m, 'id', None) if m else None,
+            "state": getattr(s, 'name', 'N/A') if s else 'N/A',
+            "state_id": getattr(s, 'id', None) if s else None,
+            "country": getattr(c, 'name', 'N/A') if c else 'N/A',
+            "country_id": getattr(c, 'id', None) if c else None,
         }
 
 
