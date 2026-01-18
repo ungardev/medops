@@ -3,7 +3,6 @@ import "./index.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
 import App from "./App";
 import DashboardPage from "./pages/Dashboard";
 import Patients from "./pages/Patients/Patients";
@@ -18,27 +17,21 @@ import Consultation from "./pages/Consultation/Consultation";
 import Login from "./pages/Auth/Login";
 import Logout from "./pages/Auth/Logout";
 import { ProtectedRoute } from "./components/Auth/ProtectedRoute";
-
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "@/lib/reactQuery";
-
 import { NotifyProvider } from "./context/NotifyContext";
-
 import axios from "axios";
-
 import ReportsPage from "./pages/Reports/ReportsPage";
 import ConfigPage from "./pages/Settings/ConfigPage";
 import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
-
 // 🔹 Configuración global de axios
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
-const token = localStorage.getItem("authToken");
+const token = import.meta.env.VITE_DEV_TOKEN ?? localStorage.getItem("authToken");
 if (token) {
-  axios.defaults.headers.common["Authorization"] = `Token ${token}`;
+  axios.defaults.headers.common["Authorization"] = `Token `;
 }
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -48,7 +41,6 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             {/* 🔹 Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
-
             {/* 🔹 Rutas protegidas */}
             <Route element={<ProtectedRoute />}>
               <Route element={<App />}>
