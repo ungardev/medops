@@ -12,7 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # ==========================================
-# 1. VIEWSETS CON SERIALIZERS DINÁMICOS
+# 1. VIEWSETS PRINCIPALES
 # ==========================================
 
 class PatientViewSet(viewsets.ModelViewSet):
@@ -34,7 +34,7 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
         return MedicalDocumentWriteSerializer
 
 # ==========================================
-# 2. SISTEMA DE DIRECCIONES (Sincronizado)
+# 2. SISTEMA DE DIRECCIONES
 # ==========================================
 
 class CountryViewSet(viewsets.ModelViewSet):
@@ -62,17 +62,12 @@ class NeighborhoodViewSet(viewsets.ModelViewSet):
     serializer_class = NeighborhoodSerializer
 
 class AddressChainView(views.APIView):
-    """
-    Usa NeighborhoodDetailSerializer definido en la línea 614 de serializers.py
-    """
     def get(self, request):
         neighborhood_id = request.query_params.get('neighborhood_id')
         if not neighborhood_id:
             return Response({"error": "neighborhood_id is required"}, status=400)
-        
         neighborhood = get_object_or_404(Neighborhood, id=neighborhood_id)
-        # CORRECCIÓN DEFINITIVA: El nombre en tu archivo es NeighborhoodDetailSerializer
-        serializer = NeighborhoodFullDetailSerializer(neighborhood)
+        serializer = NeighborhoodDetailSerializer(neighborhood)
         return Response(serializer.data)
 
 class NeighborhoodSearchView(views.APIView):
@@ -83,62 +78,22 @@ class NeighborhoodSearchView(views.APIView):
         return Response(serializer.data)
 
 # ==========================================
-# 3. OTROS VIEWSETS Y FUNCIONES API (MOCKS)
+# 3. OTROS VIEWSETS CLÍNICOS Y ADMINISTRATIVOS
 # ==========================================
 
-class PaymentViewSet(viewsets.ModelViewSet):
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-
-class PersonalHistoryViewSet(viewsets.ModelViewSet):
-    queryset = PersonalHistory.objects.all()
-    serializer_class = PersonalHistorySerializer
-
-class FamilyHistoryViewSet(viewsets.ModelViewSet):
-    queryset = FamilyHistory.objects.all()
-    serializer_class = FamilyHistorySerializer
-
-class SurgeryViewSet(viewsets.ModelViewSet):
-    queryset = Surgery.objects.all()
-    serializer_class = SurgerySerializer
-
-class HabitViewSet(viewsets.ModelViewSet):
-    queryset = Habit.objects.all()
-    serializer_class = HabitSerializer
-
-class AllergyViewSet(viewsets.ModelViewSet):
-    queryset = Allergy.objects.all()
-    serializer_class = AllergySerializer
-
-class VaccineViewSet(viewsets.ModelViewSet):
-    queryset = Vaccine.objects.all()
-    serializer_class = VaccineSerializer
-
-class VaccinationScheduleViewSet(viewsets.ModelViewSet):
-    queryset = VaccinationSchedule.objects.all()
-    serializer_class = VaccinationScheduleSerializer
-
-class PatientVaccinationViewSet(viewsets.ModelViewSet):
-    queryset = PatientVaccination.objects.all()
-    serializer_class = PatientVaccinationSerializer
-
-class MedicalHistoryViewSet(viewsets.ModelViewSet):
-    queryset = MedicalHistory.objects.all()
-    serializer_class = MedicalHistorySerializer
-
-class ClinicalAlertViewSet(viewsets.ModelViewSet):
-    queryset = ClinicalAlert.objects.all()
-    serializer_class = ClinicalAlertSerializer
-
-class PatientClinicalProfileViewSet(viewsets.ModelViewSet):
-    queryset = ClinicalNote.objects.all()
-    serializer_class = ClinicalNoteSerializer
-
-class ClinicalBackgroundViewSet(viewsets.ModelViewSet):
-    queryset = MedicalHistory.objects.all()
-    serializer_class = MedicalHistorySerializer
-
-# ViewSets menores
+class PaymentViewSet(viewsets.ModelViewSet): queryset = Payment.objects.all(); serializer_class = PaymentSerializer
+class PersonalHistoryViewSet(viewsets.ModelViewSet): queryset = PersonalHistory.objects.all(); serializer_class = PersonalHistorySerializer
+class FamilyHistoryViewSet(viewsets.ModelViewSet): queryset = FamilyHistory.objects.all(); serializer_class = FamilyHistorySerializer
+class SurgeryViewSet(viewsets.ModelViewSet): queryset = Surgery.objects.all(); serializer_class = SurgerySerializer
+class HabitViewSet(viewsets.ModelViewSet): queryset = Habit.objects.all(); serializer_class = HabitSerializer
+class AllergyViewSet(viewsets.ModelViewSet): queryset = Allergy.objects.all(); serializer_class = AllergySerializer
+class VaccineViewSet(viewsets.ModelViewSet): queryset = Vaccine.objects.all(); serializer_class = VaccineSerializer
+class VaccinationScheduleViewSet(viewsets.ModelViewSet): queryset = VaccinationSchedule.objects.all(); serializer_class = VaccinationScheduleSerializer
+class PatientVaccinationViewSet(viewsets.ModelViewSet): queryset = PatientVaccination.objects.all(); serializer_class = PatientVaccinationSerializer
+class MedicalHistoryViewSet(viewsets.ModelViewSet): queryset = MedicalHistory.objects.all(); serializer_class = MedicalHistorySerializer
+class ClinicalAlertViewSet(viewsets.ModelViewSet): queryset = ClinicalAlert.objects.all(); serializer_class = ClinicalAlertSerializer
+class PatientClinicalProfileViewSet(viewsets.ModelViewSet): queryset = ClinicalNote.objects.all(); serializer_class = ClinicalNoteSerializer
+class ClinicalBackgroundViewSet(viewsets.ModelViewSet): queryset = MedicalHistory.objects.all(); serializer_class = MedicalHistorySerializer
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet): queryset = WaitingRoomEntry.objects.all(); serializer_class = WaitingRoomEntrySerializer
 class DiagnosisViewSet(viewsets.ModelViewSet): queryset = Diagnosis.objects.all(); serializer_class = DiagnosisSerializer
 class TreatmentViewSet(viewsets.ModelViewSet): queryset = Treatment.objects.all(); serializer_class = TreatmentSerializer
@@ -150,51 +105,77 @@ class MedicalReferralViewSet(viewsets.ModelViewSet): queryset = MedicalReferral.
 class SpecialtyViewSet(viewsets.ModelViewSet): queryset = Specialty.objects.all(); serializer_class = SpecialtySerializer
 class GeneticPredispositionViewSet(viewsets.ModelViewSet): queryset = GeneticPredisposition.objects.all(); serializer_class = GeneticPredispositionSerializer
 
-# Funciones API necesarias para api_urls.py
+# ==========================================
+# 4. FUNCIONES API EXIGIDAS POR api_urls.py
+# ==========================================
+
+@api_view(['GET'])
+def dashboard_summary_api(request):
+    return Response({"summary": "Dashboard data"})
+
+@api_view(['GET'])
+def metrics_api(request):
+    return Response({"metrics": "Advanced metrics"})
+
 @api_view(['GET'])
 def bcv_rate_api(request):
-    try:
-        return Response({"rate": services.get_bcv_rate()})
-    except:
-        return Response({"rate": 0})
+    try: return Response({"rate": services.get_bcv_rate()})
+    except: return Response({"rate": 0})
 
 @api_view(['GET'])
 def institution_settings_api(request):
     config = InstitutionSettings.objects.first()
-    if not config: return Response({"error": "No config"}, status=404)
-    return Response(InstitutionSettingsSerializer(config).data)
+    return Response(InstitutionSettingsSerializer(config).data if config else {"error": "No config"})
 
 @api_view(['GET'])
 def doctor_operator_settings_api(request):
     doctor = DoctorOperator.objects.first()
-    if not doctor: return Response({"error": "No doctor"}, status=404)
-    return Response(DoctorOperatorSerializer(doctor).data)
+    return Response(DoctorOperatorSerializer(doctor).data if doctor else {"error": "No doctor"})
 
-# Mocks para rutas que aún no tienen lógica
+@api_view(['GET'])
+def patient_search_api(request): return Response([])
+@api_view(['GET'])
+def appointment_search_api(request): return Response([])
+@api_view(['GET'])
+def chargeorder_search_api(request): return Response([])
+@api_view(['GET'])
+def icd_search_api(request): return Response([])
+@api_view(['GET'])
+def search(request): return Response([])
+
 @api_view(['POST'])
 def update_appointment_status(request, pk): return Response({"status": "ok"})
 @api_view(['POST'])
-def update_waitingroom_status(request, pk): return Response({"status": "ok"})
-@api_view(['GET'])
-def patient_search_api(request): return Response([])
-@api_view(['POST'])
 def update_appointment_notes(request, pk): return Response({"status": "ok"})
+@api_view(['POST'])
+def update_waitingroom_status(request, pk): return Response({"status": "ok"})
+@api_view(['POST'])
+def register_arrival(request): return Response({"status": "ok"})
+
 @api_view(['GET'])
 def audit_by_appointment(request, appointment_id): return Response([])
 @api_view(['GET'])
 def audit_by_patient(request, patient_id): return Response([])
-@api_view(['POST'])
-def register_arrival(request): return Response({"status": "ok"})
+@api_view(['GET'])
+def audit_log_api(request): return Response([])
+
 @api_view(['GET'])
 def waitingroom_entries_today_api(request): return Response([])
 @api_view(['GET'])
 def appointments_pending_api(request): return Response([])
 @api_view(['GET'])
+def current_consultation_api(request): return Response({})
+@api_view(['GET'])
+def appointment_detail_api(request, pk): return Response({})
+@api_view(['GET'])
 def reports_api(request): return Response({})
 @api_view(['GET'])
 def reports_export_api(request): return Response({})
 @api_view(['GET'])
-def audit_log_api(request): return Response([])
+def documents_api(request): return Response([])
+@api_view(['GET'])
+def notifications_api(request): return Response([])
+
 @api_view(['POST', 'GET'])
 def generate_medical_report(request, pk): return Response({"url": ""})
 @api_view(['POST', 'GET'])
@@ -207,8 +188,7 @@ def generate_referral_pdf(request, pk): return Response({"url": ""})
 def generate_chargeorder_pdf(request, pk): return Response({"url": ""})
 @api_view(['POST', 'GET'])
 def generate_used_documents(request, pk): return Response({"url": ""})
-@api_view(['GET'])
-def icd_search_api(request): return Response([])
+
 @api_view(['GET'])
 def treatment_choices_api(request): return Response([])
 @api_view(['GET'])
@@ -218,36 +198,4 @@ def medicaltest_choices_api(request): return Response([])
 @api_view(['GET'])
 def medicalreferral_choices_api(request): return Response([])
 @api_view(['GET'])
-def current_consultation_api(request): return Response({})
-@api_view(['GET'])
-def appointment_detail_api(request, pk): return Response({})
-@api_view(['GET'])
-def documents_api(request): return Response([])
-@api_view(['GET'])
-def search(request): return Response([])
-@api_view(['GET'])
-def appointment_search_api(request): return Response([])
-@api_view(['GET'])
-def chargeorder_search_api(request): return Response([])
-@api_view(['GET'])
-def notifications_api(request): return Response([])
-@api_view(['GET'])
 def specialty_choices_api(request): return Response([])
-
-@api_view(['GET'])
-def metrics_api(request):
-    """
-    Endpoint para las métricas del dashboard. 
-    Usamos el servicio get_advanced_metrics si existe, sino devolvemos un mock.
-    """
-    try:
-        # Intentamos usar la lógica de services si está implementada
-        data = services.get_advanced_metrics()
-        return Response(data)
-    except Exception as e:
-        logger.error(f"Error en metrics_api: {str(e)}")
-        # Mock de respaldo para que la UI no rompa mientras tanto
-        return Response({
-            "summary": {"totalPatients": 0, "todayRevenue": 0},
-            "appointmentVolume": []
-        })

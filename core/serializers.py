@@ -2086,7 +2086,7 @@ class RegisterWalkinSerializer(serializers.Serializer):
     patient_id = serializers.IntegerField()
 
 
-class NeighborhoodFullDetailSerializer(serializers.Serializer):
+class NeighborhoodDetailSerializer(serializers.Serializer):
     """
     Serializer de solo lectura para reconstruir la jerarquía completa 
     de una dirección desde el sector (Neighborhood).
