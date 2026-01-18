@@ -252,8 +252,7 @@ def prescription_choices_api(request): return Response([])
 def medicaltest_choices_api(request): return Response([])
 @api_view(['GET'])
 def medicalreferral_choices_api(request): return Response([])
-@api_view(['GET'])
-def specialty_choices_api(request): return Response([])
+
 
 
 @api_view(['GET', 'PATCH'])
@@ -291,3 +290,10 @@ def doctor_operator_settings_api(request):
         files = request.FILES
         doctor = services.update_doctor_config(data, request.user, files)
         return Response(DoctorOperatorSerializer(doctor).data)
+
+
+@api_view(['GET'])
+def specialty_choices_api(request):
+    specialties = Specialty.objects.all().order_by('name')
+    serializer = SpecialtySerializer(specialties, many=True)
+    return Response(serializer.data)
