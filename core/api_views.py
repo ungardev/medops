@@ -233,7 +233,7 @@ def medicalreferral_choices_api(request): return Response([])
 
 
 @api_view(['GET', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def institution_settings_api(request):
     if request.method == 'GET':
         data = services.get_institution_settings()
@@ -255,7 +255,7 @@ def institution_settings_api(request):
 
 
 @api_view(['GET', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def doctor_operator_settings_api(request):
     if request.method == 'GET':
         data = services.get_doctor_config()
