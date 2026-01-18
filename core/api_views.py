@@ -219,8 +219,6 @@ def audit_by_patient(request, patient_id): return Response([])
 
 # Configuración y Varios
 @api_view(['GET'])
-def institution_settings_api(request): return Response({})
-@api_view(['GET'])
 def doctor_operator_settings_api(request): return Response({})
 @api_view(['GET'])
 def bcv_rate_api(request): return Response({"rate": 0})
@@ -258,3 +256,25 @@ def medicaltest_choices_api(request): return Response([])
 def medicalreferral_choices_api(request): return Response([])
 @api_view(['GET'])
 def specialty_choices_api(request): return Response([])
+
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def institution_settings_api(request):
+    if request.method == 'GET':
+        data = services.get_institution_settings()
+        return Response(data)
+    elif request.method == 'PATCH':
+        # Manejar JSON o FormData
+        if request.content_type == 'multipart/form-data':
+            data = request.data
+            files = request.FILES
+            settings_obj = services.update_institution_settings_ext(
+                data, request.user, files
+            )
+        else:
+            data = request.data
+            settings_obj = services.update_institution_settings_ext(
+                data, request.user
+            )
+        return Response(InstitutionSettingsSerializer(settings_obj).data)
