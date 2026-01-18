@@ -6,13 +6,13 @@ export const api = axios.create({
   withCredentials: false,                 // ✅ no enviar cookies, solo token
 });
 // 🔒 aplicar token inicial si existe (usar variable de entorno como fallback)
-const token = import.meta.env.VITE_DEV_TOKEN ?? localStorage.getItem("authToken");
+const token = import.meta.env.VITE_DEV_TOKEN;
 if (token) {
   api.defaults.headers.common["Authorization"] = `Token ${token}`;
 }
 // 🔒 interceptor institucional para aplicar token dinámico en cada request
 api.interceptors.request.use((config) => {
-  const token = import.meta.env.VITE_DEV_TOKEN ?? localStorage.getItem("authToken");
+  const token = import.meta.env.VITE_DEV_TOKEN;
   if (token) {
     if (!config.headers) {
       config.headers = {};
