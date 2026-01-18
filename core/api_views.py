@@ -219,8 +219,6 @@ def audit_by_patient(request, patient_id): return Response([])
 
 # Configuración y Varios
 @api_view(['GET'])
-def doctor_operator_settings_api(request): return Response({})
-@api_view(['GET'])
 def bcv_rate_api(request): return Response({"rate": 0})
 @api_view(['GET'])
 def reports_api(request): return Response({})
@@ -278,3 +276,18 @@ def institution_settings_api(request):
                 data, request.user
             )
         return Response(InstitutionSettingsSerializer(settings_obj).data)
+
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def doctor_operator_settings_api(request):
+    if request.method == 'GET':
+        data = services.get_doctor_config()
+        if not data:
+            return Response({"error": "No doctor configured"}, status=404)
+        return Response(data)
+    elif request.method == 'PATCH':
+        data = request.data
+        files = request.FILES
+        doctor = services.update_doctor_config(data, request.user, files)
+        return Response(DoctorOperatorSerializer(doctor).data)
