@@ -236,24 +236,21 @@ class PatientReadSerializer(serializers.ModelSerializer):
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
     address_chain = serializers.SerializerMethodField()
-
     class Meta:
         model = Patient
         fields = [
             "id", "full_name", "national_id", "email", "age", "gender",
-            "birth_date", "phone_number", "address_detail", "blood_type",
+            "birth_date", "phone_number", "address",  # ✅ CAMBIADO de address_detail a address
+            "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
             "alerts", "address_chain", "active", "created_at", "updated_at"
         ]
-
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_alerts(self, obj) -> List[Dict[str, Any]]:
         if not hasattr(obj, 'alerts'):
             return []
         active_alerts = obj.alerts.filter(is_active=True)
-        # Aplicamos cast para que Pylance entienda que el .data de DRF es lo que buscamos
         return cast(List[Dict[str, Any]], ClinicalAlertSerializer(active_alerts, many=True).data)
-
     @extend_schema_field(serializers.DictField())
     def get_address_chain(self, obj) -> Dict[str, Any]:
         n = obj.neighborhood
@@ -263,7 +260,6 @@ class PatientReadSerializer(serializers.ModelSerializer):
         m = getattr(p, 'municipality', None) if p else None
         s = getattr(m, 'state', None) if m else None
         
-        # Estructuramos el retorno explícitamente como Dict
         res: Dict[str, Any] = {
             "neighborhood": n.name,
             "parish": getattr(p, 'name', "N/A"),
@@ -282,20 +278,18 @@ class PatientListSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField()
     age = serializers.ReadOnlyField()
     short_address = serializers.SerializerMethodField()
-
     class Meta:
         model = Patient
         fields = [
             "id", "full_name", "national_id", "age", "gender", 
             "phone_number", "short_address", "active"
         ]
-
     @extend_schema_field(serializers.CharField())
     def get_short_address(self, obj) -> str:
         """Dirección compacta para columnas de tablas."""
         if obj.neighborhood:
             return f"{obj.neighborhood.name}, {obj.neighborhood.parish.name}"
-        return obj.address_detail[:30] if obj.address_detail else "Sin dirección"
+        return obj.address[:30] if obj.address else "Sin dirección"
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):

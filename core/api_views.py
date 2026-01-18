@@ -163,19 +163,9 @@ class NeighborhoodSearchView(views.APIView):
 
 # Dashboards y Métricas
 @api_view(['GET'])
-def metrics_api(request): return Response({})
-@api_view(['GET'])
-def dashboard_summary_api(request): return Response({})
-@api_view(['GET'])
-def payment_summary_api(request): return Response({})
-@api_view(['GET'])
-def waived_consultations_api(request): return Response([]) # <--- Faltaba
-@api_view(['GET'])
 def audit_dashboard_api(request): return Response({}) # <--- Faltaba
 
 # Búsquedas
-@api_view(['GET'])
-def patient_search_api(request): return Response([])
 @api_view(['GET'])
 def appointment_search_api(request): return Response([])
 @api_view(['GET'])
@@ -187,39 +177,26 @@ def search(request): return Response([])
 
 # Citas y Sala de Espera
 @api_view(['GET'])
-def daily_appointments_api(request): return Response([])
-@api_view(['GET'])
 def appointments_pending_api(request): return Response([])
 @api_view(['GET'])
 def appointment_detail_api(request, pk): return Response({})
-@api_view(['GET'])
-def current_consultation_api(request): return Response({})
-@api_view(['POST'])
-def update_appointment_status(request, pk): return Response({"ok": True})
+
+
 @api_view(['POST'])
 def update_appointment_notes(request, pk): return Response({"ok": True})
-@api_view(['POST'])
-def update_waitingroom_status(request, pk): return Response({"ok": True})
+
 @api_view(['POST'])
 def register_arrival(request): return Response({"ok": True})
-@api_view(['GET'])
-def waitingroom_groups_today_api(request): return Response([]) # <--- Faltaba
-@api_view(['GET'])
-def waitingroom_entries_today_api(request): return Response([])
+
+
 
 # Auditoría y Logs
 @api_view(['GET'])
 def event_log_api(request): return Response([]) # <--- Faltaba
-@api_view(['GET'])
-def audit_log_api(request): return Response([])
-@api_view(['GET'])
-def audit_by_appointment(request, appointment_id): return Response([])
-@api_view(['GET'])
-def audit_by_patient(request, patient_id): return Response([])
+
+
 
 # Configuración y Varios
-@api_view(['GET'])
-def bcv_rate_api(request): return Response({"rate": 0})
 @api_view(['GET'])
 def reports_api(request): return Response({})
 @api_view(['GET'])
@@ -297,3 +274,206 @@ def specialty_choices_api(request):
     specialties = Specialty.objects.all().order_by('name')
     serializer = SpecialtySerializer(specialties, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def metrics_api(request):
+    try:
+        data = services.get_daily_metrics()
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def dashboard_summary_api(request):
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+    range_param = request.query_params.get('range')
+    currency = request.query_params.get('currency', 'USD')
+    status_param = request.query_params.get('status')
+    
+    try:
+        data = services.get_dashboard_summary_data(
+            start_date=start_date,
+            end_date=end_date,
+            range_param=range_param,
+            currency=currency,
+            status_param=status_param
+        )
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def bcv_rate_api(request):
+    try:
+        rate = services.get_bcv_rate()
+        return Response({"rate": float(rate)})
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def patient_search_api(request):
+    q = request.query_params.get('q', '').strip()
+    limit = int(request.query_params.get('limit', 10))
+    
+    if not q:
+        return Response([])
+    
+    try:
+        patients = Patient.objects.filter(
+            Q(first_name__icontains=q) |
+            Q(last_name__icontains=q) |
+            Q(national_id__icontains=q)
+        ).filter(active=True)[:limit]
+        
+        serializer = PatientListSerializer(patients, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def daily_appointments_api(request):
+    try:
+        data = services.get_daily_appointments()
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def current_consultation_api(request):
+    try:
+        data = services.get_current_consultation()
+        if not data:
+            return Response({"message": "No consultation in progress"}, status=404)
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_appointment_status(request, pk):
+    try:
+        appointment = get_object_or_404(Appointment, pk=pk)
+        new_status = request.data.get('status')
+        
+        valid_statuses = ['pending', 'arrived', 'in_consultation', 'completed', 'canceled']
+        if new_status not in valid_statuses:
+            return Response(
+                {"error": f"Invalid status. Valid options: {valid_statuses}"}, 
+                status=400
+            )
+        
+        appointment.update_status(new_status)
+        serializer = AppointmentSerializer(appointment)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def waitingroom_groups_today_api(request):
+    try:
+        data = services.get_waitingroom_groups_today()
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def waitingroom_entries_today_api(request):
+    try:
+        data = services.get_waitingroom_today_data()
+        serializer = WaitingRoomEntrySerializer(data, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_waitingroom_status(request, pk):
+    try:
+        entry = get_object_or_404(WaitingRoomEntry, pk=pk)
+        new_status = request.data.get('status')
+        
+        if not entry.can_transition(new_status):
+            return Response(
+                {"error": f"Invalid transition: {entry.status} -> {new_status}"}, 
+                status=400
+            )
+        
+        entry.update_status(new_status)
+        serializer = WaitingRoomEntrySerializer(entry)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def payment_summary_api(request):
+    try:
+        data = services.get_payment_summary()
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def waived_consultations_api(request):
+    try:
+        waived = services.get_waived_consultations()
+        serializer = PaymentSerializer(waived, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def audit_log_api(request):
+    entity = request.query_params.get('entity')
+    entity_id = request.query_params.get('entity_id')
+    patient_id = request.query_params.get('patient_id')
+    limit = request.query_params.get('limit')
+    
+    try:
+        data = services.get_audit_logic(
+            entity=entity,
+            entity_id=entity_id,
+            patient_id=patient_id,
+            limit=int(limit) if limit else None
+        )
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def audit_by_appointment(request, appointment_id):
+    try:
+        data = services.get_audit_logic(
+            entity="Appointment",
+            entity_id=appointment_id
+        )
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def audit_by_patient(request, patient_id):
+    try:
+        data = services.get_audit_logic(
+            patient_id=patient_id
+        )
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
