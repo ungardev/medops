@@ -30,7 +30,7 @@ import SearchPage from "./pages/Search/Search";
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN ?? localStorage.getItem("authToken");
 if (token) {
-  axios.defaults.headers.common["Authorization"] = `Token `;
+  axios.defaults.headers.common["Authorization"] = `Token ${token}`;
 }
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
