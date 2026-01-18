@@ -16,20 +16,90 @@ logger = logging.getLogger(__name__)
 # ==========================================
 
 class PatientViewSet(viewsets.ModelViewSet):
+    """
+    Administración profesional de Pacientes MEDOPZ.
+    Usa lógica de serializers dinámicos para optimizar el ancho de banda.
+    """
     queryset = Patient.objects.all()
+
     def get_serializer_class(self):
-        if self.action in ['list', 'retrieve']: return PatientReadSerializer
+        # 1. Si está viendo la tabla (lista)
+        if self.action == 'list':
+            return PatientListSerializer
+        
+        # 2. Si está viendo el perfil completo (detalle)
+        if self.action == 'retrieve':
+            return PatientReadSerializer
+        
+        # 3. Si está creando o editando (escritura)
         return PatientWriteSerializer
-    @action(detail=True, methods=['get', 'post'])
-    def documents(self, request, pk=None): return Response([])
-    @action(detail=True, methods=['delete'])
-    def delete_document(self, request, pk=None, document_id=None): return Response(status=204)
+
+    def get_queryset(self):
+        """
+        Opcional: Filtrado por institución automática.
+        Si el usuario no es superuser, solo ve pacientes de su institución.
+        """
+        user = self.request.user
+        queryset = super().get_queryset()
+        
+        if not user.is_superuser and hasattr(user, 'doctor_profile'):
+            return queryset.filter(institution=user.doctor_profile.institution)
+        return queryset
+
     @action(detail=True, methods=['get'])
-    def profile(self, request, pk=None): return Response({})
+    def clinical_summary(self, request, pk=None):
+        """Endpoint extra para un resumen rápido en el Frontend."""
+        patient = self.get_object()
+        # Aquí podrías usar un serializer aún más específico
+        return Response({"status": "Success", "data": "Resumen clínico generado"})
+
 
 class AppointmentViewSet(viewsets.ModelViewSet):
-    queryset = Appointment.objects.all()
+    """
+    Control Élite de Citas y Notas Clínicas.
+    Maneja el ciclo de vida de la consulta y el bloqueo de integridad.
+    """
+    queryset = Appointment.objects.all().select_related('patient', 'doctor', 'note')
     serializer_class = AppointmentSerializer
+
+    @action(detail=True, methods=['post'], url_path='lock-note')
+    def lock_clinical_note(self, request, pk=None):
+        """
+        Sella la nota clínica. Una vez sellada, no hay vuelta atrás (Normativa Médica).
+        """
+        appointment = self.get_object()
+        if not hasattr(appointment, 'note'):
+            return Response(
+                {"error": "No hay una nota clínica asociada a esta cita."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        note = appointment.note
+        if note.is_locked:
+            return Response(
+                {"warning": "Esta nota ya se encuentra sellada."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Lógica de sellado
+        note.is_locked = True
+        note.locked_at = now()
+        note.save()
+
+        return Response({
+            "status": "Nota sellada exitosamente",
+            "locked_at": note.locked_at
+        })
+
+    def get_queryset(self):
+        # Filtro institucional: Seguridad Elite
+        user = self.request.user
+        qs = super().get_queryset()
+        if not user.is_superuser:
+            # Aseguramos que solo vea citas de su institución
+            return qs.filter(institution=user.doctor_profile.institution)
+        return qs
+
 
 class MedicalDocumentViewSet(viewsets.ModelViewSet):
     queryset = MedicalDocument.objects.all()

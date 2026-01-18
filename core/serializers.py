@@ -15,7 +15,8 @@ from typing import Optional, Any, cast
 from decimal import Decimal, InvalidOperation
 from django.db import models
 from django.utils import timezone
-from typing import Dict, Any, cast
+#from typing import Dict, Any, cast, Optional, List
+from typing import Optional, Any, Dict, List, cast
 import hashlib
 
 # --- Pacientes ---
@@ -164,11 +165,17 @@ class NeighborhoodSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "parish", "parish_id"]
 
 
+class ClinicalAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClinicalAlert
+        fields = ["id", "type", "message", "is_active", "level"]
+
+
 # 🔹 Serializer para crear/actualizar pacientes (sin campo active)
 class PatientWriteSerializer(serializers.ModelSerializer):
     """
-    Optimizado para creación y edición.
-    Maneja la relación Many-to-Many de predisposiciones y la jerarquía geográfica.
+    OPTIMIZADO: Para creación y edición.
+    Maneja la relación Many-to-Many y la jerarquía geográfica por ID.
     """
     genetic_predispositions = serializers.PrimaryKeyRelatedField(
         queryset=GeneticPredisposition.objects.all(),
@@ -186,145 +193,92 @@ class PatientWriteSerializer(serializers.ModelSerializer):
         model = Patient
         fields = [
             "id", "first_name", "middle_name", "last_name", "second_last_name",
-            "national_id", "birthdate", "birth_place", "birth_country",
-            "gender", "contact_info", "email", "address", 
+            "national_id", "birth_date", "birth_place", "birth_country",
+            "gender", "phone_number", "email", "address_detail", "institution",
             "weight", "height", "blood_type", "genetic_predispositions", "neighborhood_id",
+            "active"
         ]
 
-    def validate_birthdate(self, value):
+    def validate_birth_date(self, value):
         if value and value > date.today():
             raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
         return value
 
     def save(self, **kwargs):
-        # Aseguramos que address nunca sea None para evitar errores de concatenación
+        # Aseguramos consistencia en campos de texto
         v_data = cast(Dict[str, Any], self.validated_data)
-        if v_data.get('address') is None:
-            v_data['address'] = ""
+        if v_data.get('address_detail') is None:
+            v_data['address_detail'] = ""
         return super().save(**kwargs)
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
-    # Usamos ReadOnlyField si el modelo tiene la property 'full_name'
-    # de lo contrario, mantenemos el MethodField (he dejado el método abajo por seguridad)
-    full_name = serializers.SerializerMethodField()
-    age = serializers.SerializerMethodField()
-    
-    # --- Relaciones de Élite ---
-    # medical_history ahora incluye todo (patologías, alergias, cirugías)
+    full_name = serializers.ReadOnlyField() 
+    age = serializers.ReadOnlyField()       
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
-    
-    # Nuevo bloque de Alertas Críticas (Alergias severas, riesgos, etc.)
+    genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
-    
-    # Ubicación geográfica
-    neighborhood = NeighborhoodSerializer(read_only=True)
     address_chain = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
         fields = [
-            "id",
-            "full_name",
-            "national_id",
-            "email",
-            "age",
-            "gender",
-            "birthdate",
-            "contact_info",
-            "address",
-            "blood_type",
-            "medical_history", # Historia unificada
-            "alerts",          # Alertas visuales inmediatas
-            "neighborhood",
-            "address_chain",
+            "id", "full_name", "national_id", "email", "age", "gender",
+            "birth_date", "phone_number", "address_detail", "blood_type",
+            "weight", "height", "medical_history", "genetic_predispositions", 
+            "alerts", "address_chain", "active", "created_at", "updated_at"
         ]
-
-    @extend_schema_field(serializers.CharField())
-    def get_full_name(self, obj) -> str:
-        if not obj: return "SIN-NOMBRE"
-        # Intenta usar la property del modelo, si no, concatena
-        if hasattr(obj, 'full_name'):
-            return obj.full_name
-        parts = [obj.first_name, obj.middle_name, obj.last_name, obj.second_last_name]
-        name = " ".join(filter(None, parts)).strip()
-        return name if name else "SIN-NOMBRE"
-
-    @extend_schema_field(serializers.IntegerField(allow_null=True))
-    def get_age(self, obj) -> Optional[int]:
-        if not obj or not obj.birthdate:
-            return None
-        today = date.today()
-        return today.year - obj.birthdate.year - (
-            (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
-        )
 
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
-    def get_alerts(self, obj):
-        """
-        Extrae alertas críticas para que el frontend pinte banners de advertencia.
-        """
+    def get_alerts(self, obj) -> List[Dict[str, Any]]:
         if not hasattr(obj, 'alerts'):
             return []
-        # Solo enviamos alertas activas
         active_alerts = obj.alerts.filter(is_active=True)
-        return [
-            {"type": a.type, "message": a.message} 
-            for a in active_alerts
-        ]
+        # Aplicamos cast para que Pylance entienda que el .data de DRF es lo que buscamos
+        return cast(List[Dict[str, Any]], ClinicalAlertSerializer(active_alerts, many=True).data)
 
-    def get_address_chain(self, obj):
-        """Devuelve la cadena jerárquica compacta."""
+    @extend_schema_field(serializers.DictField())
+    def get_address_chain(self, obj) -> Dict[str, Any]:
         n = obj.neighborhood
         if not n:
-            return {"neighborhood": "N/A", "country": "N/A"}
-        
-        # Navegación segura hacia arriba en la jerarquía
+            return {"neighborhood": "N/A", "full_path": "Sin dirección"}
         p = getattr(n, 'parish', None)
         m = getattr(p, 'municipality', None) if p else None
         s = getattr(m, 'state', None) if m else None
-        c = getattr(s, 'country', None) if s else None
-
-        return {
+        
+        # Estructuramos el retorno explícitamente como Dict
+        res: Dict[str, Any] = {
             "neighborhood": n.name,
-            "neighborhood_id": n.id,
             "parish": getattr(p, 'name', "N/A"),
             "municipality": getattr(m, 'name', "N/A"),
             "state": getattr(s, 'name', "N/A"),
-            "country": getattr(c, 'name', "N/A"),
+            "country": getattr(s.country, 'name', "N/A") if s else "N/A",
+            "full_path": f"{n.name}, {getattr(p, 'name', '')}".strip(', ')
         }
+        return res
 
 
 class PatientListSerializer(serializers.ModelSerializer):
     """
-    Diseñado para tablas y búsquedas. 
-    Carga lo mínimo necesario para una respuesta rápida.
+    LIGERO: Diseñado para tablas, resultados de búsqueda y alto rendimiento.
     """
-    full_name = serializers.ReadOnlyField() # Usando la property del modelo
-    age = serializers.SerializerMethodField()
-    full_address = serializers.SerializerMethodField()
+    full_name = serializers.ReadOnlyField()
+    age = serializers.ReadOnlyField()
+    short_address = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
         fields = [
             "id", "full_name", "national_id", "age", "gender", 
-            "contact_info", "full_address", "active"
+            "phone_number", "short_address", "active"
         ]
 
-    def get_age(self, obj) -> Optional[int]:
-        if not obj.birthdate: return None
-        today = date.today()
-        return today.year - obj.birthdate.year - (
-            (today.month, today.day) < (obj.birthdate.month, obj.birthdate.day)
-        )
-
-    def get_full_address(self, obj) -> str:
-        parts = []
-        if obj.address: parts.append(obj.address)
-        n = obj.neighborhood
-        if n:
-            parts.extend([n.name, n.parish.name, n.parish.municipality.state.name])
-        return ", ".join(parts) if parts else "Sin dirección"
+    @extend_schema_field(serializers.CharField())
+    def get_short_address(self, obj) -> str:
+        """Dirección compacta para columnas de tablas."""
+        if obj.neighborhood:
+            return f"{obj.neighborhood.name}, {obj.neighborhood.parish.name}"
+        return obj.address_detail[:30] if obj.address_detail else "Sin dirección"
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
@@ -2061,12 +2015,6 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
         }
 
 
-class ClinicalAlertSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ClinicalAlert
-        fields = ["id", "patient", "type", "message", "created_at", "updated_at"]
-
-
 # --- Serializers auxiliares para PATCH/POST ---
 class AppointmentStatusUpdateSerializer(serializers.Serializer):
     status = serializers.CharField()
@@ -2110,3 +2058,18 @@ class NeighborhoodDetailSerializer(serializers.Serializer):
             "country": c.name if c else "N/A",
             "country_id": c.id if c else None,
         }
+
+
+# --- SUB-SERIALIZERS PARA LECTURA (Elegancia en el Frontend) ---
+
+class InstitutionMiniSerializer(serializers.ModelSerializer):
+    """Para mostrar la institución en listas sin sobrecargar la red"""
+    class Meta:
+        model = InstitutionSettings
+        fields = ['id', 'name', 'slug', 'logo']
+
+class DoctorMiniSerializer(serializers.ModelSerializer):
+    """Para que el frontend sepa quién es el médico de un vistazo"""
+    class Meta:
+        model = DoctorOperator
+        fields = ['id', 'name', 'specialties', 'is_verified']
