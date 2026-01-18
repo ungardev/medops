@@ -28,7 +28,7 @@ import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
 // 🔹 Configuración global de axios
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
-const token = import.meta.env.VITE_DEV_TOKEN ?? localStorage.getItem("authToken");
+const token = import.meta.env.VITE_DEV_TOKEN;
 if (token) {
   axios.defaults.headers.common["Authorization"] = `Token ${token}`;
 }
