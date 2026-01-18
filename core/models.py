@@ -304,10 +304,21 @@ class Appointment(models.Model):
     def __str__(self):
         return f"{self.patient} - {self.institution.name} - {self.appointment_date}"
 
+    # --- PROPIEDADES DE VALIDACIÓN PARA EL ADMIN ---
+    @property
+    def is_fully_paid(self):
+        """
+        Calcula si la cita está pagada. 
+        Requerido por core.admin.AppointmentAdmin (list_display[8])
+        """
+        # Si no hay saldo pendiente, está totalmente pagada
+        return self.balance_due() <= 0
+
     # --- FINANZAS POR SEDE ---
     def total_paid(self):
         # Filtramos pagos confirmados en esta cita
-        agg = self.payments.filter(status='confirmed').aggregate(total=Sum('amount'))
+        # Usamos 'completed' o 'confirmed' según tu lógica de Payment.status
+        agg = self.payments.filter(status__in=['confirmed', 'completed']).aggregate(total=Sum('amount'))
         return agg.get('total') or Decimal('0.00')
 
     def balance_due(self):
@@ -334,7 +345,7 @@ class Appointment(models.Model):
     def save(self, *args, **kwargs):
         # 1. Validación de Verificación Profesional
         if not self.doctor.is_verified:
-            # En modo 'extreme' podemos lanzar error, por ahora solo log o warning
+            # Aquí podrías lanzar una excepción si fuera necesario
             pass 
 
         # 2. Registro automático de hora de llegada
