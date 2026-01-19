@@ -1135,7 +1135,7 @@ def get_institution_settings(request=None, active_only=False):
             institution = InstitutionSettings.objects.first()
             if active_only:
                 return cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data) if institution else {}
-            return [cast(Dict[str, Any], InstitutionSettings(institution).data)] if institution else []
+            return [cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data)] if institution else []
         
         # Obtener todas las instituciones del doctor
         institutions = doctor.institutions.all()
