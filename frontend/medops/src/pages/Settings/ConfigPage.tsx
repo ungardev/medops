@@ -1,13 +1,14 @@
 // src/pages/Settings/ConfigPage.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import PageHeader from "@/components/Common/PageHeader";
-import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
+// ✅ ELIMINADO: import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import { InstitutionCard } from "@/components/Settings/InstitutionCard";
 import { InstitutionFormModal } from "@/components/Settings/InstitutionFormModal";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
+import { api } from "@/lib/apiClient"; // ✅ AGREGADO: Importar api client
 import type { Specialty } from "@/types/consultation"; 
 import { 
   FingerPrintIcon,
@@ -29,9 +30,8 @@ type DoctorForm = {
 };
 export default function ConfigPage() {
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  // ✅ Hook singleton para identidad institucional
-  const { data: inst, updateInstitution, isLoading: instLoading } = useInstitutionSettings();
-  
+  // ✅ Hook singleton eliminado - ya no es necesario
+  // const { data: inst, updateInstitution, isLoading: instLoading } = useInstitutionSettings();
   // ✅ Hook multi-institución para gestión completa
   const {
     institutions,
@@ -91,29 +91,50 @@ export default function ConfigPage() {
     setEditingInstitution(institution);
     setIsInstModalOpen(true);
   };
-  // ✅ HANDLER: Eliminar institución (CORREGIDO para aceptar number | undefined)
+  // ✅ HANDLER: Eliminar institución
   const handleDeleteInstitution = async (id: number | undefined) => {
     if (id === undefined) return;
     if (confirm("¿Estás seguro de que quieres eliminar esta institución?")) {
       await deleteInstitution(id);
     }
   };
-  // ✅ HANDLER: Seleccionar institución activa (CORREGIDO para aceptar number | undefined)
+  // ✅ HANDLER: Seleccionar institución activa
   const handleSelectInstitution = async (id: number | undefined) => {
     if (id === undefined) return;
     await setActiveInstitution(id);
   };
+  // ✅ HELPER: Actualizar institución existente
+  const updateInstitution = async (formData: any) => {
+    // Obtener el ID de la institución a actualizar
+    const institutionId = editingInstitution?.id || activeInstitution?.id;
+    if (!institutionId) return;
+    // Actualizar el header X-Institution-ID temporalmente
+    const originalHeader = api.defaults.headers.common["X-Institution-ID"];
+    api.defaults.headers.common["X-Institution-ID"] = String(institutionId);
+    try {
+      // Llamar al endpoint de configuración de institución con método PATCH
+      const response = await api.patch("config/institution/", formData);
+      return response.data;
+    } finally {
+      // Restaurar el header original
+      if (originalHeader !== undefined) {
+        api.defaults.headers.common["X-Institution-ID"] = originalHeader;
+      } else {
+        delete api.defaults.headers.common["X-Institution-ID"];
+      }
+    }
+  };
   // ✅ HANDLER: Guardar institución (crear o editar)
   const handleSaveInstitution = async (formData: any) => {
     if (editingInstitution) {
-      await updateInstitution(formData);
+      await updateInstitution(formData);  // ← Ahora esta función existe
     } else {
       await createInstitution(formData);
     }
     setIsInstModalOpen(false);
     setEditingInstitution(null);
   };
-  // ✅ HELPER: Obtener URL del logo (CORREGIDO)
+  // ✅ HELPER: Obtener URL del logo
   const getLogoUrl = (institution: any): string | null => {
     if (!institution.logo) return null;
     if (typeof institution.logo === 'string') {
@@ -130,14 +151,10 @@ export default function ConfigPage() {
     }
     return 'N/A';
   };
-  const memoizedLogoUrl = useMemo(() => {
-    if (!inst?.logo) return null;
-    if (inst.logo instanceof File) return URL.createObjectURL(inst.logo);
-    const logoStr = String(inst.logo);
-    if (logoStr.startsWith('http') || logoStr.startsWith('blob:')) return logoStr;
-    return ``;
-  }, [inst?.logo, API_BASE]);
+  // Helper para labelStyles (necesario para el formulario de doctor)
   const labelStyles = `text-[9px] font-black uppercase tracking-[0.25em] text-white/30 mb-2 block`;
+  
+  // Helper para inputStyles (necesario para el formulario de doctor)
   const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-emerald-500/50 transition-all`;
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-8 space-y-10 bg-black min-h-screen">
@@ -148,7 +165,7 @@ export default function ConfigPage() {
           { label: "CONFIGURATION", active: true }
         ]}
         stats={[
-          { label: "CORE_STATUS", value: inst?.is_active ? "OPERATIONAL" : "OFFLINE", color: inst?.is_active ? "text-emerald-500" : "text-red-500" },
+          { label: "CORE_STATUS", value: activeInstitution?.is_active ? "OPERATIONAL" : "OFFLINE", color: activeInstitution?.is_active ? "text-emerald-500" : "text-red-500" },
           { label: "AUDIT_ENGINE", value: "SHA-256_ACTIVE", color: "text-blue-400" }
         ]}
         actions={
@@ -159,34 +176,8 @@ export default function ConfigPage() {
       />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         
-        {/* 🏢 SECCIÓN: IDENTIDAD INSTITUCIONAL */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between px-1 border-l-2 border-white/10 ml-1">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Organization_Identity</h3>
-          </div>
-          {instLoading ? (
-            <div className="h-64 bg-white/5 animate-pulse rounded-sm border border-white/10" />
-          ) : (
-            <InstitutionCard 
-              name={inst?.name || "UNNAMED_ENTITY"}
-              taxId={inst?.tax_id || ""}
-              logoUrl={memoizedLogoUrl}
-              address={inst?.address || "STREET_DATA_MISSING"}
-              neighborhoodName={typeof inst?.neighborhood === 'object' ? (inst.neighborhood as any)?.name : 'N/A'}
-              isActive={inst?.is_active ?? false}
-              onEdit={() => handleEditInstitution(inst)}
-            />
-          )}
-          <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-sm">
-            <div className="flex items-start gap-3">
-               <CpuChipIcon className="w-4 h-4 text-emerald-500/40 mt-1" />
-               <div className="text-[9px] font-mono text-emerald-500/60 leading-relaxed uppercase">
-                 <p className="font-bold">Protocol_Notice:</p>
-                 Los cambios en la identidad institucional afectan los encabezados de todos los documentos médicos generados.
-               </div>
-            </div>
-          </div>
-        </section>
+        {/* ✅ ELIMINADO: SECCIÓN "Organization_Identity" */}
+        
         {/* 👨‍⚕️ SECCIÓN: REGISTRO PROFESIONAL */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1 border-l-2 border-emerald-500/50 ml-1">
@@ -302,7 +293,7 @@ export default function ConfigPage() {
           </div>
         </section>
       </div>
-      {/* 🏢 SECCIÓN: GESTIÓN DE INSTITUCIONES (NUEVA) */}
+      {/* 🏢 SECCIÓN: GESTIÓN DE INSTITUCIONES (NUEVA DISEÑADA) */}
       <section className="space-y-4">
         <div className="flex items-center justify-between px-1 border-l-2 border-emerald-500/50 ml-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
@@ -325,20 +316,49 @@ export default function ConfigPage() {
               </p>
             </div>
           ) : (
-            institutions.map((inst) => (
-              <InstitutionCard
-                key={inst.id}
-                name={inst.name || "UNNAMED_ENTITY"}
-                taxId={inst.tax_id || ""}
-                logoUrl={getLogoUrl(inst)}
-                address={inst.address || "STREET_DATA_MISSING"}
-                neighborhoodName={getNeighborhoodName(inst)}
-                isActive={activeInstitution?.id === inst.id}
-                onSelect={() => handleSelectInstitution(inst.id)}
-                onEdit={() => handleEditInstitution(inst)}
-                onDelete={() => handleDeleteInstitution(inst.id)}
-              />
-            ))
+            <>
+              {/* Institución ACTIVA - Destacada visualmente */}
+              {activeInstitution && (
+                <div className="relative">
+                  <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-500 rounded-sm" />
+                  <div className="border-2 border-emerald-500/30 rounded-sm p-1">
+                    <InstitutionCard
+                      key={activeInstitution.id}
+                      name={activeInstitution.name || "UNNAMED_ENTITY"}
+                      taxId={activeInstitution.tax_id || ""}
+                      logoUrl={getLogoUrl(activeInstitution)}
+                      address={activeInstitution.address || "STREET_DATA_MISSING"}
+                      neighborhoodName={getNeighborhoodName(activeInstitution)}
+                      isActive={true}
+                      onSelect={undefined}
+                      onEdit={() => handleEditInstitution(activeInstitution)}
+                      onDelete={() => handleDeleteInstitution(activeInstitution.id)}
+                    />
+                  </div>
+                  <div className="text-[8px] font-mono text-emerald-500 uppercase tracking-wider mt-1 ml-2">
+                    ● Active Institution
+                  </div>
+                </div>
+              )}
+              {/* Otras Instituciones */}
+              {institutions
+                .filter(inst => inst.id !== activeInstitution?.id)
+                .map((inst) => (
+                  <InstitutionCard
+                    key={inst.id}
+                    name={inst.name || "UNNAMED_ENTITY"}
+                    taxId={inst.tax_id || ""}
+                    logoUrl={getLogoUrl(inst)}
+                    address={inst.address || "STREET_DATA_MISSING"}
+                    neighborhoodName={getNeighborhoodName(inst)}
+                    isActive={false}
+                    onSelect={() => handleSelectInstitution(inst.id)}
+                    onEdit={() => handleEditInstitution(inst)}
+                    onDelete={() => handleDeleteInstitution(inst.id)}
+                  />
+                ))
+              }
+            </>
           )}
         </div>
         <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-sm">
@@ -358,7 +378,7 @@ export default function ConfigPage() {
             <div className="h-px w-24 bg-gradient-to-r from-white to-transparent" />
         </div>
         <div className="text-[6px] font-mono text-emerald-500/20 break-all max-w-md text-center uppercase">
-            Node_Hash: {hashlib_mock(inst?.name || 'ROOT')}
+            Node_Hash: {hashlib_mock(activeInstitution?.name || 'ROOT')}
         </div>
       </footer>
       <InstitutionFormModal 
