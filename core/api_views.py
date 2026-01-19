@@ -233,13 +233,57 @@ def medicalreferral_choices_api(request): return Response([])
 
 
 @api_view(['GET', 'PATCH'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def institution_settings_api(request):
-    if request.method == 'GET':
-        data = services.get_institution_settings()
+    """
+    Endpoint de configuración de institución.
+    
+    GET:
+        Si no hay autenticación: Devuelve institución global (legacy singleton)
+        Si hay autenticación: Devuelve todas las instituciones del doctor
+        Si query param 'active_only=true': Devuelve solo la institución activa
+    
+    PATCH:
+        Actualiza la institución ACTIVA del doctor (según header X-Institution-ID)
+    """
+    # Si no hay autenticación, comportamiento legacy (singleton global)
+    if not request.user.is_authenticated:
+        data = services.get_institution_settings(request, active_only=True)
+        if request.method == 'PATCH':
+            data = request.data
+            files = request.FILES
+            settings_obj = services.update_institution_settings_ext(
+                data, None, files
+            )
+            return Response(InstitutionSettingsSerializer(settings_obj).data)
         return Response(data)
+    
+    # Si hay autenticación, comportamiento nuevo
+    doctor = getattr(request.user, 'doctor_profile', None)
+    if not doctor:
+        return Response({"error": "Doctor profile not found"}, status=404)
+    
+    if request.method == 'GET':
+        # Verificar si pide solo la activa
+        active_only = request.query_params.get('active_only', 'false').lower() == 'true'
+        data = services.get_institution_settings(request, active_only=active_only)
+        return Response(data)
+    
     elif request.method == 'PATCH':
-        # Manejar JSON o FormData
+        # Identificar institución activa (prioridad: header → DB predeterminada → primera)
+        institution_id = request.META.get('HTTP_X_INSTITUTION_ID')
+        
+        if institution_id:
+            institution = doctor.institutions.filter(id=institution_id).first()
+        elif doctor.active_institution:
+            institution = doctor.active_institution
+        else:
+            institution = doctor.institutions.first()
+        
+        if not institution:
+            return Response({"error": "No active institution found"}, status=404)
+        
+        # Actualizar la institución activa
         if request.content_type == 'multipart/form-data':
             data = request.data
             files = request.FILES
@@ -251,12 +295,16 @@ def institution_settings_api(request):
             settings_obj = services.update_institution_settings_ext(
                 data, request.user
             )
+        
         return Response(InstitutionSettingsSerializer(settings_obj).data)
 
 
 @api_view(['GET', 'PATCH'])
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def doctor_operator_settings_api(request):
+    """
+    Endpoint de configuración del doctor operador.
+    """
     if request.method == 'GET':
         data = services.get_doctor_config()
         if not data:
@@ -476,6 +524,101 @@ def audit_by_patient(request, patient_id):
             patient_id=patient_id
         )
         return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def institutions_list_api(request):
+    """
+    Obtiene todas las instituciones del doctor autenticado.
+    """
+    try:
+        data = services.get_institution_settings(request, active_only=False)
+        return Response(data)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_institution_api(request):
+    """
+    Crea una nueva institución para el doctor autenticado.
+    """
+    try:
+        doctor = getattr(request.user, 'doctor_profile', None)
+        if not doctor:
+            return Response({"error": "Doctor profile not found"}, status=404)
+        
+        data = services.create_institution_for_doctor(request.data, doctor)
+        return Response(InstitutionSettingsSerializer(data).data, status=201)
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=400)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_institution_api(request):
+    """
+    Agrega una institución existente al doctor autenticado.
+    """
+    try:
+        doctor = getattr(request.user, 'doctor_profile', None)
+        if not doctor:
+            return Response({"error": "Doctor profile not found"}, status=404)
+        
+        institution_id = request.data.get('institution_id')
+        if not institution_id:
+            return Response({"error": "institution_id is required"}, status=400)
+        
+        data = services.add_institution_to_doctor(institution_id, doctor)
+        return Response(InstitutionSettingsSerializer(data).data, status=201)
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=400)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_institution_api(request, institution_id):
+    """
+    Elimina una institución del doctor autenticado.
+    NO borra la institución de la DB global, solo la relación.
+    """
+    try:
+        doctor = getattr(request.user, 'doctor_profile', None)
+        if not doctor:
+            return Response({"error": "Doctor profile not found"}, status=404)
+        
+        result = services.delete_institution_from_doctor(institution_id, doctor)
+        return Response(result)
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=400)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def set_active_institution_api(request, institution_id):
+    """
+    Cambia la institución activa (predeterminada) del doctor autenticado.
+    Guarda en base de datos para persistencia entre sesiones.
+    """
+    try:
+        doctor = getattr(request.user, 'doctor_profile', None)
+        if not doctor:
+            return Response({"error": "Doctor profile not found"}, status=404)
+        
+        data = services.set_active_institution(institution_id, doctor)
+        return Response(InstitutionSettingsSerializer(data).data)
+    except ValidationError as e:
+        return Response({"error": str(e)}, status=400)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 

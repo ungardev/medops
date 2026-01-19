@@ -93,7 +93,7 @@ from core.utils.search_normalize import normalize, normalize_token
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 
 # Configuración de Logging
-#logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 audit = logging.getLogger("audit")
@@ -1112,55 +1112,117 @@ def get_advanced_metrics() -> Dict[str, Any]:
 # ==========================================
 # SERVICIOS DE CONFIGURACIÓN
 # ==========================================
-def get_institution_settings() -> Dict[str, Any]:
+def get_institution_settings(request=None, active_only=False):
     """
-    Obtiene la configuración de la institución (singleton).
-    Retorna None si no existe configuración.
+    Obtiene todas las instituciones del doctor actual.
+    
+    Parámetros:
+        request: Request HTTP (opcional)
+        active_only: Si es True, devuelve solo la institución activa (por implementar)
+    
+    Retorna:
+        - Todas las instituciones (array) si active_only=False
+        - Una sola institución activa (objeto) si active_only=True
+        - {} si no hay doctor configurado
     """
-    institution = InstitutionSettings.objects.first()
-    if not institution:
-        return {}
-    return cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data)
+    try:
+        # Obtener doctor actual
+        doctor = None
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            doctor = getattr(request.user, 'doctor_profile', None)
+        
+        if not doctor:
+            institution = InstitutionSettings.objects.first()
+            if active_only:
+                return cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data) if institution else {}
+            return [cast(Dict[str, Any], InstitutionSettings(institution).data)] if institution else []
+        
+        # Obtener todas las instituciones del doctor
+        institutions = doctor.institutions.all()
+        
+        if active_only:
+            institution_id = None
+            if request:
+                institution_id = request.META.get('HTTP_X_INSTITUTION_ID')
+            
+            if institution_id:
+                institution = institutions.filter(id=institution_id).first()
+            elif doctor.active_institution:
+                institution = doctor.active_institution
+            else:
+                institution = institutions.first()
+            
+            return cast(Dict[str, Any], InstitutionSettings(institution).data) if institution else {}
+        
+        # Devolver todas las instituciones del doctor
+        serializer = InstitutionSettingsSerializer(institutions, many=True)
+        return cast(Dict[str, Any], serializer.data)
+    
+    except Exception as e:
+        logger.error(f"Error getting institution settings: {e}")
+        raise
 
 
 def update_institution_settings_ext(
-    data: Dict[str, Any], 
-    user, 
+    data: Dict[str, Any],
+    user,
     files: Optional[Dict[str, Any]] = None
 ) -> InstitutionSettings:
     """
     Actualiza la configuración de la institución.
     Soporta FormData (con archivos) o JSON (sin archivos).
+    
+    Args:
+        data: Datos a actualizar
+        user: Usuario Django autenticado
+        files: Archivos (para FormData)
+    
+    Returns:
+        InstitutionSettings actualizada
+    
+    Raises:
+        ValidationError: Si el doctor no puede editar esa institución
     """
-    settings_obj, _ = InstitutionSettings.objects.get_or_create(id=1)
+    try:
+        settings_obj = InstitutionSettings.objects.get(id=1)
+        
+        # VERIFICACIÓN: El doctor debe tener esta institución
+        if user.is_authenticated and hasattr(user, 'doctor_profile'):
+            doctor = user.doctor_profile
+            if settings_obj not in doctor.institutions.all():
+                raise ValidationError("No tienes permiso para editar esta institución")
+        
+        for key, value in data.items():
+            if key in ["neighborhood_id", "neighborhood"]:
+                if value and value != "":
+                    settings_obj.neighborhood_id = value
+            elif hasattr(settings_obj, key):
+                setattr(settings_obj, key, value)
+        
+        if files:
+            for key, file in files.items():
+                if hasattr(settings_obj, key):
+                    setattr(settings_obj, key, file)
+        
+        if user.is_authenticated:
+            settings_obj.updated_by = user
+        
+        settings_obj.save()
+        
+        logger.info(f"Institution {settings_obj.name} updated by {user.username}")
+        return settings_obj
     
-    # Actualización de campos básicos
-    for key, value in data.items():
-        if key in ["neighborhood_id", "neighborhood"]:
-            if value and value != "":
-                settings_obj.neighborhood_id = value
-        elif hasattr(settings_obj, key):
-            setattr(settings_obj, key, value)
-    
-    # Procesar archivos (logo, etc.)
-    if files:
-        for field_name, file_obj in files.items():
-            if hasattr(settings_obj, field_name):
-                setattr(settings_obj, field_name, file_obj)
-    
-    settings_obj.save()
-    
-    # Log de auditoría
-    Event.objects.create(
-        entity="InstitutionSettings",
-        entity_id=settings_obj.id,
-        action="update_settings",
-        actor=str(user),
-        metadata={k: str(v) for k, v in data.items()},
-        severity="info"
-    )
-    
-    return settings_obj
+    except InstitutionSettings.DoesNotExist:
+        logger.error("Institution not found")
+        raise
+    except ValidationError as e:
+        logger.error(f"Validation error updating institution: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error updating institution: {e}")
+        raise
+
+
 def get_doctor_config() -> Optional[Dict[str, Any]]:
     """
     Obtiene la configuración del médico operador (singleton).
@@ -1171,6 +1233,8 @@ def get_doctor_config() -> Optional[Dict[str, Any]]:
         return None
     
     return cast(Dict[str, Any], DoctorOperatorSerializer(doctor).data)
+
+
 def update_doctor_config(
     data: Dict[str, Any], 
     user, 
@@ -1218,3 +1282,171 @@ def update_doctor_config(
     )
     
     return doctor_obj
+
+
+def create_institution_for_doctor(data: Dict[str, Any], doctor: DoctorOperator) -> InstitutionSettings:
+    """
+    Crea una nueva institución y la agrega automáticamente al doctor actual.
+    
+    Args:
+        data: Datos de la institución a crear
+        doctor: DoctorOperator al que se agrega la institución
+    
+    Returns:
+        InstitutionSettings creada
+    
+    Raises:
+        ValidationError: Si hay errores de validación
+    """
+    try:
+        serializer = InstitutionSettingsSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        
+        # ✅ FIX: cast() explicit para resolver el error de tipo
+        institution = cast(InstitutionSettings, serializer.save())
+        
+        doctor.institutions.add(institution)
+        
+        if doctor.institutions.count() == 1:
+            doctor.active_institution = institution
+            doctor.save()
+        
+        logger.info(f"Institution created for doctor {doctor.colegiado_id}: {institution.name}")
+        return institution
+    
+    except ValidationError as e:
+        logger.error(f"Validation error creating institution: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error creating institution: {e}")
+        raise
+
+
+def add_institution_to_doctor(institution_id: int, doctor: DoctorOperator) -> InstitutionSettings:
+    """
+    Agrega una institución existente al doctor.
+    
+    Args:
+        institution_id: ID de la institución existente
+        doctor: DoctorOperator al que se agrega la institución
+    
+    Returns:
+        InstitutionSettings agregada
+    
+    Raises:
+        ValidationError: Si el doctor ya tiene esa institución
+    """
+    try:
+        institution = InstitutionSettings.objects.get(id=institution_id)
+        
+        if institution in doctor.institutions.all():
+            raise ValidationError(f"El doctor {doctor.colegiado_id} ya tiene la institución {institution.name}")
+        
+        doctor.institutions.add(institution)
+        
+        if doctor.institutions.count() == 1:
+            doctor.active_institution = institution
+            doctor.save()
+        
+        logger.info(f"Institution {institution.name} added to doctor {doctor.colegiado_id}")
+        return institution
+    
+    except InstitutionSettings.DoesNotExist:
+        logger.error(f"Institution {institution_id} not found")
+        raise
+    except ValidationError as e:
+        logger.error(f"Validation error adding institution: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error adding institution to doctor: {e}")
+        raise
+
+
+def delete_institution_from_doctor(institution_id: int, doctor: DoctorOperator) -> Dict[str, Any]:
+    """
+    Elimina una institución del doctor.
+    NO borra la institución de la DB global, solo la relación.
+    
+    Args:
+        institution_id: ID de la institución a eliminar
+        doctor: DoctorOperator al que se le elimina la institución
+    
+    Returns:
+        Dict con éxito de la operación
+    
+    Raises:
+        ValidationError: Si el doctor no tiene esa institución
+        ValidationError: Si intenta eliminar la última institución
+    """
+    try:
+        institution = InstitutionSettings.objects.get(id=institution_id)
+        
+        if institution not in doctor.institutions.all():
+            raise ValidationError(f"El doctor {doctor.colegiado_id} no tiene la institución {institution.name}")
+        
+        if doctor.institutions.count() == 1:
+            raise ValidationError("El doctor debe tener al menos una institución")
+        
+        doctor.institutions.remove(institution)
+        
+        if doctor.active_institution == institution:
+            remaining = doctor.institutions.first()
+            if remaining:
+                doctor.active_institution = remaining
+                doctor.save()
+            else:
+                doctor.active_institution = None
+                doctor.save()
+        
+        logger.info(f"Institution {institution.name} deleted from doctor {doctor.colegiado_id}")
+        return {"success": True, "message": "Institución eliminada correctamente"}
+    
+    except InstitutionSettings.DoesNotExist:
+        logger.error(f"Institution {institution_id} not found")
+        raise
+    except ValidationError as e:
+        logger.error(f"Validation error deleting institution: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting institution from doctor: {e}")
+        raise
+
+
+def set_active_institution(institution_id: int, doctor: DoctorOperator) -> InstitutionSettings:
+    """
+    Cambia la institución activa (predeterminada) del doctor.
+    Guarda en base de datos para persistencia entre sesiones.
+    
+    Args:
+        institution_id: ID de la institución a marcar como activa
+        doctor: DoctorOperator al que se le cambia la institución activa
+    
+    Returns:
+        InstitutionSettings activa
+    
+    Raises:
+        ValidationError: Si el doctor no tiene esa institución
+    """
+    try:
+        institution = InstitutionSettings.objects.get(id=institution_id)
+        
+        if institution not in doctor.institutions.all():
+            raise ValidationError(f"El doctor {doctor.colegiado_id} no tiene la institución {institution.name}")
+        
+        doctor.active_institution = institution
+        doctor.save()
+        
+        logger.info(f"Active institution set to {institution.name} for doctor {doctor.colegiado_id}")
+        return institution
+    
+    except InstitutionSettings.DoesNotExist:
+        logger.error(f"Institution {institution_id} not found")
+        raise
+    except ValidationError as e:
+        logger.error(f"Validation error setting active institution: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Error setting active institution: {e}")
+        raise
+
+

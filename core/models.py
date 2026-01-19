@@ -1314,13 +1314,13 @@ class InstitutionSettings(models.Model):
 
 
 class DoctorOperator(models.Model):
-    # Relación con el usuario de Django (Acceso al sistema)
+    # --- RELACIÓN CON EL USUARIO DE DJANGO (ACCESO AL SISTEMA) ---
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE,
         related_name="doctor_profile"
     )
-
+    
     # --- IDENTIDAD Y VERIFICACIÓN ELITE ---
     full_name = models.CharField(max_length=255)
     
@@ -1336,7 +1336,7 @@ class DoctorOperator(models.Model):
         default='M',
         verbose_name="Sexo/Género"
     )
-
+    
     is_verified = models.BooleanField(
         default=False, 
         help_text="Designa si el cirujano ha sido validado por el Colegio de Médicos."
@@ -1353,7 +1353,7 @@ class DoctorOperator(models.Model):
         unique=True,
         verbose_name="Licencia Sanitaria / MPPS"
     )
-
+    
     # --- RELACIONES DE PODER ---
     # ManyToMany: El doctor opera en múltiples nodos (sedes)
     institutions = models.ManyToManyField(
@@ -1367,7 +1367,18 @@ class DoctorOperator(models.Model):
         "Specialty", 
         related_name="doctors"
     )
-
+    
+    # --- INSTITUCIÓN ACTIVA (PREDETERMINADA) ---
+    active_institution = models.ForeignKey(
+        "InstitutionSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="active_for_doctors",
+        verbose_name="Institución Activa (Predeterminada)",
+        help_text="La institución preferida del doctor. Se usa por defecto."
+    )
+    
     # --- CONTACTO Y FIRMA ---
     email = models.EmailField(blank=True, null=True)
     phone = models.CharField(max_length=50, blank=True, null=True)
@@ -1378,7 +1389,7 @@ class DoctorOperator(models.Model):
         null=True,
         help_text="Firma digitalizada para validación de documentos oficiales."
     )
-
+    
     # --- AUDITORÍA DE SISTEMA ---
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1389,25 +1400,25 @@ class DoctorOperator(models.Model):
         blank=True,
         related_name="doctor_updates"
     )
-
+    
     history = HistoricalRecords()
-
+    
     class Meta:
         verbose_name = "Médico Operador"
         verbose_name_plural = "Médicos Operadores"
         ordering = ['full_name']
-
+    
     # --- PROPERTIES INTELIGENTES ---
     @property
     def formal_title(self):
         """Devuelve Dr. o Dra. según el sexo registrado"""
         prefix = "Dra." if self.gender == 'F' else "Dr."
         return f"{prefix} {self.full_name}"
-
+    
     def __str__(self):
         status = "[VERIFIED]" if self.is_verified else "[PENDING]"
         return f"{status} {self.formal_title} — {self.colegiado_id}"
-
+    
     def clean(self):
         """Validaciones de integridad antes de persistir en DB"""
         from django.core.exceptions import ValidationError
