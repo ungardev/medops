@@ -134,7 +134,7 @@ export default function ConfigPage() {
     setIsInstModalOpen(false);
     setEditingInstitution(null);
   };
-  // ✅ HELPER: Obtener URL del logo
+  // ✅ HELPER: Obtener URL del logo (CORREGIDO)
   const getLogoUrl = (institution: any): string | null => {
     if (!institution.logo) return null;
     if (typeof institution.logo === 'string') {
@@ -174,11 +174,10 @@ export default function ConfigPage() {
           </div>
         }
       />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      {/* ✅ GRID DE 2 COLUMNAS - LADO A LADO EN DESKTOP */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-start">
         
-        {/* ✅ ELIMINADO: SECCIÓN "Organization_Identity" */}
-        
-        {/* 👨‍⚕️ SECCIÓN: REGISTRO PROFESIONAL */}
+        {/* 👨‍⚕️ SECCIÓN: REGISTRO PROFESIONAL (COLUMNA 1) */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1 border-l-2 border-emerald-500/50 ml-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Practitioner_Service_Record</h3>
@@ -292,85 +291,85 @@ export default function ConfigPage() {
             )}
           </div>
         </section>
-      </div>
-      {/* 🏢 SECCIÓN: GESTIÓN DE INSTITUCIONES (NUEVA DISEÑADA) */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between px-1 border-l-2 border-emerald-500/50 ml-1">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
-            Institutions_Management
-          </h3>
-          <button
-            onClick={handleCreateInstitution}
-            className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 hover:text-emerald-400 transition-colors"
-          >
-            + ADD NEW
-          </button>
-        </div>
-        <div className="space-y-4">
-          {multiInstLoading ? (
-            <div className="h-64 bg-white/5 animate-pulse rounded-sm border border-white/10" />
-          ) : institutions.length === 0 ? (
-            <div className="p-8 bg-white/5 border border-white/10 rounded-sm text-center">
-              <p className="text-white/40 text-[9px] font-mono uppercase tracking-[0.2em]">
-                No institutions configured. Click "+" to create one.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Institución ACTIVA - Destacada visualmente */}
-              {activeInstitution && (
-                <div className="relative">
-                  <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-500 rounded-sm" />
-                  <div className="border-2 border-emerald-500/30 rounded-sm p-1">
-                    <InstitutionCard
-                      key={activeInstitution.id}
-                      name={activeInstitution.name || "UNNAMED_ENTITY"}
-                      taxId={activeInstitution.tax_id || ""}
-                      logoUrl={getLogoUrl(activeInstitution)}
-                      address={activeInstitution.address || "STREET_DATA_MISSING"}
-                      neighborhoodName={getNeighborhoodName(activeInstitution)}
-                      isActive={true}
-                      onSelect={undefined}
-                      onEdit={() => handleEditInstitution(activeInstitution)}
-                      onDelete={() => handleDeleteInstitution(activeInstitution.id)}
-                    />
-                  </div>
-                  <div className="text-[8px] font-mono text-emerald-500 uppercase tracking-wider mt-1 ml-2">
-                    ● Active Institution
-                  </div>
-                </div>
-              )}
-              {/* Otras Instituciones */}
-              {institutions
-                .filter(inst => inst.id !== activeInstitution?.id)
-                .map((inst) => (
-                  <InstitutionCard
-                    key={inst.id}
-                    name={inst.name || "UNNAMED_ENTITY"}
-                    taxId={inst.tax_id || ""}
-                    logoUrl={getLogoUrl(inst)}
-                    address={inst.address || "STREET_DATA_MISSING"}
-                    neighborhoodName={getNeighborhoodName(inst)}
-                    isActive={false}
-                    onSelect={() => handleSelectInstitution(inst.id)}
-                    onEdit={() => handleEditInstitution(inst)}
-                    onDelete={() => handleDeleteInstitution(inst.id)}
-                  />
-                ))
-              }
-            </>
-          )}
-        </div>
-        <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-sm">
-          <div className="flex items-start gap-3">
-             <CpuChipIcon className="w-4 h-4 text-blue-500/40 mt-1" />
-             <div className="text-[9px] font-mono text-blue-500/60 leading-relaxed uppercase">
-               <p className="font-bold">Multi-Institution_Protocol:</p>
-               Select an institution as "Active" to set it as the default. Changes affect all medical documents until another institution is selected.
-             </div>
+        {/* 🏢 SECCIÓN: GESTIÓN DE INSTITUCIONES (COLUMNA 2) - ✅ MOVIDO DENTRO DEL GRID */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between px-1 border-l-2 border-emerald-500/50 ml-1">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
+              Institutions_Management
+            </h3>
+            <button
+              onClick={handleCreateInstitution}
+              className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 hover:text-emerald-400 transition-colors"
+            >
+              + ADD NEW
+            </button>
           </div>
-        </div>
-      </section>
+          <div className="space-y-4">
+            {multiInstLoading ? (
+              <div className="h-64 bg-white/5 animate-pulse rounded-sm border border-white/10" />
+            ) : institutions.length === 0 ? (
+              <div className="p-8 bg-white/5 border border-white/10 rounded-sm text-center">
+                <p className="text-white/40 text-[9px] font-mono uppercase tracking-[0.2em]">
+                  No institutions configured. Click "+" to create one.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Institución ACTIVA - Destacada visualmente */}
+                {activeInstitution && (
+                  <div className="relative">
+                    <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-500 rounded-sm" />
+                    <div className="border-2 border-emerald-500/30 rounded-sm p-1">
+                      <InstitutionCard
+                        key={activeInstitution.id}
+                        name={activeInstitution.name || "UNNAMED_ENTITY"}
+                        taxId={activeInstitution.tax_id || ""}
+                        logoUrl={getLogoUrl(activeInstitution)}
+                        address={activeInstitution.address || "STREET_DATA_MISSING"}
+                        neighborhoodName={getNeighborhoodName(activeInstitution)}
+                        isActive={true}
+                        onSelect={undefined}
+                        onEdit={() => handleEditInstitution(activeInstitution)}
+                        onDelete={() => handleDeleteInstitution(activeInstitution.id)}
+                      />
+                    </div>
+                    <div className="text-[8px] font-mono text-emerald-500 uppercase tracking-wider mt-1 ml-2">
+                      ● Active Institution
+                    </div>
+                  </div>
+                )}
+                {/* Otras Instituciones */}
+                {institutions
+                  .filter(inst => inst.id !== activeInstitution?.id)
+                  .map((inst) => (
+                    <InstitutionCard
+                      key={inst.id}
+                      name={inst.name || "UNNAMED_ENTITY"}
+                      taxId={inst.tax_id || ""}
+                      logoUrl={getLogoUrl(inst)}
+                      address={inst.address || "STREET_DATA_MISSING"}
+                      neighborhoodName={getNeighborhoodName(inst)}
+                      isActive={false}
+                      onSelect={() => handleSelectInstitution(inst.id)}
+                      onEdit={() => handleEditInstitution(inst)}
+                      onDelete={() => handleDeleteInstitution(inst.id)}
+                    />
+                  ))
+                }
+              </>
+            )}
+          </div>
+          <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-sm">
+            <div className="flex items-start gap-3">
+               <CpuChipIcon className="w-4 h-4 text-blue-500/40 mt-1" />
+               <div className="text-[9px] font-mono text-blue-500/60 leading-relaxed uppercase">
+                 <p className="font-bold">Multi-Institution_Protocol:</p>
+                 Select an institution as "Active" to set it as the default. Changes affect all medical documents until another institution is selected.
+               </div>
+            </div>
+          </div>
+        </section>
+      </div>
       <footer className="mt-16 py-10 border-t border-white/5 flex flex-col items-center gap-6">
         <div className="flex items-center gap-8 opacity-20">
             <div className="h-px w-24 bg-gradient-to-l from-white to-transparent" />
