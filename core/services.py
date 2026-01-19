@@ -24,7 +24,7 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count, Sum, Q, F, Value, CharField
 from django.db.models.functions import TruncDate, TruncMonth, TruncWeek, Coalesce, Cast, Concat
-from django.http import JsonResponse, FileResponse
+from django.http import JsonResponse, FileResponse, HttpResponse, HttpRequest
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -1223,16 +1223,36 @@ def update_institution_settings_ext(
         raise
 
 
-def get_doctor_config() -> Optional[Dict[str, Any]]:
+def get_doctor_config(request: Optional[HttpRequest] = None) -> Optional[Dict[str, Any]]:
     """
-    Obtiene la configuración del médico operador (singleton).
-    Retorna None si no existe médico configurado.
-    """
-    doctor = DoctorOperator.objects.first()
-    if not doctor:
-        return None
+    Obtiene la configuración del médico operador autenticado.
     
-    return cast(Dict[str, Any], DoctorOperatorSerializer(doctor).data)
+    Args:
+        request: Objeto HttpRequest (opcional, para obtener el usuario autenticado)
+    
+    Returns:
+        Dict con la configuración del doctor, o None si no existe médico configurado.
+    """
+    # Si hay request, obtener el doctor_profile del usuario autenticado
+    if request and request.user.is_authenticated:
+        doctor = getattr(request.user, 'doctor_profile', None)
+        if not doctor:
+            return None
+    else:
+        # Fallback: usar el primer doctor (para desarrollo/legacy)
+        doctor = DoctorOperator.objects.first()
+        if not doctor:
+            return None
+    
+    data = cast(Dict[str, Any], DoctorOperatorSerializer(doctor).data)
+    
+    # Agregar active_institution si existe
+    if doctor.active_institution:
+        data['active_institution'] = InstitutionSettingsSerializer(doctor.active_institution).data
+    else:
+        data['active_institution'] = None
+    
+    return data
 
 
 def update_doctor_config(

@@ -312,13 +312,13 @@ def institution_settings_api(request):
 
 
 @api_view(['GET', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def doctor_operator_settings_api(request):
     """
     Endpoint de configuración del doctor operador.
     """
     if request.method == 'GET':
-        data = services.get_doctor_config()
+        data = services.get_doctor_config(request)  # ← Pasa request
         if not data:
             return Response({"error": "No doctor configured"}, status=404)
         return Response(data)

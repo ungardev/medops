@@ -1424,9 +1424,7 @@ class SpecialtySerializer(serializers.ModelSerializer):
 
 
 class DoctorOperatorSerializer(serializers.ModelSerializer):
-    # 🔹 Firma opcional con URL completa
     signature = serializers.ImageField(required=False, allow_null=True, use_url=True)
-    # 🔹 Especialidades: lectura y escritura
     specialties = SpecialtySerializer(many=True, read_only=True)
     specialty_ids = serializers.PrimaryKeyRelatedField(
         queryset=Specialty.objects.all(),
@@ -1434,32 +1432,38 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         write_only=True,
         source="specialties"
     )
-    # 🔹 Instituciones: lectura (objetos completos) y escritura (IDs)
     institutions = serializers.PrimaryKeyRelatedField(
         queryset=InstitutionSettings.objects.all(),
         many=True,
         required=False,
         allow_null=True
     )
-    # 🔹 Títulos formales para lectura
+    active_institution = serializers.PrimaryKeyRelatedField(
+        queryset=InstitutionSettings.objects.all(),
+        required=False,
+        allow_null=True
+    )
     formal_title = serializers.CharField(read_only=True)
+    
     class Meta:
         model = DoctorOperator
         fields = [
             "id",
             "full_name",
-            "gender",           # ✅ AGREGADO
-            "is_verified",      # ✅ AGREGADO
+            "gender",
+            "is_verified",
             "colegiado_id",
             "license",
-            "specialties",      # lectura como objetos {id, code, name}
-            "specialty_ids",    # escritura como lista de IDs
-            "institutions",     # ✅ AGREGADO
+            "specialties",
+            "specialty_ids",
+            "institutions",
+            "active_institution",  # ← AGREGADO
             "email",
             "phone",
             "signature",
-            "formal_title",     # ✅ AGREGADO
+            "formal_title",
         ]
+    
     def to_representation(self, instance):
         """
         Extiende la representación para incluir también los IDs de especialidades
