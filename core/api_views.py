@@ -16,17 +16,8 @@ logger = logging.getLogger(__name__)
 def conditional_permission():
     """
     Retorna el permiso apropiado según el entorno:
-    
     - Desarrollo (DEBUG=True): AllowAny
-      - Permite acceso sin autenticación
-      - Facilita desarrollo rápido
-      
     - Producción (DEBUG=False): IsAuthenticated
-      - Requiere autenticación
-      - Mantiene seguridad apropiada
-    
-    Uso:
-        @permission_classes([conditional_permission()])
     """
     return AllowAny if settings.DEBUG else IsAuthenticated
 
