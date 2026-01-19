@@ -17,7 +17,6 @@ from .api_views import (
     MedicalTestViewSet,
     MedicalReferralViewSet,
     SpecialtyViewSet,
-
     # --- Nuevos ViewSets clínicos ---
     PersonalHistoryViewSet,
     FamilyHistoryViewSet,
@@ -31,7 +30,6 @@ from .api_views import (
     MedicalHistoryViewSet,
     ClinicalAlertViewSet,
     ClinicalBackgroundViewSet,
-
     # --- ViewSets de Direcciones ---
     CountryViewSet,
     StateViewSet,
@@ -41,7 +39,6 @@ from .api_views import (
     NeighborhoodViewSet,
     AddressChainView,
     NeighborhoodSearchView,
-
     # --- Funciones ---
     update_appointment_status,
     update_waitingroom_status,
@@ -76,19 +73,21 @@ from .api_views import (
     search,
     appointment_search_api,
     chargeorder_search_api,
-
     # --- Notificaciones ---
     notifications_api,
+    # --- Multi-Institución (NUEVOS ENDPOINTS) ---
+    institutions_list_api,
+    create_institution_api,
+    add_institution_api,
+    delete_institution_api,
+    set_active_institution_api,
 )
-
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
-
 # --- Router DRF principal ---
 router = routers.DefaultRouter()
-
 # --- Core ---
 router.register(r"patients", PatientViewSet, basename="patient")
 router.register(r"appointments", AppointmentViewSet, basename="appointment")
@@ -104,7 +103,6 @@ router.register(r"charge-items", ChargeItemViewSet, basename="chargeitem")
 router.register(r"medical-tests", MedicalTestViewSet, basename="medicaltest")
 router.register(r"medical-referrals", MedicalReferralViewSet, basename="medicalreferral")
 router.register(r"specialties", SpecialtyViewSet, basename="specialty")
-
 # --- Nuevos módulos clínicos ---
 router.register(r"personal-history", PersonalHistoryViewSet, basename="personal-history")
 router.register(r"family-history", FamilyHistoryViewSet, basename="family-history")
@@ -112,12 +110,11 @@ router.register(r"surgeries", SurgeryViewSet, basename="surgery")
 router.register(r"habits", HabitViewSet, basename="habit")
 router.register(r"vaccines", VaccineViewSet, basename="vaccine")
 router.register(r"vaccination-schedule", VaccinationScheduleViewSet, basename="vaccination-schedule")
-router.register(r"patient-vaccinations", PatientVaccinationViewSet, basename="patient-vaccination")
+router.register(r"patient-vaccinations", PatientVaccinationViewSet, basename="patient-vaccinations")
 router.register(r"patient-clinical-profile", PatientClinicalProfileViewSet, basename="patient-clinical-profile")
 router.register(r"medical-history", MedicalHistoryViewSet, basename="medical-history")
 router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, basename="patient-alerts")
 router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")
-
 # --- Direcciones ---
 router.register(r"countries", CountryViewSet, basename="country")
 router.register(r"states", StateViewSet, basename="state")
@@ -125,17 +122,14 @@ router.register(r"municipalities", MunicipalityViewSet, basename="municipality")
 router.register(r"cities", CityViewSet, basename="city")
 router.register(r"parishes", ParishViewSet, basename="parish")
 router.register(r"neighborhoods", NeighborhoodViewSet, basename="neighborhood")
-
 # --- Router anidado para pacientes ---
 patients_router = nested_routers.NestedDefaultRouter(router, r"patients", lookup="patient")
 patients_router.register(r"allergies", AllergyViewSet, basename="patient-allergies")
 patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
-
 # --- Funciones personalizadas ---
 urlpatterns = [
     # ❌ Eliminado el endpoint legacy de login que causaba CSRF
     # path("auth/token/", api_views.login_view, name="api-login"),
-
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
     path("reports/", reports_api, name="reports-api"),
@@ -166,7 +160,6 @@ urlpatterns = [
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
-
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
     path("notifications/", notifications_api, name="notifications-api"),
@@ -174,44 +167,41 @@ urlpatterns = [
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),
     path("audit/log/", audit_log_api, name="audit-log-api"),
-
     # --- Sala de Espera ---
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
     path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
-
     # --- Tasa BCV ---
     path("bcv-rate/", bcv_rate_api, name="bcv-rate-api"),
-
     # --- Choices ---
     path("choices/treatment/", treatment_choices_api, name="treatment-choices-api"),
     path("choices/prescription/", prescription_choices_api, name="prescription-choices-api"),
     path("choices/medical-test/", medicaltest_choices_api, name="medicaltest-choices-api"),
     path("choices/medical-referral/", medicalreferral_choices_api, name="medicalreferral-choices-api"),
     path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
-
     # --- Búsqueda institucional general ---
     path("search/", search, name="search-api"),
-
     # --- Endpoints de Direcciones ---
     path("address-chain/", AddressChainView.as_view(), name="address-chain-api"),
     path("neighborhood-search/", NeighborhoodSearchView.as_view(), name="neighborhood-search-api"),
+    # --- Multi-Institución (NUEVOS ENDPOINTS) ---
+    path("config/institutions/", institutions_list_api, name="institutions-list-api"),
+    path("config/institutions/create/", create_institution_api, name="create-institution-api"),
+    path("config/institutions/add/", add_institution_api, name="add-institution-api"),
+    path("config/institutions/<int:institution_id>/delete/", delete_institution_api, name="delete-institution-api"),
+    path("config/institutions/<int:institution_id>/set-active/", set_active_institution_api, name="set-active-institution-api"),
 ]
-
 # --- Documentación OpenAPI ---
 urlpatterns += [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
 ]
-
 if settings.DEBUG:
     urlpatterns += [
         path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     ]
-
 # --- Routers principales y anidados ---
 urlpatterns += router.urls
 urlpatterns += patients_router.urls
-
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
