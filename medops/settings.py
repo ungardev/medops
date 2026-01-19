@@ -13,25 +13,19 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-
 # === Paths ===
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 # === Entorno ===
 # Selecciona .env según DJANGO_ENV (development o production)
 ENVIRONMENT = os.environ.get("DJANGO_ENV", "development")
 load_dotenv(BASE_DIR / f".env.{ENVIRONMENT}")
-
 # === Seguridad ===
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "inseguro-en-dev")
 if SECRET_KEY == "inseguro-en-dev":
     raise ValueError("SECRET_KEY insegura: define DJANGO_SECRET_KEY en tu .env")
-
 DEBUG = os.environ.get("DEBUG", "False") == "True"
-
 # Ajuste para Docker: 'web' es el nombre del servicio en docker-compose, '0.0.0.0' para Gunicorn
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,web,0.0.0.0").split(",")
-
 # === Apps ===
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,7 +49,6 @@ INSTALLED_APPS = [
     # App Principal
     'core.apps.CoreConfig',
 ]
-
 # === Middleware ===
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -68,25 +61,37 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
 ]
-
 # === Ajustes Críticos para CORS y Docker ===
-APPEND_SLASH = False # Evita redirecciones 301 que rompen el pre-flight de CORS
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https") # Necesario para Nginx
-
-# === DRF / API ===
+APPEND_SLASH = False  # Evita redirecciones 301 que rompen el pre-flight de CORS
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # Necesario para Nginx
+# === DRF / API - ENFOQUE HÍBRIDO ===
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    #"DEFAULT_AUTHENTICATION_CLASSES": [
-    #    "rest_framework.authentication.TokenAuthentication",
-    #],
-    #"DEFAULT_PERMISSION_CLASSES": [
-    #    "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    #],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
     "DATETIME_FORMAT": "%Y-%m-%dT%H:%M:%S%z",
 }
-
+# 🔄 AUTENTICACIÓN CONDICIONAL (Desarrollo vs Producción)
+if not DEBUG:
+    # ✅ EN PRODUCCIÓN (DEBUG=False): Autenticación HABILITADA
+    REST_FRAMEWORK.update({
+        "DEFAULT_AUTHENTICATION_CLASSES": [
+            "rest_framework.authentication.TokenAuthentication",
+        ],
+        "DEFAULT_PERMISSION_CLASSES": [
+            "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+        ],
+    })
+    print("🔒 PRODUCCIÓN: Autenticación HABILITADA (TokenAuthentication + IsAuthenticatedOrReadOnly)")
+else:
+    # ✅ EN DESARROLLO (DEBUG=True): Autenticación DESHABILITADA
+    REST_FRAMEWORK.update({
+        "DEFAULT_AUTHENTICATION_CLASSES": [],
+        "DEFAULT_PERMISSION_CLASSES": [
+            "rest_framework.permissions.AllowAny",
+        ],
+    })
+    print("⚠️  DESARROLLO: Autenticación DESHABILITADA (AllowAny)")
 # Configuración OpenAPI
 SPECTACULAR_SETTINGS = {
     "TITLE": "MedOps API",
@@ -102,7 +107,6 @@ SPECTACULAR_SETTINGS = {
     "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
     "REDOC_DIST": "SIDECAR",
 }
-
 # === Seguridad Extra ===
 X_FRAME_OPTIONS = "DENY"
 SECURE_BROWSER_XSS_FILTER = True
@@ -112,9 +116,7 @@ SECURE_SSL_REDIRECT = not DEBUG
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
 SECURE_HSTS_PRELOAD = not DEBUG
-
 ROOT_URLCONF = 'medops.urls'
-
 # === Templates ===
 TEMPLATES = [
     {
@@ -130,9 +132,7 @@ TEMPLATES = [
         },
     },
 ]
-
 WSGI_APPLICATION = 'medops.wsgi.application'
-
 # === Base de Datos (PostgreSQL en Docker) ===
 DATABASES = {
     "default": {
@@ -140,29 +140,24 @@ DATABASES = {
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASSWORD"),
-        "HOST": os.environ.get("DB_HOST", "db"), # Generalmente 'db' en docker-compose
+        "HOST": os.environ.get("DB_HOST", "db"),  # Generalmente 'db' en docker-compose
         "PORT": os.environ.get("DB_PORT", "5432"),
     }
 }
-
 # === Internacionalización ===
 LANGUAGE_CODE = 'es-ve'
 TIME_ZONE = 'America/Caracas'
 USE_I18N = True
 USE_TZ = True
-
 # === Archivos Estáticos y Media ===
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "frontend" / "medops" / "dist" / "assets",
 ]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 # === Logging ===
 LOGGING = {
     "version": 1,
@@ -184,20 +179,16 @@ LOGGING = {
         "level": "INFO",
     },
 }
-
 # === CORS / CSRF CONFIGURATION ===
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173", # Vite Dev Server
-    "http://localhost:8080", # Producción local / Nginx
+    "http://localhost:5173",  # Vite Dev Server
+    "http://localhost:8080",  # Producción local / Nginx
     "http://127.0.0.1:8080",
     "http://127.0.0.1:5173",
 ]
-
 # Permitir credenciales (importante para Auth Tokens y Cookies)
 CORS_ALLOW_CREDENTIALS = True
-
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-
 CORS_ALLOW_HEADERS = [
     "accept",
     "authorization",
@@ -207,13 +198,11 @@ CORS_ALLOW_HEADERS = [
     "x-requested-with",
     "origin",
 ]
-
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
 ]
-
 # === ICD API (CIE-11) ===
 ICD_CLIENT_ID = os.environ.get("ICD_CLIENT_ID")
 ICD_CLIENT_SECRET = os.environ.get("ICD_CLIENT_SECRET")
