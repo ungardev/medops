@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status, views
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.conf import settings
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
