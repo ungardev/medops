@@ -396,6 +396,8 @@ def create_charge_order(sender, instance, created, **kwargs):
         ChargeOrder.objects.create(
             appointment=instance,
             patient=instance.patient,
+            doctor=instance.doctor,  # NUEVO
+            institution=instance.institution,  # NUEVO
             currency="USD",
             status="open",
             total=Decimal('0.00'),
@@ -648,22 +650,48 @@ class Treatment(models.Model):
         ("surgical", "Quirúrgico / Procedimiento"),
         ("rehabilitation", "Fisioterapia / Rehabilitación"),
         ("lifestyle", "Cambio de estilo de vida / Dieta"),
-        ("psychological", "Apoyo Psicológico / Terapia"), # Agregado
+        ("psychological", "Apoyo Psicológico / Terapia"),
         ("other", "Otro"),
     ]
-
     STATUS_CHOICES = [
         ("active", "En curso / Activo"),
         ("completed", "Finalizado / Completado"),
-        ("suspended", "Suspendido Temporalmente"), # Agregado para fármacos
+        ("suspended", "Suspendido Temporalmente"),
         ("cancelled", "Cancelado / Contraindicado"),
     ]
-
     # --- Relaciones ---
     diagnosis = models.ForeignKey(
         "Diagnosis", 
         on_delete=models.CASCADE, 
         related_name="treatments"
+    )
+    # NUEVO: CACHÉ de patient, doctor e institution para rendimiento y reportes
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="treatments",
+        verbose_name="Paciente asociado"
+    )
+    doctor = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="treatments",
+        verbose_name="Médico asociado"
+    )
+    institution = models.ForeignKey(
+        "InstitutionSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="treatments",
+        verbose_name="Sede asociada"
     )
     
     # --- Definición ---
@@ -681,7 +709,7 @@ class Treatment(models.Model):
     )
     
     # --- Cronología ---
-    start_date = models.DateField(default=timezone.now) # Mejor por defecto hoy
+    start_date = models.DateField(default=timezone.now)
     end_date = models.DateField(blank=True, null=True)
     
     # --- Estado y Control ---
@@ -695,30 +723,38 @@ class Treatment(models.Model):
         help_text="Marcar si es un tratamiento de por vida (ej: Insulina, Dieta para celíacos)"
     )
     notes = models.TextField(blank=True, null=True, help_text="Observaciones de evolución")
-
     class Meta:
         verbose_name = "Tratamiento"
         verbose_name_plural = "Tratamientos"
         ordering = ["-start_date"]
-
+        indexes = [
+            models.Index(fields=['doctor', 'status']), # NUEVO: Optimización para reportes por médico
+            models.Index(fields=['patient', 'status']), # NUEVO: Optimización para historial por paciente
+            models.Index(fields=['institution', 'status']), # NUEVO: Optimización para reportes por sede
+        ]
     def __str__(self):
         return f"{self.title} ({self.get_status_display()}) - {self.diagnosis.title}"
-
     def save(self, *args, **kwargs):
-        """
-        Lógica Élite: Si el tratamiento es quirúrgico o permanente, 
-        podemos disparar un registro en MedicalHistory.
-        """
-        is_new = self.pk is None
+        # NUEVO: Auto-completar patient, doctor e institution desde diagnosis → appointment
+        if self.diagnosis and self.diagnosis.appointment:
+            app = self.diagnosis.appointment
+            if not self.patient:
+                self.patient = app.patient
+            if not self.doctor:
+                self.doctor = app.doctor
+            if not self.institution:
+                self.institution = app.institution
+        
         super().save(*args, **kwargs)
         
         # Si es Quirúrgico y se acaba de crear, lo registramos como antecedente quirúrgico
+        is_new = self.pk is None
         if is_new and self.treatment_type == "surgical":
             from .models import MedicalHistory
             MedicalHistory.objects.get_or_create(
                 patient=self.diagnosis.appointment.patient,
                 condition=f"Cirugía: {self.title}",
-                source="surgical", # Asegúrate de que este source exista en MedicalHistory
+                source="surgical",
                 notes=f"Realizado según plan en cita {self.diagnosis.appointment.id}. Plan: {self.plan}"
             )
 
@@ -813,7 +849,6 @@ class Payment(models.Model):
         ('crypto', 'Criptomonedas'),
         ('other', 'Otro'),
     ]
-
     # --- RELACIONES ---
     institution = models.ForeignKey(
         'InstitutionSettings',
@@ -822,13 +857,21 @@ class Payment(models.Model):
     )
     appointment = models.ForeignKey('Appointment', on_delete=models.CASCADE, related_name="payments")
     charge_order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='payments')
-
+    # NUEVO: CACHÉ de doctor para rendimiento y reportes
+    doctor = models.ForeignKey(
+        'DoctorOperator',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name='payments',
+        verbose_name="Médico asociado al pago"
+    )
     # --- TRANSACCIÓN ---
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='USD')
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-
     # --- TRAZABILIDAD EXTERNA (ELITE) ---
     # ID universal para cualquier pasarela (Mercantil, Stripe, Binance, etc.)
     gateway_transaction_id = models.CharField(
@@ -842,10 +885,8 @@ class Payment(models.Model):
         max_length=100, blank=True, null=True,
         verbose_name="Nro. Referencia Manual / Comprobante"
     )
-
     # Dump de la respuesta de la API para auditoría técnica
     gateway_response_raw = models.JSONField(blank=True, null=True)
-
     # --- AUDITORÍA ---
     received_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -860,20 +901,25 @@ class Payment(models.Model):
     )
     
     idempotency_key = models.CharField(max_length=200, blank=True, null=True, unique=True)
-
     history = HistoricalRecords()
-
     class Meta:
         verbose_name = "Registro de Pago"
         verbose_name_plural = "Registros de Pagos"
         indexes = [
             models.Index(fields=['institution', 'status']),
             models.Index(fields=['gateway_transaction_id']),
+            models.Index(fields=['doctor', 'status']), # NUEVO: Optimización para reportes por médico
         ]
-
     def __str__(self):
         return f"Payment #{self.pk} - {self.amount} {self.currency} ({self.status})"
-
+    def save(self, *args, **kwargs):
+        # NUEVO: Auto-completar doctor desde appointment o charge_order
+        if not self.doctor:
+            if self.appointment:
+                self.doctor = self.appointment.doctor
+            elif self.charge_order and self.charge_order.appointment:
+                self.doctor = self.charge_order.appointment.doctor
+        super().save(*args, **kwargs)
     # --- LÓGICA DE NEGOCIO ---
     def clean(self):
         if self.amount and self.amount <= Decimal('0.00'):
@@ -881,7 +927,6 @@ class Payment(models.Model):
         
         if self.charge_order and self.charge_order.status in ['void', 'waived']:
             raise ValidationError("Orden no apta para pagos.")
-
     def confirm(self, actor_user=None):
         """Confirmación atómica con sincronización de saldos"""
         with transaction.atomic():
@@ -890,10 +935,8 @@ class Payment(models.Model):
             self.status = 'confirmed'
             self.cleared_at = timezone.now()
             self.save(update_fields=['status', 'cleared_at'])
-
             order.recalc_totals()
             order.save()
-
             # Notificación al log de eventos
             Event = apps.get_model('core', 'Event')
             Event.objects.create(
@@ -1010,12 +1053,29 @@ class MedicalDocument(models.Model):
     patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="documents")
     appointment = models.ForeignKey("Appointment", on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
     diagnosis = models.ForeignKey("Diagnosis", on_delete=models.SET_NULL, blank=True, null=True, related_name="documents")
-
+    # NUEVO: CACHÉ de doctor e institution para rendimiento y reportes
+    doctor = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="medical_documents",
+        verbose_name="Médico asociado"
+    )
+    institution = models.ForeignKey(
+        "InstitutionSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="medical_documents",
+        verbose_name="Sede asociada"
+    )
     # Clasificación
     category = models.CharField(max_length=40, choices=DocumentCategory.choices, default=DocumentCategory.OTHER)
     source = models.CharField(max_length=20, choices=DocumentSource.choices, default=DocumentSource.SYSTEM_GENERATED)
     origin_panel = models.CharField(max_length=50, blank=True, null=True, help_text="Módulo de origen: prescriptions, tests, etc.")
-
     # Archivo y Metadatos Técnicos
     file = models.FileField(
         upload_to="medical_documents/%Y/%m/%d/",
@@ -1034,12 +1094,10 @@ class MedicalDocument(models.Model):
     
     # Identificador Único de Verificación (QR/Auditoría)
     audit_code = models.CharField(max_length=64, unique=True, editable=False, null=True)
-
     # Trazabilidad de Usuarios
     uploaded_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="uploaded_documents")
     generated_by = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True, related_name="generated_documents")
-
     class Meta:
         verbose_name = "Documento Médico"
         verbose_name_plural = "Documentos Médicos"
@@ -1048,16 +1106,15 @@ class MedicalDocument(models.Model):
             models.Index(fields=["patient", "category"]),
             models.Index(fields=["audit_code"]),
             models.Index(fields=["uploaded_at"]),
+            models.Index(fields=["doctor", "category"]), # NUEVO: Optimización para reportes por médico
+            models.Index(fields=["institution", "category"]), # NUEVO: Optimización para reportes por sede
         ]
-
     def __str__(self):
         return f"{self.get_category_display()} — {self.patient.full_name}"
-
     def clean(self):
         """Validación de integridad de negocio."""
         if self.source == DocumentSource.SYSTEM_GENERATED and self.mime_type != "application/pdf":
             raise ValidationError({"mime_type": "Los documentos generados por el sistema deben ser PDF."})
-
         # Categorías que requieren contexto clínico obligatorio
         clinical_categories = {
             DocumentCategory.PRESCRIPTION, 
@@ -1067,9 +1124,13 @@ class MedicalDocument(models.Model):
         }
         if self.category in clinical_categories and not self.appointment:
             raise ValidationError({"appointment": "Este documento requiere estar vinculado a una consulta activa."})
-
     def save(self, *args, **kwargs):
         """Lógica automática de metadatos y seguridad."""
+        # NUEVO: Auto-completar doctor e institution desde appointment
+        if self.appointment:
+            self.doctor = self.appointment.doctor
+            self.institution = self.appointment.institution
+        
         if self.file:
             # 1. Almacenar tamaño automáticamente
             self.size_bytes = self.file.size
@@ -1080,12 +1141,10 @@ class MedicalDocument(models.Model):
                 for chunk in self.file.chunks():
                     sha256.update(chunk)
                 self.checksum_sha256 = sha256.hexdigest()
-
             # 3. Generar Audit Code único (para validación externa vía QR)
             if not self.audit_code:
                 unique_str = f"{self.patient_id}-{self.uploaded_at}-{self.checksum_sha256}"
                 self.audit_code = hashlib.sha1(unique_str.encode()).hexdigest()[:16].upper()
-
         super().save(*args, **kwargs)
 
 
@@ -1097,7 +1156,6 @@ class ChargeOrder(models.Model):
         ('void', 'Void'),
         ('waived', 'Waived'), # Exoneraciones para casos especiales o cortesías
     ]
-
     # --- RELACIONES DE PODER Y TRAZABILIDAD ---
     appointment = models.ForeignKey(
         'Appointment', 
@@ -1112,23 +1170,29 @@ class ChargeOrder(models.Model):
         related_name='charge_orders',
         verbose_name="Sede emisora de cobro"
     )
-
     patient = models.ForeignKey(
         'Patient', 
         on_delete=models.CASCADE, 
         related_name='charge_orders'
     )
-
+    # NUEVO: CACHÉ de doctor para rendimiento y reportes
+    doctor = models.ForeignKey(
+        'DoctorOperator',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name='charge_orders',
+        verbose_name="Médico emisor de cobro"
+    )
     # --- MONETIZACIÓN ---
     currency = models.CharField(max_length=10, default='USD')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     balance_due = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
-
     # --- REGISTRO Y AUDITORÍA ---
     issued_at = models.DateTimeField(auto_now_add=True)
     issued_by = models.CharField(max_length=100, blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
@@ -1140,54 +1204,53 @@ class ChargeOrder(models.Model):
         blank=True,
         related_name="charge_orders_created"
     )
-
     history = HistoricalRecords()
-
     class Meta:
         indexes = [
             models.Index(fields=['appointment', 'status']),
             models.Index(fields=['patient', 'status']),
-            models.Index(fields=['institution', 'status']), # NUEVO: Optimización para cierres de caja
+            models.Index(fields=['institution', 'status']),
+            models.Index(fields=['doctor', 'status']), # NUEVO: Optimización para reportes por médico
         ]
         verbose_name = "Orden de Cobro"
         verbose_name_plural = "Órdenes de Cobro"
-
     def __str__(self):
         return f"Order #{self.pk} — {self.institution.name} — {self.status}"
-
+    def save(self, *args, **kwargs):
+        # NUEVO: Auto-completar doctor e institution desde appointment
+        if self.appointment:
+            if not self.doctor:
+                self.doctor = self.appointment.doctor
+            if not self.institution:
+                self.institution = self.appointment.institution
+        super().save(*args, **kwargs)
     # --- LÓGICA DE CÁLCULO ELITE ---
     def recalc_totals(self):
         """Recalcula la salud financiera de la orden basándose en ítems y pagos."""
         items_sum = self.items.aggregate(s=Sum('subtotal')).get('s') or Decimal('0.00')
         self.total = items_sum
-
         confirmed_payments = self.payments.filter(status='confirmed').aggregate(s=Sum('amount')).get('s') or Decimal('0.00')
         self.balance_due = max(self.total - confirmed_payments, Decimal('0.00'))
-
         if self.status in ['void', 'waived']:
             return
-
         if self.balance_due <= 0 and self.total > 0:
             self.status = 'paid'
         elif confirmed_payments > 0:
             self.status = 'partially_paid'
         else:
             self.status = 'open'
-
     def clean(self):
         # Reglas de negocio inquebrantables
         if self.status == 'paid' and self.balance_due != Decimal('0.00'):
             raise ValidationError("Inconsistencia: Una orden pagada no puede tener deuda pendiente.")
         if self.status == 'waived' and self.balance_due != Decimal('0.00'):
             raise ValidationError("Inconsistencia: Una orden exonerada debe quedar con deuda cero.")
-
     # --- FLUJO DE EVENTOS CRÍTICOS ---
     def mark_void(self, reason: str = '', actor: str = ''):
         if self.status == 'paid':
             raise ValidationError("Operación Denegada: No se puede anular un ingreso ya confirmado en caja.")
         self.status = 'void'
         self.save(update_fields=['status'])
-
         # Registro en el log de eventos de MedOpz
         Event = apps.get_model('core', 'Event')
         Event.objects.create(
@@ -1198,6 +1261,7 @@ class ChargeOrder(models.Model):
             severity="critical",
             notify=True
         )
+
 
 # --- EL DETALLE DEL COBRO ---
 class ChargeItem(models.Model):
@@ -1438,14 +1502,47 @@ class BCVRateCache(models.Model):
 
 
 class MedicalReport(models.Model):
+    # Relaciones de contexto
     appointment = models.ForeignKey("Appointment", on_delete=models.CASCADE, related_name="medical_reports")
     patient = models.ForeignKey("Patient", on_delete=models.CASCADE, related_name="medical_reports")
+    # NUEVO: CACHÉ de doctor e institution para rendimiento y reportes
+    doctor = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="medical_reports",
+        verbose_name="Médico asociado"
+    )
+    institution = models.ForeignKey(
+        "InstitutionSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="medical_reports",
+        verbose_name="Sede asociada"
+    )
+    # Metadatos
     created_at = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=20, default="generated")
     file_url = models.CharField(max_length=255, blank=True, null=True)  # opcional, si guardas PDF
-
+    class Meta:
+        verbose_name = "Informe Médico"
+        verbose_name_plural = "Informes Médicos"
+        indexes = [
+            models.Index(fields=['doctor', 'created_at']), # NUEVO: Optimización para reportes por médico
+            models.Index(fields=['institution', 'created_at']), # NUEVO: Optimización para reportes por sede
+        ]
     def __str__(self):
         return f"Informe Médico #{self.id} - Paciente {self.patient_id}"
+    def save(self, *args, **kwargs):
+        # NUEVO: Auto-completar doctor e institution desde appointment
+        if self.appointment:
+            self.doctor = self.appointment.doctor
+            self.institution = self.appointment.institution
+        super().save(*args, **kwargs)
 
 
 # --- Catálogo institucional ICD‑11 ---
@@ -1641,14 +1738,12 @@ class MedicalReferral(models.Model):
         ("urgent", "Urgente"),
         ("stat", "Inmediato (STAT)"),
     ]
-
     STATUS_CHOICES = [
         ("issued", "Emitida"),
         ("accepted", "Aceptada"),
         ("rejected", "Rechazada"),
         ("completed", "Completada"), # Para cuando el referido ya atendió al paciente
     ]
-
     appointment = models.ForeignKey(
         "Appointment",
         on_delete=models.CASCADE,
@@ -1665,7 +1760,34 @@ class MedicalReferral(models.Model):
         "Specialty",
         related_name="referrals"
     )
-
+    # NUEVO: CACHÉ de patient, doctor e institution para rendimiento y reportes
+    patient = models.ForeignKey(
+        "Patient",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="referrals",
+        verbose_name="Paciente referido"
+    )
+    doctor = models.ForeignKey(
+        "DoctorOperator",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="issued_referrals",
+        verbose_name="Médico que emite la referencia"
+    )
+    institution = models.ForeignKey(
+        "InstitutionSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        editable=False,
+        related_name="issued_referrals",
+        verbose_name="Sede donde se emitió"
+    )
     # --- El Corazón de la Red MedOpz ---
     referred_to_doctor = models.ForeignKey(
         "DoctorOperator",
@@ -1673,16 +1795,15 @@ class MedicalReferral(models.Model):
         null=True,
         blank=True,
         related_name="received_referrals",
-        help_text="Médico interno registrado en MedOpz"
+        help_text="Médico interno registrado en MedOpz (DESTINO)"
     )
     
     referred_to_external = models.CharField(
         max_length=255,
         null=True,
         blank=True,
-        help_text="Nombre del doctor o clínica externa (si no está en MedOpz)"
+        help_text="Nombre del doctor o clínica externa (si no está en MedOpz) (DESTINO)"
     )
-
     # Metadatos clínicos
     urgency = models.CharField(max_length=20, choices=URGENCY_CHOICES, default="routine")
     reason = models.TextField(help_text="Motivo clínico de la referencia")
@@ -1693,20 +1814,33 @@ class MedicalReferral(models.Model):
     # Tracking para el futuro
     is_internal = models.BooleanField(default=False, editable=False)
     issued_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         verbose_name = "Referencia Médica"
         verbose_name_plural = "Referencias Médicas"
-
+        indexes = [
+            models.Index(fields=['doctor', 'issued_at']), # NUEVO: Referencias emitidas por médico
+            models.Index(fields=['institution', 'issued_at']), # NUEVO: Referencias emitidas por sede
+            models.Index(fields=['patient', 'issued_at']), # NUEVO: Referencias de paciente
+            models.Index(fields=['referred_to_doctor', 'status']), # Referencias recibidas
+        ]
+    def __str__(self):
+        destinatario = self.referred_to_doctor.full_name if self.referred_to_doctor else self.referred_to_external
+        emisor = self.doctor.full_name if self.doctor else "Desconocido"
+        return f"Referencia de {emisor} a {destinatario} ({self.get_status_display()})"
     def save(self, *args, **kwargs):
+        # NUEVO: Auto-completar patient, doctor e institution desde appointment
+        if self.appointment:
+            if not self.patient:
+                self.patient = self.appointment.patient
+            if not self.doctor:
+                self.doctor = self.appointment.doctor
+            if not self.institution:
+                self.institution = self.appointment.institution
+        
         # Determinamos automáticamente si es una referencia interna
         if self.referred_to_doctor:
             self.is_internal = True
         super().save(*args, **kwargs)
-
-    def __str__(self):
-        destinatario = self.referred_to_doctor.full_name if self.referred_to_doctor else self.referred_to_external
-        return f"Referencia a {destinatario} ({self.get_status_display()})"
 
 
 SPECIALTY_CHOICES = [
