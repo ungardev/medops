@@ -2,13 +2,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
+import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
-
 import { InstitutionCard } from "@/components/Settings/InstitutionCard";
 import { InstitutionFormModal } from "@/components/Settings/InstitutionFormModal";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
-
 import type { Specialty } from "@/types/consultation"; 
 import { 
   FingerPrintIcon,
@@ -17,7 +16,6 @@ import {
   CommandLineIcon,
   CpuChipIcon
 } from "@heroicons/react/24/outline";
-
 type DoctorForm = {
   id?: number;
   full_name: string;
@@ -29,24 +27,31 @@ type DoctorForm = {
   phone: string;
   signature?: string | File | null;
 };
-
 export default function ConfigPage() {
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-  // ✅ Corregido: updateInstitution (nombre real en el hook)
+  // ✅ Hook singleton para identidad institucional
   const { data: inst, updateInstitution, isLoading: instLoading } = useInstitutionSettings();
+  
+  // ✅ Hook multi-institución para gestión completa
+  const {
+    institutions,
+    activeInstitution,
+    createInstitution,
+    deleteInstitution,
+    setActiveInstitution,
+    isLoading: multiInstLoading,
+  } = useInstitutions();
+  
   const { data: doc, updateDoctor, isLoading: docLoading } = useDoctorConfig();
   const { data: specialties = [] } = useSpecialtyChoices();
-
   const [isInstModalOpen, setIsInstModalOpen] = useState(false);
+  const [editingInstitution, setEditingInstitution] = useState<any>(null);
   const [editingDoctor, setEditingDoctor] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [signaturePreview, setSignaturePreview] = useState<string | File | null>(null);
-
   const [docForm, setDocForm] = useState<DoctorForm>({
     full_name: "", gender: "M", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
   });
-
   // Inicialización de datos del Doctor
   useEffect(() => {
     if (!doc || specialties.length === 0 || initialized) return;
@@ -69,7 +74,6 @@ export default function ConfigPage() {
     if (doc.signature) setSignaturePreview(doc.signature);
     setInitialized(true);
   }, [doc, specialties, initialized]);
-
   const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       const file = e.target.files[0];
@@ -77,18 +81,64 @@ export default function ConfigPage() {
       setDocForm({ ...docForm, signature: file });
     }
   };
-
+  // ✅ HANDLER: Crear nueva institución
+  const handleCreateInstitution = () => {
+    setEditingInstitution(null);
+    setIsInstModalOpen(true);
+  };
+  // ✅ HANDLER: Editar institución existente
+  const handleEditInstitution = (institution: any) => {
+    setEditingInstitution(institution);
+    setIsInstModalOpen(true);
+  };
+  // ✅ HANDLER: Eliminar institución (CORREGIDO para aceptar number | undefined)
+  const handleDeleteInstitution = async (id: number | undefined) => {
+    if (id === undefined) return;
+    if (confirm("¿Estás seguro de que quieres eliminar esta institución?")) {
+      await deleteInstitution(id);
+    }
+  };
+  // ✅ HANDLER: Seleccionar institución activa (CORREGIDO para aceptar number | undefined)
+  const handleSelectInstitution = async (id: number | undefined) => {
+    if (id === undefined) return;
+    await setActiveInstitution(id);
+  };
+  // ✅ HANDLER: Guardar institución (crear o editar)
+  const handleSaveInstitution = async (formData: any) => {
+    if (editingInstitution) {
+      await updateInstitution(formData);
+    } else {
+      await createInstitution(formData);
+    }
+    setIsInstModalOpen(false);
+    setEditingInstitution(null);
+  };
+  // ✅ HELPER: Obtener URL del logo (CORREGIDO)
+  const getLogoUrl = (institution: any): string | null => {
+    if (!institution.logo) return null;
+    if (typeof institution.logo === 'string') {
+      const logoStr = institution.logo;
+      if (logoStr.startsWith('http') || logoStr.startsWith('blob:')) return logoStr;
+      return ``;
+    }
+    return null;
+  };
+  // ✅ HELPER: Obtener nombre del barrio
+  const getNeighborhoodName = (institution: any): string => {
+    if (typeof institution.neighborhood === 'object' && institution.neighborhood) {
+      return (institution.neighborhood as any)?.name || 'N/A';
+    }
+    return 'N/A';
+  };
   const memoizedLogoUrl = useMemo(() => {
     if (!inst?.logo) return null;
     if (inst.logo instanceof File) return URL.createObjectURL(inst.logo);
     const logoStr = String(inst.logo);
     if (logoStr.startsWith('http') || logoStr.startsWith('blob:')) return logoStr;
-    return `${API_BASE}${logoStr.startsWith('/') ? '' : '/'}${logoStr}`;
+    return ``;
   }, [inst?.logo, API_BASE]);
-
   const labelStyles = `text-[9px] font-black uppercase tracking-[0.25em] text-white/30 mb-2 block`;
   const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-emerald-500/50 transition-all`;
-
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-8 space-y-10 bg-black min-h-screen">
       
@@ -107,7 +157,6 @@ export default function ConfigPage() {
           </div>
         }
       />
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         
         {/* 🏢 SECCIÓN: IDENTIDAD INSTITUCIONAL */}
@@ -115,7 +164,6 @@ export default function ConfigPage() {
           <div className="flex items-center justify-between px-1 border-l-2 border-white/10 ml-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Organization_Identity</h3>
           </div>
-
           {instLoading ? (
             <div className="h-64 bg-white/5 animate-pulse rounded-sm border border-white/10" />
           ) : (
@@ -124,13 +172,11 @@ export default function ConfigPage() {
               taxId={inst?.tax_id || ""}
               logoUrl={memoizedLogoUrl}
               address={inst?.address || "STREET_DATA_MISSING"}
-              // ✅ Fix para neighborhoodName
               neighborhoodName={typeof inst?.neighborhood === 'object' ? (inst.neighborhood as any)?.name : 'N/A'}
               isActive={inst?.is_active ?? false}
-              onEdit={() => setIsInstModalOpen(true)}
+              onEdit={() => handleEditInstitution(inst)}
             />
           )}
-
           <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-sm">
             <div className="flex items-start gap-3">
                <CpuChipIcon className="w-4 h-4 text-emerald-500/40 mt-1" />
@@ -141,13 +187,11 @@ export default function ConfigPage() {
             </div>
           </div>
         </section>
-
         {/* 👨‍⚕️ SECCIÓN: REGISTRO PROFESIONAL */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1 border-l-2 border-emerald-500/50 ml-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Practitioner_Service_Record</h3>
           </div>
-
           <div className="bg-[#080808] border border-white/10 p-8 rounded-sm shadow-2xl relative overflow-hidden">
             {!editingDoctor ? (
               <div className="space-y-8">
@@ -168,7 +212,6 @@ export default function ConfigPage() {
                     )}
                   </div>
                 </div>
-
                 <div className="space-y-4 border-y border-white/5 py-6">
                   <div className="flex justify-between items-start text-[10px] uppercase">
                     <span className="text-white/30 font-bold tracking-widest font-mono">Deploy_Specialties:</span>
@@ -181,7 +224,6 @@ export default function ConfigPage() {
                     </div>
                   </div>
                 </div>
-
                 <div className="space-y-3">
                   <span className={labelStyles}>Digital_Validation_Signature</span>
                   <div className="h-24 w-full bg-black/40 border border-white/5 flex items-center justify-center border-dashed relative group">
@@ -189,7 +231,7 @@ export default function ConfigPage() {
                       <img 
                         src={typeof signaturePreview === 'string' && signaturePreview.startsWith('blob:') 
                           ? signaturePreview 
-                          : `${API_BASE}${signaturePreview}`
+                          : ``
                         } 
                         alt="Signature" 
                         className="h-full object-contain invert opacity-60 group-hover:opacity-100 transition-opacity p-2" 
@@ -199,7 +241,6 @@ export default function ConfigPage() {
                     )}
                   </div>
                 </div>
-
                 <button 
                   onClick={() => setEditingDoctor(true)} 
                   className="w-full flex items-center justify-center gap-3 py-4 border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/50 hover:text-emerald-500 transition-all rounded-sm"
@@ -238,7 +279,6 @@ export default function ConfigPage() {
                   <div><label className={labelStyles}>License_UID</label><input className={inputStyles} value={docForm.license} onChange={(e) => setDocForm({...docForm, license: e.target.value})} /></div>
                   <div><label className={labelStyles}>Board_ID</label><input className={inputStyles} value={docForm.colegiado_id} onChange={(e) => setDocForm({...docForm, colegiado_id: e.target.value})} /></div>
                 </div>
-
                 <div className="z-20 relative">
                   <label className={labelStyles}>Clinical_Specialties_Array</label>
                   <SpecialtyComboboxElegante
@@ -247,12 +287,10 @@ export default function ConfigPage() {
                     options={specialties}
                   />
                 </div>
-
                 <div className="bg-black/40 p-6 border border-white/5 rounded-sm">
                   <label className={labelStyles}>Signature_Blob_Import</label>
                   <input type="file" onChange={handleSignatureUpload} className="w-full text-[10px] text-white/20 file:bg-white/10 file:border-none file:text-white/60 file:px-4 file:py-2 file:text-[9px] file:font-black file:uppercase file:rounded-sm file:mr-4 file:hover:bg-white file:hover:text-black transition-all" />
                 </div>
-
                 <div className="flex gap-4 pt-4">
                   <button type="submit" className="flex-1 bg-white text-black text-[10px] font-black px-6 py-4 uppercase tracking-[0.3em] hover:bg-emerald-500 hover:text-white transition-all rounded-sm">
                     Push_To_Mainframe
@@ -264,7 +302,55 @@ export default function ConfigPage() {
           </div>
         </section>
       </div>
-
+      {/* 🏢 SECCIÓN: GESTIÓN DE INSTITUCIONES (NUEVA) */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-1 border-l-2 border-emerald-500/50 ml-1">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
+            Institutions_Management
+          </h3>
+          <button
+            onClick={handleCreateInstitution}
+            className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 hover:text-emerald-400 transition-colors"
+          >
+            + ADD NEW
+          </button>
+        </div>
+        <div className="space-y-4">
+          {multiInstLoading ? (
+            <div className="h-64 bg-white/5 animate-pulse rounded-sm border border-white/10" />
+          ) : institutions.length === 0 ? (
+            <div className="p-8 bg-white/5 border border-white/10 rounded-sm text-center">
+              <p className="text-white/40 text-[9px] font-mono uppercase tracking-[0.2em]">
+                No institutions configured. Click "+" to create one.
+              </p>
+            </div>
+          ) : (
+            institutions.map((inst) => (
+              <InstitutionCard
+                key={inst.id}
+                name={inst.name || "UNNAMED_ENTITY"}
+                taxId={inst.tax_id || ""}
+                logoUrl={getLogoUrl(inst)}
+                address={inst.address || "STREET_DATA_MISSING"}
+                neighborhoodName={getNeighborhoodName(inst)}
+                isActive={activeInstitution?.id === inst.id}
+                onSelect={() => handleSelectInstitution(inst.id)}
+                onEdit={() => handleEditInstitution(inst)}
+                onDelete={() => handleDeleteInstitution(inst.id)}
+              />
+            ))
+          )}
+        </div>
+        <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-sm">
+          <div className="flex items-start gap-3">
+             <CpuChipIcon className="w-4 h-4 text-blue-500/40 mt-1" />
+             <div className="text-[9px] font-mono text-blue-500/60 leading-relaxed uppercase">
+               <p className="font-bold">Multi-Institution_Protocol:</p>
+               Select an institution as "Active" to set it as the default. Changes affect all medical documents until another institution is selected.
+             </div>
+          </div>
+        </div>
+      </section>
       <footer className="mt-16 py-10 border-t border-white/5 flex flex-col items-center gap-6">
         <div className="flex items-center gap-8 opacity-20">
             <div className="h-px w-24 bg-gradient-to-l from-white to-transparent" />
@@ -275,21 +361,15 @@ export default function ConfigPage() {
             Node_Hash: {hashlib_mock(inst?.name || 'ROOT')}
         </div>
       </footer>
-
       <InstitutionFormModal 
         open={isInstModalOpen} 
         onClose={() => setIsInstModalOpen(false)} 
-        initialData={inst}
-        onSave={async (formData) => {
-          // ✅ Corregido a updateInstitution
-          await updateInstitution(formData);
-          setIsInstModalOpen(false);
-        }}
+        initialData={editingInstitution}
+        onSave={handleSaveInstitution}
       />
     </div>
   );
 }
-
 function hashlib_mock(str: string) {
     return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString(16).toUpperCase().padEnd(32, '0');
 }
