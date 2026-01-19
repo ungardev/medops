@@ -549,7 +549,7 @@ def audit_by_patient(request, patient_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def institutions_list_api(request):
     """
     Obtiene todas las instituciones del doctor autenticado.
@@ -562,7 +562,7 @@ def institutions_list_api(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def create_institution_api(request):
     """
     Crea una nueva institución para el doctor autenticado.
@@ -581,7 +581,7 @@ def create_institution_api(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def add_institution_api(request):
     """
     Agrega una institución existente al doctor autenticado.
@@ -604,7 +604,7 @@ def add_institution_api(request):
 
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def delete_institution_api(request, institution_id):
     """
     Elimina una institución del doctor autenticado.
@@ -624,7 +624,7 @@ def delete_institution_api(request, institution_id):
 
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def set_active_institution_api(request, institution_id):
     """
     Cambia la institución activa (predeterminada) del doctor autenticado.
