@@ -1,23 +1,22 @@
 // src/components/Appointments/AppointmentEditForm.tsx
 import React, { useState } from "react";
-import { Appointment, AppointmentInput } from "../../types/appointments"; // Verifica que la ruta sea correcta
+import { Appointment, AppointmentInput } from "../../types/appointments";
 import { XMarkIcon, PencilSquareIcon } from "@heroicons/react/24/outline";
-
 interface Props {
-  appointment: Appointment; // Corregido: 'A' mayúscula
+  appointment: Appointment;
   onClose: () => void;
   onSubmit?: (id: number, data: AppointmentInput) => void;
 }
-
 export default function AppointmentEditForm({ appointment, onClose, onSubmit }: Props) {
   const [form, setForm] = useState<AppointmentInput>({
     patient: appointment?.patient?.id ?? 0,
+    institution: appointment?.institution?.id ?? 0,
+    doctor: appointment?.doctor?.id ?? 0,
     appointment_date: appointment?.appointment_date ?? "",
     appointment_type: appointment?.appointment_type ?? "general",
     expected_amount: String(appointment?.expected_amount ?? ""),
-    notes: appointment?.notes ?? "", // Añadido para consistencia
+    notes: appointment?.notes ?? "",
   });
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -25,7 +24,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
     if (name === "patient") return;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload: AppointmentInput = {
@@ -37,7 +35,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
     }
     onClose();
   };
-
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] p-4 font-sans">
       <div className="max-w-lg w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] shadow-2xl overflow-hidden text-[var(--palantir-text)]">
@@ -65,7 +62,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
-
         {/* Cuerpo del Protocolo */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
@@ -75,7 +71,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               Subject identity is locked and cannot be altered in this view.
             </p>
           </div>
-
           <div className="space-y-1.5 opacity-80">
             <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">
               Locked_Subject_Identity
@@ -84,7 +79,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               {appointment?.patient?.full_name ?? "UNKNOWN_SUBJECT"}
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Re-Schedule_Date</label>
@@ -97,7 +91,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
                 className="w-full bg-black/40 border border-[var(--palantir-border)] px-3 py-2 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all [color-scheme:dark]"
               />
             </div>
-
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Op_Classification</label>
               <select
@@ -111,7 +104,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               </select>
             </div>
           </div>
-
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Resource_Reallocation (USD)</label>
             <div className="relative">
@@ -125,7 +117,6 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               />
             </div>
           </div>
-
           <div className="flex justify-end gap-4 pt-6 border-t border-[var(--palantir-border)] mt-4">
             <button
               type="button"

@@ -4,15 +4,12 @@ import ConfirmCloseDayModal from "@/components/WaitingRoom/ConfirmCloseDayModal"
 import ConfirmGenericModal from "@/components/Common/ConfirmGenericModal";
 import Toast from "@/components/Common/Toast";
 import PageHeader from "@/components/Common/PageHeader";
-
 import { useWaitingRoomEntriesToday } from "@/hooks/waitingroom/useWaitingRoomEntriesToday";
 import { useUpdateWaitingRoomStatus } from "@/hooks/waitingroom/useUpdateWaitingRoomStatus";
 import { useRegisterArrival } from "@/hooks/waitingroom/useRegisterArrival";
 import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
-
 import type { WaitingRoomEntry, WaitingRoomStatus } from "@/types/waitingRoom";
 import type { Appointment } from "@/types/appointments";
-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   PlayIcon, 
@@ -23,24 +20,22 @@ import {
   UserGroupIcon,
   CheckCircleIcon
 } from "@heroicons/react/24/outline";
-
 const renderStatusBadge = (status: string) => {
   const base = "inline-flex items-center justify-center px-2 py-0.5 text-[9px] rounded-sm font-black uppercase tracking-tighter border whitespace-nowrap transition-all";
-
+  
   switch (status) {
     case "waiting":
-      return <span className={`${base} bg-amber-500/10 text-amber-500 border-amber-500/20`}>In_Queue</span>;
+      return <span className={` bg-amber-500/10 text-amber-500 border-amber-500/20`}>In_Queue</span>;
     case "in_consultation":
-      return <span className={`${base} bg-white/10 text-white border-white/20 animate-pulse`}>In_Consult</span>;
+      return <span className={` bg-white/10 text-white border-white/20 animate-pulse`}>In_Consult</span>;
     case "completed":
-      return <span className={`${base} bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]`}>Resolved</span>;
+      return <span className={` bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]`}>Resolved</span>;
     case "canceled":
-      return <span className={`${base} bg-red-500/10 text-red-500 border-red-500/20`}>Aborted</span>;
+      return <span className={` bg-red-500/10 text-red-500 border-red-500/20`}>Aborted</span>;
     default:
-      return <span className={`${base} bg-white/5 text-white/40 border-white/10`}>{status}</span>;
+      return <span className={` bg-white/5 text-white/40 border-white/10`}>{status}</span>;
   }
 };
-
 const renderWaitTime = (entry: WaitingRoomEntry) => {
   if (!entry.arrival_time) return "-";
   
@@ -52,34 +47,31 @@ const renderWaitTime = (entry: WaitingRoomEntry) => {
       </div>
     );
   }
-
   const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime()) / 60000);
   return (
     <div className="flex items-center gap-1 font-mono text-[10px] text-[var(--palantir-muted)]">
       <ClockIcon className="w-3 h-3 text-amber-500/70" />
-      <span>{minutes < 60 ? `${minutes}M` : `${Math.floor(minutes / 60)}H ${minutes % 60}M`}</span>
+      <span>{minutes < 60 ? `M` : `H M`}</span>
     </div>
   );
 };
-
 export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [entryToCancel, setEntryToCancel] = useState<WaitingRoomEntry | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
-
+  
   const { data: entries, isLoading, isFetching } = useWaitingRoomEntriesToday();
   const updateWaitingRoomStatus = useUpdateWaitingRoomStatus();
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const queryClient = useQueryClient();
-
   const today = new Date().toISOString().split("T")[0];
-
+  
   const { data: appointmentsToday } = useQuery({
     queryKey: ["appointmentsToday", today],
     queryFn: async (): Promise<Appointment[]> => {
-      const res = await fetch(`/api/appointments/?date=${today}&status__in=pending,canceled`);
+      const res = await fetch(`/api/appointments/?date=&status__in=pending,canceled`);
       if (res.status === 204) return [];
       const data = await res.json();
       return Array.isArray(data) ? data : [];
@@ -87,15 +79,12 @@ export default function WaitingRoom() {
     staleTime: 30000,
     initialData: [],
   });
-
   const orderedGroup = (entries ?? []).filter((e) =>
     ["waiting", "in_consultation", "completed"].includes(e.status)
   );
-
   const pendingAppointmentsToday = (appointmentsToday ?? []).filter((a) =>
     ["pending", "canceled"].includes(a.status)
   );
-
   const [showOverlay, setShowOverlay] = useState(true);
   useEffect(() => {
     if (!isLoading && !isFetching) {
@@ -105,21 +94,19 @@ export default function WaitingRoom() {
       setShowOverlay(true);
     }
   }, [isLoading, isFetching]);
-
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
-    if (entry.appointment_id) {
-      updateAppointmentStatus.mutate({ id: entry.appointment_id, status: newStatus });
+    if (entry.appointment) {
+      updateAppointmentStatus.mutate({ id: entry.appointment, status: newStatus });
     } else {
       updateWaitingRoomStatus.mutate({ id: Number(entry.id), status: newStatus });
     }
   };
-
   return (
     <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-6 relative min-h-[80vh]">
       
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
+          { label: "MEDOPS", path: "/" },
           { label: "WAITING_ROOM", active: true }
         ]}
         stats={[
@@ -146,7 +133,6 @@ export default function WaitingRoom() {
           </div>
         }
       />
-
       {showOverlay && (
         <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10 animate-in fade-in duration-300">
            <div className="flex items-center gap-3 px-4 py-2 bg-[var(--palantir-surface)] border border-[var(--palantir-border)] shadow-xl rounded-sm">
@@ -155,7 +141,6 @@ export default function WaitingRoom() {
            </div>
         </div>
       )}
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LISTA PRINCIPAL */}
         <div className="lg:col-span-8 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm">
@@ -165,7 +150,6 @@ export default function WaitingRoom() {
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Live_Queue_Stream</h3>
             </div>
           </div>
-
           <div className="min-h-[400px]">
             {orderedGroup.length === 0 ? (
               <div className="h-full min-h-[400px] flex flex-col items-center justify-center p-20 opacity-30 italic">
@@ -176,24 +160,19 @@ export default function WaitingRoom() {
                 {orderedGroup.map((entry, index) => (
                   <div 
                     key={entry.id} 
-                    className={`group flex justify-between items-center px-4 py-3 transition-colors border-l-2 ${
-                      entry.status === 'completed' 
-                        ? 'bg-emerald-500/[0.02] border-emerald-500/20 opacity-80' 
-                        : 'hover:bg-white/[0.02] border-transparent hover:border-l-white'
-                    }`}
+                    className={`group flex justify-between items-center px-4 py-3 transition-colors border-l-2 `}
                   >
                     <div className="flex items-start gap-4">
                       <span className="mt-1 font-mono text-xs font-bold text-[var(--palantir-muted)] opacity-50">
                         {String(index + 1).padStart(2, '0')}.
                       </span>
                       <div className="flex flex-col gap-0.5">
-                        <p className={`text-[13px] font-black uppercase tracking-tight ${entry.status === 'completed' ? 'text-white/40' : 'text-white'}`}>
+                        <p className={`text-[13px] font-black uppercase tracking-tight `}>
                           {entry.patient.full_name}
                         </p>
                         {renderWaitTime(entry)}
                       </div>
                     </div>
-
                     <div className="flex items-center gap-6">
                       {renderStatusBadge(entry.status)}
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -221,7 +200,6 @@ export default function WaitingRoom() {
             )}
           </div>
         </div>
-
         {/* COLUMNA DERECHA */}
         <div className="lg:col-span-4 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm h-fit">
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-white/[0.02]">
@@ -255,7 +233,6 @@ export default function WaitingRoom() {
           </div>
         </div>
       </div>
-
       {showModal && (
         <RegisterWalkinModal 
           onClose={() => setShowModal(false)} 
@@ -263,16 +240,14 @@ export default function WaitingRoom() {
           existingEntries={entries ?? []} 
         />
       )}
-
       {entryToCancel && (
         <ConfirmGenericModal
           title="Abort_Process"
-          message={`¿Confirma la cancelación del flujo operativo para ${entryToCancel.patient.full_name}?`}
+          message={`¿Confirma la cancelación del flujo operativo para ?`}
           onConfirm={() => { handleStatusChange(entryToCancel, "canceled"); setEntryToCancel(null); }}
           onCancel={() => setEntryToCancel(null)}
         />
       )}
-
       {showConfirmClose && (
         <ConfirmCloseDayModal
           onConfirm={() => { 
@@ -283,7 +258,6 @@ export default function WaitingRoom() {
           onCancel={() => setShowConfirmClose(false)}
         />
       )}
-
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );

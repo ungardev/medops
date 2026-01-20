@@ -20,12 +20,10 @@ import {
   ArrowsRightLeftIcon,
   ClipboardDocumentCheckIcon
 } from "@heroicons/react/24/outline";
-
 interface Option {
   value: string;
   label: string;
 }
-
 const frequencyOptions: Option[] = [
   { value: "once_daily", label: "Una vez al día" },
   { value: "bid", label: "2 veces al día (BID)" },
@@ -44,7 +42,6 @@ const frequencyOptions: Option[] = [
   { value: "pc", label: "Después de las comidas" },
   { value: "achs", label: "Antes de comidas y al acostarse" },
 ];
-
 const routeOptions: Option[] = [
   { value: "oral", label: "Oral" },
   { value: "iv", label: "Intravenosa (IV)" },
@@ -56,16 +53,17 @@ const routeOptions: Option[] = [
   { value: "topical", label: "Tópica" },
   { value: "other", label: "Otro" },
 ];
-
 export interface PrescriptionPanelProps {
   diagnoses: Diagnosis[];
   prescriptions?: Prescription[];
+  appointmentId?: number;
   readOnly?: boolean;
   onAdd?: (data: CreatePrescriptionInput) => void;
 }
-
 const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   diagnoses,
+  prescriptions,
+  appointmentId,
   readOnly,
   onAdd,
 }) => {
@@ -76,15 +74,13 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   const [frequency, setFrequency] = useState<UpdatePrescriptionInput["frequency"]>("once_daily");
   const [route, setRoute] = useState<UpdatePrescriptionInput["route"]>("oral");
   const [components, setComponents] = useState<PrescriptionComponent[]>([]);
-
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!diagnosisId || (!medicationCatalogId && !medicationText)) return;
-
+    if (!diagnosisId || (!medicationCatalogId && !medicationText) || !appointmentId) return;
     const payload: CreatePrescriptionInput = {
+      appointment: appointmentId,
       diagnosis: Number(diagnosisId),
       medication_catalog: medicationCatalogId || undefined,
       medication_text: medicationText?.trim() || undefined,
@@ -93,11 +89,10 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       route,
       components: components.map((c) => ({
         substance: c.substance.trim(),
-        dosage: Number(c.dosage),
+        dosage: String(c.dosage),
         unit: c.unit,
       })),
     };
-
     onAdd?.(payload);
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
@@ -107,7 +102,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     setRoute("oral");
     setComponents([]);
   };
-
   return (
     <div className="space-y-8">
       {/* HEADER SECTION */}
@@ -117,7 +111,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
           Pharmacological_Orders
         </span>
       </div>
-
       {/* RENDER DIAGNOSES AND THEIR PRESCRIPTIONS */}
       <div className="space-y-6">
         {diagnoses.length === 0 ? (
@@ -135,7 +128,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   {d.title || d.description || "Untitled_Condition"}
                 </h4>
               </div>
-
               <div className="grid gap-2 ml-4">
                 {d.prescriptions && d.prescriptions.length > 0 ? (
                   d.prescriptions.map((p: Prescription) => (
@@ -171,16 +163,14 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
           ))
         )}
       </div>
-
       {/* NEW PRESCRIPTION FORM */}
-      {!readOnly && diagnoses.length > 0 && (
+      {!readOnly && diagnoses.length > 0 && appointmentId && (
         <div className="mt-10 pt-6">
           <form onSubmit={handleSubmit} className="bg-white/5 border border-[var(--palantir-border)] p-5 space-y-6 rounded-sm shadow-xl">
             <div className="flex items-center gap-2 mb-2 border-b border-white/5 pb-3">
               <ClipboardDocumentCheckIcon className="w-4 h-4 text-[var(--palantir-active)]" />
               <span className="text-[9px] font-black uppercase tracking-widest">New_Prescription_Draft</span>
             </div>
-
             {/* Top Grid: Diagnosis & Medication */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
@@ -199,7 +189,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   ))}
                 </select>
               </div>
-
               <div className="space-y-1">
                 <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Agent_Selector</label>
                 <MedicationSelector
@@ -212,14 +201,13 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 />
               </div>
             </div>
-
             {/* Components Subform */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Molecular_Components</label>
                 <button
                   type="button"
-                  onClick={() => setComponents([...components, { substance: "", dosage: 0, unit: "mg" }])}
+                  onClick={() => setComponents([...components, { substance: "", dosage: "", unit: "mg" }])}
                   className="flex items-center gap-1 text-[9px] font-black text-[var(--palantir-active)] hover:opacity-80 uppercase transition-all"
                 >
                   <PlusIcon className="w-3 h-3" /> Add_Component
@@ -246,12 +234,12 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                       className="flex-1 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
                     />
                     <input
-                      type="number"
+                      type="text"
                       placeholder="VAL"
                       value={comp.dosage}
                       onChange={(e) => {
                         const newComps = [...components];
-                        newComps[index].dosage = Number(e.target.value);
+                        newComps[index].dosage = e.target.value;
                         setComponents(newComps);
                       }}
                       className="w-16 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-center text-[var(--palantir-text)]"
@@ -280,7 +268,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 ))}
               </div>
             </div>
-
             {/* Dosage Parameters Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1">
@@ -295,7 +282,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
                 />
               </div>
-
               <div className="space-y-1">
                 <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
                   <ClockIcon className="w-3 h-3" /> Frequency_Interval
@@ -310,7 +296,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   ))}
                 </select>
               </div>
-
               <div className="space-y-1">
                 <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
                   <ArrowsRightLeftIcon className="w-3 h-3" /> Admin_Route
@@ -326,7 +311,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 </select>
               </div>
             </div>
-
             <button
               type="submit"
               className="w-full bg-[var(--palantir-active)] hover:bg-blue-600 text-white py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20"
@@ -340,5 +324,4 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     </div>
   );
 };
-
 export default PrescriptionPanel;

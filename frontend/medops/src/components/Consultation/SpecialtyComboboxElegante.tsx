@@ -1,58 +1,48 @@
 // src/components/Consultation/SpecialtyComboboxElegante.tsx
 import { Combobox, Transition } from "@headlessui/react";
 import { useState, useEffect, useRef, Fragment } from "react";
-import type { Specialty } from "../../types/consultation";
+import type { Specialty } from "../../types/config";
 import { 
   MagnifyingGlassIcon, 
   XMarkIcon, 
   ChevronUpDownIcon,
   HashtagIcon
 } from "@heroicons/react/20/solid";
-
 interface Props {
   value: Specialty[];
   onChange: (next: Specialty[]) => void;
   options: Specialty[];
 }
-
 export default function SpecialtyComboboxElegante({ value, onChange, options }: Props) {
   const [search, setSearch] = useState("");
   const lock = useRef(false);
-
   // Garantizamos que no haya duplicados
   const dedupedValue = value.filter(
     (s, i, self) => self.findIndex((x) => x.id === s.id) === i
   );
-
   useEffect(() => {
     if (dedupedValue.length !== value.length) {
       onChange(dedupedValue);
     }
   }, [value, dedupedValue, onChange]);
-
   const filtered = search.length
     ? options.filter((o) =>
-        `${o.name} ${o.code}`.toLowerCase().includes(search.toLowerCase())
+        ` `.toLowerCase().includes(search.toLowerCase())
       )
     : options;
-
   const addSpecialty = (s: Specialty | null) => {
     if (!s) return;
     if (lock.current) return;
     
     lock.current = true;
     setTimeout(() => { lock.current = false; }, 50);
-
     if (dedupedValue.some((v) => v.id === s.id)) return;
-
     onChange([...dedupedValue, s]);
     setSearch("");
   };
-
   const removeSpecialty = (id: number) => {
     onChange(dedupedValue.filter((v) => v.id !== id));
   };
-
   return (
     <div className="w-full space-y-3">
       <Combobox value={null} onChange={addSpecialty}>
@@ -73,7 +63,6 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
               <ChevronUpDownIcon className="h-4 w-4 text-[var(--palantir-muted)]" aria-hidden="true" />
             </Combobox.Button>
           </div>
-
           <Transition
             as={Fragment}
             leave="transition ease-in duration-100"
@@ -91,16 +80,14 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
                   <Combobox.Option
                     key={s.id}
                     className={({ active }) =>
-                      `relative cursor-pointer select-none py-2 pl-10 pr-4 text-[10px] font-mono uppercase tracking-wider ${
-                        active ? "bg-[var(--palantir-active)] text-white" : "text-[var(--palantir-text)]"
-                      }`
+                      `relative cursor-pointer select-none py-2 pl-10 pr-4 text-[10px] font-mono uppercase tracking-wider `
                     }
                     value={s}
                   >
                     {({ selected, active }) => (
                       <>
-                        <span className={`block truncate ${selected ? "font-black" : "font-normal"}`}>
-                          {s.name} <span className={`ml-2 opacity-50 ${active ? "text-white" : "text-[var(--palantir-active)]"}`}>[{s.code}]</span>
+                        <span className={`block truncate `}>
+                          {s.name} <span className={`ml-2 opacity-50 `}>[{s.code}]</span>
                         </span>
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3">
                           <HashtagIcon className="h-3 w-3 opacity-30" />
@@ -114,7 +101,6 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
           </Transition>
         </div>
       </Combobox>
-
       {/* ÁREA DE TAGS SELECCIONADOS */}
       {dedupedValue.length > 0 && (
         <div className="flex flex-wrap gap-1.5 min-h-[32px]">

@@ -11,45 +11,38 @@ import {
   IdentificationIcon,
   ArrowTopRightOnSquareIcon
 } from "@heroicons/react/24/outline";
-
 interface PatientHeaderProps {
   patient: Patient & {
     balance_due?: number;
     age?: number | null;
   };
 }
-
 interface AddressChain {
   country: string; state: string; municipality: string;
   parish: string; neighborhood: string;
 }
-
 // Utils de limpieza de datos
 const extractPhone = (contact: any): string => {
-  if (!contact) return "NO_DAT_LINK";
+  if (!contact) return "NO_DATA_LINK";
   try {
     const p = typeof contact === 'string' && contact.startsWith('{') ? JSON.parse(contact) : contact;
     return p.phone || p.tel || p.mobile || String(contact);
   } catch { return String(contact); }
 };
-
 const buildFullAddress = (patient: Patient): string => {
   const c = (patient.address_chain as AddressChain);
-  return [patient.address, c?.neighborhood, c?.parish, c?.state]
+  return [c?.neighborhood, c?.parish, c?.state, c?.country]
     .filter(Boolean).join(", ") || "LOCATION_UNKNOWN";
 };
-
 export default function PatientHeader({ patient }: PatientHeaderProps) {
   const phone = extractPhone(patient.contact_info);
   const fullAddress = buildFullAddress(patient);
-
   return (
     <div className="relative overflow-hidden bg-black/40 border border-[var(--palantir-border)] p-4 group">
       {/* Decoración Cyberpunk de fondo */}
       <div className="absolute top-0 right-0 p-1 opacity-10 pointer-events-none">
         <IdentificationIcon className="w-24 h-24 -mr-8 -mt-8" />
       </div>
-
       <div className="flex flex-col md:flex-row gap-6 relative z-10">
         
         {/* AVATAR / STATUS SECTION */}
@@ -65,11 +58,10 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
             <div className="text-[10px] font-black text-emerald-500 uppercase italic">Active_Session</div>
           </div>
         </div>
-
         {/* CORE INFO SECTION */}
         <div className="flex-1 space-y-4">
           {/* Nombre y Acceso Rápido */}
-          <div className="flex items-center justify-between group/name">
+          <div className="flex items-center justify-between group-name">
             <div className="flex items-baseline gap-3">
               <h2 className="text-xl font-black italic uppercase tracking-tighter text-[var(--palantir-text)]">
                 {patient.full_name || "MISSING_IDENTITY"}
@@ -79,13 +71,12 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
               </span>
             </div>
             <Link
-              to={`/patients/${patient.id}`}
+              to={`/patients/`}
               className="flex items-center gap-2 text-[10px] font-black uppercase text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors"
             >
               Master_Profile <ArrowTopRightOnSquareIcon className="w-3 h-3" />
             </Link>
           </div>
-
           {/* Grid de Biometría Táctica */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="space-y-1">
@@ -113,7 +104,6 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
               <p className="text-xs font-bold truncate max-w-[150px]">{patient.email || "N/A"}</p>
             </div>
           </div>
-
           {/* Dirección */}
           <div className="flex items-start gap-2 pt-2 border-t border-[var(--palantir-border)]/30">
             <MapPinIcon className="w-3 h-3 text-[var(--palantir-active)] mt-0.5" />
@@ -122,7 +112,6 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
             </p>
           </div>
         </div>
-
         {/* ALERTS & BALANCE SECTION */}
         <div className="md:w-64 space-y-3">
           {/* Alertas Médicas */}
@@ -141,16 +130,14 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
               </div>
             </div>
           )}
-
           {/* Balance Financiero */}
-          <div className={`p-2 border ${patient.balance_due && patient.balance_due > 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+          <div className={`p-2 border `}>
             <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">Financial_Ledger</span>
-            <p className={`text-sm font-black ${patient.balance_due && patient.balance_due > 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-              {patient.balance_due && patient.balance_due > 0 ? `DEBIT: $${patient.balance_due.toFixed(2)}` : 'CREDIT_CLEAR'}
+            <p className={`text-sm font-black `}>
+              {patient.balance_due && patient.balance_due > 0 ? `DEBIT: {patient.balance_due.toFixed(2)}` : 'CREDIT_CLEAR'}
             </p>
           </div>
         </div>
-
       </div>
     </div>
   );

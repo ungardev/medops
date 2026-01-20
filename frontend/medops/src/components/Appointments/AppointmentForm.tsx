@@ -5,27 +5,24 @@ import type { Patient } from "types/patients";
 import { usePatients } from "hooks/patients/usePatients";
 import NewPatientModal from "components/Patients/NewPatientModal";
 import { UserPlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
-
 interface Props {
   date?: Date;
   onClose: () => void;
   onSubmit: (data: AppointmentInput) => void;
 }
-
 export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   const [form, setForm] = useState<AppointmentInput>({
     patient: 0,
+    institution: 0,
+    doctor: 0,
     appointment_date: date ? date.toISOString().slice(0, 10) : "",
     appointment_type: "general",
     expected_amount: "",
     notes: "",
   });
-
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
-
   const { data, isLoading, isError, refetch } = usePatients(1, 50);
   const patientList: Patient[] = data?.results ?? [];
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -35,15 +32,12 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       [name]: name === "patient" ? Number(value) || 0 : value,
     }));
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!form.patient || form.patient === 0) {
       alert("CRITICAL_ERROR: Select a Subject_Identity before commit.");
       return;
     }
-
     const payload: AppointmentInput = {
       ...form,
       expected_amount: form.expected_amount ? String(form.expected_amount) : "",
@@ -51,7 +45,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     onSubmit(payload);
     onClose();
   };
-
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="max-w-lg w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden">
@@ -74,7 +67,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
-
         {/* Formulario Estilo Terminal */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
@@ -120,7 +112,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               </button>
             </div>
           </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {/* Fecha */}
             <div className="space-y-1.5">
@@ -134,7 +125,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
                 className="w-full bg-black/40 border border-[var(--palantir-border)] px-3 py-2 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all [color-scheme:dark]"
               />
             </div>
-
             {/* Tipo */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Module_Classification</label>
@@ -149,7 +139,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               </select>
             </div>
           </div>
-
           {/* Monto esperado */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Resource_Allocation (USD)</label>
@@ -165,7 +154,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               />
             </div>
           </div>
-
           {/* Notas */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Operational_Intelligence_Notes</label>
@@ -178,7 +166,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               className="w-full bg-black/40 border border-[var(--palantir-border)] px-3 py-2 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all resize-none placeholder:text-gray-700"
             />
           </div>
-
           {/* Acciones de Footer */}
           <div className="flex justify-end gap-3 pt-4 border-t border-[var(--palantir-border)]">
             <button
@@ -196,7 +183,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             </button>
           </div>
         </form>
-
         {/* Modal Secundario */}
         {showNewPatientModal && (
           <NewPatientModal

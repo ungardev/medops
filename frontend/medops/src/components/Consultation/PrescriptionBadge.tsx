@@ -10,30 +10,25 @@ import {
   ArrowsRightLeftIcon,
   CalendarIcon
 } from "@heroicons/react/24/outline";
-
 type Frequency =
   | "once_daily" | "bid" | "tid" | "qid"
   | "q4h" | "q6h" | "q8h" | "q12h" | "q24h"
   | "qod" | "stat" | "prn" | "hs"
   | "ac" | "pc" | "achs";
-
 type Route =
   | "oral" | "iv" | "im" | "sc"
   | "topical" | "sublingual" | "inhalation"
   | "rectal" | "other";
-
 type Unit =
   | "mg" | "ml" | "g"
   | "tablet" | "capsule" | "drop"
   | "puff" | "unit" | "patch";
-
 export interface PrescriptionComponent {
   id?: number;
   substance: string;
-  dosage: number;
+  dosage: string;
   unit: Unit;
 }
-
 export interface PrescriptionBadgeProps {
   id: number;
   medication: string;
@@ -51,7 +46,6 @@ export interface PrescriptionBadgeProps {
   ) => void;
   onDelete?: (id: number) => void;
 }
-
 export default function PrescriptionBadge({
   id,
   medication,
@@ -68,14 +62,12 @@ export default function PrescriptionBadge({
   const [editedFrequency, setEditedFrequency] = useState<Frequency>(frequency);
   const [editedRoute, setEditedRoute] = useState<Route>(route);
   const [editedComponents, setEditedComponents] = useState<PrescriptionComponent[]>(components);
-
   const handleSave = () => {
     if (onEdit) {
       onEdit(id, editedMedication.trim(), editedDuration || null, editedFrequency, editedRoute, editedComponents);
     }
     setIsEditing(false);
   };
-
   return (
     <div className="group border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden transition-all hover:border-[var(--palantir-active)]/40">
       {/* HEADER: Medication Name & Actions */}
@@ -98,7 +90,6 @@ export default function PrescriptionBadge({
           </div>
         )}
       </div>
-
       <div className="p-3">
         {isEditing ? (
           <div className="space-y-4 animate-in fade-in duration-200">
@@ -109,7 +100,6 @@ export default function PrescriptionBadge({
               onChange={(e) => setEditedMedication(e.target.value)}
               className="w-full bg-black/40 border border-[var(--palantir-border)] px-2 py-1.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)]"
             />
-
             {/* Editor de Componentes */}
             <div className="space-y-2">
               <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)]">Composition</label>
@@ -127,14 +117,15 @@ export default function PrescriptionBadge({
                     placeholder="Substance"
                   />
                   <input
-                    type="number"
+                    type="text"
                     value={comp.dosage}
                     onChange={(e) => {
                       const newComps = [...editedComponents];
-                      newComps[index].dosage = Number(e.target.value);
+                      newComps[index].dosage = e.target.value;
                       setEditedComponents(newComps);
                     }}
                     className="w-12 bg-black/20 border border-white/5 text-center text-[10px] font-mono"
+                    placeholder="Dose"
                   />
                   <button 
                     onClick={() => setEditedComponents(editedComponents.filter((_, i) => i !== index))}
@@ -146,13 +137,12 @@ export default function PrescriptionBadge({
               ))}
               <button
                 type="button"
-                onClick={() => setEditedComponents([...editedComponents, { substance: "", dosage: 0, unit: "mg" }])}
+                onClick={() => setEditedComponents([...editedComponents, { substance: "", dosage: "", unit: "mg" }])}
                 className="text-[8px] font-black uppercase text-[var(--palantir-active)]"
               >
                 + Add_Substance
               </button>
             </div>
-
             {/* Footer de Edición */}
             <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
               <button onClick={() => setIsEditing(false)} className="text-[9px] font-black uppercase text-[var(--palantir-muted)]">Cancel</button>
@@ -174,7 +164,6 @@ export default function PrescriptionBadge({
                 ))}
               </div>
             </div>
-
             {/* Info Técnica Grid */}
             <div className="space-y-1">
               <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)] flex items-center gap-1">
@@ -182,14 +171,12 @@ export default function PrescriptionBadge({
               </span>
               <span className="text-[10px] font-mono text-[var(--palantir-text)] uppercase">{frequency.replace('_', ' ')}</span>
             </div>
-
             <div className="space-y-1">
               <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)] flex items-center gap-1">
                 <ArrowsRightLeftIcon className="w-2.5 h-2.5" /> Route
               </span>
               <span className="text-[10px] font-mono text-[var(--palantir-text)] uppercase">{route}</span>
             </div>
-
             {duration && (
               <div className="col-span-2 md:col-span-4 mt-2 pt-2 border-t border-white/5 flex items-center gap-2">
                 <CalendarIcon className="w-3 h-3 text-[var(--palantir-muted)]" />

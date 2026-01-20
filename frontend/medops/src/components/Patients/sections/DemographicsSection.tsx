@@ -9,12 +9,10 @@ import {
   MapPinIcon,
   UserCircleIcon
 } from "@heroicons/react/24/outline";
-
 interface DemographicsSectionProps {
   patient: Patient;
   onRefresh: () => void;
 }
-
 interface FieldProps {
   label: string;
   value: string;
@@ -24,16 +22,14 @@ interface FieldProps {
   editing: boolean;
   onChange?: (value: string) => void;
 }
-
 function Field({ label, value, type = "text", multiline = false, span = 3, editing, onChange }: FieldProps) {
   const colClasses: Record<number, string> = {
     3: "md:col-span-3", 4: "md:col-span-4", 6: "md:col-span-6",
     8: "md:col-span-8", 9: "md:col-span-9", 12: "md:col-span-12"
   };
-  const colClass = `col-span-12 ${colClasses[span] || "md:col-span-3"}`;
-
+  const colClass = `col-span-12 `;
   return (
-    <div className={`${colClass} group`}>
+    <div className={` group`}>
       <label className="block text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest mb-1 group-focus-within:text-[var(--palantir-active)] transition-colors">
         {label}
       </label>
@@ -63,7 +59,6 @@ function Field({ label, value, type = "text", multiline = false, span = 3, editi
     </div>
   );
 }
-
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
   
@@ -72,7 +67,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   
   const [form, setForm] = useState<Partial<PatientInput>>({});
   const updatePatient = useUpdatePatient(patient.id);
-
   useEffect(() => {
     // ✅ Usamos ?? "" para convertir null/undefined en strings vacíos y limpiar errores de tipos
     setForm({
@@ -86,7 +80,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       birth_country: patient.birth_country ?? "",
       email: patient.email ?? "",
       contact_info: patient.contact_info ?? "",
-      address: patient.address ?? "",
       country_id: chain.country_id,
       state_id: chain.state_id,
       municipality_id: chain.municipality_id,
@@ -94,7 +87,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_id: chain.neighborhood_id,
     });
   }, [patient, chain]);
-
   const handleSave = () => {
     updatePatient.mutate(form as PatientInput, {
       onSuccess: () => { 
@@ -103,9 +95,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       }
     });
   };
-
-  const direccionCompleta = `${form.address || ""}, ${chain.neighborhood || ""}, ${chain.parish || ""}`.trim().toUpperCase();
-
+  const direccionCompleta = `, `.trim().toUpperCase();
   return (
     <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden transition-all duration-500 hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]">
       <div className="bg-[var(--palantir-border)]/20 px-4 py-2 flex justify-between items-center border-b border-[var(--palantir-border)]">
@@ -129,7 +119,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           </button>
         )}
       </div>
-
       <div className="p-6 grid grid-cols-12 gap-x-8 gap-y-6">
         {/* Usamos el operador || "" para asegurar que siempre pasamos un string al componente Field */}
         <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm({...form, national_id: v})} />
@@ -139,22 +128,19 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         
         <Field span={3} label="Email_Address" value={form.email || ""} editing={editing} onChange={(v) => setForm({...form, email: v})} />
         <Field span={3} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm({...form, contact_info: v})} />
-        <Field span={6} label="Birth_Location" value={`${form.birth_place || ""}, ${form.birth_country || ""}`} editing={editing} onChange={(v) => setForm({...form, birth_place: v})} />
-
+        <Field span={6} label="Birth_Location" value={`, `} editing={editing} onChange={(v) => setForm({...form, birth_place: v})} />
         <div className="col-span-12 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] via-transparent to-transparent my-2" />
-
         <div className="col-span-12 flex items-center gap-2 mb-2">
           <MapPinIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
           <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em]">Geographic_Location_Data</span>
         </div>
-
         {!editing ? (
           <div className="col-span-12 bg-[var(--palantir-bg)]/50 border border-[var(--palantir-border)] p-3 rounded-sm">
             <label className="block text-[8px] font-mono text-[var(--palantir-muted)] uppercase mb-1">Primary_Residence_Chain</label>
             <p className="text-[10px] font-mono text-[var(--palantir-text)] leading-relaxed">{direccionCompleta || "NO_LOCATION_DATA_AVAILABLE"}</p>
           </div>
         ) : (
-          <Field span={12} label="Full_Address_Details" value={form.address || ""} editing={editing} multiline onChange={(v) => setForm({...form, address: v})} />
+          <Field span={12} label="Full_Address_Details" value={form.address ?? ""} editing={editing} multiline onChange={(v) => setForm({...form, address: v})} />
         )}
       </div>
     </div>

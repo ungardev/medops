@@ -1,27 +1,22 @@
 import { useState } from "react";
-import { ClinicEvent, ClinicEventInput } from "types/events";
-
+import { Event, CreateEventInput } from "types/events";
 interface Props {
-  onSubmit: (data: ClinicEventInput) => void;
-  event?: ClinicEvent | null;
+  onSubmit: (data: CreateEventInput) => void;
+  event?: Event | null;
 }
-
 export default function EventForm({ onSubmit, event }: Props) {
-  const [form, setForm] = useState<ClinicEventInput>({
+  const [form, setForm] = useState<CreateEventInput>({
     title: event?.title || "",
     description: event?.description || "",
-    date: event?.date || "",
+    date: event?.timestamp ? event.timestamp.slice(0, 10) : "",
   });
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(form);
   };
-
   return (
     <form onSubmit={handleSubmit}>
       <input

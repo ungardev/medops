@@ -17,14 +17,12 @@ import {
   ShieldCheckIcon,
   ArrowRightCircleIcon
 } from "@heroicons/react/24/outline";
-
 interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
   appointmentId: number;
   notes: string | null;
   readOnly: boolean;
 }
-
 export default function ConsultationWorkflow({
   diagnoses,
   appointmentId,
@@ -34,7 +32,6 @@ export default function ConsultationWorkflow({
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
   const [activeTab, setActiveTab] = useState("diagnosis");
-
   // Mapeo de iconos para las pestañas
   const tabIcons: Record<string, any> = {
     diagnosis: <ShieldCheckIcon className="w-4 h-4" />,
@@ -44,7 +41,6 @@ export default function ConsultationWorkflow({
     tests: <BeakerIcon className="w-4 h-4" />,
     referrals: <ArrowRightCircleIcon className="w-4 h-4" />
   };
-
   return (
     <div className="bg-black/20 border border-[var(--palantir-border)] min-h-[600px] flex flex-col">
       {/* Barra de progreso / Info de sesión */}
@@ -56,12 +52,11 @@ export default function ConsultationWorkflow({
           {['diagnosis', 'treatment', 'prescription'].map((step) => (
             <div 
               key={step}
-              className={`w-2 h-2 rounded-full ${activeTab === step ? 'bg-[var(--palantir-active)] animate-pulse' : 'bg-[var(--palantir-border)]'}`}
+              className={`w-2 h-2 rounded-full `}
             />
           ))}
         </div>
       </div>
-
       <Tabs
         value={activeTab}
         onChange={setActiveTab}
@@ -88,7 +83,6 @@ export default function ConsultationWorkflow({
             />
           </div>
         </Tab>
-
         <Tab 
           id="treatment" 
           label={<span className="flex items-center gap-2">{tabIcons.treatment} Tratamiento</span>}
@@ -104,13 +98,13 @@ export default function ConsultationWorkflow({
                       createTreatment.mutate({
                         ...data,
                         appointment: appointmentId,
+                        title: data.plan.substring(0, 50),
                       })
                   : undefined
               }
             />
           </div>
         </Tab>
-
         <Tab 
           id="prescription" 
           label={<span className="flex items-center gap-2">{tabIcons.prescription} Prescripción</span>}
@@ -118,6 +112,8 @@ export default function ConsultationWorkflow({
           <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <PrescriptionPanel
               diagnoses={diagnoses}
+              prescriptions={undefined}
+              appointmentId={appointmentId}
               readOnly={readOnly}
               onAdd={
                 !readOnly
@@ -130,7 +126,6 @@ export default function ConsultationWorkflow({
             />
           </div>
         </Tab>
-
         <Tab 
           id="notes" 
           label={<span className="flex items-center gap-2">{tabIcons.notes} Notas</span>}
@@ -139,7 +134,6 @@ export default function ConsultationWorkflow({
             <NotesPanel appointmentId={appointmentId} notes={notes} readOnly={readOnly} />
           </div>
         </Tab>
-
         <Tab 
           id="tests" 
           label={<span className="flex items-center gap-2">{tabIcons.tests} Exámenes</span>}
@@ -148,7 +142,6 @@ export default function ConsultationWorkflow({
             <MedicalTestsPanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
-
         <Tab 
           id="referrals" 
           label={<span className="flex items-center gap-2">{tabIcons.referrals} Referencias</span>}

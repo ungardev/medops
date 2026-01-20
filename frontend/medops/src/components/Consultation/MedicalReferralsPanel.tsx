@@ -7,7 +7,8 @@ import {
   useDeleteMedicalReferral,
 } from "../../hooks/consultations/useMedicalReferrals";
 import { useSpecialties } from "../../hooks/consultations/useSpecialties";
-import type { Specialty, MedicalReferral } from "../../types/consultation";
+import type { Specialty } from "../../types/config";
+import type { MedicalReferral } from "../../types/consultation";
 import SpecialtyComboboxElegante from "./SpecialtyComboboxElegante";
 import { 
   ArrowTopRightOnSquareIcon, 
@@ -19,32 +20,26 @@ import {
   CheckIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
-
 export interface MedicalReferralsPanelProps {
   appointmentId: number;
   readOnly?: boolean;
 }
-
 export default function MedicalReferralsPanel({ appointmentId, readOnly = false }: MedicalReferralsPanelProps) {
   const { data, isLoading } = useMedicalReferrals(appointmentId);
   const referrals = Array.isArray(data) ? data : [];
-
   // Hooks con nombres de mutación claros para evitar colisiones
   const { mutateAsync: createReferral } = useCreateMedicalReferral();
   const { mutateAsync: updateReferralMutation } = useUpdateMedicalReferral();
   const { mutateAsync: deleteReferral } = useDeleteMedicalReferral();
-
   const [referredTo, setReferredTo] = useState("");
   const [reason, setReason] = useState("");
   const [selectedSpecialties, setSelectedSpecialties] = useState<Specialty[]>([]);
   const { data: specialties = [] } = useSpecialties("");
-
   const [urgency, setUrgency] = useState<"routine" | "urgent" | "stat">("routine");
   const [status, setStatus] = useState<"issued" | "accepted" | "rejected">("issued");
   
   // Estado para manejar la edición
   const [editingReferral, setEditingReferral] = useState<MedicalReferral | null>(null);
-
   const handleAdd = async () => {
     if (!referredTo || readOnly) return;
     try {
@@ -62,7 +57,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       setUrgency("routine");
     } catch (err: any) { console.error("Error creating referral:", err); }
   };
-
   const handleUpdate = async () => {
     if (!editingReferral || readOnly) return;
     try {
@@ -78,7 +72,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       setEditingReferral(null);
     } catch (err: any) { console.error("Error updating referral:", err); }
   };
-
   return (
     <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden">
       {/* HEADER */}
@@ -91,7 +84,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
         </div>
         {isLoading && <span className="text-[8px] animate-pulse font-mono text-[var(--palantir-active)]">SYNCING_DATA...</span>}
       </div>
-
       <div className="p-4 space-y-4">
         {/* LISTA DE REFERENCIAS */}
         <div className="space-y-3">
@@ -164,7 +156,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
             ))
           )}
         </div>
-
         {/* FORMULARIO DE NUEVA REFERENCIA */}
         {!readOnly && (
           <div className="mt-6 pt-6 border-t border-white/10 space-y-4">
@@ -188,7 +179,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                 />
               </div>
             </div>
-
             <div className="space-y-1">
               <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Clinical_Justification</label>
               <textarea
@@ -198,7 +188,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                 className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none min-h-[70px] resize-none"
               />
             </div>
-
             <div className="flex flex-wrap gap-4 items-end justify-between">
               <div className="space-y-1">
                 <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Urgency_Level</label>
@@ -212,7 +201,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                   <option value="stat">STAT</option>
                 </select>
               </div>
-
               <button
                 onClick={handleAdd}
                 disabled={!referredTo}
@@ -225,7 +213,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
           </div>
         )}
       </div>
-
       <div className="bg-black/20 px-4 py-2 border-t border-[var(--palantir-border)] flex items-center gap-2">
         <ShieldCheckIcon className="w-3 h-3 text-[var(--palantir-active)]" />
         <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
