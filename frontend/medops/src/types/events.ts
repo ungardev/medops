@@ -25,7 +25,7 @@ export interface Event {
   notify: boolean;
   is_read?: boolean;
   
-  // 🆕 Campos enriquecidos del backend
+  // Campos enriquecidos del backend
   title?: string;
   description?: string;
   category?: string;
@@ -41,8 +41,10 @@ export interface Event {
   updated_at?: string;
 }
 // =====================================================
-// PROPIEDAD ÚTIL DEL BACKEND
+// CREATE EVENT INPUT
 // =====================================================
-export interface EventColorTag {
-  [key: string]: string;
+export interface CreateEventInput {
+  title: string;
+  description: string;
+  date: string;
 }
