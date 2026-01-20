@@ -1,7 +1,7 @@
 // src/hooks/settings/useSpecialtyChoices.ts
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
-import type { Specialty } from "@/types/consultation";
+import type { Specialty } from "@/types/config";
 
 export function useSpecialtyChoices() {
   return useQuery<Specialty[]>({

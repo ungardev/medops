@@ -1,213 +1,242 @@
+// src/types/consultation.ts
+// =====================================================
+// IMPORTAR TIPOS DESDE identity.ts
+// =====================================================
+import type { IdentityPatient, IdentityDoctor, IdentityInstitution } from "./identity";
 import type { ChargeOrder } from "./payments";
-
-// --- Diagnóstico ---
+// =====================================================
+// ENUMS - Alineados con backend (choices.py y models.py)
+// =====================================================
+export type DiagnosisType = 
+  | "presumptive"   // Presuntivo (Sospecha)
+  | "definitive"    // Definitivo (Decretado/Confirmado)
+  | "differential"  // Diferencial (Opción en estudio)
+  | "provisional";  // Provisional
+export type DiagnosisStatus = 
+  | "under_investigation"  // En Investigación / Estudio
+  | "awaiting_results"     // Esperando Resultados (Lab/Imagen)
+  | "confirmed"            // Decretado / Confirmado
+  | "ruled_out"           // Descartado / Excluido
+  | "chronic";             // Pre-existente / Crónico
+export type TreatmentType = 
+  | "pharmacological"  // Farmacológico
+  | "surgical"        // Quirúrgico / Procedimiento
+  | "rehabilitation"  // Fisioterapia / Rehabilitación
+  | "lifestyle"       // Cambio de estilo de vida / Dieta
+  | "psychological"    // Apoyo Psicológico / Terapia
+  | "other";          // Otro
+export type TreatmentStatus = 
+  | "active"        // En curso / Activo
+  | "completed"     // Finalizado / Completado
+  | "suspended"     // Suspendido Temporalmente
+  | "cancelled";    // Cancelado / Contraindicado
+export type PrescriptionRoute = 
+  | "oral" | "iv" | "im" | "sc"
+  | "topical" | "sublingual" | "inhalation"
+  | "rectal" | "other";
+export type PrescriptionFrequency = 
+  | "once_daily" | "bid" | "tid" | "qid"
+  | "q4h" | "q6h" | "q8h" | "q12h" | "q24h"
+  | "qod" | "stat" | "prn" | "hs"
+  | "ac" | "pc" | "achs";
+export type PrescriptionUnit = 
+  | "mg" | "ml" | "g"
+  | "tablet" | "capsule" | "drop"
+  | "puff" | "unit" | "patch";
+export type MedicalTestUrgency = "routine" | "urgent" | "stat";
+export type MedicalTestStatus = "pending" | "completed" | "cancelled";
+export type MedicalReferralUrgency = "routine" | "urgent" | "stat";
+export type MedicalReferralStatus = "issued" | "accepted" | "rejected";
+// =====================================================
+// DIAGNOSIS - Alineado con DiagnosisSerializer (backend)
+// =====================================================
 export interface Diagnosis {
   id: number;
-
-  // 🔹 Metadatos ICD-11
-  icd_code: string;        // código ICD-11 oficial (ej: "CA23.0")
-  title?: string;          // descripción oficial OMS
-  foundation_id?: string;  // ID único ICD-11
-  description?: string;    // notas adicionales del médico
-
-  // 🔹 Campos clínicos prácticos (lo que devuelve el backend en consultas)
-  name?: string;           // nombre del diagnóstico (ej: "Diabetes tipo 2")
-  severity?: string;       // severidad clínica (ej: "moderada", "grave")
-  source?: string;         // origen del diagnóstico (ej: "anamnesis", "laboratorio")
-  notes?: string;          // notas adicionales
-
-  // 🔹 Relaciones
+  appointment: number;
+  // Metadatos ICD-11
+  icd_code: string;
+  title?: string;
+  foundation_id?: string;
+  description?: string;
+  // Campos clínicos (del backend)
+  type: DiagnosisType;
+  type_display?: string;
+  status: DiagnosisStatus;
+  status_display?: string;
+  clinical_certainty: number;
+  is_main_diagnosis: boolean;
+  // Relaciones
   treatments: Treatment[];
   prescriptions: Prescription[];
-
-  // 🔹 Metadatos
+  // Auditoría
+  created_by?: number | null;
   created_at?: string;
   updated_at?: string;
 }
-
-// --- Tratamiento ---
+// =====================================================
+// TREATMENT - Alineado con TreatmentSerializer (backend)
+// =====================================================
 export interface Treatment {
   id: number;
+  diagnosis: number;
+  // Campos CACHED del backend (importados desde identity.ts)
+  patient?: IdentityPatient;
+  doctor?: IdentityDoctor;
+  institution?: IdentityInstitution;
+  // Definición
+  treatment_type: TreatmentType;
+  treatment_type_display?: string;
+  title: string;
   plan: string;
+  // Cronología
   start_date?: string;
   end_date?: string;
-  status: "active" | "completed" | "cancelled";   // 👈 igual que backend
-  treatment_type: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 igual que backend
+  // Estado y control
+  status: TreatmentStatus;
+  status_display?: string;
+  is_permanent: boolean;
+  notes?: string | null;
+  // Utilidad frontend
+  is_active_now?: boolean;
 }
-
-// --- Inputs para mutaciones de tratamientos ---
+// --- Inputs para tratamientos ---
 export interface CreateTreatmentInput {
   appointment: number;
   diagnosis: number;
+  treatment_type: TreatmentType;
+  title: string;
   plan: string;
   start_date?: string;
   end_date?: string;
-  status?: "active" | "completed" | "cancelled";
-  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other";
+  is_permanent?: boolean;
+  status?: TreatmentStatus;
+  notes?: string;
 }
-
 export interface UpdateTreatmentInput {
   id: number;
+  treatment_type?: TreatmentType;
+  title?: string;
   plan?: string;
   start_date?: string;
   end_date?: string;
-  status?: "active" | "completed" | "cancelled";
-  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other";
+  is_permanent?: boolean;
+  status?: TreatmentStatus;
+  notes?: string;
 }
-
-// --- Componente de prescripción ---
+// =====================================================
+// PRESCRIPTION - Alineado con PrescriptionSerializer (backend)
+// =====================================================
 export interface PrescriptionComponent {
   id?: number;
   substance: string;
-  dosage: number;
-  unit:
-    | "mg" | "ml" | "g"
-    | "tablet" | "capsule" | "drop"
-    | "puff" | "unit" | "patch";
+  dosage: string;
+  unit: PrescriptionUnit;
+  unit_display?: string;
 }
-
-// --- Prescripción ---
 export interface Prescription {
   id: number;
-
-  // 🔹 Híbrido: catálogo o texto libre
+  diagnosis: number;
+  // Campos CACHED del backend (importados desde identity.ts)
+  patient?: IdentityPatient;
+  doctor?: IdentityDoctor;
+  institution?: IdentityInstitution;
+  // Híbrido: catálogo o texto libre
   medication_catalog?: {
     id: number;
     name: string;
-    presentation: string;
-    concentration: string;
-    route: string;
-    unit: string;
+    generic_name?: string;
+    presentation?: string;
+    concentration?: string;
+    route?: string;
+    unit?: string;
   } | null;
   medication_text?: string | null;
-
+  medication_name?: string;
+  // Posología
+  dosage_form?: string | null;
+  route: PrescriptionRoute;
+  route_display?: string;
+  frequency: PrescriptionFrequency;
+  frequency_display?: string;
   duration?: string | null;
-  frequency?:
-    | "once_daily" | "bid" | "tid" | "qid"
-    | "q4h" | "q6h" | "q8h" | "q12h" | "q24h"
-    | "qod" | "stat" | "prn" | "hs"
-    | "ac" | "pc" | "achs";
-  route?:
-    | "oral" | "iv" | "im" | "sc"
-    | "topical" | "sublingual" | "inhalation"
-    | "rectal" | "other";
-
+  indications?: string | null;
+  // Componentes
   components: PrescriptionComponent[];
+  // Auditoría
+  issued_at?: string;
+  doctor_name?: string;
 }
-
-// --- Inputs para mutaciones de prescripciones ---
+// --- Inputs para prescripciones ---
 export interface CreatePrescriptionInput {
+  appointment: number;
   diagnosis: number;
   medication_catalog?: number;
   medication_text?: string | null;
+  dosage_form?: string;
+  route?: PrescriptionRoute;
+  frequency?: PrescriptionFrequency;
   duration?: string;
-  frequency?: Prescription["frequency"];
-  route?: Prescription["route"];
+  indications?: string;
   components: PrescriptionComponent[];
 }
-
 export interface UpdatePrescriptionInput {
   id: number;
   medication_catalog?: number;
   medication_text?: string | null;
+  dosage_form?: string;
+  route?: PrescriptionRoute;
+  frequency?: PrescriptionFrequency;
   duration?: string;
-  frequency?: Prescription["frequency"];
-  route?: Prescription["route"];
+  indications?: string;
   components?: PrescriptionComponent[];
 }
-
-// --- Documento clínico ---
-export interface MedicalDocument {
-  id: number;
-  description?: string;
-  category?: string;
-  uploaded_at: string;
-  uploaded_by?: string;
-  file: string;
-}
-
-// --- Pago ---
-export interface Payment {
-  id: number;
-  amount: number;
-  currency: string;
-  method: string;
-  status: string;
-  reference_number?: string | null;
-  bank_name?: string | null;
-  received_by?: string | null;
-  received_at?: string | null;
-  idempotency_key?: string | null;
-}
-
-// --- Paciente mínimo ---
-export interface Patient {
-  id: number;
-  first_name: string;
-  last_name: string;
-  birth_date?: string;
-  gender?: string;
-}
-
-// --- Consulta / Appointment ---
-export interface Appointment {
-  id: number;
-  patient: Patient;
-  appointment_date?: string;
-  arrival_time?: string | null;
-  // ⚡️ NUEVO CAMPO: Sincronizado con la base de datos para cronómetro
-  started_at: string | null; 
-  status: "pending" | "arrived" | "in_consultation" | "completed" | "canceled";
-  notes?: string | null;
-  diagnoses: Diagnosis[];
-  treatments: Treatment[];
-  prescriptions: Prescription[];
-  documents?: MedicalDocument[];
-  payments?: Payment[];
-  charge_order?: ChargeOrder;
-  created_at: string;
-  updated_at: string;
-}
-
-// --- Examen médico ---
+// =====================================================
+// MEDICAL TEST - Alineado con backend
+// =====================================================
 export interface MedicalTest {
   id: number;
   appointment: number;
   diagnosis?: number | null;
   requested_by?: number | null;
+  
   test_type: string;
   test_type_display?: string;
   description?: string;
-  urgency: "routine" | "urgent" | "stat";
-  status: "pending" | "completed" | "cancelled";
+  
+  urgency: MedicalTestUrgency;
+  urgency_display?: string;
+  status: MedicalTestStatus;
+  status_display?: string;
+  
   requested_at: string;
   completed_at?: string | null;
+  
   created_at: string;
   updated_at: string;
   created_by?: number | null;
   updated_by?: number | null;
 }
-
-// --- Especialidad institucional ---
-export interface Specialty {
-  id: number;
-  code: string;
-  name: string;
-}
-
-// --- Referencia médica ---
+// =====================================================
+// MEDICAL REFERRAL - Alineado con backend
+// =====================================================
 export interface MedicalReferral {
   id: number;
   appointment: number;
   diagnosis?: number | null;
   issued_by?: number | null;
+  
   referred_to: string;
   reason?: string;
-  specialties: Specialty[];
+  specialties: any[];
   specialty_ids?: number[];
-  urgency: "routine" | "urgent" | "stat";
-  status: "issued" | "accepted" | "rejected";
+  
+  urgency: MedicalReferralUrgency;
+  urgency_display?: string;
+  status: MedicalReferralStatus;
+  status_display?: string;
+  
   issued_at: string;
+  
   created_at: string;
   updated_at: string;
   created_by?: number | null;

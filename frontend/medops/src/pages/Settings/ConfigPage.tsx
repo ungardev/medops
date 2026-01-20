@@ -9,7 +9,7 @@ import { InstitutionCard } from "@/components/Settings/InstitutionCard";
 import { InstitutionFormModal } from "@/components/Settings/InstitutionFormModal";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
 import { api } from "@/lib/apiClient"; // ✅ AGREGADO: Importar api client
-import type { Specialty } from "@/types/consultation"; 
+import type { Specialty } from "@/types/config";
 import { 
   FingerPrintIcon,
   ShieldCheckIcon,

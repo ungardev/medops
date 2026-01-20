@@ -1,74 +1,77 @@
-import { PatientRef } from "./patients";
-import { Payment, ChargeOrder } from "./payments";
-import {
-  Diagnosis,
-  Treatment,
-  Prescription,
-  MedicalTest,
-  MedicalReferral,
-} from "./consultation";
-
-// --- Estados posibles de una cita
-export type AppointmentStatus =
-  | "pending"
-  | "arrived"
-  | "in_consultation"
-  | "completed"
-  | "canceled";
-
-// --- Modelo de cita (lo que devuelve el backend)
+// src/types/appointments.ts
+// =====================================================
+// IMPORTAR TIPOS DESDE identity.ts
+// =====================================================
+import type { IdentityPatient, IdentityDoctor, IdentityInstitution } from "./identity";
+import type { ChargeOrder } from "./payments";
+// =====================================================
+// ENUMS - Alineados con backend
+// =====================================================
+export type AppointmentStatus = "pending" | "arrived" | "in_consultation" | "completed" | "canceled";
+export type AppointmentType = "general" | "specialized";
+// =====================================================
+// MODELO DE CITA (lo que devuelve el backend)
+// =====================================================
 export interface Appointment {
   id: number;
-  patient: PatientRef;
-  appointment_date: string;     // YYYY-MM-DD
-  appointment_type: "general" | "specialized";
-  expected_amount: string | number; // string en payload, number en UI
-  status: AppointmentStatus;
+  
+  // Relaciones principales
+  patient: IdentityPatient;
+  institution: IdentityInstitution;
+  doctor: IdentityDoctor;
+  
+  // Datos temporales
+  appointment_date: string;
+  start_time?: string | null;
   arrival_time?: string | null;
+  status: AppointmentStatus;
+  status_display?: string;
+  appointment_type: AppointmentType;
+  appointment_type_display?: string;
+  
+  // Brazo financiero
+  expected_amount: string | number;
   notes?: string | null;
-
-  // 🔹 Bloques clínicos
-  diagnoses: Diagnosis[];
-  treatments: Treatment[];
-  prescriptions: Prescription[];
-
-  // 🔹 Documentos y pagos
+  
+  // Bloques clínicos
+  diagnoses: any[];
+  treatments: any[];
+  prescriptions: any[];
+  
+  // Documentos y pagos
   documents?: any[];
-  payments: Payment[];
-
-  // 🔹 Campos adicionales del serializer de consulta
+  payments: any[];
   balance_due?: number;
   charge_order?: ChargeOrder;
-
-  // 🔹 Nuevos campos del backend
-  medical_tests?: MedicalTest[];
-  referrals?: MedicalReferral[];
-
-  // 🔹 Metadatos
+  
+  // Nuevos campos (médicos, exámenes)
+  medical_tests?: any[];
+  referrals?: any[];
+  
+  // Métricas de tiempo
+  started_at?: string | null;
+  completed_at?: string | null;
+  
+  // Metadatos
   created_at?: string;
   updated_at?: string;
-
-  // 🔹 ⚡️ CAMPOS DE TIEMPO OPERATIVO
-  // started_at: Hora real de inicio (activa el cronómetro)
-  // completed_at: Hora de finalización técnica
-  started_at?: string | null; 
-  completed_at?: string | null;
 }
-
-/**
- * 🔹 AppointmentUI
- * Interfaz normalizada para los componentes de la interfaz de usuario.
- * Garantiza que started_at esté presente para el SessionTimer.
- */
+// =====================================================
+// APPOINTMENT UI (para componentes)
+// =====================================================
 export interface AppointmentUI extends Appointment {
   started_at: string | null;
 }
-
-// --- Datos de entrada para crear/editar cita
+// =====================================================
+// DATOS DE ENTRADA PARA CREAR/EDITAR CITA
+// =====================================================
 export interface AppointmentInput {
   patient: number;
+  institution: number;
+  doctor: number;
   appointment_date: string;
-  appointment_type: "general" | "specialized";
+  start_time?: string;
+  appointment_type: AppointmentType;
   expected_amount?: string;
   status?: AppointmentStatus;
   notes?: string;

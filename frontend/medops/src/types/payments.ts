@@ -1,95 +1,133 @@
-import { PatientRef } from "./patients";
-import { Appointment } from "./appointments";
-
-// --- Estados de pago institucionales ---
+// src/types/payments.ts
+// =====================================================
+// IMPORTAR TIPOS DE IDENTIDAD DESDE identity.ts
+// =====================================================
+import type { IdentityPatient, IdentityDoctor, IdentityInstitution } from "./identity";
+// =====================================================
+// ENUMS - Alineados con backend
+// =====================================================
 export enum PaymentStatus {
   PENDING = "pending",
   CONFIRMED = "confirmed",
   REJECTED = "rejected",
   VOID = "void",
 }
-
-// --- Métodos de pago institucionales ---
 export enum PaymentMethod {
   CASH = "cash",
   CARD = "card",
   TRANSFER = "transfer",
+  ZELLE = "zelle",
+  CRYPTO = "crypto",
   OTHER = "other",
 }
-
+export enum ChargeOrderStatus {
+  OPEN = "open",
+  PARTIALLY_PAID = "partially_paid",
+  PAID = "paid",
+  VOID = "void",
+  WAIVED = "waived",
+}
+// =====================================================
+// ÍTEM DE COBRO
+// =====================================================
+export interface ChargeItem {
+  id: number;
+  order: number;
+  code: string;
+  description?: string | null;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+}
+// =====================================================
+// PAGO
+// =====================================================
 export interface Payment {
   id: number;
-  appointment: Appointment["id"];
-  appointment_date: string; // YYYY-MM-DD
-  patient: PatientRef;
-  amount: string; // DRF devuelve Decimal como string
-  method: PaymentMethod;
-  status: PaymentStatus;
-  reference_number?: string | null;
-  bank_name?: string | null;   // ✅ ya lo tenías
-  detail?: string | null;      // ✅ añadido para método "other"
-  received_by?: string | null;
-  received_at?: string | null; // ISO string
-
-  // 🔹 Relación con ChargeOrder
+  
+  // Relaciones
+  institution: IdentityInstitution;
+  appointment: number;
   charge_order: number;
+  doctor: IdentityDoctor;
+  
+  // Transacción
+  amount: number | string;
+  currency: string;
+  method: PaymentMethod;
+  method_display?: string;
+  status: PaymentStatus;
+  status_display?: string;
+  
+  // Trazabilidad Fintech
+  gateway_transaction_id?: string | null;
+  reference_number?: string | null;
+  bank_name?: string | null;
+  detail?: string | null;
+  gateway_response_raw?: Record<string, any>;
+  
+  // Auditoría
+  received_by?: number | null;
+  received_at?: string | null;
+  cleared_at?: string | null;
+  idempotency_key?: string | null;
+  
+  // Display
+  patient_name?: string;
 }
-
-// --- Datos de entrada para crear/editar pago ---
+// =====================================================
+// PAGO EXTENDIDO (para UI)
+// =====================================================
+export interface PaymentExtended extends Payment {
+  appointment_date?: string;
+}
+// =====================================================
+// DATOS DE ENTRADA PARA CREAR/EDITAR PAGO
+// =====================================================
 export interface PaymentInput {
   amount: string;
   method: PaymentMethod;
   status?: PaymentStatus;
   reference_number?: string;
   bank_name?: string;
-  detail?: string;             // ✅ añadido para método "other"
-
-  // 🔹 Relaciones
-  charge_order: number;       // requerido para vincular el pago
-  appointment?: number;       // opcional, si el backend lo admite
+  detail?: string;
+  charge_order: number;
+  appointment?: number;
 }
-
-// --- Estados de ChargeOrder institucionales ---
-export enum ChargeOrderStatus {
-  OPEN = "open",
-  PARTIALLY_PAID = "partially_paid",
-  PAID = "paid",
-  VOID = "void",
-  WAIVED = "waived", // 👈 añadido porque tu modelo soporta exoneraciones
-}
-
-export interface ChargeItem {
-  id: number;
-  order: number;
-  code: string;
-  description?: string | null; // ✅ opcional según tu modelo
-  qty: number;
-  unit_price: number;
-  subtotal: number;
-}
-
-// --- Nueva entidad: Orden de Cobro ---
+// =====================================================
+// ORDEN DE COBRO
+// =====================================================
 export interface ChargeOrder {
   id: number;
-  appointment: Appointment["id"];
-  patient: number; // en el payload base es ID
+  
+  // Relaciones
+  appointment: number;
+  patient: number;
+  patient_name?: string;
+  patient_detail?: IdentityPatient;
+  institution: IdentityInstitution;
+  doctor: IdentityDoctor;
+  
+  // Monetización
   currency: string;
   total: number;
   balance_due: number;
   status: ChargeOrderStatus;
-  issued_at: string; // ISO datetime
-  issued_by?: string | null;
+  status_display?: string;
+  
+  // Items y pagos
   items: ChargeItem[];
-
-  // --- Aliases del serializer extendido para Pagos ---
-  appointment_date?: string; // alias de issued_at
-  total_amount?: string | number; // alias de total
-  patient_detail?: PatientRef; // objeto expandido con full_name
-  payments?: Payment[];
-
-  // --- Campos de auditoría ---
+  payments: any[];
+  
+  // Auditoría
+  issued_at: string;
+  issued_by?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
-  created_by?: string | null;
-  updated_by?: string | null;
+  created_by?: number | null;
+  updated_by?: number | null;
+  
+  // Alias para pagos
+  appointment_date?: string;
+  total_amount?: string | number;
 }
