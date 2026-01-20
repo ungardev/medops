@@ -3,19 +3,31 @@ from django.db import models
 from core.models import ChargeOrder, Payment, MedicalDocument, MedicalReport, Treatment, MedicalReferral
 class Command(BaseCommand):
     help = "Rellena los campos doctor, institution y patient en modelos existentes"
+    
     def handle(self, *args, **kwargs):
         self.stdout.write("Iniciando backfill de datos...")
+        
         # 1. ChargeOrder - Backfill doctor
         self.stdout.write("Backfilling ChargeOrder.doctor...")
-        orders_updated = ChargeOrder.objects.filter(doctor__isnull=True).update(
-            doctor=models.F('appointment__doctor')
-        )
+        orders_updated = 0
+        for order in ChargeOrder.objects.filter(doctor__isnull=True).select_related('appointment'):
+            if order.appointment:
+                order.doctor = order.appointment.doctor
+                order.save(update_fields=['doctor'])
+                orders_updated += 1
         self.stdout.write(self.style.SUCCESS(f"  → {orders_updated} órdenes actualizadas"))
         # 2. Payment - Backfill doctor
         self.stdout.write("Backfilling Payment.doctor...")
-        payments_updated = Payment.objects.filter(doctor__isnull=True).update(
-            doctor=models.F('appointment__doctor')
-        )
+        payments_updated = 0
+        for payment in Payment.objects.filter(doctor__isnull=True).select_related('appointment', 'charge_order__appointment'):
+            if payment.appointment:
+                payment.doctor = payment.appointment.doctor
+                payment.save(update_fields=['doctor'])
+                payments_updated += 1
+            elif payment.charge_order and payment.charge_order.appointment:
+                payment.doctor = payment.charge_order.appointment.doctor
+                payment.save(update_fields=['doctor'])
+                payments_updated += 1
         self.stdout.write(self.style.SUCCESS(f"  → {payments_updated} pagos actualizados"))
         # 3. MedicalDocument - Backfill doctor e institution
         self.stdout.write("Backfilling MedicalDocument...")
