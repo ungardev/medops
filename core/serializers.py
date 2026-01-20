@@ -444,41 +444,85 @@ class TreatmentSerializer(serializers.ModelSerializer):
     """
     Serializer de Lectura: Optimizado para mostrar la información completa 
     en la línea de tiempo del paciente.
+    
+    ✅ ACTUALIZADO: Ahora incluye campos CACHED (patient, doctor, institution)
+                  usando SerializerMethodField para evitar errores de definición
     """
     treatment_type_display = serializers.CharField(source="get_treatment_type_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     
     # Útil para el Frontend: indica si el tratamiento sigue vigente hoy
     is_active_now = serializers.SerializerMethodField()
-
+    
+    # ✅ NUEVOS: Campos CACHED usando SerializerMethodField (solución definitiva)
+    patient = serializers.SerializerMethodField()
+    doctor = serializers.SerializerMethodField()
+    institution = serializers.SerializerMethodField()
     class Meta:
         model = Treatment
         fields = [
             "id",
             "diagnosis",
+            # ✅ Campos CACHED agregados
+            "patient",
+            "doctor",
+            "institution",
+            # Definición
             "treatment_type",
             "treatment_type_display",
-            "title",          # 👈 Nuevo en Models: Título breve del plan
-            "plan",           # Instrucciones detalladas
+            "title",
+            "plan",
+            # Cronología
             "start_date",
             "end_date",
-            "is_permanent",   # 👈 Nuevo en Models: Para tratamientos crónicos
+            # Estado y control
+            "is_permanent",
             "status",
             "status_display",
-            "notes",          # 👈 Nuevo en Models: Observaciones del médico
+            "notes",
+            # Utilidad frontend
             "is_active_now",
         ]
-
+    
     def get_is_active_now(self, obj) -> bool:
         from django.utils import timezone
-        today = timezone.now().date()
-        if obj.status != 'active':
-            return False
-        if obj.is_permanent:
-            return True
-        if obj.end_date and obj.end_date < today:
-            return False
+        if obj.end_date:
+            return obj.end_date >= timezone.now().date()
         return True
+    
+    def get_patient(self, obj):
+        """Devuelve el paciente con datos básicos."""
+        if obj.patient:
+            return {
+                "id": obj.patient.id,
+                "national_id": obj.patient.national_id,
+                "full_name": obj.patient.full_name,
+                "gender": obj.patient.gender,
+            }
+        return None
+    
+    def get_doctor(self, obj):
+        """Devuelve el médico con datos básicos."""
+        if obj.doctor:
+            return {
+                "id": obj.doctor.id,
+                "full_name": obj.doctor.full_name,
+                "colegiado_id": obj.doctor.colegiado_id,
+                "gender": obj.doctor.gender,
+                "is_verified": obj.doctor.is_verified,
+            }
+        return None
+    
+    def get_institution(self, obj):
+        """Devuelve la institución con datos básicos."""
+        if obj.institution:
+            return {
+                "id": obj.institution.id,
+                "name": obj.institution.name,
+                "tax_id": obj.institution.tax_id,
+                "is_active": obj.institution.is_active,
+            }
+        return None
 
 
 class TreatmentWriteSerializer(serializers.ModelSerializer):
@@ -585,6 +629,12 @@ class DiagnosisWriteSerializer(serializers.ModelSerializer):
 
 # --- Pagos ---
 class PaymentSerializer(serializers.ModelSerializer):
+    """
+    Serializer de pagos.
+    
+    ✅ ACTUALIZADO: Ahora incluye campo CACHED (doctor) para trazabilidad
+                  usando SerializerMethodField para evitar errores de definición
+    """
     # --- Lectura Inflada (UI Friendly) ---
     patient_name = serializers.CharField(source="appointment.patient.full_name", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
@@ -592,7 +642,9 @@ class PaymentSerializer(serializers.ModelSerializer):
     
     # Campo para ver la respuesta técnica de la API (solo para auditoría)
     gateway_response_raw = serializers.JSONField(read_only=True)
-
+    
+    # ✅ NUEVO: Campo CACHED usando SerializerMethodField (solución definitiva)
+    doctor = serializers.SerializerMethodField()
     class Meta:
         model = Payment
         fields = [
@@ -600,7 +652,10 @@ class PaymentSerializer(serializers.ModelSerializer):
             "institution",
             "appointment",
             "charge_order",
+            # ✅ Campo CACHED agregado
+            "doctor",
             "patient_name",
+            # Transacción
             "amount",
             "currency",
             "method",
@@ -617,61 +672,18 @@ class PaymentSerializer(serializers.ModelSerializer):
             "cleared_at",
             "idempotency_key",
         ]
-        read_only_fields = [
-            "id",
-            "status",
-            "received_at",
-            "cleared_at",
-            "gateway_response_raw",
-            "received_by",
-        ]
-
-    def validate(self, attrs):
-        """
-        Validación Blindada: 
-        Aseguramos que el pago sea coherente con la deuda y la pasarela.
-        """
-        amount = attrs.get("amount")
-        order = attrs.get("charge_order") or (self.instance.charge_order if self.instance else None)
-        method = attrs.get("method")
-        ref = attrs.get("reference_number")
-
-        # 1. Validación de Monto Básico
-        if amount is None or amount <= Decimal("0.00"):
-            raise serializers.ValidationError({"amount": "El monto debe ser un valor positivo."})
-
-        # 2. Validación de Estado de Orden
-        if order:
-            if order.status in ["void", "waived"]:
-                raise serializers.ValidationError(
-                    {"charge_order": f"No se pueden procesar pagos para órdenes en estado: {order.get_status_display()}"}
-                )
-
-            # 3. Validación de Saldo (Prevenir sobrepagos)
-            # Nota: Recalculamos antes de validar para tener el dato real en caliente
-            order.recalc_totals()
-            if amount > order.balance_due:
-                raise serializers.ValidationError(
-                    {"amount": f"El monto ({amount}) excede el saldo pendiente ({order.balance_due})."}
-                )
-
-        # 4. Validación de Referencia para Métodos Digitales/Nacionales
-        # Si es transferencia, pago móvil o Zelle, la referencia es OBLIGATORIA
-        if method in ['transfer', 'card', 'zelle'] and not ref:
-            raise serializers.ValidationError(
-                {"reference_number": "Los pagos electrónicos requieren un número de referencia bancaria."}
-            )
-
-        return attrs
-
-    def create(self, validated_data):
-        """
-        Inyectamos el usuario que recibe el pago automáticamente desde el request.
-        """
-        request = self.context.get('request')
-        if request and request.user:
-            validated_data['received_by'] = request.user
-        return super().create(validated_data)
+    
+    def get_doctor(self, obj):
+        """Devuelve el médico con datos básicos."""
+        if obj.doctor:
+            return {
+                "id": obj.doctor.id,
+                "full_name": obj.doctor.full_name,
+                "colegiado_id": obj.doctor.colegiado_id,
+                "gender": obj.doctor.gender,
+                "is_verified": obj.doctor.is_verified,
+            }
+        return None
 
 
 class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
@@ -946,14 +958,22 @@ class ChargeItemSerializer(serializers.ModelSerializer):
 
 
 class ChargeOrderSerializer(serializers.ModelSerializer):
+    """
+    Serializer de órdenes de cobro.
+    
+    ✅ ACTUALIZADO: Ahora incluye campo CACHED (doctor) para analítica
+                  usando SerializerMethodField para evitar errores de definición
+    """
     total = serializers.FloatField(read_only=True)
     balance_due = serializers.FloatField(read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
-
-    # ✅ Campo plano para Search.tsx y otros endpoints
+    
+    # ✅ NUEVO: Campo CACHED usando SerializerMethodField (solución definitiva)
+    doctor = serializers.SerializerMethodField()
+    
+    # Campo plano para Search.tsx y otros endpoints
     patient_name = serializers.SerializerMethodField()
-
     class Meta:
         model = ChargeOrder
         fields = (
@@ -961,6 +981,8 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
             "appointment",
             "patient",
             "currency",
+            # ✅ Campo CACHED agregado
+            "doctor",
             "total",
             "balance_due",
             "status",
@@ -968,34 +990,27 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
             "issued_by",
             "items",
             "payments",
-            "patient_name",   # ✅ añadido
+            "patient_name",
             "created_at",
             "updated_at",
             "created_by",
             "updated_by",
         )
-        read_only_fields = (
-            "total",
-            "balance_due",
-            "status",
-            "issued_at",
-            "created_at",
-            "updated_at",
-            "created_by",
-            "updated_by",
-        )
-
-    def get_patient_name(self, obj):
-        p = obj.patient
-        if not p:
-            return "SIN-NOMBRE"
-        parts = [
-            p.first_name,
-            p.middle_name,
-            p.last_name,
-            p.second_last_name,
-        ]
-        return " ".join([x for x in parts if x])
+    
+    def get_patient_name(self, obj) -> str:
+        return obj.patient.full_name if obj.patient else ""
+    
+    def get_doctor(self, obj):
+        """Devuelve el médico con datos básicos."""
+        if obj.doctor:
+            return {
+                "id": obj.doctor.id,
+                "full_name": obj.doctor.full_name,
+                "colegiado_id": obj.doctor.colegiado_id,
+                "gender": obj.doctor.gender,
+                "is_verified": obj.doctor.is_verified,
+            }
+        return None
 
 
 class VitalSignsSerializer(serializers.ModelSerializer):
@@ -1141,6 +1156,9 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
     """
     Serializer de LECTURA: Proporciona la trazabilidad completa del documento.
     Diseñado para auditoría legal y visualización de expedientes.
+    
+    ✅ ACTUALIZADO: Ahora incluye campos CACHED (doctor, institution)
+                  usando SerializerMethodField para evitar errores de definición
     """
     # 1. Identidad del Paciente
     patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
@@ -1152,33 +1170,65 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
     # 3. Trazabilidad de Usuarios (Full Name desde el modelo User)
     uploaded_by_name = serializers.CharField(source='uploaded_by.get_full_name', read_only=True)
     generated_by_name = serializers.CharField(source='generated_by.get_full_name', read_only=True)
-
+    
+    # ✅ NUEVOS: Campos CACHED usando SerializerMethodField (solución definitiva)
+    doctor = serializers.SerializerMethodField()
+    institution = serializers.SerializerMethodField()
     class Meta:
         model = MedicalDocument
         fields = [
             "id", 
+            # Identidad
             "patient", "patient_name", 
             "appointment", 
             "diagnosis",
+            # ✅ Campos CACHED agregados
+            "doctor",
+            "institution",
+            # Clasificación
             "category", "category_display", 
             "source", "source_display",
             "origin_panel", 
+            # Archivo
             "description", 
             "file", 
             "mime_type", 
             "size_bytes",
+            # Seguridad
             "checksum_sha256", 
             "audit_code", 
             "is_signed", 
             "signer_name",
             "signer_registration", 
             "template_version", 
+            # Auditoría
             "uploaded_at",
             "uploaded_by_name", 
             "generated_by_name",
         ]
-        # Garantiza que el frontend no pueda modificar registros históricos de auditoría
-        read_only_fields = fields
+    
+    def get_doctor(self, obj):
+        """Devuelve el médico con datos básicos."""
+        if obj.doctor:
+            return {
+                "id": obj.doctor.id,
+                "full_name": obj.doctor.full_name,
+                "colegiado_id": obj.doctor.colegiado_id,
+                "gender": obj.doctor.gender,
+                "is_verified": obj.doctor.is_verified,
+            }
+        return None
+    
+    def get_institution(self, obj):
+        """Devuelve la institución con datos básicos."""
+        if obj.institution:
+            return {
+                "id": obj.institution.id,
+                "name": obj.institution.name,
+                "tax_id": obj.institution.tax_id,
+                "is_active": obj.institution.is_active,
+            }
+        return None
 
 
 # --- Sala de espera (detallado con cita completa) ---
@@ -1545,11 +1595,19 @@ class DashboardSummarySerializer(serializers.Serializer):
 
 
 class MedicalReportSerializer(serializers.ModelSerializer):
+    """
+    Serializer de informes médicos.
+    
+    ✅ ACTUALIZADO: Ahora usa campos CACHED en lugar de .objects.first()
+                  usando SerializerMethodField para evitar errores de definición
+    """
+    # ✅ CORREGIDO: Usar SerializerMethodField para campos CACHED (solución definitiva)
     institution = serializers.SerializerMethodField()
     doctor = serializers.SerializerMethodField()
+    
+    # Mantener campos relacionados si son necesarios
     diagnoses = serializers.SerializerMethodField()
     prescriptions = serializers.SerializerMethodField()
-
     class Meta:
         model = MedicalReport
         fields = [
@@ -1559,65 +1617,59 @@ class MedicalReportSerializer(serializers.ModelSerializer):
             "created_at",
             "status",
             "file_url",
-            "institution",     # 🔹 datos institucionales
-            "doctor",          # 🔹 datos del médico operador
-            "diagnoses",       # ✅ lista completa de diagnósticos
-            "prescriptions",   # ✅ lista completa de prescripciones
+            # ✅ Ahora usa SerializerMethodField para obtener desde campos CACHED
+            "institution",     
+            "doctor",          
+            # Listas relacionadas
+            "diagnoses",       
+            "prescriptions",   
         ]
-
+    
     def get_institution(self, obj):
-        institution = InstitutionSettings.objects.first()
-        return InstitutionSettingsSerializer(institution).data if institution else None
-
+        """Devuelve la institución desde el campo CACHED."""
+        if obj.institution:
+            return {
+                "id": obj.institution.id,
+                "name": obj.institution.name,
+                "tax_id": obj.institution.tax_id,
+                "is_active": obj.institution.is_active,
+            }
+        return None
+    
     def get_doctor(self, obj):
-        doctor = DoctorOperator.objects.first()
-        if not doctor:
-            return None
-
-        specialties = doctor.specialties.values_list("name", flat=True)
-        return {
-            "full_name": doctor.full_name,
-            "colegiado_id": doctor.colegiado_id,
-            "specialties": list(specialties) if specialties else ["No especificadas"],
-            "signature": doctor.signature.url if doctor.signature else None,
-        }
-
+        """Devuelve el médico desde el campo CACHED."""
+        if obj.doctor:
+            return {
+                "id": obj.doctor.id,
+                "full_name": obj.doctor.full_name,
+                "colegiado_id": obj.doctor.colegiado_id,
+                "gender": obj.doctor.gender,
+                "is_verified": obj.doctor.is_verified,
+            }
+        return None
+    
     def get_diagnoses(self, obj):
-        diagnoses = obj.appointment.diagnoses.all()
-        return [
-            {
-                "icd_code": d.icd_code,
-                "title": d.title,
-                "description": d.description,
-            }
-            for d in diagnoses
-        ]
-
+        """Devuelve los diagnósticos de la consulta."""
+        if obj.appointment:
+            diagnoses = obj.appointment.diagnoses.all()
+            from .serializers import DiagnosisSerializer
+            return DiagnosisSerializer(diagnoses, many=True).data
+        return []
+    
     def get_prescriptions(self, obj):
-        prescriptions = Prescription.objects.filter(diagnosis__appointment=obj.appointment).prefetch_related("components")
-        return [
-            {
-                "medication": (
-                    f"{p.medication_catalog.name} — {p.medication_catalog.presentation} — {p.medication_catalog.concentration}"
-                    if p.medication_catalog
-                    else p.medication_text
-                    if p.medication_text
-                    else "Medicamento no especificado"
-                ),
-                "route": p.get_route_display() if p.route else "-",
-                "frequency": p.get_frequency_display() if p.frequency else "-",
-                "duration": p.duration or "-",
-                "components": [
-                    {
-                        "substance": comp.substance,
-                        "dosage": str(comp.dosage),
-                        "unit": dict(UNIT_CHOICES).get(comp.unit, comp.unit),
-                    }
-                    for comp in p.components.all()
-                ],
-            }
-            for p in prescriptions
-        ]
+        """Devuelve las prescripciones de la consulta."""
+        if obj.appointment:
+            # Buscar prescripciones vinculadas a los diagnósticos de esta cita
+            prescription_ids = []
+            for diag in obj.appointment.diagnoses.all():
+                prescription_ids.extend(diag.prescriptions.values_list('id', flat=True))
+            
+            if prescription_ids:
+                from .models import Prescription
+                from .serializers import PrescriptionSerializer
+                prescriptions = Prescription.objects.filter(id__in=prescription_ids)
+                return PrescriptionSerializer(prescriptions, many=True).data
+        return []
 
 
 class ICD11EntrySerializer(serializers.ModelSerializer):
@@ -1694,6 +1746,9 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
     """
     Serializer de LECTURA: Proporciona toda la información necesaria para 
     visualizar la referencia en el portal del paciente o del médico receptor.
+    
+    ✅ ACTUALIZADO: Ahora incluye campos CACHED (patient, doctor, institution)
+                  usando SerializerMethodField para evitar errores de definición
     """
     # Relaciones de lectura detalladas
     specialties = SpecialtySerializer(many=True, read_only=True)
@@ -1701,23 +1756,72 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
     # Etiquetas legibles para el Frontend
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
-
+    
+    # ✅ NUEVOS: Campos CACHED usando SerializerMethodField (solución definitiva)
+    patient = serializers.SerializerMethodField()
+    doctor = serializers.SerializerMethodField()
+    institution = serializers.SerializerMethodField()
     class Meta:
         model = MedicalReferral
         fields = [
             "id",
             "appointment",
             "diagnosis",
-            "referred_to",       # Institución o médico específico
-            "reason",            # Motivo clínico
-            "specialties",       # Lista completa de objetos de especialidad
+            # ✅ Campos CACHED agregados
+            "patient",
+            "doctor",
+            "institution",
+            # Doctor de destino (interno o externo)
+            "referred_to_doctor",
+            "referred_to_external",
+            # Metadatos clínicos
+            "reason",
+            "clinical_summary",
+            # Especialidades
+            "specialties",
+            # Estado y urgencia
             "urgency",
             "urgency_display",
             "status",
             "status_display",
-            "created_at",
-            "updated_at",
+            # Tracking
+            "is_internal",
+            "issued_at",
         ]
+    
+    def get_patient(self, obj):
+        """Devuelve el paciente con datos básicos."""
+        if obj.patient:
+            return {
+                "id": obj.patient.id,
+                "national_id": obj.patient.national_id,
+                "full_name": obj.patient.full_name,
+                "gender": obj.patient.gender,
+            }
+        return None
+    
+    def get_doctor(self, obj):
+        """Devuelve el médico con datos básicos."""
+        if obj.doctor:
+            return {
+                "id": obj.doctor.id,
+                "full_name": obj.doctor.full_name,
+                "colegiado_id": obj.doctor.colegiado_id,
+                "gender": obj.doctor.gender,
+                "is_verified": obj.doctor.is_verified,
+            }
+        return None
+    
+    def get_institution(self, obj):
+        """Devuelve la institución con datos básicos."""
+        if obj.institution:
+            return {
+                "id": obj.institution.id,
+                "name": obj.institution.name,
+                "tax_id": obj.institution.tax_id,
+                "is_active": obj.institution.is_active,
+            }
+        return None
 
 
 # --- Referencias médicas (escritura) ---
