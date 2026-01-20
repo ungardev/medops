@@ -74,6 +74,12 @@ export interface Payment {
   
   // Display
   patient_name?: string;
+  
+  // 🆕 AGREGADO: appointment_date (alias de compatibilidad)
+  appointment_date?: string;
+  
+  // 🆕 AGREGADO: patient (alias de compatibilidad)
+  patient?: IdentityPatient;
 }
 // =====================================================
 // PAGO EXTENDIDO (para UI)

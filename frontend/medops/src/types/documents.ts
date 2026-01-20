@@ -27,7 +27,7 @@ export interface MedicalDocument {
   appointment?: number | null;
   diagnosis?: number | null;
   
-  // Campos CACHED del backend
+  // Campos CACHED del backend (importados desde identity.ts)
   doctor?: IdentityDoctor;
   institution?: IdentityInstitution;
   
@@ -40,7 +40,7 @@ export interface MedicalDocument {
   
   // Archivo
   description?: string | null;
-  file: string;
+  file: string;  // URL del archivo
   mime_type?: string | null;
   size_bytes?: number | null;
   checksum_sha256?: string | null;
@@ -51,6 +51,9 @@ export interface MedicalDocument {
   signer_name?: string | null;
   signer_registration?: string | null;
   audit_code?: string | null;
+  
+  // 🆕 AGREGADO: file_url (alias de compatibilidad)
+  file_url?: string;
   
   // Trazabilidad
   uploaded_at?: string;

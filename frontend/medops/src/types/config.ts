@@ -1,11 +1,11 @@
 // src/types/config.ts
-
+// =====================================================
 // 🔹 Jerarquía Geográfica "Deep Structure"
+// =====================================================
 export interface Country { id: number; name: string; }
 export interface State { id: number; name: string; country: number; }
 export interface Municipality { id: number; name: string; state: number; }
 export interface Parish { id: number; name: string; municipality: number; }
-
 export interface Neighborhood {
   id: number;
   name: string;
@@ -23,8 +23,9 @@ export interface Neighborhood {
     };
   };
 }
-
+// =====================================================
 // 🔹 Configuración Institucional (Fintech Ready)
+// =====================================================
 export interface InstitutionSettings {
   id?: number;
   name: string;
@@ -35,7 +36,6 @@ export interface InstitutionSettings {
   // ⚔️ Nueva Estructura Geográfica
   neighborhood?: number | Neighborhood | null; 
   address: string; // Dirección detallada (Calle/Av/Local)
-
   // 💰 Motor Financiero
   active_gateway: 'none' | 'mercantil_ve' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
   is_gateway_test_mode: boolean; // Sandbox vs Production
@@ -45,15 +45,17 @@ export interface InstitutionSettings {
   // Estado del Nodo
   is_active: boolean;
 }
-
+// =====================================================
 // 🔹 Especialidad Clínica
+// =====================================================
 export interface Specialty {
   id: number;
   code: string;
   name: string;
 }
-
+// =====================================================
 // 🔹 Configuración del Médico Operador (Identity v2.0)
+// =====================================================
 export interface DoctorConfig {
   id?: number;
   full_name?: string;
@@ -63,14 +65,15 @@ export interface DoctorConfig {
   colegiado_id?: string;
   license?: string;
   is_verified: boolean; // Estado de validación del colegio
-
   // Alcance
   specialty_ids?: number[];
   specialties?: Specialty[];
   institutions?: number[]; // IDs de las sedes donde opera
-
   // Contacto & Firma
   email?: string;
   phone?: string;
   signature?: string | File | null;
+  
+  // 🆕 AGREGADO: specialty (especialidad principal)
+  specialty?: string | null;
 }

@@ -1,13 +1,12 @@
 // src/hooks/useWaitingroomGroupsToday.ts
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../lib/apiClient";
-import type { WaitingroomGroupsTodayResponse } from "../../types/waitingRoom";
-
+import type { WaitingRoomGroupsTodayResponse } from "../../types/waitingRoom";
 export function useWaitingroomGroupsToday() {
-  return useQuery<WaitingroomGroupsTodayResponse>({
+  return useQuery<WaitingRoomGroupsTodayResponse>({
     queryKey: ["waitingroomGroupsToday"],
     queryFn: async () => {
-      const { data } = await api.get<WaitingroomGroupsTodayResponse>(
+      const { data } = await api.get<WaitingRoomGroupsTodayResponse>(
         "/waitingroom/groups-today/"
       );
       return data;

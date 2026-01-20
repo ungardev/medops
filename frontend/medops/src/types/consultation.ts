@@ -72,9 +72,14 @@ export interface Diagnosis {
   created_by?: number | null;
   created_at?: string;
   updated_at?: string;
+  // 🆕 AGREGADO: name (compatibilidad con componente)
+  name?: string;
+  
+  // 🆕 AGREGADO: notes (compatibilidad con componente)
+  notes?: string | null;
 }
 // =====================================================
-// TREATMENT - Alineado con TreatmentSerializer (backend)
+// TRATAMIENTO - Alineado con TreatmentSerializer (backend)
 // =====================================================
 export interface Treatment {
   id: number;
@@ -124,7 +129,7 @@ export interface UpdateTreatmentInput {
   notes?: string;
 }
 // =====================================================
-// PRESCRIPTION - Alineado con PrescriptionSerializer (backend)
+// PRESCRIPCIÓN - Alineado con PrescriptionSerializer (backend)
 // =====================================================
 export interface PrescriptionComponent {
   id?: number;
@@ -191,7 +196,7 @@ export interface UpdatePrescriptionInput {
   components?: PrescriptionComponent[];
 }
 // =====================================================
-// MEDICAL TEST - Alineado con backend
+// EXAMEN MÉDICO - Alineado con backend
 // =====================================================
 export interface MedicalTest {
   id: number;
@@ -217,7 +222,7 @@ export interface MedicalTest {
   updated_by?: number | null;
 }
 // =====================================================
-// MEDICAL REFERRAL - Alineado con backend
+// REFERENCIA MÉDICA - Alineado con backend
 // =====================================================
 export interface MedicalReferral {
   id: number;
