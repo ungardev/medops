@@ -71,9 +71,8 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     Control Élite de Citas y Notas Clínicas.
     Maneja el ciclo de vida de la consulta y el bloqueo de integridad.
     """
-    queryset = Appointment.objects.all().select_related('patient', 'doctor', 'note')
+    queryset = Appointment.objects.all().select_related('patient', 'doctor', 'note', 'institution')
     serializer_class = AppointmentSerializer
-
     @action(detail=True, methods=['post'], url_path='lock-note')
     def lock_clinical_note(self, request, pk=None):
         """
@@ -92,22 +91,19 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 {"warning": "Esta nota ya se encuentra sellada."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         # Lógica de sellado
         note.is_locked = True
         note.locked_at = now()
         note.save()
-
         return Response({
             "status": "Nota sellada exitosamente",
             "locked_at": note.locked_at
         })
-
     def get_queryset(self):
         # Filtro institucional: Seguridad Elite
         user = self.request.user
         qs = super().get_queryset()
-        if not user.is_superuser:
+        if not user.is_superuser and hasattr(user, 'doctor_profile'):
             # Aseguramos que solo vea citas de su institución
             return qs.filter(institution=user.doctor_profile.institution)
         return qs
