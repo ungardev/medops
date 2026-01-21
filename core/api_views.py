@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from .models import *
 from .serializers import *
+from datetime import date
 from . import services
 import logging
 
@@ -33,6 +34,7 @@ class PatientViewSet(viewsets.ModelViewSet):
     Usa lógica de serializers dinámicos para optimizar el ancho de banda.
     """
     queryset = Patient.objects.all()
+    
     def get_serializer_class(self):
         # 1. Si está viendo la tabla (lista)
         if self.action == 'list':
@@ -44,6 +46,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         
         # 3. Si está creando o editando (escritura)
         return PatientWriteSerializer
+    
     def get_queryset(self):
         """
         Opcional: Filtrado por institución automática.
@@ -55,15 +58,88 @@ class PatientViewSet(viewsets.ModelViewSet):
         # ✅ Solo pacientes activos (excluye soft deletes)
         queryset = queryset.filter(active=True)
         
-        if not user.is_superuser and hasattr(user, 'doctor_profile') and hasattr(user.doctor_profile, 'active_institution'):
-            return queryset.filter(institution=user.doctor_profile.active_institution)
+        # ✅ REMOVED: Patient model NO tiene campo 'institution'
+        # El filtrado por institución debe hacerse a través de la jerarquía geográfica
+        # o agregando el campo institution al modelo Patient
+        # Por ahora, devolvemos todos los pacientes activos
+        
         return queryset
+    
     @action(detail=True, methods=['get'])
     def clinical_summary(self, request, pk=None):
         """Endpoint extra para un resumen rápido en el Frontend."""
         patient = self.get_object()
         # Aquí podrías usar un serializer aún más específico
         return Response({"status": "Success", "data": "Resumen clínico generado"})
+    
+    @action(detail=True, methods=['get'])
+    def profile(self, request, pk=None):
+        """
+        Endpoint completo del perfil clínico del paciente.
+        Devuelve todos los antecedentes, alergias, hábitos, cirugías y vacunaciones
+        en una sola respuesta optimizada.
+        """
+        # Optimización de consultas con prefetch_related
+        patient = Patient.objects.filter(pk=pk).prefetch_related(
+            'allergies',
+            'personal_history',
+            'family_history',
+            'surgeries',
+            'habits',
+            'patient_vaccinations',
+            'genetic_predispositions'
+        ).first()
+        
+        if not patient:
+            return Response({"error": "Patient not found"}, status=404)
+        
+        # Serializar cada módulo clínico (convertir a list de Python para evitar error Pylance)
+        allergies_data = list(AllergySerializer(patient.allergies.all(), many=True).data)
+        personal_history_data = list(PersonalHistorySerializer(patient.personal_history.all(), many=True).data)
+        family_history_data = list(FamilyHistorySerializer(patient.family_history.all(), many=True).data)
+        surgeries_data = list(SurgerySerializer(patient.surgeries.all(), many=True).data)
+        habits_data = list(HabitSerializer(patient.habits.all(), many=True).data)
+        vaccinations_data = list(PatientVaccinationSerializer(patient.patient_vaccinations.all(), many=True).data)
+        genetic_data = list(GeneticPredispositionSerializer(patient.genetic_predispositions.all(), many=True).data)
+        medical_history_data = list(MedicalHistorySerializer(patient.medical_history.all(), many=True).data)
+        
+        # Construir objeto de respuesta unificado
+        profile_data = {
+            'id': patient.id,
+            'full_name': patient.full_name,
+            'national_id': patient.national_id,
+            'birthdate': patient.birthdate.isoformat() if patient.birthdate else None,
+            'age': (date.today() - patient.birthdate).days // 365 if patient.birthdate else None,
+            'gender': patient.gender,
+            'email': patient.email,
+            'phone_number': patient.phone_number,
+            'address': patient.address,
+            'blood_type': patient.blood_type,
+            'weight': float(patient.weight) if patient.weight else None,
+            'height': float(patient.height) if patient.height else None,
+            'contact_info': patient.contact_info,
+            'active': patient.active,
+            'created_at': patient.created_at.isoformat() if patient.created_at else None,
+            'updated_at': patient.updated_at.isoformat() if patient.updated_at else None,
+            
+            # Datos clínicos completos
+            'allergies': allergies_data,
+            'personal_history': personal_history_data,
+            'family_history': family_history_data,
+            'surgeries': surgeries_data,
+            'habits': habits_data,
+            'vaccinations': vaccinations_data,
+            'genetic_predispositions': genetic_data,
+            'medical_history': medical_history_data,
+            
+            # clinical_background = unión de todos los antecedentes
+            'clinical_background': personal_history_data + family_history_data + [
+                {'id': g['id'], 'type': 'genetic', 'condition': g['name'], 'description': g.get('description', '')}
+                for g in genetic_data
+            ],
+        }
+        
+        return Response(profile_data)
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
