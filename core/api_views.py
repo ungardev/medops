@@ -52,8 +52,8 @@ class PatientViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if not user.is_superuser and hasattr(user, 'doctor_profile') and hasattr(user.doctor_profile, 'institution'):
-            return queryset.filter(institution=user.doctor_profile.institution)
+        if not user.is_superuser and hasattr(user, 'doctor_profile') and hasattr(user.doctor_profile, 'active_institution'):
+            return queryset.filter(institution=user.doctor_profile.active_institution)
         return queryset
     @action(detail=True, methods=['get'])
     def clinical_summary(self, request, pk=None):
