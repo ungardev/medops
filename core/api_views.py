@@ -52,6 +52,9 @@ class PatientViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
+        # ✅ Solo pacientes activos (excluye soft deletes)
+        queryset = queryset.filter(active=True)
+        
         if not user.is_superuser and hasattr(user, 'doctor_profile') and hasattr(user.doctor_profile, 'active_institution'):
             return queryset.filter(institution=user.doctor_profile.active_institution)
         return queryset
