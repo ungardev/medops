@@ -202,7 +202,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "last_name", 
             "second_last_name",
             "national_id", 
-            "birth_date", 
+            "birthdate",  # ✅ Corregido (sin guion)
             "birth_place", 
             "birth_country",
             "gender", 
@@ -217,7 +217,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "genetic_predispositions", 
             "active"
         ]
-    def validate_birth_date(self, value):
+    def validate_birthdate(self, value):
         if value and value > date.today():
             raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
         return value
@@ -240,7 +240,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
         model = Patient
         fields = [
             "id", "full_name", "national_id", "email", "age", "gender",
-            "birth_date", "phone_number", "address",  # ✅ CAMBIADO de address_detail a address
+            "birthdate", "phone_number", "address",  # ✅ Corregido (sin guion)
             "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
             "alerts", "address_chain", "active", "created_at", "updated_at"
