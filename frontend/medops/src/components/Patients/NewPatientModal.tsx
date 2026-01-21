@@ -5,40 +5,34 @@ import { useForm } from "react-hook-form";
 import { useCreatePatient } from "../../hooks/patients/useCreatePatient";
 import { PatientInput } from "../../types/patients";
 import { XMarkIcon, UserPlusIcon } from "@heroicons/react/24/outline";
-
 interface Props {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
 }
-
 interface FormValues {
   first_name: string;
-  second_name?: string;
+  middle_name?: string;
   last_name: string;
   second_last_name?: string;
   national_id: string;
-  phone?: string;
+  phone_number?: string;
   email?: string;
 }
-
 const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>();
   const createPatient = useCreatePatient();
-
   if (!open) return null;
-
   const onSubmit = (values: FormValues) => {
     const payload: PatientInput = {
       first_name: values.first_name.trim(),
       last_name: values.last_name.trim(),
       national_id: values.national_id.trim(),
-      ...(values.second_name?.trim() && { second_name: values.second_name.trim() }),
+      ...(values.middle_name?.trim() && { middle_name: values.middle_name.trim() }),
       ...(values.second_last_name?.trim() && { second_last_name: values.second_last_name.trim() }),
-      ...(values.phone?.trim() && { phone: values.phone.trim() }),
+      ...(values.phone_number?.trim() && { phone_number: values.phone_number.trim() }),
       ...(values.email?.trim() && { email: values.email.trim() }),
     };
-
     createPatient.mutate(payload, {
       onSuccess: () => {
         onCreated();
@@ -47,16 +41,13 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
       },
     });
   };
-
   const inputClass = "w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] text-[var(--palantir-text)] text-[11px] font-mono p-2.5 rounded-sm focus:outline-none focus:border-[var(--palantir-active)] transition-all placeholder:text-[var(--palantir-muted)]/30 uppercase";
-
   return ReactDOM.createPortal(
     <div className="fixed inset-0 bg-[#020617]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       <div 
         className="bg-[var(--palantir-surface)] border border-[var(--palantir-border)] w-full max-w-xl shadow-2xl animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header del Modal */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--palantir-border)] bg-[var(--palantir-bg)]/50">
           <div className="flex items-center gap-3">
             <UserPlusIcon className="w-5 h-5 text-[var(--palantir-active)]" />
@@ -68,7 +59,6 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
-
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
@@ -76,8 +66,8 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
               <input {...register("first_name", { required: true })} className={inputClass} placeholder="NAME_ALPHA" />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Secondary_Name</label>
-              <input {...register("second_name")} className={inputClass} placeholder="NAME_BRAVO" />
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Middle_Name</label>
+              <input {...register("middle_name")} className={inputClass} placeholder="NAME_BRAVO" />
             </div>
             <div className="space-y-1">
               <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Surname_A*</label>
@@ -88,23 +78,20 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
               <input {...register("second_last_name")} className={inputClass} placeholder="SURNAME_BRAVO" />
             </div>
           </div>
-
           <div className="space-y-1">
             <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">National_Identification_UID*</label>
             <input {...register("national_id", { required: true })} className={inputClass} placeholder="XX.XXX.XXX" />
           </div>
-
           <div className="grid grid-cols-2 gap-4 border-t border-[var(--palantir-border)] pt-4 mt-2">
             <div className="space-y-1">
-              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Comms_Phone</label>
-              <input {...register("phone")} className={inputClass} placeholder="+00 000-0000" />
+              <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Phone_Number</label>
+              <input {...register("phone_number")} className={inputClass} placeholder="+00 000-0000" />
             </div>
             <div className="space-y-1">
               <label className="text-[9px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Comms_Email</label>
               <input {...register("email")} className={inputClass} placeholder="SUBJECT@NETWORK.OPS" />
             </div>
           </div>
-
           <div className="flex gap-3 pt-6">
             <button
               type="submit"
@@ -127,5 +114,4 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
     document.getElementById("modal-root")!
   );
 };
-
 export default NewPatientModal;

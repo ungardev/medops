@@ -33,7 +33,6 @@ class PatientViewSet(viewsets.ModelViewSet):
     Usa lógica de serializers dinámicos para optimizar el ancho de banda.
     """
     queryset = Patient.objects.all()
-
     def get_serializer_class(self):
         # 1. Si está viendo la tabla (lista)
         if self.action == 'list':
@@ -45,7 +44,6 @@ class PatientViewSet(viewsets.ModelViewSet):
         
         # 3. Si está creando o editando (escritura)
         return PatientWriteSerializer
-
     def get_queryset(self):
         """
         Opcional: Filtrado por institución automática.
@@ -54,10 +52,9 @@ class PatientViewSet(viewsets.ModelViewSet):
         user = self.request.user
         queryset = super().get_queryset()
         
-        if not user.is_superuser and hasattr(user, 'doctor_profile'):
+        if not user.is_superuser and hasattr(user, 'doctor_profile') and hasattr(user.doctor_profile, 'institution'):
             return queryset.filter(institution=user.doctor_profile.institution)
         return queryset
-
     @action(detail=True, methods=['get'])
     def clinical_summary(self, request, pk=None):
         """Endpoint extra para un resumen rápido en el Frontend."""
