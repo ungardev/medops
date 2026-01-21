@@ -236,21 +236,26 @@ class PatientReadSerializer(serializers.ModelSerializer):
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
     address_chain = serializers.SerializerMethodField()
+    
     class Meta:
         model = Patient
         fields = [
             "id", "full_name", "national_id", "email", "age", "gender",
-            "birthdate", "phone_number", "address",  # ✅ Corregido (sin guion)
+            "birth_date", "phone_number", "address",  # ✅ CAMBIADO de address_detail a address
             "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
             "alerts", "address_chain", "active", "created_at", "updated_at"
         ]
+    
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_alerts(self, obj) -> List[Dict[str, Any]]:
         if not hasattr(obj, 'alerts'):
             return []
-        active_alerts = obj.alerts.filter(is_active=True)
-        return cast(List[Dict[str, Any]], ClinicalAlertSerializer(active_alerts, many=True).data)
+        return [
+            {"type": alert.type, "message": alert.message} 
+            for alert in obj.alerts.all()
+        ]
+    
     @extend_schema_field(serializers.DictField())
     def get_address_chain(self, obj) -> Dict[str, Any]:
         n = obj.neighborhood
@@ -303,7 +308,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
     address_chain = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = Patient
         fields = [
@@ -312,29 +317,34 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "medical_history", "genetic_predispositions", "alerts",
             "address", "address_chain", "active", "created_at", "updated_at"
         ]
-
+    
     def get_age(self, obj):
         if not obj.birthdate: return None
         return (date.today() - obj.birthdate).days // 365
-
+    
     def get_alerts(self, obj):
         """Extrae alertas de seguridad: Alergias severas o riesgos clínicos."""
         if not hasattr(obj, 'alerts'): return []
-        return [{"type": a.type, "message": a.message} for a in obj.alerts.filter(is_active=True)]
-
+        return [{"type": a.type, "message": a.message} for a in obj.alerts.all()]
+    
     def get_address_chain(self, obj):
         """Navegación segura por la jerarquía geográfica."""
         n = obj.neighborhood
+        if not n:
+            return {"neighborhood": "N/A", "full_path": "Sin dirección"}
         p = getattr(n, 'parish', None)
-        m = getattr(p, 'municipality', None)
-        s = getattr(m, 'state', None)
-        return {
+        m = getattr(p, 'municipality', None) if p else None
+        s = getattr(m, 'state', None) if m else None
+        
+        res: Dict[str, Any] = {
             "neighborhood": getattr(n, 'name', "N/A"),
             "parish": getattr(p, 'name', "N/A"),
-            "municipality": getattr(m, 'name', "N/A"),
-            "state": getattr(s, 'name', "N/A"),
-            "country": getattr(s.country, 'name', "N/A") if s else "N/A"
+            "municipality": getattr(m, 'name', 'N/A'),
+            "state": getattr(s, 'name', 'N/A'),
+            "country": getattr(s.country, 'name', "N/A") if s else "N/A",
+            "full_path": f"{n.name}, {getattr(p, 'name', '')}".strip(', ')
         }
+        return res
 
 
 class MedicationCatalogSerializer(serializers.ModelSerializer):
