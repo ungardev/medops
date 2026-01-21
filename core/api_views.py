@@ -245,7 +245,7 @@ def medicalreferral_choices_api(request): return Response([])
 
 
 @api_view(['GET', 'PATCH'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def institution_settings_api(request):
     """
     Endpoint de configuración de institución.
