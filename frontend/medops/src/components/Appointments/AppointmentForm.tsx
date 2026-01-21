@@ -1,8 +1,10 @@
 // src/components/Appointments/AppointmentForm.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AppointmentInput } from "types/appointments";
 import type { Patient } from "types/patients";
 import { usePatients } from "hooks/patients/usePatients";
+import { useInstitutions } from "@/hooks/settings/useInstitutions";
+import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import NewPatientModal from "components/Patients/NewPatientModal";
 import { UserPlusIcon, XMarkIcon } from "@heroicons/react/24/outline";
 interface Props {
@@ -11,18 +13,33 @@ interface Props {
   onSubmit: (data: AppointmentInput) => void;
 }
 export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
+  const { institutions, activeInstitution } = useInstitutions();
+  const { data: doctorConfig } = useDoctorConfig();
+  const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  
+  const { data, isLoading, isError, refetch } = usePatients(1, 50);
+  const patientList: Patient[] = data?.results ?? [];
+  
+  const institutionId = activeInstitution?.id ?? 0;
+  const doctorId = doctorConfig?.id ?? 0;
+  
   const [form, setForm] = useState<AppointmentInput>({
     patient: 0,
-    institution: 0,
-    doctor: 0,
+    institution: institutionId,
+    doctor: doctorId,
     appointment_date: date ? date.toISOString().slice(0, 10) : "",
     appointment_type: "general",
     expected_amount: "",
     notes: "",
   });
-  const [showNewPatientModal, setShowNewPatientModal] = useState(false);
-  const { data, isLoading, isError, refetch } = usePatients(1, 50);
-  const patientList: Patient[] = data?.results ?? [];
+  useEffect(() => {
+    if (activeInstitution?.id) {
+      setForm(prev => ({
+        ...prev,
+        institution: activeInstitution.id!,
+      }));
+    }
+  }, [activeInstitution?.id]);
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
@@ -38,6 +55,14 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       alert("CRITICAL_ERROR: Select a Subject_Identity before commit.");
       return;
     }
+    if (!form.institution || form.institution === 0) {
+      alert("CRITICAL_ERROR: Select a Medical Center before commit.");
+      return;
+    }
+    if (!form.doctor || form.doctor === 0) {
+      alert("CRITICAL_ERROR: No attending physician configured.");
+      return;
+    }
     const payload: AppointmentInput = {
       ...form,
       expected_amount: form.expected_amount ? String(form.expected_amount) : "",
@@ -49,7 +74,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="max-w-lg w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] shadow-[0_0_30px_rgba(0,0,0,0.5)] overflow-hidden">
         
-        {/* Header Táctico */}
         <div className="flex justify-between items-center px-6 py-4 border-b border-[var(--palantir-border)] bg-black/40">
           <div className="flex flex-col">
             <span className="text-[9px] font-black text-[var(--palantir-active)] uppercase tracking-[0.3em]">
@@ -67,10 +91,9 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
-        {/* Formulario Estilo Terminal */}
+        
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
-          {/* Paciente / Subject */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">
               Target_Subject_Identity
@@ -112,8 +135,38 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               </button>
             </div>
           </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">
+              Medical_Center_Location
+            </label>
+            <select
+              name="institution"
+              value={form.institution || ""}
+              onChange={handleChange}
+              required
+              className="w-full bg-black/40 border border-[var(--palantir-border)] px-3 py-2 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all appearance-none"
+            >
+              <option value="" className="bg-gray-900">SELECT_INSTITUTION</option>
+              {institutions.map((inst) => (
+                <option 
+                  key={inst.id} 
+                  value={inst.id} 
+                  className="bg-gray-900"
+                >
+                  {inst.name.toUpperCase()} [ID: {inst.id}] {activeInstitution?.id === inst.id ? "● ACTIVE" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+          <input
+            type="hidden"
+            name="doctor"
+            value={form.doctor || ""}
+          />
+          <div className="text-[9px] font-mono text-[var(--palantir-muted)]">
+            ATTENDING_PHYSICIAN: {doctorConfig?.full_name || "NOT_CONFIGURED"}
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Fecha */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Execution_Timestamp</label>
               <input
@@ -125,7 +178,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
                 className="w-full bg-black/40 border border-[var(--palantir-border)] px-3 py-2 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all [color-scheme:dark]"
               />
             </div>
-            {/* Tipo */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Module_Classification</label>
               <select
@@ -139,7 +191,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               </select>
             </div>
           </div>
-          {/* Monto esperado */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Resource_Allocation (USD)</label>
             <div className="relative">
@@ -154,7 +205,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               />
             </div>
           </div>
-          {/* Notas */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-bold text-[var(--palantir-muted)] uppercase tracking-widest">Operational_Intelligence_Notes</label>
             <textarea
@@ -166,7 +216,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               className="w-full bg-black/40 border border-[var(--palantir-border)] px-3 py-2 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none transition-all resize-none placeholder:text-gray-700"
             />
           </div>
-          {/* Acciones de Footer */}
           <div className="flex justify-end gap-3 pt-4 border-t border-[var(--palantir-border)]">
             <button
               type="button"
@@ -183,7 +232,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             </button>
           </div>
         </form>
-        {/* Modal Secundario */}
+        
         {showNewPatientModal && (
           <NewPatientModal
             open={showNewPatientModal}
