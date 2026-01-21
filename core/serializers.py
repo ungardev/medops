@@ -241,7 +241,8 @@ class PatientReadSerializer(serializers.ModelSerializer):
         model = Patient
         fields = [
             "id", "full_name", "national_id", "email", "age", "gender",
-            "birth_date", "phone_number", "address",  # ✅ CAMBIADO de address_detail a address
+            "birthdate",  # ✅ CORREGIDO: birthdate → birthdate
+            "phone_number", "address",  # ✅ CORREGIDO: address_detail → address
             "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
             "alerts", "address_chain", "active", "created_at", "updated_at"
@@ -299,7 +300,7 @@ class PatientListSerializer(serializers.ModelSerializer):
 
 class PatientDetailSerializer(serializers.ModelSerializer):
     """
-    La "Joyas de la Corona": Devuelve la visión 360° del paciente.
+    La Joyas de la Corona": Devuelve la visión 360° del paciente.
     Incluye alertas críticas, historia unificada y geolocalización.
     """
     full_name = serializers.ReadOnlyField()
@@ -312,7 +313,7 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = [
-            "id", "full_name", "national_id", "age", "gender", "birthdate",
+            "id", "full_name", "national_id", "age", "gender", "birthdate",  # ✅ CORREGIDO: birth_date → birthdate
             "email", "contact_info", "blood_type", "weight", "height",
             "medical_history", "genetic_predispositions", "alerts",
             "address", "address_chain", "active", "created_at", "updated_at"
@@ -338,8 +339,8 @@ class PatientDetailSerializer(serializers.ModelSerializer):
         
         res: Dict[str, Any] = {
             "neighborhood": getattr(n, 'name', "N/A"),
-            "parish": getattr(p, 'name', "N/A"),
-            "municipality": getattr(m, 'name', 'N/A'),
+            "parish": getattr(p, 'name', 'N/A'),
+            "municipality": getattr(m, 'name', "N/A"),
             "state": getattr(s, 'name', 'N/A'),
             "country": getattr(s.country, 'name', "N/A") if s else "N/A",
             "full_path": f"{n.name}, {getattr(p, 'name', '')}".strip(', ')
