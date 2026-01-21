@@ -2,7 +2,7 @@ import type { Patient as PatientAdmin } from "../types/patients";
 export interface ClinicalPatient {
   id: number;
   full_name?: string;
-  birth_date?: string | null;
+  birthdate?: string | null;
   gender?: string | null;
   national_id?: string | null;
   allergies?: string | null;
@@ -33,7 +33,7 @@ export function mapPatient(clinical: ClinicalPatient): PatientAdmin {
     full_name: clinical.full_name ?? "",
     first_name: nameParts.first_name,
     last_name: nameParts.last_name,
-    birthdate: clinical.birth_date ?? null,
+    birthdate: clinical.birthdate ?? null,
     gender: normalizeGender(clinical.gender),
     age: clinical.age ?? null,
     allergies: clinical.allergies ?? null,
