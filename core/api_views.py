@@ -86,7 +86,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             'family_history',
             'surgeries',
             'habits',
-            'patient_vaccinations',
+            'vaccinations',  # ✅ CORREGIDO: 'patient_vaccinations' → 'vaccinations'
             'genetic_predispositions'
         ).first()
         
@@ -99,7 +99,7 @@ class PatientViewSet(viewsets.ModelViewSet):
         family_history_data = list(FamilyHistorySerializer(patient.family_history.all(), many=True).data)
         surgeries_data = list(SurgerySerializer(patient.surgeries.all(), many=True).data)
         habits_data = list(HabitSerializer(patient.habits.all(), many=True).data)
-        vaccinations_data = list(PatientVaccinationSerializer(patient.patient_vaccinations.all(), many=True).data)
+        vaccinations_data = list(PatientVaccinationSerializer(patient.vaccinations.all(), many=True).data)  # ✅ CORREGIDO
         genetic_data = list(GeneticPredispositionSerializer(patient.genetic_predispositions.all(), many=True).data)
         medical_history_data = list(MedicalHistorySerializer(patient.medical_history.all(), many=True).data)
         
