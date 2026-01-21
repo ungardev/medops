@@ -996,10 +996,12 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
 
     # 4. Selección Dinámica de Plantilla HTML
     template_map = {
-        'prescriptions': 'pdf/prescription_template.html',
-        'treatments': 'pdf/treatment_template.html',
-        'referrals': 'pdf/referral_template.html',
-        'medical_tests': 'pdf/medical_test_template.html',
+    'prescriptions': 'documents/prescription.html',       # ✅ CORREGIDO
+    'treatments': 'documents/treatment.html',           # ✅ CORREGIDO
+    'referrals': 'documents/medical_referral.html',     # ✅ CORREGIDO
+    'medical_tests': 'documents/medical_test_order.html', # ✅ CORREGIDO
+    'medical_reports': 'pdf/medical_report.html',       # ✅ NUEVO
+    'charge_orders': 'pdf/charge_order.html',           # ✅ NUEVO
     }
     template_path = template_map.get(category, 'pdf/generic_medical_doc.html')
 

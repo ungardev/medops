@@ -4,12 +4,18 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from django.db.models import Sum, Count, Q
 from .models import *
 from .serializers import *
 from datetime import date
 from . import services
+from datetime import datetime, timedelta, date as python_date
+from django.utils import timezone
 import logging
+from weasyprint import HTML
+from openpyxl import Workbook
 
 
 logger = logging.getLogger(__name__)
@@ -140,6 +146,120 @@ class PatientViewSet(viewsets.ModelViewSet):
         }
         
         return Response(profile_data)
+    
+    @action(detail=True, methods=['get'])
+    def completed_appointments(self, request, pk=None):
+        """
+        Citas completadas del paciente.
+        Retorna las últimas 20 citas con status='completed'.
+        """
+        try:
+            patient = self.get_object()
+            appointments = Appointment.objects.filter(
+                patient=patient,
+                status='completed'
+            ).select_related('doctor', 'institution').order_by('-appointment_date')[:20]
+            
+            serializer = AppointmentSerializer(appointments, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Error en completed_appointments: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+    
+    @action(detail=True, methods=['get'])
+    def pending_appointments(self, request, pk=None):
+        """
+        Citas pendientes del paciente.
+        Retorna citas con status='pending' o 'arrived' ordenadas por fecha.
+        """
+        try:
+            patient = self.get_object()
+            appointments = Appointment.objects.filter(
+                patient=patient,
+                status__in=['pending', 'scheduled', 'arrived']
+            ).select_related('doctor', 'institution').order_by('appointment_date')
+            
+            serializer = AppointmentSerializer(appointments, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Error en pending_appointments: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+    
+    @action(detail=True, methods=['get', 'patch'])
+    def notes(self, request, pk=None):
+        """
+        Notas del paciente (lectura/escritura).
+        GET: Retorna las notas del paciente (campo contact_info).
+        PATCH: Actualiza las notas del paciente.
+        """
+        try:
+            patient = self.get_object()
+            
+            if request.method == 'GET':
+                # GET: Retornar notas existentes
+                return Response({
+                    'patient_id': patient.id,
+                    'content': patient.contact_info or '',
+                    'updated_at': patient.updated_at.isoformat() if patient.updated_at else None,
+                })
+            
+            # PATCH: Actualizar notas
+            content = request.data.get('content', '')
+            patient.contact_info = content
+            patient.save(update_fields=['contact_info'])
+            
+            return Response({
+                'patient_id': patient.id,
+                'content': patient.contact_info or '',
+                'updated_at': patient.updated_at.isoformat() if patient.updated_at else None,
+            })
+        except Exception as e:
+            logger.error(f"Error en notes: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+    
+    @action(detail=True, methods=['get'])
+    def payments(self, request, pk=None):
+        """
+        Pagos del paciente.
+        Retorna todos los pagos relacionados con órdenes de cobro del paciente.
+        """
+        try:
+            patient = self.get_object()
+            
+            # Buscar órdenes de cobro del paciente
+            charge_orders = ChargeOrder.objects.filter(patient=patient).values_list('id', flat=True)
+            
+            # Buscar pagos de esas órdenes de cobro
+            payments = Payment.objects.filter(
+                charge_order__in=charge_orders
+            ).select_related('charge_order', 'charge_order__patient', 'charge_order__appointment').order_by('-payment_date')
+            
+            serializer = PaymentSerializer(payments, many=True)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Error en payments: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+    
+    def delete_document(self, request, pk=None, document_id=None):
+        """
+        Eliminar documento del paciente.
+        DELETE /api/patients/{pk}/documents/{document_id}/
+        """
+        try:
+            # Verificar que el documento pertenece al paciente
+            document = get_object_or_404(
+                MedicalDocument,
+                pk=document_id,
+                patient=pk
+            )
+            
+            # Eliminar el documento
+            document.delete()
+            
+            return Response(status=204)  # No Content
+        except Exception as e:
+            logger.error(f"Error en delete_document: {str(e)}")
+            return Response({"error": str(e)}, status=500)
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
@@ -149,6 +269,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     """
     queryset = Appointment.objects.all().select_related('patient', 'doctor', 'note', 'institution')
     serializer_class = AppointmentSerializer
+    
     @action(detail=True, methods=['post'], url_path='lock-note')
     def lock_clinical_note(self, request, pk=None):
         """
@@ -175,6 +296,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             "status": "Nota sellada exitosamente",
             "locked_at": note.locked_at
         })
+    
     def get_queryset(self):
         # Filtro institucional: Seguridad Elite
         user = self.request.user
@@ -187,9 +309,50 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
 class MedicalDocumentViewSet(viewsets.ModelViewSet):
     queryset = MedicalDocument.objects.all()
+    
     def get_serializer_class(self):
-        if self.action in ['list', 'retrieve']: return MedicalDocumentReadSerializer
+        if self.action in ['list', 'retrieve']:
+            return MedicalDocumentReadSerializer
         return MedicalDocumentWriteSerializer
+
+
+class MedicationCatalogViewSet(viewsets.ModelViewSet):
+    """
+    Catálogo maestro de medicamentos.
+    Expone el modelo MedicationCatalog con CRUD completo.
+    """
+    queryset = MedicationCatalog.objects.all()
+    serializer_class = MedicationCatalogSerializer
+    
+    def get_queryset(self):
+        """
+        Filtra medicamentos activos y del contexto institucional.
+        - Si hay institución activa: muestra solo medicamentos de esa institución + catálogo maestro (institution is null)
+        - Si no hay institución: muestra solo catálogo maestro
+        """
+        user = self.request.user
+        
+        # Filtro básico: solo activos
+        queryset = super().get_queryset().filter(is_active=True)
+        
+        # Filtrado institucional opcional
+        if user.is_authenticated and hasattr(user, 'doctor_profile'):
+            doctor = user.doctor_profile
+            
+            # Si el doctor tiene institución activa
+            if hasattr(doctor, 'active_institution') and doctor.active_institution:
+                institution = doctor.active_institution
+                
+                # Mostrar: catálogo maestro (institution is null) + medicamentos de la institución
+                queryset = queryset.filter(
+                    Q(institution__isnull=True) | Q(institution=institution)
+                )
+            else:
+                # Sin institución activa: solo catálogo maestro
+                queryset = queryset.filter(institution__isnull=True)
+        
+        return queryset
+
 
 # ViewSets Automáticos (Mocks de serializers y modelos)
 class PaymentViewSet(viewsets.ModelViewSet): queryset = Payment.objects.all(); serializer_class = PaymentSerializer
@@ -247,15 +410,110 @@ class NeighborhoodSearchView(views.APIView):
 
 # Dashboards y Métricas
 @api_view(['GET'])
-def audit_dashboard_api(request): return Response({}) # <--- Faltaba
+def audit_dashboard_api(request):
+    """
+    Devuelve métricas de auditoría para el dashboard.
+    Total de eventos, agrupados por entidad y acción.
+    """
+    try:
+        # Usar el servicio existente con dashboard_stats=True
+        data = services.get_audit_logic(filters={"dashboard_stats": True})
+        return Response(data)
+    except Exception as e:
+        logger.error(f"Error en audit_dashboard_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
 
 # Búsquedas
 @api_view(['GET'])
-def appointment_search_api(request): return Response([])
+def appointment_search_api(request):
+    """
+    Busca citas por paciente, ID, o campos relacionados.
+    Soporta búsqueda por nombre, cédula, ID de cita, o fecha.
+    """
+    q = request.query_params.get('q', '').strip()
+    limit = int(request.query_params.get('limit', 10))
+    
+    if not q:
+        return Response([])
+    
+    try:
+        # Buscar en múltiples campos del paciente y cita
+        appointments = Appointment.objects.filter(
+            Q(patient__full_name__icontains=q) |
+            Q(patient__national_id__icontains=q) |
+            Q(id__icontains=q) |
+            Q(appointment_date__icontains=q)
+        ).order_by('-appointment_date')[:limit]
+        
+        serializer = AppointmentSerializer(appointments, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en appointment_search_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
-def chargeorder_search_api(request): return Response([])
+def chargeorder_search_api(request):
+    """
+    Busca órdenes de cobro por paciente, ID, o campos relacionados.
+    Soporta búsqueda por nombre, cédula, ID de orden, ID de cita, o monto.
+    """
+    q = request.query_params.get('q', '').strip()
+    limit = int(request.query_params.get('limit', 10))
+    
+    if not q:
+        return Response([])
+    
+    try:
+        # Buscar en múltiples campos de la orden y paciente
+        charge_orders = ChargeOrder.objects.filter(
+            Q(patient__full_name__icontains=q) |
+            Q(patient__national_id__icontains=q) |
+            Q(id__icontains=q) |
+            Q(appointment__id__icontains=q)
+        ).select_related(
+            'appointment', 'patient', 'institution', 'doctor'
+        ).order_by('-issued_at')[:limit]
+        
+        serializer = ChargeOrderSerializer(charge_orders, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en chargeorder_search_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
-def icd_search_api(request): return Response([])
+def icd_search_api(request):
+    """
+    Busca en el catálogo ICD-11 por código, título, o sinónimos.
+    Soporta búsqueda por código exacto, título aproximado, o sinónimos.
+    """
+    q = request.query_params.get('q', '').strip()
+    limit = int(request.query_params.get('limit', 20))
+    language = request.query_params.get('language', 'es')
+    
+    if not q:
+        return Response([])
+    
+    try:
+        # Buscar en múltiples campos de ICD-11
+        entries = ICD11Entry.objects.filter(
+            Q(language=language) &
+            (
+                Q(icd_code__icontains=q) |
+                Q(title__icontains=q) |
+                Q(synonyms__icontains=q)
+            )
+        ).order_by('icd_code')[:limit]
+        
+        serializer = ICD11EntrySerializer(entries, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en icd_search_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
 def search(request): return Response([])
 
@@ -276,43 +534,693 @@ def register_arrival(request): return Response({"ok": True})
 
 # Auditoría y Logs
 @api_view(['GET'])
-def event_log_api(request): return Response([]) # <--- Faltaba
-
+def event_log_api(request):
+    """
+    Devuelve el log de eventos/auditoría.
+    Soporta filtros por entidad, ID de entidad, ID de paciente, límite.
+    """
+    try:
+        entity = request.query_params.get('entity')
+        entity_id = request.query_params.get('entity_id')
+        patient_id = request.query_params.get('patient_id')
+        limit = request.query_params.get('limit')
+        
+        # Usar el servicio existente
+        data = services.get_audit_logic(
+            entity=entity,
+            entity_id=entity_id,
+            patient_id=patient_id,
+            limit=int(limit) if limit else None
+        )
+        
+        return Response(data)
+    except Exception as e:
+        logger.error(f"Error en event_log_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
 
 
 # Configuración y Varios
 @api_view(['GET'])
-def reports_api(request): return Response({})
+def reports_api(request):
+    """
+    Genera reportes financieros y clínicos por período.
+    Soporta filtros de tipo, fecha inicio, fecha fin, moneda.
+    """
+    report_type = request.query_params.get('type', 'FINANCIAL')
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+    currency = request.query_params.get('currency', 'USD')
+    
+    try:
+        # Parsear fechas si se proporcionan
+        start = datetime.strptime(start_date, '%Y-%m-%d') if start_date else None
+        end = datetime.strptime(end_date, '%Y-%m-%d') if end_date else None
+        
+        rows = []
+        
+        if report_type == 'FINANCIAL':
+            # Reporte financiero: pagos por período
+            payments = Payment.objects.filter(status='confirmed')
+            
+            if start:
+                payments = payments.filter(payment_date__date__gte=start)
+            if end:
+                payments = payments.filter(payment_date__date__lte=end)
+            
+            # Agrupar por fecha
+            payments_by_date = payments.values('payment_date').annotate(
+                total=Sum('amount'),
+                count=Count('id')
+            ).order_by('-payment_date')
+            
+            for item in payments_by_date:
+                rows.append({
+                    'id': f"FIN-{item['payment_date']}",
+                    'date': item['payment_date'],
+                    'type': 'FINANCIAL',
+                    'entity': 'Payment',
+                    'status': 'CONFIRMED',
+                    'amount': float(item['total']),
+                    'currency': currency,
+                })
+        
+        elif report_type == 'CLINICAL':
+            # Reporte clínico: citas por período y estado
+            appointments = Appointment.objects.filter(
+                status__in=['pending', 'completed', 'canceled']
+            )
+            
+            if start:
+                appointments = appointments.filter(appointment_date__date__gte=start)
+            if end:
+                appointments = appointments.filter(appointment_date__date__lte=end)
+            
+            # Agrupar por fecha y estado
+            appointments_by_status = appointments.values('appointment_date', 'status').annotate(
+                count=Count('id')
+            ).order_by('-appointment_date')
+            
+            for item in appointments_by_status:
+                rows.append({
+                    'id': f"CLI-{item['appointment_date']}.{item['status']}",
+                    'date': item['appointment_date'],
+                    'type': 'CLINICAL',
+                    'entity': 'Appointment',
+                    'status': item['status'].upper(),
+                    'amount': 0,
+                    'currency': currency,
+                })
+        
+        elif report_type == 'COMBINED':
+            # Reporte combinado: pagos + citas
+            # Pagos
+            payments = Payment.objects.filter(status='confirmed')
+            if start:
+                payments = payments.filter(payment_date__date__gte=start)
+            if end:
+                payments = payments.filter(payment_date__date__lte=end)
+            
+            payments_by_date = payments.values('payment_date').annotate(
+                total=Sum('amount'),
+                count=Count('id')
+            ).order_by('-payment_date')
+            
+            # Citas
+            appointments = Appointment.objects.filter(
+                status__in=['pending', 'completed', 'canceled']
+            )
+            if start:
+                appointments = appointments.filter(appointment_date__date__gte=start)
+            if end:
+                appointments = appointments.filter(appointment_date__date__lte=end)
+            
+            # Agrupar por fecha y estado
+            appointments_by_status = appointments.values('appointment_date', 'status').annotate(
+                count=Count('id')
+            ).order_by('-appointment_date')
+            
+            # Agregar filas financieras
+            for item in payments_by_date:
+                rows.append({
+                    'id': f"FIN-{item['payment_date']}",
+                    'date': item['payment_date'],
+                    'type': 'FINANCIAL',
+                    'entity': 'Payment',
+                    'status': 'CONFIRMED',
+                    'amount': float(item['total']),
+                    'count': item['count'],
+                    'currency': currency,
+                })
+            
+            # Agregar filas clínicas
+            for item in appointments_by_status:
+                rows.append({
+                    'id': f"CLI-{item['appointment_date']}.{item['status']}",
+                    'date': item['appointment_date'],
+                    'type': 'CLINICAL',
+                    'entity': 'Appointment',
+                    'status': item['status'].upper(),
+                    'amount': 0,
+                    'count': item['count'],
+                    'currency': currency,
+                })
+        else:
+            # Tipo de reporte no soportado
+            return Response({"error": f"Tipo de reporte no soportado: {report_type}"}, status=400)
+        
+        # Ordenar por fecha descendente
+        rows.sort(key=lambda x: x.get('date', ''), reverse=True)
+        
+        return Response(rows)
+    except Exception as e:
+        logger.error(f"Error en reports_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
-def reports_export_api(request): return Response({})
+def reports_export_api(request):
+    """
+    Exporta reportes a formato Excel (XLSX).
+    Usa la función existente generate_excel_report si está disponible en services.py
+    """
+    try:
+        report_type = request.query_params.get('type', 'FINANCIAL')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        currency = request.query_params.get('currency', 'USD')
+        export_format = request.query_params.get('format', 'excel')
+        
+        # Verificar si la función existe en services.py
+        from . import services
+        
+        if not hasattr(services, 'generate_excel_report'):
+            return Response({
+                "error": "Función de exportación no disponible"
+            }, status=501)
+        
+        # Preparar datos según el tipo
+        data = []
+        
+        if report_type == 'FINANCIAL':
+            # Reporte financiero: pagos por período
+            payments = Payment.objects.filter(status='confirmed')
+            
+            if start_date:
+                payments = payments.filter(payment_date__date__gte=start_date)
+            if end_date:
+                payments = payments.filter(payment_date__date__lte=end_date)
+            
+            for p in payments:
+                data.append({
+                    'ID': p.id,
+                    'Fecha de Pago': p.payment_date.strftime('%d/%m/%Y') if p.payment_date else '',
+                    'Monto': float(p.amount),
+                    'Método': p.method or '',
+                    'Orden de Cobro': p.charge_order.id if p.charge_order else '',
+                    'Estado': p.status,
+                })
+        
+        elif report_type == 'CLINICAL':
+            # Reporte clínico: citas por período
+            appointments = Appointment.objects.filter(
+                status__in=['pending', 'completed', 'canceled']
+            )
+            
+            if start_date:
+                appointments = appointments.filter(appointment_date__gte=start_date)
+            if end_date:
+                appointments = appointments.filter(appointment_date__lte=end_date)
+            
+            for apt in appointments:
+                data.append({
+                    'ID': apt.id,
+                    'Fecha de Cita': apt.appointment_date.strftime('%d/%m/%Y') if apt.appointment_date else '',
+                    'Paciente': apt.patient.full_name if apt.patient else '',
+                    'Estado': apt.get_status_display() or '',
+                    'Médico': apt.doctor.full_name if apt.doctor else '',
+                })
+        
+        elif report_type == 'COMBINED':
+            # Reporte combinado: pagos + citas
+            # Pagos
+            payments = Payment.objects.filter(status='confirmed')
+            
+            if start_date:
+                payments = payments.filter(payment_date__date__gte=start_date)
+            if end_date:
+                payments = payments.filter(payment_date__date__lte=end_date)
+            
+            for p in payments:
+                data.append({
+                    'ID': p.id,
+                    'Tipo': 'Pago',
+                    'Fecha': p.payment_date.strftime('%d/%m/%Y') if p.payment_date else '',
+                    'Monto': float(p.amount),
+                    'Método': p.method or '',
+                    'Estado': p.status,
+                })
+            
+            # Citas
+            appointments = Appointment.objects.filter(
+                status__in=['pending', 'completed', 'canceled']
+            )
+            
+            if start_date:
+                appointments = appointments.filter(appointment_date__gte=start_date)
+            if end_date:
+                appointments = appointments.filter(appointment_date__lte=end_date)
+            
+            for apt in appointments:
+                data.append({
+                    'ID': apt.id,
+                    'Tipo': 'Cita',
+                    'Fecha': apt.appointment_date.strftime('%d/%m/%Y') if apt.appointment_date else '',
+                    'Paciente': apt.patient.full_name if apt.patient else '',
+                    'Estado': apt.get_status_display() or '',
+                    'Médico': apt.doctor.full_name if apt.doctor else '',
+                })
+        else:
+            return Response({
+                "error": f"Tipo de reporte no soportado: {report_type}"
+            }, status=400)
+        
+        # Usar función de exportación si existe
+        file, content_type, filename = services.generate_excel_report(
+            report_type=report_type,
+            data=data,
+            start=start_date,
+            end=end_date,
+            currency=currency
+        )
+        
+        # Retornar archivo para descargar
+        response = HttpResponse(
+            file,
+            content_type=content_type
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    
+    except Exception as e:
+        logger.error(f"Error en reports_export_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
 def documents_api(request): return Response([])
+
+
 @api_view(['GET'])
-def notifications_api(request): return Response([])
+def notifications_api(request):
+    """
+    Devuelve las 3 notificaciones más recientes de los últimos 7 días.
+    Filtra por notify=True (solo eventos que deben mostrarse).
+    """
+    try:
+        # Usar el servicio existente get_audit_logic con ventana de 7 días
+        from . import services
+        from .serializers import EventSerializer
+        
+        data = services.get_audit_logic(limit=3)
+        all_events = data.get('all_events', [])
+        
+        # Filtrar por notify=True (solo notificaciones)
+        notifications = [e for e in all_events if e.get('notify', False)]
+        
+        # Ordenar por timestamp descendente
+        notifications.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        # Tomar las 3 notificaciones más recientes
+        top_3 = notifications[:3]
+        
+        # Filtrar por ventana de 7 días
+        cutoff = datetime.now() - timedelta(days=7)
+        recent = [
+            n for n in top_3 
+            if n.get('timestamp') and 
+               datetime.fromisoformat(n['timestamp']) > cutoff
+        ]
+        
+        # Si no hay notificaciones, devolver evento de "sin actividad"
+        if not recent:
+            recent = [{
+                "id": 0,
+                "timestamp": datetime.now().isoformat(),
+                "actor": "Sistema",
+                "entity": "Dashboard",
+                "entity_id": 0,
+                "action": "other",
+                "metadata": {"message": "Sin actividad en la última semana"},
+                "severity": "info",
+                "notify": False,
+                "title": "Sin actividad reciente",
+                "description": "No hay eventos en la última semana",
+                "category": "dashboard.other",
+                "action_label": "Ver dashboard",
+                "action_href": "/dashboard",
+                "badge_action": "other",
+            }]
+        
+        return Response(recent)
+    except Exception as e:
+        logger.error(f"Error en notifications_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
 
 # PDF y Generación
 @api_view(['POST', 'GET'])
-def generate_medical_report(request, pk): return Response({"url": ""})
+def generate_medical_report(request, pk):
+    """
+    Genera PDF de informe médico completo.
+    Incluye diagnósticos, tratamientos, recetas, exámenes, y referencias.
+    """
+    try:
+        # Obtener el informe médico
+        report = get_object_or_404(MedicalReport, pk=pk)
+        appointment = report.appointment
+        patient = appointment.patient
+        doctor = appointment.doctor
+        institution = appointment.institution
+        
+        # Obtener datos de la consulta
+        diagnoses = Diagnosis.objects.filter(appointment=appointment)
+        treatments = Treatment.objects.filter(appointment=appointment)
+        prescriptions = Prescription.objects.filter(appointment=appointment)
+        medical_tests = MedicalTest.objects.filter(appointment=appointment)
+        referrals = MedicalReferral.objects.filter(appointment=appointment)
+        
+        # Preparar contexto para plantilla
+        context = {
+            'data': report,
+            'patient': patient,
+            'appointment': appointment,
+            'doctor': doctor,
+            'institution': institution,
+            'diagnoses': diagnoses,
+            'treatments': treatments,
+            'prescriptions': prescriptions,
+            'medical_tests': medical_tests,
+            'referrals': referrals,
+            'generated_at': timezone.now(),
+        }
+        
+        # Renderizar HTML desde plantilla
+        html_string = render_to_string('pdf/medical_report.html', context)
+        
+        # Generar PDF con WeasyPrint
+        pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+        
+        # Crear respuesta HTTP con PDF
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        filename = f"medical_report_{appointment.id}_{report.id}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Actualizar el reporte con la URL del PDF
+        report.file_url = f"/media/medical_reports/{filename}"
+        report.save()
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generando informe médico: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['POST', 'GET'])
-def generate_prescription_pdf(request, pk): return Response({"url": ""})
+def generate_prescription_pdf(request, pk):
+    """
+    Genera PDF de receta médica.
+    """
+    try:
+        # Obtener la receta
+        prescription = get_object_or_404(Prescription, pk=pk)
+        
+        # Usar el servicio de generación de PDFs existente
+        pdf_bytes, filename, mime_type = services.generate_generic_pdf(
+            prescription, 'prescriptions'
+        )
+        
+        # Crear respuesta HTTP con PDF
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generando receta: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['POST', 'GET'])
-def generate_treatment_pdf(request, pk): return Response({"url": ""})
+def generate_treatment_pdf(request, pk):
+    """
+    Genera PDF de tratamiento.
+    """
+    try:
+        # Obtener el tratamiento
+        treatment = get_object_or_404(Treatment, pk=pk)
+        
+        # Usar el servicio de generación de PDFs existente
+        pdf_bytes, filename, mime_type = services.generate_generic_pdf(
+            treatment, 'treatments'
+        )
+        
+        # Crear respuesta HTTP con PDF
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generando tratamiento: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['POST', 'GET'])
-def generate_referral_pdf(request, pk): return Response({"url": ""})
+def generate_referral_pdf(request, pk):
+    """
+    Genera PDF de referencia médica.
+    """
+    try:
+        # Obtener la referencia
+        referral = get_object_or_404(MedicalReferral, pk=pk)
+        
+        # Usar el servicio de generación de PDFs existente
+        pdf_bytes, filename, mime_type = services.generate_generic_pdf(
+            referral, 'referrals'
+        )
+        
+        # Crear respuesta HTTP con PDF
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generando referencia: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['POST', 'GET'])
-def generate_chargeorder_pdf(request, pk): return Response({"url": ""})
+def generate_chargeorder_pdf(request, pk):
+    """
+    Genera PDF de orden de cobro.
+    """
+    try:
+        # Obtener la orden de cobro
+        charge_order = get_object_or_404(ChargeOrder, pk=pk)
+        
+        # Obtener datos relacionados para el contexto
+        items = ChargeItem.objects.filter(charge_order=charge_order)
+        payments = Payment.objects.filter(charge_order=charge_order)
+        
+        # Calcular totales
+        subtotal = charge_order.total
+        paid_amount = sum(p.amount for p in payments)
+        balance_due = charge_order.balance_due
+        
+        # Preparar contexto para plantilla
+        context = {
+            'data': charge_order,
+            'charge_order': charge_order,
+            'patient': charge_order.patient,
+            'appointment': charge_order.appointment,
+            'doctor': charge_order.doctor,
+            'institution': charge_order.institution,
+            'items': items,
+            'payments': payments,
+            'subtotal': str(subtotal),
+            'discount': str(charge_order.discount or 0),
+            'total': str(charge_order.total),
+            'paid_amount': str(paid_amount),
+            'balance_due': str(balance_due),
+            'generated_at': timezone.now(),
+        }
+        
+        # Renderizar HTML desde plantilla
+        html_string = render_to_string('pdf/charge_order.html', context)
+        
+        # Generar PDF con WeasyPrint
+        pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+        
+        # Crear respuesta HTTP con PDF
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        filename = f"charge_order_{charge_order.id}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generando orden de cobro: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['POST', 'GET'])
-def generate_used_documents(request, pk): return Response({"url": ""})
+def generate_used_documents(request, pk):
+    """
+    Genera todos los documentos PDF usados en una cita en lote.
+    Incluye: informes médicos, recetas, tratamientos, referencias, exámenes.
+    """
+    try:
+        # Obtener la cita
+        appointment = get_object_or_404(Appointment, pk=pk)
+        user = request.user if request.user.is_authenticated else None
+        
+        # Usar el servicio existente de generación en lote
+        result = services.bulk_generate_appointment_docs(appointment, user)
+        
+        return Response({
+            'status': 'success',
+            'generated_files': result.get('generated_files', []),
+            'errors': result.get('errors', []),
+            'total_generated': len(result.get('generated_files', [])),
+        })
+        
+    except Exception as e:
+        logger.error(f"Error generando documentos en lote: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
 
 # Opciones (Choices)
 @api_view(['GET'])
-def treatment_choices_api(request): return Response([])
+def treatment_choices_api(request):
+    """
+    Devuelve los tipos de tratamiento disponibles (choices del modelo Treatment).
+    Usado para desplegar opciones en el formulario de creación de tratamientos.
+    """
+    try:
+        # Obtener choices del modelo Treatment
+        treatment_types = Treatment.TREATMENT_TYPE_CHOICES
+        
+        # Formatear como array de objetos
+        choices = [
+            {'value': choice[0], 'label': choice[1]}
+            for choice in treatment_types
+        ]
+        
+        return Response(choices)
+    except Exception as e:
+        logger.error(f"Error en treatment_choices_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
-def prescription_choices_api(request): return Response([])
+def prescription_choices_api(request):
+    """
+    Devuelve el catálogo de medicamentos disponibles.
+    Usado para autocompletar en el formulario de recetas.
+    """
+    try:
+        # Obtener medicamentos activos
+        category = request.query_params.get('category')
+        search = request.query_params.get('q', '')
+        
+        medications = MedicationCatalog.objects.filter(is_active=True)
+        
+        # Filtrar por categoría si se proporciona
+        if category:
+            medications = medications.filter(presentation=category)
+        
+        # Filtrar por búsqueda si se proporciona
+        if search:
+            medications = medications.filter(
+                Q(name__icontains=search) |
+                Q(generic_name__icontains=search) |
+                Q(code__icontains=search)
+            )
+        
+        # Ordenar y limitar resultados
+        medications = medications.order_by('name')[:50]
+        
+        serializer = MedicationCatalogSerializer(medications, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en prescription_choices_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
-def medicaltest_choices_api(request): return Response([])
+def medicaltest_choices_api(request):
+    """
+    Devuelve el catálogo de exámenes médicos disponibles.
+    Usado para autocompletar en el formulario de exámenes.
+    """
+    try:
+        # Obtener pruebas activas
+        category = request.query_params.get('category')
+        search = request.query_params.get('q', '')
+        
+        tests = MedicalTestCatalog.objects.filter(is_active=True)
+        
+        # Filtrar por categoría si se proporciona
+        if category:
+            tests = tests.filter(category=category)
+        
+        # Filtrar por búsqueda si se proporciona
+        if search:
+            tests = tests.filter(
+                Q(name__icontains=search) |
+                Q(code__icontains=search)
+            )
+        
+        # Ordenar y limitar resultados
+        tests = tests.order_by('name')[:50]
+        
+        serializer = MedicalTestCatalogSerializer(tests, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en medicaltest_choices_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
-def medicalreferral_choices_api(request): return Response([])
+def medicalreferral_choices_api(request):
+    """
+    Devuelve las especialidades médicas disponibles para referencias.
+    Usado para autocompletar en el formulario de referencias.
+    """
+    try:
+        # Obtener especialidades
+        category = request.query_params.get('category')
+        search = request.query_params.get('q', '')
+        
+        specialties = Specialty.objects.all()
+        
+        # Filtrar por categoría si se proporciona
+        if category:
+            specialties = specialties.filter(category=category)
+        
+        # Filtrar por búsqueda si se proporciona
+        if search:
+            specialties = specialties.filter(
+                Q(name__icontains=search) |
+                Q(code__icontains=search)
+            )
+        
+        # Ordenar y limitar resultados
+        specialties = specialties.order_by('name')[:50]
+        
+        serializer = SpecialtySerializer(specialties, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en medicalreferral_choices_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
 
 
 

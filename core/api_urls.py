@@ -37,6 +37,8 @@ from .api_views import (
     CityViewSet,
     ParishViewSet,
     NeighborhoodViewSet,
+    # --- ✅ NUEVO: ViewSet de Medicamentos ---
+    MedicationCatalogViewSet,
     AddressChainView,
     NeighborhoodSearchView,
     # --- Funciones ---
@@ -115,6 +117,8 @@ router.register(r"patient-clinical-profile", PatientClinicalProfileViewSet, base
 router.register(r"medical-history", MedicalHistoryViewSet, basename="medical-history")
 router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, basename="patient-alerts")
 router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")
+# --- ✅ NUEVO: Catálogo de Medicamentos ---
+router.register(r"medications", MedicationCatalogViewSet, basename="medication")
 # --- Direcciones ---
 router.register(r"countries", CountryViewSet, basename="country")
 router.register(r"states", StateViewSet, basename="state")
@@ -130,6 +134,7 @@ patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
 urlpatterns = [
     # ❌ Eliminado el endpoint legacy de login que causaba CSRF
     # path("auth/token/", api_views.login_view, name="api-login"),
+    
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
     path("reports/", reports_api, name="reports-api"),
@@ -140,26 +145,32 @@ urlpatterns = [
     path("patients/<int:pk>/documents/", PatientViewSet.as_view({"get": "documents", "post": "documents"}), name="patient-documents-api"),
     path("patients/<int:pk>/documents/<int:document_id>/", PatientViewSet.as_view({"delete": "delete_document"}), name="patient-document-delete-api"),
     path("patients/<int:pk>/profile/", PatientViewSet.as_view({"get": "profile"}), name="patient-clinical-profile"),
+    
     path("appointments/search/", appointment_search_api, name="appointment-search-api"),
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
     path("appointments/<int:pk>/status/", update_appointment_status, name="appointment-status-api"),
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
     path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),
     path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),
+    
     path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),
     path("consultation/current/", current_consultation_api, name="current-consultation-api"),
     path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
     path("consultations/<int:pk>/generate-used-documents/", generate_used_documents, name="generate-used-documents"),
+    
     path("prescriptions/<int:pk>/generate-pdf/", generate_prescription_pdf, name="generate-prescription-pdf"),
     path("treatments/<int:pk>/generate-pdf/", generate_treatment_pdf, name="generate-treatment-pdf"),
     path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
     path("chargeorders/<int:pk>/generate-pdf/", generate_chargeorder_pdf, name="generate-chargeorder-pdf"),
     path("charge-orders/<int:pk>/export/", generate_chargeorder_pdf, name="chargeorder-export"),
+    
     path("documents/", documents_api, name="documents-api"),
     path("icd/search/", icd_search_api, name="icd-search-api"),
+    
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
+    
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
     path("notifications/", notifications_api, name="notifications-api"),
@@ -167,24 +178,30 @@ urlpatterns = [
     path("audit/appointment/<int:appointment_id>/", audit_by_appointment, name="audit-by-appointment"),
     path("audit/patient/<int:patient_id>/", audit_by_patient, name="audit-by-patient"),
     path("audit/log/", audit_log_api, name="audit-log-api"),
+    
     # --- Sala de Espera ---
     path("waitingroom/groups-today/", api_views.waitingroom_groups_today_api, name="waitingroom-groups-today-api"),
     path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
+    
     # --- Tasa BCV ---
     path("bcv-rate/", bcv_rate_api, name="bcv-rate-api"),
+    
     # --- Choices ---
     path("choices/treatment/", treatment_choices_api, name="treatment-choices-api"),
     path("choices/prescription/", prescription_choices_api, name="prescription-choices-api"),
     path("choices/medical-test/", medicaltest_choices_api, name="medicaltest-choices-api"),
     path("choices/medical-referral/", medicalreferral_choices_api, name="medicalreferral-choices-api"),
     path("choices/specialty/", specialty_choices_api, name="specialty-choices-api"),
+    
     # --- Búsqueda institucional general ---
     path("search/", search, name="search-api"),
+    
     # --- Endpoints de Direcciones ---
     path("address-chain/", AddressChainView.as_view(), name="address-chain-api"),
     path("neighborhood-search/", NeighborhoodSearchView.as_view(), name="neighborhood-search-api"),
+    
     # --- Multi-Institución (NUEVOS ENDPOINTS) ---
     path("config/institutions/", institutions_list_api, name="institutions-list-api"),
     path("config/institutions/create/", create_institution_api, name="create-institution-api"),
