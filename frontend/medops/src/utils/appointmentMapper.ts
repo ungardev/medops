@@ -1,26 +1,21 @@
-import type { Appointment as ClinicalAppointment } from "../types/consultation";
+import type { Appointment as ClinicalAppointment } from "../types/appointments";
 import type { Patient as PatientAdmin } from "../types/patients";
 import { mapPatient } from "./patientMapper";
 import type { AppointmentStatus } from "../types/appointments";
-
 type ClinicalPayment = NonNullable<ClinicalAppointment["payments"]>[number];
-
 interface PaymentUI extends Omit<ClinicalPayment, "amount"> {
   amount: number;
   currency: string;
   idempotency_key?: string | null;
 }
-
 export interface AppointmentUI {
   id: number;
   status: AppointmentStatus;
   appointment_date?: string;
   arrival_time?: string | null;
-  // ⚡️ Campo crucial para el cronómetro
-  started_at: string | null; 
+  started_at: string | null;
   created_at: string;
   updated_at: string;
-
   patient: PatientAdmin;
   notes: string | null;
   diagnoses: ClinicalAppointment["diagnoses"];
@@ -29,8 +24,6 @@ export interface AppointmentUI {
   documents: ClinicalAppointment["documents"];
   payments: PaymentUI[];
 }
-
-// 🔹 Exportado para uso externo
 export function normalizeStatus(status: string | null | undefined): AppointmentStatus {
   switch (status) {
     case "in_progress":
@@ -47,18 +40,15 @@ export function normalizeStatus(status: string | null | undefined): AppointmentS
       return "pending";
   }
 }
-
 export function mapAppointment(clinical: ClinicalAppointment): AppointmentUI {
   return {
     id: clinical.id,
     status: normalizeStatus(clinical.status),
     appointment_date: clinical.appointment_date ?? undefined,
     arrival_time: clinical.arrival_time ?? null,
-    // ⚡️ Mapeamos el campo del backend al objeto de la UI
-    started_at: clinical.started_at ?? null, 
-    created_at: clinical.created_at,
-    updated_at: clinical.updated_at,
-
+    started_at: clinical.started_at ?? null,
+    created_at: clinical.created_at ?? "",
+    updated_at: clinical.updated_at ?? "",
     patient: mapPatient(clinical.patient),
     notes: clinical.notes ?? null,
     diagnoses: clinical.diagnoses ?? [],

@@ -1,6 +1,5 @@
 import type { Appointment } from "../types/appointments";
 import type { AppointmentStatus } from "../types/appointments";
-
 // 🔹 Normalización defensiva de estados
 function normalizeStatus(status: string | null | undefined): AppointmentStatus {
   switch (status) {
@@ -18,17 +17,17 @@ function normalizeStatus(status: string | null | undefined): AppointmentStatus {
       return "pending"; // fallback seguro
   }
 }
-
 export function mapAppointmentList(raw: any): Appointment {
   const co = raw?.charge_order ?? undefined;
   const items = Array.isArray(co?.items) ? co.items : [];
   const payments = Array.isArray(co?.payments) ? co.payments : [];
-
   return {
     id: raw.id,
-    patient: raw.patient ?? { id: 0, full_name: "" }, // 🔹 ya no metemos age si tu tipo no lo soporta
+    patient: raw.patient ?? { id: 0, full_name: "" },
     appointment_date: raw.appointment_date?.slice(0, 10) ?? "",
     appointment_type: raw.appointment_type ?? "general",
+    institution: raw.institution?.id ?? 0,
+    doctor: raw.doctor?.id ?? 0,
     expected_amount:
       typeof raw.expected_amount === "number"
         ? raw.expected_amount
@@ -49,7 +48,7 @@ export function mapAppointmentList(raw: any): Appointment {
           items,
           payments,
         }
-      : undefined, // 🔹 ahora sí compatible con tu tipo
+      : undefined,
     balance_due: Number(raw.balance_due ?? 0),
     created_at: raw.created_at ?? "",
     updated_at: raw.updated_at ?? "",

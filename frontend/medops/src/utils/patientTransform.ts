@@ -1,6 +1,5 @@
 // src/utils/patientTransform.ts
-import type { Patient as PatientsPatient } from "../types/patients";
-
+import type { Patient as PatientsPatient, AddressChain } from "../types/patients";
 // 🔹 Calcular edad desde birthdate
 export function calcAge(birthdate?: string | null): number | null {
   if (!birthdate) return null;
@@ -10,7 +9,6 @@ export function calcAge(birthdate?: string | null): number | null {
   const ageDate = new Date(diff);
   return Math.abs(ageDate.getUTCFullYear() - 1970);
 }
-
 // 🔹 Normalizar alergias
 export function normalizeAllergies(allergies: any): string {
   if (Array.isArray(allergies)) {
@@ -24,7 +22,6 @@ export function normalizeAllergies(allergies: any): string {
   }
   return String(allergies ?? "");
 }
-
 // 🔹 Normalizar historia médica
 export function normalizeMedicalHistory(medical_history: any): string {
   if (Array.isArray(medical_history)) {
@@ -42,21 +39,6 @@ export function normalizeMedicalHistory(medical_history: any): string {
   }
   return String(medical_history ?? "");
 }
-
-// 🔹 Tipado para la cadena de dirección
-export interface AddressChain {
-  country: string;
-  country_id: number | null;
-  state: string;
-  state_id: number | null;
-  municipality: string;
-  municipality_id: number | null;
-  parish: string;
-  parish_id: number | null;
-  neighborhood: string;
-  neighborhood_id: number | null;
-}
-
 const EMPTY_CHAIN: AddressChain = {
   country: "",
   country_id: null,
@@ -68,8 +50,8 @@ const EMPTY_CHAIN: AddressChain = {
   parish_id: null,
   neighborhood: "",
   neighborhood_id: null,
+  full_path: "",
 };
-
 // 🔹 Normalizar address_chain
 export function normalizeAddressChain(chain: any): AddressChain {
   if (!chain || typeof chain !== "object") return EMPTY_CHAIN;
@@ -84,9 +66,9 @@ export function normalizeAddressChain(chain: any): AddressChain {
     parish_id: chain.parish_id != null ? Number(chain.parish_id) : null,
     neighborhood: String(chain.neighborhood ?? ""),
     neighborhood_id: chain.neighborhood_id != null ? Number(chain.neighborhood_id) : null,
+    full_path: String(chain.full_path ?? ""),
   };
 }
-
 // 🔹 Transformación estricta para PatientHeader
 export function toPatientHeaderPatient(
   p: any
@@ -94,10 +76,8 @@ export function toPatientHeaderPatient(
   const full_name =
     p.full_name ??
     [p.first_name, p.middle_name, p.last_name, p.second_last_name].filter(Boolean).join(" ").trim();
-
   const age = p.age ?? calcAge(p.birthdate ?? null);
   const address_chain: AddressChain = normalizeAddressChain(p.address_chain);
-
   return {
     id: p.id,
     national_id: p.national_id ?? "",
@@ -109,7 +89,6 @@ export function toPatientHeaderPatient(
     gender: p.gender ?? null,
     email: p.email ?? "",
     contact_info: p.contact_info ?? "",
-    address: p.address ?? "",
     weight: p.weight ?? null,
     height: p.height ?? null,
     blood_type: p.blood_type ?? undefined,
