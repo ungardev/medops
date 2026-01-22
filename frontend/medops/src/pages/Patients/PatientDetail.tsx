@@ -1,5 +1,6 @@
 // src/pages/Patients/PatientDetail.tsx
-import { useParams, useSearchParams } from "react-router-dom";
+import { useEffect } from "react";
+import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import { usePatient } from "../../hooks/patients/usePatient";
 import { Tabs, Tab } from "../../components/ui/Tabs";
 // Componentes de Pestañas
@@ -41,6 +42,7 @@ export default function PatientDetail() {
   const patientId = Number(id);
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const currentTab = normalizeTab(searchParams.get("tab") ?? "info");
   const setTab = (next: string) => {
     const normalized = normalizeTab(next);
@@ -50,6 +52,19 @@ export default function PatientDetail() {
       return p;
     });
   };
+  // CRITICAL: Sincronizar con cambios en la URL causados por navegación externa
+  useEffect(() => {
+    const tabParam = new URLSearchParams(location.search).get("tab");
+    const normalized = normalizeTab(tabParam ?? "info");
+    // Si la URL tiene un tab diferente al actual, actualizar
+    if (normalized !== currentTab) {
+      setSearchParams((prev) => {
+        const p = new URLSearchParams(prev);
+        p.set("tab", normalized);
+        return p;
+      });
+    }
+  }, [location.search]);
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
