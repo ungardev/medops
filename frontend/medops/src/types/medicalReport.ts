@@ -1,22 +1,28 @@
 // src/types/medicalReport.ts
+
 // =====================================================
-// IMPORTAR TIPOS DESDE config.ts
+// IMPORTAR TIPOS DE identidad en lugar de config.ts
 // =====================================================
-import type { InstitutionSettings, DoctorConfig } from "./config";
+import type { IdentityDoctor, IdentityInstitution } from "./identity";
 // =====================================================
 // INFORME MÉDICO GENERADO DESDE UNA CONSULTA/APPOINTMENT
 // =====================================================
 export interface MedicalReport {
-  id: number;                // ID del informe
-  appointment: number;       // ID de la consulta/appointment
-  patient: number;           // ID del paciente
-  created_at: string;        // Fecha/hora ISO de creación (ISO string)
-  status: "generated";       // Estado del informe (por ahora siempre "generated")
-  file_url?: string | null;  // URL del archivo PDF/HTML generado (opcional)
-  // 🔹 Campos adicionales que devuelve generate_medical_report
-  audit_code?: string | null; // Código de auditoría institucional
-  qr_code_url?: string | null; // QR embebido en el informe (opcional)
-  // 🔹 IMPORTADO desde config.ts para evitar duplicados
-  institution?: InstitutionSettings | null; // Datos institucionales
-  doctor?: DoctorConfig | null;           // Datos del médico operador (usar DoctorConfig en lugar de DoctorOperator)
+  id: number;
+  appointment: number;
+  patient: number;
+  created_at: string;
+  status: "generated";
+  file_url?: string | null;
+  audit_code?: string | null;
+  qr_code_url?: string | null;
+  
+  // 🔹 CAMBIADO DE: config.ts → identity.ts (tipos cacheados para lectura)
+  institution?: IdentityInstitution | null;
+  doctor?: IdentityDoctor | null;
+  
+  // 🔹 AGREGADO: Opciones adicionales que devuelve el endpoint
+  options?: {
+    verbose_name: string;
+  };
 }

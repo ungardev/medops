@@ -17,10 +17,19 @@ export interface IdentityDoctor {
   colegiado_id: string;
   gender: "M" | "F" | "Other" | "Unknown";
   is_verified: boolean;
+  // Add these:
+  specialty?: string;
+  license?: string;
+  signature?: string;
 }
+// IdentityInstitution - add missing fields  
 export interface IdentityInstitution {
   id: number;
   name: string;
   tax_id: string;
   is_active: boolean;
+  // Add these:
+  logo?: string;
+  address?: string;
+  phone?: string;
 }

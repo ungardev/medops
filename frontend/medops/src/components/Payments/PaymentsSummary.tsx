@@ -1,4 +1,5 @@
 // src/components/Payments/PaymentsSummary.tsx
+import { formatCurrency } from "@/utils/format";  // ✅ AGREGADO: Import de formatCurrency
 interface Props {
   totals?: {
     total: number;
@@ -7,7 +8,6 @@ interface Props {
     failed: number;
   };
 }
-
 export default function PaymentsSummary({ totals }: Props) {
   // Configuración de los bloques de datos
   const metrics = [
@@ -40,7 +40,6 @@ export default function PaymentsSummary({ totals }: Props) {
       decoration: "bg-red-500/20"
     }
   ];
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-[1px] bg-[var(--palantir-border)] border border-[var(--palantir-border)] overflow-hidden rounded-sm">
       {metrics.map((m) => (
@@ -55,15 +54,13 @@ export default function PaymentsSummary({ totals }: Props) {
             </span>
             <div className={`w-1 h-1 rounded-full opacity-30 group-hover:opacity-100 transition-opacity ${m.color.replace('text', 'bg')}`} />
           </div>
-
           {/* VALOR NUMÉRICO */}
           <div className="flex items-baseline gap-1">
             <span className={`text-base sm:text-lg font-black font-mono tracking-tighter ${m.color}`}>
-              ${m.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(m.value, undefined)}  {/* ✅ CORREGIDO: Usa formatCurrency en lugar de toLocaleString */}
             </span>
-            <span className="text-[8px] font-mono text-[var(--palantir-muted)]">USD</span>
+            {/* ✅ ELIMINADO: Línea con hardcoded "USD" - formatCurrency ya incluye el símbolo de moneda */}
           </div>
-
           {/* DECORACIÓN DE CARGA (Simulada) */}
           <div className="w-full h-[2px] bg-white/5 mt-1 overflow-hidden">
             <div 

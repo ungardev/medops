@@ -1,5 +1,6 @@
 // src/components/Consultation/PrescriptionBadge.tsx
 import React, { useState } from "react";
+import type { Prescription } from "../../types/consultation";  // ✅ AGREGADO: Import de Prescription para acceder a doctor/institution
 import { 
   PencilSquareIcon, 
   TrashIcon, 
@@ -8,7 +9,10 @@ import {
   BeakerIcon,
   ClockIcon,
   ArrowsRightLeftIcon,
-  CalendarIcon
+  CalendarIcon,
+  UserGroupIcon,        // ✅ AGREGADO: Icono para doctor
+  BuildingOfficeIcon,    // ✅ AGREGADO: Icono para institución
+  ShieldCheckIcon       // ✅ AGREGADO: Icono de verificación
 } from "@heroicons/react/24/outline";
 type Frequency =
   | "once_daily" | "bid" | "tid" | "qid"
@@ -36,6 +40,8 @@ export interface PrescriptionBadgeProps {
   frequency?: Frequency;
   route?: Route;
   components: PrescriptionComponent[];
+  doctor?: Prescription['doctor'];  // ✅ AGREGADO: Campo opcional para mostrar metadata
+  institution?: Prescription['institution'];  // ✅ AGREGADO: Campo opcional para mostrar metadata
   onEdit?: (
     id: number,
     medication: string,
@@ -53,6 +59,8 @@ export default function PrescriptionBadge({
   frequency = "once_daily",
   route = "oral",
   components,
+  doctor,
+  institution,
   onEdit,
   onDelete,
 }: PrescriptionBadgeProps) {
@@ -62,12 +70,14 @@ export default function PrescriptionBadge({
   const [editedFrequency, setEditedFrequency] = useState<Frequency>(frequency);
   const [editedRoute, setEditedRoute] = useState<Route>(route);
   const [editedComponents, setEditedComponents] = useState<PrescriptionComponent[]>(components);
+  
   const handleSave = () => {
     if (onEdit) {
       onEdit(id, editedMedication.trim(), editedDuration || null, editedFrequency, editedRoute, editedComponents);
     }
     setIsEditing(false);
   };
+  
   return (
     <div className="group border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden transition-all hover:border-[var(--palantir-active)]/40">
       {/* HEADER: Medication Name & Actions */}
@@ -90,6 +100,27 @@ export default function PrescriptionBadge({
           </div>
         )}
       </div>
+      {/* ✅ AGREGADO: SECCIÓN DE METADATA (FASE 1) - Doctor e Institución */}
+      {!isEditing && (doctor || institution) && (
+        <div className="flex items-center gap-3 text-xs font-mono text-[var(--palantir-muted)] px-3 py-2 border-b border-white/5">
+          {doctor && (
+            <div className="flex items-center gap-1">
+              <UserGroupIcon className="w-3.5 h-3.5" />
+              <span>{doctor.full_name}</span>
+              {doctor.is_verified && (
+                <ShieldCheckIcon className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />
+              )}
+            </div>
+          )}
+          {doctor && institution && <span className="text-white/20">•</span>}
+          {institution && (
+            <div className="flex items-center gap-1">
+              <BuildingOfficeIcon className="w-3.5 h-3.5" />
+              <span>{institution.name}</span>
+            </div>
+          )}
+        </div>
+      )}
       <div className="p-3">
         {isEditing ? (
           <div className="space-y-4 animate-in fade-in duration-200">
@@ -124,7 +155,7 @@ export default function PrescriptionBadge({
                       newComps[index].dosage = e.target.value;
                       setEditedComponents(newComps);
                     }}
-                    className="w-12 bg-black/20 border border-white/5 text-center text-[10px] font-mono"
+                    className="w-12 bg-black/20 border border-white/5 px-2 text-center text-[10px] font-mono outline-none"
                     placeholder="Dose"
                   />
                   <button 
@@ -145,8 +176,12 @@ export default function PrescriptionBadge({
             </div>
             {/* Footer de Edición */}
             <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
-              <button onClick={() => setIsEditing(false)} className="text-[9px] font-black uppercase text-[var(--palantir-muted)]">Cancel</button>
-              <button onClick={handleSave} className="bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] border border-[var(--palantir-active)]/30 px-2 py-1 text-[9px] font-black uppercase">Save_Order</button>
+              <button onClick={() => setIsEditing(false)} className="text-[9px] font-black uppercase text-[var(--palantir-muted)] hover:text-white transition-colors">
+                Cancel
+              </button>
+              <button onClick={handleSave} className="bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] border border-[var(--palantir-active)]/30 px-2 py-1 text-[9px] font-black uppercase hover:bg-[var(--palantir-active)] hover:text-white transition-all">
+                Commit_Changes
+              </button>
             </div>
           </div>
         ) : (

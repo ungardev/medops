@@ -1,4 +1,5 @@
 // src/types/waitingRoom.ts
+import type { IdentityInstitution } from "./identity";
 // =====================================================
 // ENUMS - Alineados con backend
 // =====================================================
@@ -22,7 +23,10 @@ export interface WaitingRoomEntry {
   id: number | string;  // 👈 permite ID temporal para optimistic update
   
   // Relaciones
-  institution: number;  // 🆕 Segmentación por sede
+  institution: number;  // 🆕 Segmentación por sede (ya existía)
+  // ✅ CAMPOS AGREGADOS: Datos cacheados de la institución
+  institution_data?: IdentityInstitution | null;
+  
   patient: {
     id: number;
     full_name: string;

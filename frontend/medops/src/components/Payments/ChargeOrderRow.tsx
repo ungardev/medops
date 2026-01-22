@@ -3,24 +3,24 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PaymentList from "./PaymentList";
 import { ChargeOrder } from "../../types/payments";
+import { formatCurrency } from "@/utils/format";  // 🆕 Import de utilidad de formateo
 import { 
   CreditCardIcon, 
   EyeIcon, 
   ArrowDownTrayIcon,
   ChevronDownIcon,
-  ChevronUpIcon
+  ChevronUpIcon,
+  UserGroupIcon         // 🆕 Icono para doctor
 } from "@heroicons/react/24/outline";
-
-interface Props {
+// 🔄 CAMBIO: Interfaz ahora se llama ChargeOrderRowProps y está explícitamente definida
+interface ChargeOrderRowProps {
   order: ChargeOrder;
   isSelected?: boolean;
-  onRegisterPayment?: () => void;
+  onRegisterPayment?: (orderId: number, appointmentId: number) => void;
 }
-
-export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }: Props) {
+export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }: ChargeOrderRowProps) {
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
-
   // --- LÓGICA DE EXPORTACIÓN (Refactorizada a estética industrial) ---
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -45,14 +45,11 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
       console.error("Export failed");
     }
   };
-
+  // 🔄 CAMBIO: Usar formatCurrency para formatear fecha y monto
   const formattedDate = order.appointment_date
     ? new Date(order.appointment_date).toLocaleDateString('en-GB')
     : "—";
-
-  const formattedAmount = Number(order.total_amount ?? order.total ?? 0).toFixed(2);
   const patientName = order.patient_detail?.full_name ?? `SUBJECT_ID: ${order.patient}`;
-
   // --- CONFIGURACIÓN DE STATUS (Terminal Style) ---
   const statusConfig = {
     paid: { label: "SETTLED", class: "text-emerald-400 border-emerald-500/30 bg-emerald-500/5" },
@@ -61,9 +58,7 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
     void: { label: "ANNULLED", class: "text-red-400 border-red-500/30 bg-red-500/5" },
     default: { label: "UNKNOWN", class: "text-[var(--palantir-muted)] border-white/10" }
   };
-
   const currentStatus = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.default;
-
   return (
     <div 
       className={`
@@ -82,38 +77,45 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
           {expanded ? <ChevronUpIcon className="w-3 h-3 text-[var(--palantir-muted)]" /> : <ChevronDownIcon className="w-3 h-3 text-[var(--palantir-muted)]" />}
           <span className="text-[9px] font-mono text-[var(--palantir-muted)]">#{order.id.toString().padStart(4, '0')}</span>
         </div>
-
         {/* PACIENTE */}
         <div className="col-span-11 sm:col-span-4">
           <p className="text-[10px] font-black uppercase tracking-wider truncate">{patientName}</p>
+          
+          {/* 🆕 AGREGADO: Médico responsable (FASE 1) */}
+          {order.doctor && (
+            <div className="flex items-center gap-1 text-xs font-mono text-[var(--palantir-muted)] mt-1">
+              <UserGroupIcon className="w-3.5 h-3.5" />
+              <span>{order.doctor.full_name}</span>
+              {order.doctor.is_verified && (
+                <span className="text-emerald-500 text-[8px] ml-1">● VERIFIED</span>
+              )}
+            </div>
+          )}
           <p className="text-[8px] font-mono text-[var(--palantir-muted)] sm:hidden uppercase mt-1">
-            {formattedDate} • ${formattedAmount}
+            {formattedDate} • {formatCurrency(order.total_amount ?? order.total, order.currency)}
           </p>
         </div>
-
         {/* FECHA (Desktop) */}
         <div className="col-span-2 hidden sm:block text-[10px] font-mono text-[var(--palantir-muted)]">
           {formattedDate}
         </div>
-
         {/* MONTO (Desktop) */}
         <div className="col-span-2 hidden sm:block text-right">
+          {/* 🔄 CAMBIO: Usar formatCurrency para consistencia */}
           <span className="text-[11px] font-black font-mono tracking-tighter text-[var(--palantir-text)]">
-            ${formattedAmount}
+            {formatCurrency(order.total_amount ?? order.total, order.currency)}
           </span>
         </div>
-
         {/* STATUS */}
         <div className="col-span-12 sm:col-span-2 flex justify-start sm:justify-center items-center">
           <span className={`px-2 py-0.5 border text-[8px] font-black tracking-[0.1em] rounded-sm ${currentStatus.class}`}>
             {currentStatus.label}
           </span>
         </div>
-
         {/* ACCIONES (Reveladas en Hover) */}
         <div className="col-span-1 hidden sm:flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button 
-            onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(); }}
+            onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(order.id, order.appointment); }}
             className="p-1.5 hover:text-emerald-400 transition-colors" title="Post Payment"
           >
             <CreditCardIcon className="w-4 h-4" />
@@ -132,7 +134,6 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
           </button>
         </div>
       </div>
-
       {/* ÁREA EXPANDIDA: DETALLE DE PAGOS */}
       {expanded && (
         <div className="px-6 pb-6 pt-2 bg-black/20 border-t border-white/5 animate-in fade-in slide-in-from-top-1">
@@ -142,13 +143,26 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
             <div className="h-[1px] flex-grow bg-white/10"></div>
           </div>
           
+          {/* 🆕 AGREGADO: Metadata de institución en área expandida */}
+          <div className="mb-4 pb-4 border-b border-white/5">
+            <div className="flex items-center gap-2 text-[9px] font-mono text-[var(--palantir-muted)]">
+              <span className="uppercase tracking-wider">Institution:</span>
+              <span className="text-[var(--palantir-text)]">{order.institution?.name}</span>
+              {order.institution?.tax_id && (
+                <>
+                  <span className="text-white/20">|</span>
+                  <span>{order.institution.tax_id}</span>
+                </>
+              )}
+            </div>
+          </div>
+          
           <div className="rounded-sm border border-white/5 bg-white/[0.01] overflow-hidden">
             <PaymentList payments={order.payments || []} hideSummaryBadges={false} />
           </div>
-
           <div className="mt-4 flex justify-end gap-3">
              <button 
-                onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(); }}
+                onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(order.id, order.appointment); }}
                 className="text-[9px] font-mono border border-emerald-500/50 text-emerald-500 px-3 py-1 hover:bg-emerald-500/10 transition-all uppercase tracking-widest"
              >
                Execute_New_Payment

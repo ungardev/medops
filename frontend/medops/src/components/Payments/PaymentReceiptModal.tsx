@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Payment } from "../../types/payments";
+import { formatCurrency } from "@/utils/format";  // ✅ AGREGADO: Import de formatCurrency
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 interface Props {
@@ -45,7 +46,7 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
       head: [["Campo", "Detalle"]],
       body: [
         ["Paciente", payment.patient?.full_name ?? "N/A"],
-        ["Monto", `{Number(String(payment.amount) || "0").toFixed(2)}`],
+        ["Monto", formatCurrency(payment.amount, payment.currency)],
         ["Método", String(payment.method ?? "")],
         ["Estado", String(payment.status ?? "")],
         ["Referencia", payment.reference_number ?? "—"],
@@ -85,7 +86,7 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
         </h3>
         <div className="flex flex-col gap-2 text-sm text-[#0d2c53] dark:text-gray-200">
           <div><strong>Paciente:</strong> {payment.patient?.full_name ?? "N/A"}</div>
-          <div><strong>Monto:</strong> </div>
+          <div><strong>Monto:</strong> {formatCurrency(payment.amount, payment.currency)}</div>  {/* ✅ CORREGIDO: Ahora muestra el valor con formatCurrency */}
           <div><strong>Método:</strong> {String(payment.method ?? "")}</div>
           <div><strong>Estado:</strong> {String(payment.status ?? "")}</div>
           <div><strong>Referencia:</strong> {payment.reference_number ?? "—"}</div>

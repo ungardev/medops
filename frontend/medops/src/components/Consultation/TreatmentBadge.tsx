@@ -6,45 +6,54 @@ import {
   CheckCircleIcon, 
   ClockIcon, 
   XCircleIcon,
-  CalendarIcon
+  CalendarIcon,
+  UserGroupIcon,        
+  BuildingOfficeIcon,   
+  CalendarDaysIcon,     
+  ArrowPathIcon         
 } from "@heroicons/react/24/outline";
-
-export type TreatmentStatus = "active" | "completed" | "cancelled" | "suspended";
-export type TreatmentType = "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "therapeutic" | "other";
-
+import type { Treatment, TreatmentStatus, TreatmentType } from "../../types/consultation";
+import type { UpdateTreatmentInput } from "../../types/consultation";
+// 🔄 CAMBIO: Props ahora recibe objeto Treatment completo en lugar de campos individuales
 export interface TreatmentBadgeProps {
-  id: number;
-  plan: string;
-  start_date?: string | null;
-  end_date?: string | null;
-  status: TreatmentStatus;
-  treatment_type: TreatmentType;
-  onEdit?: (id: number, newPlan: string, start?: string | null, end?: string | null, status?: TreatmentStatus, type?: TreatmentType) => void;
+  treatment: Treatment;  // 🆕 Objeto Treatment completo
+  onEdit?: (id: number, newData: UpdateTreatmentInput) => void;  // 🔄 Actualizado
   onDelete?: (id: number) => void;
+  showMetadata?: boolean;  // 🆕 Control para mostrar/esconder metadata
 }
-
 export default function TreatmentBadge({
-  id, plan, start_date, end_date, status, treatment_type, onEdit, onDelete,
+  treatment,
+  onEdit,
+  onDelete,
+  showMetadata = false,  // 🆕 Default: false para mantener compatibilidad
 }: TreatmentBadgeProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedPlan, setEditedPlan] = useState(plan);
-  const [editedStart, setEditedStart] = useState(start_date || "");
-  const [editedEnd, setEditedEnd] = useState(end_date || "");
-  const [editedStatus, setEditedStatus] = useState<TreatmentStatus>(status);
-  const [editedType, setEditedType] = useState<TreatmentType>(treatment_type);
-
+  
+  // 🔄 CAMBIO: Estado de edición ahora usa propiedades del objeto treatment
+  const [editedPlan, setEditedPlan] = useState(treatment.plan);
+  const [editedStart, setEditedStart] = useState(treatment.start_date || "");
+  const [editedEnd, setEditedEnd] = useState(treatment.end_date || "");
+  const [editedStatus, setEditedStatus] = useState<TreatmentStatus>(treatment.status);
+  const [editedType, setEditedType] = useState<TreatmentType>(treatment.treatment_type);
   const statusConfig = {
     active: { color: "text-emerald-400", icon: <ClockIcon className="w-3 h-3" />, label: "ACTIVE" },
     completed: { color: "text-blue-400", icon: <CheckCircleIcon className="w-3 h-3" />, label: "COMPLETED" },
     cancelled: { color: "text-red-400", icon: <XCircleIcon className="w-3 h-3" />, label: "CANCELLED" },
     suspended: { color: "text-amber-400", icon: <XCircleIcon className="w-3 h-3" />, label: "SUSPENDED" },
   };
-
   const handleSave = () => {
-    onEdit?.(id, editedPlan.trim(), editedStart || null, editedEnd || null, editedStatus, editedType);
+    // 🔄 CAMBIO: Construir objeto UpdateTreatmentInput en lugar de pasar campos individuales
+    const updateData: UpdateTreatmentInput = {
+      id: treatment.id,
+      plan: editedPlan.trim(),
+      start_date: editedStart || undefined,
+      end_date: editedEnd || undefined,
+      status: editedStatus,
+      treatment_type: editedType,
+    };
+    onEdit?.(treatment.id, updateData);
     setIsEditing(false);
   };
-
   return (
     <div className={`group relative border border-[var(--palantir-border)] bg-black/20 p-4 transition-all hover:bg-white/5 ${isEditing ? 'border-[var(--palantir-active)] bg-white/5' : ''}`}>
       
@@ -52,14 +61,13 @@ export default function TreatmentBadge({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <span className="text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">
-            Type__{treatment_type}
+            Type__{treatment.treatment_type}
           </span>
-          <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 ${statusConfig[status].color}`}>
-            {statusConfig[status].icon}
-            {statusConfig[status].label}
+          <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 ${statusConfig[treatment.status].color}`}>
+            {statusConfig[treatment.status].icon}
+            {statusConfig[treatment.status].label}
           </div>
         </div>
-
         {!isEditing && (
           <div className="flex gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
             {onEdit && (
@@ -68,14 +76,13 @@ export default function TreatmentBadge({
               </button>
             )}
             {onDelete && (
-              <button onClick={() => window.confirm("Confirm_Delete?") && onDelete(id)} className="text-[var(--palantir-muted)] hover:text-red-400">
+              <button onClick={() => window.confirm("Confirm_Delete?") && onDelete(treatment.id)} className="text-[var(--palantir-muted)] hover:text-red-400">
                 <TrashIcon className="w-4 h-4" />
               </button>
             )}
           </div>
         )}
       </div>
-
       {isEditing ? (
         <div className="space-y-3 animate-in fade-in duration-200">
           <textarea
@@ -108,22 +115,55 @@ export default function TreatmentBadge({
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-[12px] text-[var(--palantir-text)] leading-relaxed font-medium">
-            {plan}
-          </p>
+          {/* TÍTULO DEL TRATAMIENTO */}
+          <h3 className="font-semibold text-[12px] text-[var(--palantir-text)] leading-relaxed">
+            {treatment.title || treatment.treatment_type}
+          </h3>
           
+          {/* PLAN */}
+          <p className="text-[12px] text-[var(--palantir-text)] leading-relaxed font-medium">
+            {treatment.plan}
+          </p>
+          {/* 🆕 SECCIÓN DE METADATA (FASE 1) - Doctor e Institución */}
+          {showMetadata && (treatment.doctor || treatment.institution) && (
+            <div className="flex items-center gap-3 text-xs font-mono text-[var(--palantir-muted)] mb-2 border-t border-white/5 pt-2">
+              {treatment.doctor && (
+                <div className="flex items-center gap-1">
+                  <UserGroupIcon className="w-3.5 h-3.5" />
+                  <span>{treatment.doctor.full_name}</span>
+                  {treatment.doctor.is_verified && (
+                    <CheckCircleIcon className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />
+                  )}
+                </div>
+              )}
+              {treatment.doctor && treatment.institution && <span className="text-white/20">•</span>}
+              {treatment.institution && (
+                <div className="flex items-center gap-1">
+                  <BuildingOfficeIcon className="w-3.5 h-3.5" />
+                  <span>{treatment.institution.name}</span>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* CRONOLOGÍA */}
           <div className="flex items-center gap-6 border-t border-white/5 pt-3">
-            {start_date && (
+            {treatment.start_date && (
               <div className="flex items-center gap-2">
-                <CalendarIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)]" />
-                <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">Start: {start_date}</span>
+                <CalendarDaysIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)]" />
+                <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">Start: {treatment.start_date}</span>
               </div>
             )}
-            {end_date && (
+            {treatment.end_date && (
               <div className="flex items-center gap-2">
-                <ClockIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)]" />
-                <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">End: {end_date}</span>
+                <ArrowPathIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)]" />
+                <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">End: {treatment.end_date}</span>
               </div>
+            )}
+            {!treatment.start_date && !treatment.end_date && treatment.is_permanent && (
+              <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">
+                Indefinite_Treatment
+              </span>
             )}
           </div>
         </div>

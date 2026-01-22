@@ -1,6 +1,7 @@
 // src/components/Payments/PaymentList.tsx
 import React from "react";
 import { Payment, PaymentStatus, PaymentMethod } from "../../types/payments";
+import { formatCurrency } from "@/utils/format";  // ✅ AGREGADO: Import de formatCurrency
 import { 
   CheckCircleIcon, 
   ClockIcon, 
@@ -48,7 +49,7 @@ export default function PaymentList({ payments, hideSummaryBadges = false }: Pro
           ].map((stat, i) => (
             <div key={i} className={`px-2 py-1 border border-white/5 rounded-sm flex items-center gap-2 `}>
               <span className="text-[8px] font-black uppercase tracking-tighter opacity-60">{stat.label}:</span>
-              <span className="text-[10px] font-mono font-bold"></span>
+              <span className="text-[10px] font-mono font-bold">{formatCurrency(stat.val, undefined)}</span>  {/* ✅ CORREGIDO: Ahora muestra el valor con formatCurrency */}
             </div>
           ))}
         </div>
@@ -70,6 +71,7 @@ export default function PaymentList({ payments, hideSummaryBadges = false }: Pro
               const amount = parseFloat(String(p.amount) || "0");
               const dateStr = p.received_at ?? p.appointment_date;
               const date = dateStr ? new Date(dateStr).toLocaleDateString('en-GB') : "---";
+              
               // Map de Configuración de Estatus
               const statusMap = {
                 [PaymentStatus.CONFIRMED]: { label: "CONFIRMED", icon: CheckCircleIcon, color: "text-emerald-400" },
@@ -82,7 +84,7 @@ export default function PaymentList({ payments, hideSummaryBadges = false }: Pro
               return (
                 <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
                   <td className="px-4 py-2 font-mono text-[11px] font-bold text-white">
-                    
+                    {formatCurrency(p.amount, p.currency)}  {/* ✅ CORREGIDO: Ahora muestra el monto con formatCurrency */}
                   </td>
                   <td className="px-4 py-2 text-[10px] uppercase font-mono tracking-tighter text-[var(--palantir-muted)]">
                     {p.method === PaymentMethod.CASH ? "Cash_Assets" : 

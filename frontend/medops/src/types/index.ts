@@ -23,4 +23,3 @@ export * from "./reports";
 export * from "./medicalReport";
 export * from "./waivedConsultations";
 export * from "./api";
-export * from "./consultations";

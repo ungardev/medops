@@ -18,7 +18,9 @@ import {
   TagIcon,
   ShieldCheckIcon,
   CheckIcon,
-  XMarkIcon
+  XMarkIcon,
+  UserGroupIcon,         // ✅ AGREGADO: Icono para doctor
+  BuildingOfficeIcon     // ✅ AGREGADO: Icono para institución
 } from "@heroicons/react/24/outline";
 export interface MedicalReferralsPanelProps {
   appointmentId: number;
@@ -40,6 +42,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
   
   // Estado para manejar la edición
   const [editingReferral, setEditingReferral] = useState<MedicalReferral | null>(null);
+  
   const handleAdd = async () => {
     if (!referredTo || readOnly) return;
     try {
@@ -57,6 +60,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       setUrgency("routine");
     } catch (err: any) { console.error("Error creating referral:", err); }
   };
+  
   const handleUpdate = async () => {
     if (!editingReferral || readOnly) return;
     try {
@@ -72,6 +76,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       setEditingReferral(null);
     } catch (err: any) { console.error("Error updating referral:", err); }
   };
+  
   return (
     <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden">
       {/* HEADER */}
@@ -140,6 +145,29 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                         </div>
                       )}
                     </div>
+                    
+                    {/* ✅ AGREGADO: METADATA DE DOCTOR E INSTITUCIÓN (FASE 1) */}
+                    {(r.doctor || r.institution) && (
+                      <div className="flex items-center gap-3 text-xs font-mono text-[var(--palantir-muted)] mt-1 border-t border-white/5 pt-2">
+                        {r.doctor && (
+                          <div className="flex items-center gap-1">
+                            <UserGroupIcon className="w-3.5 h-3.5" />
+                            <span>{r.doctor.full_name}</span>
+                            {r.doctor.is_verified && (
+                              <ShieldCheckIcon className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />
+                            )}
+                          </div>
+                        )}
+                        {r.doctor && r.institution && <span className="text-white/20">•</span>}
+                        {r.institution && (
+                          <div className="flex items-center gap-1">
+                            <BuildingOfficeIcon className="w-3.5 h-3.5" />
+                            <span>{r.institution.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
                       {r.specialties?.map(s => (
                         <span key={s.id} className="flex items-center gap-1 text-[8px] font-black bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/20 uppercase">
@@ -156,6 +184,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
             ))
           )}
         </div>
+        
         {/* FORMULARIO DE NUEVA REFERENCIA */}
         {!readOnly && (
           <div className="mt-6 pt-6 border-t border-white/10 space-y-4">

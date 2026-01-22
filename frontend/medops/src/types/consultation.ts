@@ -13,15 +13,15 @@ export type DiagnosisType =
   | "differential"  // Diferencial (Opción en estudio)
   | "provisional";  // Provisional
 export type DiagnosisStatus = 
-  | "under_investigation"  // En Investigación / Estudio
+  | "under_investigation" // En Investigación / Estudio
   | "awaiting_results"     // Esperando Resultados (Lab/Imagen)
   | "confirmed"            // Decretado / Confirmado
   | "ruled_out"           // Descartado / Excluido
   | "chronic";             // Pre-existente / Crónico
 export type TreatmentType = 
-  | "pharmacological"  // Farmacológico
+  | "pharmacological" // Farmacológico
   | "surgical"        // Quirúrgico / Procedimiento
-  | "rehabilitation"  // Fisioterapia / Rehabilitación
+  | "rehabilitation" // Fisioterapia / Rehabilitación
   | "lifestyle"       // Cambio de estilo de vida / Dieta
   | "psychological"    // Apoyo Psicológico / Terapia
   | "other";          // Otro
@@ -48,7 +48,7 @@ export type MedicalTestStatus = "pending" | "completed" | "cancelled";
 export type MedicalReferralUrgency = "routine" | "urgent" | "stat";
 export type MedicalReferralStatus = "issued" | "accepted" | "rejected";
 // =====================================================
-// DIAGNOSIS - Alineado con DiagnosisSerializer (backend)
+// DIAGNÓSTICOS - Alineado con DiagnosisSerializer (backend)
 // =====================================================
 export interface Diagnosis {
   id: number;
@@ -74,7 +74,6 @@ export interface Diagnosis {
   updated_at?: string;
   // 🆕 AGREGADO: name (compatibilidad con componente)
   name?: string;
-  
   // 🆕 AGREGADO: notes (compatibilidad con componente)
   notes?: string | null;
 }
@@ -182,7 +181,7 @@ export interface CreatePrescriptionInput {
   frequency?: PrescriptionFrequency;
   duration?: string;
   indications?: string;
-  components: PrescriptionComponent[];
+  components?: PrescriptionComponent[];
 }
 export interface UpdatePrescriptionInput {
   id: number;
@@ -196,7 +195,7 @@ export interface UpdatePrescriptionInput {
   components?: PrescriptionComponent[];
 }
 // =====================================================
-// EXAMEN MÉDICO - Alineado con backend
+// EXAMEN MÉDICO - Alineado con MedicalTestSerializer (backend)
 // =====================================================
 export interface MedicalTest {
   id: number;
@@ -222,13 +221,18 @@ export interface MedicalTest {
   updated_by?: number | null;
 }
 // =====================================================
-// REFERENCIA MÉDICA - Alineado con backend
+// REFERENCIA MÉDICA - Alineado con backend migración 0003
 // =====================================================
 export interface MedicalReferral {
   id: number;
   appointment: number;
   diagnosis?: number | null;
   issued_by?: number | null;
+  
+  // 🆕 CAMPOS AGREGADOS EN MIGRACIÓN 0003
+  patient?: IdentityPatient;
+  doctor?: IdentityDoctor;
+  institution?: IdentityInstitution;
   
   referred_to: string;
   reason?: string;
@@ -241,9 +245,17 @@ export interface MedicalReferral {
   status_display?: string;
   
   issued_at: string;
-  
   created_at: string;
   updated_at: string;
   created_by?: number | null;
   updated_by?: number | null;
+}
+// Representa una nota clínica asociada a un paciente
+export interface ConsultationNote {
+  id: number;
+  patient_id: number;
+  content: string;
+  created_at: string;   // ISO timestamp
+  updated_at: string;   // ISO timestamp
+  author?: string;      // opcional: médico/usuario que escribió la nota
 }

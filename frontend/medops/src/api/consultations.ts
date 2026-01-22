@@ -1,5 +1,5 @@
 import { apiFetch } from "./client";
-import { ConsultationNote } from "../types/consultations";
+import { ConsultationNote } from "../types/consultation";
 
 // 🔹 Obtener todas las notas de un paciente
 export const getPatientNotes = (patientId: number): Promise<ConsultationNote[]> =>

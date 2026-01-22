@@ -1,3 +1,4 @@
+// src/hooks/settings/useInstitutions.ts
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
@@ -10,6 +11,7 @@ export function useInstitutions() {
     const saved = localStorage.getItem("active_institution_id");
     return saved ? parseInt(saved) : null;
   });
+  
   // Query para obtener todas las instituciones
   const query = useQuery<InstitutionSettings[]>({
     queryKey: ["config", "institutions"],
@@ -19,6 +21,7 @@ export function useInstitutions() {
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
+  
   // Query para obtener institución activa del backend
   const activeQuery = useQuery<InstitutionSettings | null>({
     queryKey: ["config", "institution", "active"],
@@ -26,8 +29,9 @@ export function useInstitutions() {
       const res = await api.get<InstitutionSettings>("config/institution/");
       return res.data || null;
     },
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutos
   });
+  
   // Mutation para crear institución
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, any>) => {
@@ -59,6 +63,7 @@ export function useInstitutions() {
       }
     },
   });
+  
   // Mutation para agregar institución existente
   const addMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -71,10 +76,11 @@ export function useInstitutions() {
       queryClient.invalidateQueries({ queryKey: ["config", "institutions"] });
     },
   });
+  
   // Mutation para eliminar institución
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await api.delete(`config/institutions//delete/`);
+      await api.delete(`config/institutions/delete/`);
     },
     onSuccess: (_, deletedId) => {
       queryClient.setQueryData(["config", "institutions"], (old: any) => 
@@ -90,20 +96,28 @@ export function useInstitutions() {
       }
     },
   });
-  // Mutation para cambiar institución activa
+  
+  // Mutation para cambiar institución activa - ahora acepta number | undefined
   const setActiveMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: number | undefined) => {
+      if (id === undefined || id === null) {
+        localStorage.removeItem("active_institution_id");
+        setLocalActiveId(null);
+        await api.put(`config/institution/clear-active/`);
+        return;
+      }
+      
       localStorage.setItem("active_institution_id", String(id));
       setLocalActiveId(id);
       
-      await api.put(`config/institutions//set-active/`);
-      
+      await api.put(`config/institution/set-active/`, { institution: id });
       api.defaults.headers.common["X-Institution-ID"] = String(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["config", "institution", "active"] });
     },
   });
+  
   // Función para obtener institución activa actual
   const getActiveInstitution = (): InstitutionSettings | null => {
     if (localActiveId) {
@@ -115,24 +129,26 @@ export function useInstitutions() {
     
     return query.data?.[0] || null;
   };
+  
   // Función para cambiar institución activa
   const handleSetActiveInstitution = async (id: number): Promise<void> => {
     await setActiveMutation.mutateAsync(id);
   };
+  
   return {
     ...query,
     institutions: query.data || [],
     activeInstitution: getActiveInstitution(),
     getActiveInstitution,
-    setActiveInstitution: handleSetActiveInstitution,
     createInstitution: createMutation.mutateAsync,
     addInstitution: addMutation.mutateAsync,
     deleteInstitution: deleteMutation.mutateAsync,
-    isLoading: query.isLoading,
+    setActiveInstitution: handleSetActiveInstitution,
     isCreating: createMutation.isPending,
     isAdding: addMutation.isPending,
     isDeleting: deleteMutation.isPending,
     isSettingActive: setActiveMutation.isPending,
+    isLoading: query.isLoading,
     error: query.error?.message || null,
   };
 }
