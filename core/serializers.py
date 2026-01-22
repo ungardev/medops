@@ -768,8 +768,8 @@ class EventSerializer(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     action_label = serializers.SerializerMethodField()
     action_href = serializers.SerializerMethodField()
-    badge_action = serializers.SerializerMethodField()  # 🔹 Nuevo campo para el frontend
-
+    badge_action = serializers.SerializerMethodField()
+    actor = serializers.SerializerMethodField()  # ✅ CORREGIDO: Ahora usa get_actor()
     class Meta:
         model = Event
         fields = [
@@ -790,7 +790,6 @@ class EventSerializer(serializers.ModelSerializer):
             "action_href",
             "badge_action",  # 🔹 Incluido en la respuesta
         ]
-
     def get_title(self, obj):
         if obj.entity == "Payment" and obj.action == "create":
             return "Pago confirmado"
@@ -801,7 +800,6 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
             return "Paciente llegó a la sala de espera"
         return f"{obj.entity} {obj.action}"
-
     def get_description(self, obj):
         if obj.entity == "Payment":
             return f"Orden #{obj.entity_id} confirmada"
@@ -812,11 +810,9 @@ class EventSerializer(serializers.ModelSerializer):
             aid = obj.metadata.get("appointment_id") if obj.metadata else None
             return f"Paciente #{pid} con cita #{aid} registrado en sala de espera"
         return obj.metadata.get("message", "") if obj.metadata else ""
-
     def get_category(self, obj):
         # Normaliza entity+action como clave única
         return f"{obj.entity.lower()}.{obj.action.lower()}"
-
     def get_action_label(self, obj):
         if obj.entity == "Payment":
             return "Ver pago"
@@ -827,7 +823,6 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "WaitingRoom":
             return "Ver sala de espera"
         return "Ver detalle"
-
     def get_action_href(self, obj):
         if obj.entity == "Payment":
             return f"/payments/{obj.entity_id}"
@@ -838,7 +833,6 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "WaitingRoomEntry":
             return "/waitingroom"
         return None
-
     def get_badge_action(self, obj):
         # 🔹 Normaliza para NotificationBadge
         if obj.action in ["create", "update", "delete"]:
@@ -846,6 +840,11 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
             return "create"
         return "other"
+    def get_actor(self, obj):
+        # ✅ CORREGIDO: Combina actor_user y actor_name
+        if obj.actor_user:
+            return str(obj.actor_user)
+        return obj.actor_name or "System"
 
 
 # --- Sala de espera (básico) ---
