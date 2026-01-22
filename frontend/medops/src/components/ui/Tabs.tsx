@@ -1,9 +1,9 @@
 // src/components/ui/Tabs.tsx
-import { ReactNode } from "react";
+import React, { ReactNode, isValidElement, ReactElement } from "react";
 
 interface TabProps {
   id: string;
-  label: ReactNode; // ✅ CAMBIO: De 'string' a 'ReactNode' para aceptar iconos/JSX
+  label: ReactNode;
   children: ReactNode;
 }
 
@@ -15,10 +15,13 @@ interface TabsProps {
   layout?: "vertical" | "horizontal";
 }
 
+/**
+ * Componente Tab: Actúa principalmente como un contenedor de datos
+ * para que el componente Tabs pueda extraer las props.
+ */
 export function Tab({ children }: TabProps) {
   return <>{children}</>;
 }
-Tab.displayName = "Tab";
 
 export function Tabs({
   children,
@@ -27,38 +30,41 @@ export function Tabs({
   className,
   layout = "vertical",
 }: TabsProps) {
-  // Aseguramos que children sea un array para poder filtrar
-  const childArray = Array.isArray(children) ? children : [children];
   
-  // Filtramos solo los componentes de tipo Tab
-  const tabs = childArray.filter((c: any) => c?.type?.displayName === "Tab");
+  // ✅ FIX: Usamos React.Children.toArray para manejar los hijos de forma segura.
+  // Esto evita errores cuando hay un solo hijo o cuando React Fast Refresh 
+  // envuelve los componentes en proxies durante el desarrollo.
+  const tabs = React.Children.toArray(children).filter((child) => {
+    return isValidElement(child);
+  }) as ReactElement<TabProps>[];
 
   return (
     <div className={className ?? "space-y-4"}>
+      
       {/* 🛠️ NAVIGATION HEADER */}
-      <div className="flex flex-wrap gap-1 border-b border-[var(--palantir-border)] pb-0 overflow-x-auto scrollbar-hide">
-        {tabs.map((tab: any) => {
+      <div className="flex flex-wrap gap-1 border-b border-[var(--palantir-border)] pb-0 overflow-x-auto scrollbar-hide bg-black/20">
+        {tabs.map((tab) => {
           const isActive = value === tab.props.id;
           return (
             <button
               key={tab.props.id}
-              type="button" // Buena práctica para evitar submit accidentales
+              type="button"
               onClick={() => onChange(tab.props.id)}
               className={`
-                relative px-4 py-3 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-200
+                relative px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200
                 ${isActive 
-                  ? "text-[var(--palantir-active)] bg-[var(--palantir-active)]/5" 
-                  : "text-[var(--palantir-muted)] hover:text-[var(--palantir-text)] hover:bg-white/5"}
+                  ? "text-blue-500 bg-blue-500/5" 
+                  : "text-white/30 hover:text-white/70 hover:bg-white/5"}
               `}
             >
-              {/* Contenedor flexible para alinear iconos y texto que vengan en el label */}
+              {/* Contenedor flexible para alinear iconos y texto */}
               <div className="flex items-center justify-center gap-2">
                 {tab.props.label}
               </div>
               
-              {/* 💡 Active Indicator Line */}
+              {/* 💡 Active Indicator Line con efecto Glow */}
               {isActive && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-[var(--palantir-active)] shadow-[0_0_8px_var(--palantir-active)]" />
+                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
               )}
             </button>
           );
@@ -67,13 +73,13 @@ export function Tabs({
 
       {/* 🧊 CONTENT DISPLAY */}
       <div className={layout === "horizontal" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
-        {tabs.map((tab: any) =>
+        {tabs.map((tab) =>
           tab.props.id === value ? (
             <div
               key={tab.props.id}
-              className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+              className="animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out"
             >
-              <div className="bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm p-4 sm:p-6 shadow-xl shadow-black/20">
+              <div className="bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm p-4 sm:p-6 shadow-2xl">
                 {tab.props.children}
               </div>
             </div>
