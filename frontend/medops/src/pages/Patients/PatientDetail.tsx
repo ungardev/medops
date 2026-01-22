@@ -2,7 +2,6 @@
 import { useParams, useSearchParams } from "react-router-dom";
 import { usePatient } from "../../hooks/patients/usePatient";
 import { Tabs, Tab } from "../../components/ui/Tabs";
-
 // Componentes de Pestañas
 import PatientInfoTab from "../../components/Patients/PatientInfoTab";
 import PatientConsultationsTab from "../../components/Patients/PatientConsultationsTab";
@@ -12,10 +11,8 @@ import PatientPendingAppointmentsTab from "../../components/Patients/PatientPend
 import PatientEventsTab from "../../components/Patients/PatientEventsTab";
 import VaccinationTab from "../../components/Patients/VaccinationTab";
 import SurgeriesTab from "../../components/Patients/SurgeriesTab";
-
 // Componentes de Common
 import PageHeader from "../../components/Common/PageHeader";
-
 // Iconos para el Header
 import { 
   IdentificationIcon, 
@@ -23,7 +20,6 @@ import {
   GlobeAltIcon,
   UserIcon
 } from "@heroicons/react/24/outline";
-
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -40,15 +36,12 @@ function normalizeTab(id?: string): string {
   if (!id) return "info";
   return map[id.toLowerCase()] ?? id;
 }
-
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
-
   const currentTab = normalizeTab(searchParams.get("tab") ?? "info");
-
   const setTab = (next: string) => {
     const normalized = normalizeTab(next);
     setSearchParams((prev) => {
@@ -57,7 +50,6 @@ export default function PatientDetail() {
       return p;
     });
   };
-
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
@@ -66,7 +58,6 @@ export default function PatientDetail() {
       </div>
     </div>
   );
-
   if (error || !patient) return (
     <div className="p-8">
       <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-sm">
@@ -74,7 +65,6 @@ export default function PatientDetail() {
       </div>
     </div>
   );
-
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       
@@ -119,7 +109,6 @@ export default function PatientDetail() {
           </div>
         }
       />
-
       {/* 📊 SUB-METADATA BAR (DNI, DOB, COUNTRY) */}
       <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest backdrop-blur-md">
         <span className="flex items-center gap-2.5">
@@ -137,7 +126,6 @@ export default function PatientDetail() {
           </span>
         )}
       </div>
-
       {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
       <div className="border border-white/10 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
         <Tabs
@@ -147,31 +135,24 @@ export default function PatientDetail() {
           <Tab id="info" label="Identity_Core">
             <PatientInfoTab patientId={patientId} />
           </Tab>
-
           <Tab id="consultas" label="Clinical_Ledger">
             <PatientConsultationsTab patient={patient} />
           </Tab>
-
           <Tab id="documentos" label="Archive_Vault">
             <PatientDocumentsTab patient={patient} />
           </Tab>
-
           <Tab id="vacunacion" label="Immunology">
             <VaccinationTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
-
           <Tab id="cirugias" label="Surgical_Ops">
             <SurgeriesTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
-
           <Tab id="citas" label="Logistics_Schedule">
             <PatientPendingAppointmentsTab patient={patient} />
           </Tab>
-
           <Tab id="pagos" label="Financial_Flow">
             <PatientPaymentsTab patient={patient} />
           </Tab>
-
           <Tab id="eventos" label="Audit_Log">
             <PatientEventsTab patient={patient} />
           </Tab>
