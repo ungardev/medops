@@ -837,51 +837,59 @@ def notifications_api(request):
     Filtra por notify=True (solo eventos que deben mostrarse).
     """
     try:
-        # Usar el servicio existente get_audit_logic con ventana de 7 días
         from . import services
         from .serializers import EventSerializer
         
-        data = services.get_audit_logic(limit=3)
-        all_events = data.get('all_events', [])
+        # get_audit_logic devuelve directamente una LISTA de eventos
+        all_events = services.get_audit_logic(limit=3)
+        
+        # Asegurar que es una lista
+        if not isinstance(all_events, list):
+            all_events = list(all_events)
         
         # Filtrar por notify=True (solo notificaciones)
         notifications = [e for e in all_events if e.get('notify', False)]
         
-        # Ordenar por timestamp descendente
-        notifications.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-        
-        # Tomar las 3 notificaciones más recientes
-        top_3 = notifications[:3]
-        
-        # Filtrar por ventana de 7 días
-        cutoff = datetime.now() - timedelta(days=7)
-        recent = [
-            n for n in top_3 
-            if n.get('timestamp') and 
-               datetime.fromisoformat(n['timestamp']) > cutoff
-        ]
+        # Si hay eventos con notify=True, procesarlos
+        if notifications:
+            # Ordenar por timestamp descendente
+            notifications.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            
+            # Tomar las 3 notificaciones más recientes
+            top_3 = notifications[:3]
+            
+            # Filtrar por ventana de 7 días
+            cutoff = datetime.now() - timedelta(days=7)
+            recent = [
+                n for n in top_3 
+                if n.get('timestamp') and 
+                   datetime.fromisoformat(n['timestamp']) > cutoff
+            ]
+            
+            # Si hay notificaciones recientes, devolverlas
+            if recent:
+                return Response(recent)
         
         # Si no hay notificaciones, devolver evento de "sin actividad"
-        if not recent:
-            recent = [{
-                "id": 0,
-                "timestamp": datetime.now().isoformat(),
-                "actor": "Sistema",
-                "entity": "Dashboard",
-                "entity_id": 0,
-                "action": "other",
-                "metadata": {"message": "Sin actividad en la última semana"},
-                "severity": "info",
-                "notify": False,
-                "title": "Sin actividad reciente",
-                "description": "No hay eventos en la última semana",
-                "category": "dashboard.other",
-                "action_label": "Ver dashboard",
-                "action_href": "/dashboard",
-                "badge_action": "other",
-            }]
+        no_activity = [{
+            "id": 0,
+            "timestamp": datetime.now().isoformat(),
+            "actor": "Sistema",
+            "entity": "Dashboard",
+            "entity_id": 0,
+            "action": "other",
+            "metadata": {"message": "Sin actividad en la última semana"},
+            "severity": "info",
+            "notify": False,
+            "title": "Sin actividad reciente",
+            "description": "No hay eventos en la última semana",
+            "category": "dashboard.other",
+            "action_label": "Ver dashboard",
+            "action_href": "/dashboard",
+            "badge_action": "other",
+        }]
         
-        return Response(recent)
+        return Response(no_activity)
     except Exception as e:
         logger.error(f"Error en notifications_api: {str(e)}")
         return Response({"error": str(e)}, status=500)
