@@ -1,5 +1,6 @@
 // src/components/Patients/SurgeriesModal.tsx
 import React, { useState, useEffect } from "react";
+import { Surgery } from "../../types/patients"; // ✅ FIX: Importar Surgery desde types/patients
 import { 
   ScissorsIcon, 
   PlusIcon, 
@@ -11,18 +12,7 @@ import {
   CheckIcon
 } from "@heroicons/react/24/outline";
 import { X } from "lucide-react";
-interface Surgery {
-  id: number;
-  patient: number;
-  doctor_id: number;
-  hospital?: string;
-  name: string;
-  date?: string;
-  type?: string;
-  description?: string;
-  status?: string;
-  notes?: string;
-}
+// ✅ FIX: Eliminada la definición local de Surgery
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -91,7 +81,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
             </label>
             <input
               type="text"
-              value={form.name}
+              value={form.name || ""} // ✅ FIX: Convertir null a ""
               onChange={(e) => handleChange("name", e.target.value)}
               placeholder="Nombre de la cirugía"
               className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
@@ -103,7 +93,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
             </label>
             <input
               type="text"
-              value={form.hospital}
+              value={form.hospital || ""} // ✅ FIX: Convertir null a ""
               onChange={(e) => handleChange("hospital", e.target.value)}
               placeholder="Nombre del hospital o centro"
               className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
@@ -115,7 +105,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                   Tipo
               </label>
               <select
-                value={form.type}
+                value={form.type || ""} // ✅ FIX: Convertir null a ""
                 onChange={(e) => handleChange("type", e.target.value)}
                 className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
               >
@@ -130,7 +120,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
               </label>
               <input
                 type="date"
-                value={form.date}
+                value={form.date || ""} // ✅ FIX: Convertir null a ""
                 onChange={(e) => handleChange("date", e.target.value)}
                 className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
               />
@@ -141,7 +131,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
               Notas (opcional)
             </label>
             <textarea
-              value={form.notes}
+              value={form.notes || ""} // ✅ FIX: Convertir null a ""
               onChange={(e) => handleChange("notes", e.target.value)}
               placeholder="Detalles adicionales..."
               className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40 min-h-[60px] resize-none"

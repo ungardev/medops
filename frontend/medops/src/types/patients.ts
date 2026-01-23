@@ -75,8 +75,15 @@ export interface FamilyHistory {
 // =====================================================
 export interface Surgery {
   id: number;
+  patient: number;
+  doctor_id: number; // ✅ Requerido para compatibilidad con SurgeriesModal
+  doctor?: string; // ✅ Agregado para compatibilidad con SurgeriesTab
+  hospital?: string;
   name: string;
   date?: string | null; // ISO string
+  type?: string;
+  description?: string;
+  status?: "programada" | "realizada" | "cancelada";
   notes?: string | null;
 }
 // =====================================================
