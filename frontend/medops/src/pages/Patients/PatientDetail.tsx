@@ -141,7 +141,7 @@ export default function PatientDetail() {
       </div>
       
       {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
-      <div className="border border-white/10 bg-black/20 rounded-sm overflow-hidden shadow-2xl"> // ✅ FIX: Ya quitado backdrop-blur-md
+      <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl"> // ✅ FIX: Quitado bg-black/20 y backdrop-blur-md
         <Tabs
           value={currentTab}
           onChange={setTab}

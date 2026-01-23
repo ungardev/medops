@@ -58,7 +58,7 @@ export default function Sidebar({
       className={`border-r border-white/5 transition-all duration-500 ease-in-out
         ${effectiveCollapsed ? "w-[78px]" : "w-64"}
         h-screen bg-[#0a0a0b] text-white
-        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-[200] // ✅ FIX: Aumentado z-index
+        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-[300] // ✅ FIX: Aumentado z-index
       `}
     >
       <div className="flex flex-col h-full pt-4 pb-6 px-3">
@@ -121,6 +121,7 @@ export default function Sidebar({
                 <li key={item.path}>
                   <Link
                     to={item.path}
+                    onClick={() => console.log('Sidebar Link clicked:', item.path)} // 🔍 DIAGNOSTIC LOG
                     className={`${itemBase} ${isActive ? itemActive : itemIdle}`}
                   >
                     <Icon
