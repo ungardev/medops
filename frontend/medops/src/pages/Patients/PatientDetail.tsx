@@ -123,7 +123,7 @@ export default function PatientDetail() {
       />
       
       {/* 📊 SUB-METADATA BAR (DNI, DOB, COUNTRY) */}
-      <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest backdrop-blur-md">
+      <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest"> // ✅ FIX: Quitado backdrop-blur-md
         <span className="flex items-center gap-2.5">
           <IdentificationIcon className="w-4 h-4 text-blue-500/40" />
           <span className="text-white/10">DNI:</span> <span className="text-white/80 font-bold">{patient.national_id || "NOT_ASSIGNED"}</span>
@@ -141,7 +141,7 @@ export default function PatientDetail() {
       </div>
       
       {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
-      <div className="border border-white/10 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
+      <div className="border border-white/10 bg-black/20 rounded-sm overflow-hidden shadow-2xl"> // ✅ FIX: Ya quitado backdrop-blur-md
         <Tabs
           value={currentTab}
           onChange={setTab}
