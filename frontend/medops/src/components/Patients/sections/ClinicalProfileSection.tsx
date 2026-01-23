@@ -12,10 +12,8 @@ import {
 } from "@heroicons/react/24/outline";
 import { apiFetch } from "../../../api/client";
 import ClinicalBackgroundModal from "./ClinicalBackgroundModal";
-
 type BackgroundType = "personal" | "family" | "genetic" | "habit";
 type ModalType = BackgroundType | "allergy";
-
 interface ClinicalBackground {
   id: number;
   type: BackgroundType;
@@ -25,7 +23,6 @@ interface ClinicalBackground {
   source?: string;
   notes?: string;
 }
-
 interface Habit {
   id: number;
   type: string;
@@ -34,7 +31,6 @@ interface Habit {
   description?: string;
   notes?: string;
 }
-
 interface Allergy {
   id: number;
   name: string;
@@ -42,7 +38,6 @@ interface Allergy {
   source?: string;
   notes?: string;
 }
-
 interface Props {
   backgrounds?: ClinicalBackground[];
   allergies?: Allergy[];
@@ -50,14 +45,12 @@ interface Props {
   patientId: number;
   onRefresh?: () => void;
 }
-
 const backgroundLabels: Record<BackgroundType, string> = {
   personal: "SUBJECT_PERSONAL_HISTORY",
   family: "LINEAGE_FAMILY_HISTORY",
   genetic: "GENOMIC_PREDISPOSITIONS",
   habit: "LIFESTYLE_HABITS",
 };
-
 const backgroundIcons: Record<string, React.ElementType> = {
   personal: UserIcon,
   family: UsersIcon,
@@ -65,7 +58,6 @@ const backgroundIcons: Record<string, React.ElementType> = {
   habit: FireIcon,
   allergy: SparklesIcon,
 };
-
 export default function ClinicalProfileSection({
   backgrounds = [],
   allergies = [],
@@ -74,21 +66,21 @@ export default function ClinicalProfileSection({
   onRefresh,
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>("personal");
+  // 🔍 DIAGNOSTIC LOG: Verificar estado del modal en esta sección
   const [modalOpen, setModalOpen] = useState(false);
+  console.log('ClinicalProfileSection modalOpen:', modalOpen);
+  
   const [modalType, setModalType] = useState<ModalType>("personal");
   const [modalInitial, setModalInitial] = useState<any>(undefined);
-
   const grouped: Record<BackgroundType, ClinicalBackground[]> = {
     personal: [],
     family: [],
     genetic: [],
     habit: [],
   };
-
   backgrounds.forEach((item) => {
     if (grouped[item.type]) grouped[item.type].push(item);
   });
-
   const handleDelete = async (item: any, type: string) => {
     if (!confirm("CONFIRM_DATA_PURGE: Are you sure?")) return;
     try {
@@ -98,14 +90,12 @@ export default function ClinicalProfileSection({
       else if (type === "personal") endpoint = `personal-history/${item.id}/`;
       else if (type === "family") endpoint = `family-history/${item.id}/`;
       else if (type === "genetic") endpoint = `genetic-predispositions/${item.id}/`;
-
       await apiFetch(endpoint, { method: "DELETE" });
       onRefresh?.();
     } catch (err) {
       console.error("ERRO_DELETING_RECORD:", err);
     }
   };
-
   const handleSave = async (type: ModalType, payload: any) => {
     const isEdit = modalInitial?.id;
     let endpoint = "";
@@ -114,14 +104,12 @@ export default function ClinicalProfileSection({
     if (type === "genetic") endpoint = "genetic-predispositions/";
     if (type === "habit") endpoint = `patients/${patientId}/habits/`;
     if (type === "allergy") endpoint = `patients/${patientId}/allergies/`;
-
     const method = isEdit ? "PATCH" : "POST";
     const url = isEdit
       ? (type === "habit" || type === "allergy") 
         ? `${endpoint}${modalInitial.id}/` 
         : `${endpoint}${modalInitial.id}/`
       : endpoint;
-
     try {
       await apiFetch(url, {
         method,
@@ -134,10 +122,8 @@ export default function ClinicalProfileSection({
       console.error("ERROR_SAVING_RECORD:", err);
     }
   };
-
   const renderSection = (type: ModalType, title: string, items: any[], Icon: any) => {
     const isExpanded = expanded === type;
-
     return (
       <div className={`border-b border-[var(--palantir-border)] last:border-0 transition-all ${isExpanded ? 'bg-white/[0.02]' : ''}`}>
         <button
@@ -157,7 +143,6 @@ export default function ClinicalProfileSection({
             <ChevronDownIcon className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[var(--palantir-active)]' : 'text-[var(--palantir-muted)]'}`} />
           </div>
         </button>
-
         {isExpanded && (
           <div className="px-6 pb-6 pt-2 animate-in fade-in slide-in-from-top-2">
             <div className="space-y-3">
@@ -190,7 +175,7 @@ export default function ClinicalProfileSection({
                         </p>
                       )}
                     </div>
-                    
+                     
                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => { setModalType(type); setModalInitial(item); setModalOpen(true); }}
@@ -208,7 +193,7 @@ export default function ClinicalProfileSection({
                   </div>
                 ))
               )}
-              
+               
               <button
                 onClick={() => { setModalType(type); setModalInitial(undefined); setModalOpen(true); }}
                 className="w-full py-2 border border-dashed border-[var(--palantir-border)] hover:border-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/5 transition-all group flex justify-center items-center gap-2"
@@ -222,7 +207,6 @@ export default function ClinicalProfileSection({
       </div>
     );
   };
-
   return (
     <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden">
       <div className="bg-[var(--palantir-border)]/20 px-6 py-3 border-b border-[var(--palantir-border)]">
@@ -231,7 +215,6 @@ export default function ClinicalProfileSection({
           Clinical_Bio_Profile
         </span>
       </div>
-
       <div className="flex flex-col">
         {renderSection("personal", backgroundLabels.personal, grouped.personal, backgroundIcons.personal)}
         {renderSection("family", backgroundLabels.family, grouped.family, backgroundIcons.family)}
@@ -239,7 +222,6 @@ export default function ClinicalProfileSection({
         {renderSection("allergy", "IMMUNOLOGICAL_SENSITIVITY", allergies, backgroundIcons.allergy)}
         {renderSection("habit", backgroundLabels.habit, habits, backgroundIcons.habit)}
       </div>
-
       <ClinicalBackgroundModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

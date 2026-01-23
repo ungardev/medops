@@ -36,7 +36,10 @@ export default function AlertsSection({
   vaccinations,
   vaccinationSchedule,
 }: Props) {
+  // 🔍 DIAGNOSTIC LOG: Verificar estado del modal en esta sección
   const [modalOpen, setModalOpen] = useState(false);
+  console.log('AlertsSection modalOpen:', modalOpen);
+  
   const [editing, setEditing] = useState<ManualAlert | null>(null);
   const { list, create, update, remove } = useClinicalAlerts(patient.id);
   // --- LÓGICA DE ALERTAS AUTOMÁTICAS (CORE INTELLIGENCE) ---

@@ -70,6 +70,9 @@ const allergySourceChoices = [
   { value: "autorreporte", label: "Autorreporte" },
 ];
 export default function ClinicalBackgroundModal({ open, onClose, onSave, initial, type }: Props) {
+  // 🔍 DIAGNOSTIC LOG: Verificar si este modal está abierto
+  console.log('ClinicalBackgroundModal open:', open);
+  
   const [form, setForm] = useState<ClinicalBackgroundForm>({
     type,
     condition: "",

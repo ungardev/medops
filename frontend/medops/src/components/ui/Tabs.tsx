@@ -1,12 +1,10 @@
 // src/components/ui/Tabs.tsx
 import React, { ReactNode, isValidElement, ReactElement } from "react";
-
 interface TabProps {
   id: string;
   label: ReactNode;
   children: ReactNode;
 }
-
 interface TabsProps {
   children: ReactNode[] | ReactNode;
   value: string;
@@ -14,7 +12,6 @@ interface TabsProps {
   className?: string;
   layout?: "vertical" | "horizontal";
 }
-
 /**
  * Componente Tab: Actúa principalmente como un contenedor de datos
  * para que el componente Tabs pueda extraer las props.
@@ -22,7 +19,6 @@ interface TabsProps {
 export function Tab({ children }: TabProps) {
   return <>{children}</>;
 }
-
 export function Tabs({
   children,
   value,
@@ -37,7 +33,6 @@ export function Tabs({
   const tabs = React.Children.toArray(children).filter((child) => {
     return isValidElement(child);
   }) as ReactElement<TabProps>[];
-
   return (
     <div className={className ?? "space-y-4"}>
       
@@ -49,7 +44,11 @@ export function Tabs({
             <button
               key={tab.props.id}
               type="button"
-              onClick={() => onChange(tab.props.id)}
+              onClick={() => {
+                // 🔍 DIAGNOSTIC LOG: Verificar si onChange se dispara
+                console.log('Tab changed to:', tab.props.id);
+                onChange(tab.props.id);
+              }}
               className={`
                 relative px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200
                 ${isActive 
@@ -70,7 +69,6 @@ export function Tabs({
           );
         })}
       </div>
-
       {/* 🧊 CONTENT DISPLAY */}
       <div className={layout === "horizontal" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
         {tabs.map((tab) =>

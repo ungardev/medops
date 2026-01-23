@@ -7,6 +7,9 @@ interface Props {
   initial?: { type: "danger" | "warning" | "info"; message: string };
 }
 export default function AlertModal({ open, onClose, onSave, initial }: Props) {
+  // 🔍 DIAGNOSTIC LOG: Verificar si este modal está abierto
+  console.log('AlertModal open:', open);
+  
   const [form, setForm] = useState<{ type: "danger" | "warning" | "info"; message: string }>({
     type: initial?.type ?? "warning",
     message: initial?.message ?? "",

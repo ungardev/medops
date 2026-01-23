@@ -14,6 +14,9 @@ interface Props {
   patientId: number;
 }
 export default function VaccinationModal({ open, onClose, onSave, initial, vaccines, patientId }: Props) {
+  // 🔍 DIAGNOSTIC LOG: Verificar si este modal está abierto
+  console.log('VaccinationModal open:', open);
+  
   const [form, setForm] = useState<any>({
     vaccine: "",
     vaccine_detail: null as any,
