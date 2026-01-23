@@ -1,5 +1,5 @@
 // src/components/Layout/Sidebar.tsx
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // ✅ FIX: Agregar useNavigate
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -37,6 +37,7 @@ export default function Sidebar({
   setMobileOpen,
 }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate(); // ✅ FIX: Agregar useNavigate
   const [isDarkMode, setIsDarkMode] = useState(true);
   const effectiveCollapsed = mobileOpen ? false : collapsed;
   useEffect(() => {
@@ -58,7 +59,7 @@ export default function Sidebar({
       className={`border-r border-white/5 transition-all duration-500 ease-in-out
         ${effectiveCollapsed ? "w-[78px]" : "w-64"}
         h-screen bg-[#0a0a0b] text-white
-        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-[300] // ✅ FIX: Aumentado z-index
+        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-[300] // ✅ FIX: Z-index alto
       `}
     >
       <div className="flex flex-col h-full pt-4 pb-6 px-3">
@@ -78,8 +79,8 @@ export default function Sidebar({
                     <X size={24} />
                   </button>
                 )}
-                <Link 
-                  to="/" 
+                <button // ✅ FIX: Cambiar Link por button con navigate
+                  onClick={() => navigate("/")}
                   className={`flex items-center transition-all duration-500 hover:opacity-100 ${
                     mobileOpen ? "flex-col gap-1" : "gap-3"
                   } ${location.pathname === "/" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
@@ -100,7 +101,7 @@ export default function Sidebar({
                             className="h-4 transition-all duration-500 drop-shadow-[0_0_25px_rgba(255,255,255,0.18)]"
                         />
                     )}
-                </Link>
+                </button>
                 {!mobileOpen && (
                   <button
                     onClick={() => setCollapsed(!collapsed)}
@@ -119,9 +120,11 @@ export default function Sidebar({
               const isActive = location.pathname === item.path;
               return (
                 <li key={item.path}>
-                  <Link
-                    to={item.path}
-                    onClick={() => console.log('Sidebar Link clicked:', item.path)} // 🔍 DIAGNOSTIC LOG
+                  <button // ✅ FIX: Cambiar Link por button con navigate
+                    onClick={() => {
+                      console.log('Sidebar navigation to:', item.path); // Log de diagnóstico
+                      navigate(item.path);
+                    }}
                     className={`${itemBase} ${isActive ? itemActive : itemIdle}`}
                   >
                     <Icon
@@ -141,7 +144,7 @@ export default function Sidebar({
                     {isActive && (
                       <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
                     )}
-                  </Link>
+                  </button>
                 </li>
               );
             })}
