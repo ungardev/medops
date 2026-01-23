@@ -15,6 +15,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { vaccinations: vaccQuery, schedule } = useVaccinations(patientId);
+  
   const refreshProfile = () => {
     setLoading(true);
     apiFetch(`patients/${patientId}/profile/`)
@@ -25,9 +26,11 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       })
       .finally(() => setLoading(false));
   };
+  
   useEffect(() => {
     refreshProfile();
   }, [patientId]);
+  
   // ✅ FIX: Separar estados de carga para evitar bloqueo
   if (loading && !profile) {
     // Skeleton simplificado sin padding extra
@@ -43,6 +46,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       </div>
     );
   }
+  
   // ✅ FIX: Estado de error separado del estado de carga
   if (!loading && !profile) {
     return (
@@ -51,18 +55,20 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
         <h3 className="text-[10px] font-black uppercase tracking-widest text-red-500">
           DATA_FETCH_ERROR
         </h3>
-        <p className="text-[9px] font-mono text-red-400/80 mt-2">Unable to load profile data. The application is still functional.</p>
+        <p className="text-[9px] font-mono text-red-400/80">Unable to load profile data. The application is still functional.</p>
       </div>
     );
   }
+  
   return (
     /* ✨ CORRECCIÓN: 
        Eliminamos p-4, sm:p-6 y bg-black/20.
        Ahora el componente confía en el padding del contenedor padre (Tabs.tsx).
-    */
+     */
     <div className="space-y-12">
       
       {/* SECCIÓN 1: DEMOGRÁFICOS */}
+      {(() => { console.log('🔍 Rendering DemographicsSection'); return (
       <section className="relative">
         {/* Línea decorativa lateral integrada al flujo */}
         <div className="absolute -left-4 top-0 h-full w-0.5 bg-[var(--palantir-active)]/30 hidden lg:block" />
@@ -79,7 +85,10 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
         
         <DemographicsSection patient={profile} onRefresh={refreshProfile} />
       </section>
+      ); })()}
+      
       {/* SECCIÓN 2: ALERTAS Y BIOMETRÍA */}
+      {(() => { console.log('🔍 Rendering AlertsSection'); return (
       <section>
         <div className="flex items-center gap-3 mb-6">
           <div className="p-1.5 bg-red-500/10 rounded-sm">
@@ -101,7 +110,10 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
         />
       </section>
+      ); })()}
+      
       {/* SECCIÓN 3: PERFIL CLÍNICO */}
+      {(() => { console.log('🔍 Rendering ClinicalProfileSection'); return (
       <section>
         <div className="flex items-center gap-3 mb-6">
           <div className="p-1.5 bg-blue-500/10 rounded-sm">
@@ -121,7 +133,10 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           onRefresh={refreshProfile}
         />
       </section>
+      ); })()}
+      
       {/* FOOTER DE ESTADO */}
+      {(() => { console.log('🔍 Rendering Footer'); return (
       <div className="pt-6 border-t border-[var(--palantir-border)] flex justify-between items-center">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-[8px] font-mono text-[var(--palantir-active)] uppercase">
@@ -136,6 +151,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           Last_Audit: {new Date().toLocaleTimeString()}
         </span>
       </div>
+      ); })()}
     </div>
   );
 }
