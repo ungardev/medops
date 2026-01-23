@@ -1,3 +1,6 @@
+// 🔍 DIAGNOSTIC: Verificar si el archivo se carga
+console.log('🔍 Patients.tsx file loaded');
+
 // src/pages/Patients/Patients.tsx
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
