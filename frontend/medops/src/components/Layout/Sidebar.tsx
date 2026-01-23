@@ -123,7 +123,6 @@ export default function Sidebar({
                 <li key={item.path}>
                   <button // ✅ FIX: Cambiar Link por button con navigate
                     onClick={() => {
-                      console.log('Sidebar navigation to:', item.path); // Log de diagnóstico
                       navigate(item.path);
                     }}
                     className={`${itemBase} ${isActive ? itemActive : itemIdle}`}

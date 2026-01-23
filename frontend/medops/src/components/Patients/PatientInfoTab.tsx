@@ -68,126 +68,82 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
     <div className="space-y-12">
       
       {/* SECCIÓN 1: DEMOGRÁFICOS */}
-      {(() => {
-        try {
-          console.log('🔍 Rendering DemographicsSection'); // 🔍 DIAGNOSTIC LOG
-          return (
-            <section className="relative">
-              {/* Línea decorativa lateral integrada al flujo */}
-              <div className="absolute -left-4 top-0 h-full w-0.5 bg-[var(--palantir-active)]/30 hidden lg:block" />
-              
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-1.5 bg-[var(--palantir-active)]/10 rounded-sm">
-                  <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-                  Subject_Identity_Core
-                </span>
-                <div className="flex-1 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] to-transparent" />
-              </div>
-              
-              <DemographicsSection patient={profile} onRefresh={refreshProfile} />
-            </section>
-          );
-        } catch (error) {
-          console.error('❌ Error in DemographicsSection:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          return <div>Error in DemographicsSection: {errorMessage}</div>;
-        }
-      })()}
+      <section className="relative">
+        {/* Línea decorativa lateral integrada al flujo */}
+        <div className="absolute -left-4 top-0 h-full w-0.5 bg-[var(--palantir-active)]/30 hidden lg:block" />
+        
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-1.5 bg-[var(--palantir-active)]/10 rounded-sm">
+            <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
+            Subject_Identity_Core
+          </span>
+          <div className="flex-1 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] to-transparent" />
+        </div>
+        
+        <DemographicsSection patient={profile} onRefresh={refreshProfile} />
+      </section>
       
       {/* SECCIÓN 2: ALERTAS Y BIOMETRÍA */}
-      {(() => {
-        try {
-          console.log('🔍 Rendering AlertsSection'); // 🔍 DIAGNOSTIC LOG
-          return (
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-1.5 bg-red-500/10 rounded-sm">
-                  <ShieldCheckIcon className="w-4 h-4 text-red-500" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">
-                  Critical_Risk_Assessment
-                </span>
-                <div className="flex-1 h-[1px] bg-gradient-to-r from-red-900/30 to-transparent" />
-              </div>
-              
-              <AlertsSection
-                patient={profile}
-                backgrounds={profile.clinical_background ?? []}
-                allergies={profile.allergies ?? []}
-                habits={profile.habits ?? []}
-                surgeries={profile.surgeries ?? []}
-                vaccinations={Array.isArray(vaccQuery.data) ? vaccQuery.data : []}
-                vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
-              />
-            </section>
-          );
-        } catch (error) {
-          console.error('❌ Error in AlertsSection:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          return <div>Error in AlertsSection: {errorMessage}</div>;
-        }
-      })()}
+      <section>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-1.5 bg-red-500/10 rounded-sm">
+            <ShieldCheckIcon className="w-4 h-4 text-red-500" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">
+            Critical_Risk_Assessment
+          </span>
+          <div className="flex-1 h-[1px] bg-gradient-to-r from-red-900/30 to-transparent" />
+        </div>
+        
+        <AlertsSection
+          patient={profile}
+          backgrounds={profile.clinical_background ?? []}
+          allergies={profile.allergies ?? []}
+          habits={profile.habits ?? []}
+          surgeries={profile.surgeries ?? []}
+          vaccinations={Array.isArray(vaccQuery.data) ? vaccQuery.data : []}
+          vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
+        />
+      </section>
       
       {/* SECCIÓN 3: PERFIL CLÍNICO */}
-      {(() => {
-        try {
-          console.log('🔍 Rendering ClinicalProfileSection'); // 🔍 DIAGNOSTIC LOG
-          return (
-            <section>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-1.5 bg-blue-500/10 rounded-sm">
-                  <CpuChipIcon className="w-4 h-4 text-blue-400" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">
-                  Historical_Clinical_Database
-                </span>
-                <div className="flex-1 h-[1px] bg-gradient-to-r from-blue-900/30 to-transparent" />
-              </div>
-              
-              <ClinicalProfileSection
-                backgrounds={profile.clinical_background ?? []}
-                allergies={profile.allergies ?? []}
-                habits={profile.habits ?? []}
-                patientId={patientId}
-                onRefresh={refreshProfile}
-              />
-            </section>
-          );
-        } catch (error) {
-          console.error('❌ Error in ClinicalProfileSection:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          return <div>Error in ClinicalProfileSection: {errorMessage}</div>;
-        }
-      })()}
+      <section>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-1.5 bg-blue-500/10 rounded-sm">
+            <CpuChipIcon className="w-4 h-4 text-blue-400" />
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">
+            Historical_Clinical_Database
+          </span>
+          <div className="flex-1 h-[1px] bg-gradient-to-r from-blue-900/30 to-transparent" />
+        </div>
+        
+        <ClinicalProfileSection
+          backgrounds={profile.clinical_background ?? []}
+          allergies={profile.allergies ?? []}
+          habits={profile.habits ?? []}
+          patientId={patientId}
+          onRefresh={refreshProfile}
+        />
+      </section>
       
       {/* FOOTER DE ESTADO */}
-      {(() => {
-        try {
-          console.log('🔍 Rendering Footer'); // 🔍 DIAGNOSTIC LOG
-          return (
-            <div className="pt-6 border-t border-[var(--palantir-border)] flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <span className="flex items-center gap-1.5 text-[8px] font-mono text-[var(--palantir-active)] uppercase">
-                  <div className="w-1 h-1 bg-[var(--palantir-active)] rounded-full animate-pulse" />
-                  Sync_Active
-                </span>
-                <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
-                  ID: {patientId.toString().padStart(6, '0')}
-                </span>
-              </div>
-              <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
-                Last_Audit: {new Date().toLocaleTimeString()}
-              </span>
-            </div>
-          );
-        } catch (error) {
-          console.error('❌ Error in Footer:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          return <div>Error in Footer: {errorMessage}</div>;
-        }
-      })()}
+      <div className="pt-6 border-t border-[var(--palantir-border)] flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-1.5 text-[8px] font-mono text-[var(--palantir-active)] uppercase">
+            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+            Sync_Active
+          </span>
+          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
+            ID: {patientId.toString().padStart(6, '0')}
+          </span>
+        </div>
+        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
+          Last_Audit: {new Date().toLocaleTimeString()}
+        </span>
+      </div>
     </div>
   );
 }

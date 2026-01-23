@@ -60,8 +60,6 @@ export default function PatientDetail() {
     setSearchParams({ tab: normalized });
   };
   
-  // 🔍 DIAGNOSTIC LOG: Verificar si currentTab cambia
-  console.log('PatientDetail currentTab:', currentTab);
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">

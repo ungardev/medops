@@ -16,7 +16,7 @@ interface ClinicalBackgroundForm {
   type: BackgroundType;
   condition?: string;
   relation?: string;
-  relative?: string; // 🔹 Agregado para resolver error ts(2339)
+  relative?: string;
   status?: "active" | "resolved" | "suspected" | "positive" | "negative";
   source?: string;
   notes?: string;
@@ -70,9 +70,6 @@ const allergySourceChoices = [
   { value: "autorreporte", label: "Autorreporte" },
 ];
 export default function ClinicalBackgroundModal({ open, onClose, onSave, initial, type }: Props) {
-  // 🔍 DIAGNOSTIC LOG: Verificar si este modal está abierto
-  console.log('ClinicalBackgroundModal open:', open);
-  
   const [form, setForm] = useState<ClinicalBackgroundForm>({
     type,
     condition: "",
@@ -90,7 +87,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
   const [options, setOptions] = useState<{ id: number; name: string }[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const activeConfig = typeConfig[type];
-  // ⭐ NEW: Agregar soporte para tecla Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
@@ -117,7 +113,7 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
         description: initial?.description ?? "",
         date: initial?.date ?? "",
       });
-      if (type === "genetic") { // ✅ FIX: Cambiar "genético" por "genetic"
+      if (type === "genetic") {
         setLoadingOptions(true);
         const fetchAll = async () => {
           let all: { id: number; name: string }[] = [];
@@ -144,7 +140,7 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
       payload = { type: form.personalType, description: form.condition, date: form.date || new Date().toISOString().slice(0, 10), notes: form.notes };
     } else if (type === "family") {
       payload = { condition: form.condition, relative: form.relation || form.relative, notes: form.notes };
-    } else if (type === "genetic") { // ✅ FIX: Cambiar "genético" por "genetic"
+    } else if (type === "genetic") {
       payload = { name: form.name, description: form.notes || "" };
     } else if (type === "allergy") {
       payload = { name: form.name, severity: form.severity, source: form.source, notes: form.notes };
@@ -157,14 +153,12 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
   return (
     <div 
       className="fixed inset-0 bg-[#07090e]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300"
-      onClick={onClose} // ✅ FIX: Agregar onClick al backdrop
+      onClick={onClose}
     >
       <div 
         className="bg-[#11141a] border border-[var(--palantir-border)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()} // ✅ FIX: Prevenir cerrar al hacer clic en el contenido
+        onClick={(e) => e.stopPropagation()}
       >
-        
-        {/* Cabecera */}
         <div className="px-6 py-4 border-b border-[var(--palantir-border)] flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg bg-white/5 ${activeConfig.color}`}>
@@ -183,9 +177,7 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
             <X size={20} />
           </button>
         </div>
-        {/* Formulario */}
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          
           {type === "personal" && (
             <div className="space-y-4 animate-in slide-in-from-right-2">
               <div className="space-y-1.5">
@@ -318,7 +310,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
             />
           </div>
         </div>
-        {/* Acciones */}
         <div className="p-6 bg-black/20 border-t border-[var(--palantir-border)] flex items-center justify-end gap-3">
           <button
             onClick={onClose}
