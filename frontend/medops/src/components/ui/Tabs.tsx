@@ -44,13 +44,11 @@ export function Tabs({
             <button
               key={tab.props.id}
               type="button"
-              onClick={() => {
-                onChange(tab.props.id);
-              }}
+              onClick={() => onChange(tab.props.id)}
               className={`
                 relative px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200
                 ${isActive 
-                  ? "text-blue-500 bg-blue-500/5" 
+                  ? "text-white bg-white/10"  // ✅ Cambiado: Neutro, letras blancas
                   : "text-white/30 hover:text-white/70 hover:bg-white/5"}
               `}
             >
@@ -59,9 +57,9 @@ export function Tabs({
                 {tab.props.label}
               </div>
               
-              {/* 💡 Active Indicator Line con efecto Glow */}
+              {/* 💡 Active Indicator Line - Neutro, sin azul */}
               {isActive && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.5)]" />
+                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/50" />  // ✅ Cambiado: Sin azul
               )}
             </button>
           );
@@ -69,8 +67,8 @@ export function Tabs({
       </div>
       {/* 🧊 CONTENT DISPLAY */}
       <div className={layout === "horizontal" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
-        {tabs.map((tab) => {
-          return tab.props.id === value ? (
+        {tabs.map((tab) =>
+          tab.props.id === value ? (
             <div
               key={tab.props.id}
               className="animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out"
@@ -79,8 +77,8 @@ export function Tabs({
                 {tab.props.children}
               </div>
             </div>
-          ) : null;
-        })}
+          ) : null
+        )}
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ import {
   GlobeAltIcon,
   UserIcon
 } from "@heroicons/react/24/outline";
-import { useState, useEffect } from "react"; // ✅ FIX: Agregar useState y useEffect
+import { useState, useEffect } from "react";
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -43,10 +43,8 @@ export default function PatientDetail() {
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // ✅ FIX: State local sincronizado con URL
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
   
-  // ✅ FIX: Sincronizar state local con cambios en URL
   useEffect(() => {
     const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
     if (tabFromUrl !== currentTab) {
@@ -121,7 +119,7 @@ export default function PatientDetail() {
       />
       
       {/* 📊 SUB-METADATA BAR (DNI, DOB, COUNTRY) */}
-      <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest"> // ✅ FIX: Quitado backdrop-blur-md
+      <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest">
         <span className="flex items-center gap-2.5">
           <IdentificationIcon className="w-4 h-4 text-blue-500/40" />
           <span className="text-white/10">DNI:</span> <span className="text-white/80 font-bold">{patient.national_id || "NOT_ASSIGNED"}</span>
@@ -139,7 +137,7 @@ export default function PatientDetail() {
       </div>
       
       {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
-      <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl"> // ✅ FIX: Quitado bg-black/20 y backdrop-blur-md
+      <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
         <Tabs
           value={currentTab}
           onChange={setTab}
