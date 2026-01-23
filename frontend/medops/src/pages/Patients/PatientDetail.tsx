@@ -42,6 +42,7 @@ export default function PatientDetail() {
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = normalizeTab(searchParams.get("tab") ?? "info");
+  console.log('PatientDetail currentTab:', currentTab);
   const setTab = (next: string) => {
     const normalized = normalizeTab(next);
     setSearchParams((prev) => {

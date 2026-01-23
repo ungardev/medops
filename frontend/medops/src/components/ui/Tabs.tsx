@@ -33,12 +33,17 @@ export function Tabs({
   const tabs = React.Children.toArray(children).filter((child) => {
     return isValidElement(child);
   }) as ReactElement<TabProps>[];
+  // 🔍 DIAGNOSTIC LOG: Verificar si Tabs se re-renderiza con el nuevo value
+  console.log('Tabs rendering with value:', value);
   return (
     <div className={className ?? "space-y-4"}>
       
       {/* 🛠️ NAVIGATION HEADER */}
       <div className="flex flex-wrap gap-1 border-b border-[var(--palantir-border)] pb-0 overflow-x-auto scrollbar-hide bg-black/20">
         {tabs.map((tab) => {
+          // 🔍 DIAGNOSTIC LOG: Verificar qué tabs se están evaluando
+          console.log('Checking tab:', tab.props.id, 'against value:', value);
+          
           const isActive = value === tab.props.id;
           return (
             <button
@@ -71,8 +76,11 @@ export function Tabs({
       </div>
       {/* 🧊 CONTENT DISPLAY */}
       <div className={layout === "horizontal" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
-        {tabs.map((tab) =>
-          tab.props.id === value ? (
+        {tabs.map((tab) => {
+          // 🔍 DIAGNOSTIC LOG: Verificar si el contenido se está renderizando
+          console.log('Rendering content for tab:', tab.props.id, 'value:', value);
+          
+          return tab.props.id === value ? (
             <div
               key={tab.props.id}
               className="animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out"
@@ -81,8 +89,8 @@ export function Tabs({
                 {tab.props.children}
               </div>
             </div>
-          ) : null
-        )}
+          ) : null;
+        })}
       </div>
     </div>
   );
