@@ -1,5 +1,5 @@
 // src/components/Layout/Sidebar.tsx
-import { useNavigate, useLocation } from "react-router-dom"; // ✅ FIX: Agregar useNavigate
+import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -29,6 +29,7 @@ const navItems = [
   { path: "/payments", label: "Pagos", icon: CreditCard },
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
+  { path: "/test", label: "TEST ROUTE", icon: LayoutDashboard }, // ✅ MODIFICACIÓN TEMPORAL PARA DIAGNÓSTICO
 ];
 export default function Sidebar({
   collapsed,
