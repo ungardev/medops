@@ -20,6 +20,7 @@ import {
   GlobeAltIcon,
   UserIcon
 } from "@heroicons/react/24/outline";
+import { useState, useEffect } from "react"; // ✅ FIX: Agregar useState y useEffect
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -41,20 +42,30 @@ export default function PatientDetail() {
   const patientId = Number(id);
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentTab = normalizeTab(searchParams.get("tab") ?? "info");
-  console.log('PatientDetail currentTab:', currentTab);
+  
+  // ✅ FIX: State local sincronizado con URL
+  const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
+  
+  // ✅ FIX: Sincronizar state local con cambios en URL
+  useEffect(() => {
+    const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
+    if (tabFromUrl !== currentTab) {
+      setCurrentTab(tabFromUrl);
+    }
+  }, [searchParams, currentTab]);
+  
   const setTab = (next: string) => {
     const normalized = normalizeTab(next);
-    setSearchParams((prev) => {
-      const p = new URLSearchParams(prev);
-      p.set("tab", normalized);
-      return p;
-    });
+    setCurrentTab(normalized);
+    setSearchParams({ tab: normalized });
   };
+  
+  // 🔍 DIAGNOSTIC LOG: Verificar si currentTab cambia
+  console.log('PatientDetail currentTab:', currentTab);
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-500">Syncing_Subject_Data...</p>
       </div>
     </div>
@@ -110,6 +121,7 @@ export default function PatientDetail() {
           </div>
         }
       />
+      
       {/* 📊 SUB-METADATA BAR (DNI, DOB, COUNTRY) */}
       <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest backdrop-blur-md">
         <span className="flex items-center gap-2.5">
@@ -127,6 +139,7 @@ export default function PatientDetail() {
           </span>
         )}
       </div>
+      
       {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
       <div className="border border-white/10 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
         <Tabs
