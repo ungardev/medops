@@ -82,24 +82,30 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const updatePatient = useUpdatePatient(patient.id);
   
   useEffect(() => {
-    // ✅ Usamos ?? "" para convertir null/undefined en strings vacíos y limpiar errores de tipos
-    setForm({
-      national_id: patient.national_id ?? "",
-      first_name: patient.first_name ?? "",
-      middle_name: patient.middle_name ?? "",
-      last_name: patient.last_name ?? "",
-      second_last_name: patient.second_last_name ?? "",
-      birthdate: patient.birthdate ?? "",
-      birth_place: patient.birth_place ?? "",
-      birth_country: patient.birth_country ?? "",
-      email: patient.email ?? "",
-      contact_info: patient.contact_info ?? "",
-      country_id: chain.country_id,
-      state_id: chain.state_id,
-      municipality_id: chain.municipality_id,
-      parish_id: chain.parish_id,
-      neighborhood_id: chain.neighborhood_id,
-    });
+    try {
+      // ✅ Usamos ?? "" para convertir null/undefined en strings vacíos y limpiar errores de tipos
+      setForm({
+        national_id: patient.national_id ?? "",
+        first_name: patient.first_name ?? "",
+        middle_name: patient.middle_name ?? "",
+        last_name: patient.last_name ?? "",
+        second_last_name: patient.second_last_name ?? "",
+        birthdate: patient.birthdate ?? "",
+        birth_place: patient.birth_place ?? "",
+        birth_country: patient.birth_country ?? "",
+        email: patient.email ?? "",
+        contact_info: patient.contact_info ?? "",
+        country_id: chain.country_id,
+        state_id: chain.state_id,
+        municipality_id: chain.municipality_id,
+        parish_id: chain.parish_id,
+        neighborhood_id: chain.neighborhood_id,
+      });
+    } catch (error) {
+      console.error('❌ Error in DemographicsSection useEffect:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Error details:', errorMessage);
+    }
   }, [patient, chain]);
   
   const handleSave = () => {
