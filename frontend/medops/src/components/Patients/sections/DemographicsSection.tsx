@@ -80,6 +80,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   
   const [form, setForm] = useState<Partial<PatientInput>>({});
   const updatePatient = useUpdatePatient(patient.id);
+  
   useEffect(() => {
     // ✅ Usamos ?? "" para convertir null/undefined en strings vacíos y limpiar errores de tipos
     setForm({
@@ -100,6 +101,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_id: chain.neighborhood_id,
     });
   }, [patient, chain]);
+  
   const handleSave = () => {
     updatePatient.mutate(form as PatientInput, {
       onSuccess: () => { 
@@ -108,64 +110,73 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       }
     });
   };
+  
   const direccionCompleta = `, `.trim().toUpperCase();
-  return (
-    <div className="bg-[var(--palantir-surface)]/20 border border border-[var(--palantir-border)] rounded-sm overflow-hidden transition-all duration-500 hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]">
-      <div className="bg-[var(--palantir-border)]/20 px-4 py-2 flex justify-between items-center border-b border-[var(--palantir-border)]">
-        <div className="flex items-center gap-2">
-          <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-          <span className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest">Subject_Demographics</span>
+  
+  // 🔍 DIAGNÓSTICO: Try-catch para capturar el error exacto
+  try {
+    return (
+      <div className="bg-[var(--palantir-surface)]/20 border border border-[var(--palantir-border)] rounded-sm overflow-hidden transition-all duration-500 hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+        <div className="bg-[var(--palantir-border)]/20 px-4 py-2 flex justify-between items-center border-b border-[var(--palantir-border)]">
+          <div className="flex items-center gap-2">
+            <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+            <span className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest">Subject_Demographics</span>
+          </div>
+          
+          {editing ? (
+            <div className="flex gap-2">
+              <button onClick={() => setEditing(false)} className="flex items-center gap-1 px-3 py-1 text-[9px] font-mono text-[var(--palantir-muted)] hover:text-white transition-colors">
+                <XMarkIcon className="w-3 h-3" /> CANCEL
+              </button>
+              <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1 bg-[var(--palantir-active)] text-white text-[9px] font-bold rounded-sm shadow-lg shadow-blue-500/20">
+                <CheckIcon className="w-3 h-3" /> COMMIT_CHANGES
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setEditing(true)} className="flex items-center gap-1 px-3 py-1 border border border-[var(--palantir-border)] text-[9px] font-mono text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:border-[[var(--palantir-border)] transition-all">
+              <PencilSquareIcon className="w-3 h-3" /> EDIT_RECORD
+            </button>
+          )}
         </div>
         
-        {editing ? (
-          <div className="flex gap-2">
-            <button onClick={() => setEditing(false)} className="flex items-center gap-1 px-3 py-1 text-[9px] font-mono text-[var(--palantir-muted)] hover:text-white transition-colors">
-              <XMarkIcon className="w-3 h-3" /> CANCEL
-            </button>
-            <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1 bg-[var(--palantir-active)] text-white text-[9px] font-bold rounded-sm shadow-lg shadow-blue-500/20">
-              <CheckIcon className="w-3 h-3" /> COMMIT_CHANGES
-            </button>
+        {/* ⭐ CRITICAL FIX: Envolver inputs en <form> con e.preventDefault() */}
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault(); // ⭐ CRITICAL: Prevenir recarga de página
+            if (editing) handleSave();
+          }}
+          className="p-6 grid grid-cols-12 gap-x-8 gap-y-6"
+        >
+          {/* Usamos el operador || "" para asegurar que siempre pasamos un string al componente Field */}
+          <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm({...form, national_id: v})} />
+          <Field span={3} label="First_Name" value={form.first_name || ""} editing={editing} onChange={(v) => setForm({...form, first_name: v})} />
+          <Field span={3} label="Last_Name" value={form.last_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, last_name: v }))} />
+          <Field span={3} label="Birth_Date" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setForm({...form, birthdate: v})} />
+          
+          <Field span={3} label="Email_Address" value={form.email || ""} editing={editing} onChange={(v) => setForm({...form, email: v})} />
+          <Field span={3} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm({...form, contact_info: v})} />
+          <Field span={6} label="Birth_Location" value={`${form.birth_place || ''}`} editing={editing} onChange={(v) => setForm({...form, birth_place: v})} />
+          
+          <div className="col-span-12 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] via-transparent to-transparent my-2" />
+          <div className="col-span-12 flex items-center gap-2 mb-2">
+            <MapPinIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
+            <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em]">Geographic_Location_Data</span>
           </div>
-        ) : (
-          <button onClick={() => setEditing(true)} className="flex items-center gap-1 px-3 py-1 border border border-[var(--palantir-border)] text-[9px] font-mono text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:border-[[var(--palantir-border)] transition-all">
-            <PencilSquareIcon className="w-3 h-3" /> EDIT_RECORD
-          </button>
-        )}
+          
+          {!editing ? (
+            <div className="col-span-12 bg-[var(--palantir-bg)]/50 border border border-[var(--palantir-border)] p-3 rounded-sm">
+              <label className="block text-[8px] font-mono text-[var(--palantir-muted)] uppercase mb-1">Primary_Residence_Chain</label>
+              <p className="text-[10px] font-mono text-[var(--palantir-text)] leading-relaxed">{direccionCompleta || "NO_LOCATION_DATA_AVAILABLE"}</p>
+            </div>
+          ) : (
+            <Field span={12} label="Full_Address_Details" value={form.address ?? ""} editing={editing} multiline onChange={(v) => setForm({...form, address: v})} />
+          )}
+        </form>
       </div>
-      
-      {/* ⭐ CRITICAL FIX: Envolver inputs en <form> con e.preventDefault() */}
-      <form 
-        onSubmit={(e) => {
-          e.preventDefault(); // ⭐ CRITICAL: Prevenir recarga de página
-          if (editing) handleSave();
-        }}
-        className="p-6 grid grid-cols-12 gap-x-8 gap-y-6"
-      >
-        {/* Usamos el operador || "" para asegurar que siempre pasamos un string al componente Field */}
-        <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm({...form, national_id: v})} />
-        <Field span={3} label="First_Name" value={form.first_name || ""} editing={editing} onChange={(v) => setForm({...form, first_name: v})} />
-        <Field span={3} label="Last_Name" value={form.last_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, last_name: v }))} />
-        <Field span={3} label="Birth_Date" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setForm({...form, birthdate: v})} />
-        
-        <Field span={3} label="Email_Address" value={form.email || ""} editing={editing} onChange={(v) => setForm({...form, email: v})} />
-        <Field span={3} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm({...form, contact_info: v})} />
-        <Field span={6} label="Birth_Location" value={`${form.birth_place || ''}`} editing={editing} onChange={(v) => setForm({...form, birth_place: v})} />
-        
-        <div className="col-span-12 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] via-transparent to-transparent my-2" />
-        <div className="col-span-12 flex items-center gap-2 mb-2">
-          <MapPinIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
-          <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em]">Geographic_Location_Data</span>
-        </div>
-        
-        {!editing ? (
-          <div className="col-span-12 bg-[var(--palantir-bg)]/50 border border border-[var(--palantir-border)] p-3 rounded-sm">
-            <label className="block text-[8px] font-mono text-[var(--palantir-muted)] uppercase mb-1">Primary_Residence_Chain</label>
-            <p className="text-[10px] font-mono text-[var(--palantir-text)] leading-relaxed">{direccionCompleta || "NO_LOCATION_DATA_AVAILABLE"}</p>
-          </div>
-        ) : (
-          <Field span={12} label="Full_Address_Details" value={form.address ?? ""} editing={editing} multiline onChange={(v) => setForm({...form, address: v})} />
-        )}
-      </form>
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error('❌ Error in DemographicsSection:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return <div>Error in DemographicsSection: {errorMessage}</div>;
+  }
 }

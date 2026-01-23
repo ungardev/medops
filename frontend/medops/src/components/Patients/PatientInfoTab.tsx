@@ -67,13 +67,13 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
      */
     <div className="space-y-12">
       
-      {/* SECCIÓN 1: DEMOGRÁFICOS - COMENTADA PARA DIAGNÓSTICO */}
-      {/* 
+      {/* SECCIÓN 1: DEMOGRÁFICOS */}
       {(() => {
         try {
           console.log('🔍 Rendering DemographicsSection'); // 🔍 DIAGNOSTIC LOG
           return (
             <section className="relative">
+              {/* Línea decorativa lateral integrada al flujo */}
               <div className="absolute -left-4 top-0 h-full w-0.5 bg-[var(--palantir-active)]/30 hidden lg:block" />
               
               <div className="flex items-center gap-3 mb-6">
@@ -95,7 +95,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           return <div>Error in DemographicsSection: {errorMessage}</div>;
         }
       })()}
-      */}
       
       {/* SECCIÓN 2: ALERTAS Y BIOMETRÍA */}
       {(() => {
