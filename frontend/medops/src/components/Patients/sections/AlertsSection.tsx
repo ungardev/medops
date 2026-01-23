@@ -3,20 +3,16 @@ import React, { useMemo, useState } from "react";
 import { PlusIcon, ExclamationTriangleIcon, InformationCircleIcon, BoltIcon } from "@heroicons/react/24/outline";
 import AlertModal from "./AlertModal";
 import { useClinicalAlerts } from "../../../hooks/patients/useClinicalAlerts";
-
 type AlertType = "danger" | "warning" | "info";
-
 interface AutoAlert {
   type: AlertType;
   message: React.ReactNode;
 }
-
 interface ManualAlert {
   id: number;
   type: AlertType;
   message: string;
 }
-
 interface Props {
   patient: any;
   backgrounds: any[];
@@ -25,15 +21,12 @@ interface Props {
   surgeries: any[];
   vaccinations: any[];
   vaccinationSchedule: any[];
-  onChangeTab?: (id: string) => void;
 }
-
 function isRecent(date?: string) {
   if (!date) return false;
   const diffMonths = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24 * 30);
   return diffMonths < 6;
 }
-
 export default function AlertsSection({
   patient,
   backgrounds,
@@ -42,17 +35,13 @@ export default function AlertsSection({
   surgeries,
   vaccinations,
   vaccinationSchedule,
-  onChangeTab,
 }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ManualAlert | null>(null);
-
   const { list, create, update, remove } = useClinicalAlerts(patient.id);
-
   // --- LÓGICA DE ALERTAS AUTOMÁTICAS (CORE INTELLIGENCE) ---
   const autoAlerts: AutoAlert[] = useMemo(() => {
     const alerts: AutoAlert[] = [];
-
     if (allergies.length > 0) {
       alerts.push({
         type: "danger",
@@ -64,7 +53,6 @@ export default function AlertsSection({
         ),
       });
     }
-
     const medicalHistory = backgrounds.filter((a) => a.type === "personal" || a.type === "family");
     if (medicalHistory.length > 0) {
       alerts.push({
@@ -77,7 +65,6 @@ export default function AlertsSection({
         ),
       });
     }
-
     const riskyHabits = habits.filter((h) => ["smoking", "alcohol", "drugs"].includes(h.type));
     if (riskyHabits.length > 0) {
       alerts.push({
@@ -90,7 +77,6 @@ export default function AlertsSection({
         ),
       });
     }
-
     const recentSurgeries = surgeries.filter((s) => isRecent(s.date));
     if (recentSurgeries.length > 0) {
       alerts.push({
@@ -103,7 +89,6 @@ export default function AlertsSection({
         ),
       });
     }
-
     const missing = vaccinationSchedule.filter(
       (dose: any) => !vaccinations.some((v: any) => v.vaccine.id === dose.vaccine.id && v.dose_number === dose.dose_number)
     );
@@ -118,13 +103,10 @@ export default function AlertsSection({
         ),
       });
     }
-
     return alerts;
   }, [backgrounds, allergies, habits, surgeries, vaccinations, vaccinationSchedule]);
-
   const manualAlerts: ManualAlert[] = (list.data as ManualAlert[]) ?? [];
   const allAlerts = [...autoAlerts, ...manualAlerts];
-
   // Configuración visual táctica
   const alertStyles: Record<AlertType, { bg: string; text: string; border: string; icon: any }> = {
     danger: { 
@@ -140,7 +122,6 @@ export default function AlertsSection({
       text: "text-blue-400", icon: InformationCircleIcon 
     },
   };
-
   return (
     <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden">
       {/* Header Táctico */}
@@ -158,7 +139,6 @@ export default function AlertsSection({
           <PlusIcon className="w-5 h-5" />
         </button>
       </div>
-
       <div className="p-5">
         {allAlerts.length === 0 ? (
           <div className="py-8 text-center border border-dashed border-[var(--palantir-border)] rounded-sm">
@@ -172,24 +152,23 @@ export default function AlertsSection({
               const Icon = style.icon;
               const isManual = "id" in alert;
               const key = isManual ? `manual-${alert.id}` : `auto-${index}`;
-
               return (
                 <div 
                   key={key}
                   className={`${style.bg} ${style.border} border p-4 rounded-sm flex items-start gap-4 transition-all hover:brightness-125`}
                 >
                   <Icon className={`w-5 h-5 mt-0.5 ${style.text}`} />
-                  
+                   
                   <div className="flex-1">
                     <div className={`text-[11px] font-mono leading-relaxed ${style.text}`}>
                       {alert.message}
                     </div>
-                    
+                     
                     <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2">
                       <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
                         Origin: {isManual ? `STAFF_ID_${(alert as any).created_by || 'USR'}` : 'SYSTEM_AUTO_GEN'}
                       </span>
-                      
+                       
                       {isManual && (
                         <div className="flex gap-3">
                           <button 
@@ -214,7 +193,6 @@ export default function AlertsSection({
           </div>
         )}
       </div>
-
       <AlertModal
         open={modalOpen}
         onClose={() => { setModalOpen(false); setEditing(null); }}

@@ -99,7 +99,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           surgeries={profile.surgeries ?? []}
           vaccinations={Array.isArray(vaccQuery.data) ? vaccQuery.data : []}
           vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
-          onChangeTab={(tab) => console.log("NAV:", tab)}
         />
       </section>
       {/* SECCIÓN 3: PERFIL CLÍNICO */}

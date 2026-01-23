@@ -28,6 +28,7 @@ function Field({ label, value, type = "text", multiline = false, span = 3, editi
     8: "md:col-span-8", 9: "md:col-span-9", 12: "md:col-span-12"
   };
   const colClass = `col-span-12 `;
+  
   return (
     <div className={` group`}>
       <label className="block text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest mb-1 group-focus-within:text-[var(--palantir-active)] transition-colors">
@@ -39,6 +40,12 @@ function Field({ label, value, type = "text", multiline = false, span = 3, editi
             rows={2}
             value={value}
             onChange={(e) => onChange?.(e.target.value)}
+            onKeyDown={(e) => {
+              // ⭐ CRITICAL: Prevenir Enter key de causar comportamiento inesperado
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+              }
+            }}
             className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-xs font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] focus:outline-none focus:ring-1 focus:ring-[var(--palantir-active)]/30 transition-all uppercase"
           />
         ) : (
@@ -46,6 +53,12 @@ function Field({ label, value, type = "text", multiline = false, span = 3, editi
             type={type}
             value={value}
             onChange={(e) => onChange?.(e.target.value)}
+            onKeyDown={(e) => {
+              // ⭐ CRITICAL: Prevenir Enter key de causar comportamiento inesperado
+              if (e.key === 'Enter') {
+                e.preventDefault();
+              }
+            }}
             className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-3 py-2 text-xs font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] focus:outline-none focus:ring-1 focus:ring-[var(--palantir-active)]/30 transition-all uppercase"
           />
         )
@@ -119,7 +132,15 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           </button>
         )}
       </div>
-      <div className="p-6 grid grid-cols-12 gap-x-8 gap-y-6">
+      
+      {/* ⭐ CRITICAL FIX: Envolver inputs en <form> con e.preventDefault() */}
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault(); // ⭐ CRITICAL: Prevenir recarga de página
+          if (editing) handleSave();
+        }}
+        className="p-6 grid grid-cols-12 gap-x-8 gap-y-6"
+      >
         {/* Usamos el operador || "" para asegurar que siempre pasamos un string al componente Field */}
         <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm({...form, national_id: v})} />
         <Field span={3} label="First_Name" value={form.first_name || ""} editing={editing} onChange={(v) => setForm({...form, first_name: v})} />
@@ -128,12 +149,14 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         
         <Field span={3} label="Email_Address" value={form.email || ""} editing={editing} onChange={(v) => setForm({...form, email: v})} />
         <Field span={3} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm({...form, contact_info: v})} />
-        <Field span={6} label="Birth_Location" value={`, `} editing={editing} onChange={(v) => setForm({...form, birth_place: v})} />
+        <Field span={6} label="Birth_Location" value={`${form.birth_place || ''}`} editing={editing} onChange={(v) => setForm({...form, birth_place: v})} />
+        
         <div className="col-span-12 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] via-transparent to-transparent my-2" />
         <div className="col-span-12 flex items-center gap-2 mb-2">
           <MapPinIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
           <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em]">Geographic_Location_Data</span>
         </div>
+        
         {!editing ? (
           <div className="col-span-12 bg-[var(--palantir-bg)]/50 border border-[var(--palantir-border)] p-3 rounded-sm">
             <label className="block text-[8px] font-mono text-[var(--palantir-muted)] uppercase mb-1">Primary_Residence_Chain</label>
@@ -142,7 +165,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         ) : (
           <Field span={12} label="Full_Address_Details" value={form.address ?? ""} editing={editing} multiline onChange={(v) => setForm({...form, address: v})} />
         )}
-      </div>
+      </form>
     </div>
   );
 }

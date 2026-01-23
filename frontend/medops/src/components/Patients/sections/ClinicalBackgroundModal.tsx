@@ -11,9 +11,7 @@ import {
   Save, 
   Loader2 
 } from "lucide-react";
-
 type BackgroundType = "personal" | "family" | "genetic" | "allergy" | "habit";
-
 interface ClinicalBackgroundForm {
   type: BackgroundType;
   condition?: string;
@@ -28,7 +26,6 @@ interface ClinicalBackgroundForm {
   description?: string;
   date?: string;
 }
-
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -36,7 +33,6 @@ interface Props {
   initial?: ClinicalBackgroundForm;
   type: BackgroundType;
 }
-
 const typeConfig: Record<BackgroundType, { label: string; icon: any; color: string }> = {
   personal: { label: "Antecedente Personal", icon: ClipboardList, color: "text-blue-400" },
   family: { label: "Antecedente Familiar", icon: Users, color: "text-purple-400" },
@@ -44,7 +40,6 @@ const typeConfig: Record<BackgroundType, { label: string; icon: any; color: stri
   allergy: { label: "Alergia / Reacción", icon: AlertTriangle, color: "text-orange-400" },
   habit: { label: "Hábito / Estilo de Vida", icon: Activity, color: "text-cyan-400" },
 };
-
 const personalHistoryChoices = [
   { value: "patologico", label: "Patológico" },
   { value: "no_patologico", label: "No patológico" },
@@ -54,7 +49,6 @@ const personalHistoryChoices = [
   { value: "toxico", label: "Tóxico" },
   { value: "gineco_obstetrico", label: "Gineco-obstétrico" },
 ];
-
 const habitTypes = [
   { value: "tabaco", label: "Tabaco" },
   { value: "alcohol", label: "Alcohol" },
@@ -63,21 +57,18 @@ const habitTypes = [
   { value: "sueno", label: "Sueño" },
   { value: "drogas", label: "Drogas" },
 ];
-
 const allergySeverityChoices = [
   { value: "leve", label: "Leve" },
   { value: "moderada", label: "Moderada" },
   { value: "grave", label: "Grave" },
   { value: "anafilactica", label: "Anafiláctica" },
 ];
-
 const allergySourceChoices = [
   { value: "historia_clinica", label: "Historia clínica" },
   { value: "prueba_cutanea", label: "Prueba cutánea" },
   { value: "prueba_sanguinea", label: "Prueba sanguínea" },
   { value: "autorreporte", label: "Autorreporte" },
 ];
-
 export default function ClinicalBackgroundModal({ open, onClose, onSave, initial, type }: Props) {
   const [form, setForm] = useState<ClinicalBackgroundForm>({
     type,
@@ -93,12 +84,9 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
     description: "",
     date: "",
   });
-
   const [options, setOptions] = useState<{ id: number; name: string }[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
-
   const activeConfig = typeConfig[type];
-
   useEffect(() => {
     if (open) {
       setForm({
@@ -115,7 +103,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
         description: initial?.description ?? "",
         date: initial?.date ?? "",
       });
-
       if (type === "genetic") {
         setLoadingOptions(true);
         const fetchAll = async () => {
@@ -134,12 +121,9 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
       }
     }
   }, [open, initial, type]);
-
   if (!open) return null;
-
   const setField = (field: keyof ClinicalBackgroundForm, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
-
   const handleSave = () => {
     let payload: any = {};
     if (type === "personal") {
@@ -156,10 +140,15 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
     onSave(payload);
     onClose();
   };
-
   return (
-    <div className="fixed inset-0 bg-[#07090e]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-      <div className="bg-[#11141a] border border-[var(--palantir-border)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+    <div 
+      className="fixed inset-0 bg-[#07090e]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300"
+      onClick={onClose} // ⭐ CRITICAL FIX: Agregar onClick al backdrop
+    >
+      <div 
+        className="bg-[#11141a] border border-[var(--palantir-border)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()} // ⭐ CRITICAL FIX: Prevenir cerrar al hacer clic en el contenido
+      >
         
         {/* Cabecera */}
         <div className="px-6 py-4 border-b border-[var(--palantir-border)] flex items-center justify-between bg-white/[0.02]">
@@ -180,7 +169,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
             <X size={20} />
           </button>
         </div>
-
         {/* Formulario */}
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scrollbar">
           
@@ -207,7 +195,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
               </div>
             </div>
           )}
-
           {type === "family" && (
             <div className="space-y-4 animate-in slide-in-from-right-2">
               <div className="space-y-1.5">
@@ -230,7 +217,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
               </div>
             </div>
           )}
-
           {type === "genetic" && (
             <div className="space-y-4 animate-in slide-in-from-right-2">
               <div className="space-y-1.5">
@@ -248,7 +234,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
               </div>
             </div>
           )}
-
           {type === "allergy" && (
             <div className="space-y-4 animate-in slide-in-from-right-2">
               <div className="space-y-1.5">
@@ -286,7 +271,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
               </div>
             </div>
           )}
-
           {type === "habit" && (
             <div className="space-y-4 animate-in slide-in-from-right-2">
               <div className="space-y-1.5">
@@ -310,7 +294,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
               </div>
             </div>
           )}
-
           <div className="space-y-1.5 pt-2 border-t border-[var(--palantir-border)]/30">
             <label className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest ml-1">Observaciones adicionales</label>
             <textarea
@@ -321,7 +304,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
             />
           </div>
         </div>
-
         {/* Acciones */}
         <div className="p-6 bg-black/20 border-t border-[var(--palantir-border)] flex items-center justify-end gap-3">
           <button

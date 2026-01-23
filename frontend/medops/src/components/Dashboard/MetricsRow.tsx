@@ -14,7 +14,7 @@ const MetricsRow: React.FC = () => {
         style: 'currency',
         currency: currency || 'MXN',
         minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
+        maximumFractionDigits:0,
       }).format(value);
     }
     return value.toLocaleString();

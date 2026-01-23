@@ -1,40 +1,39 @@
 // src/components/Patients/sections/AlertModal.tsx
 import React, { useState, useEffect } from "react";
-
 interface Props {
   open: boolean;
   onClose: () => void;
   onSave: (data: { type: "danger" | "warning" | "info"; message: string }) => void;
   initial?: { type: "danger" | "warning" | "info"; message: string };
 }
-
 export default function AlertModal({ open, onClose, onSave, initial }: Props) {
   const [form, setForm] = useState<{ type: "danger" | "warning" | "info"; message: string }>({
     type: initial?.type ?? "warning",
     message: initial?.message ?? "",
   });
-
   // Sincronizar estado cuando se edita una alerta existente
   useEffect(() => {
     if (initial) {
       setForm({ type: initial.type, message: initial.message });
     }
   }, [initial]);
-
   if (!open) return null;
-
   const handleSave = () => {
     if (form.message.trim() === "") return; // Evitar guardar vacío
     onSave(form);
   };
-
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-lg">
+    <div 
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      onClick={onClose} // ⭐ CRITICAL FIX: Agregar onClick al backdrop
+    >
+      <div 
+        className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-lg"
+        onClick={(e) => e.stopPropagation()} // ⭐ CRITICAL FIX: Prevenir cerrar al hacer clic en el contenido
+      >
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-4">
           {initial ? "Editar alerta" : "Nueva alerta"}
         </h3>
-
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium block mb-1">Tipo</label>
@@ -48,7 +47,6 @@ export default function AlertModal({ open, onClose, onSave, initial }: Props) {
               <option value="info">Información</option>
             </select>
           </div>
-
           <div>
             <label className="text-sm font-medium block mb-1">Mensaje</label>
             <textarea
@@ -60,7 +58,6 @@ export default function AlertModal({ open, onClose, onSave, initial }: Props) {
             />
           </div>
         </div>
-
         <div className="flex justify-end gap-2 mt-6">
           <button
             className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
