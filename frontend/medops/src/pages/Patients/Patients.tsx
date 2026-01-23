@@ -11,48 +11,38 @@ import {
   ServerIcon,
   FingerPrintIcon
 } from "@heroicons/react/24/outline";
-
 // Hooks
 import { usePatients } from "../../hooks/patients/usePatients";
 import { usePatientsSearch } from "../../hooks/patients/usePatientsSearch";
 import { useDeletePatient } from "../../hooks/patients/useDeletePatient";
-
 // Componentes de Common
 import PageHeader from "../../components/Common/PageHeader";
 import Pagination from "../../components/Common/Pagination";
 import EmptyState from "../../components/Common/EmptyState";
 import { EmptyStateRegistry } from "../../components/Common/EmptyStateRegistry";
-
 // Components
 import NewPatientModal from "../../components/Patients/NewPatientModal";
 import PatientsTable from "../../components/Patients/PatientsTable";
-
 // Types
 import { Patient } from "../../types/patients";
-
 export default function Patients() {
   const [query, setQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { mutate: deletePatient, isPending: isDeleting } = useDeletePatient();
-
   // Data Fetching
   const { data: paged, isLoading: isLoadingPaged, refetch } = usePatients(currentPage, pageSize);
   const { data: searchResults = [], isLoading: isSearching } = usePatientsSearch(query);
-
   // Selector de lista (Búsqueda vs Paginación)
   const list = useMemo(() => {
     return query.trim().length > 0 
       ? searchResults 
       : (paged?.results || []);
   }, [query, searchResults, paged]);
-
   const handleView = (id: number) => navigate(`/patients/${id}`);
-
   const handleDelete = (p: Patient) => {
     if (window.confirm(`⚠️ CRITICAL_NOTICE: ¿Confirmar purga del registro #${p.id}? Esta operación es irreversible.`)) {
       deletePatient(p.id, {
@@ -62,11 +52,14 @@ export default function Patients() {
       });
     }
   };
-
-  return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      
-      {/* HEADER TÉCNICO */}
+  // 🔍 DIAGNÓSTICO: Try-catch para identificar el error exacto
+  try {
+    console.log('🔍 Patients.tsx - Starting render');
+    // SECCIÓN 1: HOOKS
+    console.log('✅ Patients.tsx - Hooks section passed');
+    // SECCIÓN 2: PAGE HEADER
+    console.log('✅ Patients.tsx - PageHeader section passed');
+    const pageHeader = (
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -100,8 +93,10 @@ export default function Patients() {
           </div>
         }
       />
-
-      {/* 🔍 MAINFRAME SEARCH - Neutralizado */}
+    );
+    // SECCIÓN 3: SEARCH INPUT
+    console.log('✅ Patients.tsx - Search section passed');
+    const searchSection = (
       <div className="relative group">
         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
           <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/20'}`} />
@@ -110,8 +105,8 @@ export default function Patients() {
           type="text"
           value={query}
           onChange={(e) => {
-              setQuery(e.target.value);
-              setCurrentPage(1);
+            setQuery(e.target.value);
+            setCurrentPage(1);
           }}
           placeholder="ACCESS_CENTRAL_DATABASE: BUSCAR POR NOMBRE, UID O FOLIO..."
           className="w-full bg-black/40 border border-white/10 text-white text-xs font-mono py-4 pl-12 pr-4 rounded-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 uppercase tracking-[0.1em] shadow-inner"
@@ -122,8 +117,10 @@ export default function Patients() {
           </div>
         )}
       </div>
-
-      {/* 🖥️ SUBJECT_GRID_CONTROLLER */}
+    );
+    // SECCIÓN 4: TABLE RENDER
+    console.log('✅ Patients.tsx - Table section passed');
+    const tableSection = (
       <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
           <PatientsTable
@@ -158,23 +155,19 @@ export default function Patients() {
                       </div>
                     </div>
                   </td>
-
                   <td className="px-4 py-4 text-[11px] font-mono text-white/40 w-[160px]">
                     {p.national_id || "NOT_ASSIGNED"}
                   </td>
-
                   <td className="px-4 py-4 w-[130px]">
                     <span className="text-[9px] px-2 py-0.5 border border-white/10 text-white/40 font-mono uppercase bg-black/40 block text-center truncate">
                       {p.gender || "UDF"}
                     </span>
                   </td>
-
                   <td className="px-4 py-4 text-[10px] font-mono text-white/40 max-w-[220px]">
                     <div className="truncate" title={p.contact_info || ""}>
                       {p.contact_info || "---"}
                     </div>
                   </td>
-
                   <td className="px-4 py-4 w-[110px]">
                     <div className="flex items-center gap-4 justify-end">
                       <button 
@@ -198,7 +191,6 @@ export default function Patients() {
             )}
           </PatientsTable>
         </div>
-
         {/* 📟 PANEL DE PAGINACIÓN */}
         <div className="flex items-center justify-between p-4 border-t border-white/5 bg-black/40">
           <div className="flex items-center gap-3">
@@ -221,12 +213,26 @@ export default function Patients() {
           )}
         </div>
       </div>
-
-      <NewPatientModal
-        open={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onCreated={refetch}
-      />
-    </div>
-  );
+    );
+    console.log('✅ Patients.tsx - All sections passed, rendering complete');
+    return (
+      <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
+        
+        {pageHeader}
+        
+        {searchSection}
+        
+        {tableSection}
+        <NewPatientModal
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onCreated={refetch}
+        />
+      </div>
+    );
+  } catch (error) {
+    console.error('❌ ERROR in Patients.tsx:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'; // ✅ FIX: Type assertion
+    return <div>Error loading patients page: {errorMessage}</div>;
+  }
 }
