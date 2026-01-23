@@ -1,5 +1,5 @@
-// src/components/Layout/Sidebar.tsx
-import { useNavigate, useLocation } from "react-router-dom";
+// src/components/Sidebar.tsx
+import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
@@ -29,7 +29,6 @@ const navItems = [
   { path: "/payments", label: "Pagos", icon: CreditCard },
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
-  { path: "/test", label: "TEST ROUTE", icon: LayoutDashboard }, // ✅ MODIFICACIÓN TEMPORAL PARA DIAGNÓSTICO
 ];
 export default function Sidebar({
   collapsed,
@@ -38,7 +37,6 @@ export default function Sidebar({
   setMobileOpen,
 }: SidebarProps) {
   const location = useLocation();
-  const navigate = useNavigate(); // ✅ FIX: Agregar useNavigate
   const [isDarkMode, setIsDarkMode] = useState(true);
   const effectiveCollapsed = mobileOpen ? false : collapsed;
   useEffect(() => {
@@ -60,7 +58,7 @@ export default function Sidebar({
       className={`border-r border-white/5 transition-all duration-500 ease-in-out
         ${effectiveCollapsed ? "w-[78px]" : "w-64"}
         h-screen bg-[#0a0a0b] text-white
-        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-[300] // ✅ FIX: Z-index alto
+        flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-50
       `}
     >
       <div className="flex flex-col h-full pt-4 pb-6 px-3">
@@ -80,8 +78,8 @@ export default function Sidebar({
                     <X size={24} />
                   </button>
                 )}
-                <button // ✅ FIX: Cambiar Link por button con navigate
-                  onClick={() => navigate("/")}
+                <Link 
+                  to="/" 
                   className={`flex items-center transition-all duration-500 hover:opacity-100 ${
                     mobileOpen ? "flex-col gap-1" : "gap-3"
                   } ${location.pathname === "/" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
@@ -92,76 +90,93 @@ export default function Sidebar({
                         className={`transition-all duration-500 drop-shadow-[0_0_25px_rgba(255,255,255,0.18)] ${
                             mobileOpen 
                             ? "h-28 w-28" 
-                            : effectiveCollapsed ? "h-6 w-6" : "h-8 w-8"
+                            : effectiveCollapsed ? "h-10 w-10" : "h-9 w-9"
                         }`}
                     />
-                    {!effectiveCollapsed && !mobileOpen && (
+                    
+                    {!effectiveCollapsed && (
                         <img
                             src={getFontSrc()}
-                            alt="Fuente"
-                            className="h-4 transition-all duration-500 drop-shadow-[0_0_25px_rgba(255,255,255,0.18)]"
+                            alt="Medopz"
+                            className={`object-contain transition-all duration-500 ${
+                                mobileOpen 
+                                ? "h-[22px] w-auto -mt-2 -ml-1 opacity-95" // Altura controlada y margen negativo para el encaje en D-O
+                                : "h-4 w-auto"
+                            }`}
                         />
                     )}
-                </button>
-                {!mobileOpen && (
-                  <button
-                    onClick={() => setCollapsed(!collapsed)}
-                    className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-sm transition-all duration-300"
-                  >
-                    {effectiveCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-                  </button>
+                </Link>
+                {!effectiveCollapsed && !mobileOpen && (
+                    <button
+                        onClick={() => setCollapsed(!collapsed)}
+                        className="p-1.5 text-white/20 hover:text-white transition-all hidden lg:block rounded-md border border-transparent hover:border-white/10 hover:bg-white/5"
+                    >
+                        <ChevronLeft size={16} />
+                    </button>
                 )}
             </div>
+            {effectiveCollapsed && (
+                <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="mx-auto mt-2 p-2 text-white/20 hover:text-white transition-all hidden lg:block rounded-md border border-white/5 bg-white/5 hover:bg-white/10"
+                >
+                    <ChevronRight size={16} />
+                </button>
+            )}
         </div>
-        {/* NAVIGATION - FLUJO QUIRÚRGICO */}
+        {/* SECTION LABEL */}
+        {!effectiveCollapsed && (
+          <div className="flex items-center gap-2 mb-4 px-4">
+            <div className="h-[1px] w-4 bg-white/20"></div>
+            <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.4em]">
+              Menu
+            </div>
+          </div>
+        )}
+        {/* NAVIGATION */}
         <nav className="flex-1">
-          <ul className="space-y-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+          <ul className="flex flex-col space-y-1">
+            {navItems.map(({ path, label, icon: Icon }) => {
+              const isActive = location.pathname === path;
               return (
-                <li key={item.path}>
-                  <button // ✅ FIX: Cambiar Link por button con navigate
-                    onClick={() => {
-                      navigate(item.path);
-                    }}
-                    className={`${itemBase} ${isActive ? itemActive : itemIdle}`}
+                <li key={path}>
+                  <Link
+                    to={path}
+                    onClick={() => mobileOpen && setMobileOpen(false)}
+                    className={`${itemBase} rounded-sm ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
                   >
-                    <Icon
-                      size={20}
-                      className={`flex-shrink-0 transition-all duration-300 ${
-                        effectiveCollapsed && !mobileOpen ? "mx-auto" : ""
-                      }`}
+                    <Icon 
+                      size={19} 
+                      className={`shrink-0 transition-all duration-300 ${isActive ? "text-white" : "group-hover:text-white"}`} 
+                      strokeWidth={isActive ? 2.5 : 1.5} 
                     />
-                    <span
-                      className={`font-mono text-[10px] uppercase tracking-[0.15em] transition-all duration-300 ${
-                        effectiveCollapsed && !mobileOpen ? "opacity-0 scale-0 w-0" : "opacity-100 scale-100"
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    {/* ACTIVE INDICATOR */}
-                    {isActive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                    
+                    {!effectiveCollapsed && (
+                      <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase ${isActive ? "text-white" : "opacity-80 group-hover:opacity-100"}`}>
+                        {label}
+                      </span>
                     )}
-                  </button>
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] to-transparent translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
+                  </Link>
                 </li>
               );
             })}
           </ul>
         </nav>
-        {/* FOOTER - STATUS INDICATOR */}
-        <div className="mt-auto pt-4 border-t border-white/5">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center gap-2 text-[8px] font-mono text-white/30 uppercase tracking-widest">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <span className={`transition-all duration-300 ${
-                effectiveCollapsed && !mobileOpen ? "opacity-0 scale-0 w-0" : "opacity-100 scale-100"
-              }`}>
-                Online
-              </span>
-            </div>
-          </div>
+        {/* FOOTER */}
+        <div className="mt-auto pt-6 border-t border-white/5">
+            {!effectiveCollapsed ? (
+              <div className="flex flex-col gap-2 px-4">
+                <div className="flex items-center gap-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
+                   <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">Medopz_Live_Link</span>
+                </div>
+              </div>
+            ) : (
+                <div className="flex justify-center">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
+                </div>
+            )}
         </div>
       </div>
     </aside>
