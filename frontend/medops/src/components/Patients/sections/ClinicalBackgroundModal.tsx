@@ -41,32 +41,32 @@ const typeConfig: Record<BackgroundType, { label: string; icon: any; color: stri
   habit: { label: "Hábito / Estilo de Vida", icon: Activity, color: "text-cyan-400" },
 };
 const personalHistoryChoices = [
-  { value: "patologico", label: "Patológico" },
-  { value: "no_patologico", label: "No patológico" },
-  { value: "quirurgico", label: "Quirúrgico" },
-  { value: "traumatico", label: "Traumático" },
-  { value: "alergico", label: "Alérgico" },
-  { value: "toxico", label: "Tóxico" },
-  { value: "gineco_obstetrico", label: "Gineco-obstétrico" },
+  { value: "patológico", label: "Patológico" },
+  { value: "no_patológico", label: "No patológico" },
+  { value: "quirúrgico", label: "Quirúrgico" },
+  { value: "traumático", label: "Traumático" },
+  { value: "alérgico", label: "Alérgico" },
+  { value: "tóxico", label: "Tóxico" },
+  { value: "gineco-obstétrico", label: "Gineco-obstétrico" },
 ];
 const habitTypes = [
   { value: "tabaco", label: "Tabaco" },
   { value: "alcohol", label: "Alcohol" },
-  { value: "actividad_fisica", label: "Actividad física" },
+  { value: "actividad_física", label: "Actividad física" },
   { value: "dieta", label: "Dieta" },
-  { value: "sueno", label: "Sueño" },
+  { value: "sueño", label: "Sueño" },
   { value: "drogas", label: "Drogas" },
 ];
 const allergySeverityChoices = [
   { value: "leve", label: "Leve" },
   { value: "moderada", label: "Moderada" },
   { value: "grave", label: "Grave" },
-  { value: "anafilactica", label: "Anafiláctica" },
+  { value: "anafiláctica", label: "Anafiláctica" },
 ];
 const allergySourceChoices = [
-  { value: "historia_clinica", label: "Historia clínica" },
-  { value: "prueba_cutanea", label: "Prueba cutánea" },
-  { value: "prueba_sanguinea", label: "Prueba sanguínea" },
+  { value: "historia_clínica", label: "Historia clínica" },
+  { value: "prueba_cutánea", label: "Prueba cutánea" },
+  { value: "prueba_sanguínea", label: "Prueba sanguínea" },
   { value: "autorreporte", label: "Autorreporte" },
 ];
 export default function ClinicalBackgroundModal({ open, onClose, onSave, initial, type }: Props) {
@@ -78,7 +78,7 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
     status: "active",
     source: "",
     notes: "",
-    personalType: "patologico",
+    personalType: "patológico",
     name: "",
     severity: "",
     description: "",
@@ -87,6 +87,17 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
   const [options, setOptions] = useState<{ id: number; name: string }[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const activeConfig = typeConfig[type];
+  // ⭐ NEW: Agregar soporte para tecla Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && open) {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [open, onClose]);
   useEffect(() => {
     if (open) {
       setForm({
@@ -97,13 +108,13 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
         status: initial?.status ?? "active",
         source: initial?.source ?? "",
         notes: initial?.notes ?? "",
-        personalType: initial?.personalType ?? "patologico",
+        personalType: initial?.personalType ?? "patológico",
         name: initial?.name ?? "",
         severity: initial?.severity ?? "",
         description: initial?.description ?? "",
         date: initial?.date ?? "",
       });
-      if (type === "genetic") {
+      if (type === "genetic") { // ✅ FIX: Cambiar "genético" por "genetic"
         setLoadingOptions(true);
         const fetchAll = async () => {
           let all: { id: number; name: string }[] = [];
@@ -130,7 +141,7 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
       payload = { type: form.personalType, description: form.condition, date: form.date || new Date().toISOString().slice(0, 10), notes: form.notes };
     } else if (type === "family") {
       payload = { condition: form.condition, relative: form.relation || form.relative, notes: form.notes };
-    } else if (type === "genetic") {
+    } else if (type === "genetic") { // ✅ FIX: Cambiar "genético" por "genetic"
       payload = { name: form.name, description: form.notes || "" };
     } else if (type === "allergy") {
       payload = { name: form.name, severity: form.severity, source: form.source, notes: form.notes };
@@ -143,11 +154,11 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
   return (
     <div 
       className="fixed inset-0 bg-[#07090e]/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300"
-      onClick={onClose} // ⭐ CRITICAL FIX: Agregar onClick al backdrop
+      onClick={onClose} // ✅ FIX: Agregar onClick al backdrop
     >
       <div 
         className="bg-[#11141a] border border-[var(--palantir-border)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()} // ⭐ CRITICAL FIX: Prevenir cerrar al hacer clic en el contenido
+        onClick={(e) => e.stopPropagation()} // ✅ FIX: Prevenir cerrar al hacer clic en el contenido
       >
         
         {/* Cabecera */}

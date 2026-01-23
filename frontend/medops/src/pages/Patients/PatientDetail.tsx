@@ -30,7 +30,7 @@ function normalizeTab(id?: string): string {
     citas: "citas",
     events: "eventos",
     eventos: "eventos",
-    vacunacion: "vacunacion",
+    vacunación: "vacunacion",
     cirugias: "cirugias",
   };
   if (!id) return "info";
@@ -100,12 +100,12 @@ export default function PatientDetail() {
         actions={
           <div className="flex items-center gap-3">
              <div className="flex flex-col items-end px-3 border-r border-white/10">
-                <span className="text-[8px] font-mono text-white/30 uppercase tracking-tighter">Blood_Group</span>
-                <span className="text-xs font-black text-red-500">{patient.blood_type || 'N/A'}</span>
-             </div>
-             <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
-                <UserIcon className="w-5 h-5 text-blue-500" />
-             </div>
+                 <span className="text-[8px] font-mono text-white/30 uppercase tracking-tighter">Blood_Group</span>
+                 <span className="text-xs font-black text-red-500">{patient.blood_type || 'N/A'}</span>
+              </div>
+              <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
+                 <UserIcon className="w-5 h-5 text-blue-500" />
+              </div>
           </div>
         }
       />

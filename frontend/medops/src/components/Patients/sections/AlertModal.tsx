@@ -17,6 +17,17 @@ export default function AlertModal({ open, onClose, onSave, initial }: Props) {
       setForm({ type: initial.type, message: initial.message });
     }
   }, [initial]);
+  // ⭐ NEW: Agregar soporte para tecla Escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && open) {
+        onClose();
+      }
+    };
+    
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [open, onClose]);
   if (!open) return null;
   const handleSave = () => {
     if (form.message.trim() === "") return; // Evitar guardar vacío
@@ -25,11 +36,11 @@ export default function AlertModal({ open, onClose, onSave, initial }: Props) {
   return (
     <div 
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      onClick={onClose} // ⭐ CRITICAL FIX: Agregar onClick al backdrop
+      onClick={onClose} // ✅ FIX: Agregar onClick al backdrop
     >
       <div 
         className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-lg"
-        onClick={(e) => e.stopPropagation()} // ⭐ CRITICAL FIX: Prevenir cerrar al hacer clic en el contenido
+        onClick={(e) => e.stopPropagation()} // ✅ FIX: Prevenir cerrar al hacer clic en el contenido
       >
         <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-4">
           {initial ? "Editar alerta" : "Nueva alerta"}

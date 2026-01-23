@@ -110,7 +110,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   };
   const direccionCompleta = `, `.trim().toUpperCase();
   return (
-    <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden transition-all duration-500 hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]">
+    <div className="bg-[var(--palantir-surface)]/20 border border border-[var(--palantir-border)] rounded-sm overflow-hidden transition-all duration-500 hover:shadow-[0_0_20px_rgba(0,0,0,0.3)]">
       <div className="bg-[var(--palantir-border)]/20 px-4 py-2 flex justify-between items-center border-b border-[var(--palantir-border)]">
         <div className="flex items-center gap-2">
           <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
@@ -127,7 +127,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
             </button>
           </div>
         ) : (
-          <button onClick={() => setEditing(true)} className="flex items-center gap-1 px-3 py-1 border border-[var(--palantir-border)] text-[9px] font-mono text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:border-[var(--palantir-active)] transition-all">
+          <button onClick={() => setEditing(true)} className="flex items-center gap-1 px-3 py-1 border border border-[var(--palantir-border)] text-[9px] font-mono text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:border-[[var(--palantir-border)] transition-all">
             <PencilSquareIcon className="w-3 h-3" /> EDIT_RECORD
           </button>
         )}
@@ -144,7 +144,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         {/* Usamos el operador || "" para asegurar que siempre pasamos un string al componente Field */}
         <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm({...form, national_id: v})} />
         <Field span={3} label="First_Name" value={form.first_name || ""} editing={editing} onChange={(v) => setForm({...form, first_name: v})} />
-        <Field span={3} label="Last_Name" value={form.last_name || ""} editing={editing} onChange={(v) => setForm({...form, last_name: v})} />
+        <Field span={3} label="Last_Name" value={form.last_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, last_name: v }))} />
         <Field span={3} label="Birth_Date" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setForm({...form, birthdate: v})} />
         
         <Field span={3} label="Email_Address" value={form.email || ""} editing={editing} onChange={(v) => setForm({...form, email: v})} />
@@ -158,7 +158,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         </div>
         
         {!editing ? (
-          <div className="col-span-12 bg-[var(--palantir-bg)]/50 border border-[var(--palantir-border)] p-3 rounded-sm">
+          <div className="col-span-12 bg-[var(--palantir-bg)]/50 border border border-[var(--palantir-border)] p-3 rounded-sm">
             <label className="block text-[8px] font-mono text-[var(--palantir-muted)] uppercase mb-1">Primary_Residence_Chain</label>
             <p className="text-[10px] font-mono text-[var(--palantir-text)] leading-relaxed">{direccionCompleta || "NO_LOCATION_DATA_AVAILABLE"}</p>
           </div>

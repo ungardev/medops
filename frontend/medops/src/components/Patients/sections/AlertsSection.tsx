@@ -17,7 +17,7 @@ interface Props {
   patient: any;
   backgrounds: any[];
   allergies?: any[];
-  habits: any[];
+  habits?: any[]; // ✅ FIX: Ya está definido como opcional
   surgeries: any[];
   vaccinations: any[];
   vaccinationSchedule: any[];
@@ -31,7 +31,7 @@ export default function AlertsSection({
   patient,
   backgrounds,
   allergies = [],
-  habits,
+  habits = [], // ✅ FIX: Agregar valor por defecto []
   surgeries,
   vaccinations,
   vaccinationSchedule,
@@ -65,7 +65,7 @@ export default function AlertsSection({
         ),
       });
     }
-    const riskyHabits = habits.filter((h) => ["smoking", "alcohol", "drugs"].includes(h.type));
+    const riskyHabits = habits.filter((h) => ["smoking", "alcohol", "drugs"].includes(h.type)); // ✅ FIX: habits ya no puede ser undefined
     if (riskyHabits.length > 0) {
       alerts.push({
         type: "warning",
@@ -158,17 +158,16 @@ export default function AlertsSection({
                   className={`${style.bg} ${style.border} border p-4 rounded-sm flex items-start gap-4 transition-all hover:brightness-125`}
                 >
                   <Icon className={`w-5 h-5 mt-0.5 ${style.text}`} />
-                   
+                  
                   <div className="flex-1">
                     <div className={`text-[11px] font-mono leading-relaxed ${style.text}`}>
                       {alert.message}
-                    </div>
-                     
+                    </div>                     
                     <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2">
                       <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
                         Origin: {isManual ? `STAFF_ID_${(alert as any).created_by || 'USR'}` : 'SYSTEM_AUTO_GEN'}
                       </span>
-                       
+                        
                       {isManual && (
                         <div className="flex gap-3">
                           <button 
