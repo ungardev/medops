@@ -7,17 +7,14 @@ import {
   ShieldCheckIcon,
   CpuChipIcon 
 } from "@heroicons/react/24/outline";
-
 import DemographicsSection from "./sections/DemographicsSection";
 import AlertsSection from "./sections/AlertsSection";
 import ClinicalProfileSection from "./sections/ClinicalProfileSection";
 import { useVaccinations } from "../../hooks/patients/useVaccinations";
-
 export default function PatientInfoTab({ patientId }: { patientId: number }) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { vaccinations: vaccQuery, schedule } = useVaccinations(patientId);
-
   const refreshProfile = () => {
     setLoading(true);
     apiFetch(`patients/${patientId}/profile/`)
@@ -28,11 +25,10 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       })
       .finally(() => setLoading(false));
   };
-
   useEffect(() => {
     refreshProfile();
   }, [patientId]);
-
+  // ✅ FIX: Separar estados de carga para evitar bloqueo
   if (loading && !profile) {
     // Skeleton simplificado sin padding extra
     return (
@@ -47,18 +43,18 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       </div>
     );
   }
-
-  if (!profile) {
+  // ✅ FIX: Estado de error separado del estado de carga
+  if (!loading && !profile) {
     return (
       <div className="py-8 border border-red-900/30 bg-red-950/5 flex flex-col items-center text-center rounded-sm">
         <ExclamationTriangleIcon className="w-10 h-10 text-red-500 mb-4" />
         <h3 className="text-[10px] font-black uppercase tracking-widest text-red-500">
           DATA_FETCH_ERROR
         </h3>
+        <p className="text-[9px] font-mono text-red-400/80 mt-2">Unable to load profile data. The application is still functional.</p>
       </div>
     );
   }
-
   return (
     /* ✨ CORRECCIÓN: 
        Eliminamos p-4, sm:p-6 y bg-black/20.
@@ -83,7 +79,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
         
         <DemographicsSection patient={profile} onRefresh={refreshProfile} />
       </section>
-
       {/* SECCIÓN 2: ALERTAS Y BIOMETRÍA */}
       <section>
         <div className="flex items-center gap-3 mb-6">
@@ -107,7 +102,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           onChangeTab={(tab) => console.log("NAV:", tab)}
         />
       </section>
-
       {/* SECCIÓN 3: PERFIL CLÍNICO */}
       <section>
         <div className="flex items-center gap-3 mb-6">
@@ -128,7 +122,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           onRefresh={refreshProfile}
         />
       </section>
-
       {/* FOOTER DE ESTADO */}
       <div className="pt-6 border-t border-[var(--palantir-border)] flex justify-between items-center">
         <div className="flex items-center gap-4">
