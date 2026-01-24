@@ -11,9 +11,9 @@ export default function InstitutionSelector() {
   };
   if (isLoading) {
     return (
-      <button className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm opacity-50 cursor-not-allowed">
+      <button className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm opacity-50 cursor-not-allowed backdrop-blur-sm">
         <BuildingOfficeIcon className="w-5 h-5 text-[var(--palantir-muted)]" />
-        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--parantir-text)]">
+        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--palantir-text)]">
           Loading...
         </span>
       </button>
@@ -21,24 +21,24 @@ export default function InstitutionSelector() {
   }
   return (
     <div className="relative">
-      {/* Botón del selector */}
+      {/* Botón del selector con opacidad ajustada para no chocar */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm hover:border-emerald-500/30 hover:bg-white/10 transition-all"
+        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm hover:border-emerald-500/30 hover:bg-white/10 transition-all backdrop-blur-sm opacity-80"
       >
         {activeInstitution?.logo && typeof activeInstitution.logo === 'string' ? (
           <img src={activeInstitution.logo} className="w-5 h-5 object-contain" alt="logo" />
         ) : (
-          <BuildingOfficeIcon className="w-5 h-5 text-[var(--parantir-muted)]" />
+          <BuildingOfficeIcon className="w-5 h-5 text-[var(--palantir-muted)]" />
         )}
-        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--parantir-text)]">
+        <span className="text-[10px] font-black uppercase tracking-wider text-[var(--palantir-text)]">
           {activeInstitution?.name || "Select Institution"}
         </span>
-        <ChevronDownIcon className="w-4 h-4 text-[var(--parantir-muted)]" />
+        <ChevronDownIcon className="w-4 h-4 text-[var(--palantir-muted)]" />
       </button>
       {/* Dropdown de instituciones */}
       {isOpen && (
-        <div className="absolute top-full right-0 mt-1 w-80 bg-black/90 border border-white/10 rounded-sm shadow-xl z-50">
+        <div className="absolute top-full right-0 mt-1 w-80 bg-black/90 border border-white/10 rounded-sm shadow-xl z-50 backdrop-blur-md">
           <div className="p-2 space-y-1">
             <div className="text-[9px] font-mono text-white/50 uppercase tracking-widest border-b border-white/5 pb-2">
               Switch Institution
