@@ -7,7 +7,8 @@ import {
   CheckIcon, 
   XMarkIcon,
   MapPinIcon,
-  UserCircleIcon
+  UserCircleIcon,
+  ExclamationCircleIcon
 } from "@heroicons/react/24/outline";
 interface DemographicsSectionProps {
   patient: Patient;
@@ -21,18 +22,23 @@ interface FieldProps {
   multiline?: boolean;
   span?: 3 | 4 | 6 | 8 | 9 | 12;
   editing: boolean;
+  tooltip?: string;
   onChange?: (value: string) => void;
 }
-function Field({ label, value, type = "text", options = [], multiline = false, span = 3, editing, onChange }: FieldProps) {
-  const colClasses: Record<number, string> = {
-    3: "md:col-span-3", 4: "md:col-span-4", 6: "md:col-span-6",
-    8: "md:col-span-8", 9: "md:col-span-9", 12: "md:col-span-12"
+function Field({ label, value, type = "text", options = [], multiline = false, span = 3, editing, tooltip, onChange }: FieldProps) {
+  const spanClasses = {
+    3: "col-span-12 md:col-span-3",
+    4: "col-span-12 md:col-span-4",
+    6: "col-span-12 md:col-span-6",
+    8: "col-span-12 md:col-span-8",
+    9: "col-span-12 md:col-span-9",
+    12: "col-span-12",
   };
-  const colClass = `col-span-12`;
   return (
-    <div className="group">
+    <div className={`${spanClasses[span]} group`}>
       <label className="block text-[9px] font-mono font-bold text-[var(--palantir-muted)] uppercase tracking-widest mb-1 group-focus-within:text-[var(--palantir-active)] transition-colors">
         {label}
+        {tooltip && <span className="ml-1 text-[var(--palantir-muted)]" title={tooltip}>ⓘ</span>}
       </label>
       {editing ? (
         type === "select" ? (
@@ -56,7 +62,8 @@ function Field({ label, value, type = "text", options = [], multiline = false, s
                 e.preventDefault();
               }
             }}
-            className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-4 py-3 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] focus:outline-none focus:ring-1 focus:ring-[var(--palantir-active)]/30 transition-all uppercase"
+            className="w-full bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm px-4 py-3 text-sm font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] focus:outline-none focus:ring-1 focus:ring-[var(--palantir-active)]/30 transition-all uppercase resize-none"
+            placeholder="Detalles adicionales..."
           />
         ) : (
           <input
@@ -72,9 +79,9 @@ function Field({ label, value, type = "text", options = [], multiline = false, s
           />
         )
       ) : (
-        <div className="min-h-[40px] flex items-center border-b border-transparent group-hover:border-[var(--palantir-border)] transition-all">
-          <p className="text-[12px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
-            {value && value !== "" ? value : <span className="text-[var(--palantir-muted)] opacity-30">NO_DATA_ENTRY</span>}
+        <div className="min-h-[40px] flex items-center border-b border-transparent group-hover:border-[var(--palantir-border)] transition-all animate-in fade-in duration-200">
+          <p className="text-[12px] font-bold text-[var(--palantir-text)] uppercase tracking-tight truncate">
+            {value && value !== "" && value !== "undefined" ? value : <span className="text-[var(--palantir-muted)] opacity-30 italic">NO_DATA_ENTRY</span>}
           </p>
         </div>
       )}
@@ -85,6 +92,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const [editing, setEditing] = useState(false);
   const chain = useMemo(() => (patient.address_chain as any) || {}, [patient.address_chain]);
   const [form, setForm] = useState<Partial<PatientInput>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const updatePatient = useUpdatePatient(patient.id);
   useEffect(() => {
     setForm({
@@ -103,42 +111,48 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       municipality_id: chain.municipality_id,
       parish_id: chain.parish_id,
       neighborhood_id: chain.neighborhood_id,
+      address: patient.address ?? ""
     });
   }, [patient]);
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!form.first_name?.trim()) newErrors.first_name = "Nombre requerido";
+    if (!form.last_name?.trim()) newErrors.last_name = "Apellido requerido";
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = "Email inválido";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   const handleSave = () => {
+    if (!validateForm()) return;
     updatePatient.mutate(form as PatientInput, {
       onSuccess: () => { 
         setEditing(false); 
+        setErrors({});
         onRefresh(); 
-      }
+      },
+      onError: () => setErrors({ general: "Error al guardar" })
     });
   };
-  // Estados para opciones de dirección (integrar con hooks/API reales)
-  const [countryOptions, setCountryOptions] = useState<{ value: string; label: string }[]>([]);
-  const [stateOptions, setStateOptions] = useState<{ value: string; label: string }[]>([]);
-  const [municipalityOptions, setMunicipalityOptions] = useState<{ value: string; label: string }[]>([]);
-  const [parishOptions, setParishOptions] = useState<{ value: string; label: string }[]>([]);
-  const [neighborhoodOptions, setNeighborhoodOptions] = useState<{ value: string; label: string }[]>([]);
-  // Handlers para cascada jerárquica (convertir a number)
-  const handleCountryChange = (countryId: string) => {
-    setForm(prev => ({ ...prev, country_id: Number(countryId) || undefined, state_id: undefined, municipality_id: undefined, parish_id: undefined, neighborhood_id: undefined }));
-    // Fetch states based on countryId
-    setStateOptions([]);
+  const countryOptions = useMemo(() => [{ value: "1", label: "VENEZUELA" }], []);
+  const stateOptions = useMemo(() => form.country_id ? [{ value: "1", label: "MIRANDA" }] : [], [form.country_id]);
+  const municipalityOptions = useMemo(() => form.state_id ? [{ value: "1", label: "CHACAO" }] : [], [form.state_id]);
+  const parishOptions = useMemo(() => form.municipality_id ? [{ value: "1", label: "CHACAO" }] : [], [form.municipality_id]);
+  const neighborhoodOptions = useMemo(() => form.parish_id ? [{ value: "1", label: "CENTRO" }] : [], [form.parish_id]);
+  const handleCountryChange = (v: string) => {
+    const id = Number(v) || undefined;
+    setForm(prev => ({ ...prev, country_id: id, state_id: undefined, municipality_id: undefined, parish_id: undefined, neighborhood_id: undefined }));
   };
-  const handleStateChange = (stateId: string) => {
-    setForm(prev => ({ ...prev, state_id: Number(stateId) || undefined, municipality_id: undefined, parish_id: undefined, neighborhood_id: undefined }));
-    // Fetch municipalities based on stateId
-    setMunicipalityOptions([]);
+  const handleStateChange = (v: string) => {
+    const id = Number(v) || undefined;
+    setForm(prev => ({ ...prev, state_id: id, municipality_id: undefined, parish_id: undefined, neighborhood_id: undefined }));
   };
-  const handleMunicipalityChange = (municipalityId: string) => {
-    setForm(prev => ({ ...prev, municipality_id: Number(municipalityId) || undefined, parish_id: undefined, neighborhood_id: undefined }));
-    // Fetch parishes based on municipalityId
-    setParishOptions([]);
+  const handleMunicipalityChange = (v: string) => {
+    const id = Number(v) || undefined;
+    setForm(prev => ({ ...prev, municipality_id: id, parish_id: undefined, neighborhood_id: undefined }));
   };
-  const handleParishChange = (parishId: string) => {
-    setForm(prev => ({ ...prev, parish_id: Number(parishId) || undefined, neighborhood_id: undefined }));
-    // Fetch neighborhoods based on parishId
-    setNeighborhoodOptions([]);
+  const handleParishChange = (v: string) => {
+    const id = Number(v) || undefined;
+    setForm(prev => ({ ...prev, parish_id: id, neighborhood_id: undefined }));
   };
   return (
     <div className="border border-[var(--palantir-border)] rounded-sm overflow-hidden">
@@ -164,6 +178,13 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         )}
       </div>
       
+      {errors.general && (
+        <div className="px-5 py-2 bg-red-500/10 border-b border-red-500/30 flex items-center gap-2">
+          <ExclamationCircleIcon className="w-4 h-4 text-red-500" />
+          <span className="text-[10px] font-mono text-red-500">{errors.general}</span>
+        </div>
+      )}
+      
       <form 
         onSubmit={(e) => {
           e.preventDefault();
@@ -171,14 +192,17 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         }}
         className="p-5 grid grid-cols-12 gap-x-8 gap-y-6"
       >
-        <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, national_id: v }))} />
+        <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, national_id: v }))} tooltip="Cédula o ID nacional" />
         <Field span={3} label="First_Name" value={form.first_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, first_name: v }))} />
+        <Field span={3} label="Middle_Name" value={form.middle_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, middle_name: v }))} />
         <Field span={3} label="Last_Name" value={form.last_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, last_name: v }))} />
+        <Field span={3} label="Second_Last_Name" value={form.second_last_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, second_last_name: v }))} />
         <Field span={3} label="Birth_Date" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, birthdate: v }))} />
-        
-        <Field span={3} label="Email_Address" value={form.email || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, email: v }))} />
-        <Field span={3} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, contact_info: v }))} />
         <Field span={6} label="Birth_Location" value={`${form.birth_place || ''}`} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, birth_place: v }))} />
+        
+        <Field span={4} label="Email_Address" type="email" value={form.email || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, email: v }))} />
+        <Field span={4} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, contact_info: v }))} />
+        <Field span={4} label="Birth_Country" value={form.birth_country || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, birth_country: v }))} />
         
         <div className="col-span-12 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] via-transparent to-transparent my-2" />
         <div className="col-span-12 flex items-center gap-2 mb-2">
@@ -192,7 +216,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         <Field span={3} label="Parish" type="select" options={parishOptions} value={String(form.parish_id || "")} editing={editing} onChange={handleParishChange} />
         
         <Field span={6} label="Neighborhood" type="select" options={neighborhoodOptions} value={String(form.neighborhood_id || "")} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, neighborhood_id: Number(v) || undefined }))} />
-        <Field span={6} label="Full_Address_Details" value={form.address ?? ""} editing={editing} multiline onChange={(v) => setForm(prev => ({ ...prev, address: v }))} />
+        <Field span={6} label="Full_Address_Details" value={form.address || ""} editing={editing} multiline onChange={(v) => setForm(prev => ({ ...prev, address: v }))} />
       </form>
     </div>
   );

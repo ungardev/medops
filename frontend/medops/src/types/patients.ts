@@ -212,6 +212,7 @@ export interface Patient extends PatientRef {
   };
   // AddressChain (propiedad calculada)
   address_chain?: AddressChain;
+  address?: string | null;  // ✅ Agregado para acceso en DemographicsSection
   // Perfil clínico base
   weight?: number | string | null;   // DRF puede serializar Decimal como string
   height?: number | string | null;
