@@ -34,8 +34,8 @@ export default function InstitutionFilter({
     );
   }
   return (
-    <div className="relative flex items-center gap-3">
-      {/* Botón de filtro principal */}
+    <div className="relative">
+      {/* Botón de filtro */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-3 py-1.5 border rounded-sm transition-all ${
@@ -60,22 +60,21 @@ export default function InstitutionFilter({
           </div>
         )}
       </button>
-      {/* Badge de conteo de pacientes */}
+      {/* Badge */}
       {selectedInstitutionId && totalInstitution > 0 && (
         <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 rounded-full text-[9px] font-black">
           {totalInstitution}
         </span>
       )}
-      {/* Dropdown posicionado fuera del recuadro (fixed para viewport) */}
+      {/* Dropdown relativo al botón, con z-index alto para salir del recuadro */}
       {isOpen && (
         <>
-          {/* Overlay para cerrar */}
           <div 
             className="fixed inset-0 z-40" 
             onClick={() => setIsOpen(false)} 
           />
           
-          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-72 bg-[#0a0a0a] border border-white/10 rounded-sm shadow-2xl z-50 backdrop-blur-md">
+          <div className="absolute top-full left-0 mt-2 w-72 bg-[#0a0a0a] border border-white/10 rounded-sm shadow-2xl z-50 backdrop-blur-md">
             <div className="p-2 space-y-1">
               <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/5 mb-1">
                 <div className="flex items-center gap-2">
