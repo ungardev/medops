@@ -31,9 +31,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
     refreshProfile();
   }, [patientId]);
   
-  // ✅ FIX: Separar estados de carga para evitar bloqueo
   if (loading && !profile) {
-    // Skeleton simplificado sin padding extra
     return (
       <div className="space-y-6 animate-pulse">
         <div className="flex items-center gap-4 border-b border-[var(--palantir-border)] pb-4">
@@ -47,7 +45,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
     );
   }
   
-  // ✅ FIX: Estado de error separado del estado de carga
   if (!loading && !profile) {
     return (
       <div className="py-8 border border-red-900/30 bg-red-950/5 flex flex-col items-center text-center rounded-sm">
@@ -61,10 +58,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
   }
   
   return (
-    /* ✨ CORRECCIÓN: 
-       Eliminamos p-4, sm:p-6 y bg-black/20.
-       Ahora el componente confía en el padding del contenedor padre (Tabs.tsx).
-     */
     <div className="space-y-12">
       
       {/* SECCIÓN 1: DEMOGRÁFICOS */}
