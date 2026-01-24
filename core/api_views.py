@@ -112,9 +112,15 @@ class PatientViewSet(viewsets.ModelViewSet):
         # Construir objeto de respuesta unificado
         profile_data = {
             'id': patient.id,
+            'first_name': patient.first_name,  # ✅ AGREGADO
+            'middle_name': patient.middle_name,  # ✅ AGREGADO
+            'last_name': patient.last_name,  # ✅ AGREGADO
+            'second_last_name': patient.second_last_name,  # ✅ AGREGADO
             'full_name': patient.full_name,
             'national_id': patient.national_id,
             'birthdate': patient.birthdate.isoformat() if patient.birthdate else None,
+            'birth_place': patient.birth_place,  # ✅ AGREGADO
+            'birth_country': patient.birth_country,  # ✅ AGREGADO
             'age': (date.today() - patient.birthdate).days // 365 if patient.birthdate else None,
             'gender': patient.gender,
             'email': patient.email,
