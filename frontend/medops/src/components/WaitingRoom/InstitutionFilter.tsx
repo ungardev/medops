@@ -25,7 +25,7 @@ export default function InstitutionFilter({
   };
   if (isLoading) {
     return (
-      <button className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm opacity-50 cursor-not-allowed backdrop-blur-sm">
+      <button className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm opacity-50 cursor-not-allowed">
         <BuildingOfficeIcon className="w-4 h-4 text-[var(--palantir-muted)]" />
         <span className="text-[9px] font-black uppercase tracking-wider text-[var(--palantir-text)]">
           Loading...
@@ -35,7 +35,6 @@ export default function InstitutionFilter({
   }
   return (
     <div className="relative">
-      {/* Botón de filtro */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-3 py-1.5 border rounded-sm transition-all ${
@@ -60,21 +59,16 @@ export default function InstitutionFilter({
           </div>
         )}
       </button>
-      {/* Badge */}
       {selectedInstitutionId && totalInstitution > 0 && (
         <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 rounded-full text-[9px] font-black">
           {totalInstitution}
         </span>
       )}
-      {/* Dropdown relativo al botón, con z-index alto para salir del recuadro */}
       {isOpen && (
         <>
-          <div 
-            className="fixed inset-0 z-40" 
-            onClick={() => setIsOpen(false)} 
-          />
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           
-          <div className="absolute top-full left-0 mt-2 w-72 bg-[#0a0a0a] border border-white/10 rounded-sm shadow-2xl z-50 backdrop-blur-md">
+          <div className="absolute top-full right-0 mt-2 w-72 bg-[#0a0a0a] border border-white/20 rounded-sm shadow-2xl z-50">
             <div className="p-2 space-y-1">
               <div className="flex items-center justify-between px-2 py-1.5 border-b border-white/5 mb-1">
                 <div className="flex items-center gap-2">

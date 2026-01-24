@@ -64,7 +64,6 @@ export default function WaitingRoom() {
   const [entryToCancel, setEntryToCancel] = useState<WaitingRoomEntry | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   
-  // ✅ AGREGADO: Estado para filtro por institución
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
   
   const { data: entries, isLoading, isFetching } = useWaitingRoomEntriesToday();
@@ -86,7 +85,6 @@ export default function WaitingRoom() {
     initialData: [],
   });
   
-  // ✅ AGREGADO: Filtrar entradas por institución seleccionada
   const filteredEntries = (entries ?? []).filter(entry =>
     ["waiting", "in_consultation", "completed"].includes(entry.status) &&
     (selectedInstitutionId ? entry.institution === selectedInstitutionId : true)
@@ -132,7 +130,6 @@ export default function WaitingRoom() {
         ]}
         actions={
           <div className="flex gap-2">
-            {/* ✅ AGREGADO: Selector de institución */}
             <InstitutionSelector />
             
             <button
@@ -166,14 +163,13 @@ export default function WaitingRoom() {
         {/* LISTA PRINCIPAL */}
         <div className="lg:col-span-8 flex flex-col bg-[var(--palantir-surface)] border border-[var(--palantir-border)] rounded-sm overflow-hidden shadow-sm">
           
-          {/* ✅ MODIFICADO: Header con filtro de institución */}
+          {/* HEADER CON FILTRO */}
           <div className="px-4 py-2.5 border-b border-[var(--palantir-border)] bg-white/[0.02] flex justify-between items-center">
             <div className="flex items-center gap-2">
               <UserGroupIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)]" />
               <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">Live_Queue_Stream</h3>
             </div>
             
-            {/* ✅ AGREGADO: Filtro por institución */}
             <InstitutionFilter
               selectedInstitutionId={selectedInstitutionId}
               onFilterChange={(id) => setSelectedInstitutionId(id)}
@@ -202,7 +198,6 @@ export default function WaitingRoom() {
                           {entry.patient.full_name}
                         </p>
                         
-                        {/* ✅ AGREGADO: Información de institución */}
                         {entry.institution_data && (
                           <div className="flex items-center gap-1.5 text-[9px] font-mono text-[var(--palantir-muted)] mt-1">
                             <BuildingOfficeIcon className="w-3 h-3 text-[var(--palantir-active)]/50" />
@@ -245,7 +240,6 @@ export default function WaitingRoom() {
             )}
           </div>
           
-          {/* ✅ MODIFICADO: Stats con count filtrado */}
           <div className="px-4 py-2.5 border-t border-[var(--palantir-border)] bg-white/[0.02]">
             <div className="text-[9px] font-mono text-[var(--palantir-muted)] opacity-70 uppercase tracking-widest">
               Displaying {filteredEntries.length} of {orderedGroup.length} entries
