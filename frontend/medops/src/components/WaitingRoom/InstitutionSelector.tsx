@@ -21,13 +21,23 @@ export default function InstitutionSelector() {
   }
   return (
     <>
+      {/* OVERLAY: Ahora con z-[9998] para asegurar que esté por encima de TODO excepto el dropdown */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black/80 z-[60]" onClick={() => setIsOpen(false)} />
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] cursor-default"
+          onClick={(e) => {
+            e.stopPropagation(); // Detiene el click para que no llegue al fondo
+            setIsOpen(false);
+          }}
+        />
       )}
-      <div className="relative z-[70]">
+      {/* CONTENEDOR RELATIVO: Subimos el z-index para que el dropdown gane la batalla */}
+      <div className="relative z-[9999]">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] border border-white/20 rounded-sm hover:border-white/40 transition-all"
+          className={`flex items-center gap-2 px-3 py-1.5 bg-[#1a1a1a] border rounded-sm transition-all duration-200 ${
+            isOpen ? 'border-white/60 ring-1 ring-white/20' : 'border-white/20 hover:border-white/40'
+          }`}
         >
           {activeInstitution?.logo && typeof activeInstitution.logo === 'string' ? (
             <img src={activeInstitution.logo} className="w-5 h-5 object-contain" alt="logo" />
@@ -37,38 +47,48 @@ export default function InstitutionSelector() {
           <span className="text-[10px] font-black uppercase tracking-wider text-[var(--palantir-text)]">
             {activeInstitution?.name || "Select Institution"}
           </span>
-          <ChevronDownIcon className="w-4 h-4 text-[var(--palantir-muted)]" />
+          <ChevronDownIcon className={`w-4 h-4 text-[var(--palantir-muted)] transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
+        {/* DROPDOWN MENU */}
         {isOpen && (
-          <div className="absolute top-full right-0 mt-1 w-80 bg-[#0a0a0a] border border-white/20 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,1)] z-[71]">
-            <div className="p-2 space-y-1">
-              <div className="text-[9px] font-mono text-white/50 uppercase tracking-widest border-b border-white/5 pb-2">
+          <div 
+            className="absolute top-full right-0 mt-2 w-80 bg-[#0d0d0d] border border-white/20 rounded-sm shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] overflow-hidden"
+            onClick={(e) => e.stopPropagation()} // IMPORTANTE: Evita que el click dentro del menú cierre el menú
+          >
+            <div className="p-2 space-y-1 bg-[#0d0d0d]"> {/* Reforzamos el color de fondo aquí */}
+              <div className="px-3 py-2 text-[9px] font-mono text-white/40 uppercase tracking-[0.2em] border-b border-white/5 mb-1">
                 Switch Institution
               </div>
-              {institutions.map((inst: any) => (
-                <button
-                  key={inst.id}
-                  onClick={() => handleSelect(inst.id)}
-                  className="flex items-center gap-2 w-full px-3 py-2 hover:bg-white/5 rounded-sm transition-all"
-                >
-                  {inst.logo && typeof inst.logo === 'string' ? (
-                    <img src={inst.logo} className="w-6 h-6 object-contain" alt="logo" />
-                  ) : (
-                    <BuildingOfficeIcon className="w-6 h-6 text-white/40" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-black uppercase tracking-wider text-white">
-                      {inst.name}
+              
+              <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
+                {institutions.map((inst: any) => (
+                  <button
+                    key={inst.id}
+                    onClick={() => handleSelect(inst.id)}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-white/10 rounded-sm transition-colors group text-left"
+                  >
+                    <div className="relative flex-shrink-0">
+                      {inst.logo && typeof inst.logo === 'string' ? (
+                        <img src={inst.logo} className="w-6 h-6 object-contain" alt="logo" />
+                      ) : (
+                        <BuildingOfficeIcon className="w-6 h-6 text-white/20 group-hover:text-white/40" />
+                      )}
                     </div>
-                    <div className="text-[8px] font-mono text-white/60 uppercase">
-                      {inst.tax_id}
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[10px] font-black uppercase tracking-wider text-white/90 group-hover:text-white">
+                        {inst.name}
+                      </div>
+                      <div className="text-[8px] font-mono text-white/40 uppercase">
+                        {inst.tax_id}
+                      </div>
                     </div>
-                  </div>
-                  {activeInstitution?.id === inst.id && (
-                    <CheckIcon className="w-4 h-4 text-emerald-500" />
-                  )}
-                </button>
-              ))}
+                    {activeInstitution?.id === inst.id && (
+                      <CheckIcon className="w-4 h-4 text-emerald-500" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
