@@ -1,44 +1,38 @@
 // src/components/Consultation/index.ts
-
+// 🔥 CORREGIDO: Solo exportar interfaces que realmente existen con export
+// 🏥 CABECERA DE PACIENTE
 export { default as PatientHeader } from "./PatientHeader";
-
-// 🔹 Diagnosis
+// ❌ NO EXPORTAR: PatientHeaderProps (interface sin export en archivo original)
+// 🔹 DIAGNÓSTICO
 export { default as DiagnosisPanel } from "./DiagnosisPanel";
 export type { DiagnosisPanelProps } from "./DiagnosisPanel";
-
-// 🔹 Treatment
+// 🔹 TRATAMIENTO
 export { default as TreatmentPanel } from "./TreatmentPanel";
 export type { TreatmentPanelProps } from "./TreatmentPanel";
-
-// 🔹 Prescription
+// 🔹 PRESCRIPCIÓN
 export { default as PrescriptionPanel } from "./PrescriptionPanel";
 export type { PrescriptionPanelProps } from "./PrescriptionPanel";
-
-// 🔹 Notes
-export { default as NotesPanel } from "./NotesPanel";
-export type { NotesPanelProps } from "./NotesPanel";
-
-// 🔹 Documents
+// 🔹 NOTAS CLÍNICAS - CORREGIDO: Usar ClinicalNotePanel con Props interface
+export { default as NotesPanel } from "./ClinicalNotePanel";
+export type { Props as ClinicalNotePanelProps } from "./ClinicalNotePanel";
+// 🔹 DOCUMENTOS
 export { default as DocumentsPanel } from "./DocumentsPanel";
 export type { DocumentsPanelProps } from "./DocumentsPanel";
-
-// 🔹 Audit log
+// 🔹 AUDITORÍA
 export { default as AuditLogPanel } from "./AuditLogPanel";
-
-// 🔹 Consultation actions
+// ❌ NO EXPORTAR: AuditLogPanelProps (interface sin export en archivo original)
+// 🔹 ACCIONES DE CONSULTA
 export { default as ConsultationActions } from "./ConsultationActions";
-
-// 🔹 Charge order
+// ❌ NO EXPORTAR: ConsultationActionsProps (interface sin export en archivo original)
+// 🔹 ORDEN DE COBRO
 export { default as ChargeOrderPanel } from "./ChargeOrderPanel";
-export type { ChargeOrderPanelProps } from "./ChargeOrderPanel";
-
-// 🔹 Medical tests
+// ❌ VERIFICAR: ChargeOrderPanelProps (necesito revisar este archivo)
+// 🔹 PRUEBAS MÉDICAS
 export { default as MedicalTestsPanel } from "./MedicalTestsPanel";
 export type { MedicalTestsPanelProps } from "./MedicalTestsPanel";
-
-// 🔹 Medical referrals
+// 🔹 REFERENCIAS MÉDICAS
 export { default as MedicalReferralsPanel } from "./MedicalReferralsPanel";
 export type { MedicalReferralsPanelProps } from "./MedicalReferralsPanel";
-
-// 🔹 Document generation actions
+// 🔹 ACCIONES DE DOCUMENTOS
 export { default as ConsultationDocumentsActions } from "./ConsultationDocumentsActions";
+// ❌ NO EXPORTAR: ConsultationDocumentsActionsProps (interface sin export en archivo original)

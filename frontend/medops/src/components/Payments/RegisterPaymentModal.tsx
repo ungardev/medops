@@ -4,23 +4,24 @@ import { createPortal } from "react-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PaymentInput, Payment, PaymentMethod, PaymentStatus } from "../../types/payments";
 import { registerPayment } from "@/api/payments";
+import { useInstitutions } from "@/hooks/settings/useInstitutions"; // 🆕 IMPORTAR CONTEXTO
 import { 
   XMarkIcon, 
   CreditCardIcon, 
   BanknotesIcon, 
   ArrowPathIcon,
-  ShieldCheckIcon 
+  ShieldCheckIcon,
+  BuildingOfficeIcon // 🆕 ICONO INSTITUCIONAL
 } from "@heroicons/react/24/outline";
-
 interface Props {
   appointmentId: number;
   chargeOrderId: number;
   onClose: () => void;
 }
-
 export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onClose }: Props) {
   const queryClient = useQueryClient();
-
+  // 🆕 OBTENER CONTEXTO INSTITUCIONAL
+  const { activeInstitution } = useInstitutions();
   const [form, setForm] = useState<Omit<PaymentInput, "status">>({
     charge_order: chargeOrderId,
     appointment: appointmentId,
@@ -29,9 +30,10 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
     reference_number: "",
     bank_name: "",
   });
-
   const mutation = useMutation<Payment, Error, PaymentInput>({
     mutationFn: async (data) => {
+      // 🆕 EL CONTEXTO INSTITUCIONAL SE INFERE AUTOMÁTICAMENTE 
+      // DEL HEADER X-Institution-ID QUE YA CONFIGURA useInstitutions()
       const res = await registerPayment(chargeOrderId, {
         ...data,
         status: PaymentStatus.CONFIRMED,
@@ -39,13 +41,14 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
       return res;
     },
     onSuccess: () => {
+      // Invalidar queries relacionadas con la institución activa
       queryClient.invalidateQueries({ queryKey: ["charge-orders"] });
       queryClient.invalidateQueries({ queryKey: ["charge-order", String(chargeOrderId)] });
       queryClient.invalidateQueries({ queryKey: ["charge-order-events", String(chargeOrderId)] });
+      queryClient.invalidateQueries({ queryKey: ["payments"] }); // 🆕 Invalidar pagos globales
       onClose();
     },
   });
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({
@@ -53,12 +56,10 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
       [name]: name === "method" ? (value as PaymentMethod) : value,
     }));
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     mutation.mutate({ ...form, status: PaymentStatus.CONFIRMED });
   };
-
   return createPortal(
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
       {/* CONTENEDOR TÉCNICO */}
@@ -76,7 +77,17 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
             <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
-
+        {/* 🆕 BADGE INSTITUCIONAL */}
+        {activeInstitution && (
+          <div className="bg-purple-500/5 border-b border-purple-500/10 px-4 py-2">
+            <div className="flex items-center gap-2">
+              <BuildingOfficeIcon className="w-3 h-3 text-purple-400" />
+              <span className="text-[8px] font-mono text-purple-300 uppercase tracking-[0.2em]">
+                {activeInstitution.name} // {activeInstitution.tax_id}
+              </span>
+            </div>
+          </div>
+        )}
         {/* CUERPO DEL FORMULARIO */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
@@ -100,7 +111,6 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
               />
             </div>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             {/* CAMPO: MÉTODO */}
             <div className="space-y-1.5">
@@ -117,7 +127,6 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
                 <option value={PaymentMethod.OTHER}>OTHER_ENTRY</option>
               </select>
             </div>
-
             {/* CAMPO: REFERENCIA */}
             <div className="space-y-1.5">
               <label className="text-[9px] font-mono uppercase tracking-widest text-[var(--palantir-muted)]">Reference_Log</label>
@@ -131,7 +140,6 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
               />
             </div>
           </div>
-
           {/* CAMPO: BANCO */}
           <div className="space-y-1.5">
             <label className="text-[9px] font-mono uppercase tracking-widest text-[var(--palantir-muted)]">Financial_Entity_Name</label>
@@ -144,7 +152,6 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
               className="w-full bg-black/40 border border-white/10 rounded-sm py-2 px-3 text-[10px] font-mono text-white focus:border-white/30 outline-none transition-all placeholder:opacity-10"
             />
           </div>
-
           {/* FOOTER ACTIONS */}
           <div className="pt-4 flex flex-col gap-3">
             <button
@@ -164,7 +171,7 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
                 </span>
               ) : "Commit_Transaction"}
             </button>
-            
+           
             <button
               type="button"
               onClick={onClose}
@@ -174,12 +181,11 @@ export default function RegisterPaymentModal({ appointmentId, chargeOrderId, onC
             </button>
           </div>
         </form>
-
         {/* SECURITY FOOTER */}
         <div className="bg-white/[0.02] px-6 py-2 border-t border-white/5 flex items-center justify-center gap-2">
           <ShieldCheckIcon className="w-3 h-3 text-[var(--palantir-muted)] opacity-30" />
           <span className="text-[7px] font-mono text-[var(--palantir-muted)] opacity-30 uppercase tracking-[0.3em]">
-            End-to-End_Encryption_Active // TLS_1.3
+            End-to-End_Encryption_Active // TLS_1.3 // Institution_Context_Active
           </span>
         </div>
       </div>

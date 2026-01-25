@@ -20,7 +20,6 @@ import {
   ClockIcon,
   CalendarIcon
 } from "@heroicons/react/24/outline";
-
 /**
  * 🛠️ UTILIDADES DE TRANSFORMACIÓN (In-place para desacoplar de tipos rígidos)
  */
@@ -32,11 +31,9 @@ function calcAge(birthdate?: string | null): number | null {
   const ageDate = new Date(diff);
   return Math.abs(ageDate.getUTCFullYear() - 1970);
 }
-
 const transformToPatientHeader = (p: any): any => {
   const full_name = p.full_name ?? 
     [p.first_name, p.middle_name, p.last_name, p.second_last_name].filter(Boolean).join(" ").trim();
-
   return {
     ...p,
     full_name,
@@ -47,25 +44,20 @@ const transformToPatientHeader = (p: any): any => {
     medical_history: Array.isArray(p.medical_history) ? p.medical_history.join(", ") : String(p.medical_history || ""),
   };
 };
-
 export default function PatientConsultationsDetail() {
   const { patientId, appointmentId } = useParams<{ patientId: string; appointmentId: string }>();
   const appointmentIdNum = Number(appointmentId);
-
   const { data: appointment, isLoading, error } = useConsultationById(appointmentIdNum) as any;
   
   const [successData, setSuccessData] = useState<{ docs: any[], skipped: string[] } | null>(null);
   const [errorData, setErrorData] = useState<{ category: string, error: string }[] | null>(null);
-
   const [readOnly, setReadOnly] = useState<boolean>(() => {
     const saved = localStorage.getItem("consultationReadOnly");
     return saved ? JSON.parse(saved) : true;
   });
-
   useEffect(() => {
     localStorage.setItem("consultationReadOnly", JSON.stringify(readOnly));
   }, [readOnly]);
-
   if (isLoading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center space-y-4">
@@ -74,7 +66,6 @@ export default function PatientConsultationsDetail() {
       </div>
     </div>
   );
-
   if (error || !appointment) return (
     <div className="min-h-screen bg-black p-8">
       <div className="border border-red-500/30 bg-red-500/5 p-4 text-red-500 text-[10px] font-mono uppercase flex items-center gap-3">
@@ -83,12 +74,10 @@ export default function PatientConsultationsDetail() {
       </div>
     </div>
   );
-
   const patient = appointment.patient as any;
   const patientFullName = patient?.full_name || "SUBJECT_NAME_UNDEFINED";
   const sessionDate = appointment.date || appointment.appointment_date || "";
   const statusLabel = appointment.status_display || appointment.status || "N/A";
-
   return (
     <div className="min-h-screen bg-black text-white p-4 lg:p-6 space-y-6">
       
@@ -125,7 +114,6 @@ export default function PatientConsultationsDetail() {
           </div>
         }
       />
-
       {/* 🛡️ OVERRIDE CONTROLLER (Sticky-like feel) */}
       <div className={`
         flex items-center justify-between px-6 py-4 border rounded-sm transition-all duration-700 backdrop-blur-md
@@ -162,11 +150,9 @@ export default function PatientConsultationsDetail() {
           {readOnly ? "Unlock_Data_Core" : "Commit_Modifications"}
         </button>
       </div>
-
       <div className="border border-white/10 bg-black/20 backdrop-blur-sm rounded-sm overflow-hidden shadow-2xl">
         <PatientHeader patient={transformToPatientHeader(appointment.patient)} />
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Sidebar Táctico */}
         <div className="lg:col-span-3 space-y-6">
@@ -181,7 +167,6 @@ export default function PatientConsultationsDetail() {
               readOnly={readOnly}
             />
           </section>
-
           <section className="space-y-4">
             <div className="flex items-center gap-2 border-b border-white/5 pb-2">
               <CommandLineIcon className="w-3.5 h-3.5 text-emerald-500/50" />
@@ -194,18 +179,16 @@ export default function PatientConsultationsDetail() {
             />
           </section>
         </div>
-
         {/* Main Workspace */}
         <div className="lg:col-span-9 flex flex-col gap-6">
           <div className="bg-white/[0.01] border border-white/10 rounded-sm overflow-hidden">
             <ConsultationWorkflow
               diagnoses={appointment.diagnoses}
               appointmentId={appointment.id}
-              notes={appointment.notes ?? null}
+              // ❌ ELIMINADO: notes={appointment.notes ?? null} (parámetro obsoleto causando error TypeScript)
               readOnly={readOnly}
             />
           </div>
-
           <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-sm">
             <div className="flex items-center justify-between mb-6">
               <div className="flex flex-col">
@@ -220,7 +203,6 @@ export default function PatientConsultationsDetail() {
           </div>
         </div>
       </div>
-
       {successData && (
         <ExportSuccessToast 
           documents={successData.docs} 

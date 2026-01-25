@@ -7,6 +7,7 @@ import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
 import { useState } from "react";
 import { ChargeOrder, ChargeOrderStatus } from "@/types/payments"; 
 import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders";
+import { useInstitutions } from "@/hooks/settings/useInstitutions"; // 🆕 IMPORTAR CONTEXTO
 import { apiFetch } from "@/api/client";
 import { 
   ArrowLeftIcon, 
@@ -16,9 +17,9 @@ import {
   PlusIcon,
   ClockIcon,
   UserIcon,
-  HashtagIcon
+  HashtagIcon,
+  BuildingOfficeIcon // 🆕 ICONO INSTITUCIONAL
 } from "@heroicons/react/24/outline";
-
 interface Event {
   id: number;
   action: string;
@@ -26,35 +27,31 @@ interface Event {
   timestamp: string;
   notes?: string | null | Record<string, any>;
 }
-
 export default function ChargeOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
   const invalidateChargeOrders = useInvalidateChargeOrders();
-
+  
+  // 🆕 OBTENER CONTEXTO INSTITUCIONAL
+  const { activeInstitution } = useInstitutions();
   if (!id) return <div className="p-8 text-[10px] font-mono text-red-500 uppercase tracking-widest">Error: Null_Reference_ID</div>;
-
   const { data: order, isLoading, error } = useQuery<ChargeOrder>({
     queryKey: ["charge-order", id],
     queryFn: async () => apiFetch<ChargeOrder>(`charge-orders/${id}/`),
   });
-
   const { data: events } = useQuery<Event[]>({
     queryKey: ["charge-order-events", id],
     queryFn: async () => apiFetch<Event[]>(`charge-orders/${id}/events/`),
   });
-
   const voidMutation = useMutation({
     mutationFn: async () => apiFetch<void>(`charge-orders/${id}/void/`, { method: "POST" }),
     onSuccess: () => invalidateChargeOrders(id),
   });
-
   const waiveMutation = useMutation({
     mutationFn: async () => apiFetch<void>(`charge-orders/${id}/waive/`, { method: "POST" }),
     onSuccess: () => invalidateChargeOrders(id),
   });
-
   const handleExport = async () => {
     if (!order?.id) return;
     try {
@@ -71,14 +68,11 @@ export default function ChargeOrderDetail() {
       link.click();
     } catch (err) { alert("EXPORT_FAILED: Server_Response_Error"); }
   };
-
   if (isLoading) return <div className="p-8 animate-pulse font-mono text-[10px] uppercase tracking-widest text-[var(--palantir-muted)]">Fetching_Object_Data...</div>;
   if (error || !order) return <div className="p-8 font-mono text-[10px] text-red-500">OBJECT_NOT_FOUND</div>;
-
   const total = order.total_amount ?? order.total ?? 0;
   const paid = order.payments?.reduce((acc, p) => acc + Number(p.amount), 0) ?? 0;
   const pending = Number(total) - paid;
-
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen max-w-7xl mx-auto">
       
@@ -86,6 +80,10 @@ export default function ChargeOrderDetail() {
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
           { label: "PAYMENTS", path: "/payments" },
+          { 
+            label: order.institution?.name?.toUpperCase().slice(0, 15) || "INSTITUTION", // 🆕 MOSTRAR INSTITUCIÓN EN BREADCRUMB
+            path: "#" 
+          },
           { label: `ORDER_DET_#${order.id}`, active: true }
         ]}
         stats={[
@@ -94,15 +92,62 @@ export default function ChargeOrderDetail() {
             value: order.status?.toUpperCase() || "UNKNOWN", 
             color: order.status === ChargeOrderStatus.PAID ? "text-emerald-400" : "text-yellow-500" 
           },
-          { label: "BALANCE", value: `$${pending.toFixed(2)}`, color: pending > 0 ? "text-red-400" : "text-emerald-400" }
+          { 
+            label: "BALANCE", 
+            value: `$${pending.toFixed(2)}`, 
+            color: pending > 0 ? "text-red-400" : "text-emerald-400" 
+          },
+          { 
+            label: "INSTITUTION", // 🆕 MOSTRAR INSTITUCIÓN EN STATS
+            value: order.institution?.name?.toUpperCase().slice(0, 12) || "NONE",
+            color: "text-purple-400" 
+          }
         ]}
         actions={
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-4 py-2 border border-white/10 text-[9px] font-mono hover:bg-white/5 uppercase transition-all bg-white/[0.02]">
-            <ArrowLeftIcon className="w-3 h-3" /> [ Abort_View ]
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-4 py-2 border border-white/10 text-[9px] font-mono hover:bg-white/5 uppercase transition-all bg-white/[0.02]">
+              <ArrowLeftIcon className="w-3 h-3" /> [ Abort_View ]
+            </button>
+            
+            {/* 🆕 BADGE INSTITUCIONAL */}
+            {order.institution && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 border border-purple-500/20">
+                <BuildingOfficeIcon className="w-3 h-3 text-purple-400" />
+                <span className="text-[8px] font-mono text-purple-300 uppercase tracking-[0.2em]">
+                  {order.institution.tax_id}
+                </span>
+              </div>
+            )}
+          </div>
         }
       />
-
+      {/* 🆕 BANNER INSTITUCIONAL CLARO */}
+      {order.institution && (
+        <div className="bg-purple-500/5 border border-purple-500/20 rounded-sm p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <BuildingOfficeIcon className="w-5 h-5 text-purple-400" />
+              <div>
+                <h3 className="text-[11px] font-black text-purple-300 uppercase tracking-[0.3em]">
+                  {order.institution.name}
+                </h3>
+                <p className="text-[8px] font-mono text-purple-400/70 uppercase tracking-[0.2em]">
+                  TAX_ID: {order.institution.tax_id} // ID: {order.institution.id}
+                </p>
+              </div>
+            </div>
+            
+            {/* 🆕 COMPARAR CON INSTITUCIÓN ACTIVA */}
+            {activeInstitution && activeInstitution.id !== order.institution.id && (
+              <div className="bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-sm">
+                <span className="text-[7px] font-mono text-yellow-400 uppercase tracking-[0.2em]">
+                  Cross-Institution_Context_Active
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[var(--palantir-border)] border border-[var(--palantir-border)] shadow-2xl">
         {[
           { label: "GROSS_TOTAL", val: total, color: "text-white" },
@@ -117,7 +162,6 @@ export default function ChargeOrderDetail() {
           </div>
         ))}
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
           <section className="space-y-4">
@@ -150,7 +194,6 @@ export default function ChargeOrderDetail() {
               </table>
             </div>
           </section>
-
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
               <ClockIcon className="w-4 h-4 text-emerald-400" />
@@ -159,7 +202,6 @@ export default function ChargeOrderDetail() {
             <PaymentList payments={order.payments || []} />
           </section>
         </div>
-
         <div className="lg:col-span-4 space-y-8">
           <section className="p-6 bg-white/[0.02] border border-white/5 space-y-4 rounded-sm shadow-xl">
             <h3 className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--palantir-muted)]">Operations_Panel</h3>
@@ -189,7 +231,6 @@ export default function ChargeOrderDetail() {
               </div>
             </div>
           </section>
-
           {events && events.length > 0 && (
             <section className="space-y-4">
               <h3 className="text-[10px] font-black tracking-[0.2em] uppercase text-[var(--palantir-muted)] px-1">Audit_Log_Stream</h3>
@@ -218,7 +259,6 @@ export default function ChargeOrderDetail() {
           )}
         </div>
       </div>
-
       {showModal && (
         <RegisterPaymentModal
           appointmentId={order.appointment}

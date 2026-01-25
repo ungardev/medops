@@ -3,148 +3,157 @@ import { useState } from "react";
 import DiagnosisPanel from "./DiagnosisPanel";
 import TreatmentPanel from "./TreatmentPanel";
 import PrescriptionPanel from "./PrescriptionPanel";
-import NotesPanel from "./NotesPanel";
 import MedicalTestsPanel from "./MedicalTestsPanel";
 import MedicalReferralsPanel from "./MedicalReferralsPanel";
+// 🆕 IMPORTAR NUEVOS COMPONENTES
+import VitalSignsPanel from "./VitalSignsPanel";
+import ClinicalNotePanel from "./ClinicalNotePanel";
 import { Tabs, Tab } from "../ui/Tabs";
 import { Diagnosis } from "../../types/consultation";
 import { useCreateTreatment, useCreatePrescription } from "../../hooks/consultations";
+import type { CreatePrescriptionInput } from "../../types/consultation";
 import { 
   BeakerIcon, 
   ClipboardDocumentCheckIcon, 
   PencilSquareIcon, 
   QueueListIcon, 
   ShieldCheckIcon,
-  ArrowRightCircleIcon
+  ArrowRightCircleIcon,
+  HeartIcon, // 🆕 ICONO VITAL SIGNS
+  DocumentTextIcon, // 🆕 ICONO CLINICAL NOTE
+  BuildingOfficeIcon // 🆕 ICONO INSTITUCIONAL
 } from "@heroicons/react/24/outline";
+// 🔥 CORRECCIÓN CRÍTICA: Interface sin parámetro obsoleto
 interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
   appointmentId: number;
-  notes: string | null;
   readOnly: boolean;
+  // ❌ ELIMINADO: notes?: string | null; (parámetro obsoleto que causaba el error)
 }
 export default function ConsultationWorkflow({
   diagnoses,
   appointmentId,
-  notes,
   readOnly,
 }: ConsultationWorkflowProps) {
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
-  const [activeTab, setActiveTab] = useState("diagnosis");
-  // Mapeo de iconos para las pestañas
-  const tabIcons: Record<string, any> = {
-    diagnosis: <ShieldCheckIcon className="w-4 h-4" />,
-    treatment: <QueueListIcon className="w-4 h-4" />,
+  const [activeTab, setActiveTab] = useState("vital-signs"); // 🆕 EMPEZAR CON VITAL SIGNS
+  
+  // 🆕 OBJETO DE ÍCONOS CONSISTENTE
+  const tabIcons = {
+    "vital-signs": <HeartIcon className="w-4 h-4" />,
+    "clinical-note": <DocumentTextIcon className="w-4 h-4" />,
+    diagnosis: <BeakerIcon className="w-4 h-4" />,
+    treatment: <ClipboardDocumentCheckIcon className="w-4 h-4" />,
     prescription: <PencilSquareIcon className="w-4 h-4" />,
-    notes: <ClipboardDocumentCheckIcon className="w-4 h-4" />,
-    tests: <BeakerIcon className="w-4 h-4" />,
-    referrals: <ArrowRightCircleIcon className="w-4 h-4" />
+    tests: <QueueListIcon className="w-4 h-4" />,
+    referrals: <ArrowRightCircleIcon className="w-4 h-4" />,
   };
   return (
-    <div className="bg-black/20 border border-[var(--palantir-border)] min-h-[600px] flex flex-col">
-      {/* Barra de progreso / Info de sesión */}
-      <div className="bg-[var(--palantir-border)]/10 px-4 py-2 flex justify-between items-center border-b border-[var(--palantir-border)]">
-        <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[var(--palantir-active)]">
-          Clinical_Workflow_Engine // Session_ID: {appointmentId}
-        </span>
-        <div className="flex gap-1">
-          {['diagnosis', 'treatment', 'prescription'].map((step) => (
-            <div 
-              key={step}
-              className={`w-2 h-2 rounded-full `}
-            />
-          ))}
+    <div className="w-full space-y-6">
+      {/* 🆕 BANNER DE INSTITUCIÓN */}
+      {readOnly && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <BuildingOfficeIcon className="w-5 h-5 text-red-500" />
+            <div>
+              <h4 className="text-sm font-semibold text-red-700">Read-Only Mode</h4>
+              <p className="text-xs text-red-600">
+                Cross-institution access detected. You can only view this consultation.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
+      
+      {/* 🆕 SISTEMA DE TABS MEJORADO */}
       <Tabs
         value={activeTab}
         onChange={setActiveTab}
-        className="flex-1 flex flex-col
-          [&_nav]:bg-black/40 [&_nav]:border-b [&_nav]:border-[var(--palantir-border)]
-          [&_.tab-list]:flex [&_.tab-list]:overflow-x-auto [&_.tab-list]:scrollbar-none
-          [&_.tab-label]:px-6 [&_.tab-label]:py-4 [&_.tab-label]:flex [&_.tab-label]:items-center [&_.tab-label]:gap-3
-          [&_.tab-label]:text-[10px] [&_.tab-label]:font-black [&_.tab-label]:uppercase [&_.tab-label]:tracking-widest
-          [&_.tab-label]:transition-all [&_.tab-label]:relative
-          [&_.tab-label]:text-[var(--palantir-muted)]
-          [&_.active-tab]:text-[var(--palantir-active)] [&_.active-tab]:bg-white/5
-          [&_.active-tab]:after:content-[''] [&_.active-tab]:after:absolute [&_.active-tab]:after:bottom-0 [&_.active-tab]:after:left-0 [&_.active-tab]:after:w-full [&_.active-tab]:after:h-0.5 [&_.active-tab]:after:bg-[var(--palantir-active)]
-        "
+        layout="horizontal"
+        className="flex space-x-1 bg-gray-100 p-1 rounded-lg"
       >
+        {/* 🆕 TAB: VITAL SIGNS */}
+        <Tab 
+          id="vital-signs" 
+          label={<span className="flex items-center gap-2">{tabIcons["vital-signs"]} Vital Signs</span>}
+        >
+          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <VitalSignsPanel appointmentId={appointmentId} readOnly={readOnly} />
+          </div>
+        </Tab>
+        {/* 🆕 TAB: CLINICAL NOTE */}
+        <Tab 
+          id="clinical-note" 
+          label={<span className="flex items-center gap-2">{tabIcons["clinical-note"]} Clinical Note</span>}
+        >
+          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <ClinicalNotePanel appointmentId={appointmentId} readOnly={readOnly} />
+          </div>
+        </Tab>
+        {/* TAB: DIAGNOSIS */}
         <Tab 
           id="diagnosis" 
-          label={<span className="flex items-center gap-2">{tabIcons.diagnosis} Diagnóstico</span>}
+          label={<span className="flex items-center gap-2">{tabIcons.diagnosis} Diagnosis</span>}
         >
           <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <DiagnosisPanel
-              diagnoses={diagnoses}
-              readOnly={readOnly}
+            <DiagnosisPanel 
+              diagnoses={diagnoses} 
+              readOnly={readOnly} 
               appointmentId={appointmentId}
             />
           </div>
         </Tab>
+        {/* TAB: TREATMENT */}
         <Tab 
           id="treatment" 
-          label={<span className="flex items-center gap-2">{tabIcons.treatment} Tratamiento</span>}
+          label={<span className="flex items-center gap-2">{tabIcons.treatment} Treatment</span>}
         >
           <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <TreatmentPanel
+            <TreatmentPanel 
               diagnoses={diagnoses}
-              appointmentId={appointmentId}
+              appointmentId={appointmentId} 
               readOnly={readOnly}
-              onAdd={
-                !readOnly
-                  ? (data) =>
-                      createTreatment.mutate({
-                        ...data,
-                        appointment: appointmentId,
-                        title: data.plan.substring(0, 50),
-                      })
-                  : undefined
-              }
+              onAdd={(data) => createTreatment.mutateAsync({
+                appointment: appointmentId,
+                diagnosis: data.diagnosis,
+                title: `Tratamiento para ${data.diagnosis}`,
+                plan: data.plan,
+                treatment_type: data.treatment_type,
+                start_date: data.start_date,
+                end_date: data.end_date,
+                status: data.status
+              })}
             />
           </div>
         </Tab>
+        {/* TAB: PRESCRIPTION */}
         <Tab 
           id="prescription" 
-          label={<span className="flex items-center gap-2">{tabIcons.prescription} Prescripción</span>}
+          label={<span className="flex items-center gap-2">{tabIcons.prescription} Prescription</span>}
         >
           <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <PrescriptionPanel
+            <PrescriptionPanel 
               diagnoses={diagnoses}
-              prescriptions={undefined}
-              appointmentId={appointmentId}
+              appointmentId={appointmentId} 
               readOnly={readOnly}
-              onAdd={
-                !readOnly
-                  ? (data) =>
-                      createPrescription.mutate({
-                        ...data,
-                      })
-                  : undefined
-              }
+              onAdd={(data: CreatePrescriptionInput) => createPrescription.mutateAsync(data)}
             />
           </div>
         </Tab>
-        <Tab 
-          id="notes" 
-          label={<span className="flex items-center gap-2">{tabIcons.notes} Notas</span>}
-        >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <NotesPanel appointmentId={appointmentId} notes={notes} readOnly={readOnly} />
-          </div>
-        </Tab>
+        {/* TAB: TESTS */}
         <Tab 
           id="tests" 
-          label={<span className="flex items-center gap-2">{tabIcons.tests} Exámenes</span>}
+          label={<span className="flex items-center gap-2">{tabIcons.tests} Tests</span>}
         >
           <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <MedicalTestsPanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
+        {/* TAB: REFERRALS */}
         <Tab 
           id="referrals" 
-          label={<span className="flex items-center gap-2">{tabIcons.referrals} Referencias</span>}
+          label={<span className="flex items-center gap-2">{tabIcons.referrals} Referrals</span>}
         >
           <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <MedicalReferralsPanel appointmentId={appointmentId} readOnly={readOnly} />

@@ -24,7 +24,7 @@ export interface Neighborhood {
   };
 }
 // =====================================================
-// 🔹 Configuración Institucional (Fintech Ready)
+// 🔹 Configuración Institucional (Fintech Ready + Geográfica)
 // =====================================================
 export interface InstitutionSettings {
   id?: number;
@@ -33,14 +33,23 @@ export interface InstitutionSettings {
   tax_id: string; // RIF/NIT/Fiscal ID
   logo?: string | File | null;
   
-  // ⚔️ Nueva Estructura Geográfica
+  // ⚔️ Estructura Geográfica EXPANDIDA
   neighborhood?: number | Neighborhood | null; 
   address: string; // Dirección detallada (Calle/Av/Local)
+  
+  // 🆕 CAMBIO: Campos geográficos completos para compatibilidad con IdentityInstitution
+  country?: string | null;        // 🆕 Nombre del país
+  state_name?: string | null;      // 🆕 Nombre del estado
+  municipality_name?: string | null; // 🆕 Nombre del municipio
+  parish_name?: string | null;     // 🆕 Nombre de la parroquia
+  
   // 💰 Motor Financiero
   active_gateway: 'none' | 'mercantil_ve' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
   is_gateway_test_mode: boolean; // Sandbox vs Production
-  settlement_bank_name?: string;
-  settlement_account_id?: string;
+  
+  // 🆕 CAMBIO: Compatible con null (backend consistency)
+  settlement_bank_name?: string | null;    // 🆕 Cambiado a null-compatible
+  settlement_account_id?: string | null;   // 🆕 Cambiado a null-compatible
   
   // Estado del Nodo
   is_active: boolean;
