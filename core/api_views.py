@@ -1634,15 +1634,15 @@ def set_active_institution_api(request, institution_id):
 def generate_professional_pdf(request):
     """Endpoint para generar PDF profesional"""
     try:
-        from core.utils.professional_pdf import ProfessionalPDFService
+        from .utils.professional_pdf import ProfessionalPDFService
         
-        service = ProfessionalPDFService()
         # 🔧 CAMBIO CLAVE: Usar template existente
         template_name = request.data.get('template_name', 'medical_report')  # Cambiar de 'medical_report_universal' a 'medical_report'
         context = request.data.get('context', {})
         institution_settings = request.data.get('institution_settings', {})
         
-        pdf_bytes = service.generate_professional_pdf(template_name, context, institution_settings)
+        pdf_service = ProfessionalPDFService()
+        pdf_bytes = pdf_service.generate_professional_pdf(template_name, context, institution_settings)
         
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{template_name}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
