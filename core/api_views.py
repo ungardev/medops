@@ -1637,7 +1637,8 @@ def generate_professional_pdf(request):
         from .services.professional_pdf import ProfessionalPDFService
         
         service = ProfessionalPDFService()
-        template_name = request.data.get('template_name', 'medical_report_universal')
+        # 🔧 CAMBIO CLAVE: Usar template existente
+        template_name = request.data.get('template_name', 'medical_report')  # Cambiar de 'medical_report_universal' a 'medical_report'
         context = request.data.get('context', {})
         institution_settings = request.data.get('institution_settings', {})
         
