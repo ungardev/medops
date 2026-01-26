@@ -63,6 +63,8 @@ from .api_views import (
     generate_referral_pdf,
     generate_chargeorder_pdf,
     generate_used_documents,
+    # 🔥 NUEVO: Sistema PDF Profesional
+    generate_professional_pdf,  # ✅ Ya estaba importado, ahora se usará
     icd_search_api,
     treatment_choices_api,
     prescription_choices_api,
@@ -83,6 +85,9 @@ from .api_views import (
     add_institution_api,
     delete_institution_api,
     set_active_institution_api,
+    # ✅ NUEVOS ENDPOINTS DE PERMISOS ---
+    institution_permissions_api,
+    refresh_emergency_access,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -141,6 +146,11 @@ urlpatterns = [
     path("reports/export/", reports_export_api, name="reports-export-api"),
     path("config/institution/", institution_settings_api, name="institution-settings-api"),
     path("config/doctor/", doctor_operator_settings_api, name="doctor-operator-settings-api"),
+    
+    # ✅ NUEVOS ENDPOINTS DE PERMISOS INSTITUCIONALES ---
+    path("config/institution-permissions/", institution_permissions_api, name="institution-permissions-api"),
+    path("config/institution-permissions/emergency-refresh/", refresh_emergency_access, name="refresh-emergency-access-api"),
+    
     path("patients/search/", patient_search_api, name="patient-search-api"),
     path("patients/<int:pk>/documents/", PatientViewSet.as_view({"get": "documents", "post": "documents"}), name="patient-documents-api"),
     path("patients/<int:pk>/documents/<int:document_id>/", PatientViewSet.as_view({"delete": "delete_document"}), name="patient-document-delete-api"),
@@ -158,11 +168,15 @@ urlpatterns = [
     path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
     path("consultations/<int:pk>/generate-used-documents/", generate_used_documents, name="generate-used-documents"),
     
+    # --- PDFs Legacy (ReportLab) ---
     path("prescriptions/<int:pk>/generate-pdf/", generate_prescription_pdf, name="generate-prescription-pdf"),
     path("treatments/<int:pk>/generate-pdf/", generate_treatment_pdf, name="generate-treatment-pdf"),
     path("referrals/<int:pk>/generate-pdf/", generate_referral_pdf, name="generate-referral-pdf"),
     path("chargeorders/<int:pk>/generate-pdf/", generate_chargeorder_pdf, name="generate-chargeorder-pdf"),
     path("charge-orders/<int:pk>/export/", generate_chargeorder_pdf, name="chargeorder-export"),
+    
+    # 🔥 NUEVO: Sistema PDF Profesional (WeasyPrint) ---
+    path("pdf/generate/", generate_professional_pdf, name="generate-professional-pdf"),
     
     path("documents/", documents_api, name="documents-api"),
     path("icd/search/", icd_search_api, name="icd-search-api"),

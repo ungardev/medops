@@ -2330,3 +2330,163 @@ class ClinicalNote(models.Model):
         verbose_name_plural = "Notas Clínicas"
 
 
+class InstitutionPermission(models.Model):
+    """
+    Permiso híbrido mono-médico multi-institución
+    Diseñado para evolucionar a multi-usuario sin rewrites
+    """
+    
+    ACCESS_LEVELS = [
+        ('full_access', 'Acceso Completo'),
+        ('emergency_access', 'Acceso de Emergencia'),
+    ]
+    
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='institution_permissions'
+    )
+    institution = models.ForeignKey(
+        'InstitutionSettings',
+        on_delete=models.CASCADE,
+        related_name='user_permissions'
+    )
+    
+    access_level = models.CharField(
+        max_length=20,
+        choices=ACCESS_LEVELS,
+        default='full_access'
+    )
+    
+    # Metadata para evolución futura
+    granted_at = models.DateTimeField(auto_now_add=True)
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='granted_permissions'
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Para emergency access (24h default)"
+    )
+    
+    # Control de evolución
+    is_own_institution = models.BooleanField(
+        default=True,
+        help_text="True si el médico 'posee' esta institución"
+    )
+    
+    # Auditoría
+    last_accessed = models.DateTimeField(null=True, blank=True)
+    access_count = models.PositiveIntegerField(default=0)
+    
+    class Meta:
+        unique_together = ('user', 'institution')
+        ordering = ['-granted_at']
+    
+    def __str__(self):
+        return f"{self.user.doctor_profile.full_name} - {self.institution.name} ({self.access_level})"
+
+
+class AuditLog(models.Model):
+    """
+    Log de auditoría para acceso institucional
+    """
+    
+    ACTION_TYPES = [
+        ('login', 'Login'),
+        ('view', 'View'),
+        ('edit', 'Edit'),
+        ('generate_pdf', 'Generate PDF'),
+        ('emergency_access', 'Emergency Access'),
+        ('emergency_access_refreshed', 'Emergency Access Refreshed'),
+        ('institution_switch', 'Switch Institution'),
+    ]
+    
+    # Relaciones
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='audit_logs'
+    )
+    institution = models.ForeignKey(
+        'InstitutionSettings',
+        on_delete=models.CASCADE,
+        related_name='audit_logs'
+    )
+    
+    # Acción y contexto
+    action = models.CharField(
+        max_length=50,
+        choices=ACTION_TYPES,
+        help_text="Tipo de acción realizada"
+    )
+    access_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('full_access', 'Full Access'),
+            ('emergency_access', 'Emergency Access'),
+        ],
+        help_text="Nivel de acceso utilizado"
+    )
+    
+    # Metadata institucional
+    is_own_institution = models.BooleanField(
+        default=True,
+        help_text="True si es institución propia del médico"
+    )
+    is_cross_institution = models.BooleanField(
+        default=False,
+        help_text="True si es cross-institution access"
+    )
+    
+    # Información técnica
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        help_text="Dirección IP del acceso"
+    )
+    user_agent = models.TextField(
+        blank=True,
+        help_text="User Agent del navegador"
+    )
+    
+    # Timestamps
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Cuándo ocurrió el acceso"
+    )
+    
+    # Metadata adicional
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Información adicional en formato JSON"
+    )
+    
+    class Meta:
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', 'timestamp']),
+            models.Index(fields=['institution', 'timestamp']),
+            models.Index(fields=['action', 'timestamp']),
+            models.Index(fields=['is_cross_institution']),
+        ]
+        verbose_name = "Audit Log"
+        verbose_name_plural = "Audit Logs"
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.action} - {self.institution.name} ({self.timestamp})"
+    
+    @property
+    def is_emergency_access(self):
+        """Verificar si fue acceso de emergencia"""
+        return self.access_level == 'emergency_access'
+    
+    @property
+    def is_cross_access(self):
+        """Verificar si fue cross-institution access"""
+        return self.is_cross_institution

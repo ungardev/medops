@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Referencia Médica - MEDOPZ</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.5cm;
+    }
+    body {
+      font-family: "DejaVu Sans", sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      text-align: center;
+      border-bottom: 2px solid #0ea5e9;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+    }
+    h1 { font-size: 16px; margin: 0; color: #0ea5e9; }
+    h2 { font-size: 13px; margin: 8px 0 6px 0; border-bottom: 1px solid #0ea5e9; color: #0ea5e9; }
+    h3 { font-size: 12px; margin: 6px 0 4px 0; color: #64748b; }
+    .section { margin-bottom: 12px; }
+    .referral-details { background: #f8fafc; padding: 8px; border-radius: 4px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 11px;
+    }
+    th, td { 
+      border: 1px solid #000; 
+      padding: 4px; 
+      text-align: left; 
+      vertical-align: top; 
+    }
+    th { background: #0ea5e9; color: white; font-weight: 600; }
+    .label { font-weight: 600; color: #374151; }
+    .urgent { color: #ef4444; font-weight: 600; }
+    .normal { color: #f59e0b; font-weight: 600; }
+    .low { color: #10b981; font-weight: 600; }
+    .empty { color: #666; font-style: italic; }
+    footer {
+      margin-top: 12px;
+      font-size: 10px;
+      text-align: center;
+      border-top: 1px solid #000;
+      padding-top: 6px;
+    }
+    .signature-area {
+      margin-top: 20px;
+      border-top: 1px dashed #ccc;
+      padding-top: 20px;
+    }
+    .qr { margin-top: 8px; }
+    .section, table, ul, p { page-break-inside: avoid; }
+  </style>
+</head>
+<body>
+  <header>
+    {% if institution.logo %}
+      <img src="{{ institution.logo.path }}" alt="Logo"
+           style="max-width:120px; max-height:70px; object-fit:contain; margin-bottom:6px;">
+    {% endif %}
+    <h1>{{ institution.name }}</h1>
+    <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
+    <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
+    <p><strong>Referencia Médica #{{ referral.id }} — Código de auditoría: {{ audit_code }}</strong></p>
+  </header>
+  
+  <div class="section">
+    <strong>Paciente:</strong> {{ patient.first_name }} {{ patient.last_name }}<br>
+    C.I.: {{ patient.national_id }} - Edad: {{ patient.age }} - Sexo: {{ patient.gender }}<br>
+    {% if patient.phone %}Teléfono: {{ patient.phone }} - {% endif %}
+    {% if patient.email %}Email: {{ patient.email }}{% endif %}
+  </div>
+  <div class="section referral-details">
+    <h2>Detalles de la Referencia</h2>
+    <table>
+      <tr>
+        <td width="20%"><span class="label">Fecha de Referencia:</span></td>
+        <td>{{ referral.created_at|date:"d/m/Y H:i" }}</td>
+        <td width="20%"><span class="label">Urgencia:</span></td>
+        <td>
+          {% if referral.urgency == 'high' %}
+            <span class="urgent">ALTA</span>
+          {% elif referral.urgency == 'normal' %}
+            <span class="normal">NORMAL</span>
+          {% else %}
+            <span class="low">BAJA</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td><span class="label">Médico Referente:</span></td>
+        <td>{{ referring_doctor.full_name }}</td>
+        <td><span class="label">Colegiado:</span></td>
+        <td>{{ referring_doctor.colegiado_id }}</td>
+      </tr>
+      <tr>
+        <td><span class="label">Especialidades Referente:</span></td>
+        <td colspan="3">
+          {% if referring_doctor.specialties %}
+            {{ referring_doctor.specialties|join:", " }}
+          {% else %}
+            <span class="empty">No especificadas</span>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div class="section">
+    <h2>Motivo de la Referencia</h2>
+    <p>{{ referral.reason|default:"Sin especificar motivo de referencia" }}</p>
+  </div>
+  {% if referral.clinical_findings %}
+  <div class="section">
+    <h2>Hallazgos Clínicos</h2>
+    <p>{{ referral.clinical_findings }}</p>
+  </div>
+  {% endif %}
+  <div class="section">
+    <h2>Diagnósticos Preliminares</h2>
+    {% if referral.diagnoses %}
+      <table>
+        <thead>
+          <tr><th>Código</th><th>Nombre</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+          {% for d in referral.diagnoses %}
+          <tr>
+            <td>{{ d.icd_code }}</td>
+            <td>{{ d.title }}</td>
+            <td>{{ d.description }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="empty">Sin diagnósticos preliminares</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">No hay diagnósticos preliminares registrados</p>
+    {% endif %}
+  </div>
+  <div class="section">
+    <h2>Referido a</h2>
+    <table>
+      <tr>
+        <td width="20%"><span class="label">Especialista:</span></td>
+        <td width="30%">{{ referral.referred_to_doctor|default:"Por asignar" }}</td>
+        <td width="20%"><span class="label">Especialidad Requerida:</span></td>
+        <td width="30%">
+          {% if referral.required_specialties %}
+            {{ referral.required_specialties|join:", " }}
+          {% else %}
+            <span class="empty">No especificada</span>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td><span class="label">Institución:</span></td>
+        <td>{{ referral.referred_to_institution|default:"Por asignar" }}</td>
+        <td><span class="label">Contacto:</span></td>
+        <td>{{ referral.referred_to_contact|default:"Por asignar" }}</td>
+      </tr>
+    </table>
+  </div>
+  {% if referral.instructions %}
+  <div class="section">
+    <h2>Instrucciones Adicionales</h2>
+    <p>{{ referral.instructions }}</p>
+  </div>
+  {% endif %}
+  {% if referral.status %}
+  <div class="section">
+    <h2>Estado de la Referencia</h2>
+    <table>
+      <tr>
+        <td width="20%"><span class="label">Estado Actual:</span></td>
+        <td>{{ referral.status|upper }}</td>
+        <td width="20%"><span class="label">Fecha Actualización:</span></td>
+        <td>{{ referral.updated_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% if referral.accepted_by %}
+      <tr>
+        <td><span class="label">Aceptado por:</span></td>
+        <td>{{ referral.accepted_by }}</td>
+        <td><span class="label">Fecha Aceptación:</span></td>
+        <td>{{ referral.accepted_at|date:"d/m/Y H:i" }}</td>
+      </tr>
+      {% endif %}
+      {% if referral.notes %}
+      <tr>
+        <td><span class="label">Notas del Estado:</span></td>
+        <td colspan="3">{{ referral.notes }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+  {% endif %}
+  <div class="signature-area">
+    <h3>Firma del Médico Referente</h3>
+    <table>
+      <tr>
+        <td width="50%">
+          <strong>{{ referring_doctor.full_name }}</strong><br>
+          Nº Colegiado: {{ referring_doctor.colegiado_id }}<br>
+          {% if referring_doctor.specialties %}
+          Especialidades: {{ referring_doctor.specialties|join:", " }}<br>
+          {% endif %}
+          {% if referring_doctor.signature %}
+          <div style="margin-top:10px;">
+            <img src="{{ referring_doctor.signature.path }}" alt="Firma" style="height:45px;">
+          </div>
+          {% endif %}
+        </td>
+        <td width="50%">
+          <table style="border: none; width: 100%;">
+            <tr>
+              <td><span class="label">Firma:</span></td>
+              <td>_________________________</td>
+            </tr>
+            <tr>
+              <td><span class="label">Fecha:</span></td>
+              <td>_________________________</td>
+            </tr>
+            <tr>
+              <td><span class="label">Sello:</span></td>
+              <td>_________________________</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+  
+  <footer>
+    Esta referencia médica forma parte del expediente clínico institucional.<br>
+    Generada por {{ referring_doctor.full_name }} - {{ institution.name }}<br>
+    Código de auditoría: {{ audit_code }}
+    <div class="qr">
+      <img src="{{ qr_code_url }}" alt="QR Auditoría" style="height:80px;">
+    </div>
+  </footer>
+</body>
+</html>

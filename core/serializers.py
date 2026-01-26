@@ -2225,10 +2225,11 @@ class NeighborhoodDetailSerializer(serializers.Serializer):
 # --- SUB-SERIALIZERS PARA LECTURA (Elegancia en el Frontend) ---
 
 class InstitutionMiniSerializer(serializers.ModelSerializer):
-    """Para mostrar la institución en listas sin sobrecargar la red"""
+    """Serializer minimal para institution selector"""
     class Meta:
         model = InstitutionSettings
-        fields = ['id', 'name', 'slug', 'logo']
+        fields = ['id', 'name', 'logo', 'is_active']
+
 
 class DoctorMiniSerializer(serializers.ModelSerializer):
     """Para que el frontend sepa quién es el médico de un vistazo"""

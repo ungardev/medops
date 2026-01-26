@@ -1629,3 +1629,119 @@ def set_active_institution_api(request, institution_id):
         return Response({"error": str(e)}, status=500)
 
 
+@api_view(['POST'])
+@permission_classes([conditional_permission()])
+def generate_professional_pdf(request):
+    """Endpoint para generar PDF profesional"""
+    try:
+        from .services.professional_pdf import ProfessionalPDFService
+        
+        service = ProfessionalPDFService()
+        template_name = request.data.get('template_name', 'medical_report_universal')
+        context = request.data.get('context', {})
+        institution_settings = request.data.get('institution_settings', {})
+        
+        pdf_bytes = service.generate_professional_pdf(template_name, context, institution_settings)
+        
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="{template_name}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error en generate_professional_pdf: {str(e)}")
+        return Response(
+            {'error': f'No se pudo generar PDF: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([conditional_permission()])
+def institution_permissions_api(request):
+    """Obtener permisos del médico actual"""
+    doctor = getattr(request.user, 'doctor_profile', None)
+    if not doctor:
+        return Response({"error": "Doctor profile not found"}, status=404)
+    
+    from .permissions import SmartInstitutionValidator
+    from .models import InstitutionSettings
+    
+    # Obtener todas las instituciones del médico
+    institutions = doctor.institutions.all()
+    permissions_data = []
+    
+    for institution in institutions:
+        permission_info = SmartInstitutionValidator.get_permission_level(doctor, institution)
+        permissions_data.append({
+            'institution_id': institution.id,
+            'institution_name': institution.name,
+            'institution_logo': institution.logo.url if institution.logo else None,
+            'access_level': permission_info['level'],
+            'is_own_institution': permission_info['is_own'],
+            'is_cross_institution': permission_info['is_cross'],
+            'can_edit': permission_info['can_edit'],
+            'can_generate_pdf': permission_info['can_generate_pdf'],
+            'expires_at': permission_info['expires_at'],
+            'access_count': permission_info['permission'].access_count,
+            'last_accessed': permission_info['permission'].last_accessed
+        })
+    
+    from .serializers import InstitutionMiniSerializer
+    return Response({
+        'active_institution': InstitutionMiniSerializer(doctor.active_institution).data if doctor.active_institution else None,
+        'all_permissions': permissions_data,
+        'own_institutions': [p for p in permissions_data if p['is_own_institution']],
+        'cross_institutions': [p for p in permissions_data if p['is_cross_institution']]
+    })
+
+
+@api_view(['POST'])
+@permission_classes([conditional_permission()])
+def refresh_emergency_access(request):
+    """Refrescar emergency access (24h adicionales)"""
+    institution_id = request.data.get('institution_id')
+    doctor = getattr(request.user, 'doctor_profile', None)
+    
+    # ✅ VALIDACIÓN ANTES DE USAR doctor
+    if not doctor:
+        return Response({"error": "Doctor profile not found"}, status=404)
+    
+    try:
+        from .models import InstitutionSettings
+        institution = InstitutionSettings.objects.get(id=institution_id)
+        
+        # ✅ VALIDACIÓN ANTES DE USAR doctor.institutions
+        if not hasattr(doctor, 'institutions'):
+            return Response({"error": "Doctor has no institutions"}, status=400)
+        
+        institutions_list = doctor.institutions.all()
+        
+        # Solo permite refresh para cross-institutions
+        if institution in institutions_list:
+            return Response({"error": "Solo para cross-institutions"}, status=400)
+        
+        # Crear/actualizar emergency access
+        from .permissions import SmartInstitutionValidator
+        permission_info = SmartInstitutionValidator.get_permission_level(doctor, institution)
+        
+        # Refresh expiration
+        permission = permission_info['permission']
+        from django.utils import timezone
+        from datetime import timedelta
+        permission.expires_at = timezone.now() + timedelta(hours=24)
+        permission.save(update_fields=['expires_at'])
+        
+        # Log del refresh
+        SmartInstitutionValidator.log_access(
+            doctor, institution, 'emergency_access_refreshed'
+        )
+        
+        return Response({
+            "message": "Emergency access refrescado por 24 horas",
+            "expires_at": permission.expires_at
+        })
+        
+    except InstitutionSettings.DoesNotExist:
+        return Response({"error": "Institution not found"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
