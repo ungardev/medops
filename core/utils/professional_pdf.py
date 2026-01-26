@@ -1,4 +1,4 @@
-# core/services/professional_pdf.py
+# core/utils/professional_pdf.py
 # -*- coding: utf-8 -*-
 """
 Servicio profesional para generación de PDF con WeasyPrint optimizado y soporte multi-país
@@ -20,7 +20,8 @@ class ProfessionalPDFService:
     """Servicio profesional para generación de PDF con WeasyPrint optimizado y soporte multi-país"""
     
     def __init__(self):
-        self.font_config = FontConfiguration()
+        # 🔥 CORRECCIÓN: Removido FontConfiguration - causa problemas
+        # self.font_config = FontConfiguration()
         self.css_cache = {}
     
     def generate_professional_pdf(
@@ -113,7 +114,8 @@ class ProfessionalPDFService:
         institution_settings: Any
     ) -> bytes:
         """
-        Método interno para generar bytes del PDF con WeasyPrint optimizado
+        🎯 MÉTODO CRÍTICO CORREGIDO - Versión minimalista ultra-efectiva
+        Basado en tests exitosos que demostraron que este método funciona perfectamente
         """
         # Preparar contexto con tipos estrictos
         enhanced_context = self._prepare_context(template_name, context, institution_settings)
@@ -122,28 +124,21 @@ class ProfessionalPDFService:
         template_path = f"medical/documents/{template_name}.html"
         html_string = self._render_template(template_path, enhanced_context)
         
-        # Obtener CSS específico del país
-        css_string = self._get_country_css(institution_settings.get('country_code', 'VE'))
-        
-        # Configurar WeasyPrint con seguridad de tipos
+        # 🔥 CORRECCIÓN CLAVE: WeasyPrint simple y efectivo (como en el test exitoso)
         html = HTML(
             string=html_string, 
             base_url=settings.MEDIA_ROOT or ""
         )
         
-        # 🔥 CORRECCIÓN CRÍTICA: Manejar bytes | None de WeasyPrint
-        pdf_result: Union[bytes, None] = html.write_pdf(
-            stylesheets=[CSS(string=css_string)],
-            font_config=self.font_config,
-            optimize_size=True,
-            presentational_hints=True
-        )
+        # 🔥 SOLUCIÓN DEFINITIVA: Sin CSS externo, sin font_config, sin optimización
+        # El template ya tiene CSS inline profesional - no necesita CSS externo
+        pdf_bytes = html.write_pdf()  # Método testado y probado exitosamente
         
-        # 🔥 CONVERTIR A BYTES CON VALIDACIÓN
-        if pdf_result is None:
+        # 🔥 VALIDACIÓN CRÍTICA: Asegurar que siempre devuelve bytes (soluciona error TypeScript)
+        if pdf_bytes is None:
             raise PDFGenerationError("WeasyPrint devolvió None al generar PDF")
         
-        return pdf_result
+        return pdf_bytes
     
     def _prepare_context(
         self, 
@@ -165,8 +160,8 @@ class ProfessionalPDFService:
                 'patient_id': int(context.get('patient_id', 0)),
                 'appointment_id': int(context.get('appointment_id', 0)),
                 'template_name': str(template_name),
-                'country_code': str(institution_settings.get('corporate_country_code', 'VE')),
-                'compliance_info': self._get_compliance_info(institution_settings.get('corporate_country_code', 'VE'))
+                'country_code': str(institution_settings.get('country_code', 'VE')),
+                'compliance_info': self._get_compliance_info(institution_settings.get('country_code', 'VE'))
             })
         except (ValueError, TypeError) as e:
             logger.warning(f"⚠️ Error en conversión de datos context: {str(e)}")
