@@ -1634,7 +1634,7 @@ def set_active_institution_api(request, institution_id):
 def generate_professional_pdf(request):
     """Endpoint para generar PDF profesional"""
     try:
-        from .services.professional_pdf import ProfessionalPDFService
+        from core.utils.professional_pdf import ProfessionalPDFService
         
         service = ProfessionalPDFService()
         # 🔧 CAMBIO CLAVE: Usar template existente
