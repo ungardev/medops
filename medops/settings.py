@@ -51,16 +51,16 @@ INSTALLED_APPS = [
 ]
 # === Middleware ===
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # <--- Siempre arriba de CommonMiddleware
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'core.middleware.InstitutionPermissionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware',
+    'django.middleware.security.SecurityMiddleware',           # 1
+    'django.contrib.sessions.middleware.SessionMiddleware',       # 2
+    'django.contrib.auth.middleware.AuthenticationMiddleware',     # 3 ✅ MOVIDO ARRIBA
+    'corsheaders.middleware.CorsMiddleware',                 # 4
+    'django.middleware.common.CommonMiddleware',               # 5
+    'django.middleware.csrf.CsrfViewMiddleware',              # 6
+    'core.middleware.InstitutionPermissionMiddleware',           # 7 ✅ AHORA DESPUÉS DE AUTH
+    'django.contrib.messages.middleware.MessageMiddleware',      # 8
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',   # 9
+    'simple_history.middleware.HistoryRequestMiddleware',      # 10
 ]
 # === Ajustes Críticos para CORS y Docker ===
 APPEND_SLASH = False  # Evita redirecciones 301 que rompen el pre-flight de CORS
