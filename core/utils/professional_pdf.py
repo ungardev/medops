@@ -34,9 +34,9 @@ class ProfessionalPDFService:
         Generar PDF profesional con validación híbrida mono-médico
         """
         try:
-            logger.info(f"🔍 [1] Starting PDF generation for template: {template_name}")
-            logger.info(f"🔍 [2] Context keys: {list(context.keys())}")
-            logger.info(f"🔍 [3] Institution settings: {list(institution_settings.keys())}")
+            print(f"🔍 [1] Starting PDF generation for template: {template_name}")
+            print(f"🔍 [2] Context keys: {list(context.keys())}")
+            print(f"🔍 [3] Institution settings: {list(institution_settings.keys())}")
             
             # Validación de entrada
             if not template_name or not context or not institution_settings:
@@ -45,26 +45,26 @@ class ProfessionalPDFService:
             # ✅ CORRECCIÓN: Usar get_current_user() sin parámetros
             from django.contrib.auth import get_current_user
             user = get_current_user()
-            logger.info(f"🔍 [4] User authenticated: {user is not None}")
+            print(f"🔍 [4] User authenticated: {user is not None}")
             
             if not user or not user.is_authenticated:
                 raise PDFGenerationError("Usuario no autenticado")
             
             from .models import DoctorOperator, InstitutionSettings
             doctor = getattr(user, 'doctor_profile', None)
-            logger.info(f"🔍 [5] Doctor profile found: {doctor is not None}")
+            print(f"🔍 [5] Doctor profile found: {doctor is not None}")
             
             if not doctor:
                 raise PDFGenerationError("Perfil de médico no encontrado")
             
             # Validar permisos para la institución
             institution = InstitutionSettings.objects.get(id=institution_settings.get('id'))
-            logger.info(f"🔍 [6] Institution found: {institution.name if institution else 'None'}")
+            print(f"🔍 [6] Institution found: {institution.name if institution else 'None'}")
             
             from .permissions import SmartInstitutionValidator
             permission_info = SmartInstitutionValidator.get_permission_level(doctor, institution)
-            logger.info(f"🔍 [7] Permission level: {permission_info.get('level')}")
-            logger.info(f"🔍 [8] Has access: {permission_info.get('has_access')}")
+            print(f"🔍 [7] Permission level: {permission_info.get('level')}")
+            print(f"🔍 [8] Has access: {permission_info.get('has_access')}")
             
             if not permission_info['has_access']:
                 from .permissions import SmartInstitutionValidator
@@ -75,7 +75,7 @@ class ProfessionalPDFService:
             
             # Determinar modo de generación
             is_emergency_mode = permission_info['is_cross_institution']
-            logger.info(f"🔍 [9] Emergency mode: {is_emergency_mode}")
+            print(f"🔍 [9] Emergency mode: {is_emergency_mode}")
             
             # Añadir metadata de permisos al contexto
             enhanced_context = {
@@ -95,15 +95,15 @@ class ProfessionalPDFService:
                 'compliance_info': self._get_compliance_info(institution_settings.get('country_code', 'VE'))
             }
             
-            logger.info(f"🔍 [10] Enhanced context prepared, keys: {list(enhanced_context.keys())}")
+            print(f"🔍 [10] Enhanced context prepared, keys: {list(enhanced_context.keys())}")
             
             # Generar PDF
             pdf_bytes = self._generate_pdf_bytes(template_name, enhanced_context, institution_settings)
             
-            logger.info(f"🔍 [11] PDF bytes received from _generate_pdf_bytes")
-            logger.info(f"🔍 [12] Type: {type(pdf_bytes)}")
-            logger.info(f"🔍 [13] Length: {len(pdf_bytes) if pdf_bytes else 'None'}")
-            logger.info(f"🔍 [14] First 50 chars: {pdf_bytes[:50] if pdf_bytes else 'None'}")
+            print(f"🔍 [11] PDF bytes received from _generate_pdf_bytes")
+            print(f"🔍 [12] Type: {type(pdf_bytes)}")
+            print(f"🔍 [13] Length: {len(pdf_bytes) if pdf_bytes else 'None'}")
+            print(f"🔍 [14] First 50 chars: {pdf_bytes[:50] if pdf_bytes else 'None'}")
             
             # Validar resultado
             if not pdf_bytes or len(pdf_bytes) < 100:
@@ -117,10 +117,10 @@ class ProfessionalPDFService:
             
             # Log especial para emergency mode
             if is_emergency_mode:
-                logger.info(f"EMERGENCY PDF: Dr {doctor.full_name} generated {template_name} from {institution.name}")
+                print(f"EMERGENCY PDF: Dr {doctor.full_name} generated {template_name} from {institution.name}")
             
-            logger.info(f"✅ PDF generado exitosamente: {template_name} - {permission_info['level']} access")
-            logger.info(f"🔍 [15] PDF validation passed, returning {len(pdf_bytes)} bytes")
+            print(f"✅ PDF generado exitosamente: {template_name} - {permission_info['level']} access")
+            print(f"🔍 [15] PDF validation passed, returning {len(pdf_bytes)} bytes")
             return pdf_bytes
             
         except Exception as e:
@@ -137,41 +137,41 @@ class ProfessionalPDFService:
         🎯 MÉTODO CRÍTICO CORREGIDO - Versión minimalista ultra-efectiva
         Basado en tests exitosos que demostraron que este método funciona perfectamente
         """
-        logger.info(f"🔍 [A] Starting _generate_pdf_bytes for template: {template_name}")
+        print(f"🔍 [A] Starting _generate_pdf_bytes for template: {template_name}")
         
         # Preparar contexto con tipos estrictos
         enhanced_context = self._prepare_context(template_name, context, institution_settings)
-        logger.info(f"🔍 [B] Context prepared, keys: {list(enhanced_context.keys())}")
+        print(f"🔍 [B] Context prepared, keys: {list(enhanced_context.keys())}")
         
         # Renderizar template
         template_path = f"medical/documents/{template_name}.html"
-        logger.info(f"🔍 [C] Template path: {template_path}")
+        print(f"🔍 [C] Template path: {template_path}")
         
         html_string = self._render_template(template_path, enhanced_context)
-        logger.info(f"🔍 [D] HTML rendered: {len(html_string)} chars")
-        logger.info(f"🔍 [E] HTML preview: {html_string[:200]}...")
+        print(f"🔍 [D] HTML rendered: {len(html_string)} chars")
+        print(f"🔍 [E] HTML preview: {html_string[:200]}...")
         
         # 🔥 CORRECCIÓN CLAVE: WeasyPrint simple y efectivo (como en el test exitoso)
         html = HTML(
             string=html_string, 
             base_url=settings.MEDIA_ROOT or ""
         )
-        logger.info(f"🔍 [F] HTML object created")
+        print(f"🔍 [F] HTML object created")
         
         # 🔥 SOLUCIÓN DEFINITIVA: Sin CSS externo, sin font_config, sin optimización
         # El template ya tiene CSS inline profesional - no necesita CSS externo
         pdf_bytes = html.write_pdf()  # Método testado y probado exitosamente
         
-        logger.info(f"🔍 [G] WeasyPrint.write_pdf() called")
-        logger.info(f"🔍 [H] Result type: {type(pdf_bytes)}")
-        logger.info(f"🔍 [I] Result length: {len(pdf_bytes) if pdf_bytes else 'None'}")
-        logger.info(f"🔍 [J] First 50 chars: {pdf_bytes[:50] if pdf_bytes else 'None'}")
+        print(f"🔍 [G] WeasyPrint.write_pdf() called")
+        print(f"🔍 [H] Result type: {type(pdf_bytes)}")
+        print(f"🔍 [I] Result length: {len(pdf_bytes) if pdf_bytes else 'None'}")
+        print(f"🔍 [J] First 50 chars: {pdf_bytes[:50] if pdf_bytes else 'None'}")
         
         # 🔥 VALIDACIÓN CRÍTICA: Asegurar que siempre devuelve bytes (soluciona error TypeScript)
         if pdf_bytes is None:
             raise PDFGenerationError("WeasyPrint devolvió None al generar PDF")
         
-        logger.info(f"🔍 [K] Returning from _generate_pdf_bytes: {len(pdf_bytes)} bytes")
+        print(f"🔍 [K] Returning from _generate_pdf_bytes: {len(pdf_bytes)} bytes")
         return pdf_bytes
     
     def _prepare_context(
@@ -183,9 +183,9 @@ class ProfessionalPDFService:
         """
         Preparar contexto con tipos estrictos y validación
         """
-        logger.info(f"🔍 [P1] Starting _prepare_context")
+        print(f"🔍 [P1] Starting _prepare_context")
         enhanced_context = context.copy()
-        logger.info(f"🔍 [P2] Context copied, initial keys: {list(enhanced_context.keys())}")
+        print(f"🔍 [P2] Context copied, initial keys: {list(enhanced_context.keys())}")
         
         # Validar y convertir tipos con seguridad
         try:
@@ -200,8 +200,8 @@ class ProfessionalPDFService:
                 'compliance_info': self._get_compliance_info(institution_settings.get('country_code', 'VE'))
             }
             enhanced_context.update(context_updates)
-            logger.info(f"🔍 [P3] Context updated successfully")
-            logger.info(f"🔍 [P4] Final context keys: {list(enhanced_context.keys())}")
+            print(f"🔍 [P3] Context updated successfully")
+            print(f"🔍 [P4] Final context keys: {list(enhanced_context.keys())}")
         except (ValueError, TypeError) as e:
             logger.warning(f"⚠️ Error en conversión de datos context: {str(e)}")
             # Valores por defecto si hay error
@@ -214,21 +214,21 @@ class ProfessionalPDFService:
                 'country_code': 'VE',
                 'compliance_info': self._get_compliance_info('VE')
             })
-            logger.info(f"🔍 [P5] Context updated with defaults due to error")
+            print(f"🔍 [P5] Context updated with defaults due to error")
         
-        logger.info(f"🔍 [P6] Returning prepared context")
+        print(f"🔍 [P6] Returning prepared context")
         return enhanced_context
     
     def _render_template(self, template_path: str, context: Dict[str, Any]) -> str:
         """Renderizar template con Django"""
-        logger.info(f"🔍 [T1] Starting template render for: {template_path}")
-        logger.info(f"🔍 [T2] Context has {len(context)} keys")
+        print(f"🔍 [T1] Starting template render for: {template_path}")
+        print(f"🔍 [T2] Context has {len(context)} keys")
         
         try:
             from django.template.loader import render_to_string
             result = render_to_string(template_path, context)
-            logger.info(f"🔍 [T3] Template rendered successfully: {len(result)} chars")
-            logger.info(f"🔍 [T4] First 100 chars: {result[:100]}...")
+            print(f"🔍 [T3] Template rendered successfully: {len(result)} chars")
+            print(f"🔍 [T4] First 100 chars: {result[:100]}...")
             return result
         except Exception as e:
             logger.error(f"🔍 [T5] Template render error: {str(e)}")
@@ -236,41 +236,41 @@ class ProfessionalPDFService:
     
     def _get_country_css(self, country_code: str) -> str:
         """Obtener CSS específico para el país"""
-        logger.info(f"🔍 [C1] Getting CSS for country: {country_code}")
+        print(f"🔍 [C1] Getting CSS for country: {country_code}")
         
         if country_code not in self.css_cache:
             # 🔥 CORRECCIÓN: Eliminar lógica duplicada
             css_file = f"medical/css/country_{country_code.lower()}.css"
-            logger.info(f"🔍 [C2] CSS file path: {css_file}")
+            print(f"🔍 [C2] CSS file path: {css_file}")
             
             try:
                 full_path = settings.TEMPLATES[0]['DIRS'][0] + '/' + css_file
-                logger.info(f"🔍 [C3] Full CSS path: {full_path}")
+                print(f"🔍 [C3] Full CSS path: {full_path}")
                 
                 with open(full_path, 'r', encoding='utf-8') as f:
                     self.css_cache[country_code] = f.read()
-                logger.info(f"🔍 [C4] CSS loaded from file: {len(self.css_cache[country_code])} chars")
+                print(f"🔍 [C4] CSS loaded from file: {len(self.css_cache[country_code])} chars")
             except (FileNotFoundError, IndexError, KeyError):
-                logger.warning(f"⚠️ CSS específico no encontrado para {country_code}, usando por defecto")
+                print(f"⚠️ CSS específico no encontrado para {country_code}, usando por defecto")
                 self.css_cache[country_code] = self._get_default_css()
-                logger.info(f"🔍 [C5] Using default CSS")
+                print(f"🔍 [C5] Using default CSS")
         
         result = self.css_cache.get(country_code, self._get_default_css())
-        logger.info(f"🔍 [C6] Returning CSS: {len(result)} chars")
+        print(f"🔍 [C6] Returning CSS: {len(result)} chars")
         return result
     
     def _get_default_css(self) -> str:
         """CSS por defecto universal"""
-        logger.info(f"🔍 [D1] Getting default CSS")
+        print(f"🔍 [D1] Getting default CSS")
         
         try:
             # 🔥 CORRECCIÓN: Ruta absoluta para producción
             css_path = settings.TEMPLATES[0]['DIRS'][0] + '/medical/css/universal.css'
-            logger.info(f"🔍 [D2] Default CSS path: {css_path}")
+            print(f"🔍 [D2] Default CSS path: {css_path}")
             
             with open(css_path, 'r', encoding='utf-8') as f:
                 result = f.read()
-            logger.info(f"🔍 [D3] Default CSS loaded: {len(result)} chars")
+            print(f"🔍 [D3] Default CSS loaded: {len(result)} chars")
             return result
         except (FileNotFoundError, IndexError, KeyError):
             logger.error(f"❌ Error leyendo CSS por defecto")
@@ -279,7 +279,7 @@ class ProfessionalPDFService:
             .medical-header { border-bottom: 2px solid #0ea5e9; }
             .soap-section { margin: 20px 0; border: 1px solid #e2e8f0; }
             """  # CSS básico como fallback
-            logger.info(f"🔍 [D4] Using fallback CSS: {len(fallback_css)} chars")
+            print(f"🔍 [D4] Using fallback CSS: {len(fallback_css)} chars")
             return fallback_css
     
     def _generate_audit_code(
@@ -289,7 +289,7 @@ class ProfessionalPDFService:
         institution_settings: Any
     ) -> str:
         """Generar código de auditoría único"""
-        logger.info(f"🔍 [A1] Generating audit code for {template_name}")
+        print(f"🔍 [A1] Generating audit code for {template_name}")
         
         try:
             audit_data = {
@@ -302,16 +302,16 @@ class ProfessionalPDFService:
             
             audit_string = json.dumps(audit_data, sort_keys=True)
             result = hashlib.sha256(audit_string.encode()).hexdigest()[:16].upper()
-            logger.info(f"🔍 [A2] Audit code generated: {result}")
+            print(f"🔍 [A2] Audit code generated: {result}")
             return result
         except Exception:
             fallback = f"ERROR_AUDIT_{int(time.time())}"
-            logger.warning(f"🔍 [A3] Using fallback audit code: {fallback}")
+            print(f"🔍 [A3] Using fallback audit code: {fallback}")
             return fallback
     
     def _get_compliance_info(self, country_code: str) -> Dict[str, Any]:
         """Obtener información de cumplimiento regulatorio por país"""
-        logger.info(f"🔍 [CM1] Getting compliance info for: {country_code}")
+        print(f"🔍 [CM1] Getting compliance info for: {country_code}")
         
         # 🔥 CORRECCIÓN: Eliminar texto basura y restaurar datos válidos
         compliance_map = {
@@ -348,5 +348,5 @@ class ProfessionalPDFService:
             'prescription_format': 'español'
         })
         
-        logger.info(f"🔍 [CM2] Compliance info retrieved: authority={result.get('authority')}")
+        print(f"🔍 [CM2] Compliance info retrieved: authority={result.get('authority')}")
         return result
