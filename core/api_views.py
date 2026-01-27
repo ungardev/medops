@@ -1632,28 +1632,39 @@ def set_active_institution_api(request, institution_id):
 @api_view(['POST'])
 @permission_classes([conditional_permission()])
 def generate_professional_pdf(request):
-    """Endpoint para generar PDF profesional"""
     try:
+        logger.info(f"🔍 [ENDPOINT-1] Starting PDF generation endpoint")
+        logger.info(f"🔍 [ENDPOINT-2] Request data: {request.data}")
+        
         from .utils.professional_pdf import ProfessionalPDFService
         
-        # 🔧 CAMBIO CLAVE: Usar template existente
-        template_name = request.data.get('template_name', 'medical_report')  # Cambiar de 'medical_report_universal' a 'medical_report'
+        template_name = request.data.get('template_name', 'medical_report')
         context = request.data.get('context', {})
         institution_settings = request.data.get('institution_settings', {})
         
+        logger.info(f"🔍 [ENDPOINT-3] Inputs extracted - template: {template_name}")
+        
         pdf_service = ProfessionalPDFService()
+        logger.info(f"🔍 [ENDPOINT-4] Service instantiated")
+        
         pdf_bytes = pdf_service.generate_professional_pdf(template_name, context, institution_settings)
+        
+        logger.info(f"🔍 [ENDPOINT-5] PDF bytes received from service")
+        logger.info(f"🔍 [ENDPOINT-6] Type: {type(pdf_bytes)}")
+        logger.info(f"🔍 [ENDPOINT-7] Length: {len(pdf_bytes)}")
+        logger.info(f"🔍 [ENDPOINT-8] First 50 chars: {pdf_bytes[:50]}")
         
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{template_name}_{timezone.now().strftime("%Y%m%d_%H%M%S")}.pdf"'
+        
+        logger.info(f"🔍 [ENDPOINT-9] Response created, content-type: {response['Content-Type']}")
+        logger.info(f"🔍 [ENDPOINT-10] Response content: {type(response.content)}, length: {len(response.content)}")
+        
         return response
         
     except Exception as e:
-        logger.error(f"Error en generate_professional_pdf: {str(e)}")
-        return Response(
-            {'error': f'No se pudo generar PDF: {str(e)}'}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        logger.error(f"🔍 [ENDPOINT-ERROR] Error in endpoint: {str(e)}")
+        return Response({'error': f'No se pudo generar PDF: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
