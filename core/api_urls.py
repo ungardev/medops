@@ -88,6 +88,8 @@ from .api_views import (
     # ✅ NUEVOS ENDPOINTS DE PERMISOS ---
     institution_permissions_api,
     refresh_emergency_access,
+    # 🔥 NUEVO: Verificación de WeasyPrint
+    verify_weasyprint_output,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -177,6 +179,7 @@ urlpatterns = [
     
     # 🔥 NUEVO: Sistema PDF Profesional (WeasyPrint) ---
     path("pdf/generate/", generate_professional_pdf, name="generate-professional-pdf"),
+    path("pdf/verify-weasyprint/", verify_weasyprint_output, name="verify-weasyprint"),
     
     path("documents/", documents_api, name="documents-api"),
     path("icd/search/", icd_search_api, name="icd-search-api"),

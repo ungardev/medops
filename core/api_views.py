@@ -939,7 +939,7 @@ def generate_medical_report(request, pk):
         }
         
         # Renderizar HTML desde plantilla
-        html_string = render_to_string('pdf/medical_report.html', context)
+        html_string = render_to_string('medical/documents/medical_report.html', context)
         
         # Generar PDF con WeasyPrint
         pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
@@ -1069,7 +1069,7 @@ def generate_chargeorder_pdf(request, pk):
         }
         
         # Renderizar HTML desde plantilla
-        html_string = render_to_string('pdf/charge_order.html', context)
+        html_string = render_to_string('documents/charge_order.html', context)
         
         # Generar PDF con WeasyPrint
         pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
@@ -1757,3 +1757,64 @@ def refresh_emergency_access(request):
         return Response({"error": "Institution not found"}, status=404)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([conditional_permission()])
+def verify_weasyprint_output(request):
+    """Endpoint que verifica qué produce WeasyPrint SIN errores de TypeScript"""
+    try:
+        import os
+        from weasyprint import HTML
+        from django.template.loader import render_to_string
+        from django.utils import timezone
+        from typing import Dict, Any
+        
+        print(f"🔍 [VERIFY] Starting WeasyPrint verification")
+        
+        # 1. Template rendering
+        context = {
+            'test': 'verification',
+            'timestamp': str(timezone.now())
+        }
+        
+        html_string = render_to_string('medical/documents/medical_report.html', context)
+        print(f"🔍 [VERIFY] Template rendered: {len(html_string)} chars")
+        print(f"🔍 [VERIFY] HTML preview: {html_string[:100]}...")
+        
+        # 2. WeasyPrint generation
+        html_obj = HTML(string=html_string)
+        pdf_bytes = html_obj.write_pdf()
+        print(f"🔍 [VERIFY] WeasyPrint called, type: {type(pdf_bytes)}")
+        
+        # 🔥 NUEVO: Verificación segura del valor None
+        if pdf_bytes is None:
+            return Response({
+                'success': False,
+                'error': 'WeasyPrint returned None - HTML could not be converted to PDF',
+                'timestamp': str(timezone.now()),
+                'weasyprint_works': False,
+            })
+        
+        # 3. Análisis robusto (ahora seguro sin riesgo de None)
+        verification_data = {
+            'success': True,
+            'timestamp': str(timezone.now()),
+            'weasyprint_works': True,
+            'pdf_type': type(pdf_bytes).__name__,
+            'pdf_length': len(pdf_bytes),
+            'pdf_preview': pdf_bytes[:50],  # ✅ Seguro: pdf_bytes no es None
+            'pdf_is_pdf_like': pdf_bytes.startswith(b'%PDF'),  # ✅ Seguro
+            'pdf_starts_with_pdf': pdf_bytes[:4],  # ✅ Seguro
+        }
+        
+        print(f"🔍 [VERIFY] VERIFICATION COMPLETE")
+        
+        return Response(verification_data)
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e),
+            'timestamp': str(timezone.now()),
+        })
