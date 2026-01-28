@@ -1050,7 +1050,7 @@ def generate_chargeorder_pdf(request, pk):
         charge_order = get_object_or_404(ChargeOrder, pk=pk)
         
         # Obtener datos relacionados para el contexto
-        items = ChargeItem.objects.filter(charge_order=charge_order)
+        items = ChargeItem.objects.filter(order=charge_order)
         payments = Payment.objects.filter(charge_order=charge_order)
         
         # Calcular totales
