@@ -1062,6 +1062,7 @@ def generate_chargeorder_pdf(request, pk):
         context = {
             'data': charge_order,
             'charge_order': charge_order,
+            'order': charge_order,  # ✅ AGREGADO - Para compatibilidad con template
             'patient': charge_order.patient,
             'appointment': charge_order.appointment,
             'doctor': charge_order.doctor,
