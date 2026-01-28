@@ -916,12 +916,20 @@ def generate_medical_report(request, pk):
         doctor = appointment.doctor
         institution = appointment.institution
         
-        # Obtener datos de la consulta
-        diagnoses = Diagnosis.objects.filter(appointment=appointment)
-        treatments = Treatment.objects.filter(appointment=appointment)
-        prescriptions = Prescription.objects.filter(appointment=appointment)
-        medical_tests = MedicalTest.objects.filter(appointment=appointment)
-        referrals = MedicalReferral.objects.filter(appointment=appointment)
+        # Obtener datos de la consulta (CORREGIDO)
+        diagnoses = Diagnosis.objects.filter(appointment=appointment)  # ✅ CORRECTO - Tiene appointment
+        treatments = Treatment.objects.filter(  # ✅ CORREGIDO - No tiene appointment
+            patient=appointment.patient,
+            doctor=appointment.doctor,
+            institution=appointment.institution
+        )
+        prescriptions = Prescription.objects.filter(  # ✅ CORREGIDO - No tiene appointment
+            patient=appointment.patient,
+            doctor=appointment.doctor,
+            institution=appointment.institution
+        )
+        medical_tests = MedicalTest.objects.filter(appointment=appointment)  # ✅ CORRECTO - Tiene appointment
+        referrals = MedicalReferral.objects.filter(appointment=appointment)  # ✅ CORRECTO - Tiene appointment
         
         # Preparar contexto para plantilla
         context = {
