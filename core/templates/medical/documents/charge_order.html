@@ -81,8 +81,8 @@
     <table>
       <tbody>
         <tr><td>Subtotal</td><td class="num">{{ subtotal }}</td></tr>
-        {% if charge_order.discount %}<tr><td>Descuento</td><td class="num">-{{ charge_order.discount }}</td></tr>{% endif %}
-        {% if charge_order.tax %}<tr><td>Impuestos</td><td class="num">{{ charge_order.tax }}</td></tr>{% endif %}
+        {% if discount %}<tr><td>Descuento</td><td class="num">-{{ discount }}</td></tr>{% endif %}
+        {% if tax %}<tr><td>Impuestos</td><td class="num">{{ tax }}</td></tr>{% endif %}
         <tr><td><strong>Total</strong></td><td class="num"><strong>{{ total }}</strong></td></tr>
         <tr><td>Pagado</td><td class="num">{{ paid_amount }}</td></tr>
         <tr><td>Pendiente</td><td class="num">{{ balance_due }}</td></tr>
