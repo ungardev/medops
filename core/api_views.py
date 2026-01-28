@@ -1094,6 +1094,7 @@ def generate_chargeorder_pdf(request, pk):
         return Response({"error": str(e)}, status=500)
 
 
+
 @api_view(['POST', 'GET'])
 def generate_used_documents(request, pk):
     """
