@@ -46,18 +46,15 @@
     {% if institution.website %}<p>Web: {{ institution.website }}</p>{% endif %}
     <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
     <p><strong>Orden de Cobro #{{ charge_order.id }} — Estado: {{ charge_order.status|upper }}</strong></p>
-    <p><strong>Código de auditoría: {{ audit_code }}</strong></p>
+    <p><strong>Código de auditoría: {{ data.id }}-{{ patient.id }}</strong></p>
   </header>
-
   <div class="section">
     <strong>Paciente:</strong> {{ patient.first_name }} {{ patient.last_name }}<br>
     C.I.: {{ patient.national_id }}{% if patient.age %} - Edad: {{ patient.age }}{% endif %}{% if patient.gender %} - Sexo: {{ patient.gender }}{% endif %}
   </div>
-
   <div class="section">
     <strong>Consulta:</strong> #{{ appointment.id }} — Fecha: {{ appointment.appointment_date|date:"d/m/Y" }}
   </div>
-
   <div class="section">
     <h2>Detalle de Cargos</h2>
     <table>
@@ -79,7 +76,6 @@
       </tbody>
     </table>
   </div>
-
   <div class="section">
     <h2>Resumen Financiero</h2>
     <table>
@@ -93,7 +89,6 @@
       </tbody>
     </table>
   </div>
-
   <div class="section">
     <h2>Pagos Registrados</h2>
     <table>
@@ -115,26 +110,21 @@
       </tbody>
     </table>
   </div>
-
   <div class="section">
     <h2>Médico Responsable</h2>
     <p><strong>{{ doctor.full_name }}</strong><br>
        Nº Colegiado: {{ doctor.colegiado_id }}<br>
-       Especialidades: {{ doctor.specialties|join:", " }}</p>
+       Especialidades: {% if doctor.specialties.all %}{{ doctor.specialties.all|join:", " }}{% else %}No especificadas{% endif %}</p>
     {% if doctor.signature %}
       <div style="margin-top:6px;">
         <img src="{{ doctor.signature.path }}" alt="Firma" style="height:45px;">
       </div>
     {% endif %}
   </div>
-
   <footer>
     Este comprobante financiero forma parte del expediente clínico institucional.<br>
     Emitido por {{ doctor.full_name }} - {{ institution.name }}<br>
-    Código de auditoría: {{ audit_code }}
-    <div class="qr">
-      <img src="{{ qr_code_url }}" alt="QR Auditoría" style="height:80px;">
-    </div>
+    Código de auditoría: {{ data.id }}-{{ patient.id }}
   </footer>
 </body>
 </html>
