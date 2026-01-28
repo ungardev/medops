@@ -1069,7 +1069,7 @@ def generate_chargeorder_pdf(request, pk):
         }
         
         # Renderizar HTML desde plantilla
-        html_string = render_to_string('documents/charge_order.html', context)
+        html_string = render_to_string('medical/documents/charge_order.html', context)
         
         # Generar PDF con WeasyPrint
         pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
