@@ -7,7 +7,7 @@ from .models import (
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
-    ClinicalNote, VitalSigns, MedicalTestCatalog
+    ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -2236,3 +2236,27 @@ class DoctorMiniSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoctorOperator
         fields = ['id', 'name', 'specialties', 'is_verified']
+
+
+class MercantilP2CTransactionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MercantilP2CTransaction
+        fields = '__all__'
+        read_only_fields = ('id', 'generated_at', 'confirmed_at')
+
+
+class MercantilP2CConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MercantilP2CConfig
+        fields = '__all__'
+        exclude = ('secret_key', 'webhook_secret')  # No exponer secrets
+
+
+class MercantilP2CCreateTransactionSerializer(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    charge_order_id = serializers.IntegerField(required=False, allow_null=True)
+    
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than 0")
+        return value

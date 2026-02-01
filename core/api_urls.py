@@ -90,6 +90,13 @@ from .api_views import (
     refresh_emergency_access,
     # 🔥 NUEVO: Verificación de WeasyPrint
     verify_weasyprint_output,
+    # 🆕 MERCANTIL P2C ENDPOINTS (ya existen en api_views.py) ---
+    mercantil_p2c_generate_qr,
+    mercantil_p2c_check_status,
+    mercantil_p2c_webhook,
+    mercantil_p2c_config_status,
+    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES (nuevo endpoint) ---
+    verify_mobile_payment,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -184,9 +191,19 @@ urlpatterns = [
     path("documents/", documents_api, name="documents-api"),
     path("icd/search/", icd_search_api, name="icd-search-api"),
     
+    # --- Payments URLs (EXSTENTES + NUEVAS) ---
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
+    
+    # 🆕 MERCANTIL P2C ENDPOINTS (ya existen en api_views.py pero faltaban registrar) ---
+    path("payments/p2c/mercantil/generate-qr/", mercantil_p2c_generate_qr, name="mercantil_p2c_generate_qr"),
+    path("payments/p2c/mercantil/status/<str:merchant_order_id>/", mercantil_p2c_check_status, name="mercantil_p2c_check_status"),
+    path("webhooks/mercantil-p2c/", mercantil_p2c_webhook, name="mercantil_p2c_webhook"),
+    path("payments/p2c/mercantil/config-status/", mercantil_p2c_config_status, name="mercantil_p2c_config_status"),
+    
+    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES (nuevo endpoint que crearemos) ---
+    path("payments/verify-mobile-payment/", verify_mobile_payment, name="verify_mobile_payment"),
     
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),

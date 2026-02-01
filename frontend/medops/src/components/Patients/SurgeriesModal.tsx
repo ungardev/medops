@@ -1,18 +1,18 @@
 // src/components/Patients/SurgeriesModal.tsx
 import React, { useState, useEffect } from "react";
-import { Surgery } from "../../types/patients"; // ✅ FIX: Importar Surgery desde types/patients
+import EliteModal from "../Common/EliteModal";
+import { Surgery } from "../../types/patients";
 import { 
   ScissorsIcon, 
   PlusIcon, 
   PencilSquareIcon, 
   TrashIcon, 
-  BuildingOfficeIcon, 
+  BuildingOfficeIcon,
+  CalendarDaysIcon,
   UserCircleIcon,
-  CalendarIcon,
   CheckIcon
 } from "@heroicons/react/24/outline";
 import { X } from "lucide-react";
-// ✅ FIX: Eliminada la definición local de Surgery
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -20,8 +20,34 @@ interface Props {
   initial?: Surgery;
   patientId: number;
 }
+interface Form {
+  id?: number;                    // ✅ FIX AGREGADO - ID opcional para edición
+  name: string;
+  hospital: string;
+  date: string;
+  type: string;
+  description: string;
+  notes: string;
+  status: string;
+}
+const SURGERY_TYPES = [
+  { value: "quirúrgico", label: "Quirúrgico" },
+  { value: "diagnóstico", label: "Diagnóstico" },
+  { value: "procedimiento", label: "Procedimiento" },
+  { value: "cosmético", label: "Cosmético" },
+];
+const SURGERY_STATUS = [
+  { value: "programada", label: "Programada" },
+  { value: "completada", label: "Completada" },
+  { value: "cancelada", label: "Cancelada" },
+  { value: "postergada", label: "Postergada" },
+];
+const inputStyles = "w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-white/30 transition-all";
+const labelStyles = "text-[9px] font-black text-white/30 uppercase tracking-[0.1em] mb-2 block";
+const sectionStyles = "bg-[#0a0a0a] border border-white/10 rounded-sm p-4 space-y-4";
 export default function SurgeriesModal({ open, onClose, onSave, initial, patientId }: Props) {
-  const [form, setForm] = useState<Partial<Surgery>>({
+  const [form, setForm] = useState<Form>({
+    id: undefined,                  // ✅ FIX AGREGADO - Inicializar ID como undefined
     name: "",
     hospital: "",
     date: "",
@@ -30,130 +56,189 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
     notes: "",
     status: "programada"
   });
-  // ⭐ NEW: Agregar soporte para tecla Escape
+  const [editingId, setEditingId] = useState<number | null>(null);
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && open) {
-        onClose();
-      }
-    };
-    
+    if (open && initial) {
+      setForm({
+        id: initial.id,             // ✅ FIX AGREGADO - Incluir ID del formulario al editar
+        name: initial.name || "",
+        hospital: initial.hospital || "",
+        date: initial.date || "",
+        type: initial.type || "quirúrgico",
+        description: initial.description || "",
+        notes: initial.notes || "",
+        status: initial.status || "programada"
+      });
+      setEditingId(initial.id);
+    } else if (open) {
+      // Reset form for new surgery
+      setForm({
+        id: undefined,               // ✅ FIX AGREGADO - Reset ID a undefined para nueva cirugía
+        name: "",
+        hospital: "",
+        date: "",
+        type: "quirúrgico",
+        description: "",
+        notes: "",
+        status: "programada"
+      });
+      setEditingId(null);
+    }
+  }, [open, initial]);
+  const handleEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && open) {
+      onClose();
+    }
+  };
+  useEffect(() => {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
-  if (!open) return null;
+  const handleChange = (field: keyof Form, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
   const handleSubmit = () => {
     const payload = {
       ...form,
-      patient: patientId,
-      date: form.date || null,
-      doctor_id: 1 // default
+      patientId: patientId
     };
+    if (editingId) {
+      payload.id = editingId;       // ✅ ESTA LÍNEA AHORA FUNCIONA SIN ERRORES
+    }
     onSave(payload);
-  };
-  const handleChange = (field: keyof Surgery, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    onClose();
   };
   return (
-    <div
-      onClick={onClose} // ✅ FIX: Agregar onClick al backdrop
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+    <EliteModal
+      open={open}
+      onClose={onClose}
+      title="SURGICAL_REGISTRY_PROTOCOL"
+      subtitle={editingId ? "EDIT_EXISTING_PROCEDURE" : "INITIALIZE_NEW_SURGICAL_ENTRY"}
+      maxWidth="2xl"
     >
-      <div
-        onClick={(e) => e.stopPropagation()} // ✅ FIX: Prevenir cerrar al hacer clic en el contenido
-        className="bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg w-full max-w-md p-6 shadow-2xl"
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-sm font-mono text-[var(--palantir-text)] uppercase tracking-widest">
-            {initial ? "Actualizar" : "Agregar"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 text-[var(--palantir-muted)] hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-              Procedimiento
-            </label>
-            <input
-              type="text"
-              value={form.name || ""} // ✅ FIX: Convertir null a ""
-              onChange={(e) => handleChange("name", e.target.value)}
-              placeholder="Nombre de la cirugía"
-              className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
-            />
+      <div className="space-y-6">
+        {/* Surgery Information Section */}
+        <div className={sectionStyles}>
+          <div className="flex items-center gap-3 mb-4">
+            <ScissorsIcon className="w-5 h-5 text-blue-400" />
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">
+              SURGICAL_PROCEDURE_DATA
+            </h3>
           </div>
-          <div>
-            <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-              Hospital (opcional)
-            </label>
-            <input
-              type="text"
-              value={form.hospital || ""} // ✅ FIX: Convertir null a ""
-              onChange={(e) => handleChange("hospital", e.target.value)}
-              placeholder="Nombre del hospital o centro"
-              className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-                  Tipo
-              </label>
-              <select
-                value={form.type || ""} // ✅ FIX: Convertir null a ""
-                onChange={(e) => handleChange("type", e.target.value)}
-                className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
-              >
-                <option value="quirúrgico">Quirúrgico</option>
-                <option value="diagnóstico">Diagnóstico</option>
-                <option value="procedimiento">Procedimiento</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-                  Fecha
-              </label>
+              <label className={labelStyles}>PROCEDURE_IDENTIFIER</label>
               <input
-                type="date"
-                value={form.date || ""} // ✅ FIX: Convertir null a ""
-                onChange={(e) => handleChange("date", e.target.value)}
-                className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
+                className={inputStyles}
+                value={form.name}
+                onChange={(e) => handleChange("name", e.target.value)}
+                placeholder="PROCEDURE_CODE_OR_NAME"
+              />
+            </div>
+            
+            <div>
+              <label className={labelStyles}>MEDICAL_FACILITY</label>
+              <input
+                className={inputStyles}
+                value={form.hospital}
+                onChange={(e) => handleChange("hospital", e.target.value)}
+                placeholder="HOSPITAL_OR_CLINIC_NAME"
               />
             </div>
           </div>
-          <div>
-            <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-              Notas (opcional)
-            </label>
-            <textarea
-              value={form.notes || ""} // ✅ FIX: Convertir null a ""
-              onChange={(e) => handleChange("notes", e.target.value)}
-              placeholder="Detalles adicionales..."
-              className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40 min-h-[60px] resize-none"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className={labelStyles}>SURGERY_DATE</label>
+              <input
+                type="date"
+                className={inputStyles}
+                value={form.date}
+                onChange={(e) => handleChange("date", e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <label className={labelStyles}>PROCEDURE_TYPE</label>
+              <select
+                className={inputStyles}
+                value={form.type}
+                onChange={(e) => handleChange("type", e.target.value)}
+              >
+                {SURGERY_TYPES.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--palantir-muted)] hover:text-white transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/90 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm"
-          >
-            <CheckIcon className="w-4 h-4" />
-            {initial ? "Actualizar" : "Guardar"}
-          </button>
+        {/* Description Section */}
+        <div className={sectionStyles}>
+          <div className="flex items-center gap-3 mb-4">
+            <PencilSquareIcon className="w-5 h-5 text-purple-400" />
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-400">
+              SURGICAL_DESCRIPTION_PROTOCOL
+            </h3>
+          </div>
+          
+          <textarea
+            className={`${inputStyles} min-h-[120px] resize-none`}
+            value={form.description}
+            onChange={(e) => handleChange("description", e.target.value)}
+            placeholder="DETAILED_PROCEDURE_DESCRIPTION_MEDICAL_NOTES"
+          />
+        </div>
+        {/* Notes Section */}
+        <div className={sectionStyles}>
+          <div className="flex items-center gap-3 mb-4">
+            <CalendarDaysIcon className="w-5 h-5 text-emerald-400" />
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-400">
+              CLINICAL_NOTES_REGISTRY
+            </h3>
+          </div>
+          
+          <textarea
+            className={`${inputStyles} min-h-[80px] resize-none bg-black/60`}
+            value={form.notes}
+            onChange={(e) => handleChange("notes", e.target.value)}
+            placeholder="ADDITIONAL_CLINICAL_OBSERVATIONS_COMMENTS_PROCEDURE_NOTES"
+          />
+        </div>
+        {/* Patient Information Display */}
+        <div className={sectionStyles}>
+          <div className="flex items-center gap-3 mb-4">
+            <UserCircleIcon className="w-5 h-5 text-amber-400" />
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-amber-400">
+              PATIENT_SUBJECT_IDENTIFIER
+            </h3>
+          </div>
+          <div className="bg-black/60 border border-white/10 rounded-sm p-4">
+            <p className="text-[10px] font-mono text-white/80">
+              PATIENT
+Continuación del archivo completo:
+              PATIENT_ID: {patientId}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+      {/* Action Buttons */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors font-mono"
+        >
+          ABORT_OPERATION
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-blue-400 transition-all font-mono"
+        >
+          <CheckIcon className="w-4 h-4" />
+          {editingId ? "UPDATE_SURGICAL_REGISTRY" : "CREATE_SURGICAL_ENTRY"}
+        </button>
+      </div>
+    </EliteModal>
   );
 }

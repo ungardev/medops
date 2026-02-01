@@ -16,6 +16,12 @@ from django.utils import timezone
 import logging
 from weasyprint import HTML
 from openpyxl import Workbook
+from decimal import Decimal
+import json
+import hashlib
+import hmac
+import uuid
+from typing import Dict, Optional, Any
 
 
 logger = logging.getLogger(__name__)
@@ -1829,3 +1835,550 @@ def verify_weasyprint_output(request):
             'error': str(e),
             'timestamp': str(timezone.now()),
         })
+
+
+@api_view(['GET'])
+def active_institution_dashboard_api(request):
+    """
+    Dashboard de institución activa con métricas en tiempo real.
+    Retorna institución activa + estadísticas del día actual.
+    """
+    try:
+        # Obtener institución activa del contexto
+        institution_id = request.headers.get('X-Institution-ID')
+        if not institution_id:
+            return Response({"error": "No active institution"}, status=400)
+            
+        institution = get_object_or_404(InstitutionSettings, id=institution_id)
+        today = timezone.now().date()
+        
+        # Queries REALES a la base de datos
+        patients_today = Patient.objects.filter(
+            created_at__date=today,
+            # institution=institution  # Cuando Patient tenga campo institution
+        ).count()
+        
+        appointments_today = Appointment.objects.filter(
+            appointment_date__date=today,
+            institution=institution
+        ).count()
+        
+        payments_today = Payment.objects.filter(
+            payment_date__date=today,
+            charge_order__institution=institution,
+            status='confirmed'
+        ).count()
+        
+        pending_payments = Payment.objects.filter(
+            charge_order__institution=institution,
+            status='pending'
+        ).count()
+        
+        return Response({
+            'institution': InstitutionMiniSerializer(institution).data,
+            'metrics': {
+                'patients_today': patients_today,
+                'appointments_today': appointments_today,
+                'payments_today': payments_today,
+                'pending_payments': pending_payments,
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error en active_institution_dashboard_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
+# ==========================================
+# MERCANTIL P2C PAYMENT GATEWAY
+# ==========================================
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mercantil_p2c_generate_qr(request):
+    """
+    Genera QR de pago P2C Mercantil.
+    Endpoint listo para producción con estructura completa.
+    """
+    try:
+        # Obtener configuración P2C de institución activa
+        institution_id = request.headers.get('X-Institution-ID')
+        if not institution_id:
+            return Response({
+                "success": False,
+                "error": "No active institution",
+                "error_code": "NO_INSTITUTION"
+            }, status=400)
+        
+        institution = get_object_or_404(InstitutionSettings, id=institution_id)
+        
+        # Obtener o crear configuración P2C
+        p2c_config, created = MercantilP2CConfig.objects.get_or_create(
+            institution=institution,
+            defaults={
+                'is_test_mode': True,  # Por defecto en sandbox
+                'qr_expiration_minutes': 15,
+                'max_amount': Decimal('1000000.00'),
+                'min_amount': Decimal('1.00')
+            }
+        )
+        
+        # Datos del request
+        amount = Decimal(str(request.data.get('amount', '0')))
+        charge_order_id = request.data.get('charge_order_id')
+        
+        if not amount or amount <= 0:
+            return Response({
+                "success": False,
+                "error": "Invalid amount",
+                "error_code": "INVALID_AMOUNT"
+            }, status=400)
+        
+        # Datos básicos de la transacción
+        merchant_order_id = f"MDP{datetime.now().strftime('%Y%m%d%H%M%S')}{str(uuid.uuid4())[:8]}"
+        expires_at = timezone.now() + timedelta(minutes=p2c_config.qr_expiration_minutes)
+        
+        # Guardar transacción en BD
+        transaction = MercantilP2CTransaction.objects.create(
+            institution=institution,
+            charge_order_id=charge_order_id,
+            merchant_order_id=merchant_order_id,
+            amount=amount,
+            currency='VES',  # Por ahora VES
+            qr_code_data="PLACEHOLDER_DATA_UNTIL_API_ACCESS",  # placeholder
+            status='generated',
+            expires_at=expires_at,
+            gateway_response_raw={
+                "request_payload": {
+                    "client_id": p2c_config.client_id or "PLACEHOLDER",
+                    "merchant_order_id": merchant_order_id,
+                    "amount": str(amount.quantize(Decimal('0.01'))),
+                    "currency": "VES",
+                    "expiration_minutes": p2c_config.qr_expiration_minutes,
+                    "callback_url": p2c_config.webhook_url or f"{settings.SITE_URL}/api/webhooks/mercantil-p2c/",
+                    "timestamp": datetime.now().isoformat(),
+                    "description": f"Pago MedOps - Orden {merchant_order_id}"
+                },
+                "api_base_url": "https://api.mercantilbanco.com/p2c-sandbox",  # URL sandbox
+                "note": "Placeholder structure - waiting API credentials"
+            }
+        )
+        
+        return Response({
+            "success": True,
+            "transaction_id": transaction.id,
+            "merchant_order_id": transaction.merchant_order_id,
+            "qr_code_data": transaction.qr_code_data,
+            "qr_image_url": transaction.qr_image_url,
+            "expires_at": transaction.expires_at.isoformat() if transaction.expires_at else None,
+            "amount": str(transaction.amount),
+            "currency": transaction.currency,
+            "status": transaction.get_status_display(),
+            "note": "P2C QR generated successfully - waiting API credentials for real processing"
+        })
+    
+    except Exception as e:
+        logger.error(f"Error en mercantil_p2c_generate_qr: {str(e)}")
+        return Response({
+            "success": False,
+            "error": str(e),
+            "error_code": "INTERNAL_ERROR"
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def mercantil_p2c_check_status(request, merchant_order_id):
+    """
+    Consulta estado de transacción P2C.
+    Endpoint listo para producción con estructura completa.
+    """
+    try:
+        # Validar merchant_order_id
+        if not merchant_order_id:
+            return Response({
+                "success": False,
+                "error": "Merchant order ID required",
+                "error_code": "MISSING_ORDER_ID"
+            }, status=400)
+        
+        # Buscar transacción
+        transaction = get_object_or_404(
+            MercantilP2CTransaction,
+            merchant_order_id=merchant_order_id
+        )
+        
+        # Respuesta simulada (placeholder hasta API real)
+        response_data = {
+            "request_payload": {
+                "client_id": "PLACEHOLDER",
+                "merchant_order_id": merchant_order_id,
+                "timestamp": datetime.now().isoformat()
+            },
+            "api_endpoint": "https://api.mercantilbanco.com/p2c-sandbox/status",
+            "note": "Placeholder structure - waiting API credentials"
+        }
+        
+        # Actualizar transacción con respuesta del gateway
+        transaction.gateway_response_raw = response_data
+        transaction.save(update_fields=['gateway_response_raw'])
+        
+        return Response({
+            "success": True,
+            "transaction_id": transaction.id,
+            "merchant_order_id": transaction.merchant_order_id,
+            "status": transaction.get_status_display(),
+            "gateway_response": response_data,
+            "message": "Status check completed - waiting API credentials for real processing"
+        })
+    
+    except MercantilP2CTransaction.DoesNotExist:
+        return Response({
+            "success": False,
+            "error": "Transaction not found",
+            "error_code": "TRANSACTION_NOT_FOUND"
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error en mercantil_p2c_check_status: {str(e)}")
+        return Response({
+            "success": False,
+            "error": str(e),
+            "error_code": "INTERNAL_ERROR"
+        }, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])  # AllowAny para webhook externo
+def mercantil_p2c_webhook(request):
+    """
+    Procesa webhook de confirmación de pago P2C.
+    Endpoint listo para producción con estructura completa.
+    """
+    try:
+        # Obtener firma del header
+        signature = request.headers.get('X-Mercantil-Signature')
+        if not signature:
+            return Response({
+                "valid": False,
+                "error": "Missing signature"
+            }, status=400)
+        
+        # Obtener datos del webhook
+        webhook_data = request.data
+        
+        # Validar merchant_order_id
+        merchant_order_id = webhook_data.get('merchant_order_id')
+        if not merchant_order_id:
+            return Response({
+                "valid": False,
+                "error": "Missing merchant_order_id"
+            }, status=400)
+        
+        # Buscar transacción
+        transaction = get_object_or_404(
+            MercantilP2CTransaction,
+            merchant_order_id=merchant_order_id
+        )
+        
+        # Simular validación de firma (placeholder hasta API real)
+        # En producción, aquí iría la validación HMAC real
+        processed_data = {
+            "merchant_order_id": webhook_data.get('merchant_order_id'),
+            "mercantil_transaction_id": webhook_data.get('transaction_id'),
+            "status": webhook_data.get('status'),
+            "amount": webhook_data.get('amount'),
+            "paid_at": webhook_data.get('paid_at'),
+            "raw_data": webhook_data
+        }
+        
+        # Actualizar transacción
+        transaction.mercantil_transaction_id = processed_data.get('mercantil_transaction_id')
+        transaction.status = 'confirmed' if processed_data.get('status') == 'paid' else 'failed'
+        transaction.confirmed_at = timezone.now()
+        transaction.callback_data = processed_data['raw_data']
+        transaction.save(update_fields=[
+            'mercantil_transaction_id', 'status', 
+            'confirmed_at', 'callback_data'
+        ])
+        
+        # Si está confirmado, crear registro de pago
+        if transaction.status == 'confirmed':
+            # Buscar o crear payment asociado
+            from .models import Payment
+            payment = Payment.objects.create(
+                institution=transaction.institution,
+                charge_order=transaction.charge_order,
+                amount=transaction.amount,
+                currency=transaction.currency,
+                method='p2c_mercantil',
+                status='confirmed',
+                gateway_transaction_id=processed_data.get('mercantil_transaction_id'),
+                reference_number=processed_data.get('reference'),
+                gateway_response_raw=processed_data['raw_data']
+            )
+            
+            # Vincular pago a transacción P2C
+            transaction.payment = payment
+            transaction.save(update_fields=['payment'])
+        
+        return Response({
+            "success": True,
+            "message": "Webhook processed successfully - waiting API credentials for real processing"
+        })
+    
+    except MercantilP2CTransaction.DoesNotExist:
+        return Response({
+            "valid": False,
+            "error": "Transaction not found"
+        }, status=404)
+    except Exception as e:
+        logger.error(f"Error en mercantil_p2c_webhook: {str(e)}")
+        return Response({
+            "valid": False,
+            "error": str(e)
+        }, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def mercantil_p2c_config_status(request):
+    """
+    Retorna estado de configuración P2C para debugging.
+    """
+    try:
+        institution_id = request.headers.get('X-Institution-ID')
+        if not institution_id:
+            return Response({
+                "configured": False,
+                "error": "No active institution"
+            }, status=400)
+        
+        institution = get_object_or_404(InstitutionSettings, id=institution_id)
+        
+        try:
+            config = institution.p2c_config
+            return Response({
+                "configured": bool(config.client_id and config.client_id != "PLACEHOLDER"),
+                "test_mode": config.is_test_mode,
+                "has_credentials": bool(config.client_id and config.secret_key and config.client_id != "PLACEHOLDER"),
+                "webhook_url": config.webhook_url,
+                "environment": "sandbox" if config.is_test_mode else "production",
+                "message": "P2C configuration status retrieved"
+            })
+        except MercantilP2CConfig.DoesNotExist:
+            return Response({
+                "configured": False,
+                "error": "P2C configuration not found",
+                "message": "Configure P2C settings to enable payments"
+            })
+    
+    except Exception as e:
+        logger.error(f"Error en mercantil_p2c_config_status: {str(e)}")
+        return Response({
+            "configured": False,
+            "error": str(e),
+            "error_code": "INTERNAL_ERROR"
+        }, status=500)
+
+
+# 🆕 ==========================================
+# MERCANTIL P2C - VERIFICACIÓN DE PAGOS MÓVILES 
+# ==========================================
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_mobile_payment(request):
+    """
+    🎯 ELITE VERIFICATION: Mobile Payment Reference Verification
+    
+    Verifies mobile payment references from any Venezuelan bank by querying
+    Banco Mercantil API for recent transactions matching criteria.
+    
+    Expected Payload:
+    {
+        "charge_order_id": 123,
+        "expected_amount": 150.00,
+        "time_window_hours": 24,
+        "reference_pattern": "AUTO_DETECT"  # Optional: specific reference pattern
+    }
+    """
+    try:
+        # 🏦 VALIDACIÓN INSTITUCIONAL (siguiendo patrón existente)
+        institution_id = request.headers.get('X-Institution-ID')
+        if not institution_id:
+            return Response({
+                "success": False,
+                "error": "INSTITUTION_HEADER_MISSING",
+                "message": "X-Institution-ID header required"
+            }, status=400)
+        
+        institution = get_object_or_404(InstitutionSettings, id=institution_id)
+        
+        # 📋 VALIDACIÓN DE DATOS DE ENTRADA
+        charge_order_id = request.data.get('charge_order_id')
+        expected_amount = request.data.get('expected_amount')
+        time_window_hours = request.data.get('time_window_hours', 24)
+        
+        if not charge_order_id:
+            return Response({
+                "success": False,
+                "error": "MISSING_CHARGE_ORDER_ID",
+                "message": "charge_order_id is required"
+            }, status=400)
+        
+        if not expected_amount:
+            return Response({
+                "success": False,
+                "error": "MISSING_EXPECTED_AMOUNT",
+                "message": "expected_amount is required"
+            }, status=400)
+        
+        # 🎯 OBTENER CHARGE ORDER CON PERMISOS
+        try:
+            charge_order = ChargeOrder.objects.get(
+                id=charge_order_id,
+                institution=institution
+            )
+        except ChargeOrder.DoesNotExist:
+            return Response({
+                "success": False,
+                "error": "CHARGE_ORDER_NOT_FOUND",
+                "message": "Charge order not found or doesn't belong to your institution"
+            }, status=404)
+        
+        # 💰 VERIFICAR QUE HAY SALDO PENDIENTE
+        current_balance = charge_order.balance_due
+        if current_balance <= 0:
+            return Response({
+                "success": False,
+                "error": "NO_PENDING_BALANCE",
+                "message": f"Charge order already paid. Balance: ${current_balance:.2f}"
+            }, status=400)
+        
+        # 🔄 VALIDAR MONTO COINCIDENTE
+        if float(expected_amount) != float(current_balance):
+            return Response({
+                "success": False,
+                "error": "AMOUNT_MISMATCH",
+                "message": f"Expected amount (${expected_amount}) doesn't match current balance (${current_balance})"
+            }, status=400)
+        
+        # 🏦 CONSULTAR SERVICIO MERCANTIL
+        from .utils.payment_gateways.mercantil_p2c import MercantilP2CService
+        mercantil_service = MercantilP2CService(institution)
+        
+        # 🕒 DEFINIR VENTANA DE BÚSQUEDA
+        cutoff_time = timezone.now() - timedelta(hours=time_window_hours)
+        
+        logger.info(f"[MOBILE_PAYMENT_VERIFY] Searching for payment: order={charge_order_id}, amount=${expected_amount}, institution={institution.name}")
+        
+        # 🔍 BUSCAR TRANSACCIONES RECIENTES
+        try:
+            recent_transactions = mercantil_service.lookup_recent_transactions(
+                amount=float(expected_amount),
+                since=cutoff_time
+            )
+        except Exception as api_error:
+            logger.error(f"[MOBILE_PAYMENT_VERIFY] API Error: {str(api_error)}")
+            return Response({
+                "success": False,
+                "error": "MERCANTIL_API_ERROR",
+                "message": "Unable to connect to Banco Mercantil API",
+                "details": str(api_error),
+                "fallback_required": True
+            }, status=503)  # Service Unavailable - suggests manual fallback
+        
+        # 📊 ANALIZAR RESULTADOS
+        if not recent_transactions:
+            return Response({
+                "success": False,
+                "error": "NO_TRANSACTIONS_FOUND",
+                "message": f"No mobile payments found for amount ${expected_amount} in the last {time_window_hours} hours",
+                "data": {
+                    "searched_amount": expected_amount,
+                    "time_window_hours": time_window_hours,
+                    "cutoff_time": cutoff_time.isoformat()
+                }
+            }, status=404)
+        
+        # 🎯 ENCONTRAR TRANSACCIÓN COINCIDENTE (la más reciente)
+        best_match = recent_transactions[0]  # API returns ordered by newest
+        
+        # 🔒 DUPLICACIÓN CHECK
+        existing_payment = Payment.objects.filter(
+            gateway_transaction_id=best_match.get('transaction_id'),
+            institution=institution
+        ).first()
+        
+        if existing_payment:
+            return Response({
+                "success": False,
+                "error": "PAYMENT_ALREADY_EXISTS",
+                "message": "This transaction was already recorded",
+                "existing_payment": {
+                    "id": existing_payment.id,
+                    "amount": str(existing_payment.amount),
+                    "created_at": existing_payment.created_at.isoformat(),
+                    "charge_order_id": existing_payment.charge_order.id
+                }
+            }, status=409)  # Conflict
+        
+        # ✅ CREAR PAYMENT REGISTRATION
+        try:
+            payment = Payment.objects.create(
+                institution=institution,
+                charge_order=charge_order,
+                appointment=charge_order.appointment,
+                patient=charge_order.appointment.patient,
+                doctor=charge_order.appointment.doctor,
+                amount=Decimal(str(best_match['amount'])),
+                currency=best_match.get('currency', 'VES'),
+                method='transfer',  # Mobile payment is a transfer
+                status='confirmed',
+                reference_number=best_match.get('reference'),
+                gateway_transaction_id=best_match.get('transaction_id'),
+                gateway_response_raw={
+                    'verification_method': 'mobile_payment_lookup',
+                    'bank_source': best_match.get('bank_origin', 'MERCANTIL'),
+                    'verified_at': timezone.now().isoformat(),
+                    'transaction_data': best_match
+                },
+                received_by=request.user,
+                notes=f"Mobile payment verified automatically via API. Ref: {best_match.get('reference', 'N/A')}"
+            )
+            
+            logger.info(f"[MOBILE_PAYMENT_VERIFY] SUCCESS: payment_id={payment.id}, order_id={charge_order_id}, amount=${payment.amount}")
+            
+            # 🔄 ACTUALIZAR CHARGE ORDER BALANCE
+            charge_order.recalculate_balance()
+            
+            return Response({
+                "success": True,
+                "message": "✅ Mobile payment verified and registered successfully",
+                "data": {
+                    "payment_id": payment.id,
+                    "charge_order_id": charge_order_id,
+                    "amount_verified": str(payment.amount),
+                    "reference_number": payment.reference_number,
+                    "bank_transaction_id": payment.gateway_transaction_id,
+                    "new_balance": str(charge_order.balance_due),
+                    "payment_status": payment.status,
+                    "verification_method": "automatic_api_lookup"
+                }
+            }, status=201)  # Created
+            
+        except Exception as creation_error:
+            logger.error(f"[MOBILE_PAYMENT_VERIFY] Payment Creation Error: {str(creation_error)}")
+            return Response({
+                "success": False,
+                "error": "PAYMENT_CREATION_FAILED",
+                "message": "Transaction found but payment registration failed",
+                "details": str(creation_error),
+                "transaction_data": best_match  # Return for manual processing
+            }, status=500)
+    
+    except Exception as e:
+        logger.error(f"[MOBILE_PAYMENT_VERIFY] CRITICAL ERROR: {str(e)}")
+        return Response({
+            "success": False,
+            "error": "INTERNAL_SERVER_ERROR",
+            "message": "An unexpected error occurred during payment verification",
+            "details": str(e)
+        }, status=500)

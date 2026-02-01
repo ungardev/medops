@@ -1,5 +1,7 @@
+// src/components/Common/ConfirmGenericModal.tsx
 import React from "react";
-import { ExclamationTriangleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import EliteModal from "./EliteModal";
 interface ConfirmGenericModalProps {
   title: string;
   message: string;
@@ -8,6 +10,7 @@ interface ConfirmGenericModalProps {
   onConfirm: () => void;
   onCancel: () => void;
   isDestructive?: boolean;
+  open: boolean;
 }
 const ConfirmGenericModal: React.FC<ConfirmGenericModalProps> = ({
   title,
@@ -17,47 +20,34 @@ const ConfirmGenericModal: React.FC<ConfirmGenericModalProps> = ({
   onConfirm,
   onCancel,
   isDestructive = false,
+  open,
 }) => {
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center z-[1000] p-4 animate-in fade-in duration-300"
-      onClick={onCancel}
+    <EliteModal 
+      open={open} 
+      onClose={onCancel} 
+      title={isDestructive ? "DESTRUCTIVE_ACTION_CONFIRMATION" : "SYSTEM_CONFIRMATION_REQUIRED"}
+      maxWidth="max-w-md"
+      showDotIndicator={true}
     >
-      <div className="absolute inset-0 bg-[#0a0c10]/80 backdrop-blur-sm" />
-      <div
-        className="relative bg-[#11141a] border border-[var(--palantir-border)] shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-6 py-4 border-b border-[var(--palantir-border)] flex items-center justify-between bg-white/[0.02]">
-          <div className="flex items-center gap-3">
-            <div className={`p-1.5 rounded-md ${isDestructive ? 'bg-red-500/10 text-red-500' : 'bg-[var(--palantir-active)]/10 text-[var(--palantir-active)]'}`}>
-              <ExclamationTriangleIcon className="w-4.5 h-4.5" />
-            </div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-widest">
-              SYSTEM_CONFIRMATION_REQUIRED
-            </h3>
-          </div>
-          <button 
-            onClick={onCancel}
-            className="text-[var(--palantir-muted)] hover:text-white transition-colors"
-          >
-            <XMarkIcon className="w-4.5 h-4.5" />
-          </button>
-        </div>
-        <div className="p-6">
+      <div className="space-y-6">
+        {/* Mensaje con estilo elite */}
+        <div>
           <h4 className="text-lg font-semibold text-white mb-2 leading-tight">
             {title}
           </h4>
-          <p className="text-sm text-[var(--palantir-muted)] leading-relaxed">
+          <p className="text-sm text-white/60 leading-relaxed">
             {message}
           </p>
         </div>
-        <div className="px-6 py-5 bg-white/[0.01] border-t border-[var(--palantir-border)] flex flex-row-reverse gap-3">
+        
+        {/* Botones elite */}
+        <div className="flex gap-3">
           <button
-            className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all shadow-lg ${
+            className={`px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest transition-all ${
               isDestructive 
                 ? 'bg-red-600 hover:bg-red-500 text-white shadow-red-900/20' 
-                : 'bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/90 text-white shadow-blue-900/20'
+                : 'bg-white text-black hover:bg-white/90 shadow-black/20'
             }`}
             onClick={onConfirm}
           >
@@ -65,23 +55,25 @@ const ConfirmGenericModal: React.FC<ConfirmGenericModalProps> = ({
           </button>
           
           <button
-            className="px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest text-[var(--palantir-muted)] hover:text-white hover:bg-[var(--palantir-border)] transition-all border border-transparent hover:border-[var(--palantir-border)]"
+            className="px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest text-white/60 hover:text-white hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
             onClick={onCancel}
           >
             {cancelLabel}
           </button>
         </div>
-        <div className="px-6 py-2 bg-black/20 flex justify-between items-center">
-            <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tight">
-              Auth_Required: Level_01
-            </span>
-            <div className="flex gap-1">
-                <div className="w-1 h-1 rounded-full bg-[var(--palantir-muted)] opacity-30"></div>
-                <div className="w-1 h-1 rounded-full bg-[var(--palantir-muted)] opacity-30"></div>
-            </div>
+        
+        {/* Footer elite */}
+        <div className="flex justify-between items-center pt-3 border-t border-white/5">
+          <span className="text-[8px] font-mono text-white/40 uppercase tracking-tight">
+            Auth_Required: Level_01
+          </span>
+          <div className="flex gap-1">
+            <div className="w-1 h-1 rounded-full bg-white/40 opacity-30"></div>
+            <div className="w-1 h-1 rounded-full bg-white/40 opacity-30"></div>
+          </div>
         </div>
       </div>
-    </div>
+    </EliteModal>
   );
 };
 export default ConfirmGenericModal;

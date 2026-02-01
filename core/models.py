@@ -2490,3 +2490,231 @@ class AuditLog(models.Model):
     def is_cross_access(self):
         """Verificar si fue cross-institution access"""
         return self.is_cross_institution
+
+
+class MercantilP2CTransaction(models.Model):
+    """
+    Registro de transacciones P2C Mercantil con QR.
+    Almacena tanto pagos generados como confirmados.
+    """
+    STATUS_CHOICES = [
+        ('generated', 'QR Generado'),
+        ('pending', 'Pendiente de Pago'),
+        ('confirmed', 'Pago Confirmado'),
+        ('expired', 'QR Expirado'),
+        ('cancelled', 'Cancelado'),
+        ('failed', 'Fallido'),
+    ]
+    
+    # --- RELACIONES ---
+    institution = models.ForeignKey(
+        'InstitutionSettings',
+        on_delete=models.CASCADE,
+        related_name='p2c_transactions',
+        verbose_name="Institución"
+    )
+    charge_order = models.ForeignKey(
+        'ChargeOrder',
+        on_delete=models.CASCADE,
+        related_name='p2c_transactions',
+        null=True,
+        blank=True,
+        verbose_name="Orden de Cobro Asociada"
+    )
+    payment = models.ForeignKey(
+        'Payment',
+        on_delete=models.CASCADE,
+        related_name='p2c_transactions',
+        null=True,
+        blank=True,
+        verbose_name="Pago Confirmado"
+    )
+    
+    # --- DATOS DE TRANSACCIÓN ---
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto de la Transacción"
+    )
+    currency = models.CharField(
+        max_length=3,
+        default='VES',
+        verbose_name="Moneda"
+    )
+    
+    # --- DATOS ESPECÍFICOS DE P2C ---
+    qr_code_data = models.TextField(
+        verbose_name="Datos del Código QR",
+        help_text="Contenido completo del QR generado por Mercantil"
+    )
+    qr_image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name="URL de Imagen QR",
+        help_text="URL de la imagen del QR generada (opcional)"
+    )
+    
+    # --- IDs DE MERCANTIL ---
+    mercantil_transaction_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name="ID Transacción Mercantil",
+        help_text="ID único retornado por API de Mercantil"
+    )
+    merchant_order_id = models.CharField(
+        max_length=100,
+        unique=True,
+        verbose_name="ID Orden Comerciante",
+        help_text="ID único de nuestra orden para rastreo"
+    )
+    
+    # --- CONTROL DE ESTADOS ---
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='generated',
+        verbose_name="Estado de Transacción"
+    )
+    
+    # --- TIMING LIFECYCLE ---
+    generated_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de Generación QR"
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Expiración QR"
+    )
+    confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de Confirmación de Pago"
+    )
+    
+    # --- METADATOS Y AUDITORÍA ---
+    gateway_response_raw = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name="Respuesta Raw Gateway",
+        help_text="Respuesta completa de API Mercantil"
+    )
+    callback_data = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name="Datos de Callback",
+        help_text="Datos recibidos en webhook de confirmación"
+    )
+    
+    history = HistoricalRecords()
+    
+    class Meta:
+        verbose_name = "Transacción P2C Mercantil"
+        verbose_name_plural = "Transacciones P2C Mercantil"
+        ordering = ['-generated_at']
+        indexes = [
+            models.Index(fields=['institution', 'status']),
+            models.Index(fields=['mercantil_transaction_id']),
+            models.Index(fields=['merchant_order_id']),
+            models.Index(fields=['status', 'generated_at']),
+        ]
+    
+    def __str__(self):
+        return f"P2C-{self.merchant_order_id} - {self.amount} {self.currency} [{self.get_status_display()}]"
+    
+    def is_expired(self):
+        """Verifica si el QR ha expirado"""
+        if self.expires_at and timezone.now() > self.expires_at:
+            return True
+        return False
+    
+    def can_confirm_payment(self):
+        """Verifica si la transacción puede ser confirmada"""
+        return self.status == 'pending' and not self.is_expired()
+
+
+class MercantilP2CConfig(models.Model):
+    """
+    Configuración específica para integración P2C Mercantil.
+    Almacena credenciales y parámetros del servicio.
+    """
+    
+    institution = models.OneToOneField(
+        'InstitutionSettings',
+        on_delete=models.CASCADE,
+        related_name='p2c_config',
+        verbose_name="Institución"
+    )
+    
+    # --- CREDENCIALES DE API ---
+    client_id = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Client ID Mercantil"
+    )
+    secret_key = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Secret Key Mercantil"
+    )
+    webhook_secret = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Webhook Secret"
+    )
+    
+    # --- CONFIGURACIÓN DE ENTORNO ---
+    is_test_mode = models.BooleanField(
+        default=True,
+        verbose_name="Modo de Pruebas (Sandbox)",
+        help_text="Activar modo sandbox de Mercantil"
+    )
+    
+    # --- PARÁMETROS DE TRANSACCIÓN ---
+    qr_expiration_minutes = models.PositiveIntegerField(
+        default=15,
+        verbose_name="Tiempo de Expiración QR (minutos)",
+        help_text="Tiempo en minutos antes de que el QR expire"
+    )
+    max_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('1000000.00'),
+        verbose_name="Monto Máximo por Transacción"
+    )
+    min_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('1.00'),
+        verbose_name="Monto Mínimo por Transacción"
+    )
+    
+    # --- CONFIGURACIÓN DE WEBHOOK ---
+    webhook_url = models.URLField(
+        max_length=500,
+        blank=True,
+        null=True,
+        verbose_name="URL de Webhook",
+        help_text="URL donde Mercantil enviará confirmaciones de pago"
+    )
+    
+    # --- AUDITORÍA ---
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Configuración P2C Mercantil"
+        verbose_name_plural = "Configuraciones P2C Mercantil"
+    
+    def __str__(self):
+        return f"P2C Config - {self.institution.name}"
+    
+    def get_api_environment(self):
+        """Retorna el entorno de API correspondiente"""
+        return "sandbox" if self.is_test_mode else "production"

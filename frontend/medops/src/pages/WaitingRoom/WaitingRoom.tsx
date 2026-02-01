@@ -1,3 +1,4 @@
+// src/pages/WaitingRoom/WaitingRoom.tsx
 import { useState, useEffect } from "react";
 import RegisterWalkinModal from "@/components/WaitingRoom/RegisterWalkinModal";
 import ConfirmCloseDayModal from "@/components/WaitingRoom/ConfirmCloseDayModal";
@@ -62,6 +63,7 @@ export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [entryToCancel, setEntryToCancel] = useState<WaitingRoomEntry | null>(null);
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false); // ✅ AGREGADO: Variable de estado para cancelación
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
@@ -226,7 +228,7 @@ export default function WaitingRoom() {
                         )}
                         {entry.status !== 'completed' && (
                           <button 
-                            onClick={() => setEntryToCancel(entry)}
+                            onClick={() => {setEntryToCancel(entry); setShowConfirmCancel(true);}} // ✅ CORREGIDO: Manejo de estado de cancelación
                             className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-sm"
                           >
                             <XMarkIcon className="w-5 h-5" />
@@ -293,24 +295,38 @@ export default function WaitingRoom() {
           existingEntries={entries ?? []} 
         />
       )}
+      
       {entryToCancel && (
         <ConfirmGenericModal
-          title="Abort_Process"
-          message={`¿Confirma la cancelación del flujo operativo para ${entryToCancel.patient.full_name}?`}
-          onConfirm={() => { handleStatusChange(entryToCancel, "canceled"); setEntryToCancel(null); }}
-          onCancel={() => setEntryToCancel(null)}
+          open={showConfirmCancel} // ✅ CORREGIDO: Agregar propiedad open
+          title="DESTRUCTIVE_ACTION_CONFIRMATION"
+          message={`Protocol: Cancel operational flow for subject ${entryToCancel.patient.full_name}?`}
+          confirmLabel="ABORT_OPERATION"
+          cancelLabel="CANCEL_PROTOCOL"
+          isDestructive={true}
+          onConfirm={() => { 
+            handleStatusChange(entryToCancel, "canceled"); 
+            setEntryToCancel(null); 
+            setShowConfirmCancel(false); // ✅ CORREGIDO: Resetear estado de cancelación
+          }}
+          onCancel={() => { 
+            setEntryToCancel(null); 
+            setShowConfirmCancel(false); // ✅ CORREGIDO: Resetear estado de cancelación
+          }}
         />
       )}
+      
       {showConfirmClose && (
         <ConfirmCloseDayModal
           onConfirm={() => { 
             queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] }); 
             setShowConfirmClose(false); 
-            setToast({ message: "Jornada finalizada correctamente", type: "success" });
+            setToast({ message: "Daily operations terminated successfully", type: "success" });
           }}
           onCancel={() => setShowConfirmClose(false)}
         />
       )}
+      
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );

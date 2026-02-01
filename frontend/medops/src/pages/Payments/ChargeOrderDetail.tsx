@@ -9,6 +9,25 @@ import { ChargeOrder, ChargeOrderStatus } from "@/types/payments";
 import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders";
 import { useInstitutions } from "@/hooks/settings/useInstitutions"; // 🆕 IMPORTAR CONTEXTO
 import { apiFetch } from "@/api/client";
+// 🆕 IMPORTAR HOOK DE VERIFICACIÓN MÓVIL
+import { useVerifyMobilePayment } from '../../hooks/payments/useVerifyMobilePayment';
+import ManualPaymentModal from '../../components/Payments/ManualPaymentModal';
+// 🆕 TIPOS PARA VERIFICACIÓN MÓVIL
+interface VerifyMobilePaymentData {
+  amount_verified: string;
+  payment_id: number;
+  reference_number: string;
+  bank_transaction_id: string;
+  new_balance: string;
+  payment_status: string;
+  verification_method: string;
+}
+interface VerifyMobilePaymentError {
+  code: string;
+  error: string;
+  message: string;
+  fallback_required?: boolean;
+}
 import { 
   ArrowLeftIcon, 
   DocumentArrowDownIcon, 
@@ -18,7 +37,8 @@ import {
   ClockIcon,
   UserIcon,
   HashtagIcon,
-  BuildingOfficeIcon // 🆕 ICONO INSTITUCIONAL
+  BuildingOfficeIcon, // 🆕 ICONO INSTITUCIONAL
+  CreditCardIcon       // ✅ AÑADIR
 } from "@heroicons/react/24/outline";
 interface Event {
   id: number;
@@ -31,10 +51,49 @@ export default function ChargeOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  
+  // 🆕 ESTADOS PARA VERIFICACIÓN MÓVIL
+  const [showManualModal, setShowManualModal] = useState(false);
+  
   const invalidateChargeOrders = useInvalidateChargeOrders();
   
   // 🆕 OBTENER CONTEXTO INSTITUCIONAL
   const { activeInstitution } = useInstitutions();
+  
+  // 🎯 HOOK DE VERIFICACIÓN MÓVIL (placeholder hasta paso 5)
+  const verifyMobilePayment = useVerifyMobilePayment({
+    onSuccess: (data: VerifyMobilePaymentData) => {
+      // ✅ VERIFICACIÓN EXITOSA
+      setToast({ 
+        message: `✅ PAYMENT_VERIFIED: $${data.amount_verified} registered successfully`, 
+        type: "success" 
+      });
+      setShowManualModal(false);
+      setVerificationError(null);
+      // 🔄 Invalidar queries para actualizar UI
+      invalidateChargeOrders(id);
+    },
+    onError: (error: VerifyMobilePaymentError) => {
+      // ❌ ERROR DE VERIFICACIÓN
+      if (error.code === 'MERCANTIL_API_ERROR' || error.fallback_required) {
+        // 📱 MOSTRAR MODAL MANUAL SOLO PARA FALLAS DE CONEXIÓN
+        setShowManualModal(true);
+        setToast({ 
+          message: "⚠️ API_CONNECTION_DOWN: Manual registration required", 
+          type: "info" 
+        });
+      } else {
+        // 🚨 OTRO TIPO DE ERROR
+        setVerificationError(error.message);
+        setToast({ 
+          message: `❌ VERIFICATION_FAILED: ${error.error}`, 
+          type: "error" 
+        });
+      }
+    }
+  });
+  
   if (!id) return <div className="p-8 text-[10px] font-mono text-red-500 uppercase tracking-widest">Error: Null_Reference_ID</div>;
   const { data: order, isLoading, error } = useQuery<ChargeOrder>({
     queryKey: ["charge-order", id],
@@ -73,6 +132,9 @@ export default function ChargeOrderDetail() {
   const total = order.total_amount ?? order.total ?? 0;
   const paid = order.payments?.reduce((acc, p) => acc + Number(p.amount), 0) ?? 0;
   const pending = Number(total) - paid;
+  
+  // 🎯 AGREGAR ESTADO PARA TOAST (si no existe)
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen max-w-7xl mx-auto">
       
@@ -197,7 +259,7 @@ export default function ChargeOrderDetail() {
           <section className="space-y-4">
             <div className="flex items-center gap-2 px-1">
               <ClockIcon className="w-4 h-4 text-emerald-400" />
-              <h3 className="text-[10px] font-black tracking-[0.2em] uppercase opacity-70">Payment_Registry_History</h3>
+              <h3 className="text-[10px] font-black tracking-[0.2em] uppercase text-[var(--palantir-text)] opacity-70">Payment_Registry_History</h3>
             </div>
             <PaymentList payments={order.payments || []} />
           </section>
@@ -206,6 +268,38 @@ export default function ChargeOrderDetail() {
           <section className="p-6 bg-white/[0.02] border border-white/5 space-y-4 rounded-sm shadow-xl">
             <h3 className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--palantir-muted)]">Operations_Panel</h3>
             <div className="grid grid-cols-1 gap-2">
+              
+              {/* 🆕 BOTÓN DE VERIFICACIÓN MÓVIL - ESTILO TERMINAL ELITE */}
+              {pending > 0 && (
+                <button 
+                    onClick={() => verifyMobilePayment.mutate({
+                      chargeOrderId: order.id,
+                      expectedAmount: pending,
+                      timeWindowHours: 24
+                    })}
+                    disabled={verifyMobilePayment.isPending}
+                    className="flex items-center justify-between p-4 border text-[10px] font-black uppercase tracking-widest transition-all group overflow-hidden relative bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {/* 🎯 EFECTO DE BRILLO ELITE */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/5 to-transparent -skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
+                  
+                  <div className="flex items-center gap-3 relative z-10">
+                    {verifyMobilePayment.isPending ? (
+                      <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <CreditCardIcon className="w-4 h-4" />
+                    )}
+                    <span>{verifyMobilePayment.isPending ? '[💳] VERIFYING...' : '[💳] VERIFY_MOBILE_PAYMENT'}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 relative z-10">
+                    <span className="text-[8px] font-mono opacity-60 uppercase">AMOUNT:</span>
+                    <span className="font-mono font-black">${pending.toFixed(2)}</span>
+                    <span className="text-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  </div>
+                </button>
+              )}
+              
               <button onClick={() => setShowModal(true)} className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all group">
                 Register_New_Payment <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform" />
               </button>
@@ -261,14 +355,45 @@ export default function ChargeOrderDetail() {
       </div>
       {showModal && (
         <RegisterPaymentModal
+          open={showModal}
           appointmentId={order.appointment}
           chargeOrderId={order.id}
-          onClose={() => {
-            setShowModal(false);
-            invalidateChargeOrders(order.id);
-          }}
+          onClose={() => setShowModal(false)}
         />
       )}
+      {/* 🆕 MODAL DE RESPALDO PARA VERIFICACIÓN MANUAL - COMPONENTE REAL */}
+      {showManualModal && (
+        <ManualPaymentModal
+          open={showManualModal}
+          chargeOrderId={order.id}
+          expectedAmount={pending}
+          onVerificationSuccess={() => {
+            setShowManualModal(false);
+            invalidateChargeOrders(id);
+            setToast({ 
+              message: "✅ MANUAL_PAYMENT_VERIFIED: Payment registered successfully", 
+              type: "success" 
+            });
+          }}
+          onClose={() => setShowManualModal(false)}
+        />
+      )}
+      
+      {/* 🎯 ESTADO DE TOAST (si no existe Toast component) */}
+      {toast && <div className="fixed bottom-4 right-4 p-4 rounded-lg bg-white shadow-lg border border-gray-200">
+        <div className={`text-sm font-medium ${
+          toast.type === "success" ? "text-green-600" :
+          toast.type === "error" ? "text-red-600" : "text-blue-600"
+        }`}>
+          {toast.message}
+        </div>
+        <button 
+          onClick={() => setToast(null)}
+          className="ml-4 text-gray-400 hover:text-gray-600"
+        >
+          ×
+        </button>
+      </div>}
     </div>
   );
 }

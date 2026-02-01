@@ -1,6 +1,8 @@
+// src/components/Payments/PaymentReceiptModal.tsx
 import { useState } from "react";
 import { Payment } from "../../types/payments";
-import { formatCurrency } from "@/utils/format";  // ✅ AGREGADO: Import de formatCurrency
+import { formatCurrency } from "@/utils/format";
+import EliteModal from "../Common/EliteModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 interface Props {
@@ -75,48 +77,109 @@ export default function PaymentReceiptModal({ payment, onClose }: Props) {
       pageHeight - 20
     );
     doc.text("© 2025 MedOps - Todos los derechos reservados", 20, pageHeight - 12);
-    doc.save(`comprobante_pago_.pdf`);
+    doc.save(`comprobante_pago_${payment.id}.pdf`);
     setLoading(false);
   };
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="max-w-md w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-6">
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-gray-100 mb-4">
-          Comprobante de Pago
-        </h3>
-        <div className="flex flex-col gap-2 text-sm text-[#0d2c53] dark:text-gray-200">
-          <div><strong>Paciente:</strong> {payment.patient?.full_name ?? "N/A"}</div>
-          <div><strong>Monto:</strong> {formatCurrency(payment.amount, payment.currency)}</div>  {/* ✅ CORREGIDO: Ahora muestra el valor con formatCurrency */}
-          <div><strong>Método:</strong> {String(payment.method ?? "")}</div>
-          <div><strong>Estado:</strong> {String(payment.status ?? "")}</div>
-          <div><strong>Referencia:</strong> {payment.reference_number ?? "—"}</div>
-          <div><strong>Banco:</strong> {payment.bank_name ?? "—"}</div>
-          <div><strong>Recibido por:</strong> {payment.received_by ?? "—"}</div>
-          <div>
-            <strong>Fecha:</strong>{" "}
-            {payment.received_at
-              ? new Date(payment.received_at).toLocaleString()
-              : String(payment.appointment_date ?? "")}
+    <EliteModal 
+      open={true} 
+      onClose={onClose} 
+      title="PAYMENT_RECEIPT_EXPORT"
+      maxWidth="max-w-2xl"
+    >
+      <div className="space-y-6">
+        {/* Header de información del paciente */}
+        <div className="border-b border-white/10 pb-4">
+          <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-3">
+            PATIENT_IDENTIFICATION
+          </h4>
+          <div className="flex flex-col gap-3 text-sm text-white/80">
+            <div className="flex justify-between">
+              <span className="text-white/40">SUBJECT:</span>
+              <span className="font-mono">{payment.patient?.full_name ?? "N/A"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/40">STATUS:</span>
+              <span className="font-mono">{String(payment.status ?? "")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/40">TRANSACTION_ID:</span>
+              <span className="font-mono">{payment.reference_number ?? "—"}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/40">INSTITUTION:</span>
+              <span className="font-mono">{payment.institution?.name ?? "—"}</span>
+            </div>
           </div>
         </div>
-        <div className="flex justify-between mt-6">
+        
+        {/* Tabla de detalles con estilo elite */}
+        <div className="border border-white/10 rounded-sm overflow-hidden">
+          <table className="w-full text-xs">
+            <thead className="bg-white/5">
+              <tr>
+                <th className="px-4 py-3 text-left font-black uppercase tracking-[0.2em] text-white/40">FIELD</th>
+                <th className="px-4 py-3 text-left font-black uppercase tracking-[0.2em] text-white/40">VALUE</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              <tr className="hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white/60 font-mono">TRANSACTION_AMOUNT</td>
+                <td className="px-4 py-3 text-white font-mono font-bold">
+                  {formatCurrency(payment.amount, payment.currency)}
+                </td>
+              </tr>
+              <tr className="hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white/60 font-mono">PAYMENT_METHOD</td>
+                <td className="px-4 py-3 text-white font-mono">{String(payment.method ?? "")}</td>
+              </tr>
+              <tr className="hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white/60 font-mono">BANK_ENTITY</td>
+                <td className="px-4 py-3 text-white font-mono">{payment.bank_name ?? "—"}</td>
+              </tr>
+              <tr className="hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white/60 font-mono">OPERATOR</td>
+                <td className="px-4 py-3 text-white font-mono">{payment.received_by ?? "—"}</td>
+              </tr>
+              <tr className="hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white/60 font-mono">RECEIPT_TIMESTAMP</td>
+                <td className="px-4 py-3 text-white font-mono">
+                  {payment.received_at 
+                    ? new Date(payment.received_at).toLocaleString() 
+                    : "N/A"
+                  }
+                </td>
+              </tr>
+              <tr className="hover:bg-white/5 transition-colors">
+                <td className="px-4 py-3 text-white/60 font-mono">APPOINTMENT_DATE</td>
+                <td className="px-4 py-3 text-white font-mono">
+                  {payment.appointment_date 
+                    ? new Date(payment.appointment_date).toLocaleString() 
+                    : "N/A"
+                  }
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        {/* Botones de acción elite */}
+        <div className="flex gap-3 pt-4 border-t border-white/10">
           <button
-            className="px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 
-                       bg-gray-100 dark:bg-gray-700 text-[#0d2c53] dark:text-gray-200 
-                       hover:bg-gray-200 dark:hover:bg-gray-600 transition text-sm"
+            className="px-6 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all"
             onClick={onClose}
           >
-            Cerrar
+            CLOSE_RECEIPT
           </button>
           <button
-            className="px-4 py-2 rounded-md bg-[#0d2c53] text-white hover:bg-[#0b2444] transition text-sm"
+            className="flex-1 bg-white text-black text-[10px] font-black uppercase tracking-[0.2em] py-2.5 rounded-sm hover:bg-white/90 disabled:opacity-50 transition-all"
             onClick={handleDownloadPDF}
             disabled={loading}
           >
-            {loading ? "Generando..." : "Descargar PDF"}
+            {loading ? "GENERATING_PDF..." : "EXPORT_TO_PDF"}
           </button>
         </div>
       </div>
-    </div>
+    </EliteModal>
   );
 }

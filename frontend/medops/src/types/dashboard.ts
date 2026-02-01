@@ -4,6 +4,18 @@
 // =====================================================
 export type TrendPoint = { date: string; value: number };
 // =====================================================
+// ✅ NUEVO: Dashboard de Institución Activa
+// =====================================================
+export interface ActiveInstitutionDashboard {
+  institution: import("./config").InstitutionSettings;
+  metrics: {
+    patients_today: number;
+    appointments_today: number;
+    payments_today: number;
+    pending_payments: number;
+  };
+}
+// =====================================================
 // RESUMEN DEL DASHBOARD
 // =====================================================
 export type DashboardSummary = {

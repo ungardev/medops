@@ -26,6 +26,19 @@ export const DashboardAPI = {
     const res = await api.get(`/dashboard/summary`);
     return res.data as import("@/types/dashboard").DashboardSummary;
   },
+  // ✅ NUEVO: Active Institution Dashboard
+  activeInstitution: async () => {
+    const res = await api.get('/dashboard/active-institution/');
+    return res.data as {
+      institution: import("@/types/config").InstitutionSettings;
+      metrics: {
+        patients_today: number;
+        appointments_today: number;
+        payments_today: number;
+        pending_payments: number;
+      };
+    };
+  },
   notifications: async () => {
     const res = await api.get(`/notifications/`);
     return res.data as import("@/types/notifications").NotificationEvent[];

@@ -2,9 +2,10 @@
 import React, { useState, useEffect } from "react";
 import { 
   BeakerIcon, 
-  CheckIcon
+  CheckIcon,
+  XMarkIcon
 } from "@heroicons/react/24/outline";
-import { X } from "lucide-react";
+import EliteModal from "../Common/EliteModal";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -21,7 +22,7 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
     lot: "",
     center: "",
   });
-  // ⭐ NEW: Agregar soporte para tecla Escape
+  // Preservar soporte para tecla Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
@@ -32,7 +33,27 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
-  if (!open) return null;
+  // Sincronizar formulario con datos iniciales
+  useEffect(() => {
+    if (open && initial) {
+      setForm({
+          vaccine: initial.vaccine || "",
+          vaccine_detail: initial.vaccine_detail || null,
+          date_administered: initial.date_administered || "",
+          lot: initial.lot || "",
+          center: initial.center || "",
+        });
+    } else if (open && !initial) {
+      // Reset formulario para nueva vacunación
+      setForm({
+        vaccine: "",
+        vaccine_detail: null,
+        date_administered: "",
+        lot: "",
+        center: "",
+      });
+    }
+  }, [open, initial]);
   const handleSubmit = () => {
     if (!form.vaccine || !form.date_administered) {
       return;
@@ -48,94 +69,107 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
     };
     onSave(payload);
   };
+  // Constantes de estilos Elite
+  const inputStyles = "w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-white/30 transition-all";
+  const labelStyles = "text-[9px] font-black text-white/30 uppercase tracking-[0.1em] mb-2 block";
+  const sectionStyles = "bg-[#0a0a0a] border border-white/10 rounded-sm p-4 space-y-4";
   return (
-    <div 
-      onClick={onClose} // ✅ FIX: Agregar onClick al backdrop
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+    <EliteModal
+      open={open}
+      onClose={onClose}
+      title="VACCINATION_REGISTRY_PROTOCOL"
+      subtitle={initial ? "UPDATE_EXISTING_RECORD" : "INITIALIZE_NEW_VACCINATION"}
+      maxWidth="max-w-xl"
+      showDotIndicator={true}
     >
-      <div 
-        onClick={(e) => e.stopPropagation()} // ✅ FIX: Prevenir cerrar al hacer clic en el contenido
-        className="bg-[#0d1117] border border-[var(--palantir-border)] rounded-lg w-full max-w-md p-6 shadow-2xl"
-      >
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-sm font-mono text-[var(--palantir-text)] uppercase tracking-widest">
-            {initial ? "Actualizar Registro" : "Nuevo Registro"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1 text-[var(--palantir-muted)] hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+      <div className="space-y-6">
+        {/* Header con icono */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+            <BeakerIcon className="w-5 h-5" />
+          </div>
+          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">
+            VACCINATION_ADMINISTRATION_DATA
+          </h3>
         </div>
-        <div className="space-y-4">
+        {/* Formulario de Vacunación */}
+        <div className={sectionStyles}>
           <div>
-            <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-              Vacuna
-            </label>
+            <label className={labelStyles}>VACCINE_IDENTIFIER</label>
             <select
               value={form.vaccine}
               onChange={(e) => setForm({ ...form, vaccine: e.target.value })}
-              className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
+              className={inputStyles}
             >
-              <option value="">Seleccione...</option>
+              <option value="">SELECT_VACCINE...</option>
               {vaccines.map((v: any) => (
-                <option key={v.id} value={v.id}>{v.name} ({v.code})</option>
+                <option key={v.id} value={v.id}>
+                  {v.name} ({v.code})
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-              Fecha
-            </label>
+            <label className={labelStyles}>ADMINISTRATION_DATE</label>
             <input
               type="date"
               value={form.date_administered}
               onChange={(e) => setForm({ ...form, date_administered: e.target.value })}
-              className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
+              className={inputStyles}
             />
           </div>
           <div>
-            <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-              Lote (opcional)
-            </label>
+            <label className={labelStyles}>BATCH_NUMBER</label>
             <input
               type="text"
               value={form.lot}
               onChange={(e) => setForm({ ...form, lot: e.target.value })}
-              placeholder="ABC-1234"
-              className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
+              placeholder="BATCH_CODE_IDENTIFIER"
+              className={inputStyles}
             />
           </div>
           <div>
-            <label className="block text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest mb-1">
-              Centro (opcional)
-            </label>
+            <label className={labelStyles}>ADMINISTRATION_CENTER</label>
             <input
               type="text"
               value={form.center}
               onChange={(e) => setForm({ ...form, center: e.target.value })}
-              placeholder="Nombre del centro"
-              className="w-full bg-[#0d1117] border border-[var(--palantir-border)] rounded-md px-3 py-2 text-[11px] text-white focus:outline-none focus:border-[var(--palantir-active)]/40"
+              placeholder="CENTER_NAME_OR_CODE"
+              className={inputStyles}
             />
           </div>
         </div>
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-[var(--palantir-muted)] hover:text-white transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/90 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm"
-          >
-            <CheckIcon className="w-4 h-4" />
-            {initial ? "Actualizar" : "Guardar"}
-          </button>
+        {/* Patient Information Display */}
+        <div className={sectionStyles}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">
+              PATIENT_SUBJECT_IDENTIFIER
+            </h3>
+          </div>
+          <div className="bg-black/60 border border-white/10 rounded-sm p-4">
+            <p className="text-[10px] font-mono text-white/80">
+              PATIENT_ID: {patientId}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+      {/* Elite Action Buttons */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors font-mono"
+        >
+          ABORT_OPERATION
+        </button>
+        <button
+          onClick={handleSubmit}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-blue-400 transition-all font-mono"
+        >
+          <CheckIcon className="w-4 h-4" />
+          {initial ? "UPDATE_VACCINATION_RECORD" : "CREATE_VACCINATION_ENTRY"}
+        </button>
+      </div>
+    </EliteModal>
   );
 }

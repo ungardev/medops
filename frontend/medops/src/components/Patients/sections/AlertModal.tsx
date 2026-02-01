@@ -1,5 +1,7 @@
 // src/components/Patients/sections/AlertModal.tsx
 import React, { useState, useEffect } from "react";
+import EliteModal from "../../Common/EliteModal";
+import { ExclamationTriangleIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -7,20 +9,30 @@ interface Props {
   initial?: { type: "danger" | "warning" | "info"; message: string };
 }
 export default function AlertModal({ open, onClose, onSave, initial }: Props) {
-  // 🔍 DIAGNOSTIC LOG: Verificar si este modal está abierto
-  console.log('AlertModal open:', open);
-  
   const [form, setForm] = useState<{ type: "danger" | "warning" | "info"; message: string }>({
     type: initial?.type ?? "warning",
     message: initial?.message ?? "",
   });
+  // Sistema dinámico de iconos por tipo de alerta
+  const getAlertIcon = (type: "danger" | "warning" | "info") => {
+    switch (type) {
+      case "danger":
+        return { icon: ExclamationTriangleIcon, color: "text-red-500", bgColor: "bg-red-500/10" };
+      case "warning":
+        return { icon: ExclamationTriangleIcon, color: "text-amber-500", bgColor: "bg-amber-500/10" };
+      case "info":
+        return { icon: InformationCircleIcon, color: "text-blue-500", bgColor: "bg-blue-500/10" };
+      default:
+        return { icon: InformationCircleIcon, color: "text-blue-500", bgColor: "bg-blue-500/10" };
+    }
+  };
   // Sincronizar estado cuando se edita una alerta existente
   useEffect(() => {
     if (initial) {
       setForm({ type: initial.type, message: initial.message });
     }
   }, [initial]);
-  // ⭐ NEW: Agregar soporte para tecla Escape
+  // Preservar soporte para tecla Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
@@ -31,62 +43,100 @@ export default function AlertModal({ open, onClose, onSave, initial }: Props) {
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
-  if (!open) return null;
   const handleSave = () => {
-    if (form.message.trim() === "") return; // Evitar guardar vacío
+    if (form.message.trim() === "") return; // Evitar guardar mensaje vacío
     onSave(form);
   };
+  // Constantes de estilos Elite
+  const inputStyles = "w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-white/30 transition-all";
+  const labelStyles = "text-[9px] font-black text-white/30 uppercase tracking-[0.1em] mb-2 block";
+  const sectionStyles = "bg-[#0a0a0a] border border-white/10 rounded-sm p-4 space-y-4";
+  const alertConfig = getAlertIcon(form.type);
+  const DynamicIcon = alertConfig.icon;
   return (
-    <div 
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-      onClick={onClose} // ✅ FIX: Agregar onClick al backdrop
+    <EliteModal
+      open={open}
+      onClose={onClose}
+      title="PATIENT_ALERT_PROTOCOL"
+      subtitle="MEDICAL_NOTIFICATION_SYSTEM"
+      maxWidth="max-w-md"
+      showDotIndicator={true}
     >
-      <div 
-        className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md shadow-lg"
-        onClick={(e) => e.stopPropagation()} // ✅ FIX: Prevenir cerrar al hacer clic en el contenido
-      >
-        <h3 className="text-lg font-semibold text-[#0d2c53] dark:text-white mb-4">
-          {initial ? "Editar alerta" : "Nueva alerta"}
-        </h3>
-        <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Header dinámico con icono por tipo */}
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`p-2 ${alertConfig.bgColor} rounded-lg ${alertConfig.color}`}>
+            <DynamicIcon className="w-5 h-5" />
+          </div>
+          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
+            ALERT_TYPE_CLASSIFICATION
+          </h3>
+        </div>
+        {/* Formulario de Alerta */}
+        <div className={sectionStyles}>
           <div>
-            <label className="text-sm font-medium block mb-1">Tipo</label>
+            <label className={labelStyles}>ALERT_TYPE_CLASSIFICATION</label>
             <select
-              className="w-full px-3 py-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700 dark:text-white"
               value={form.type}
-              onChange={(e) => setForm({ ...form, type: e.target.value as "danger" | "warning" | "info" })}
+              onChange={(e) => setForm({ ...form, type: e.target.value as any })}
+              className={inputStyles}
             >
-              <option value="danger">Peligro</option>
-              <option value="warning">Advertencia</option>
-              <option value="info">Información</option>
+              <option value="danger">DANGER_PROTOCOL</option>
+              <option value="warning">WARNING_PROTOCOL</option>
+              <option value="info">INFORMATION_PROTOCOL</option>
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium block mb-1">Mensaje</label>
+            <label className={labelStyles}>ALERT_MESSAGE_CONTENT</label>
             <textarea
-              className="w-full px-3 py-2 border rounded-md text-sm bg-gray-50 dark:bg-gray-700 dark:text-white"
-              rows={3}
+              className={`${inputStyles} min-h-[120px] resize-none`}
+              rows={4}
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
-              placeholder="Escriba el mensaje de la alerta..."
+              placeholder="ENTER_ALERT_MESSAGE_HERE..."
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2 mt-6">
-          <button
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-sm rounded-md hover:bg-gray-300 dark:hover:bg-gray-500"
-            onClick={onClose}
-          >
-            Cancelar
-          </button>
-          <button
-            className="px-4 py-2 bg-[#0d2c53] text-white text-sm rounded-md hover:bg-[#0b2444]"
-            onClick={handleSave}
-          >
-            Guardar
-          </button>
+        {/* Alert Status Display */}
+        <div className={sectionStyles}>
+          <div className="flex items-center gap-3 mb-4">
+            <div className={`w-1.5 h-1.5 rounded-full ${alertConfig.color}`} />
+            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
+              ALERT_STATUS_MONITOR
+            </h3>
+          </div>
+          <div className="bg-black/60 border border-white/10 rounded-sm p-4">
+            <p className="text-[10px] font-mono text-white/80">
+              TYPE: <span className={`${alertConfig.color} font-bold`}>{form.type.toUpperCase()}</span>
+            </p>
+            <p className="text-[10px] font-mono text-white/60 mt-1">
+              MESSAGE_LENGTH: {form.message.length} characters
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+      {/* Elite Action Buttons */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+        <button
+          onClick={onClose}
+          className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors font-mono"
+        >
+          ABORT_OPERATION
+        </button>
+        <button
+          onClick={handleSave}
+          className={`flex items-center gap-2 px-6 py-3 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all font-mono ${
+            form.type === "danger" 
+              ? "bg-red-600 hover:bg-red-500" 
+              : form.type === "warning"
+              ? "bg-amber-600 hover:bg-amber-500"
+              : "bg-blue-600 hover:bg-blue-500"
+          }`}
+        >
+          <DynamicIcon className="w-4 h-4" />
+          {initial ? "UPDATE_ALERT_RECORD" : "CREATE_ALERT_ENTRY"}
+        </button>
+      </div>
+    </EliteModal>
   );
 }
