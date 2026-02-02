@@ -27,6 +27,7 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
   isLoading = false
 }) => {
   const navigate = useNavigate();
+  
   if (isLoading) {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
@@ -59,7 +60,7 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
             <BuildingOfficeIcon className="w-12 h-12 text-white/20 mx-auto mb-3" />
             <p className="text-white/40 text-sm">No hay institución activa</p>
             <button 
-              onClick={() => navigate("/settings/institutions")}
+              onClick={() => navigate("/settings/config")}
               className="mt-3 text-[10px] font-black uppercase text-emerald-500 hover:text-emerald-400 transition-colors tracking-widest"
             >
               Configurar Institución //
@@ -76,11 +77,11 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
     pending_payments: 0
   };
   const handleConfigure = () => {
-    navigate("/settings/institutions");
+    navigate("/settings/config");
   };
   const handleViewDetails = () => {
     // Por ahora navegamos a institutions, después se puede crear una vista detallada
-    navigate("/settings/institutions");
+    navigate("/settings/config");
   };
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
@@ -99,13 +100,14 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
             <BuildingOfficeIcon className="w-8 h-8 text-white/10" />
           )}
         </div>
+        
         {/* Institution Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
             <h4 className="text-sm font-black text-white uppercase truncate tracking-widest">
               {institution.name}
             </h4>
-            
+             
             {/* Status Indicator */}
             <div className="flex items-center gap-2">
               <div className="relative flex h-2 w-2">
@@ -190,6 +192,7 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
             Ver Detalles //
           </button>
         </div>
+        
         {/* Corner Decorator (Solo visible en hover) */}
         <div className="w-4 h-4 bg-emerald-500/5 rotate-45 translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform opacity-0 group-hover:opacity-100" />
       </div>
