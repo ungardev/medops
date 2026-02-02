@@ -97,6 +97,7 @@ from .api_views import (
     mercantil_p2c_config_status,
     # 🆕 VERIFICACIÓN DE PAGOS MÓVILES (nuevo endpoint) ---
     verify_mobile_payment,
+    active_institution_dashboard_api,  # ✅ NUEVO: Dashboard de institución activa
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -151,6 +152,7 @@ urlpatterns = [
     
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
+    path("dashboard/active-institution/", active_institution_dashboard_api, name="active-institution-dashboard-api"),  # ✅ NUEVO
     path("reports/", reports_api, name="reports-api"),
     path("reports/export/", reports_export_api, name="reports-export-api"),
     path("config/institution/", institution_settings_api, name="institution-settings-api"),
