@@ -19,5 +19,15 @@ api.interceptors.request.use((config) => {
     }
     config.headers["Authorization"] = `Token ${token}`;
   }
+  
+  // ✅ NUEVO: Inyectar ID de institución activa automáticamente
+  const activeInstitutionId = localStorage.getItem("activeInstitutionId");
+  if (activeInstitutionId) {
+    if (!config.headers) {
+      config.headers = {};
+    }
+    config.headers["X-Institution-ID"] = activeInstitutionId;
+  }
+  
   return config;
 });
