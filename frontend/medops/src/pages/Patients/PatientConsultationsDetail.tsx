@@ -48,6 +48,19 @@ export default function PatientConsultationsDetail() {
     }
   }, [appointment?.patient?.id]);
   
+  // 🆕 DEBUGGING TEMPORAL
+  useEffect(() => {
+    if (appointment) {
+      console.log("🔍 Appointment Debug Data:", {
+        id: appointment.id,
+        hasId: !!appointment.id,
+        patientId: appointmentId,
+        patientKeys: Object.keys(appointment),
+        patientData: appointment.patient
+      });
+    }
+  }, [appointment, appointmentId]);
+  
   useEffect(() => {
     localStorage.setItem("consultationReadOnly", JSON.stringify(readOnly));
   }, [readOnly]);
@@ -86,20 +99,52 @@ export default function PatientConsultationsDetail() {
         <ShieldCheckIcon className="w-4 h-4" />
         <div className="flex flex-col">
           <span>Critical_Error: Data_Stream_Corrupted</span>
-          <span className="text-xs opacity-70">Access_Denied - Consultation not found or API failure</span>
+          <span className="text-xs opacity-70">
+            {error ? 'API call failed' : 'Consultation not found'} - 
+            Appointment ID: {appointmentId}
+          </span>
         </div>
       </div>
     </div>
   );
+  
+  // 🆕 VALIDACIÓN DE DATOS MÍNIMOS
+  const hasMinimalData = appointment && appointment.patient;
+  if (!hasMinimalData) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <ShieldCheckIcon className="w-10 h-10 text-amber-500 mx-auto" />
+          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
+            Consultation_Data_Incomplete
+          </p>
+          <p className="text-[8px] font-mono text-amber-400/70">
+            Unable to load minimum required consultation information
+          </p>
+          <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-sm">
+            <p className="text-[8px] font-mono text-amber-300">
+              Appointment ID: {appointmentId || 'N/A'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // 🔧 VALIDACIÓN DE CONSISTENCIA
   if (appointment?.patient?.id !== patientProfile?.id) {
     console.warn("Patient ID mismatch between appointment and profile");
   }
   
+  // 🆕 IDS SEGUROS CONVERTIDOS EXPLÍCITAMENTE
+  const safePatientId = Number(appointment?.patient?.id) || Number(patientId);
+  const safeAppointmentId = Number(appointment?.id) || Number(appointmentId);
+  
   // 🆕 MANEJO ROBUSTO DEL PACIENTE (como Consultation.tsx)
   const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
-  const patientFullName = patient?.full_name || "SUBJECT_NAME_UNDEFINED";
+  const patientFullName = patient?.full_name || 
+    appointment?.patient?.full_name || 
+    `PATIENTE_${appointment?.patient?.id || 'UNKNOWN'}`;
   const sessionDate = appointment.appointment_date || "";
   const statusLabel = appointment.status_display || appointment.status || "N/A";
   
@@ -111,13 +156,22 @@ export default function PatientConsultationsDetail() {
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
           { label: "PATIENTS", path: "/patients" },
-          { label: patientFullName, path: `/patients/${patientId}` },
-          { label: `CONSULTATION_SESS_${appointment.id}`, active: true }
+          { label: patientFullName, path: `/patients/${patientId || safePatientId}` },
+          { 
+            label: appointment?.id 
+              ? `CONSULTATION_SESS_${appointment.id}` 
+              : `CONSULTATION_SESS_${appointmentId}`,
+            active: true 
+          }
         ]}
         stats={[
           { 
             label: "SESSION_NODE", 
-            value: `#${appointment.id.toString().padStart(6, '0')}`,
+            value: appointment?.id 
+              ? `#${appointment.id.toString().padStart(6, '0')}` 
+              : appointmentId 
+                ? `#${appointmentId.padStart(6, '0')}` 
+                : '#UNKNOWN',
             color: "text-blue-500"
           },
           { 
@@ -198,8 +252,8 @@ export default function PatientConsultationsDetail() {
               <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Clinical_Archive</span>
             </div>
             <DocumentsPanel
-              patientId={appointment.patient.id}
-              appointmentId={appointment.id}
+              patientId={safePatientId}
+              appointmentId={safeAppointmentId}
               readOnly={readOnly}
             />
           </section>
@@ -209,8 +263,7 @@ export default function PatientConsultationsDetail() {
               <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Financial_Records</span>
             </div>
             <ChargeOrderPanel
-              appointmentId={appointment.id}
-              chargeOrder={appointment.charge_order}
+              appointmentId={safeAppointmentId}
               readOnly={readOnly}
             />
           </section>
@@ -220,8 +273,8 @@ export default function PatientConsultationsDetail() {
         <div className="lg:col-span-9 flex flex-col gap-6">
           <div className="bg-white/[0.01] border border-white/10 rounded-sm overflow-hidden">
             <ConsultationWorkflow
-              diagnoses={appointment.diagnoses}
-              appointmentId={appointment.id}
+              diagnoses={appointment?.diagnoses || []}
+              appointmentId={safeAppointmentId}
               readOnly={readOnly}
             />
           </div>
@@ -235,7 +288,7 @@ export default function PatientConsultationsDetail() {
               </div>
               <div className="h-px flex-1 mx-8 bg-gradient-to-r from-white/10 to-transparent"></div>
             </div>
-            <ConsultationDocumentsActions consultationId={appointment.id} />
+            <ConsultationDocumentsActions consultationId={safeAppointmentId} />
           </div>
         </div>
       </div>
