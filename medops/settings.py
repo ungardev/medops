@@ -83,7 +83,7 @@ if not DEBUG:
             "rest_framework.permissions.IsAuthenticatedOrReadOnly",
         ],
     })
-    print("🔒 PRODUCCIÓN: Autenticación HABILITADA (TokenAuthentication + IsAuthenticatedOrReadOnly)")
+    print("[PRODUCCION] Autenticacion HABILITADA (TokenAuthentication + IsAuthenticatedOrReadOnly)")
 else:
     # ✅ EN DESARROLLO (DEBUG=True): Autenticación DESHABILITADA
     REST_FRAMEWORK.update({
@@ -92,7 +92,7 @@ else:
             "rest_framework.permissions.AllowAny",
         ],
     })
-    print("⚠️  DESARROLLO: Autenticación DESHABILITADA (AllowAny)")
+    print("[DESARROLLO] Autenticacion DESHABILITADA (AllowAny)")
 # Configuración OpenAPI
 SPECTACULAR_SETTINGS = {
     "TITLE": "MedOps API",

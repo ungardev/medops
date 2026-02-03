@@ -1864,7 +1864,7 @@ def active_institution_dashboard_api(request):
         ).count()
         
         payments_today = Payment.objects.filter(
-            payment_date__date=today,
+            received_at__date=today,
             charge_order__institution=institution,
             status='confirmed'
         ).count()
