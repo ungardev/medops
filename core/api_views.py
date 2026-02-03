@@ -623,9 +623,9 @@ def reports_api(request):
             )
             
             if start:
-                appointments = appointments.filter(appointment_date__date__gte=start)
+                appointments = appointments.filter(appointment_date__gte=start)
             if end:
-                appointments = appointments.filter(appointment_date__date__lte=end)
+                appointments = appointments.filter(appointment_date__lte=end)
             
             # Agrupar por fecha y estado
             appointments_by_status = appointments.values('appointment_date', 'status').annotate(
@@ -662,9 +662,9 @@ def reports_api(request):
                 status__in=['pending', 'completed', 'canceled']
             )
             if start:
-                appointments = appointments.filter(appointment_date__date__gte=start)
+                appointments = appointments.filter(appointment_date__gte=start)
             if end:
-                appointments = appointments.filter(appointment_date__date__lte=end)
+                appointments = appointments.filter(appointment_date__lte=end)
             
             # Agrupar por fecha y estado
             appointments_by_status = appointments.values('appointment_date', 'status').annotate(
