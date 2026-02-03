@@ -198,6 +198,7 @@ CORS_ALLOW_HEADERS = [
     "x-csrftoken",
     "x-requested-with",
     "origin",
+    "x-institution-id",
 ]
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
