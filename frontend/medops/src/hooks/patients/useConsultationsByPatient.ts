@@ -1,6 +1,5 @@
-// src/hooks/patients/useConsultationsByPatient.ts
 import { useQuery } from "@tanstack/react-query";
-import { apiFetch } from "../../api/client";
+import { apiFetch } from "../../api/client"; // ✅ Eliminado 'api', solo necesitamos apiFetch
 import { Appointment } from "../../types/appointments";
 
 interface ConsultationsResult {
@@ -15,18 +14,26 @@ function normalizeStatus(status?: string | null): boolean {
 }
 
 async function fetchConsultationsByPatient(patientId: number): Promise<Appointment[]> {
-  // 🔒 Tipamos explícitamente la respuesta como unknown
-  const response: unknown = await apiFetch<unknown>(`appointments/?patient=${patientId}`);
+  // ✅ No necesitas pasar Authorization ni Content-Type manualmente. 
+  // Tu apiFetch ya lo hace por ti.
+  const response = await apiFetch<any>(
+    `appointments/?patient=${patientId}`,
+    {
+      method: "GET",
+      headers: {
+        "X-Institution-ID": localStorage.getItem('active_institution_id') || "1"
+      }
+    }
+  );
 
-  // 🔒 Defensivo: puede ser array plano o { results: [...] }
   let arr: Appointment[] = [];
+
   if (Array.isArray(response)) {
-    arr = response as Appointment[];
-  } else if (response && typeof response === "object" && Array.isArray((response as any).results)) {
-    arr = (response as { results: Appointment[] }).results;
+    arr = response;
+  } else if (response && typeof response === "object" && Array.isArray(response.results)) {
+    arr = response.results;
   }
 
-  // 🔒 Tipado explícito en filter
   return arr.filter((a: Appointment) => normalizeStatus(a.status));
 }
 
