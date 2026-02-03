@@ -1853,10 +1853,10 @@ def active_institution_dashboard_api(request):
         today = timezone.now().date()
         
         # Queries REALES a la base de datos
-        patients_today = Patient.objects.filter(
-            created_at__date=today,
-            # institution=institution  # Cuando Patient tenga campo institution
-        ).count()
+        patients_today = Appointment.objects.filter(
+            appointment_date__date=today,
+            institution=institution
+        ).values('patient').distinct().count()
         
         appointments_today = Appointment.objects.filter(
             appointment_date__date=today,
