@@ -1,5 +1,5 @@
 // src/hooks/settings/useInstitutions.ts
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import { InstitutionSettings } from "@/types/config";
@@ -12,6 +12,27 @@ export function useInstitutions() {
     return saved ? parseInt(saved) : null;
   });
   
+  // Efecto para sincronizar cambios en localStorage con estado local
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem("active_institution_id");
+      const newId = saved ? parseInt(saved) : null;
+      
+      if (newId !== localActiveId) {
+        setLocalActiveId(newId);
+      }
+    };
+    // Escuchar cambios en localStorage (para sincronización entre pestañas)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Verificar inmediatamente por si hay cambios externos
+    handleStorageChange();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [localActiveId]);
+  
   // Query para obtener todas las instituciones
   const query = useQuery<InstitutionSettings[]>({
     queryKey: ["config", "institutions"],
@@ -22,7 +43,7 @@ export function useInstitutions() {
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
   
-  // Query para obtener institución activa del backend
+  // Query para obtener institución activa del backend - optimizado
   const activeQuery = useQuery<InstitutionSettings | null>({
     queryKey: ["config", "institution", "active"],
     queryFn: async () => {
@@ -30,7 +51,13 @@ export function useInstitutions() {
       return res.data || null;
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
+    enabled: false, // Deshabilitado, se activará según sea necesario
   });
+  
+  // Función para cambiar institución activa - MOVIDA ANTES para evitar hoisting issues
+  const handleSetActiveInstitution = async (id: number): Promise<void> => {
+    await setActiveMutation.mutateAsync(id);
+  };
   
   // Mutation para crear institución
   const createMutation = useMutation({
@@ -118,22 +145,43 @@ export function useInstitutions() {
     },
   });
   
-  // Función para obtener institución activa actual
+  // ✅ MEJORADA: Función robusta para obtener institución activa actual
   const getActiveInstitution = (): InstitutionSettings | null => {
+    // 1. Prioridad 1: localStorage (persistencia del usuario)
     if (localActiveId) {
       const found = query.data?.find((inst: InstitutionSettings) => inst.id === localActiveId);
       if (found) return found;
     }
     
-    if (activeQuery.data) return activeQuery.data;
+    // 2. Prioridad 2: backend activeQuery (estado del servidor)
+    if (activeQuery.data && activeQuery.data.id !== undefined) {
+      // Guardar en localStorage para persistencia
+      localStorage.setItem("active_institution_id", String(activeQuery.data.id));
+      setLocalActiveId(activeQuery.data.id);
+      return activeQuery.data;
+    }
     
-    return query.data?.[0] || null;
+    // 3. Prioridad 3: Primera institución disponible (auto-activación)
+    if (query.data && query.data.length > 0) {
+      const firstInstitution = query.data[0];
+      if (firstInstitution.id !== undefined) {
+        // ✅ CORREGIDO: Type guard explícito para satisfacer TypeScript
+        const institutionId: number = firstInstitution.id;
+        setTimeout(() => {
+          handleSetActiveInstitution(institutionId);
+        }, 0);
+        return firstInstitution;
+      }
+    }
+    
+    return null;
   };
   
-  // Función para cambiar institución activa
-  const handleSetActiveInstitution = async (id: number): Promise<void> => {
-    await setActiveMutation.mutateAsync(id);
-  };
+  // Efecto simplificado - sin dependencias problemáticas
+  useEffect(() => {
+    // La lógica de auto-activación está en getActiveInstitution()
+    // No necesitamos refetch manual aquí
+  }, []);
   
   return {
     ...query,
