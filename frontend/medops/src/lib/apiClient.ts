@@ -21,7 +21,7 @@ api.interceptors.request.use((config) => {
   }
   
   // ✅ NUEVO: Inyectar ID de institución activa automáticamente
-  const activeInstitutionId = localStorage.getItem("activeInstitutionId");
+  const activeInstitutionId = localStorage.getItem("active_institution_id");
   if (activeInstitutionId) {
     if (!config.headers) {
       config.headers = {};
