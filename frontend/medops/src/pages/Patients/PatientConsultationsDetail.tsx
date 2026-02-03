@@ -67,22 +67,20 @@ export default function PatientConsultationsDetail() {
     );
   }
   
-  // 🆕 ESTADO COMBINADO DE CARGA
-  const isDataLoading = isLoading || !patientProfile;
-  const hasError = error || !appointment;
-  
-  if (isDataLoading) return (
+  // 🔧 CORREGIDO: Solo usar isLoading del hook (como Consultation.tsx)
+  if (isLoading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
         <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-blue-500 animate-pulse">
-          {isLoading ? "Initializing_Session_Link..." : "Loading_Patient_Profile..."}
+          Initializing_Session_Link...
         </p>
       </div>
     </div>
   );
   
-  if (hasError) return (
+  // 🔧 CORREGIDO: Solo validar appointment, no patientProfile
+  if (error || !appointment) return (
     <div className="min-h-screen bg-black p-8">
       <div className="border border-red-500/30 bg-red-500/5 p-4 text-red-500 text-[10px] font-mono uppercase flex items-center gap-3">
         <ShieldCheckIcon className="w-4 h-4" />
@@ -99,28 +97,11 @@ export default function PatientConsultationsDetail() {
     console.warn("Patient ID mismatch between appointment and profile");
   }
   
-  // 🆕 MANEJO ROBUSTO DEL PACIENTE
+  // 🆕 MANEJO ROBUSTO DEL PACIENTE (como Consultation.tsx)
   const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
   const patientFullName = patient?.full_name || "SUBJECT_NAME_UNDEFINED";
   const sessionDate = appointment.appointment_date || "";
   const statusLabel = appointment.status_display || appointment.status || "N/A";
-  
-  // 🔧 MEJORADO: Validación final antes del renderizado
-  if (!patient) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <ShieldCheckIcon className="w-10 h-10 text-amber-500 mx-auto" />
-          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
-            Patient_Profile_Unavailable
-          </p>
-          <p className="text-[8px] font-mono text-amber-400/70">
-            Unable to load complete patient information
-          </p>
-        </div>
-      </div>
-    );
-  }
   
   return (
     <div className="min-h-screen bg-black text-white p-4 lg:p-6 space-y-6">
@@ -196,9 +177,16 @@ export default function PatientConsultationsDetail() {
         </button>
       </div>
       
-      {/* 🔧 MEJORADO: PatientHeader con perfil completo */}
-      <div className="border border-white/10 bg-black/20 backdrop-blur-sm rounded-sm overflow-hidden shadow-2xl">
-        <PatientHeader patient={patient} />
+      {/* 🔧 CORREGIDO: PatientHeader con fallback (como Consultation.tsx) */}
+      <div className="relative overflow-hidden border border-white/10 bg-black/20 backdrop-blur-md p-1 shadow-2xl group">
+        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-500" />
+        {patient ? <PatientHeader patient={patient} /> : (
+          <div className="p-10 text-center animate-pulse bg-black/10">
+            <span className="text-[10px] font-mono uppercase tracking-[0.5em] text-white/20">
+              Awaiting_Subject_BioData...
+            </span>
+          </div>
+        )}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -210,7 +198,7 @@ export default function PatientConsultationsDetail() {
               <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Clinical_Archive</span>
             </div>
             <DocumentsPanel
-              patientId={patient.id || appointment.patient.id}
+              patientId={appointment.patient.id}
               appointmentId={appointment.id}
               readOnly={readOnly}
             />
