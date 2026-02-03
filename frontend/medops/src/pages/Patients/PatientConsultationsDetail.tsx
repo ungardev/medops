@@ -20,64 +20,108 @@ import {
   ClockIcon,
   CalendarIcon
 } from "@heroicons/react/24/outline";
-/**
- * 🛠️ UTILIDADES DE TRANSFORMACIÓN (In-place para desacoplar de tipos rígidos)
- */
-function calcAge(birthdate?: string | null): number | null {
-  if (!birthdate) return null;
-  const d = new Date(birthdate);
-  if (Number.isNaN(d.getTime())) return null;
-  const diff = Date.now() - d.getTime();
-  const ageDate = new Date(diff);
-  return Math.abs(ageDate.getUTCFullYear() - 1970);
-}
-const transformToPatientHeader = (p: any): any => {
-  const full_name = p.full_name ?? 
-    [p.first_name, p.middle_name, p.last_name, p.second_last_name].filter(Boolean).join(" ").trim();
-  return {
-    ...p,
-    full_name,
-    age: p.age ?? calcAge(p.birthdate),
-    balance_due: p.balance_due ?? 0,
-    address_chain: p.address_chain || {},
-    allergies: Array.isArray(p.allergies) ? p.allergies.join(", ") : String(p.allergies || ""),
-    medical_history: Array.isArray(p.medical_history) ? p.medical_history.join(", ") : String(p.medical_history || ""),
-  };
-};
+// 🆕 IMPORTACIONES CRÍTICAS PARA EL FUNCIONAMIENTO PERFECTO
+import { getPatient } from "../../api/patients";
+import { toPatientHeaderPatient } from "../../utils/patientTransform";
 export default function PatientConsultationsDetail() {
   const { patientId, appointmentId } = useParams<{ patientId: string; appointmentId: string }>();
   const appointmentIdNum = Number(appointmentId);
-  const { data: appointment, isLoading, error } = useConsultationById(appointmentIdNum) as any;
   
+  // 🔧 MEJORADO: Eliminado "as any" para mejor manejo de TypeScript
+  const { data: appointment, isLoading, error } = useConsultationById(appointmentIdNum);
+  
+  // 🆕 ESTADO PARA PERFIL COMPLETO DEL PACIENTE
+  const [patientProfile, setPatientProfile] = useState<any | null>(null);
   const [successData, setSuccessData] = useState<{ docs: any[], skipped: string[] } | null>(null);
   const [errorData, setErrorData] = useState<{ category: string, error: string }[] | null>(null);
   const [readOnly, setReadOnly] = useState<boolean>(() => {
     const saved = localStorage.getItem("consultationReadOnly");
     return saved ? JSON.parse(saved) : true;
   });
+  
+  // 🆕 EFECTO PARA CARGAR PERFIL COMPLETO DEL PACIENTE
+  useEffect(() => {
+    if (appointment?.patient?.id) {
+      getPatient(appointment.patient.id)
+        .then((full) => setPatientProfile(full))
+        .catch((e) => console.error("CRITICAL_PROFILE_LOAD_ERROR:", e));
+    }
+  }, [appointment?.patient?.id]);
+  
   useEffect(() => {
     localStorage.setItem("consultationReadOnly", JSON.stringify(readOnly));
   }, [readOnly]);
-  if (isLoading) return (
+  
+  // 🔧 MEJORADO: Validación de IDs
+  if (!appointmentId || isNaN(appointmentIdNum)) {
+    return (
+      <div className="min-h-screen bg-black p-8">
+        <div className="border border-amber-500/30 bg-amber-500/5 p-4 text-amber-500 text-[10px] font-mono uppercase flex items-center gap-3">
+          <ShieldCheckIcon className="w-4 h-4" />
+          <div className="flex flex-col">
+            <span>Invalid_Appointment_ID</span>
+            <span className="text-xs opacity-70">Please check the consultation link</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // 🆕 ESTADO COMBINADO DE CARGA
+  const isDataLoading = isLoading || !patientProfile;
+  const hasError = error || !appointment;
+  
+  if (isDataLoading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center space-y-4">
         <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-blue-500 animate-pulse">Initializing_Session_Link...</p>
+        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-blue-500 animate-pulse">
+          {isLoading ? "Initializing_Session_Link..." : "Loading_Patient_Profile..."}
+        </p>
       </div>
     </div>
   );
-  if (error || !appointment) return (
+  
+  if (hasError) return (
     <div className="min-h-screen bg-black p-8">
       <div className="border border-red-500/30 bg-red-500/5 p-4 text-red-500 text-[10px] font-mono uppercase flex items-center gap-3">
         <ShieldCheckIcon className="w-4 h-4" />
-        Critical_Error: Data_Stream_Corrupted // Access_Denied
+        <div className="flex flex-col">
+          <span>Critical_Error: Data_Stream_Corrupted</span>
+          <span className="text-xs opacity-70">Access_Denied - Consultation not found or API failure</span>
+        </div>
       </div>
     </div>
   );
-  const patient = appointment.patient as any;
+  
+  // 🔧 VALIDACIÓN DE CONSISTENCIA
+  if (appointment?.patient?.id !== patientProfile?.id) {
+    console.warn("Patient ID mismatch between appointment and profile");
+  }
+  
+  // 🆕 MANEJO ROBUSTO DEL PACIENTE
+  const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
   const patientFullName = patient?.full_name || "SUBJECT_NAME_UNDEFINED";
-  const sessionDate = appointment.date || appointment.appointment_date || "";
+  const sessionDate = appointment.appointment_date || "";
   const statusLabel = appointment.status_display || appointment.status || "N/A";
+  
+  // 🔧 MEJORADO: Validación final antes del renderizado
+  if (!patient) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <ShieldCheckIcon className="w-10 h-10 text-amber-500 mx-auto" />
+          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
+            Patient_Profile_Unavailable
+          </p>
+          <p className="text-[8px] font-mono text-amber-400/70">
+            Unable to load complete patient information
+          </p>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen bg-black text-white p-4 lg:p-6 space-y-6">
       
@@ -114,6 +158,7 @@ export default function PatientConsultationsDetail() {
           </div>
         }
       />
+      
       {/* 🛡️ OVERRIDE CONTROLLER (Sticky-like feel) */}
       <div className={`
         flex items-center justify-between px-6 py-4 border rounded-sm transition-all duration-700 backdrop-blur-md
@@ -150,9 +195,12 @@ export default function PatientConsultationsDetail() {
           {readOnly ? "Unlock_Data_Core" : "Commit_Modifications"}
         </button>
       </div>
+      
+      {/* 🔧 MEJORADO: PatientHeader con perfil completo */}
       <div className="border border-white/10 bg-black/20 backdrop-blur-sm rounded-sm overflow-hidden shadow-2xl">
-        <PatientHeader patient={transformToPatientHeader(appointment.patient)} />
+        <PatientHeader patient={patient} />
       </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Sidebar Táctico */}
         <div className="lg:col-span-3 space-y-6">
@@ -162,7 +210,7 @@ export default function PatientConsultationsDetail() {
               <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Clinical_Archive</span>
             </div>
             <DocumentsPanel
-              patientId={appointment.patient.id}
+              patientId={patient.id || appointment.patient.id}
               appointmentId={appointment.id}
               readOnly={readOnly}
             />
@@ -179,13 +227,13 @@ export default function PatientConsultationsDetail() {
             />
           </section>
         </div>
+        
         {/* Main Workspace */}
         <div className="lg:col-span-9 flex flex-col gap-6">
           <div className="bg-white/[0.01] border border-white/10 rounded-sm overflow-hidden">
             <ConsultationWorkflow
               diagnoses={appointment.diagnoses}
               appointmentId={appointment.id}
-              // ❌ ELIMINADO: notes={appointment.notes ?? null} (parámetro obsoleto causando error TypeScript)
               readOnly={readOnly}
             />
           </div>
@@ -203,6 +251,7 @@ export default function PatientConsultationsDetail() {
           </div>
         </div>
       </div>
+      
       {successData && (
         <ExportSuccessToast 
           documents={successData.docs} 
