@@ -1156,9 +1156,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "id", "institution", "doctor", "patient", "patient_name",
             "appointment_date", "appointment_type",
             "appointment_type_display", "status", "status_display",
-            "expected_amount", "arrival_time", "created_at",
+            "expected_amount", "arrival_time",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id"]
 
 
 # --- Documentos clínicos ---
