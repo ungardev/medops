@@ -244,7 +244,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             # Buscar pagos de esas órdenes de cobro
             payments = Payment.objects.filter(
                 charge_order__in=charge_orders
-            ).select_related('charge_order', 'charge_order__patient', 'charge_order__appointment').order_by('-payment_date')
+            ).select_related('charge_order', 'charge_order__patient', 'charge_order__appointment').order_by('-received_at')
             
             serializer = PaymentSerializer(payments, many=True)
             return Response(serializer.data)
@@ -595,20 +595,20 @@ def reports_api(request):
             payments = Payment.objects.filter(status='confirmed')
             
             if start:
-                payments = payments.filter(payment_date__date__gte=start)
+                payments = payments.filter(received_at__date__gte=start)
             if end:
-                payments = payments.filter(payment_date__date__lte=end)
+                payments = payments.filter(received_at__date__lte=end)
             
             # Agrupar por fecha
-            payments_by_date = payments.values('payment_date').annotate(
+            payments_by_date = payments.values('received_at').annotate(
                 total=Sum('amount'),
                 count=Count('id')
-            ).order_by('-payment_date')
+            ).order_by('-received_at')
             
             for item in payments_by_date:
                 rows.append({
-                    'id': f"FIN-{item['payment_date']}",
-                    'date': item['payment_date'],
+                    'id': f"FIN-{item['received_at']}",
+                    'date': item['received_at'],
                     'type': 'FINANCIAL',
                     'entity': 'Payment',
                     'status': 'CONFIRMED',
@@ -648,14 +648,14 @@ def reports_api(request):
             # Pagos
             payments = Payment.objects.filter(status='confirmed')
             if start:
-                payments = payments.filter(payment_date__date__gte=start)
+                payments = payments.filter(received_at__date__gte=start)
             if end:
-                payments = payments.filter(payment_date__date__lte=end)
+                payments = payments.filter(received_at__date__lte=end)
             
-            payments_by_date = payments.values('payment_date').annotate(
+            payments_by_date = payments.values('received_at').annotate(
                 total=Sum('amount'),
                 count=Count('id')
-            ).order_by('-payment_date')
+            ).order_by('-received_at')
             
             # Citas
             appointments = Appointment.objects.filter(
@@ -674,8 +674,8 @@ def reports_api(request):
             # Agregar filas financieras
             for item in payments_by_date:
                 rows.append({
-                    'id': f"FIN-{item['payment_date']}",
-                    'date': item['payment_date'],
+                    'id': f"FIN-{item['received_at']}",
+                    'date': item['received_at'],
                     'type': 'FINANCIAL',
                     'entity': 'Payment',
                     'status': 'CONFIRMED',
@@ -738,14 +738,14 @@ def reports_export_api(request):
             payments = Payment.objects.filter(status='confirmed')
             
             if start_date:
-                payments = payments.filter(payment_date__date__gte=start_date)
+                payments = payments.filter(received_at__date__gte=start_date)
             if end_date:
-                payments = payments.filter(payment_date__date__lte=end_date)
+                payments = payments.filter(received_at__date__lte=end_date)
             
             for p in payments:
                 data.append({
                     'ID': p.id,
-                    'Fecha de Pago': p.payment_date.strftime('%d/%m/%Y') if p.payment_date else '',
+                    'Fecha de Pago': p.received_at.strftime('%d/%m/%Y') if p.received_at else '',
                     'Monto': float(p.amount),
                     'Método': p.method or '',
                     'Orden de Cobro': p.charge_order.id if p.charge_order else '',
@@ -778,15 +778,15 @@ def reports_export_api(request):
             payments = Payment.objects.filter(status='confirmed')
             
             if start_date:
-                payments = payments.filter(payment_date__date__gte=start_date)
+                payments = payments.filter(received_at__date__gte=start_date)
             if end_date:
-                payments = payments.filter(payment_date__date__lte=end_date)
+                payments = payments.filter(received_at__date__lte=end_date)
             
             for p in payments:
                 data.append({
                     'ID': p.id,
                     'Tipo': 'Pago',
-                    'Fecha': p.payment_date.strftime('%d/%m/%Y') if p.payment_date else '',
+                    'Fecha': p.received_at.strftime('%d/%m/%Y') if p.received_at else '',
                     'Monto': float(p.amount),
                     'Método': p.method or '',
                     'Estado': p.status,

@@ -1089,7 +1089,7 @@ def get_advanced_metrics() -> Dict[str, Any]:
     
     # Métricas actuales
     current_patients = Patient.objects.count()
-    current_revenue = Payment.objects.filter(payment_date=today).aggregate(Sum('amount'))['amount__sum'] or 0
+    current_revenue = Payment.objects.filter(received_at__date=today).aggregate(Sum('amount'))['amount__sum'] or 0
     
     # Cálculo de tendencia (Growth %)
     prev_patients = Patient.objects.filter(created_at__date=yesterday).count()
