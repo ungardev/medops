@@ -136,11 +136,12 @@ export default function PatientDetail() {
         )}
       </div>
       
-      {/* 🛠️ MODULAR DATA ENGINE (TABS) */}
+      {/* 🛠️ MODULAR DATA ENGINE (TABS) - CORREGIDO PARA CONTEXTO HORIZONTAL */}
       <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
         <Tabs
           value={currentTab}
           onChange={setTab}
+          layout="horizontal"
         >
           <Tab id="info" label="Identity_Core">
             <PatientInfoTab patientId={patientId} />
