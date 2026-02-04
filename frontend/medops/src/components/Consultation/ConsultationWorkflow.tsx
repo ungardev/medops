@@ -51,14 +51,14 @@ export default function ConsultationWorkflow({
   };
   return (
     <div className="w-full space-y-6">
-      {/* 🆕 BANNER DE INSTITUCIÓN */}
+      {/* 🆕 BANNER DE INSTITUCIÓN - MEJORADO VISUALMENTE */}
       {readOnly && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+        <div className="bg-red-500/5 border border-red-500/10 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <BuildingOfficeIcon className="w-5 h-5 text-red-500" />
+            <BuildingOfficeIcon className="w-5 h-5 text-red-400" />
             <div>
-              <h4 className="text-sm font-semibold text-red-700">Read-Only Mode</h4>
-              <p className="text-xs text-red-600">
+              <h4 className="text-sm font-semibold text-red-300">Read-Only Mode</h4>
+              <p className="text-xs text-red-400/80">
                 Cross-institution access detected. You can only view this consultation.
               </p>
             </div>
@@ -66,19 +66,19 @@ export default function ConsultationWorkflow({
         </div>
       )}
       
-      {/* 🆕 SISTEMA DE TABS MEJORADO */}
+      {/* 🆕 SISTEMA DE TABS MEJORADO - FIJADO EL RENDERIZADO */}
       <Tabs
         value={activeTab}
         onChange={setActiveTab}
         layout="horizontal"
-        className="flex space-x-1 bg-gray-100 p-1 rounded-lg"
+        className="w-full space-y-6"
       >
         {/* 🆕 TAB: VITAL SIGNS */}
         <Tab 
           id="vital-signs" 
           label={<span className="flex items-center gap-2">{tabIcons["vital-signs"]} Vital Signs</span>}
         >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="w-full">
             <VitalSignsPanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
@@ -87,7 +87,7 @@ export default function ConsultationWorkflow({
           id="clinical-note" 
           label={<span className="flex items-center gap-2">{tabIcons["clinical-note"]} Clinical Note</span>}
         >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="w-full">
             <ClinicalNotePanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
@@ -96,7 +96,7 @@ export default function ConsultationWorkflow({
           id="diagnosis" 
           label={<span className="flex items-center gap-2">{tabIcons.diagnosis} Diagnosis</span>}
         >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="w-full">
             <DiagnosisPanel 
               diagnoses={diagnoses} 
               readOnly={readOnly} 
@@ -109,7 +109,7 @@ export default function ConsultationWorkflow({
           id="treatment" 
           label={<span className="flex items-center gap-2">{tabIcons.treatment} Treatment</span>}
         >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="w-full">
             <TreatmentPanel 
               diagnoses={diagnoses}
               appointmentId={appointmentId} 
@@ -132,7 +132,7 @@ export default function ConsultationWorkflow({
           id="prescription" 
           label={<span className="flex items-center gap-2">{tabIcons.prescription} Prescription</span>}
         >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="w-full">
             <PrescriptionPanel 
               diagnoses={diagnoses}
               appointmentId={appointmentId} 
@@ -146,7 +146,7 @@ export default function ConsultationWorkflow({
           id="tests" 
           label={<span className="flex items-center gap-2">{tabIcons.tests} Tests</span>}
         >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="w-full">
             <MedicalTestsPanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
@@ -155,7 +155,7 @@ export default function ConsultationWorkflow({
           id="referrals" 
           label={<span className="flex items-center gap-2">{tabIcons.referrals} Referrals</span>}
         >
-          <div className="p-4 sm:p-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="w-full">
             <MedicalReferralsPanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>

@@ -37,7 +37,7 @@ export function Tabs({
     <div className={className ?? "space-y-4"}>
       
       {/* 🛠️ NAVIGATION HEADER */}
-      <div className="flex flex-wrap gap-1 border-b border-[var(--palantir-border)] pb-0 overflow-x-auto scrollbar-hide bg-black/20">
+      <div className="flex flex-wrap gap-1 border-b border-white/10 pb-0 overflow-x-auto scrollbar-hide bg-black/20">
         {tabs.map((tab) => {
           const isActive = value === tab.props.id;
           return (
@@ -65,15 +65,17 @@ export function Tabs({
           );
         })}
       </div>
-      {/* 🧊 CONTENT DISPLAY */}
-      <div className={layout === "horizontal" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
+      {/* 🧊 CONTENT DISPLAY - CORREGIDO PARA SOLUCIONAR PROBLEMA CRÍTICO */}
+      <div className={layout === "vertical" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"}>
         {tabs.map((tab) =>
           tab.props.id === value ? (
             <div
               key={tab.props.id}
-              className="animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out"
+              className={`animate-in fade-in slide-in-from-bottom-1 duration-300 ease-out ${
+                layout === "vertical" ? "" : "w-full"
+              }`}
             >
-              <div className="bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm p-4 sm:p-6 shadow-2xl">
+              <div className="bg-black/40 border border-white/10 rounded-sm p-4 sm:p-6 shadow-2xl">
                 {tab.props.children}
               </div>
             </div>
