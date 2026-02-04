@@ -1083,6 +1083,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
     }
 
 
+
 def get_advanced_metrics() -> Dict[str, Any]:
     today = localdate()
     yesterday = today - timedelta(days=1)
