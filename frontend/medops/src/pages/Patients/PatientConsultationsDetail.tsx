@@ -108,29 +108,6 @@ export default function PatientConsultationsDetail() {
     </div>
   );
   
-  // 🆕 VALIDACIÓN DE DATOS MÍNIMOS
-  const hasMinimalData = appointment && appointment.patient;
-  if (!hasMinimalData) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <ShieldCheckIcon className="w-10 h-10 text-amber-500 mx-auto" />
-          <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
-            Consultation_Data_Incomplete
-          </p>
-          <p className="text-[8px] font-mono text-amber-400/70">
-            Unable to load minimum required consultation information
-          </p>
-          <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-sm">
-            <p className="text-[8px] font-mono text-amber-300">
-              Appointment ID: {appointmentId || 'N/A'}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
   // 🔧 VALIDACIÓN DE CONSISTENCIA
   if (appointment?.patient?.id !== patientProfile?.id) {
     console.warn("Patient ID mismatch between appointment and profile");
@@ -231,14 +208,88 @@ export default function PatientConsultationsDetail() {
         </button>
       </div>
       
-      {/* 🔧 CORREGIDO: PatientHeader con fallback (como Consultation.tsx) */}
+      {/* 🆕 PANEL DE INFORMACIÓN DEL APPOINTMENT - SOLO SI HAY DATOS */}
+      {appointment && (
+        <div className="border border-blue-500/30 bg-blue-500/5 p-4 rounded-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <CommandLineIcon className="w-5 h-5 text-blue-500" />
+            <div>
+              <h3 className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em]">
+                Consultation_Data_Status
+              </h3>
+              <p className="text-[8px] font-mono text-blue-400/70">
+                Available information from consultation record
+              </p>
+            </div>
+          </div>
+          
+          {/* GRID DE DATOS DEL APPOINTMENT */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Appointment_ID</span>
+              <div className="text-[9px] font-mono text-blue-300">
+                {appointment.id || 'MISSING'}
+              </div>
+            </div>
+            <div>
+              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Status</span>
+              <div className="text-[9px] font-mono text-blue-300">
+                {appointment.status || 'MISSING'}
+              </div>
+            </div>
+            <div>
+              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Date</span>
+              <div className="text-[9px] font-mono text-blue-300">
+                {appointment.appointment_date ? new Date(appointment.appointment_date).toLocaleDateString("es-VE", { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase() : 'MISSING'}
+              </div>
+            </div>
+            <div>
+              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Type</span>
+              <div className="text-[9px] font-mono text-blue-300">
+                {appointment.appointment_type || 'MISSING'}
+              </div>
+            </div>
+            <div>
+              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Created_At</span>
+              <div className="text-[9px] font-mono text-blue-300">
+                {appointment.created_at ? new Date(appointment.created_at).toLocaleDateString("es-VE", { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase() : 'MISSING'}
+              </div>
+            </div>
+            {/* Más campos del appointment... */}
+          </div>
+        </div>
+      )}
+      
+      {/* 🔧 CORREGIDO: PatientHeader con manejo inteligente de datos parciales */}
       <div className="relative overflow-hidden border border-white/10 bg-black/20 backdrop-blur-md p-1 shadow-2xl group">
         <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-500" />
-        {patient ? <PatientHeader patient={patient} /> : (
-          <div className="p-10 text-center animate-pulse bg-black/10">
-            <span className="text-[10px] font-mono uppercase tracking-[0.5em] text-white/20">
-              Awaiting_Subject_BioData...
-            </span>
+        {appointment?.patient ? (
+          patient ? (
+            <PatientHeader patient={patient} />
+          ) : (
+            <div className="p-6">
+              <div className="text-center space-y-3">
+                <ShieldCheckIcon className="w-8 h-8 text-amber-500 mx-auto" />
+                <h3 className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
+                  Patient_Data_Status
+                </h3>
+                <p className="text-[8px] font-mono text-amber-400/70">
+                  Limited patient information available in this consultation
+                </p>
+              </div>
+            </div>
+          )
+        ) : (
+          <div className="p-6">
+            <div className="text-center space-y-3">
+              <ShieldCheckIcon className="w-8 h-8 text-amber-500 mx-auto" />
+              <h3 className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
+                Patient_Data_Status
+              </h3>
+              <p className="text-[8px] font-mono text-amber-400/70">
+                Limited patient information available in this consultation
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -252,8 +303,8 @@ export default function PatientConsultationsDetail() {
               <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Clinical_Archive</span>
             </div>
             <DocumentsPanel
-              patientId={safePatientId}
-              appointmentId={safeAppointmentId}
+              patientId={appointment?.patient?.id || safePatientId}
+              appointmentId={appointment?.id || safeAppointmentId}
               readOnly={readOnly}
             />
           </section>
@@ -263,7 +314,7 @@ export default function PatientConsultationsDetail() {
               <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Financial_Records</span>
             </div>
             <ChargeOrderPanel
-              appointmentId={safeAppointmentId}
+              appointmentId={appointment?.id || safeAppointmentId}
               readOnly={readOnly}
             />
           </section>
@@ -274,7 +325,7 @@ export default function PatientConsultationsDetail() {
           <div className="bg-white/[0.01] border border-white/10 rounded-sm overflow-hidden">
             <ConsultationWorkflow
               diagnoses={appointment?.diagnoses || []}
-              appointmentId={safeAppointmentId}
+              appointmentId={appointment?.id || safeAppointmentId}
               readOnly={readOnly}
             />
           </div>
@@ -282,13 +333,13 @@ export default function PatientConsultationsDetail() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex flex-col">
                   <span className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em]">
-                    Data_Protocol_Export
+                        Data_Protocol_Export
                   </span>
                   <span className="text-[8px] font-mono text-white/20 uppercase tracking-widest mt-1">Output Interface // Medical Reporting Engine</span>
               </div>
               <div className="h-px flex-1 mx-8 bg-gradient-to-r from-white/10 to-transparent"></div>
             </div>
-            <ConsultationDocumentsActions consultationId={safeAppointmentId} />
+            <ConsultationDocumentsActions consultationId={appointment?.id || safeAppointmentId} />
           </div>
         </div>
       </div>
