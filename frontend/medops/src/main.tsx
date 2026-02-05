@@ -41,6 +41,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             {/* 🔹 Rutas públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
+            
             {/* 🔹 Rutas protegidas */}
             <Route element={<ProtectedRoute />}>
               <Route element={<App />}>
@@ -54,8 +55,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
-                <Route path="payments/:id" element={<Payments />} />
-                <Route path="charge-orders/:id" element={<ChargeOrderDetail />} />
+                
+                {/* ✅ FIX CRÍTICO: Corregir ruta para detalle de pagos */}
+                <Route path="payments/:id" element={<ChargeOrderDetail />} />
+                
+                {/* ❌ ELIMINADO: Ruta duplicada innecesaria */}
+                {/* <Route path="charge-orders/:id" element={<ChargeOrderDetail />} /> */}
+                
                 <Route path="events" element={<Events />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
                 <Route path="consultation" element={<Consultation />} />
