@@ -1,8 +1,9 @@
 // src/pages/Payments/Payments.tsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom"; // 🆕 IMPORTAR NAVEGACIÓN
 import PageHeader from "@/components/Common/PageHeader";
-import ChargeOrderList from "@/components/Payments/ChargeOrderList";
-import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
+// import ChargeOrderList from "@/components/Payments/ChargeOrderList"; // ❌ ELIMINADO - NO SE USA
+// import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal"; // ❌ ELIMINADO - MOVIDO A DETALLE
 import PaymentsSummary from "@/components/Payments/PaymentsSummary";
 import { useInstitutions } from "@/hooks/settings/useInstitutions"; // 🆕 IMPORTAR CONTEXTO
 import { useChargeOrdersPaginated } from "@/hooks/payments/useChargeOrdersPaginated";
@@ -18,18 +19,25 @@ import {
 } from "@heroicons/react/24/outline";
 import type { ChargeOrder, ChargeOrderStatus } from "@/types/payments";
 export default function Payments() {
+  // 🆕 HOOK DE NAVEGACIÓN
+  const navigate = useNavigate();
+  
   const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-  const [showModal, setShowModal] = useState(false);
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  
+  // ❌ ELIMINAR ESTADOS DEL MODAL (MOVIDOS A ChargeOrderDetail.tsx)
+  // const [showModal, setShowModal] = useState(false);
+  // const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  // const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  
   // 🆕 OBTENER CONTEXTO INSTITUCIONAL
   const { activeInstitution, institutions } = useInstitutions();
   const { data: searchResults, isLoading: searchLoading, error: searchError } = useChargeOrdersSearch(query);
   const { data: paginatedData, isLoading: paginatedLoading, error: paginatedError } = useChargeOrdersPaginated(currentPage, pageSize);
   const { data: summary } = useChargeOrdersSummary();
   const isSearching = query.trim().length > 0;
+  
   // ✅ FIX 1: Array Type Safety - Añadir fallbacks para undefined
   const orders: ChargeOrder[] = isSearching ? (searchResults ?? []) : (paginatedData?.results ?? []);
   const loading = isSearching ? searchLoading : paginatedLoading;
@@ -37,11 +45,19 @@ export default function Payments() {
   const totalCount = isSearching ? orders.length : paginatedData?.count ?? 0;
   const startIdx = (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(currentPage * pageSize, totalCount);
-  const handleRegisterPayment = (orderId: number, appointmentId: number) => {
-    setSelectedOrderId(orderId);
-    setSelectedAppointmentId(appointmentId);
-    setShowModal(true);
+  
+  // 🆕 NUEVO MANEJADOR DE NAVEGACIÓN DIRECTA
+  const handleViewOrderDetail = (orderId: number) => {
+    navigate(`/payments/${orderId}`);
   };
+  
+  // ❌ ELIMINAR MANEJADOR ANTERIOR DEL MODAL
+  // const handleRegisterPayment = (orderId: number, appointmentId: number) => {
+  //   setSelectedOrderId(orderId);
+  //   setSelectedAppointmentId(appointmentId);
+  //   setShowModal(true);
+  // };
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       
@@ -224,8 +240,8 @@ export default function Payments() {
                   order.status === 'void' ? 'bg-red-500/10' : 
                   order.status === 'open' ? 'bg-amber-500/10' : ''
                 }`}
-                // ✅ FIX 3: Appointment Access - Usar appointment directamente
-                onClick={() => handleRegisterPayment(order.id, order.appointment)}
+                // 🆕 NAVEGACIÓN DIRECTA AL DETALLE DE LA ORDEN
+                onClick={() => handleViewOrderDetail(order.id)}
               >
                 <div className="flex-1">
                   <div className="flex items-start gap-3">
@@ -294,15 +310,17 @@ export default function Payments() {
         </div>
       </section>
       
-      {/* 🔐 MODAL DE PAGO AUTOMÁTICO */}
+      {/* ❌ ELIMINAR MODAL DE PAGO (MOVIDO A ChargeOrderDetail.tsx) */}
+      {/* 
       {showModal && selectedOrderId && (
         <RegisterPaymentModal
-          open={showModal} // ✅ CORREGIDO: Usar showModal en lugar de open
+          open={showModal} 
           onClose={() => setShowModal(false)}
           appointmentId={selectedAppointmentId!}
           chargeOrderId={selectedOrderId}
         />
       )}
+      */}
     </div>
   );
 }
