@@ -1204,7 +1204,19 @@ class ChargeOrder(models.Model):
         blank=True,
         related_name="charge_orders_created"
     )
+    
+    # ✅ NUEVO CAMPO - Auditoría de actualizaciones (consistente con InstitutionSettings y DoctorOperator)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="charge_order_updates",
+        verbose_name="Usuario que actualizó la orden"
+    )
+    
     history = HistoricalRecords()
+    
     class Meta:
         indexes = [
             models.Index(fields=['appointment', 'status']),
@@ -1214,8 +1226,10 @@ class ChargeOrder(models.Model):
         ]
         verbose_name = "Orden de Cobro"
         verbose_name_plural = "Órdenes de Cobro"
+    
     def __str__(self):
         return f"Order #{self.pk} — {self.institution.name} — {self.status}"
+    
     def save(self, *args, **kwargs):
         # NUEVO: Auto-completar doctor e institution desde appointment
         if self.appointment:
@@ -1224,6 +1238,7 @@ class ChargeOrder(models.Model):
             if not self.institution:
                 self.institution = self.appointment.institution
         super().save(*args, **kwargs)
+    
     # --- LÓGICA DE CÁLCULO ELITE ---
     def recalc_totals(self):
         """Recalcula la salud financiera de la orden basándose en ítems y pagos."""
@@ -1239,12 +1254,14 @@ class ChargeOrder(models.Model):
             self.status = 'partially_paid'
         else:
             self.status = 'open'
+    
     def clean(self):
         # Reglas de negocio inquebrantables
         if self.status == 'paid' and self.balance_due != Decimal('0.00'):
             raise ValidationError("Inconsistencia: Una orden pagada no puede tener deuda pendiente.")
         if self.status == 'waived' and self.balance_due != Decimal('0.00'):
             raise ValidationError("Inconsistencia: Una orden exonerada debe quedar con deuda cero.")
+    
     # --- FLUJO DE EVENTOS CRÍTICOS ---
     def mark_void(self, reason: str = '', actor: str = ''):
         if self.status == 'paid':
