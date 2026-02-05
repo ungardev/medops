@@ -277,13 +277,7 @@ export default function ChargeOrderDetail() {
                     ) : (
                       <CreditCardIcon className="w-4 h-4" />
                     )}
-                    <span>{verifyMobilePayment.isPending ? '[💳] VERIFYING...' : '[💳] VERIFY_MOBILE_PAYMENT'}</span>
-                  </div>
-                   
-                  <div className="flex items-center gap-2 relative z-10">
-                    <span className="text-[8px] font-mono opacity-60 uppercase">AMOUNT:</span>
-                    <span className="font-mono font-black">${pending.toFixed(2)}</span>
-                    <span className="text-cyan-300 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                    <span>{verifyMobilePayment.isPending ? 'VERIFYING...' : 'VERIFY_MOBILE_PAYMENT'}</span>
                   </div>
                 </button>
               )}
