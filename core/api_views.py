@@ -373,7 +373,30 @@ class GeneticPredispositionViewSet(viewsets.ModelViewSet): queryset = GeneticPre
 class DiagnosisViewSet(viewsets.ModelViewSet): queryset = Diagnosis.objects.all(); serializer_class = DiagnosisSerializer
 class TreatmentViewSet(viewsets.ModelViewSet): queryset = Treatment.objects.all(); serializer_class = TreatmentSerializer
 class PrescriptionViewSet(viewsets.ModelViewSet): queryset = Prescription.objects.all(); serializer_class = PrescriptionSerializer
-class ChargeOrderViewSet(viewsets.ModelViewSet): queryset = ChargeOrder.objects.all(); serializer_class = ChargeOrderSerializer
+
+
+class ChargeOrderViewSet(viewsets.ModelViewSet):
+    queryset = ChargeOrder.objects.all()
+    serializer_class = ChargeOrderSerializer
+    
+    @action(detail=False, methods=['get'])
+    def summary(self, request):
+        """Estadísticas de órdenes de cobro para el dashboard"""
+        from django.db.models import Count
+        
+        total = ChargeOrder.objects.count()
+        confirmed = ChargeOrder.objects.filter(status='paid').count()
+        pending = ChargeOrder.objects.filter(status='open').count()
+        failed = ChargeOrder.objects.filter(status='void').count()
+        
+        return Response({
+            'total': total,
+            'confirmed': confirmed,
+            'pending': pending,
+            'failed': failed
+        })
+
+
 class ChargeItemViewSet(viewsets.ModelViewSet): queryset = ChargeItem.objects.all(); serializer_class = ChargeItemSerializer
 class MedicalTestViewSet(viewsets.ModelViewSet): queryset = MedicalTest.objects.all(); serializer_class = MedicalTestSerializer
 class MedicalReferralViewSet(viewsets.ModelViewSet): queryset = MedicalReferral.objects.all(); serializer_class = MedicalReferralSerializer

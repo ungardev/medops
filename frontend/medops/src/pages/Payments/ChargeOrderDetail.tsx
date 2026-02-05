@@ -10,8 +10,8 @@ import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeO
 import { useInstitutions } from "@/hooks/settings/useInstitutions"; // 🆕 IMPORTAR CONTEXTO
 import { apiFetch } from "@/api/client";
 // 🆕 IMPORTAR HOOK DE VERIFICACIÓN MÓVIL
-import { useVerifyMobilePayment } from '../../hooks/payments/useVerifyMobilePayment';
-import ManualPaymentModal from '../../components/Payments/ManualPaymentModal';
+import { useVerifyMobilePayment } from '@/hooks/payments/useVerifyMobilePayment';
+import ManualPaymentModal from '@/components/Payments/ManualPaymentModal';
 // 🆕 TIPOS PARA VERIFICACIÓN MÓVIL
 interface VerifyMobilePaymentData {
   amount_verified: string;
