@@ -4,28 +4,13 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import PageHeader from "@/components/Common/PageHeader";
 import PaymentList from "@/components/Payments/PaymentList";
 import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
+import { useVerifyMobilePayment, type VerifyMobilePaymentData, VerifyMobilePaymentError } from '@/hooks/payments/useVerifyMobilePayment';
+import ManualPaymentModal from '@/components/Payments/ManualPaymentModal';
 import { useState } from "react";
 import { ChargeOrder, ChargeOrderStatus } from "@/types/payments"; 
 import { useInvalidateChargeOrders } from "@/hooks/payments/useInvalidateChargeOrders";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { apiFetch } from "@/api/client";
-import ManualPaymentModal from '@/components/Payments/ManualPaymentModal';
-// 🆕 TIPOS PARA VERIFICACIÓN MÓVIL
-interface VerifyMobilePaymentData {
-  amount_verified: string;
-  payment_id: number;
-  reference_number: string;
-  bank_transaction_id: string;
-  new_balance: string;
-  payment_status: string;
-  verification_method: string;
-}
-interface VerifyMobilePaymentError {
-  code: string;
-  error: string;
-  message: string;
-  fallback_required?: boolean;
-}
 import { 
   ArrowLeftIcon, 
   DocumentArrowDownIcon, 
@@ -60,11 +45,33 @@ export default function ChargeOrderDetail() {
   const invalidateChargeOrders = useInvalidateChargeOrders();
   const { activeInstitution } = useInstitutions();
   
-  // ✅ 4. MOCK DE VERIFICACIÓN MÓVIL CORREGIDO
-  const verifyMobilePayment = {
-    mutate: (params?: any) => console.log('verifyMobilePayment no implementado', params),
-    isPending: false
-  };
+  // ✅ 4. HOOK DE VERIFICACIÓN MÓVIL REAL CORREGIDO
+  const verifyMobilePayment = useVerifyMobilePayment({
+    onSuccess: (data: VerifyMobilePaymentData) => {
+      setToast({ 
+        message: `✅ PAYMENT_VERIFIED: $${data.amount_verified} registered successfully`, 
+        type: "success" 
+      });
+      setShowManualModal(false);
+      setVerificationError(null);
+      invalidateChargeOrders(id);
+    },
+    onError: (error: VerifyMobilePaymentError) => {
+      if (error.code === 'MERCANTIL_API_ERROR' || error.fallback_required) {
+        setShowManualModal(true);
+        setToast({ 
+          message: "⚠️ API_CONNECTION_DOWN: Manual registration required", 
+          type: "info" 
+        });
+      } else {
+        setVerificationError(error.message);
+        setToast({ 
+          message: `❌ VERIFICATION_FAILED: ${error.error}`, 
+          type: "error" 
+        });
+      }
+    }
+  });
   
   // ✅ 5. CONDICIONALES TEMPRANOS (DESPUÉS DE TODOS LOS HOOKS)
   if (!id) return <div className="p-8 text-[10px] font-mono text-red-500 uppercase tracking-widest">Error: Null_Reference_ID</div>;
@@ -151,7 +158,7 @@ export default function ChargeOrderDetail() {
             </button>
             
             {order!.institution && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 border border-purple-500/20">
+              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 border-purple-500/20">
                 <BuildingOfficeIcon className="w-3 h-3 text-purple-400" />
                 <span className="text-[8px] font-mono text-purple-300 uppercase tracking-[0.2em]">
                   {order!.institution.tax_id}
@@ -179,7 +186,7 @@ export default function ChargeOrderDetail() {
             </div>
             
             {activeInstitution && activeInstitution.id !== order!.institution.id && (
-              <div className="bg-yellow-500/10 border border-yellow-500/20 px-3 py-1 rounded-sm">
+              <div className="bg-yellow-500/10 border-yellow-500/20 px-3 py-1 rounded-sm">
                 <span className="text-[7px] font-mono text-yellow-400 uppercase tracking-[0.2em]">
                   Cross-Institution_Context_Active
                 </span>
@@ -251,8 +258,8 @@ export default function ChargeOrderDetail() {
             <h3 className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--palantir-muted)]">Operations_Panel</h3>
             <div className="grid grid-cols-1 gap-2">
               
-              {/* BOTÓN DE VERIFICACIÓN MÓVIL (TEMPORALMENTE OCULTO) */}
-              {false && pending > 0 && (
+              {/* ✅ BOTÓN DE VERIFICACIÓN MÓVIL ACTIVO */}
+              {verifyMobilePayment.isPending === false && pending > 0 && (
                 <button 
                     onClick={() => verifyMobilePayment.mutate({
                       chargeOrderId: order!.id,
@@ -281,7 +288,7 @@ export default function ChargeOrderDetail() {
                 </button>
               )}
               
-              <button onClick={() => setShowModal(true)} className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all group">
+              <button onClick={() => setShowModal(true)} className="flex items-center justify-between p-4 bg-emerald-500/10 border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all group">
                 Register_New_Payment <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform" />
               </button>
               
@@ -293,14 +300,14 @@ export default function ChargeOrderDetail() {
                 <button 
                   onClick={() => voidMutation.mutate()} 
                   disabled={voidMutation.isPending} 
-                  className="flex flex-col items-center justify-center p-4 bg-red-500/5 border border-red-500/10 text-red-400/60 text-[8px] font-bold uppercase tracking-widest hover:bg-red-500/20 hover:text-red-400 transition-all disabled:opacity-30"
+                  className="flex flex-col items-center justify-center p-4 bg-red-500/5 border-red-500/10 text-red-400/60 text-[8px] font-bold uppercase tracking-widest hover:bg-red-500/20 hover:text-red-400 transition-all disabled:opacity-30"
                 >
                   <NoSymbolIcon className="w-4 h-4 mb-1" /> Void_Order
                 </button>
                 <button 
                   onClick={() => waiveMutation.mutate()} 
                   disabled={waiveMutation.isPending} 
-                  className="flex flex-col items-center justify-center p-4 bg-yellow-500/5 border border-yellow-500/10 text-yellow-500/60 text-[8px] font-bold uppercase tracking-widest hover:bg-yellow-500/20 hover:text-yellow-500 transition-all disabled:opacity-30"
+                  className="flex flex-col items-center justify-center p-4 bg-yellow-500/5 border-yellow-500/10 text-yellow-500/60 text-[8px] font-bold uppercase tracking-widest hover:bg-yellow-500/20 hover:text-yellow-500 transition-all disabled:opacity-30"
                 >
                   <GiftIcon className="w-4 h-4 mb-1" /> Waive_Order
                 </button>
@@ -310,7 +317,7 @@ export default function ChargeOrderDetail() {
         </div>
       </div>
       
-      {/* MODAL DE REGISTRO DE PAGO */}
+      {/* ✅ MODAL DE REGISTRO DE PAGO */}
       {showModal && (
         <RegisterPaymentModal
           open={showModal}
@@ -320,7 +327,7 @@ export default function ChargeOrderDetail() {
         />
       )}
       
-      {/* MODAL DE RESPALDO PARA VERIFICACIÓN MANUAL */}
+      {/* ✅ MODAL DE RESPALDO PARA VERIFICACIÓN MANUAL */}
       {showManualModal && (
         <ManualPaymentModal
           open={showManualModal}
@@ -338,7 +345,7 @@ export default function ChargeOrderDetail() {
         />
       )}
       
-      {/* TOAST NOTIFICATIONS */}
+      {/* ✅ TOAST NOTIFICATIONS */}
       {toast && (
         <div className="fixed bottom-4 right-4 p-4 rounded-lg bg-white shadow-lg border border-gray-200">
           <div className={`text-sm font-medium ${
