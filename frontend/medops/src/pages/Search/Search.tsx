@@ -11,14 +11,11 @@ import {
 } from "@heroicons/react/24/outline";
 import axios from "axios";
 import PageHeader from "@/components/Common/PageHeader";
-
 interface Patient {
   id: number;
-  first_name: string;
-  last_name: string;
+  full_name: string;  // ✅ CAMBIADO: de first_name/last_name a full_name
   national_id: string;
 }
-
 interface Appointment {
   id: number;
   appointment_date: string;
@@ -27,7 +24,6 @@ interface Appointment {
   patient?: { id: number };
   patient_id?: number;
 }
-
 interface Order {
   id: number;
   total: number;
@@ -38,34 +34,28 @@ interface Order {
   patient_id?: number;
   appointment?: number;
 }
-
 interface SearchResponse {
   patients: Patient[];
   appointments: Appointment[];
   orders: Order[];
 }
-
 export default function SearchPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [results, setResults] = useState<SearchResponse>({ patients: [], appointments: [], orders: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const params = new URLSearchParams(location.search);
   const query = params.get("query") || "";
   const [searchTerm, setSearchTerm] = useState(query);
-
   useEffect(() => {
     if (!query.trim()) {
       setResults({ patients: [], appointments: [], orders: [] });
       setLoading(false);
       return;
     }
-
     setLoading(true);
     setError(null);
-
     axios.get("/search/", { params: { query: query.trim() } })
       .then((res) => {
         const data = res.data as SearchResponse;
@@ -81,16 +71,13 @@ export default function SearchPage() {
         setLoading(false);
       });
   }, [query]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
-
   const totalResults = results.patients.length + results.appointments.length + results.orders.length;
-
   return (
     <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
       <PageHeader 
@@ -103,7 +90,6 @@ export default function SearchPage() {
           { label: "MATCHES_FOUND", value: totalResults.toString().padStart(3, '0'), color: "text-white" }
         ]}
       />
-
       {/* 🔍 BARRA DE BÚSQUEDA TÉCNICA */}
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="relative group">
@@ -120,7 +106,6 @@ export default function SearchPage() {
           </button>
         </form>
       </div>
-
       <div className="max-w-6xl mx-auto space-y-10">
         {!query.trim() ? (
           <EmptyState icon={<MagnifyingGlassIcon className="w-12 h-12 text-white/5" />} title="IDLE_MODE" description="System is waiting for a query parameter to begin cross-reference." />
@@ -136,19 +121,18 @@ export default function SearchPage() {
           </div>
         ) : totalResults > 0 ? (
           <div className="grid grid-cols-1 gap-12">
-            
+             
             {/* 👥 CATEGORÍA: PACIENTES */}
             {results.patients.length > 0 && (
               <section className="space-y-4">
                 <SectionLabel icon={<UserIcon className="w-4 h-4" />} text="Target_Patients" count={results.patients.length} />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.patients.map((p) => (
-                    <ResultCard key={p.id} to={`/patients/${p.id}`} title={`${p.first_name} ${p.last_name}`} subtitle={`National_ID: ${p.national_id}`} type="PATIENT" />
+                    <ResultCard key={p.id} to={`/patients/${p.id}`} title={p.full_name} subtitle={`National_ID: ${p.national_id}`} type="PATIENT" />  {/* ✅ CAMBIADO: de `${p.first_name} ${p.last_name}` a `p.full_name` */}
                   ))}
                 </div>
               </section>
             )}
-
             {/* 📅 CATEGORÍA: CITAS */}
             {results.appointments.length > 0 && (
               <section className="space-y-4">
@@ -166,7 +150,6 @@ export default function SearchPage() {
                 </div>
               </section>
             )}
-
             {/* 💳 CATEGORÍA: ÓRDENES */}
             {results.orders.length > 0 && (
               <section className="space-y-4">
@@ -186,15 +169,13 @@ export default function SearchPage() {
             )}
           </div>
         ) : (
-          <EmptyState icon={<ExclamationTriangleIcon className="w-12 h-12 text-white/5" />} title="ZERO_MATCHES" description={`No records found matching the query "${query}".`} />
+          <EmptyState icon={<ExclamationTriangleIcon className="w-12 h-12 text-white/5" />} title="ZERO_MATCHES" description={`No records found matching query "${query}".`} />
         )}
       </div>
     </div>
   );
 }
-
 // --- SUB-COMPONENTES INTERNOS ---
-
 function SectionLabel({ icon, text, count }: { icon: React.ReactNode, text: string, count: number }) {
   return (
     <div className="flex items-center justify-between border-b border-white/5 pb-2">
@@ -206,16 +187,13 @@ function SectionLabel({ icon, text, count }: { icon: React.ReactNode, text: stri
     </div>
   );
 }
-
 function ResultCard({ to, title, subtitle, type }: { to: string, title: string, subtitle: string, type: string }) {
   const colors: Record<string, string> = {
     PATIENT: "border-blue-500/20 hover:border-blue-500/50",
     APPOINTMENT: "border-emerald-500/20 hover:border-emerald-500/50",
     FINANCE: "border-amber-500/20 hover:border-amber-500/50"
   };
-
   const borderColor = colors[type] || "border-white/10 hover:border-white/30";
-
   return (
     <Link to={to} className={`group block p-4 bg-white/[0.02] border ${borderColor} rounded-sm transition-all hover:bg-white/[0.04]`}>
       <div className="flex justify-between items-start">
@@ -231,7 +209,6 @@ function ResultCard({ to, title, subtitle, type }: { to: string, title: string, 
     </Link>
   );
 }
-
 function EmptyState({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-sm">
