@@ -1,6 +1,6 @@
 // src/components/Payments/PaymentMethodSelectorModal.tsx
 import React, { useState } from 'react';
-import { CreditCardIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { CreditCardIcon, CurrencyDollarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import EliteModal from '../Common/EliteModal';
 interface PaymentMethod {
   id: 'mobile' | 'cash';
@@ -81,10 +81,10 @@ export default function PaymentMethodSelectorModal({
           )}
         </div>
         <div className="absolute top-2 right-2">
-          <div className={`text-2xl font-bold ${
-            selectedMethod?.id === method.id ? 'text-blue-500' : 'text-gray-400'
+          <div className={`w-6 h-6 flex items-center justify-center rounded-full ${
+            selectedMethod?.id === method.id ? 'bg-blue-500 text-white' : 'border-2 border-gray-400 text-gray-400'
           }`}>
-            {method.id === 'mobile' ? '💳' : method.id === 'cash' ? '💰' : '📋'}
+            {selectedMethod?.id === method.id && <CheckCircleIcon className="w-4 h-4" />}
           </div>
         </div>
       </div>

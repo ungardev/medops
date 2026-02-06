@@ -5,7 +5,6 @@ import { apiFetch } from '@/api/client';
 import EliteModal from "../Common/EliteModal";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { 
-  XMarkIcon, 
   ArrowPathIcon,
   ShieldCheckIcon,
   BuildingOfficeIcon,
@@ -16,7 +15,6 @@ interface CashPaymentData {
   received_by?: number;
   payment_date: string;
   notes?: string;
-  cash_denominations?: Record<number, number>;
   payment_reference?: string;
 }
 interface Props {
@@ -26,8 +24,6 @@ interface Props {
   onClose: () => void;
   open: boolean;
 }
-// Denominaciones venezolanas limpias y ordenadas
-const VENEZUELAN_DENOMINATIONS = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 100, 50, 20, 10, 5, 2, 1];
 export default function CashPaymentModal({ 
   appointmentId, 
   chargeOrderId, 
@@ -41,8 +37,7 @@ export default function CashPaymentModal({
   const [form, setForm] = useState<CashPaymentData>({
     amount: expectedAmount.toFixed(2),
     payment_date: new Date().toISOString().split('T')[0],
-    notes: 'Pago en efectivo',
-    cash_denominations: {}
+    notes: 'Pago en efectivo'
   });
   
   const mutation = useMutation({
@@ -72,23 +67,11 @@ export default function CashPaymentModal({
     }
   });
   
-  // Handlers corregidos con tipado adecuado
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
       [name]: value,
-    }));
-  };
-  
-  const handleDenominationChange = (denomination: number, value: string) => {
-    const count = parseInt(value) || 0;
-    setForm((prev) => ({
-      ...prev,
-      cash_denominations: {
-        ...(prev.cash_denominations || {}),
-        [denomination]: count
-      }
     }));
   };
   
@@ -107,7 +90,7 @@ export default function CashPaymentModal({
     
     const paymentDate = new Date(form.payment_date);
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // Fin del día
+    today.setHours(23, 59, 59, 999);
     
     if (paymentDate > today) {
       alert('La fecha de pago no puede ser futura');
@@ -117,20 +100,13 @@ export default function CashPaymentModal({
     mutation.mutate(form);
   };
   
-  const getTotalDenominations = () => {
-    if (!form.cash_denominations) return 0;
-    return Object.entries(form.cash_denominations).reduce((acc, [denom, count]) => {
-      return acc + (parseFloat(denom) * count);
-    }, 0);
-  };
-  
   if (!open) return null;
   return (
     <EliteModal 
       open={open} 
       onClose={onClose} 
       title="REGISTER_CASH_PAYMENT"
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-xl"
       showDotIndicator={true}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -182,31 +158,6 @@ export default function CashPaymentModal({
                 className="w-full bg-black/40 border-emerald-500/20 rounded-lg py-3 pl-12 pr-4 text-lg font-bold text-emerald-400 focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-500 outline-none transition-all placeholder:opacity-30"
               />
             </div>
-          </div>
-        </div>
-        {/* Desglose de billetes */}
-        <div className="space-y-4">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-emerald-400/60">
-            DESGLOSE DE BILLETES (OPCIONAL)
-          </label>
-          <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-            {VENEZUELAN_DENOMINATIONS.map(denom => (
-              <div key={denom} className="text-center">
-                <div className="text-xs text-emerald-400/60 mb-2">{denom.toLocaleString()}</div>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.cash_denominations?.[denom] || ''}
-                  onChange={(e) => handleDenominationChange(denom, e.target.value)}
-                  className="w-full bg-black/40 border-emerald-500/10 rounded px-2 py-1 text-emerald-400 text-center text-sm"
-                  placeholder="0"
-                />
-              </div>
-            ))}
-          </div>
-          <div className="flex justify-between items-center pt-2">
-            <span className="text-emerald-400 text-sm">Total Desglose:</span>
-            <span className="font-bold text-emerald-400">Bs. {getTotalDenominations().toFixed(2)}</span>
           </div>
         </div>
         {/* Campos adicionales */}

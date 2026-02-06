@@ -21,8 +21,7 @@ import {
   ClockIcon,
   UserIcon,
   HashtagIcon,
-  BuildingOfficeIcon,
-  CreditCardIcon
+  BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
 interface Event {
   id: number;
@@ -274,30 +273,6 @@ export default function ChargeOrderDetail() {
           <section className="p-6 bg-white/[0.02] border border-white/5 space-y-4 rounded-sm shadow-xl">
             <h3 className="text-[9px] font-black tracking-[0.2em] uppercase text-[var(--palantir-muted)]">Operations_Panel</h3>
             <div className="grid grid-cols-1 gap-2">
-              
-              {/* ✅ BOTÓN DE VERIFICACIÓN MÓVIL ACTIVO */}
-              {verifyMobilePayment.isPending === false && pending > 0 && (
-                <button 
-                    onClick={() => verifyMobilePayment.mutate({
-                      chargeOrderId: order!.id,
-                      expectedAmount: pending,
-                      timeWindowHours: 24
-                    })}
-                    disabled={verifyMobilePayment.isPending}
-                    className="flex items-center justify-between p-4 border text-[10px] font-black uppercase tracking-widest transition-all group overflow-hidden relative bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/5 to-transparent -skew-x-12 group-hover:translate-x-full transition-transform duration-1000" />
-                   
-                  <div className="flex items-center gap-3 relative z-10">
-                    {verifyMobilePayment.isPending ? (
-                      <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <CreditCardIcon className="w-4 h-4" />
-                    )}
-                    <span>{verifyMobilePayment.isPending ? 'VERIFYING...' : 'VERIFY_MOBILE_PAYMENT'}</span>
-                  </div>
-                </button>
-              )}
               
               {/* ✅ BOTÓN UNIFICADO DE REGISTRO DE PAGO */}
               <button onClick={() => setShowPaymentSelector(true)} className="flex items-center justify-between p-4 bg-emerald-500/10 border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all group">
