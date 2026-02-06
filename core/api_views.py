@@ -578,7 +578,6 @@ def search(request):
         from .models import Patient
         
         patients = Patient.objects.filter(
-            Q(full_name__icontains=query) |
             Q(first_name__icontains=query) |
             Q(last_name__icontains=query) |
             Q(national_id__icontains=query) |
@@ -593,7 +592,8 @@ def search(request):
         from .models import Appointment
         
         appointments = Appointment.objects.filter(
-            Q(patient__full_name__icontains=query) |
+            Q(patient__first_name__icontains=query) |
+            Q(patient__last_name__icontains=query) |
             Q(patient__national_id__icontains=query) |
             Q(id__icontains=query) |
             Q(appointment_date__icontains=query)
@@ -609,7 +609,8 @@ def search(request):
         from .models import ChargeOrder
         
         charge_orders = ChargeOrder.objects.filter(
-            Q(patient__full_name__icontains=query) |
+            Q(patient__first_name__icontains=query) |
+            Q(patient__last_name__icontains=query) |
             Q(patient__national_id__icontains=query) |
             Q(id__icontains=query) |
             Q(appointment__id__icontains=query)
