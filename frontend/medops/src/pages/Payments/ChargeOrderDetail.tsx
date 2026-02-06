@@ -3,7 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import PageHeader from "@/components/Common/PageHeader";
 import PaymentList from "@/components/Payments/PaymentList";
-import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal";
+import PaymentMethodSelectorModal from "@/components/Payments/PaymentMethodSelectorModal";
+import CashPaymentModal from "@/components/Payments/CashPaymentModal";
 import { useVerifyMobilePayment, type VerifyMobilePaymentData, VerifyMobilePaymentError } from '@/hooks/payments/useVerifyMobilePayment';
 import ManualPaymentModal from '@/components/Payments/ManualPaymentModal';
 import { useState } from "react";
@@ -36,7 +37,8 @@ export default function ChargeOrderDetail() {
   const navigate = useNavigate();
   
   // ✅ 2. HOOKS DE ESTADO (TODOS JUNTOS Y AL INICIO)
-  const [showModal, setShowModal] = useState(false);
+  const [showPaymentSelector, setShowPaymentSelector] = useState(false);
+  const [showCashModal, setShowCashModal] = useState(false);
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
@@ -73,19 +75,34 @@ export default function ChargeOrderDetail() {
     }
   });
   
-  // ✅ 5. CONDICIONALES TEMPRANOS (DESPUÉS DE TODOS LOS HOOKS)
+  // ✅ 5. HANDLERS DE SELECCIÓN DE MÉTODOS DE PAGO
+  const handlePaymentMethodSelect = (paymentData: any) => {
+    setShowPaymentSelector(false);
+    
+    if (paymentData.method === 'cash') {
+      setShowCashModal(true);
+    } else if (paymentData.method === 'mobile') {
+      verifyMobilePayment.mutate({
+        chargeOrderId: order!.id,
+        expectedAmount: pending,
+        timeWindowHours: 24
+      });
+    }
+  };
+  
+  // ✅ 6. CONDICIONALES TEMPRANOS (DESPUÉS DE TODOS LOS HOOKS)
   if (!id) return <div className="p-8 text-[10px] font-mono text-red-500 uppercase tracking-widest">Error: Null_Reference_ID</div>;
   
-  // ✅ 6. HOOKS DE DATOS
+  // ✅ 7. HOOKS DE DATOS
   const { data: order, isLoading, error } = useQuery<ChargeOrder>({
     queryKey: ["charge-order", id],
     queryFn: async () => apiFetch<ChargeOrder>(`charge-orders/${id}/`),
   });
   
-  // ✅ 7. EVENTS CON TIPO CORREGIDO
+  // ✅ 8. EVENTS CON TIPO CORREGIDO
   const events: Event[] | null = null; // TEMPORAL - Endpoint no existe
   
-  // ✅ 8. MUTATIONS
+  // ✅ 9. MUTATIONS
   const voidMutation = useMutation({
     mutationFn: async () => apiFetch<void>(`charge-orders/${id}/void/`, { method: "POST" }),
     onSuccess: () => invalidateChargeOrders(id),
@@ -112,7 +129,7 @@ export default function ChargeOrderDetail() {
     } catch (err) { alert("EXPORT_FAILED: Server_Response_Error"); }
   };
   
-  // ✅ 9. CONDICIONALES DE LOADING/ERROR (DESPUÉS DE TODOS LOS HOOKS)
+  // ✅ 10. CONDICIONALES DE LOADING/ERROR (DESPUÉS DE TODOS LOS HOOKS)
   if (isLoading) return <div className="p-8 animate-pulse font-mono text-[10px] uppercase tracking-widest text-[var(--palantir-muted)]">Fetching_Object_Data...</div>;
   if (error || !order) return <div className="p-8 font-mono text-[10px] text-red-500">OBJECT_NOT_FOUND</div>;
   
@@ -282,7 +299,8 @@ export default function ChargeOrderDetail() {
                 </button>
               )}
               
-              <button onClick={() => setShowModal(true)} className="flex items-center justify-between p-4 bg-emerald-500/10 border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all group">
+              {/* ✅ BOTÓN UNIFICADO DE REGISTRO DE PAGO */}
+              <button onClick={() => setShowPaymentSelector(true)} className="flex items-center justify-between p-4 bg-emerald-500/10 border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all group">
                 Register_New_Payment <PlusIcon className="w-4 h-4 group-hover:rotate-90 transition-transform" />
               </button>
               
@@ -311,13 +329,24 @@ export default function ChargeOrderDetail() {
         </div>
       </div>
       
-      {/* ✅ MODAL DE REGISTRO DE PAGO */}
-      {showModal && (
-        <RegisterPaymentModal
-          open={showModal}
+      {/* ✅ MODAL SELECTOR DE MÉTODOS DE PAGO */}
+      {showPaymentSelector && (
+        <PaymentMethodSelectorModal
+          chargeOrderId={order!.id}
+          expectedAmount={pending}
+          onClose={() => setShowPaymentSelector(false)}
+          onSuccess={handlePaymentMethodSelect}
+        />
+      )}
+      
+      {/* ✅ MODAL DE PAGO EN EFECTIVO */}
+      {showCashModal && (
+        <CashPaymentModal
+          open={showCashModal}
           appointmentId={order!.appointment}
           chargeOrderId={order!.id}
-          onClose={() => setShowModal(false)}
+          expectedAmount={pending}
+          onClose={() => setShowCashModal(false)}
         />
       )}
       
