@@ -1471,6 +1471,7 @@ def metrics_api(request):
 
 
 @api_view(['GET'])
+@permission_classes([conditional_permission()])
 def dashboard_summary_api(request):
     start_date = request.query_params.get('start_date')
     end_date = request.query_params.get('end_date')
