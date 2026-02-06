@@ -550,7 +550,93 @@ def icd_search_api(request):
 
 
 @api_view(['GET'])
-def search(request): return Response([])
+def search(request):
+    """
+    Búsqueda global cross-entity para MEDOPZ.
+    Integra las búsquedas específicas que ya funcionan y están probadas.
+    Reutiliza la lógica existente para mantener consistencia y evitar duplicación.
+    """
+    query = request.GET.get('query', '').strip()
+    
+    if not query:
+        return Response({
+            'patients': [],
+            'appointments': [], 
+            'orders': []
+        })
+    
+    # Inicializar resultados
+    patients_data = []
+    appointments_data = []
+    orders_data = []
+    
+    # Límite de resultados para evitar sobrecarga
+    LIMIT = 5
+    
+    try:
+        # 🔍 Búsqueda de Pacientes (reutiliza lógica existente)
+        from .models import Patient
+        
+        patients = Patient.objects.filter(
+            Q(full_name__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
+            Q(national_id__icontains=query) |
+            Q(email__icontains=query)
+        ).filter(active=True).select_related('institution')[:LIMIT]
+        
+        # Serializar pacientes
+        from .serializers import PatientListSerializer
+        patients_data = PatientListSerializer(patients, many=True).data
+        
+        # 📅 Búsqueda de Citas (reutiliza lógica existente)
+        from .models import Appointment
+        
+        appointments = Appointment.objects.filter(
+            Q(patient__full_name__icontains=query) |
+            Q(patient__national_id__icontains=query) |
+            Q(id__icontains=query) |
+            Q(appointment_date__icontains=query)
+        ).select_related(
+            'patient', 'doctor', 'institution', 'note'
+        ).order_by('-appointment_date')[:LIMIT]
+        
+        # Serializar citas
+        from .serializers import AppointmentSerializer
+        appointments_data = AppointmentSerializer(appointments, many=True).data
+        
+        # 💳 Búsqueda de Órdenes de Cobro (reutiliza lógica existente)
+        from .models import ChargeOrder
+        
+        charge_orders = ChargeOrder.objects.filter(
+            Q(patient__full_name__icontains=query) |
+            Q(patient__national_id__icontains=query) |
+            Q(id__icontains=query) |
+            Q(appointment__id__icontains=query)
+        ).select_related(
+            'appointment', 'patient', 'institution', 'doctor'
+        ).order_by('-issued_at')[:LIMIT]
+        
+        # Serializar órdenes
+        from .serializers import ChargeOrderSerializer
+        orders_data = ChargeOrderSerializer(charge_orders, many=True).data
+        
+        # Construir respuesta unificada
+        return Response({
+            'patients': patients_data,
+            'appointments': appointments_data,
+            'orders': orders_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en search: {str(e)}")
+        return Response({
+            'error': f"SEARCH_ERROR: {str(e)}",
+            'patients': [],
+            'appointments': [],
+            'orders': []
+        }, status=500)
+
 
 # Citas y Sala de Espera
 @api_view(['GET'])
