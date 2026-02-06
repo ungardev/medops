@@ -13,7 +13,7 @@ import axios from "axios";
 import PageHeader from "@/components/Common/PageHeader";
 interface Patient {
   id: number;
-  full_name: string;  // ✅ CAMBIADO: de first_name/last_name a full_name
+  full_name: string;
   national_id: string;
 }
 interface Appointment {
@@ -128,7 +128,7 @@ export default function SearchPage() {
                 <SectionLabel icon={<UserIcon className="w-4 h-4" />} text="Target_Patients" count={results.patients.length} />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {results.patients.map((p) => (
-                    <ResultCard key={p.id} to={`/patients/${p.id}`} title={p.full_name} subtitle={`National_ID: ${p.national_id}`} type="PATIENT" />  {/* ✅ CAMBIADO: de `${p.first_name} ${p.last_name}` a `p.full_name` */}
+                    <ResultCard key={p.id} to={`/patients/${p.id}`} title={p.full_name} subtitle={`National_ID: ${p.national_id}`} type="PATIENT" />
                   ))}
                 </div>
               </section>
