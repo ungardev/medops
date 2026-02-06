@@ -16,13 +16,12 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { useNotifications } from "@/hooks/dashboard/useNotifications"; // Importamos el hook
+import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig"; // Importamos el hook del doctor
 import moment from "moment";
-
 interface HeaderProps {
   setCollapsed: (value: boolean) => void;
   setMobileOpen: (value: boolean) => void;
 }
-
 // Helper para iconos basado en el sistema de auditoría
 function notificationIcon(category: string) {
   if (category?.includes("appointment")) return <UserCheck className="w-3 h-3" />;
@@ -30,7 +29,20 @@ function notificationIcon(category: string) {
   if (category?.includes("report")) return <FileText className="w-3 h-3" />;
   return <Activity className="w-3 h-3" />;
 }
-
+// Helper functions para el procesamiento de datos del médico
+const getInitials = (fullName: string): string => {
+  if (!fullName) return '??';
+  const parts = fullName.trim().split(' ');
+  const first = parts[0]?.charAt(0) || '';
+  const last = parts[1]?.charAt(0) || '';
+  return (first + last).toUpperCase();
+};
+const getGenderPrefix = (gender?: string): string => {
+  return gender === 'F' ? 'DRA.' : 'DR.';
+};
+const getPrimarySpecialty = (specialties?: any[]): string => {
+  return specialties?.[0]?.name || 'Médico';
+};
 export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   const navigate = useNavigate();
   const { clearToken } = useAuthToken();
@@ -38,16 +50,16 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   // 🔹 Conectamos con el Stream de Datos
   const { data: rawData, isLoading } = useNotifications();
   const notifications = Array.isArray(rawData) ? rawData : (rawData as any)?.results || [];
-
+  
+  // ✅ NUEVO: Hook del doctor para obtener datos reales
+  const { data: doctor, isLoading: doctorLoading } = useDoctorConfig();
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
-
   const notifRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-
   // ... (Efectos de tema, teclado y click outside se mantienen igual)
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -60,7 +72,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
         setDarkMode(true);
     }
   }, []);
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -71,7 +82,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
-
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -81,7 +91,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -90,19 +99,16 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
       searchInputRef.current?.blur();
     }
   };
-
   const toggleTheme = () => {
     const next = !darkMode;
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
     setDarkMode(next);
   };
-
   const handleLogout = () => {
     clearToken();
     navigate("/login");
   };
-
   return (
     <div className="w-full flex items-center justify-between h-full bg-[#0c0e12] px-6 border-b border-white/[0.05] shadow-2xl relative z-[110]">
       <div className="flex items-center gap-6 flex-1">
@@ -111,7 +117,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-
         <form onSubmit={handleSearchSubmit} className="relative w-full max-w-lg group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="w-3.5 h-3.5 text-white/20 group-focus-within:text-[var(--palantir-active)] transition-colors" />
@@ -130,7 +135,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
           </div>
         </form>
       </div>
-
       <div className="flex items-center gap-3">
         {/* Notificaciones */}
         <div className="relative" ref={notifRef}>
@@ -181,21 +185,29 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
             </div>
           )}
         </div>
-
         <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
-
-        {/* User Menu */}
+        {/* User Menu - ACTUALIZADO CON DATOS REALES DEL MÉDICO */}
         <div className="relative" ref={userMenuRef}>
           <button onClick={() => setMenuOpen(!menuOpen)} className={`flex items-center gap-3 p-1 pl-2 pr-3 rounded-sm transition-all border ${menuOpen ? 'bg-white/5 border-white/20' : 'border-transparent hover:bg-white/5'}`}>
             <div className="relative">
               <div className="w-7 h-7 bg-white/5 rounded-sm flex items-center justify-center border border-white/10">
-                <UserCircle size={18} className="text-white/40" />
+                {doctorLoading ? (
+                  <UserCircle size={18} className="text-white/40" />
+                ) : (
+                  <span className="text-[10px] font-black text-white/80 tracking-[0.1em]">
+                    {getInitials(doctor?.full_name || '')}
+                  </span>
+                )}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0c0e12] shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-[9px] font-black text-white uppercase tracking-[0.15em]">ROOT_USER</p>
-              <p className="text-[7px] text-[var(--palantir-active)] font-black uppercase tracking-tighter opacity-60">Admin_Lvl_01</p>
+              <p className="text-[9px] font-black text-white uppercase tracking-[0.15em]">
+                {getGenderPrefix(doctor?.gender)} {getInitials(doctor?.full_name || '')}
+              </p>
+              <p className="text-[7px] text-[var(--palantir-active)] font-black uppercase tracking-tighter opacity-60">
+                {getPrimarySpecialty(doctor?.specialties)}
+              </p>
             </div>
           </button>
           
