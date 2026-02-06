@@ -582,7 +582,7 @@ def search(request):
             Q(last_name__icontains=query) |
             Q(national_id__icontains=query) |
             Q(email__icontains=query)
-        ).filter(active=True).select_related('institution')[:LIMIT]
+        ).filter(active=True)[:LIMIT]  # ✅ ELIMINADO: select_related('institution') - NO EXISTE
         
         # Serializar pacientes
         from .serializers import PatientListSerializer
