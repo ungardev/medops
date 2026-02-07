@@ -6,7 +6,7 @@ import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import { InstitutionCard } from "@/components/Settings/InstitutionCard";
-import { InstitutionFormModal } from "@/components/Settings/InstitutionFormModal";
+import EditInstitutionModal from "@/components/Settings/EditInstitutionModal";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
 import { api } from "@/lib/apiClient"; // ✅ AGREGADO: Importar api client
 import type { Specialty } from "@/types/config";
@@ -30,8 +30,10 @@ type DoctorForm = {
 };
 export default function ConfigPage() {
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  
   // ✅ Hook singleton eliminado - ya no es necesario
   // const { data: inst, updateInstitution, isLoading: instLoading } = useInstitutionSettings();
+  
   // ✅ Hook multi-institución para gestión completa
   const {
     institutions,
@@ -44,11 +46,13 @@ export default function ConfigPage() {
   
   const { data: doc, updateDoctor, isLoading: docLoading } = useDoctorConfig();
   const { data: specialties = [] } = useSpecialtyChoices();
+  
   const [isInstModalOpen, setIsInstModalOpen] = useState(false);
   const [editingInstitution, setEditingInstitution] = useState<any>(null);
   const [editingDoctor, setEditingDoctor] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [signaturePreview, setSignaturePreview] = useState<string | File | null>(null);
+  
   const [docForm, setDocForm] = useState<DoctorForm>({
     full_name: "", gender: "M", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
   });
@@ -108,9 +112,11 @@ export default function ConfigPage() {
     // Obtener el ID de la institución a actualizar
     const institutionId = editingInstitution?.id || activeInstitution?.id;
     if (!institutionId) return;
+    
     // Actualizar el header X-Institution-ID temporalmente
     const originalHeader = api.defaults.headers.common["X-Institution-ID"];
     api.defaults.headers.common["X-Institution-ID"] = String(institutionId);
+    
     try {
       // Llamar al endpoint de configuración de institución con método PATCH
       const response = await api.patch("config/institution/", formData);
@@ -140,7 +146,7 @@ export default function ConfigPage() {
     if (typeof institution.logo === 'string') {
       const logoStr = institution.logo;
       if (logoStr.startsWith('http') || logoStr.startsWith('blob:')) return logoStr;
-      return ``;
+      return `${API_BASE}${logoStr.startsWith('/') ? '' : '/'}${logoStr}`;
     }
     return null;
   };
@@ -219,9 +225,9 @@ export default function ConfigPage() {
                   <div className="h-24 w-full bg-black/40 border border-white/5 flex items-center justify-center border-dashed relative group">
                     {signaturePreview ? (
                       <img 
-                        src={typeof signaturePreview === 'string' && signaturePreview.startsWith('blob:') 
-                          ? signaturePreview 
-                          : ``
+                        src={typeof signaturePreview === 'string' 
+                          ? (signaturePreview.startsWith('blob:') ? signaturePreview : `${API_BASE}${signaturePreview.startsWith('/') ? '' : '/'}${signaturePreview}`)
+                          : URL.createObjectURL(signaturePreview)
                         } 
                         alt="Signature" 
                         className="h-full object-contain invert opacity-60 group-hover:opacity-100 transition-opacity p-2" 
@@ -245,7 +251,7 @@ export default function ConfigPage() {
                 await updateDoctor(payload);
                 setEditingDoctor(false);
               }} className="space-y-6">
-                
+                 
                 <div className="grid grid-cols-4 gap-4">
                     <div className="col-span-1">
                         <label className={labelStyles}>Title</label>
@@ -264,7 +270,7 @@ export default function ConfigPage() {
                         <input className={inputStyles} value={docForm.full_name} onChange={(e) => setDocForm({...docForm, full_name: e.target.value})} />
                     </div>
                 </div>
-                
+                 
                 <div className="grid grid-cols-2 gap-6">
                   <div><label className={labelStyles}>License_UID</label><input className={inputStyles} value={docForm.license} onChange={(e) => setDocForm({...docForm, license: e.target.value})} /></div>
                   <div><label className={labelStyles}>Board_ID</label><input className={inputStyles} value={docForm.colegiado_id} onChange={(e) => setDocForm({...docForm, colegiado_id: e.target.value})} /></div>
@@ -364,7 +370,7 @@ export default function ConfigPage() {
                <CpuChipIcon className="w-4 h-4 text-blue-500/40 mt-1" />
                <div className="text-[9px] font-mono text-blue-500/60 leading-relaxed uppercase">
                  <p className="font-bold">Multi-Institution_Protocol:</p>
-                 Select an institution as "Active" to set it as the default. Changes affect all medical documents until another institution is selected.
+                 Select an institution as "Active" to set it as default. Changes affect all medical documents until another institution is selected.
                </div>
             </div>
           </div>
@@ -380,15 +386,14 @@ export default function ConfigPage() {
             Node_Hash: {hashlib_mock(activeInstitution?.name || 'ROOT')}
         </div>
       </footer>
-      <InstitutionFormModal 
+      {/* ✅ CAMBIO CLAVE: EditInstitutionModal reemplaza a InstitutionFormModal */}
+      <EditInstitutionModal 
         open={isInstModalOpen} 
         onClose={() => setIsInstModalOpen(false)} 
-        initialData={editingInstitution}
-        onSave={handleSaveInstitution}
       />
     </div>
   );
 }
 function hashlib_mock(str: string) {
-    return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString(16).toUpperCase().padEnd(32, '0');
+  return Array.from(str).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString(16).toUpperCase().padEnd(32, '0');
 }
