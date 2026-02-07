@@ -1,3 +1,4 @@
+# core/api_urls.py
 from django.urls import path, include
 from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
@@ -97,7 +98,10 @@ from .api_views import (
     mercantil_p2c_config_status,
     # 🆕 VERIFICACIÓN DE PAGOS MÓVILES (nuevo endpoint) ---
     verify_mobile_payment,
-    active_institution_dashboard_api,  # ✅ NUEVO: Dashboard de institución activa
+    # 🆕 NUEVO: Dashboard de institución activa
+    active_institution_dashboard_api,
+    # ✅ NUEVO: Dashboard con 8 métricas y filtros
+    active_institution_with_metrics,  # 🆕 AGREGAR ESTA LÍNEA
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -148,11 +152,12 @@ patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
 # --- Funciones personalizadas ---
 urlpatterns = [
     # ❌ Eliminado el endpoint legacy de login que causaba CSRF
-    # path("auth/token/", api_views.login_view, name="api-login"),
     
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
     path("dashboard/active-institution/", active_institution_dashboard_api, name="active-institution-dashboard-api"),  # ✅ NUEVO
+    # 🆕 NUEVO: Dashboard con 8 métricas y filtros completos
+    path("dashboard/active-institution-metrics/", active_institution_with_metrics, name="active-institution-metrics-api"),  # 🆕 AGREGAR ESTA LÍNEA
     path("reports/", reports_api, name="reports-api"),
     path("reports/export/", reports_export_api, name="reports-export-api"),
     path("config/institution/", institution_settings_api, name="institution-settings-api"),
@@ -165,7 +170,7 @@ urlpatterns = [
     path("patients/search/", patient_search_api, name="patient-search-api"),
     path("patients/<int:pk>/documents/", PatientViewSet.as_view({"get": "documents", "post": "documents"}), name="patient-documents-api"),
     path("patients/<int:pk>/documents/<int:document_id>/", PatientViewSet.as_view({"delete": "delete_document"}), name="patient-document-delete-api"),
-    path("patients/<int:pk>/profile/", PatientViewSet.as_view({"get": "profile"}), name="patient-clinical-profile"),
+    path("patients/<int:pk>/profile/", PatientViewSet.as_view({"get": "profile"}), name="patient-clinical-profile-api"),
     
     path("appointments/search/", appointment_search_api, name="appointment-search-api"),
     path("appointments/today/", api_views.daily_appointments_api, name="daily-appointments-api"),
@@ -175,7 +180,7 @@ urlpatterns = [
     path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),
     
     path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),
-    path("consultation/current/", current_consultation_api, name="current-consultation-api"),
+    path("consultations/current/", current_consultation_api, name="current-consultation-api"),
     path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
     path("consultations/<int:pk>/generate-used-documents/", generate_used_documents, name="generate-used-documents"),
     
@@ -193,11 +198,10 @@ urlpatterns = [
     path("documents/", documents_api, name="documents-api"),
     path("icd/search/", icd_search_api, name="icd-search-api"),
     
-    # --- Payments URLs (EXSTENTES + NUEVAS) ---
+    # --- Payments URLs (EXISTENTES + NUEVAS) ---
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
-    
     # 🆕 MERCANTIL P2C ENDPOINTS (ya existen en api_views.py pero faltaban registrar) ---
     path("payments/p2c/mercantil/generate-qr/", mercantil_p2c_generate_qr, name="mercantil_p2c_generate_qr"),
     path("payments/p2c/mercantil/status/<str:merchant_order_id>/", mercantil_p2c_check_status, name="mercantil_p2c_check_status"),
@@ -205,7 +209,7 @@ urlpatterns = [
     path("payments/p2c/mercantil/config-status/", mercantil_p2c_config_status, name="mercantil_p2c_config_status"),
     
     # 🆕 VERIFICACIÓN DE PAGOS MÓVILES (nuevo endpoint que crearemos) ---
-    path("payments/verify-mobile-payment/", verify_mobile_payment, name="verify_mobile_payment"),
+    path("payments/verify-mobile-payment/", verify_mobile_payment, name="verify-mobile-payment"),
     
     # --- Auditoría ---
     path("events/", api_views.event_log_api, name="event-log-api"),
@@ -249,12 +253,10 @@ urlpatterns = [
 urlpatterns += [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
 ]
+urlpatterns += router.urls
+urlpatterns += patients_router.urls
 if settings.DEBUG:
     urlpatterns += [
         path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     ]
-# --- Routers principales y anidados ---
-urlpatterns += router.urls
-urlpatterns += patients_router.urls
-if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
