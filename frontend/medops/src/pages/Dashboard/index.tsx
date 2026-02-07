@@ -1,6 +1,5 @@
 // src/pages/Dashboard/index.tsx
 import React, { useEffect } from "react";
-import MetricsRow from "@/components/Dashboard/MetricsRow";
 import TrendsChart from "@/components/Dashboard/TrendsChart";
 import NotificationsFeed from "@/components/Dashboard/NotificationsFeed";
 import AuditLog from "@/components/Dashboard/AuditLog";
@@ -9,16 +8,13 @@ import PageHeader from "@/components/Common/PageHeader";
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { queryClient } from "@/lib/reactQuery";
 import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
-import { DashboardButtonGroup } from "@/components/Dashboard/DashboardButtonGroup";
-// ✅ IMPORTACIONES CORRECTAS
 import ActiveInstitutionCard from "@/components/Dashboard/ActiveInstitutionCard";
-import { useActiveInstitution } from "@/hooks/dashboard/useActiveInstitution";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import type { InstitutionSettings } from "@/types/config";
 export default function Dashboard() {
   const { token } = useAuthToken();
   
-  // ✅ PASO 1: Obtener TODAS las instituciones del usuario
+  // ✅ Obtener TODAS las instituciones del usuario
   const { 
     institutions, 
     activeInstitution, 
@@ -26,9 +22,6 @@ export default function Dashboard() {
     isLoading: isLoadingInstitutions,
     isSettingActive
   } = useInstitutions();
-  
-  // ✅ PASO 2: Solo usar dashboard si hay institución activa
-  const { data: activeInstitutionData, isLoading: isLoadingDashboard } = useActiveInstitution();
   
   useEffect(() => {
     if (token) {
@@ -43,7 +36,6 @@ export default function Dashboard() {
         <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6">
           <PageHeader 
             breadcrumbs={[{ label: "MEDOPS", active: true }]}
-            actions={<DashboardButtonGroup />}
           />
           <div className="animate-pulse space-y-4">
             <div className="h-32 bg-white/5 rounded-lg"></div>
@@ -61,7 +53,6 @@ export default function Dashboard() {
         <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6">
           <PageHeader 
             breadcrumbs={[{ label: "MEDOPS", active: true }]}
-            actions={<DashboardButtonGroup />}
           />
           <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
             <div className="mb-6">
@@ -92,7 +83,6 @@ export default function Dashboard() {
         <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6">
           <PageHeader 
             breadcrumbs={[{ label: "MEDOPS", active: true }]}
-            actions={<DashboardButtonGroup />}
           />
           <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
             <div className="mb-6">
@@ -153,29 +143,19 @@ export default function Dashboard() {
     <DashboardFiltersProvider>
       <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6 animate-in fade-in duration-700">
         
-        {/* PageHeader LIMPIO */}
+        {/* PageHeader LIMPIO - SIN actions (los botones están dentro del ActiveInstitutionCard) */}
         <PageHeader 
           breadcrumbs={[
             { label: "MEDOPS", active: true }
           ]}
-          actions={<DashboardButtonGroup />}
         />
         
-        {/* INSTITUCIÓN ACTIVA - Solo si hay institución activa */}
+        {/* 🎯 ÚNICO COMPONENTE UNIFICADO CON TODO INTEGRADO */}
         <section className="animate-in slide-in-from-bottom-1 duration-700 delay-50">
-          <ActiveInstitutionCard 
-            institution={activeInstitutionData?.institution || activeInstitution || null}
-            metrics={activeInstitutionData?.metrics}
-            isLoading={isLoadingDashboard}
-          />
+          <ActiveInstitutionCard />
         </section>
         
-        {/* MÉTRICAS */}
-        <section className="animate-in slide-in-from-bottom-2 duration-700 delay-150">
-          <MetricsRow />
-        </section>
-        
-        {/* TRIADA OPERACIONAL */}
+        {/* TRIADA OPERACIONAL - Sin cambios */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
           <div className="lg:col-span-3">
             <OperationalHub />
@@ -190,7 +170,7 @@ export default function Dashboard() {
           </div>
         </section>
         
-        {/* LOG DE AUDITORÍA */}
+        {/* LOG DE AUDITORÍA - Sin cambios */}
         <section className="pt-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-4">
              <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />

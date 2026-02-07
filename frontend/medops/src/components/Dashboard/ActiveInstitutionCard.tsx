@@ -3,36 +3,109 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BuildingOfficeIcon,
-  UserGroupIcon,
-  CalendarIcon,
-  CurrencyDollarIcon,
+  ClipboardIcon,
   ClockIcon,
+  CheckCircleIcon,
+  CurrencyDollarIcon,
   CogIcon,
-  ChartBarIcon
+  UserGroupIcon,
+  CalendarIcon
 } from "@heroicons/react/24/outline";
-import { InstitutionSettings } from "@/types/config";
-interface ActiveInstitutionCardProps {
-  institution?: InstitutionSettings | null;
-  metrics?: {
-    patients_today: number;
-    appointments_today: number;
-    payments_today: number;
-    pending_payments: number;
-  };
-  isLoading?: boolean;
-}
-export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
-  institution,
-  metrics,
-  isLoading = false
-}) => {
+import { useDashboardFilters } from "@/context/DashboardFiltersContext";
+import { useActiveInstitution } from "@/hooks/dashboard/useActiveInstitution";
+import ButtonGroup from "@/components/Common/ButtonGroup";
+import type { InstitutionSettings } from "@/types/config";
+// 🎨 Configuración de métricas integrada (desde MetricsRow)
+const metricsConfig = {
+  scheduled_count: {
+    label: "Citas Agendadas",
+    icon: ClipboardIcon,
+    color: "text-blue-600 dark:text-blue-400",
+    href: "/appointments",
+  },
+  pending_count: {
+    label: "Pendientes",
+    icon: ClockIcon,
+    color: "text-yellow-600 dark:text-yellow-400",
+    href: "/appointments?status=pending",
+  },
+  waiting_count: {
+    label: "En Espera",
+    icon: ClockIcon,
+    color: "text-purple-600 dark:text-purple-400",
+    href: "/waitingroom",
+  },
+  in_consultation_count: {
+    label: "En Consulta",
+    icon: ClipboardIcon,
+    color: "text-indigo-600 dark:text-indigo-400",
+    href: "/consultation",
+  },
+  completed_count: {
+    label: "Finalizadas",
+    icon: CheckCircleIcon,
+    color: "text-green-600 dark:text-green-400",
+    href: "/appointments?status=completed",
+  },
+  total_amount: {
+    label: "Total ($)",
+    icon: CurrencyDollarIcon,
+    color: "text-white",
+    href: "/payments",
+  },
+  payments_count: {
+    label: "Pagos",
+    icon: CurrencyDollarIcon,
+    color: "text-green-600 dark:text-green-400",
+    href: "/payments",
+  },
+  exempted_count: {
+    label: "Exonerados",
+    icon: CurrencyDollarIcon,
+    color: "text-red-600 dark:text-red-400",
+    href: "/payments",
+  },
+};
+export const ActiveInstitutionCard: React.FC = () => {
   const navigate = useNavigate();
+  const { range, setRange, currency, setCurrency } = useDashboardFilters();
   
+  // 🔥 Hook unificado con filtros
+  const { data: activeData, isLoading } = useActiveInstitution({ range, currency });
+  
+  const institution = activeData?.institution;
+  const metrics = activeData?.metrics;
+  
+  const handleConfigure = () => {
+    navigate("/settings/config");
+  };
+  
+  const handleViewDetails = () => {
+    navigate("/settings/config");
+  };
+  
+  const handleMetricClick = (href?: string) => {
+    if (href) navigate(href);
+  };
+  
+  const formatValue = (key: string, value: number): string => {
+    if (key.includes('amount') || key.includes('total')) {
+      return new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: currency || 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
+    return value.toLocaleString();
+  };
+  
+  // Loading State
   if (isLoading) {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
         {/* Loading Skeleton */}
-        <div className="flex gap-6">
+        <div className="flex gap-6 mb-6">
           <div className="w-20 h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0">
             <div className="w-8 h-8 bg-white/10 animate-pulse rounded" />
           </div>
@@ -41,10 +114,16 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
             <div className="h-3 bg-white/5 rounded w-32 animate-pulse" />
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
+        {/* Controls Skeleton */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+          <div className="h-8 bg-white/5 rounded w-48 animate-pulse" />
+          <div className="h-8 bg-white/5 rounded w-24 animate-pulse" />
+        </div>
+        {/* Metrics Grid Skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="bg-black/20 border border-white/5 rounded-sm p-3 animate-pulse">
-              <div className="h-3 bg-white/10 rounded w-16 mb-1" />
+              <div className="h-3 bg-white/10 rounded w-16 mb-2" />
               <div className="h-4 bg-white/5 rounded w-12" />
             </div>
           ))}
@@ -52,6 +131,8 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
       </div>
     );
   }
+  
+  // No Institution State
   if (!institution) {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
@@ -60,7 +141,7 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
             <BuildingOfficeIcon className="w-12 h-12 text-white/20 mx-auto mb-3" />
             <p className="text-white/40 text-sm">No hay institución activa</p>
             <button 
-              onClick={() => navigate("/settings/config")}
+              onClick={handleConfigure}
               className="mt-3 text-[10px] font-black uppercase text-emerald-500 hover:text-emerald-400 transition-colors tracking-widest"
             >
               Configurar Institución //
@@ -70,19 +151,7 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
       </div>
     );
   }
-  const metricsData = metrics || {
-    patients_today: 0,
-    appointments_today: 0,
-    payments_today: 0,
-    pending_payments: 0
-  };
-  const handleConfigure = () => {
-    navigate("/settings/config");
-  };
-  const handleViewDetails = () => {
-    // Por ahora navegamos a institutions, después se puede crear una vista detallada
-    navigate("/settings/config");
-  };
+  
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
@@ -124,57 +193,84 @@ export const ActiveInstitutionCard: React.FC<ActiveInstitutionCardProps> = ({
           </div>
         </div>
       </div>
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {/* Patients Today */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3 hover:bg-white/[0.03] transition-all group/metric">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1 rounded-sm bg-white/[0.03] border border-white/5 text-blue-600 dark:text-blue-400 group-hover/metric:border-blue-500/20 transition-colors">
-              <UserGroupIcon className="h-3 w-3" />
-            </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">Pacientes Hoy</span>
-          </div>
-          <div className="text-lg font-mono font-bold tracking-tighter text-white group-hover/metric:text-blue-500 transition-colors">
-            {metricsData.patients_today.toLocaleString()}
-          </div>
+      
+      {/* 🎛️ CONTROLES INTEGRADOS - Sin textos descriptivos */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        {/* Time Range Buttons */}
+        <div className="flex items-center gap-3">
+          <ButtonGroup
+            items={[
+              { label: "DAY", value: "day" },
+              { label: "WEEK", value: "week" },
+              { label: "MONTH", value: "month" },
+            ]}
+            selected={range}
+            onSelect={(val) => setRange(val as any)}
+          />
         </div>
-        {/* Appointments Today */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3 hover:bg-white/[0.03] transition-all group/metric">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1 rounded-sm bg-white/[0.03] border border-white/5 text-purple-600 dark:text-purple-400 group-hover/metric:border-purple-500/20 transition-colors">
-              <CalendarIcon className="h-3 w-3" />
-            </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">Citas Hoy</span>
-          </div>
-          <div className="text-lg font-mono font-bold tracking-tighter text-white group-hover/metric:text-purple-500 transition-colors">
-            {metricsData.appointments_today.toLocaleString()}
-          </div>
-        </div>
-        {/* Payments Today */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3 hover:bg-white/[0.03] transition-all group/metric">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1 rounded-sm bg-white/[0.03] border border-white/5 text-green-600 dark:text-green-400 group-hover/metric:border-green-500/20 transition-colors">
-              <CurrencyDollarIcon className="h-3 w-3" />
-            </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">Pagos Hoy</span>
-          </div>
-          <div className="text-lg font-mono font-bold tracking-tighter text-white group-hover/metric:text-green-500 transition-colors">
-            {metricsData.payments_today.toLocaleString()}
-          </div>
-        </div>
-        {/* Pending Payments */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3 hover:bg-white/[0.03] transition-all group/metric">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1 rounded-sm bg-white/[0.03] border border-white/5 text-yellow-600 dark:text-yellow-400 group-hover/metric:border-yellow-500/20 transition-colors">
-              <ClockIcon className="h-3 w-3" />
-            </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">Pendientes</span>
-          </div>
-          <div className="text-lg font-mono font-bold tracking-tighter text-white group-hover/metric:text-yellow-500 transition-colors">
-            {metricsData.pending_payments.toLocaleString()}
-          </div>
+        
+        {/* Currency Buttons */}
+        <div className="flex items-center gap-3">
+          <ButtonGroup
+            items={[
+              { label: "USD", value: "USD" },
+              { label: "VES", value: "VES" },
+            ]}
+            selected={currency}
+            onSelect={(val) => setCurrency(val as any)}
+          />
         </div>
       </div>
+      
+      {/* 📊 GRID DE 8 MÉTRICAS - 4x2 en desktop */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+        {metrics &&
+          Object.entries(metricsConfig).map(([key, cfg]) => {
+            const Icon = cfg.icon;
+            const value = metrics[key as keyof typeof metrics] ?? 0;
+            
+            return (
+              <div
+                key={key}
+                onClick={() => handleMetricClick(cfg.href)}
+                className="group relative bg-black/20 border border-white/5 rounded-sm p-3 
+                           hover:bg-white/[0.03] cursor-pointer transition-all
+                           hover:border-[var(--palantir-active)]/40
+                           flex flex-col items-start justify-center gap-2"
+              >
+                {/* Header: Icon + Label */}
+                <div className="flex items-center gap-2 w-full">
+                  <div className={`p-1 rounded-sm bg-white/[0.03] border border-white/5 ${cfg.color} group-hover:border-[var(--palantir-active)]/20 transition-colors`}>
+                    <Icon className="h-3 w-3" />
+                  </div>
+                  <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 group-hover:text-white/60 truncate">
+                    {cfg.label}
+                  </span>
+                </div>
+                
+                {/* Value */}
+                <div className="text-lg font-mono font-bold tracking-tighter text-white group-hover:text-[var(--palantir-active)] transition-colors">
+                  {formatValue(key, value)}
+                </div>
+                
+                {/* Footer: ID + Live Indicator */}
+                <div className="flex justify-between items-center w-full pt-1 border-t border-white/[0.03]">
+                  <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter">
+                    {key.slice(0, 5)}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1 h-1 rounded-full bg-emerald-500/50 animate-pulse"></div>
+                    <span className="text-[7px] font-mono text-emerald-500/50 uppercase">Live</span>
+                  </div>
+                </div>
+                
+                {/* Corner Decorator (Hover Effect) */}
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-[var(--palantir-active)]/5 rotate-45 translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform opacity-0 group-hover:opacity-100"></div>
+              </div>
+            );
+          })}
+      </div>
+      
       {/* Action Buttons */}
       <div className="flex items-center justify-between pt-4 border-t border-white/5">
         <div className="flex items-center gap-3">

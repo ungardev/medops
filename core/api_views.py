@@ -2494,3 +2494,121 @@ def verify_mobile_payment(request):
             "message": "An unexpected error occurred during payment verification",
             "details": str(e)
         }, status=500)
+
+
+@api_view(['GET'])
+def active_institution_with_metrics(request):
+    """
+    Retorna institución activa + métricas filtradas por institución activa.
+    Reemplaza a endpoints separados para mayor eficiencia.
+    """
+    from django.utils import timezone
+    from datetime import timedelta
+    from decimal import Decimal
+    from .services import get_institution_settings
+    
+    # Obtener institución activa usando el servicio existente
+    try:
+        institution_data = get_institution_settings(request, active_only=True)
+        
+        if not institution_data or not institution_data.get('id'):
+            return Response({"error": "No active institution found"}, status=404)
+        
+        active_inst = InstitutionSettings.objects.get(id=institution_data['id'])
+        
+    except Exception as e:
+        logger.error(f"Error obteniendo institución activa: {str(e)}")
+        return Response({"error": "No active institution found"}, status=404)
+    
+    # Filtros de tiempo y moneda
+    range_param = request.GET.get('range', 'day')
+    currency = request.GET.get('currency', 'USD')
+    
+    # Calcular rango de fechas
+    now = timezone.now()
+    if range_param == 'day':
+        start_date = now.date()
+        end_date = now.date() + timedelta(days=1)
+    elif range_param == 'week':
+        start_date = now.date() - timedelta(days=7)
+        end_date = now.date() + timedelta(days=1)
+    else:  # month
+        start_date = now.date() - timedelta(days=30)
+        end_date = now.date() + timedelta(days=1)
+    
+    # Métricas específicas para esta institución
+    try:
+        # Citas por estado
+        scheduled_count = Appointment.objects.filter(
+            institution=active_inst,
+            status='pending',
+            appointment_date__gte=start_date,
+            appointment_date__lt=end_date
+        ).count()
+        
+        pending_count = Appointment.objects.filter(
+            institution=active_inst,
+            status='pending'
+        ).count()
+        
+        waiting_count = Appointment.objects.filter(
+            institution=active_inst,
+            status='arrived'
+        ).count()
+        
+        in_consultation_count = Appointment.objects.filter(
+            institution=active_inst,
+            status='in_consultation'
+        ).count()
+        
+        completed_count = Appointment.objects.filter(
+            institution=active_inst,
+            status='completed',
+            appointment_date__gte=start_date,
+            appointment_date__lt=end_date
+        ).count()
+        
+        # Métricas financieras
+        charge_orders = ChargeOrder.objects.filter(
+            institution=active_inst,
+            created_at__gte=start_date,
+            created_at__lt=end_date
+        )
+        
+        total_amount = sum(order.total for order in charge_orders if order.currency == currency)
+        payments_count = Payment.objects.filter(
+            charge_order__institution=active_inst,
+            created_at__gte=start_date,
+            created_at__lt=end_date,
+            status='confirmed'
+        ).count()
+        
+        exempted_count = ChargeOrder.objects.filter(
+            institution=active_inst,
+            status='waived',
+            created_at__gte=start_date,
+            created_at__lt=end_date
+        ).count()
+        
+        metrics = {
+            'scheduled_count': scheduled_count,
+            'pending_count': pending_count,
+            'waiting_count': waiting_count,
+            'in_consultation_count': in_consultation_count,
+            'completed_count': completed_count,
+            'total_amount': float(total_amount),
+            'payments_count': payments_count,
+            'exempted_count': exempted_count,
+        }
+        
+        # Serializar institución
+        institution_data = InstitutionSettingsSerializer(active_inst).data
+        
+        return Response({
+            'institution': institution_data,
+            'metrics': metrics
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en active_institution_with_metrics: {str(e)}")
+        return Response({"error": str(e)}, status=500)
