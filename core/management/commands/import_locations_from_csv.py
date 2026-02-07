@@ -22,7 +22,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING("Tablas limpiadas: State, Municipality, City, Parish"))
 
         # Estados
-        with open('/srv/medops/data/estados.csv', newline='', encoding='utf-8') as f:
+        with open('/app/data/estados.csv', newline='', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter='\t')
             next(reader)  # saltar encabezado
             for row in reader:
@@ -33,7 +33,7 @@ class Command(BaseCommand):
                 )
 
         # Municipios
-        with open('/srv/medops/data/municipios.csv', newline='', encoding='utf-8') as f:
+        with open('/app/data/municipios.csv', newline='', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter='\t')
             next(reader)
             for row in reader:
@@ -44,7 +44,7 @@ class Command(BaseCommand):
                 )
 
         # Ciudades
-        with open('/srv/medops/data/ciudades.csv', newline='', encoding='utf-8') as f:
+        with open('/app/data/ciudades.csv', newline='', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter='\t')
             next(reader)
             for row in reader:
@@ -55,7 +55,7 @@ class Command(BaseCommand):
                 )
 
         # Parroquias
-        with open('/srv/medops/data/parroquias.csv', newline='', encoding='utf-8') as f:
+        with open('/app/data/parroquias.csv', newline='', encoding='utf-8') as f:
             reader = csv.reader(f, delimiter='\t')
             next(reader)
             for row in reader:
