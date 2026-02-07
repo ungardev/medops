@@ -1155,7 +1155,7 @@ def get_institution_settings(request=None, active_only=False):
             else:
                 institution = institutions.first()
             
-            return cast(Dict[str, Any], InstitutionSettings(institution).data) if institution else {}
+            return cast(Dict[str, Any], InstitutionSettingsSerializer(institution).data) if institution else {}
         
         # Devolver todas las instituciones del doctor
         serializer = InstitutionSettingsSerializer(institutions, many=True)

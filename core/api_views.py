@@ -2538,29 +2538,33 @@ def active_institution_with_metrics(request):
     
     # Métricas específicas para esta institución
     try:
-        # Citas por estado
+        # ✅ CORREGIDO: Citas agendadas (con filtro de fecha)
         scheduled_count = Appointment.objects.filter(
             institution=active_inst,
-            status='pending',
+            status='scheduled',  # ✅ CORREGIDO - era 'pending'
             appointment_date__gte=start_date,
             appointment_date__lt=end_date
         ).count()
         
+        # ✅ CORREGIDO: Citas pendientes totales (sin filtro de fecha)
         pending_count = Appointment.objects.filter(
             institution=active_inst,
-            status='pending'
+            status='pending'   # ✅ CORREGIDO - solo pendientes generales
         ).count()
         
+        # ✅ CORREGIDO: Citas en sala de espera
         waiting_count = Appointment.objects.filter(
             institution=active_inst,
-            status='arrived'
+            status='arrived'   # ✅ CORRECTO
         ).count()
         
+        # ✅ CORRECTO: Citas en consulta
         in_consultation_count = Appointment.objects.filter(
             institution=active_inst,
-            status='in_consultation'
+            status='in_consultation'  # ✅ CORRECTO
         ).count()
         
+        # ✅ CORRECTO: Citas completadas (con filtro de fecha)
         completed_count = Appointment.objects.filter(
             institution=active_inst,
             status='completed',
@@ -2568,26 +2572,29 @@ def active_institution_with_metrics(request):
             appointment_date__lt=end_date
         ).count()
         
-        # Métricas financieras
+        # ✅ CORREGIDO: Métricas financieras - usar issued_at en lugar de created_at
         charge_orders = ChargeOrder.objects.filter(
             institution=active_inst,
-            created_at__gte=start_date,
-            created_at__lt=end_date
+            issued_at__gte=start_date,   # ✅ CORREGIDO - era created_at
+            issued_at__lt=end_date       # ✅ CORREGIDO - era created_at
         )
         
         total_amount = sum(order.total for order in charge_orders if order.currency == currency)
+        
+        # ✅ CORREGIDO: Pagos confirmados - usar received_at en lugar de created_at
         payments_count = Payment.objects.filter(
             charge_order__institution=active_inst,
-            created_at__gte=start_date,
-            created_at__lt=end_date,
+            received_at__gte=start_date,  # ✅ CORREGIDO - era created_at
+            received_at__lt=end_date,     # ✅ CORREGIDO - era created_at
             status='confirmed'
         ).count()
         
+        # ✅ CORREGIDO: Órdenes exoneradas - usar issued_at en lugar de created_at
         exempted_count = ChargeOrder.objects.filter(
             institution=active_inst,
             status='waived',
-            created_at__gte=start_date,
-            created_at__lt=end_date
+            issued_at__gte=start_date,   # ✅ CORREGIDO - era created_at
+            issued_at__lt=end_date       # ✅ CORREGIDO - era created_at
         ).count()
         
         metrics = {
