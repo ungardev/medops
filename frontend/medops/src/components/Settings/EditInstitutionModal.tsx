@@ -6,40 +6,54 @@ import {
   ArrowPathIcon, 
   PhotoIcon, 
   ShieldCheckIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  CpuChipIcon
 } from "@heroicons/react/24/outline";
 import { useInstitutionSettings } from "../../hooks/settings/useInstitutionSettings";
 import { useLocationData } from "../../hooks/settings/useLocationData";
-import LocationSelector from "./LocationSelector";
+import FieldSelect from "./FieldSelect";
 interface Props {
   open: boolean;
   onClose: () => void;
 }
 export default function EditInstitutionModal({ open, onClose }: Props) {
   const { data: settings, updateInstitution, isUpdating } = useInstitutionSettings();
-  const { createNeighborhood } = useLocationData();
+  const { createNeighborhood, useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
   
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     tax_id: "",
     address: "",
-    neighborhood: null as number | string | null,
+    // NUEVA ESTRUCTURA JERÁRQUICA COMPLETA
+    countryId: null as number | null,
+    stateId: null as number | null,
+    municipalityId: null as number | null,
     parishId: null as number | null,
+    neighborhood: "" as string,
     logo: null as File | null
   });
   const [preview, setPreview] = useState<string | null>(null);
+  // Hooks para obtener datos geográficos
+  const { data: countries = [], isLoading: loadingCountries } = useCountries();
+  const { data: states = [], isLoading: loadingStates } = useStates(formData.countryId);
+  const { data: municipalities = [], isLoading: loadingMunis } = useMunicipalities(formData.stateId);
+  const { data: parishes = [], isLoading: loadingParishes } = useParishes(formData.municipalityId);
+  const { data: neighborhoods = [], isLoading: loadingHoods } = useNeighborhoods(formData.parishId);
   useEffect(() => {
     if (open && settings) {
-      const rawNB = settings.neighborhood;
-      const finalId = rawNB && typeof rawNB === 'object' ? (rawNB as any).id : rawNB;
+      const neighborhood = settings.neighborhood;
       setFormData({
         name: settings.name || "",
         phone: settings.phone || "",
         tax_id: settings.tax_id || "",
         address: settings.address || "",
-        neighborhood: finalId || null, 
-        parishId: (rawNB as any)?.parish?.id || null,
+        // NUEVA ESTRUCTURA CON IDS JERÁRQUICOS
+        countryId: (neighborhood as any)?.parish?.municipality?.state?.country?.id || null,
+        stateId: (neighborhood as any)?.parish?.municipality?.state?.id || null,
+        municipalityId: (neighborhood as any)?.parish?.municipality?.id || null,
+        parishId: (neighborhood as any)?.parish?.id || null,
+        neighborhood: (neighborhood as any)?.name || "",
         logo: null
       });
       
@@ -62,17 +76,67 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       setPreview(URL.createObjectURL(file));
     }
   };
+  // Handlers de cascada para selectores individuales
+  const handleCountryChange = (val: string) => {
+    const id = val ? Number(val) : null;
+    setFormData(prev => ({ 
+      ...prev, 
+      countryId: id, 
+      stateId: null, 
+      municipalityId: null, 
+      parishId: null, 
+      neighborhood: "" 
+    }));
+  };
+  const handleStateChange = (val: string) => {
+    const id = val ? Number(val) : null;
+    setFormData(prev => ({ 
+      ...prev, 
+      stateId: id, 
+      municipalityId: null, 
+      parishId: null, 
+      neighborhood: "" 
+    }));
+  };
+  const handleMunicipalityChange = (val: string) => {
+    const id = val ? Number(val) : null;
+    setFormData(prev => ({ 
+      ...prev, 
+      municipalityId: id, 
+      parishId: null, 
+      neighborhood: "" 
+    }));
+  };
+  const handleParishChange = (val: string) => {
+    const id = val ? Number(val) : null;
+    setFormData(prev => ({ 
+      ...prev, 
+      parishId: id, 
+      neighborhood: "" 
+    }));
+  };
+  const handleNeighborhoodChange = (val: string) => {
+    setFormData(prev => ({ ...prev, neighborhood: val }));
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.neighborhood) return;
+    // Validación completa de jerarquía
+    if (!formData.countryId || !formData.stateId || !formData.municipalityId || 
+        !formData.parishId || !formData.neighborhood) return;
+    
     try {
       let finalNeighborhoodId: number;
-      if (typeof formData.neighborhood === 'string') {
-        const newNB = await createNeighborhood(formData.neighborhood, formData.parishId!);
+      
+      // Si neighborhood es string (nuevo), crearlo
+      if (typeof formData.neighborhood === 'string' && formData.neighborhood.trim()) {
+        const newNB = await createNeighborhood(formData.neighborhood.trim(), formData.parishId!);
         finalNeighborhoodId = newNB.id;
-      } else {
+      } else if (typeof formData.neighborhood === 'number') {
         finalNeighborhoodId = formData.neighborhood;
+      } else {
+        return; // Validación fallida
       }
+      
       await updateInstitution({
         name: formData.name.toUpperCase(),
         phone: formData.phone,
@@ -175,16 +239,71 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </h3>
             </div>
             
-            <LocationSelector 
-              initialData={{
-                countryId: (settings?.neighborhood as any)?.parish?.municipality?.state?.country?.id,
-                stateId: (settings?.neighborhood as any)?.parish?.municipality?.state?.id,
-                municipalityId: (settings?.neighborhood as any)?.parish?.municipality?.id,
-                parishId: (settings?.neighborhood as any)?.parish?.id,
-                neighborhoodId: (settings?.neighborhood as any)?.id
-              }}
-              onLocationChange={(val, parishId) => setFormData(prev => ({...prev, neighborhood: val, parishId: parishId}))}
-            />
+            {/* NUEVOS 5 SELECTORES INDIVIDUALES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-black/20 border border-[var(--palantir-border)]/30">
+              <FieldSelect
+                label="Country"
+                value={null} // Siempre Venezuela (id=1) por defecto
+                options={countries}
+                onChange={handleCountryChange}
+                disabled={false}
+                loading={loadingCountries}
+              />
+              
+              <FieldSelect
+                label="State"
+                value={formData.stateId}
+                options={states}
+                onChange={handleStateChange}
+                disabled={!formData.countryId}
+                loading={loadingStates}
+              />
+              
+              <FieldSelect
+                label="Municipality"
+                value={formData.municipalityId}
+                options={municipalities}
+                onChange={handleMunicipalityChange}
+                disabled={!formData.stateId}
+                loading={loadingMunis}
+              />
+              
+              <FieldSelect
+                label="Parish"
+                value={formData.parishId}
+                options={parishes}
+                onChange={handleParishChange}
+                disabled={!formData.municipalityId}
+                loading={loadingParishes}
+              />
+              
+              <div className={`flex flex-col gap-1.5 flex-1 min-w-[200px] ${!formData.parishId ? 'opacity-30' : 'opacity-100'}`}>
+                <label className="text-[8px] font-black font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em] flex items-center justify-between px-1">
+                  <span>Neighborhood / Sector</span>
+                  {loadingHoods && <CpuChipIcon className="w-2.5 h-2.5 animate-spin text-[var(--palantir-active)]" />}
+                </label>
+                <div className="relative">
+                  <input
+                    list="neighborhood-options"
+                    value={formData.neighborhood}
+                    disabled={!formData.parishId || loadingHoods}
+                    onChange={(e) => handleNeighborhoodChange(e.target.value)}
+                    placeholder={!formData.parishId ? "-- LOCKED --" : "-- TYPE_OR_SELECT_NEIGHBORHOOD --"}
+                    className="w-full bg-black/60 border border-[var(--palantir-border)] text-[10px] font-mono p-3 rounded-none focus:border-[var(--palantir-active)] outline-none placeholder:text-white/20 uppercase"
+                  />
+                  <datalist id="neighborhood-options">
+                    {neighborhoods.map((n) => (
+                      <option key={n.id} value={n.name} />
+                    ))}
+                  </datalist>
+                  {formData.neighborhood && !neighborhoods.some(n => n.name.toLowerCase() === formData.neighborhood.toLowerCase()) && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+                      <span className="text-[7px] font-black text-[var(--palantir-active)] uppercase tracking-tighter animate-pulse">New_Entry</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           <div className={sectionStyles}>
             <div className="space-y-2">
@@ -199,13 +318,23 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           </div>
         </form>
       </div>
+      
       <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/10">
         <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${formData.neighborhood ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-amber-500 animate-pulse'}`} />
+          <div className={`w-2 h-2 rounded-full ${
+            formData.countryId && formData.stateId && formData.municipalityId && 
+            formData.parishId && formData.neighborhood 
+              ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' 
+              : 'bg-amber-500 animate-pulse'
+          }`} />
           <span className="text-[8px] font-mono font-black text-white/30 uppercase tracking-widest">
-            {formData.neighborhood ? 'GEOGRAPHIC_CHAIN_STABLE' : 'GEOGRAPHIC_CHAIN_BROKEN'}
+            {formData.countryId && formData.stateId && formData.municipalityId && 
+             formData.parishId && formData.neighborhood 
+              ? 'GEOGRAPHIC_CHAIN_STABLE' 
+              : 'GEOGRAPHIC_CHAIN_BROKEN'}
           </span>
         </div>
+        
         <div className="flex gap-4">
           <button 
             type="button" 
@@ -217,8 +346,14 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
           <button 
             form="institution-form" 
             type="submit" 
-            disabled={isUpdating || !formData.neighborhood}
-            className={`flex items-center gap-3 px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all font-mono ${formData.neighborhood ? 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]' : 'bg-white/10 text-white/40 cursor-not-allowed'}`}
+            disabled={isUpdating || !formData.countryId || !formData.stateId || 
+                     !formData.municipalityId || !formData.parishId || !formData.neighborhood}
+            className={`flex items-center gap-3 px-8 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-sm transition-all font-mono ${
+              formData.countryId && formData.stateId && formData.municipalityId && 
+              formData.parishId && formData.neighborhood 
+                ? 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)]' 
+                : 'bg-white/10 text-white/40 cursor-not-allowed'
+            }`}
           >
             {isUpdating ? <ArrowPathIcon className="w-3 h-3 animate-spin" /> : <ShieldCheckIcon className="w-4 h-4" />}
             {isUpdating ? 'SYNCHRONIZING...' : 'SYNCHRONIZE_DATA'}
