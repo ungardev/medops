@@ -23,7 +23,7 @@ const EliteModal: React.FC<EliteModalProps> = ({
   if (!open) return null;
   
   return ReactDOM.createPortal(
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[100] p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[999] p-4" onClick={onClose}>
       <div 
         className={`bg-[#0a0a0a] border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full ${maxWidth} rounded-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200`}
         onClick={(e) => e.stopPropagation()}
@@ -49,6 +49,7 @@ const EliteModal: React.FC<EliteModalProps> = ({
             <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
+        
         {/* Content del Modal */}
         <div className="p-6">
           {children}
@@ -58,5 +59,4 @@ const EliteModal: React.FC<EliteModalProps> = ({
     document.getElementById("modal-root")!
   );
 };
-
 export default EliteModal;
