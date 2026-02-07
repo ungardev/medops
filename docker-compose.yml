@@ -13,7 +13,8 @@ services:
     env_file:
       - .env.production
     environment:
-      - VITE_API_URL=http://backend:8000/api/
+      # ✅ AJUSTADO: Usamos localhost porque el navegador corre en tu Windows, no dentro de Docker
+      - VITE_API_URL=http://localhost:8000/api
       - VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
       - NODE_ENV=production
       - VITE_MEDOPS_ENV=production
@@ -45,8 +46,8 @@ services:
       - .env.production
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DEBUG=False
-      - DJANGO_SETTINGS_MODULE=core.settings_production
+      # ✅ AJUSTADO: Si vas a usar DEBUG=False, recuerda lo de SECURE_SSL_REDIRECT en settings.py
+      - DEBUG=${DEBUG}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS}
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
@@ -54,10 +55,7 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DJANGO_LOG_FILE=${DJANGO_LOG_FILE}
-      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080,https://medops.com,https://www.medops.com
-      - CORS_ALLOW_CREDENTIALS=true
-      - CORS_ALLOWED_METHODS=GET,POST,PUT,DELETE,OPTIONS
-      - CORS_ALLOWED_HEADERS=Content-Type,Authorization,X-Institution-ID,X-Requested-With
+      - CORS_ALLOWED_ORIGINS=http://localhost:8080,http://127.0.0.1:8080
     depends_on:
       db:
         condition: service_started
@@ -71,6 +69,7 @@ services:
       - .:/app
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media
+      - ./data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
       interval: 30s
@@ -92,7 +91,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # ✅ MANTENIDO: El sistema de carpeta local para no perder tus datos actuales
+      - ./postgres_data:/var/lib/postgresql/data
     networks:
       - medops_net
     healthcheck:
@@ -102,7 +102,7 @@ services:
       retries: 5
 
   # ================================
-  # ICD APIS
+  # ICD APIS (WHO)
   # ================================
   icdapi_es:
     image: whoicd/icd-api
@@ -115,12 +115,6 @@ services:
       - include=2025-01_es
     networks:
       - medops_net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/icd/release/11/2025-01/mms"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
 
   icdapi_en:
     image: whoicd/icd-api
@@ -133,12 +127,6 @@ services:
       - include=2025-01_en
     networks:
       - medops_net
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/icd/release/11/2025-01/mms"]
-      interval: 15s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
 
 # ================================
 # NETWORK CONFIGURATION
@@ -146,9 +134,3 @@ services:
 networks:
   medops_net:
     driver: bridge
-
-# ================================
-# VOLUMES CONFIGURATION
-# ================================
-volumes:
-  postgres_data:
