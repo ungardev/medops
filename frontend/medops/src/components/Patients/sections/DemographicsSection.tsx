@@ -239,51 +239,61 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <div className="flex-1 h-[1px] bg-white/20" />
         </div>
         
-        {/* Selectores geográficos usando FieldSelect unificado */}
-        <FieldSelect
-          label="Country"
-          value={form.country_id || null}
-          options={countries}
-          onChange={handleCountryChange}
-          disabled={!editing}
-          loading={loadingCountries}
-        />
+        {/* Selectores geográficos con COLSPAN CORREGIDO - FIX PRINCIPAL */}
+        <div className="col-span-12 md:col-span-2">
+          <FieldSelect
+            label="Country"
+            value={form.country_id || null}
+            options={countries}
+            onChange={handleCountryChange}
+            disabled={!editing}
+            loading={loadingCountries}
+          />
+        </div>
         
-        <FieldSelect
-          label="State"
-          value={form.state_id || null}
-          options={states}
-          onChange={handleStateChange}
-          disabled={!editing || !form.country_id}
-          loading={loadingStates}
-        />
+        <div className="col-span-12 md:col-span-2">
+          <FieldSelect
+            label="State"
+            value={form.state_id || null}
+            options={states}
+            onChange={handleStateChange}
+            disabled={!editing || !form.country_id}
+            loading={loadingStates}
+          />
+        </div>
         
-        <FieldSelect
-          label="Municipality"
-          value={form.municipality_id || null}
-          options={municipalities}
-          onChange={handleMunicipalityChange}
-          disabled={!editing || !form.state_id}
-          loading={loadingMunicipalities}
-        />
+        <div className="col-span-12 md:col-span-2">
+          <FieldSelect
+            label="Municipality"
+            value={form.municipality_id || null}
+            options={municipalities}
+            onChange={handleMunicipalityChange}
+            disabled={!editing || !form.state_id}
+            loading={loadingMunicipalities}
+          />
+        </div>
         
-        <FieldSelect
-          label="Parish"
-          value={form.parish_id || null}
-          options={parishes}
-          onChange={handleParishChange}
-          disabled={!editing || !form.municipality_id}
-          loading={loadingParishes}
-        />
+        <div className="col-span-12 md:col-span-2">
+          <FieldSelect
+            label="Parish"
+            value={form.parish_id || null}
+            options={parishes}
+            onChange={handleParishChange}
+            disabled={!editing || !form.municipality_id}
+            loading={loadingParishes}
+          />
+        </div>
         
-        <FieldSelect
-          label="Neighborhood"
-          value={form.neighborhood_id || null}
-          options={neighborhoods}
-          onChange={handleNeighborhoodChange}
-          disabled={!editing || !form.parish_id}
-          loading={loadingNeighborhoods}
-        />
+        <div className="col-span-12 md:col-span-2">
+          <FieldSelect
+            label="Neighborhood"
+            value={form.neighborhood_id || null}
+            options={neighborhoods}
+            onChange={handleNeighborhoodChange}
+            disabled={!editing || !form.parish_id}
+            loading={loadingNeighborhoods}
+          />
+        </div>
         
         <div className="col-span-7">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Full_Address_Details</label>
