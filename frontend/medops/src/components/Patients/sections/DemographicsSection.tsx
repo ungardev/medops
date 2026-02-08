@@ -21,9 +21,11 @@ interface DemographicsSectionProps {
 }
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
-  const chain = useMemo(() => (patient.address_chain as any) || {}, [patient.address_chain]);
   
-  // Estado del formulario con neighborhood_name para manejo interno
+  // ✅ FIX: Extraer neighborhood directamente de patient
+  const neighborhood = patient.neighborhood;
+  
+  // Estado del formulario
   const [form, setForm] = useState<Partial<PatientInput> & { 
     neighborhood_name?: string 
   }>({});
@@ -31,7 +33,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const [errors, setErrors] = useState<Record<string, string>>({});
   const updatePatient = useUpdatePatient(patient.id);
   
-  // ✅ Importar createNeighborhood también
   const {
     createNeighborhood,
     useCountries,
@@ -67,8 +68,24 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     parishesResult.isLoading || 
     neighborhoodsResult.isLoading
   );
+  // ✅ FIX: Extraer IDs de neighborhood.parish.municipality.state.country
   useEffect(() => {
-    const neighborhood = patient.neighborhood || chain.neighborhood;
+    // Extraer la jerarquía completa desde patient.neighborhood
+    const parish = neighborhood?.parish;
+    const municipality = parish?.municipality;
+    const state = municipality?.state;
+    const country = state?.country;
+    
+    // ✅ DEBUG: Ver qué estamos recibiendo (puedes quitar después)
+    console.log('🔍 DEBUG - Jerarquía recibida:', {
+      country_id: country?.id,
+      state_id: state?.id,
+      municipality_id: municipality?.id,
+      parish_id: parish?.id,
+      neighborhood_id: neighborhood?.id,
+      neighborhood_name: neighborhood?.name
+    });
+    
     setForm({
       national_id: patient.national_id ?? "",
       first_name: patient.first_name ?? "",
@@ -80,15 +97,16 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       birth_country: patient.birth_country ?? "",
       email: patient.email ?? "",
       contact_info: patient.contact_info ?? "",
-      country_id: chain.country_id,
-      state_id: chain.state_id,
-      municipality_id: chain.municipality_id,
-      parish_id: chain.parish_id,
-      neighborhood_id: neighborhood?.id || undefined,
-      neighborhood_name: neighborhood?.name || "",
+      // ✅ FIX: Extraer IDs desde la jerarquía de neighborhood
+      country_id: country?.id,
+      state_id: state?.id,
+      municipality_id: municipality?.id,
+      parish_id: parish?.id,
+      neighborhood_id: neighborhood?.id,
+      neighborhood_name: neighborhood?.name ?? "",
       address: patient.address ?? ""
     });
-  }, [patient, chain]);
+  }, [patient, neighborhood]);
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!form.first_name?.trim()) newErrors.first_name = "Nombre requerido";
@@ -97,14 +115,12 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  // ✅ FIX: handleSave ahora es async y crea neighborhood si es necesario
   const handleSave = async () => {
     if (!validateForm()) return;
     
     try {
       let finalNeighborhoodId: number | undefined;
       
-      // Si hay nombre de neighborhood pero no ID, crearlo primero
       if (form.neighborhood_name && !form.neighborhood_id && form.parish_id) {
         console.log("Creating new neighborhood:", form.neighborhood_name);
         const newNB = await createNeighborhood(form.neighborhood_name.trim(), form.parish_id);
@@ -113,7 +129,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         finalNeighborhoodId = form.neighborhood_id;
       }
       
-      // ✅ Construir payload LIMPIO con solo campos válidos de PatientInput
       const payload: Partial<PatientInput> = {
         national_id: form.national_id || undefined,
         first_name: form.first_name,
@@ -124,13 +139,8 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         birth_place: form.birth_place || undefined,
         birth_country: form.birth_country || undefined,
         email: form.email || undefined,
-        contact_info: form.contact_info || undefined, // ✅ Contact_Line
-        address: form.address || undefined, // ✅ Address
-        // ✅ Campos de ubicación jerárquica
-        country_id: form.country_id,
-        state_id: form.state_id,
-        municipality_id: form.municipality_id,
-        parish_id: form.parish_id,
+        contact_info: form.contact_info || undefined,
+        address: form.address || undefined,
         neighborhood_id: finalNeighborhoodId,
       };
       
@@ -194,7 +204,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_name: ""
     }));
   };
-  // ✅ Manejar neighborhood igual que EditInstitutionModal
   const handleNeighborhoodChange = (val: string) => {
     const existingNeighborhood = neighborhoods.find(
       n => n.name.toLowerCase() === val.toLowerCase()
@@ -305,7 +314,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        {/* ✅ Birth_Date con calendario nativo y estilo mejorado */}
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Birth_Date</label>
           <div className="relative">
@@ -315,9 +323,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
               onChange={(e) => setForm(prev => ({ ...prev, birthdate: e.target.value }))}
               disabled={!editing}
               className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30 appearance-none cursor-pointer"
-              style={{
-                colorScheme: 'dark' // ✅ Esto fuerza el tema oscuro en el calendario nativo
-              }}
+              style={{ colorScheme: 'dark' }}
             />
             {editing && (
               <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
@@ -336,7 +342,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        {/* ✅ Contact_Line - Asegurar que persiste */}
         <div className="col-span-12 md:col-span-6">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Contact_Line</label>
           <input
@@ -401,7 +406,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        {/* ✅ Campo Neighborhood con datalist y New_Entry indicator */}
         <div className="col-span-12 md:col-span-4">
           <div className={`flex flex-col gap-1.5 ${(!form.parish_id || isLoadingNeighborhoods) ? 'opacity-30' : 'opacity-100'}`}>
             <label className="text-[8px] font-black font-mono text-white/30 uppercase tracking-[0.2em] flex items-center justify-between px-1">
@@ -431,7 +435,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           </div>
         </div>
         
-        {/* ✅ Full_Address_Details */}
         <div className="col-span-12">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Full_Address_Details</label>
           <textarea
