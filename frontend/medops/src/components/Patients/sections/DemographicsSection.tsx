@@ -21,11 +21,10 @@ interface DemographicsSectionProps {
 }
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false); // ✅ FIX: Flag para inicialización única
   
-  // ✅ FIX: Extraer neighborhood directamente de patient
   const neighborhood = patient.neighborhood;
   
-  // Estado del formulario
   const [form, setForm] = useState<Partial<PatientInput> & { 
     neighborhood_name?: string 
   }>({});
@@ -68,22 +67,22 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     parishesResult.isLoading || 
     neighborhoodsResult.isLoading
   );
-  // ✅ FIX: Extraer IDs de neighborhood.parish.municipality.state.country
+  // ✅ FIX: Solo inicializar una vez con dependencias estables
   useEffect(() => {
-    // Extraer la jerarquía completa desde patient.neighborhood
+    // Si ya fue inicializado, no volver a setear el formulario
+    if (isInitialized) return;
+    
     const parish = neighborhood?.parish;
     const municipality = parish?.municipality;
     const state = municipality?.state;
     const country = state?.country;
     
-    // ✅ DEBUG: Ver qué estamos recibiendo (puedes quitar después)
-    console.log('🔍 DEBUG - Jerarquía recibida:', {
+    console.log('🔍 DEBUG - Inicializando formulario:', {
       country_id: country?.id,
       state_id: state?.id,
       municipality_id: municipality?.id,
       parish_id: parish?.id,
       neighborhood_id: neighborhood?.id,
-      neighborhood_name: neighborhood?.name
     });
     
     setForm({
@@ -97,7 +96,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       birth_country: patient.birth_country ?? "",
       email: patient.email ?? "",
       contact_info: patient.contact_info ?? "",
-      // ✅ FIX: Extraer IDs desde la jerarquía de neighborhood
       country_id: country?.id,
       state_id: state?.id,
       municipality_id: municipality?.id,
@@ -106,7 +104,9 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_name: neighborhood?.name ?? "",
       address: patient.address ?? ""
     });
-  }, [patient, neighborhood]);
+    
+    setIsInitialized(true); // ✅ Marcar como inicializado
+  }, [patient.id, neighborhood?.id]); // ✅ FIX: Dependencias estables (IDs, no objetos completos)
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!form.first_name?.trim()) newErrors.first_name = "Nombre requerido";
