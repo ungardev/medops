@@ -1,5 +1,5 @@
 // src/hooks/helpers/usePaginatedData.ts
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 interface PaginatedResponse<T> {
@@ -12,6 +12,7 @@ interface UsePaginatedDataOptions<T> {
   endpoint: string;
   enabled?: boolean;
   queryParams?: Record<string, any>;
+  filterFn?: (item: T, queryParams: Record<string, any>) => boolean;
   maxPages?: number;
   timeout?: number;
 }
@@ -19,95 +20,77 @@ function usePaginatedData<T>({
   endpoint, 
   enabled = true, 
   queryParams = {},
+  filterFn,
   maxPages = 100,
   timeout = 30000
 }: UsePaginatedDataOptions<T>) {
   const [totalCount, setTotalCount] = useState(0);
   const fetchAllPages = async (): Promise<T[]> => {
-    console.log(`🔍 Starting fetch all pages for ${endpoint}`, { queryParams });
+    console.log(`🔍 Starting fetch all pages for ${endpoint}`);
     let page = 1;
     let allData: T[] = [];
     let hasNext = true;
     let pageCount = 0;
-    let expectedTotal = 0;
     
     while (hasNext && page <= maxPages) {
-      // ✅ CONSTRUIR PARAMS CORRECTAMENTE
-      const params: Record<string, string> = {};
-      
-      // Agregar queryParams personalizados (country, state, etc.)
-      Object.entries(queryParams).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          params[key] = String(value);
-        }
-      });
-      
-      // Agregar paginación
-      params.page = page.toString();
-      
-      console.log(`🔍 ${endpoint} - Page ${page} params:`, params);
-      
       try {
         const response = await api.get<PaginatedResponse<T>>(
           endpoint,
           { 
-            params,
+            params: { page: page.toString() },
             timeout 
           }
         );
         
-        console.log(`🔍 ${endpoint} page ${page}:`, {
-          results: response.data.results.length,
-          total: response.data.count,
-          hasNext: !!response.data.next
-        });
-        
         allData = [...allData, ...response.data.results];
         
-        // Guardar total esperado desde primera página
         if (page === 1) {
-          expectedTotal = response.data.count;
           setTotalCount(response.data.count);
         }
         
-        // Verificar si hay más páginas
         hasNext = response.data.next !== null;
         page++;
         pageCount++;
         
-        // Safety limits
         if (allData.length >= 10000) {
           console.warn(`🔍 ${endpoint}: Max items (10000) reached`);
           break;
         }
         
-      } catch (error: unknown) {
+      } catch (error) {
         console.error(`🔍 ${endpoint} page ${page} error:`, error);
         break;
       }
     }
     
-    console.log(`🔍 ${endpoint} complete:`, {
-      pages: pageCount,
-      items: allData.length,
-      expected: expectedTotal
-    });
-    
+    console.log(`🔍 ${endpoint} complete: ${allData.length} items`);
     return allData;
   };
   const query = useQuery({
-    queryKey: [endpoint, 'all', queryParams],
+    queryKey: [endpoint, 'all'],
     queryFn: fetchAllPages,
     enabled,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
+  // ✅ FILTRAR DATOS EN EL FRONTEND
+  const filteredData = useMemo(() => {
+    if (!query.data) return [];
+    if (!filterFn || !queryParams || Object.keys(queryParams).length === 0) {
+      return query.data;
+    }
+    
+    console.log(`🔍 Filtering ${endpoint} with params:`, queryParams);
+    const filtered = query.data.filter(item => filterFn(item, queryParams));
+    console.log(`🔍 ${endpoint} filtered: ${filtered.length}/${query.data.length}`);
+    return filtered;
+  }, [query.data, filterFn, queryParams, endpoint]);
   return {
-    data: query.data || [],
+    data: filteredData,
     isLoading: query.isLoading,
     error: query.error,
-    totalCount,
-    isLoadingPages: query.isLoading ? 1 : 0, // ✅ Retornar number en lugar de boolean
+    totalCount: filteredData.length,
+    isLoadingPages: query.isLoading ? 1 : 0,
     refetch: query.refetch
   };
 }
