@@ -1207,12 +1207,15 @@ def update_institution_settings_ext(
                 if hasattr(settings_obj, key):
                     setattr(settings_obj, key, file)
         
-        if user.is_authenticated:
+        # ✅ FIX: Línea 1210 - Agregar 'user and' antes de 'user.is_authenticated'
+        if user and user.is_authenticated:
             settings_obj.updated_by = user
         
         settings_obj.save()
         
-        logger.info(f"Institution {settings_obj.name} updated by {user.username}")
+        # ✅ FIX: Línea 1215 - También necesita verificar que user existe
+        username = user.username if user and user.is_authenticated else "Anonymous"
+        logger.info(f"Institution {settings_obj.name} updated by {username}")
         return settings_obj
     
     except InstitutionSettings.DoesNotExist:
