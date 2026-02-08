@@ -2,10 +2,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import { InstitutionSettings } from "@/types/config";
-
 export function useInstitutionSettings() {
   const queryClient = useQueryClient();
-
   const query = useQuery<InstitutionSettings>({
     queryKey: ["config", "institution"],
     queryFn: async () => {
@@ -22,23 +20,39 @@ export function useInstitutionSettings() {
     },
     staleTime: 1000 * 60 * 5,
   });
-
   const mutation = useMutation({
-    mutationFn: async (payload: Partial<InstitutionSettings>) => {
-      // Si hay un archivo de logo, hay que usar FormData, si no, JSON es más limpio
+    mutationFn: async (payload: Partial<InstitutionSettings> & { neighborhood?: number }) => {
+      // Si hay un archivo de logo, hay que usar FormData
       if (payload.logo instanceof File) {
          const formData = new FormData();
+         
+         // ✅ FIX: Manejar cada campo correctamente según su tipo
          Object.keys(payload).forEach(key => {
-             const val = payload[key as keyof InstitutionSettings];
-             if (val !== undefined && val !== null) formData.append(key, val as any);
+             const val = payload[key as keyof typeof payload];
+             
+             if (val === undefined || val === null) return;
+             
+             // ✅ Los números deben convertirse a string para FormData
+             if (key === 'neighborhood' && typeof val === 'number') {
+                 formData.append(key, String(val));
+             } 
+             // ✅ El archivo va directo
+             else if (val instanceof File) {
+                 formData.append(key, val);
+             }
+             // ✅ Los demás campos como strings
+             else {
+                 formData.append(key, String(val));
+             }
          });
+         
          const res = await api.patch<InstitutionSettings>("config/institution/", formData, {
             headers: { "Content-Type": "multipart/form-data" },
          });
          return res.data;
       }
       
-      // Actualización estándar (JSON) para cambios rápidos fintech/dirección
+      // ✅ Actualización estándar (JSON) - el neighborhood ya es número aquí
       const res = await api.patch<InstitutionSettings>("config/institution/", payload);
       return res.data;
     },
@@ -47,7 +61,6 @@ export function useInstitutionSettings() {
       queryClient.invalidateQueries({ queryKey: ["config", "institution"] });
     },
   });
-
   return {
     ...query,
     updateInstitution: mutation.mutateAsync,
