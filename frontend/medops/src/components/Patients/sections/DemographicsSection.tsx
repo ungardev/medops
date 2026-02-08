@@ -21,7 +21,6 @@ interface DemographicsSectionProps {
 }
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false); // ✅ FIX: Flag para inicialización única
   
   const neighborhood = patient.neighborhood;
   
@@ -67,17 +66,15 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     parishesResult.isLoading || 
     neighborhoodsResult.isLoading
   );
-  // ✅ FIX: Solo inicializar una vez con dependencias estables
+  // ✅ FIX: Se ejecuta cuando llegan los datos del paciente
   useEffect(() => {
-    // Si ya fue inicializado, no volver a setear el formulario
-    if (isInitialized) return;
-    
     const parish = neighborhood?.parish;
     const municipality = parish?.municipality;
     const state = municipality?.state;
     const country = state?.country;
     
-    console.log('🔍 DEBUG - Inicializando formulario:', {
+    console.log('🔍 DEBUG - Actualizando form:', {
+      hasNeighborhood: !!neighborhood,
       country_id: country?.id,
       state_id: state?.id,
       municipality_id: municipality?.id,
@@ -85,28 +82,35 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_id: neighborhood?.id,
     });
     
-    setForm({
-      national_id: patient.national_id ?? "",
-      first_name: patient.first_name ?? "",
-      middle_name: patient.middle_name ?? "",
-      last_name: patient.last_name ?? "",
-      second_last_name: patient.second_last_name ?? "",
-      birthdate: patient.birthdate ?? "",
-      birth_place: patient.birth_place ?? "",
-      birth_country: patient.birth_country ?? "",
-      email: patient.email ?? "",
-      contact_info: patient.contact_info ?? "",
-      country_id: country?.id,
-      state_id: state?.id,
-      municipality_id: municipality?.id,
-      parish_id: parish?.id,
-      neighborhood_id: neighborhood?.id,
-      neighborhood_name: neighborhood?.name ?? "",
-      address: patient.address ?? ""
-    });
+    // ✅ Solo actualizar ubicación si tenemos los datos del neighborhood
+    if (neighborhood) {
+      setForm(prev => ({
+        ...prev,
+        country_id: country?.id,
+        state_id: state?.id,
+        municipality_id: municipality?.id,
+        parish_id: parish?.id,
+        neighborhood_id: neighborhood.id,
+        neighborhood_name: neighborhood.name ?? "",
+      }));
+    }
     
-    setIsInitialized(true); // ✅ Marcar como inicializado
-  }, [patient.id, neighborhood?.id]); // ✅ FIX: Dependencias estables (IDs, no objetos completos)
+    // ✅ Actualizar datos básicos siempre
+    setForm(prev => ({
+      ...prev,
+      national_id: patient.national_id ?? prev.national_id ?? "",
+      first_name: patient.first_name ?? prev.first_name ?? "",
+      middle_name: patient.middle_name ?? prev.middle_name ?? "",
+      last_name: patient.last_name ?? prev.last_name ?? "",
+      second_last_name: patient.second_last_name ?? prev.second_last_name ?? "",
+      birthdate: patient.birthdate ?? prev.birthdate ?? "",
+      birth_place: patient.birth_place ?? prev.birth_place ?? "",
+      birth_country: patient.birth_country ?? prev.birth_country ?? "",
+      email: patient.email ?? prev.email ?? "",
+      contact_info: patient.contact_info ?? prev.contact_info ?? "",
+      address: patient.address ?? prev.address ?? ""
+    }));
+  }, [patient, neighborhood]); // ✅ Se ejecuta cuando cambian los datos
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!form.first_name?.trim()) newErrors.first_name = "Nombre requerido";
