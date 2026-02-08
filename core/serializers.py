@@ -193,6 +193,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
         allow_null=True,
         source="neighborhood"
     )
+    
     class Meta:
         model = Patient
         fields = [
@@ -202,30 +203,34 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "last_name", 
             "second_last_name",
             "national_id", 
-            "birthdate",  # ✅ Corregido (sin guion)
+            "birthdate",
             "birth_place", 
             "birth_country",
             "gender", 
             "phone_number", 
-            "email", 
-            "address",       # ✅ CAMBIADO de address_detail a address
-            "neighborhood",  # ✅ AGREGADO para lectura
-            "neighborhood_id",  # ✅ Para escritura
+            "email",
+            "contact_info",  # ✅ AGREGADO: Campo que faltaba
+            "address",
+            "neighborhood",
+            "neighborhood_id",
             "weight", 
             "height", 
             "blood_type", 
             "genetic_predispositions", 
             "active"
         ]
+    
     def validate_birthdate(self, value):
         if value and value > date.today():
             raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
         return value
+    
     def save(self, **kwargs):
         v_data = cast(Dict[str, Any], self.validated_data)
-        # ✅ CAMBIADO de address_detail a address
         if v_data.get('address') is None:
             v_data['address'] = ""
+        if v_data.get('contact_info') is None:  # ✅ AGREGADO: Default vacío
+            v_data['contact_info'] = ""
         return super().save(**kwargs)
 
 
