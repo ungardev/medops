@@ -23,7 +23,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const [form, setForm] = useState<Partial<PatientInput>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const updatePatient = useUpdatePatient(patient.id);
-  // Importar hooks de datos geográficos reales
   const {
     useCountries,
     useStates,
@@ -31,7 +30,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     useParishes,
     useNeighborhoods
   } = useLocationData();
-  // Hooks para obtener datos reales con nueva estructura
+  // Hooks para obtener datos reales
   const countriesResult = useCountries();
   const statesResult = useStates(form.country_id);
   const municipalitiesResult = useMunicipalities(form.state_id);
@@ -47,21 +46,14 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const isLoadingMunicipalities = municipalitiesResult.isLoading;
   const isLoadingParishes = parishesResult.isLoading;
   const isLoadingNeighborhoods = neighborhoodsResult.isLoading;
-  const isLoadingPages = countriesResult.isLoadingPages || statesResult.isLoadingPages || 
-                        municipalitiesResult.isLoadingPages || parishesResult.isLoadingPages || 
-                        neighborhoodsResult.isLoadingPages;
-  // 🚀 DEBUGGING MEJORADO - VERIFICAR CARGA COMPLETA
-  useEffect(() => {
-    console.log('🔍 DemographicsSection - Countries Data:', {
-      count: countries.length,
-      totalCount: countriesResult.totalCount,
-      loading: isLoadingCountries,
-      loadingPages: countriesResult.isLoadingPages,
-      error: countriesResult.error,
-      sample: countries.slice(0, 3),
-      isComplete: countries.length >= countriesResult.totalCount
-    });
-  }, [countries, countriesResult.totalCount, isLoadingCountries, countriesResult.isLoadingPages, countriesResult.error]);
+  // ✅ FIX: Convertir a boolean explícito para evitar el "0"
+  const isLoadingAny = Boolean(
+    countriesResult.isLoading || 
+    statesResult.isLoading || 
+    municipalitiesResult.isLoading || 
+    parishesResult.isLoading || 
+    neighborhoodsResult.isLoading
+  );
   useEffect(() => {
     setForm({
       national_id: patient.national_id ?? "",
@@ -101,7 +93,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       onError: () => setErrors({ general: "ERR_SYNC_FAILED" })
     });
   };
-  // Handlers con cascada real y validación
   const handleCountryChange = (v: string) => {
     const id = v ? Number(v) : undefined;
     setForm(prev => ({ 
@@ -162,23 +153,21 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
             </button>
             <button 
               onClick={handleSave} 
-              // 🔥 CORRECCIÓN: Convertir a boolean explícito
-              disabled={isLoadingPages ? true : false}
+              disabled={isLoadingAny}
               className="flex items-center gap-1.5 px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white text-[9px] font-bold rounded-sm border border-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <CheckIcon className="w-3.5 h-3.5" /> 
-              {isLoadingPages ? 'CARGANDO DATOS...' : 'GUARDAR CAMBIOS'}
+              {isLoadingAny ? 'CARGANDO...' : 'GUARDAR CAMBIOS'}
             </button>
           </div>
         ) : (
           <button 
             onClick={() => setEditing(true)} 
-              // 🔥 CORRECCIÓN: Convertir a boolean explícito
-              disabled={isLoadingPages ? true : false}
-              className="flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/10 text-white text-[9px] font-mono text-white/60 hover:text-white hover:bg-white/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoadingAny}
+            className="flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/10 text-white text-[9px] font-mono text-white/60 hover:text-white hover:bg-white/10 transition-all rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <PencilSquareIcon className="w-3.5 h-3.5" /> 
-            {isLoadingPages ? 'CARGANDO...' : 'MODIFICAR REGISTRO'}
+            {isLoadingAny ? 'CARGANDO...' : 'MODIFICAR REGISTRO'}
           </button>
         )}
       </div>
@@ -190,18 +179,18 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         </div>
       )}
       
-      {/* 🚀 INDICADOR DE PROGRESO */}
-      {isLoadingPages && (
+      {/* ✅ INDICADOR SIMPLE DE CARGA */}
+      {isLoadingAny && (
         <div className="px-5 py-2 bg-blue-500/10 border-b border-blue-500/30 flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent animate-spin"></div>
           <span className="text-[10px] font-mono text-blue-500">
-            Cargando datos geográficos completos... Por favor espere.
+            Cargando datos geográficos...
           </span>
         </div>
       )}
       
       <form 
-        onSubmit={(e) => { e.preventDefault(); if (editing && !isLoadingPages) handleSave(); }}
+        onSubmit={(e) => { e.preventDefault(); if (editing && !isLoadingAny) handleSave(); }}
         className="p-6 grid grid-cols-12 gap-x-6 gap-y-6"
       >
         {/* Campos básicos */}
@@ -278,41 +267,9 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <div className="flex-1 h-[1px] bg-white/20" />
         </div>
         
-        {/* 🚀 INDICADORES DE DATOS CARGADOS */}
-        <div className="col-span-12 grid grid-cols-5 gap-2 text-[7px] font-mono text-white/40">
-          <div className="text-center">
-            <div>Countries</div>
-            <div className="text-emerald-400 font-bold">
-              {countries.length}/{countriesResult.totalCount || 0}
-            </div>
-          </div>
-          <div className="text-center">
-            <div>States</div>
-            <div className="text-emerald-400 font-bold">
-              {states.length}/{statesResult.totalCount || 0}
-            </div>
-          </div>
-          <div className="text-center">
-            <div>Municipalities</div>
-            <div className="text-emerald-400 font-bold">
-              {municipalities.length}/{municipalitiesResult.totalCount || 0}
-            </div>
-          </div>
-          <div className="text-center">
-            <div>Parishes</div>
-            <div className="text-emerald-400 font-bold">
-              {parishes.length}/{parishesResult.totalCount || 0}
-            </div>
-          </div>
-          <div className="text-center">
-            <div>Neighborhoods</div>
-            <div className="text-emerald-400 font-bold">
-              {neighborhoods.length}/{neighborhoodsResult.totalCount || 0}
-            </div>
-          </div>
-        </div>
+        {/* ✅ ELIMINADOS: Indicadores de conteo X/Y */}
         
-        {/* Selectores geográficos CON LAYOUT CORREGIDO */}
+        {/* Selectores geográficos CON JERARQUÍA CORREGIDA */}
         <div className="col-span-12 md:col-span-2">
           <FieldSelect
             label="Country"

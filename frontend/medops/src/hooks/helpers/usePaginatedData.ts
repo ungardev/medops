@@ -23,27 +23,37 @@ function usePaginatedData<T>({
   timeout = 30000
 }: UsePaginatedDataOptions<T>) {
   const [totalCount, setTotalCount] = useState(0);
-  const [currentLoadingPages, setCurrentLoadingPages] = useState(0);
   const fetchAllPages = async (): Promise<T[]> => {
-    console.log(`🔍 Starting fetch all pages for ${endpoint}`);
+    console.log(`🔍 Starting fetch all pages for ${endpoint}`, { queryParams });
     let page = 1;
     let allData: T[] = [];
     let hasNext = true;
     let pageCount = 0;
+    let expectedTotal = 0;
     
     while (hasNext && page <= maxPages) {
-      setCurrentLoadingPages(pageCount + 1);
+      // ✅ CONSTRUIR PARAMS CORRECTAMENTE
+      const params: Record<string, string> = {};
       
-      const params = new URLSearchParams({
-        ...queryParams,
-        page: page.toString()
+      // Agregar queryParams personalizados (country, state, etc.)
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params[key] = String(value);
+        }
       });
       
+      // Agregar paginación
+      params.page = page.toString();
+      
+      console.log(`🔍 ${endpoint} - Page ${page} params:`, params);
+      
       try {
-        // ✅ SOLUCIÓN: Usar timeout nativo de Axios
         const response = await api.get<PaginatedResponse<T>>(
-          `${endpoint}?${params}`,
-          { timeout }
+          endpoint,
+          { 
+            params,
+            timeout 
+          }
         );
         
         console.log(`🔍 ${endpoint} page ${page}:`, {
@@ -54,19 +64,20 @@ function usePaginatedData<T>({
         
         allData = [...allData, ...response.data.results];
         
-        // Set total count from first page
+        // Guardar total esperado desde primera página
         if (page === 1) {
+          expectedTotal = response.data.count;
           setTotalCount(response.data.count);
         }
         
-        // Check if there are more pages
+        // Verificar si hay más páginas
         hasNext = response.data.next !== null;
         page++;
         pageCount++;
         
         // Safety limits
-        if (allData.length >= 5000) {
-          console.warn(`🔍 ${endpoint}: Max items (5000) reached`);
+        if (allData.length >= 10000) {
+          console.warn(`🔍 ${endpoint}: Max items (10000) reached`);
           break;
         }
         
@@ -76,12 +87,10 @@ function usePaginatedData<T>({
       }
     }
     
-    setCurrentLoadingPages(0);
-    
     console.log(`🔍 ${endpoint} complete:`, {
       pages: pageCount,
       items: allData.length,
-      expected: totalCount
+      expected: expectedTotal
     });
     
     return allData;
@@ -90,15 +99,15 @@ function usePaginatedData<T>({
     queryKey: [endpoint, 'all', queryParams],
     queryFn: fetchAllPages,
     enabled,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
   return {
     data: query.data || [],
     isLoading: query.isLoading,
     error: query.error,
     totalCount,
-    isLoadingPages: currentLoadingPages,
+    isLoadingPages: query.isLoading ? 1 : 0, // ✅ Retornar number en lugar de boolean
     refetch: query.refetch
   };
 }

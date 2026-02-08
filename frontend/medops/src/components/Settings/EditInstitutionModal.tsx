@@ -32,8 +32,9 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     neighborhood: "" as string,
     logo: null as File | null
   });
+  
   const [preview, setPreview] = useState<string | null>(null);
-  // Hooks para obtener datos geográficos con nueva estructura
+  // Hooks para obtener datos geográficos
   const countriesResult = useCountries();
   const statesResult = useStates(formData.countryId);
   const municipalitiesResult = useMunicipalities(formData.stateId);
@@ -49,21 +50,14 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
   const isLoadingMunis = municipalitiesResult.isLoading;
   const loadingParishes = parishesResult.isLoading;
   const loadingHoods = neighborhoodsResult.isLoading;
-  const isLoadingPages = countriesResult.isLoadingPages || statesResult.isLoadingPages || 
-                        municipalitiesResult.isLoadingPages || parishesResult.isLoadingPages || 
-                        neighborhoodsResult.isLoadingPages;
-  // 🚀 DEBUGGING MEJORADO - VERIFICAR CARGA COMPLETA
-  useEffect(() => {
-    console.log('🔍 EditInstitutionModal - Countries Data:', {
-      count: countries.length,
-      totalCount: countriesResult.totalCount,
-      loading: isLoadingCountries,
-      loadingPages: countriesResult.isLoadingPages,
-      error: countriesResult.error,
-      sample: countries.slice(0, 3),
-      isComplete: countries.length >= countriesResult.totalCount
-    });
-  }, [countries, countriesResult.totalCount, isLoadingCountries, countriesResult.isLoadingPages, countriesResult.error]);
+  // ✅ FIX: Convertir a boolean explícito
+  const isLoadingAny = Boolean(
+    countriesResult.isLoading || 
+    statesResult.isLoading || 
+    municipalitiesResult.isLoading || 
+    parishesResult.isLoading || 
+    neighborhoodsResult.isLoading
+  );
   useEffect(() => {
     if (open && settings) {
       const neighborhood = settings.neighborhood;
@@ -99,7 +93,6 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       setPreview(URL.createObjectURL(file));
     }
   };
-  // Handlers de cascada para selectores individuales
   const handleCountryChange = (val: string) => {
     const id = val ? Number(val) : null;
     setFormData(prev => ({ 
@@ -143,21 +136,19 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
   };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Validación completa de jerarquía
     if (!formData.countryId || !formData.stateId || !formData.municipalityId || 
         !formData.parishId || !formData.neighborhood) return;
     
     try {
       let finalNeighborhoodId: number;
       
-      // Si neighborhood es string (nuevo), crearlo
       if (typeof formData.neighborhood === 'string' && formData.neighborhood.trim()) {
         const newNB = await createNeighborhood(formData.neighborhood.trim(), formData.parishId!);
         finalNeighborhoodId = newNB.id;
       } else if (typeof formData.neighborhood === 'number') {
         finalNeighborhoodId = formData.neighborhood;
       } else {
-        return; // Validación fallida
+        return;
       }
       
       await updateInstitution({
@@ -187,12 +178,12 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       maxWidth="4xl"
     >
       <div className="space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
-        {/* 🚀 INDICADOR DE PROGRESO */}
-        {isLoadingPages && (
+        {/* ✅ INDICADOR SIMPLE DE CARGA */}
+        {isLoadingAny && (
           <div className="px-4 py-3 bg-blue-500/10 border border-blue-500/30 flex items-center gap-3">
             <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent animate-spin"></div>
             <span className="text-[10px] font-mono text-blue-500">
-              Cargando todos los datos geográficos... Por favor espere.
+              Cargando datos geográficos...
             </span>
           </div>
         )}
@@ -272,41 +263,9 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </h3>
             </div>
              
-            {/* 🚀 INDICADORES DE DATOS CARGADOS */}
-            <div className="grid grid-cols-5 gap-2 text-[7px] font-mono text-white/40 mb-4">
-              <div className="text-center">
-                <div>Countries</div>
-                <div className="text-emerald-400 font-bold">
-                  {countries.length}/{countriesResult.totalCount || 0}
-                </div>
-              </div>
-              <div className="text-center">
-                <div>States</div>
-                <div className="text-emerald-400 font-bold">
-                  {states.length}/{statesResult.totalCount || 0}
-                </div>
-              </div>
-              <div className="text-center">
-                <div>Municipalities</div>
-                <div className="text-emerald-400 font-bold">
-                  {municipalities.length}/{municipalitiesResult.totalCount || 0}
-                </div>
-              </div>
-              <div className="text-center">
-                <div>Parishes</div>
-                <div className="text-emerald-400 font-bold">
-                  {parishes.length}/{parishesResult.totalCount || 0}
-                </div>
-              </div>
-              <div className="text-center">
-                <div>Neighborhoods</div>
-                <div className="text-emerald-400 font-bold">
-                  {neighborhoods.length}/{neighborhoodsResult.totalCount || 0}
-                </div>
-              </div>
-            </div>
+            {/* ✅ ELIMINADOS: Indicadores de conteo X/Y */}
              
-            {/* 5 SELECTORES CON LAYOUT CORREGIDO */}
+            {/* 5 SELECTORES CON JERARQUÍA CORREGIDA */}
             <div className="grid grid-cols-12 gap-4 p-4 bg-black/20 border border-white/10/30">
               <div className="col-span-12 md:col-span-2">
                 <FieldSelect
