@@ -4,7 +4,7 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: false,
 });
-// DEBUGGING TEMPORAL - VERIFICAR VARIABLES DE ENTORNO
+// DEBUGGING TEMPORAL - Verificar variables de entorno
 console.log('🔍 VITE_API_URL:', import.meta.env.VITE_API_URL);
 console.log('🔍 VITE_DEV_TOKEN:', import.meta.env.VITE_DEV_TOKEN);
 // aplicar token inicial si existe
