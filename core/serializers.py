@@ -241,13 +241,16 @@ class PatientReadSerializer(serializers.ModelSerializer):
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
     address_chain = serializers.SerializerMethodField()
+    neighborhood = NeighborhoodSerializer(read_only=True)  # ✅ AGREGADO: Objeto completo con jerarquía
     
     class Meta:
         model = Patient
         fields = [
             "id", "full_name", "national_id", "email", "age", "gender",
-            "birthdate",  # ✅ CORREGIDO: birthdate → birthdate
-            "phone_number", "address",  # ✅ CORREGIDO: address_detail → address
+            "birthdate",
+            "phone_number", "address",
+            "contact_info",  # ✅ AGREGADO: Campo que faltaba
+            "neighborhood",  # ✅ AGREGADO: Para que los selectores se poblen automáticamente
             "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
             "alerts", "address_chain", "active", "created_at", "updated_at"
