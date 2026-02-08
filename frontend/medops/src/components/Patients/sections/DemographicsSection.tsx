@@ -24,7 +24,25 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   
   const { createNeighborhood, useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
   
-  // ✅ VALORES INICIALES SEGUROS (siempre disponibles)
+  // ✅ OBTENER IDs DEL PATIENT DE FORMA SEGURA
+  const patientLocationIds = useMemo(() => {
+    const neighborhood = patient.neighborhood;
+    const parish = neighborhood?.parish;
+    const municipality = parish?.municipality;
+    const state = municipality?.state;
+    const country = state?.country;
+    
+    return {
+      country_id: country?.id || null,
+      state_id: state?.id || null,
+      municipality_id: municipality?.id || null,
+      parish_id: parish?.id || null,
+      neighborhood_id: neighborhood?.id || null,
+      neighborhood_name: neighborhood?.name || ""
+    };
+  }, [patient.neighborhood]);
+  
+  // ✅ INICIALIZAR FORM CON TODOS LOS CAMPOS
   const getInitialForm = () => ({
     national_id: patient.national_id ?? "",
     first_name: patient.first_name ?? "",
@@ -45,48 +63,27 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     address: patient.address ?? ""
   });
   
-  // ✅ INICIALIZAR con valores seguros inmediatamente
   const [form, setForm] = useState(getInitialForm);
   
-  // ✅ OBTENER IDs del patient si existen
-  const patientLocationIds = useMemo(() => {
-    const neighborhood = patient.neighborhood;
-    const parish = neighborhood?.parish;
-    const municipality = parish?.municipality;
-    const state = municipality?.state;
-    const country = state?.country;
-    
-    return {
-      country_id: country?.id || null,
-      state_id: state?.id || null,
-      municipality_id: municipality?.id || null,
-      parish_id: parish?.id || null,
-      neighborhood_id: neighborhood?.id || null,
-      neighborhood_name: neighborhood?.name || ""
-    };
-  }, [patient.neighborhood]);
-  
-  // ✅ USAR EFECTO PARA SINCRONIZAR cuando patient.neighborhood esté disponible
+  // ✅ ACTUALIZAR FORM CUANDO patient.neighborhood ESTÉ DISPONIBLE
   useEffect(() => {
-    if (patient.neighborhood) {
-      setForm(prev => ({
-        ...prev,
-        country_id: patientLocationIds.country_id,
-        state_id: patientLocationIds.state_id,
-        municipality_id: patientLocationIds.municipality_id,
-        parish_id: patientLocationIds.parish_id,
-        neighborhood_id: patientLocationIds.neighborhood_id,
-        neighborhood_name: patientLocationIds.neighborhood_name
-      }));
-    }
+    setForm(prev => ({
+      ...prev,
+      country_id: patientLocationIds.country_id,
+      state_id: patientLocationIds.state_id,
+      municipality_id: patientLocationIds.municipality_id,
+      parish_id: patientLocationIds.parish_id,
+      neighborhood_id: patientLocationIds.neighborhood_id,
+      neighborhood_name: patientLocationIds.neighborhood_name
+    }));
   }, [patientLocationIds]);
   
-  // ✅ Hooks usam os valores do formulário (como EditInstitutionModal)
+  // ✅ HOOKS DE UBICACIÓN - usar patientLocationIds directamente
   const countriesResult = useCountries();
-  const statesResult = useStates(form.country_id);
-  const municipalitiesResult = useMunicipalities(form.state_id);
-  const parishesResult = useParishes(form.municipality_id);
-  const neighborhoodsResult = useNeighborhoods(form.parish_id);
+  const statesResult = useStates(patientLocationIds.country_id);
+  const municipalitiesResult = useMunicipalities(patientLocationIds.state_id);
+  const parishesResult = useParishes(patientLocationIds.municipality_id);
+  const neighborhoodsResult = useNeighborhoods(patientLocationIds.parish_id);
   
   const countries = countriesResult.data || [];
   const states = statesResult.data || [];
@@ -240,8 +237,18 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         </div>
         
         <div className="col-span-12 md:col-span-3">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Middle_Name</label>
+          <input type="text" value={form.middle_name} onChange={(e) => setForm({...form, middle_name: e.target.value})} disabled={!editing} className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30" />
+        </div>
+        
+        <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Last_Name</label>
           <input type="text" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} disabled={!editing} className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30" />
+        </div>
+        
+        <div className="col-span-12 md:col-span-3">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Second_Last_Name</label>
+          <input type="text" value={form.second_last_name} onChange={(e) => setForm({...form, second_last_name: e.target.value})} disabled={!editing} className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30" />
         </div>
         
         <div className="col-span-12 md:col-span-3">
