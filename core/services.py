@@ -1190,7 +1190,7 @@ def update_institution_settings_ext(
         settings_obj = InstitutionSettings.objects.get(id=1)
         
         # VERIFICACIÓN: El doctor debe tener esta institución
-        if user.is_authenticated and hasattr(user, 'doctor_profile'):
+        if user and user.is_authenticated and hasattr(user, 'doctor_profile'):
             doctor = user.doctor_profile
             if settings_obj not in doctor.institutions.all():
                 raise ValidationError("No tienes permiso para editar esta institución")
