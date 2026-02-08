@@ -91,14 +91,16 @@ class PatientViewSet(viewsets.ModelViewSet):
         Devuelve todos los antecedentes, alergias, hábitos, cirugías y vacunaciones
         en una sola respuesta optimizada.
         """
-        # Optimización de consultas con prefetch_related
-        patient = Patient.objects.filter(pk=pk).prefetch_related(
+        # ✅ AGREGADO: select_related para incluir la estructura jerárquica del neighborhood
+        patient = Patient.objects.filter(pk=pk).select_related(
+            'neighborhood__parish__municipality__state__country'
+        ).prefetch_related(
             'allergies',
             'personal_history',
             'family_history',
             'surgeries',
             'habits',
-            'vaccinations',  # ✅ CORREGIDO: 'patient_vaccinations' → 'vaccinations'
+            'vaccinations',
             'genetic_predispositions'
         ).first()
         
@@ -111,22 +113,27 @@ class PatientViewSet(viewsets.ModelViewSet):
         family_history_data = list(FamilyHistorySerializer(patient.family_history.all(), many=True).data)
         surgeries_data = list(SurgerySerializer(patient.surgeries.all(), many=True).data)
         habits_data = list(HabitSerializer(patient.habits.all(), many=True).data)
-        vaccinations_data = list(PatientVaccinationSerializer(patient.vaccinations.all(), many=True).data)  # ✅ CORREGIDO
+        vaccinations_data = list(PatientVaccinationSerializer(patient.vaccinations.all(), many=True).data)
         genetic_data = list(GeneticPredispositionSerializer(patient.genetic_predispositions.all(), many=True).data)
         medical_history_data = list(MedicalHistorySerializer(patient.medical_history.all(), many=True).data)
+        
+        # ✅ AGREGADO: Serializar neighborhood con su estructura jerárquica
+        neighborhood_data = None
+        if patient.neighborhood:
+            neighborhood_data = NeighborhoodSerializer(patient.neighborhood).data
         
         # Construir objeto de respuesta unificado
         profile_data = {
             'id': patient.id,
-            'first_name': patient.first_name,  # ✅ AGREGADO
-            'middle_name': patient.middle_name,  # ✅ AGREGADO
-            'last_name': patient.last_name,  # ✅ AGREGADO
-            'second_last_name': patient.second_last_name,  # ✅ AGREGADO
+            'first_name': patient.first_name,
+            'middle_name': patient.middle_name,
+            'last_name': patient.last_name,
+            'second_last_name': patient.second_last_name,
             'full_name': patient.full_name,
             'national_id': patient.national_id,
             'birthdate': patient.birthdate.isoformat() if patient.birthdate else None,
-            'birth_place': patient.birth_place,  # ✅ AGREGADO
-            'birth_country': patient.birth_country,  # ✅ AGREGADO
+            'birth_place': patient.birth_place,
+            'birth_country': patient.birth_country,
             'age': (date.today() - patient.birthdate).days // 365 if patient.birthdate else None,
             'gender': patient.gender,
             'email': patient.email,
@@ -139,6 +146,9 @@ class PatientViewSet(viewsets.ModelViewSet):
             'active': patient.active,
             'created_at': patient.created_at.isoformat() if patient.created_at else None,
             'updated_at': patient.updated_at.isoformat() if patient.updated_at else None,
+            
+            # ✅ AGREGADO: Neighborhood con estructura jerárquica completa
+            'neighborhood': neighborhood_data,
             
             # Datos clínicos completos
             'allergies': allergies_data,
