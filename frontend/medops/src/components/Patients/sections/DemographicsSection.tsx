@@ -11,7 +11,8 @@ import {
   XMarkIcon,
   MapPinIcon,
   UserCircleIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  CpuChipIcon
 } from "@heroicons/react/24/outline";
 interface DemographicsSectionProps {
   patient: Patient;
@@ -20,7 +21,12 @@ interface DemographicsSectionProps {
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
   const chain = useMemo(() => (patient.address_chain as any) || {}, [patient.address_chain]);
-  const [form, setForm] = useState<Partial<PatientInput>>({});
+  
+  // ✅ NUEVO: Estado separado para neighborhood (igual que EditInstitutionModal)
+  const [form, setForm] = useState<Partial<PatientInput> & { 
+    neighborhood_name?: string 
+  }>({});
+  
   const [errors, setErrors] = useState<Record<string, string>>({});
   const updatePatient = useUpdatePatient(patient.id);
   const {
@@ -46,7 +52,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const isLoadingMunicipalities = municipalitiesResult.isLoading;
   const isLoadingParishes = parishesResult.isLoading;
   const isLoadingNeighborhoods = neighborhoodsResult.isLoading;
-  // ✅ FIX: Convertir a boolean explícito para evitar el "0"
   const isLoadingAny = Boolean(
     countriesResult.isLoading || 
     statesResult.isLoading || 
@@ -55,6 +60,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     neighborhoodsResult.isLoading
   );
   useEffect(() => {
+    const neighborhood = patient.neighborhood || chain.neighborhood;
     setForm({
       national_id: patient.national_id ?? "",
       first_name: patient.first_name ?? "",
@@ -70,10 +76,11 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       state_id: chain.state_id,
       municipality_id: chain.municipality_id,
       parish_id: chain.parish_id,
-      neighborhood_id: chain.neighborhood_id,
+      neighborhood_id: neighborhood?.id || undefined,
+      neighborhood_name: neighborhood?.name || "",
       address: patient.address ?? ""
     });
-  }, [patient]);
+  }, [patient, chain]);
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!form.first_name?.trim()) newErrors.first_name = "Nombre requerido";
@@ -101,7 +108,8 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       state_id: undefined, 
       municipality_id: undefined, 
       parish_id: undefined, 
-      neighborhood_id: undefined 
+      neighborhood_id: undefined,
+      neighborhood_name: ""
     }));
   };
   const handleStateChange = (v: string) => {
@@ -111,7 +119,8 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       state_id: id, 
       municipality_id: undefined, 
       parish_id: undefined, 
-      neighborhood_id: undefined 
+      neighborhood_id: undefined,
+      neighborhood_name: ""
     }));
   };
   const handleMunicipalityChange = (v: string) => {
@@ -120,7 +129,8 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       ...prev, 
       municipality_id: id, 
       parish_id: undefined, 
-      neighborhood_id: undefined 
+      neighborhood_id: undefined,
+      neighborhood_name: ""
     }));
   };
   const handleParishChange = (v: string) => {
@@ -128,12 +138,29 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     setForm(prev => ({ 
       ...prev, 
       parish_id: id, 
-      neighborhood_id: undefined 
+      neighborhood_id: undefined,
+      neighborhood_name: ""
     }));
   };
-  const handleNeighborhoodChange = (v: string) => {
-    const id = v ? Number(v) : undefined;
-    setForm(prev => ({ ...prev, neighborhood_id: id }));
+  // ✅ FIX: Manejar neighborhood igual que EditInstitutionModal
+  const handleNeighborhoodChange = (val: string) => {
+    const existingNeighborhood = neighborhoods.find(
+      n => n.name.toLowerCase() === val.toLowerCase()
+    );
+    
+    if (existingNeighborhood) {
+      setForm(prev => ({ 
+        ...prev, 
+        neighborhood_id: existingNeighborhood.id,
+        neighborhood_name: val
+      }));
+    } else {
+      setForm(prev => ({ 
+        ...prev, 
+        neighborhood_id: undefined,
+        neighborhood_name: val
+      }));
+    }
   };
   return (
     <div className="bg-white/[0.02] border border-white/10 rounded-sm overflow-hidden">
@@ -179,7 +206,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         </div>
       )}
       
-      {/* ✅ INDICADOR SIMPLE DE CARGA */}
       {isLoadingAny && (
         <div className="px-5 py-2 bg-blue-500/10 border-b border-blue-500/30 flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent animate-spin"></div>
@@ -238,7 +264,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-12 md:col-span-4">
+        <div className="col-span-12 md:col-span-6">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Email_Address</label>
           <input
             type="email"
@@ -249,7 +275,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-12 md:col-span-4">
+        <div className="col-span-12 md:col-span-6">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Contact_Line</label>
           <input
             type="text"
@@ -267,9 +293,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <div className="flex-1 h-[1px] bg-white/20" />
         </div>
         
-        {/* ✅ ELIMINADOS: Indicadores de conteo X/Y */}
-        
-        {/* Selectores geográficos CON JERARQUÍA CORREGIDA */}
+        {/* ✅ FIX: Selectores geográficos - 5 campos en una fila con más ancho */}
         <div className="col-span-12 md:col-span-2">
           <FieldSelect
             label="Country"
@@ -314,21 +338,41 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-12 md:col-span-2">
-          <FieldSelect
-            label="Neighborhood"
-            value={form.neighborhood_id || null}
-            options={neighborhoods}
-            onChange={handleNeighborhoodChange}
-            disabled={!editing || !form.parish_id}
-            loading={isLoadingNeighborhoods}
-          />
+        {/* ✅ FIX: Campo Neighborhood igual que EditInstitutionModal */}
+        <div className="col-span-12 md:col-span-4">
+          <div className={`flex flex-col gap-1.5 ${(!form.parish_id || isLoadingNeighborhoods) ? 'opacity-30' : 'opacity-100'}`}>
+            <label className="text-[8px] font-black font-mono text-white/30 uppercase tracking-[0.2em] flex items-center justify-between px-1">
+              <span>Neighborhood / Sector</span>
+              {isLoadingNeighborhoods && <CpuChipIcon className="w-2.5 h-2.5 animate-spin text-white/60" />}
+            </label>
+            <div className="relative">
+              <input
+                list="neighborhood-options"
+                value={form.neighborhood_name || ""}
+                disabled={!form.parish_id || isLoadingNeighborhoods || !editing}
+                onChange={(e) => handleNeighborhoodChange(e.target.value)}
+                placeholder={!form.parish_id ? "-- LOCKED --" : "-- TYPE_OR_SELECT --"}
+                className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+              />
+              <datalist id="neighborhood-options">
+                {neighborhoods.map((n) => (
+                  <option key={n.id} value={n.name} />
+                ))}
+              </datalist>
+              {form.neighborhood_name && !form.neighborhood_id && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+                  <span className="text-[7px] font-black text-emerald-400 uppercase tracking-tighter animate-pulse">New_Entry</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         
-        <div className="col-span-12 md:col-span-2">
+        {/* ✅ FIX: Full_Address_Details en línea separada con más tamaño */}
+        <div className="col-span-12">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Full_Address_Details</label>
           <textarea
-            rows={2}
+            rows={4}
             value={form.address || ""}
             onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
             disabled={!editing}
