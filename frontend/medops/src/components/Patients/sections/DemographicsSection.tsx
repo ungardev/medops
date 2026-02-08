@@ -12,7 +12,8 @@ import {
   MapPinIcon,
   UserCircleIcon,
   ExclamationCircleIcon,
-  CpuChipIcon
+  CpuChipIcon,
+  CalendarIcon
 } from "@heroicons/react/24/outline";
 interface DemographicsSectionProps {
   patient: Patient;
@@ -22,36 +23,43 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const [editing, setEditing] = useState(false);
   const chain = useMemo(() => (patient.address_chain as any) || {}, [patient.address_chain]);
   
-  // ✅ NUEVO: Estado separado para neighborhood (igual que EditInstitutionModal)
+  // Estado del formulario con neighborhood_name para manejo interno
   const [form, setForm] = useState<Partial<PatientInput> & { 
     neighborhood_name?: string 
   }>({});
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const updatePatient = useUpdatePatient(patient.id);
+  
+  // ✅ Importar createNeighborhood también
   const {
+    createNeighborhood,
     useCountries,
     useStates,
     useMunicipalities,
     useParishes,
     useNeighborhoods
   } = useLocationData();
+  
   // Hooks para obtener datos reales
   const countriesResult = useCountries();
   const statesResult = useStates(form.country_id);
   const municipalitiesResult = useMunicipalities(form.state_id);
   const parishesResult = useParishes(form.municipality_id);
   const neighborhoodsResult = useNeighborhoods(form.parish_id);
+  
   const countries = countriesResult.data || [];
   const states = statesResult.data || [];
   const municipalities = municipalitiesResult.data || [];
   const parishes = parishesResult.data || [];
   const neighborhoods = neighborhoodsResult.data || [];
+  
   const isLoadingCountries = countriesResult.isLoading;
   const isLoadingStates = statesResult.isLoading;
   const isLoadingMunicipalities = municipalitiesResult.isLoading;
   const isLoadingParishes = parishesResult.isLoading;
   const isLoadingNeighborhoods = neighborhoodsResult.isLoading;
+  
   const isLoadingAny = Boolean(
     countriesResult.isLoading || 
     statesResult.isLoading || 
@@ -89,16 +97,60 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  const handleSave = () => {
+  // ✅ FIX: handleSave ahora es async y crea neighborhood si es necesario
+  const handleSave = async () => {
     if (!validateForm()) return;
-    updatePatient.mutate(form as PatientInput, {
-      onSuccess: () => { 
-        setEditing(false); 
-        setErrors({});
-        onRefresh(); 
-      },
-      onError: () => setErrors({ general: "ERR_SYNC_FAILED" })
-    });
+    
+    try {
+      let finalNeighborhoodId: number | undefined;
+      
+      // Si hay nombre de neighborhood pero no ID, crearlo primero
+      if (form.neighborhood_name && !form.neighborhood_id && form.parish_id) {
+        console.log("Creating new neighborhood:", form.neighborhood_name);
+        const newNB = await createNeighborhood(form.neighborhood_name.trim(), form.parish_id);
+        finalNeighborhoodId = newNB.id;
+      } else {
+        finalNeighborhoodId = form.neighborhood_id;
+      }
+      
+      // ✅ Construir payload LIMPIO con solo campos válidos de PatientInput
+      const payload: Partial<PatientInput> = {
+        national_id: form.national_id || undefined,
+        first_name: form.first_name,
+        middle_name: form.middle_name || undefined,
+        last_name: form.last_name,
+        second_last_name: form.second_last_name || undefined,
+        birthdate: form.birthdate || undefined,
+        birth_place: form.birth_place || undefined,
+        birth_country: form.birth_country || undefined,
+        email: form.email || undefined,
+        contact_info: form.contact_info || undefined, // ✅ Contact_Line
+        address: form.address || undefined, // ✅ Address
+        // ✅ Campos de ubicación jerárquica
+        country_id: form.country_id,
+        state_id: form.state_id,
+        municipality_id: form.municipality_id,
+        parish_id: form.parish_id,
+        neighborhood_id: finalNeighborhoodId,
+      };
+      
+      console.log("Sending payload:", payload);
+      
+      updatePatient.mutate(payload, {
+        onSuccess: () => { 
+          setEditing(false); 
+          setErrors({});
+          onRefresh(); 
+        },
+        onError: (error) => {
+          console.error("Update error:", error);
+          setErrors({ general: "ERR_SYNC_FAILED" });
+        }
+      });
+    } catch (err) {
+      console.error("Error saving:", err);
+      setErrors({ general: "Error al guardar neighborhood" });
+    }
   };
   const handleCountryChange = (v: string) => {
     const id = v ? Number(v) : undefined;
@@ -142,7 +194,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_name: ""
     }));
   };
-  // ✅ FIX: Manejar neighborhood igual que EditInstitutionModal
+  // ✅ Manejar neighborhood igual que EditInstitutionModal
   const handleNeighborhoodChange = (val: string) => {
     const existingNeighborhood = neighborhoods.find(
       n => n.name.toLowerCase() === val.toLowerCase()
@@ -253,15 +305,24 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
+        {/* ✅ Birth_Date con calendario nativo y estilo mejorado */}
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Birth_Date</label>
-          <input
-            type="date"
-            value={form.birthdate || ""}
-            onChange={(e) => setForm(prev => ({ ...prev, birthdate: e.target.value }))}
-            disabled={!editing}
-            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
-          />
+          <div className="relative">
+            <input
+              type="date"
+              value={form.birthdate || ""}
+              onChange={(e) => setForm(prev => ({ ...prev, birthdate: e.target.value }))}
+              disabled={!editing}
+              className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30 appearance-none cursor-pointer"
+              style={{
+                colorScheme: 'dark' // ✅ Esto fuerza el tema oscuro en el calendario nativo
+              }}
+            />
+            {editing && (
+              <CalendarIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+            )}
+          </div>
         </div>
         
         <div className="col-span-12 md:col-span-6">
@@ -275,6 +336,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
+        {/* ✅ Contact_Line - Asegurar que persiste */}
         <div className="col-span-12 md:col-span-6">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Contact_Line</label>
           <input
@@ -282,7 +344,8 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
             value={form.contact_info || ""}
             onChange={(e) => setForm(prev => ({ ...prev, contact_info: e.target.value }))}
             disabled={!editing}
-            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+            placeholder="Ej: +58 412 123 4567"
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30 placeholder:text-white/10"
           />
         </div>
         
@@ -293,7 +356,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <div className="flex-1 h-[1px] bg-white/20" />
         </div>
         
-        {/* ✅ FIX: Selectores geográficos - 5 campos en una fila con más ancho */}
+        {/* Selectores geográficos */}
         <div className="col-span-12 md:col-span-2">
           <FieldSelect
             label="Country"
@@ -338,7 +401,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        {/* ✅ FIX: Campo Neighborhood igual que EditInstitutionModal */}
+        {/* ✅ Campo Neighborhood con datalist y New_Entry indicator */}
         <div className="col-span-12 md:col-span-4">
           <div className={`flex flex-col gap-1.5 ${(!form.parish_id || isLoadingNeighborhoods) ? 'opacity-30' : 'opacity-100'}`}>
             <label className="text-[8px] font-black font-mono text-white/30 uppercase tracking-[0.2em] flex items-center justify-between px-1">
@@ -368,7 +431,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           </div>
         </div>
         
-        {/* ✅ FIX: Full_Address_Details en línea separada con más tamaño */}
+        {/* ✅ Full_Address_Details */}
         <div className="col-span-12">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Full_Address_Details</label>
           <textarea
@@ -376,7 +439,8 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
             value={form.address || ""}
             onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
             disabled={!editing}
-            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase resize-none disabled:opacity-30"
+            placeholder="Calle, número, piso, apartamento..."
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase resize-none disabled:opacity-30 placeholder:text-white/10"
           />
         </div>
       </form>
