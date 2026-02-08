@@ -24,8 +24,32 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   
   const { createNeighborhood, useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
   
-  // ✅ INICIALIZAR FORM INMEDIATAMENTE con datos del patient
-  const getInitialForm = () => {
+  // ✅ VALORES INICIALES SEGUROS (siempre disponibles)
+  const getInitialForm = () => ({
+    national_id: patient.national_id ?? "",
+    first_name: patient.first_name ?? "",
+    middle_name: patient.middle_name ?? "",
+    last_name: patient.last_name ?? "",
+    second_last_name: patient.second_last_name ?? "",
+    birthdate: patient.birthdate ?? "",
+    birth_place: patient.birth_place ?? "",
+    birth_country: patient.birth_country ?? "",
+    email: patient.email ?? "",
+    contact_info: patient.contact_info ?? "",
+    country_id: null as number | null,
+    state_id: null as number | null,
+    municipality_id: null as number | null,
+    parish_id: null as number | null,
+    neighborhood_id: null as number | null,
+    neighborhood_name: "",
+    address: patient.address ?? ""
+  });
+  
+  // ✅ INICIALIZAR con valores seguros inmediatamente
+  const [form, setForm] = useState(getInitialForm);
+  
+  // ✅ OBTENER IDs del patient si existen
+  const patientLocationIds = useMemo(() => {
     const neighborhood = patient.neighborhood;
     const parish = neighborhood?.parish;
     const municipality = parish?.municipality;
@@ -33,29 +57,31 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     const country = state?.country;
     
     return {
-      national_id: patient.national_id ?? "",
-      first_name: patient.first_name ?? "",
-      middle_name: patient.middle_name ?? "",
-      last_name: patient.last_name ?? "",
-      second_last_name: patient.second_last_name ?? "",
-      birthdate: patient.birthdate ?? "",
-      birth_place: patient.birth_place ?? "",
-      birth_country: patient.birth_country ?? "",
-      email: patient.email ?? "",
-      contact_info: patient.contact_info ?? "",
       country_id: country?.id || null,
       state_id: state?.id || null,
       municipality_id: municipality?.id || null,
       parish_id: parish?.id || null,
       neighborhood_id: neighborhood?.id || null,
-      neighborhood_name: neighborhood?.name || "",
-      address: patient.address ?? ""
+      neighborhood_name: neighborhood?.name || ""
     };
-  };
+  }, [patient.neighborhood]);
   
-  const [form, setForm] = useState(getInitialForm);
+  // ✅ USAR EFECTO PARA SINCRONIZAR cuando patient.neighborhood esté disponible
+  useEffect(() => {
+    if (patient.neighborhood) {
+      setForm(prev => ({
+        ...prev,
+        country_id: patientLocationIds.country_id,
+        state_id: patientLocationIds.state_id,
+        municipality_id: patientLocationIds.municipality_id,
+        parish_id: patientLocationIds.parish_id,
+        neighborhood_id: patientLocationIds.neighborhood_id,
+        neighborhood_name: patientLocationIds.neighborhood_name
+      }));
+    }
+  }, [patientLocationIds]);
   
-  // ✅ Hooks usan los valores del formulario (como EditInstitutionModal)
+  // ✅ Hooks usam os valores do formulário (como EditInstitutionModal)
   const countriesResult = useCountries();
   const statesResult = useStates(form.country_id);
   const municipalitiesResult = useMunicipalities(form.state_id);
@@ -71,10 +97,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const isLoadingAny = countriesResult.isLoading || statesResult.isLoading || 
                       municipalitiesResult.isLoading || parishesResult.isLoading || 
                       neighborhoodsResult.isLoading;
-  // ✅ SOLO actualizar cuando cambia el patient (navegación entre pacientes)
-  useEffect(() => {
-    setForm(getInitialForm());
-  }, [patient.id]);
+  
   const handleSave = async () => {
     try {
       let finalNeighborhoodId = form.neighborhood_id;
@@ -111,6 +134,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       setErrors({ general: "Error al guardar" });
     }
   };
+  
   const handleCountryChange = (v: string) => {
     const id = v ? Number(v) : null;
     setForm(prev => ({ 
@@ -123,6 +147,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_name: ""
     }));
   };
+  
   const handleStateChange = (v: string) => {
     const id = v ? Number(v) : null;
     setForm(prev => ({ 
@@ -134,6 +159,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_name: ""
     }));
   };
+  
   const handleMunicipalityChange = (v: string) => {
     const id = v ? Number(v) : null;
     setForm(prev => ({ 
@@ -144,6 +170,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_name: ""
     }));
   };
+  
   const handleParishChange = (v: string) => {
     const id = v ? Number(v) : null;
     setForm(prev => ({ 
@@ -153,6 +180,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       neighborhood_name: ""
     }));
   };
+  
   const handleNeighborhoodChange = (val: string) => {
     const existing = neighborhoods.find(n => n.name.toLowerCase() === val.toLowerCase());
     if (existing) {
@@ -161,6 +189,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       setForm(prev => ({ ...prev, neighborhood_id: null, neighborhood_name: val }));
     }
   };
+  
   return (
     <div className="bg-white/[0.02] border border-white/10 rounded-sm overflow-hidden">
       <div className="bg-white/5 px-4 py-2.5 flex justify-between items-center border-b border-white/10">
