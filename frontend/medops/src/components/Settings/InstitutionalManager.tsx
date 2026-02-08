@@ -1,4 +1,4 @@
-// src/components/Settings/InstitutionManager.tsx
+// src/components/Settings/InstitutionalManager.tsx
 import React, { useMemo } from "react";
 import { 
   BuildingOfficeIcon, 
@@ -7,16 +7,13 @@ import {
   PencilSquareIcon 
 } from "@heroicons/react/24/outline";
 import { memo, useState, useEffect } from "react";
-
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 const StableLogo = memo(({ url }: { url: string | null }) => {
   const [imgSrc, setImgSrc] = useState<string>(url || "/logo-placeholder.svg");
   useEffect(() => {
     const targetUrl = url || "/logo-placeholder.svg";
     if (targetUrl !== imgSrc) setImgSrc(targetUrl);
   }, [url]);
-
   return (
     <img 
       src={imgSrc} 
@@ -26,36 +23,41 @@ const StableLogo = memo(({ url }: { url: string | null }) => {
     />
   );
 });
-
 interface InstitutionManagerProps {
   inst: any;
   loading: boolean;
   onEdit: () => void;
   renderGeodata: () => React.ReactNode;
 }
-
 export const InstitutionManager = ({ inst, loading, onEdit, renderGeodata }: InstitutionManagerProps) => {
   const memoizedLogoUrl = useMemo(() => {
     if (!inst?.logo) return null;
     if (inst.logo instanceof File) return URL.createObjectURL(inst.logo);
     const logoStr = String(inst.logo);
+    
+    // ✅ FIX: URLs absolutas o blobs van directo
     if (logoStr.startsWith('http') || logoStr.startsWith('blob:')) return logoStr;
-    return `${API_BASE}${logoStr.startsWith('/') ? '' : '/'}${logoStr}`;
+    
+    // ✅ FIX: Remover /api del final de VITE_API_URL para archivos media
+    const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000')
+      .replace(/\/api\/?$/, ''); // Remover "/api" o "/api/" del final
+    
+    // Asegurar que logoStr empiece con /
+    const cleanLogoStr = logoStr.startsWith('/') ? logoStr : `/${logoStr}`;
+    
+    return `${baseUrl}${cleanLogoStr}`;
   }, [inst?.logo]);
-
   if (loading) return (
     <div className="bg-[#080808] border border-white/10 p-8 animate-pulse space-y-6">
       <div className="h-24 bg-white/5 w-24 rounded-sm" />
       <div className="h-12 bg-white/5 w-full rounded-sm" />
     </div>
   );
-
   return (
     <div className="bg-[#080808] border border-white/10 p-8 rounded-sm backdrop-blur-xl relative overflow-hidden shadow-2xl">
       <div className="absolute top-0 right-0 p-4 opacity-5">
         <CpuChipIcon className="w-24 h-24 text-white" />
       </div>
-
       <div className="space-y-8">
         <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
           <div className="w-32 h-32 bg-black border border-white/10 p-4 flex items-center justify-center shadow-inner relative group">
@@ -83,11 +85,9 @@ export const InstitutionManager = ({ inst, loading, onEdit, renderGeodata }: Ins
             </div>
           </div>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5 pt-8">
           {renderGeodata()}
         </div>
-
         <button 
           onClick={onEdit} 
           className="w-full flex items-center justify-center gap-3 py-4 border border-white/10 bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-white/60 hover:text-white transition-all rounded-sm"

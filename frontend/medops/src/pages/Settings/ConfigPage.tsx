@@ -1,14 +1,13 @@
 // src/pages/Settings/ConfigPage.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import PageHeader from "@/components/Common/PageHeader";
-// ✅ ELIMINADO: import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import { InstitutionCard } from "@/components/Settings/InstitutionCard";
 import EditInstitutionModal from "@/components/Settings/EditInstitutionModal";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
-import { api } from "@/lib/apiClient"; // ✅ AGREGADO: Importar api client
+import { api } from "@/lib/apiClient";
 import type { Specialty } from "@/types/config";
 import { 
   FingerPrintIcon,
@@ -31,10 +30,6 @@ type DoctorForm = {
 export default function ConfigPage() {
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   
-  // ✅ Hook singleton eliminado - ya no es necesario
-  // const { data: inst, updateInstitution, isLoading: instLoading } = useInstitutionSettings();
-  
-  // ✅ Hook multi-institución para gestión completa
   const {
     institutions,
     activeInstitution,
@@ -56,7 +51,6 @@ export default function ConfigPage() {
   const [docForm, setDocForm] = useState<DoctorForm>({
     full_name: "", gender: "M", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
   });
-  // Inicialización de datos del Doctor
   useEffect(() => {
     if (!doc || specialties.length === 0 || initialized) return;
     
@@ -85,44 +79,35 @@ export default function ConfigPage() {
       setDocForm({ ...docForm, signature: file });
     }
   };
-  // ✅ HANDLER: Crear nueva institución
   const handleCreateInstitution = () => {
     setEditingInstitution(null);
     setIsInstModalOpen(true);
   };
-  // ✅ HANDLER: Editar institución existente
   const handleEditInstitution = (institution: any) => {
     setEditingInstitution(institution);
     setIsInstModalOpen(true);
   };
-  // ✅ HANDLER: Eliminar institución
   const handleDeleteInstitution = async (id: number | undefined) => {
     if (id === undefined) return;
     if (confirm("¿Estás seguro de que quieres eliminar esta institución?")) {
       await deleteInstitution(id);
     }
   };
-  // ✅ HANDLER: Seleccionar institución activa
   const handleSelectInstitution = async (id: number | undefined) => {
     if (id === undefined) return;
     await setActiveInstitution(id);
   };
-  // ✅ HELPER: Actualizar institución existente
   const updateInstitution = async (formData: any) => {
-    // Obtener el ID de la institución a actualizar
     const institutionId = editingInstitution?.id || activeInstitution?.id;
     if (!institutionId) return;
     
-    // Actualizar el header X-Institution-ID temporalmente
     const originalHeader = api.defaults.headers.common["X-Institution-ID"];
     api.defaults.headers.common["X-Institution-ID"] = String(institutionId);
     
     try {
-      // Llamar al endpoint de configuración de institución con método PATCH
       const response = await api.patch("config/institution/", formData);
       return response.data;
     } finally {
-      // Restaurar el header original
       if (originalHeader !== undefined) {
         api.defaults.headers.common["X-Institution-ID"] = originalHeader;
       } else {
@@ -130,10 +115,9 @@ export default function ConfigPage() {
       }
     }
   };
-  // ✅ HANDLER: Guardar institución (crear o editar)
   const handleSaveInstitution = async (formData: any) => {
     if (editingInstitution) {
-      await updateInstitution(formData);  // ← Ahora esta función existe
+      await updateInstitution(formData);
     } else {
       await createInstitution(formData);
     }
@@ -146,22 +130,24 @@ export default function ConfigPage() {
     if (typeof institution.logo === 'string') {
       const logoStr = institution.logo;
       if (logoStr.startsWith('http') || logoStr.startsWith('blob:')) return logoStr;
-      return `${API_BASE}${logoStr.startsWith('/') ? '' : '/'}${logoStr}`;
+      
+      // ✅ FIX: Remover /api del final para construir URL correcta
+      const baseUrl = API_BASE.replace(/\/api\/?$/, '');
+      const cleanLogoStr = logoStr.startsWith('/') ? logoStr : `/${logoStr}`;
+      
+      return `${baseUrl}${cleanLogoStr}`;
     }
     return null;
   };
-  // ✅ HELPER: Obtener nombre del barrio
   const getNeighborhoodName = (institution: any): string => {
     if (typeof institution.neighborhood === 'object' && institution.neighborhood) {
       return (institution.neighborhood as any)?.name || 'N/A';
     }
     return 'N/A';
   };
-  // Helper para labelStyles (necesario para el formulario de doctor)
   const labelStyles = `text-[9px] font-black uppercase tracking-[0.25em] text-white/30 mb-2 block`;
-  
-  // Helper para inputStyles (necesario para el formulario de doctor)
   const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-emerald-500/50 transition-all`;
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-8 space-y-10 bg-black min-h-screen">
       
@@ -180,10 +166,8 @@ export default function ConfigPage() {
           </div>
         }
       />
-      {/* ✅ GRID DE 2 COLUMNAS - LADO A LADO EN DESKTOP */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-start">
         
-        {/* 👨‍⚕️ SECCIÓN: REGISTRO PROFESIONAL (COLUMNA 1) */}
         <section className="space-y-4">
           <div className="flex items-center gap-3 px-1 border-l-2 border-emerald-500/50 ml-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Practitioner_Service_Record</h3>
@@ -297,7 +281,6 @@ export default function ConfigPage() {
             )}
           </div>
         </section>
-        {/* 🏢 SECCIÓN: GESTIÓN DE INSTITUCIONES (COLUMNA 2) - ✅ MOVIDO DENTRO DEL GRID */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1 border-l-2 border-emerald-500/50 ml-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
@@ -321,7 +304,6 @@ export default function ConfigPage() {
               </div>
             ) : (
               <>
-                {/* Institución ACTIVA - Destacada visualmente */}
                 {activeInstitution && (
                   <div className="relative">
                     <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-500 rounded-sm" />
@@ -344,7 +326,6 @@ export default function ConfigPage() {
                     </div>
                   </div>
                 )}
-                {/* Otras Instituciones */}
                 {institutions
                   .filter(inst => inst.id !== activeInstitution?.id)
                   .map((inst) => (
@@ -386,7 +367,6 @@ export default function ConfigPage() {
             Node_Hash: {hashlib_mock(activeInstitution?.name || 'ROOT')}
         </div>
       </footer>
-      {/* ✅ CAMBIO CLAVE: EditInstitutionModal reemplaza a InstitutionFormModal */}
       <EditInstitutionModal 
         open={isInstModalOpen} 
         onClose={() => setIsInstModalOpen(false)} 
