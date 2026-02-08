@@ -20,14 +20,17 @@ export default function FieldSelect({
       .map(normalizeLocationOption)
       .filter((opt): opt is LocationOption => opt !== null);
   }, [options]);
-  // DEBUGGING TEMPORAL - BORRAR LUEGO
+  // 🚀 DEBUGGING MEJORADO - VERIFICAR CARGA COMPLETA
   React.useEffect(() => {
     console.log(`🔍 FieldSelect [${label}]:`, {
       optionsCount: safeOptions.length,
       loading,
       disabled,
       currentValue: value,
-      rawOptions: options?.length || 0
+      rawOptions: options?.length || 0,
+      firstOption: safeOptions[0],
+      lastOption: safeOptions[safeOptions.length - 1],
+      sampleData: safeOptions.slice(0, 3)
     });
   }, [label, safeOptions, loading, disabled, value, options]);
   return (

@@ -33,20 +33,37 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     logo: null as File | null
   });
   const [preview, setPreview] = useState<string | null>(null);
-  // Hooks para obtener datos geográficos
-  const { data: countries = [], isLoading: loadingCountries } = useCountries();
-  const { data: states = [], isLoading: loadingStates } = useStates(formData.countryId);
-  const { data: municipalities = [], isLoading: loadingMunis } = useMunicipalities(formData.stateId);
-  const { data: parishes = [], isLoading: loadingParishes } = useParishes(formData.municipalityId);
-  const { data: neighborhoods = [], isLoading: loadingHoods } = useNeighborhoods(formData.parishId);
-  // DEBUGGING TEMPORAL - VERIFICAR DATOS DE PAÍSES
-  React.useEffect(() => {
-    console.log('🔍 EditInstitutionModal - Countries:', {
+  // Hooks para obtener datos geográficos con nueva estructura
+  const countriesResult = useCountries();
+  const statesResult = useStates(formData.countryId);
+  const municipalitiesResult = useMunicipalities(formData.stateId);
+  const parishesResult = useParishes(formData.municipalityId);
+  const neighborhoodsResult = useNeighborhoods(formData.parishId);
+  const countries = countriesResult.data || [];
+  const states = statesResult.data || [];
+  const municipalities = municipalitiesResult.data || [];
+  const parishes = parishesResult.data || [];
+  const neighborhoods = neighborhoodsResult.data || [];
+  const isLoadingCountries = countriesResult.isLoading;
+  const isLoadingStates = statesResult.isLoading;
+  const isLoadingMunis = municipalitiesResult.isLoading;
+  const loadingParishes = parishesResult.isLoading;
+  const loadingHoods = neighborhoodsResult.isLoading;
+  const isLoadingPages = countriesResult.isLoadingPages || statesResult.isLoadingPages || 
+                        municipalitiesResult.isLoadingPages || parishesResult.isLoadingPages || 
+                        neighborhoodsResult.isLoadingPages;
+  // 🚀 DEBUGGING MEJORADO - VERIFICAR CARGA COMPLETA
+  useEffect(() => {
+    console.log('🔍 EditInstitutionModal - Countries Data:', {
       count: countries.length,
-      loading: loadingCountries,
-      data: countries
+      totalCount: countriesResult.totalCount,
+      loading: isLoadingCountries,
+      loadingPages: countriesResult.isLoadingPages,
+      error: countriesResult.error,
+      sample: countries.slice(0, 3),
+      isComplete: countries.length >= countriesResult.totalCount
     });
-  }, [countries, loadingCountries]);
+  }, [countries, countriesResult.totalCount, isLoadingCountries, countriesResult.isLoadingPages, countriesResult.error]);
   useEffect(() => {
     if (open && settings) {
       const neighborhood = settings.neighborhood;
@@ -170,6 +187,16 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
       maxWidth="4xl"
     >
       <div className="space-y-8 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        {/* 🚀 INDICADOR DE PROGRESO */}
+        {isLoadingPages && (
+          <div className="px-4 py-3 bg-blue-500/10 border border-blue-500/30 flex items-center gap-3">
+            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent animate-spin"></div>
+            <span className="text-[10px] font-mono text-blue-500">
+              Cargando todos los datos geográficos... Por favor espere.
+            </span>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} id="institution-form">
           <div className={sectionStyles}>
             <div className="flex items-center gap-2 mb-4">
@@ -245,6 +272,40 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
               </h3>
             </div>
              
+            {/* 🚀 INDICADORES DE DATOS CARGADOS */}
+            <div className="grid grid-cols-5 gap-2 text-[7px] font-mono text-white/40 mb-4">
+              <div className="text-center">
+                <div>Countries</div>
+                <div className="text-emerald-400 font-bold">
+                  {countries.length}/{countriesResult.totalCount || 0}
+                </div>
+              </div>
+              <div className="text-center">
+                <div>States</div>
+                <div className="text-emerald-400 font-bold">
+                  {states.length}/{statesResult.totalCount || 0}
+                </div>
+              </div>
+              <div className="text-center">
+                <div>Municipalities</div>
+                <div className="text-emerald-400 font-bold">
+                  {municipalities.length}/{municipalitiesResult.totalCount || 0}
+                </div>
+              </div>
+              <div className="text-center">
+                <div>Parishes</div>
+                <div className="text-emerald-400 font-bold">
+                  {parishes.length}/{parishesResult.totalCount || 0}
+                </div>
+              </div>
+              <div className="text-center">
+                <div>Neighborhoods</div>
+                <div className="text-emerald-400 font-bold">
+                  {neighborhoods.length}/{neighborhoodsResult.totalCount || 0}
+                </div>
+              </div>
+            </div>
+             
             {/* 5 SELECTORES CON LAYOUT CORREGIDO */}
             <div className="grid grid-cols-12 gap-4 p-4 bg-black/20 border border-white/10/30">
               <div className="col-span-12 md:col-span-2">
@@ -254,7 +315,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                   options={countries}
                   onChange={handleCountryChange}
                   disabled={false}
-                  loading={loadingCountries}
+                  loading={isLoadingCountries}
                 />
               </div>
               
@@ -265,7 +326,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                   options={states}
                   onChange={handleStateChange}
                   disabled={!formData.countryId}
-                  loading={loadingStates}
+                  loading={isLoadingStates}
                 />
               </div>
               
@@ -276,7 +337,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                   options={municipalities}
                   onChange={handleMunicipalityChange}
                   disabled={!formData.stateId}
-                  loading={loadingMunis}
+                  loading={isLoadingMunis}
                 />
               </div>
               

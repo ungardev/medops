@@ -3,6 +3,7 @@ import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import { Country, State, Municipality, Parish, Neighborhood } from "@/types/config";
+import usePaginatedData from "../helpers/usePaginatedData";
 export function useLocationData() {
   const sanitize = (id: any): string | null => {
     if (!id || id === "undefined" || id === "null") return null;
@@ -14,88 +15,103 @@ export function useLocationData() {
     console.log('🔍 Current Token:', import.meta.env.VITE_DEV_TOKEN);
     console.log('🔍 API Base URL:', import.meta.env.VITE_API_URL);
   }, []);
-  // 🔹 Países: /api/countries/ - CORREGIDO PARA EXTRAER RESULTS
-  const useCountries = () => useQuery({
-    queryKey: ["geo", "countries"],
-    queryFn: async () => {
-      console.log('🔍 Fetching countries...');
-      const res = await api.get<{results: Country[], count: number}>("countries/");
-      console.log('🔍 Countries response:', res.data);
-      console.log('🔍 Countries results extracted:', res.data.results);
-      return res.data.results; // ← FIX: Extraer results de estructura paginada
-    },
-    staleTime: 1000, // 1 segundo para debugging
-    gcTime: 1000, // 1 segundo para debugging
-  });
-  // 🔹 Estados: /api/states/?country=1 - CORREGIDO PARA EXTRAER RESULTS
+  // 🔹 Países: /api/countries/ - NUEVA ESTRATEGIA DE FETCH ALL
+  const useCountries = () => {
+    const result = usePaginatedData<Country>({
+      endpoint: "countries/",
+      enabled: true,
+      maxPages: 50, // Reducido para countries (solo 1 página esperada)
+      timeout: 15000 // 15 segundos
+    });
+    
+    console.log('🔍 useCountries result:', {
+      dataCount: result.data?.length || 0,
+      totalCount: result.totalCount,
+      isLoading: result.isLoading,
+      isLoadingPages: result.isLoadingPages
+    });
+    
+    return result;
+  };
+  // 🔹 Estados: /api/states/?country=1 - NUEVA ESTRATEGIA
   const useStates = (countryId?: any) => {
     const cleanId = sanitize(countryId);
-    return useQuery({
-      queryKey: ["geo", "states", cleanId],
-      queryFn: async () => {
-        if (!cleanId) return [];
-        console.log('🔍 Fetching states for country:', cleanId);
-        const res = await api.get<{results: State[], count: number}>(`states/?country=${cleanId}`);
-        console.log('🔍 States response:', res.data);
-        console.log('🔍 States results extracted:', res.data.results);
-        return res.data.results; // ← FIX: Extraer results de estructura paginada
-      },
+    const result = usePaginatedData<State>({
+      endpoint: "states/",
       enabled: !!cleanId,
-      staleTime: 1000, // 1 segundo para debugging
-      gcTime: 1000, // 1 segundo para debugging
+      queryParams: cleanId ? { country: cleanId } : {},
+      maxPages: 100, // Venezuela tiene ~25 estados, pero permitimos hasta 100
+      timeout: 20000 // 20 segundos
     });
+    
+    console.log('🔍 useStates result:', {
+      countryId: cleanId,
+      dataCount: result.data?.length || 0,
+      totalCount: result.totalCount,
+      isLoading: result.isLoading
+    });
+    
+    return result;
   };
-  // 🔹 Municipios: /api/municipalities/?state=1 - CORREGIDO PARA EXTRAER RESULTS
+  // 🔹 Municipios: /api/municipalities/?state=1 - NUEVA ESTRATEGIA
   const useMunicipalities = (stateId?: any) => {
     const cleanId = sanitize(stateId);
-    return useQuery({
-      queryKey: ["geo", "municipalities", cleanId],
-      queryFn: async () => {
-        if (!cleanId) return [];
-        console.log('🔍 Fetching municipalities for state:', cleanId);
-        const res = await api.get<{results: Municipality[], count: number}>(`municipalities/?state=${cleanId}`);
-        console.log('🔍 Municipalities response:', res.data);
-        console.log('🔍 Municipalities results extracted:', res.data.results);
-        return res.data.results; // ← FIX: Extraer results de estructura paginada
-      },
+    const result = usePaginatedData<Municipality>({
+      endpoint: "municipalities/",
       enabled: !!cleanId,
-      staleTime: 1000, // 1 segundo para debugging
-      gcTime: 1000, // 1 segundo para debugging
+      queryParams: cleanId ? { state: cleanId } : {},
+      maxPages: 200, // Algunos estados tienen muchos municipios
+      timeout: 25000 // 25 segundos
     });
+    
+    console.log('🔍 useMunicipalities result:', {
+      stateId: cleanId,
+      dataCount: result.data?.length || 0,
+      totalCount: result.totalCount,
+      isLoading: result.isLoading
+    });
+    
+    return result;
   };
-  // 🔹 Parroquias: /api/parishes/?municipality=1 - CORREGIDO PARA EXTRAER RESULTS
+  // 🔹 Parroquias: /api/parishes/?municipality=1 - NUEVA ESTRATEGIA
   const useParishes = (municipalityId?: any) => {
     const cleanId = sanitize(municipalityId);
-    return useQuery({
-      queryKey: ["geo", "parishes", cleanId],
-      queryFn: async () => {
-        if (!cleanId) return [];
-        const res = await api.get<{results: Parish[], count: number}>(`parishes/?municipality=${cleanId}`);
-        console.log('🔍 Parishes response:', res.data);
-        console.log('🔍 Parishes results extracted:', res.data.results);
-        return res.data.results; // ← FIX: Extraer results de estructura paginada
-      },
+    const result = usePaginatedData<Parish>({
+      endpoint: "parishes/",
       enabled: !!cleanId,
-      staleTime: 1000, // 1 segundo para debugging
-      gcTime: 1000, // 1 segundo para debugging
+      queryParams: cleanId ? { municipality: cleanId } : {},
+      maxPages: 300, // Algunos municipios tienen muchas parroquias
+      timeout: 25000 // 25 segundos
     });
+    
+    console.log('🔍 useParishes result:', {
+      municipalityId: cleanId,
+      dataCount: result.data?.length || 0,
+      totalCount: result.totalCount,
+      isLoading: result.isLoading
+    });
+    
+    return result;
   };
-  // 🔹 Urbanizaciones: /api/neighborhoods/?parish=1 - CORREGIDO PARA EXTRAER RESULTS
+  // 🔹 Urbanizaciones: /api/neighborhoods/?parish=1 - NUEVA ESTRATEGIA
   const useNeighborhoods = (parishId?: any) => {
     const cleanId = sanitize(parishId);
-    return useQuery({
-      queryKey: ["geo", "neighborhoods", cleanId],
-      queryFn: async () => {
-        if (!cleanId) return [];
-        const res = await api.get<{results: Neighborhood[], count: number}>(`neighborhoods/?parish=${cleanId}`);
-        console.log('🔍 Neighborhoods response:', res.data);
-        console.log('🔍 Neighborhoods results extracted:', res.data.results);
-        return res.data.results; // ← FIX: Extraer results de estructura paginada
-      },
+    const result = usePaginatedData<Neighborhood>({
+      endpoint: "neighborhoods/",
       enabled: !!cleanId,
-      staleTime: 1000, // 1 segundo para debugging
-      gcTime: 1000, // 1 segundo para debugging
+      queryParams: cleanId ? { parish: cleanId } : {},
+      maxPages: 500, // Barrios puede ser muy numerosos
+      timeout: 30000 // 30 segundos
     });
+    
+    console.log('🔍 useNeighborhoods result:', {
+      parishId: cleanId,
+      dataCount: result.data?.length || 0,
+      totalCount: result.totalCount,
+      isLoading: result.isLoading
+    });
+    
+    return result;
   };
   // 🔹 Crear Nueva Urbanización (POST) - SIN CAMBIOS
   const createNeighborhood = async (name: string, parishId: number) => {
