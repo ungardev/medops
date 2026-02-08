@@ -3,87 +3,19 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Patient, PatientInput } from "../../../types/patients";
 import { useUpdatePatient } from "../../../hooks/patients/useUpdatePatient";
 import { useLocationData } from "../../../hooks/settings/useLocationData";
+import { LocationOption, normalizeLocationOption } from "../../../types/common";
+import FieldSelect from "../../Settings/FieldSelect";
 import { 
   PencilSquareIcon, 
   CheckIcon, 
   XMarkIcon,
   MapPinIcon,
   UserCircleIcon,
-  ExclamationCircleIcon,
-  CpuChipIcon
+  ExclamationCircleIcon
 } from "@heroicons/react/24/outline";
 interface DemographicsSectionProps {
   patient: Patient;
   onRefresh: () => void;
-}
-interface FieldProps {
-  label: string;
-  value: string;
-  type?: "text" | "date" | "email" | "number" | "select";
-  options?: { value: string; label: string }[];
-  multiline?: boolean;
-  span?: 3 | 4 | 6 | 8 | 9 | 12;
-  editing: boolean;
-  tooltip?: string;
-  onChange?: (value: string) => void;
-}
-function Field({ label, value, type = "text", options = [], multiline = false, span = 3, editing, tooltip, onChange }: FieldProps) {
-  const spanClasses = {
-    3: "col-span-12 md:col-span-3",
-    4: "col-span-12 md:col-span-4",
-    6: "col-span-12 md:col-span-6",
-    8: "col-span-12 md:col-span-8",
-    9: "col-span-12 md:col-span-9",
-    12: "col-span-12",
-  };
-  // Determinar estado de carga para select
-  const isLoading = type === "select" && options.length === 0;
-  return (
-    <div className={`${spanClasses[span]} group`}>
-      <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5 group-focus-within:text-white/60 transition-colors">
-        {label}
-        {tooltip && <span className="ml-1 text-white/20 cursor-help" title={tooltip}>ⓘ</span>}
-        {isLoading && <span className="ml-2 text-emerald-400 animate-pulse">●</span>}
-      </label>
-      {editing ? (
-        type === "select" ? (
-          <select
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase"
-            disabled={isLoading}
-          >
-            <option value="" className="bg-[#0a0a0a]">{isLoading ? 'CARGANDO...' : 'SELECCIONAR_OPCIÓN'}</option>
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-[#0a0a0a]">
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        ) : multiline ? (
-          <textarea
-            rows={2}
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase resize-none"
-          />
-        ) : (
-          <input
-            type={type}
-            value={value}
-            onChange={(e) => onChange?.(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase"
-          />
-        )
-      ) : (
-        <div className="min-h-[32px] flex items-center border-b border-white/5 group-hover:border-white/10 transition-all animate-in fade-in duration-200">
-          <p className="text-[11px] font-bold text-white/90 uppercase tracking-tight truncate">
-            {value && value !== "" && value !== "undefined" ? value : <span className="text-white/10 italic">NULL_VAL</span>}
-          </p>
-        </div>
-      )}
-    </div>
-  );
 }
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
@@ -91,7 +23,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const [form, setForm] = useState<Partial<PatientInput>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const updatePatient = useUpdatePatient(patient.id);
-  // ✅ NUEVO: Importar hooks de datos geográficos reales
+  // Importar hooks de datos geográficos reales
   const {
     useCountries,
     useStates,
@@ -99,7 +31,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     useParishes,
     useNeighborhoods
   } = useLocationData();
-  // ✅ NUEVO: Hooks para obtener datos reales
+  // Hooks para obtener datos reales
   const { data: countries = [], isLoading: loadingCountries } = useCountries();
   const { data: states = [], isLoading: loadingStates } = useStates(form.country_id);
   const { data: municipalities = [], isLoading: loadingMunicipalities } = useMunicipalities(form.state_id);
@@ -144,30 +76,9 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       onError: () => setErrors({ general: "ERR_SYNC_FAILED" })
     });
   };
-  // ✅ NUEVO: Opciones dinámicas con datos reales
-  const countryOptions = useMemo(() => 
-    countries.map(country => ({ value: String(country.id), label: country.name.toUpperCase() })),
-    [countries]
-  );
-  const stateOptions = useMemo(() => 
-    form.country_id ? states.map(state => ({ value: String(state.id), label: state.name.toUpperCase() })) : [],
-    [states, form.country_id]
-  );
-  const municipalityOptions = useMemo(() => 
-    form.state_id ? municipalities.map(municipality => ({ value: String(municipality.id), label: municipality.name.toUpperCase() })) : [],
-    [municipalities, form.state_id]
-  );
-  const parishOptions = useMemo(() => 
-    form.municipality_id ? parishes.map(parish => ({ value: String(parish.id), label: parish.name.toUpperCase() })) : [],
-    [parishes, form.municipality_id]
-  );
-  const neighborhoodOptions = useMemo(() => 
-    form.parish_id ? neighborhoods.map(neighborhood => ({ value: String(neighborhood.id), label: neighborhood.name.toUpperCase() })) : [],
-    [neighborhoods, form.parish_id]
-  );
-  // ✅ NUEVO: Handlers con cascada real y validación
+  // Handlers con cascada real y validación
   const handleCountryChange = (v: string) => {
-    const id = Number(v) || undefined;
+    const id = v ? Number(v) : undefined;
     setForm(prev => ({ 
       ...prev, 
       country_id: id, 
@@ -178,7 +89,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     }));
   };
   const handleStateChange = (v: string) => {
-    const id = Number(v) || undefined;
+    const id = v ? Number(v) : undefined;
     setForm(prev => ({ 
       ...prev, 
       state_id: id, 
@@ -188,7 +99,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     }));
   };
   const handleMunicipalityChange = (v: string) => {
-    const id = Number(v) || undefined;
+    const id = v ? Number(v) : undefined;
     setForm(prev => ({ 
       ...prev, 
       municipality_id: id, 
@@ -197,7 +108,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     }));
   };
   const handleParishChange = (v: string) => {
-    const id = Number(v) || undefined;
+    const id = v ? Number(v) : undefined;
     setForm(prev => ({ 
       ...prev, 
       parish_id: id, 
@@ -205,7 +116,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     }));
   };
   const handleNeighborhoodChange = (v: string) => {
-    const id = Number(v) || undefined;
+    const id = v ? Number(v) : undefined;
     setForm(prev => ({ ...prev, neighborhood_id: id }));
   };
   return (
@@ -254,32 +165,136 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         onSubmit={(e) => { e.preventDefault(); if (editing) handleSave(); }}
         className="p-6 grid grid-cols-12 gap-x-6 gap-y-6"
       >
-        <Field span={3} label="Identity_ID" value={String(form.national_id || "")} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, national_id: v }))} tooltip="Cédula o ID nacional" />
-        <Field span={3} label="First_Name" value={form.first_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, first_name: v }))} />
-        <Field span={3} label="Middle_Name" value={form.middle_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, middle_name: v }))} />
-        <Field span={3} label="Last_Name" value={form.last_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, last_name: v }))} />
+        {/* Campos básicos */}
+        <div className="col-span-3">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Identity_ID</label>
+          <input
+            type="text"
+            value={form.national_id || ""}
+            onChange={(e) => setForm(prev => ({ ...prev, national_id: e.target.value }))}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+          />
+        </div>
         
-        <Field span={3} label="Second_Last_Name" value={form.second_last_name || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, second_last_name: v }))} />
-        <Field span={3} label="Birth_Date" type="date" value={form.birthdate || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, birthdate: v }))} />
-        <Field span={6} label="Birth_Location" value={form.birth_place || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, birth_place: v }))} />
+        <div className="col-span-3">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">First_Name</label>
+          <input
+            type="text"
+            value={form.first_name || ""}
+            onChange={(e) => setForm(prev => ({ ...prev, first_name: e.target.value }))}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+          />
+        </div>
         
-        <Field span={4} label="Email_Address" type="email" value={form.email || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, email: v }))} />
-        <Field span={4} label="Contact_Line" value={form.contact_info || ""} editing={editing} onChange={(v) => setForm(prev => ({ ...prev, contact_info: v }))} />
-        <Field span={4} label="Birth_Country" type="select" options={countryOptions} value={String(form.country_id || "")} editing={editing} onChange={handleCountryChange} />
+        <div className="col-span-3">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Last_Name</label>
+          <input
+            type="text"
+            value={form.last_name || ""}
+            onChange={(e) => setForm(prev => ({ ...prev, last_name: e.target.value }))}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+          />
+        </div>
         
+        <div className="col-span-3">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Birth_Date</label>
+          <input
+            type="date"
+            value={form.birthdate || ""}
+            onChange={(e) => setForm(prev => ({ ...prev, birthdate: e.target.value }))}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+          />
+        </div>
+        
+        <div className="col-span-4">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Email_Address</label>
+          <input
+            type="email"
+            value={form.email || ""}
+            onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+          />
+        </div>
+        
+        <div className="col-span-4">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Contact_Line</label>
+          <input
+            type="text"
+            value={form.contact_info || ""}
+            onChange={(e) => setForm(prev => ({ ...prev, contact_info: e.target.value }))}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase disabled:opacity-30"
+          />
+        </div>
+        
+        {/* Separador geográfico */}
         <div className="col-span-12 flex items-center gap-3 pt-4 opacity-30">
           <MapPinIcon className="w-3.5 h-3.5" />
           <span className="text-[8px] font-mono uppercase tracking-[0.3em]">GEOGRAPHIC_LOCATION_DATA</span>
           <div className="flex-1 h-[1px] bg-white/20" />
         </div>
         
-        <Field span={3} label="Country" type="select" options={countryOptions} value={String(form.country_id || "")} editing={editing} onChange={handleCountryChange} />
-        <Field span={3} label="State" type="select" options={stateOptions} value={String(form.state_id || "")} editing={editing} onChange={handleStateChange} />
-        <Field span={3} label="Municipality" type="select" options={municipalityOptions} value={String(form.municipality_id || "")} editing={editing} onChange={handleMunicipalityChange} />
-        <Field span={3} label="Parish" type="select" options={parishOptions} value={String(form.parish_id || "")} editing={editing} onChange={handleParishChange} />
+        {/* Selectores geográficos usando FieldSelect unificado */}
+        <FieldSelect
+          label="Country"
+          value={form.country_id || null}
+          options={countries}
+          onChange={handleCountryChange}
+          disabled={!editing}
+          loading={loadingCountries}
+        />
         
-        <Field span={4} label="Neighborhood" type="select" options={neighborhoodOptions} value={String(form.neighborhood_id || "")} editing={editing} onChange={handleNeighborhoodChange} />
-        <Field span={8} label="Full_Address_Details" value={form.address || ""} editing={editing} multiline onChange={(v) => setForm(prev => ({ ...prev, address: v }))} />
+        <FieldSelect
+          label="State"
+          value={form.state_id || null}
+          options={states}
+          onChange={handleStateChange}
+          disabled={!editing || !form.country_id}
+          loading={loadingStates}
+        />
+        
+        <FieldSelect
+          label="Municipality"
+          value={form.municipality_id || null}
+          options={municipalities}
+          onChange={handleMunicipalityChange}
+          disabled={!editing || !form.state_id}
+          loading={loadingMunicipalities}
+        />
+        
+        <FieldSelect
+          label="Parish"
+          value={form.parish_id || null}
+          options={parishes}
+          onChange={handleParishChange}
+          disabled={!editing || !form.municipality_id}
+          loading={loadingParishes}
+        />
+        
+        <FieldSelect
+          label="Neighborhood"
+          value={form.neighborhood_id || null}
+          options={neighborhoods}
+          onChange={handleNeighborhoodChange}
+          disabled={!editing || !form.parish_id}
+          loading={loadingNeighborhoods}
+        />
+        
+        <div className="col-span-7">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Full_Address_Details</label>
+          <textarea
+            rows={2}
+            value={form.address || ""}
+            onChange={(e) => setForm(prev => ({ ...prev, address: e.target.value }))}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white focus:border-white/30 focus:outline-none transition-all uppercase resize-none disabled:opacity-30"
+          />
+        </div>
       </form>
     </div>
   );
