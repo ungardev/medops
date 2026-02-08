@@ -1,16 +1,19 @@
 // src/lib/apiClient.ts
 import axios from "axios";
-// ⚔️ Usar la variable de entorno definida en .env.production
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,  // ✅ ahora apunta a http://127.0.0.1:8000/api
-  withCredentials: false,                 // ✅ no enviar cookies, solo token
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: false,
 });
-// 🔒 aplicar token inicial si existe (usar variable de entorno como fallback)
+// DEBUGGING TEMPORAL - VERIFICAR VARIABLES DE ENTORNO
+console.log('🔍 VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('🔍 VITE_DEV_TOKEN:', import.meta.env.VITE_DEV_TOKEN);
+// aplicar token inicial si existe
 const token = import.meta.env.VITE_DEV_TOKEN;
 if (token) {
+  console.log('🔍 Setting initial token:', token);
   api.defaults.headers.common["Authorization"] = `Token ${token}`;
 }
-// 🔒 interceptor institucional para aplicar token dinámico en cada request
+// interceptor institucional para aplicar token dinámico en cada request
 api.interceptors.request.use((config) => {
   const token = import.meta.env.VITE_DEV_TOKEN;
   if (token) {
@@ -18,9 +21,15 @@ api.interceptors.request.use((config) => {
       config.headers = {};
     }
     config.headers["Authorization"] = `Token ${token}`;
+    console.log('🔍 API Request:', {
+      url: config.url,
+      method: config.method,
+      hasToken: !!token,
+      tokenPreview: token.substring(0, 10) + '...'
+    });
   }
   
-  // ✅ NUEVO: Inyectar ID de institución activa automáticamente
+  // inyectar ID de institución activa automáticamente
   const activeInstitutionId = localStorage.getItem("active_institution_id");
   if (activeInstitutionId) {
     if (!config.headers) {
@@ -31,3 +40,21 @@ api.interceptors.request.use((config) => {
   
   return config;
 });
+api.interceptors.response.use(
+  (response) => {
+    console.log('🔍 API Response:', {
+      url: response.config.url,
+      status: response.status,
+      dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+    });
+    return response;
+  },
+  (error) => {
+    console.error('🔍 API Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.message
+    });
+    return Promise.reject(error);
+  }
+);

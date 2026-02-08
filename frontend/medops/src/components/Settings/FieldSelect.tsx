@@ -20,17 +20,27 @@ export default function FieldSelect({
       .map(normalizeLocationOption)
       .filter((opt): opt is LocationOption => opt !== null);
   }, [options]);
+  // DEBUGGING TEMPORAL - BORRAR LUEGO
+  React.useEffect(() => {
+    console.log(`🔍 FieldSelect [${label}]:`, {
+      optionsCount: safeOptions.length,
+      loading,
+      disabled,
+      currentValue: value,
+      rawOptions: options?.length || 0
+    });
+  }, [label, safeOptions, loading, disabled, value, options]);
   return (
-    <div className={`flex flex-col gap-1.5 flex-1 min-w-[200px] ${disabled ? 'opacity-30' : 'opacity-100'}`}>
-      <label className="text-[8px] font-black font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em] flex items-center justify-between px-1">
+    <div className={`flex flex-col gap-1.5 ${disabled ? 'opacity-30' : 'opacity-100'}`}>
+      <label className="text-[8px] font-black font-mono text-white/30 uppercase tracking-[0.2em] flex items-center justify-between px-1">
         <span>{label}</span>
-        {loading && <CpuChipIcon className="w-2.5 h-2.5 animate-spin text-[var(--palantir-active)]" />}
+        {loading && <CpuChipIcon className="w-2.5 h-2.5 animate-spin text-white/60" />}
       </label>
       <select
         value={value || ""}
         disabled={disabled || loading}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full bg-black/60 border border-[var(--palantir-border)] text-[10px] font-mono p-3 rounded-none focus:border-[var(--palantir-active)] outline-none appearance-none uppercase"
+        className="w-full bg-black/60 border border-white/10 text-[10px] font-mono p-3 rounded-none focus:border-white/30 outline-none appearance-none uppercase"
       >
         <option value="">-- {loading ? 'LOADING...' : `SELECT_${label.toUpperCase()}`} --</option>
         {safeOptions.map((opt) => (

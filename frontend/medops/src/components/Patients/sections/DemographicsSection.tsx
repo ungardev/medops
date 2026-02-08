@@ -37,6 +37,14 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const { data: municipalities = [], isLoading: loadingMunicipalities } = useMunicipalities(form.state_id);
   const { data: parishes = [], isLoading: loadingParishes } = useParishes(form.municipality_id);
   const { data: neighborhoods = [], isLoading: loadingNeighborhoods } = useNeighborhoods(form.parish_id);
+  // DEBUGGING TEMPORAL - VERIFICAR DATOS QUE LLEGAN
+  React.useEffect(() => {
+    console.log('🔍 DemographicsSection - Countries:', {
+      count: countries.length,
+      loading: loadingCountries,
+      data: countries
+    });
+  }, [countries, loadingCountries]);
   useEffect(() => {
     setForm({
       national_id: patient.national_id ?? "",
@@ -166,7 +174,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         className="p-6 grid grid-cols-12 gap-x-6 gap-y-6"
       >
         {/* Campos básicos */}
-        <div className="col-span-3">
+        <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Identity_ID</label>
           <input
             type="text"
@@ -177,7 +185,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-3">
+        <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">First_Name</label>
           <input
             type="text"
@@ -188,7 +196,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-3">
+        <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Last_Name</label>
           <input
             type="text"
@@ -199,7 +207,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-3">
+        <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Birth_Date</label>
           <input
             type="date"
@@ -210,7 +218,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-4">
+        <div className="col-span-12 md:col-span-4">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Email_Address</label>
           <input
             type="email"
@@ -221,7 +229,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-4">
+        <div className="col-span-12 md:col-span-4">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Contact_Line</label>
           <input
             type="text"
@@ -239,7 +247,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <div className="flex-1 h-[1px] bg-white/20" />
         </div>
         
-        {/* Selectores geográficos con COLSPAN CORREGIDO - FIX PRINCIPAL */}
+        {/* Selectores geográficos CON LAYOUT CORREGIDO */}
         <div className="col-span-12 md:col-span-2">
           <FieldSelect
             label="Country"
@@ -295,7 +303,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           />
         </div>
         
-        <div className="col-span-7">
+        <div className="col-span-12 md:col-span-2">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase tracking-widest mb-1.5">Full_Address_Details</label>
           <textarea
             rows={2}

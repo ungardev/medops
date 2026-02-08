@@ -25,7 +25,6 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     phone: "",
     tax_id: "",
     address: "",
-    // NUEVA ESTRUCTURA JERÁRQUICA COMPLETA
     countryId: null as number | null,
     stateId: null as number | null,
     municipalityId: null as number | null,
@@ -40,6 +39,14 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
   const { data: municipalities = [], isLoading: loadingMunis } = useMunicipalities(formData.stateId);
   const { data: parishes = [], isLoading: loadingParishes } = useParishes(formData.municipalityId);
   const { data: neighborhoods = [], isLoading: loadingHoods } = useNeighborhoods(formData.parishId);
+  // DEBUGGING TEMPORAL - VERIFICAR DATOS DE PAÍSES
+  React.useEffect(() => {
+    console.log('🔍 EditInstitutionModal - Countries:', {
+      count: countries.length,
+      loading: loadingCountries,
+      data: countries
+    });
+  }, [countries, loadingCountries]);
   useEffect(() => {
     if (open && settings) {
       const neighborhood = settings.neighborhood;
@@ -48,7 +55,6 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         phone: settings.phone || "",
         tax_id: settings.tax_id || "",
         address: settings.address || "",
-        // NUEVA ESTRUCTURA CON IDS JERÁRQUICOS
         countryId: (neighborhood as any)?.parish?.municipality?.state?.country?.id || null,
         stateId: (neighborhood as any)?.parish?.municipality?.state?.id || null,
         municipalityId: (neighborhood as any)?.parish?.municipality?.id || null,
@@ -172,7 +178,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                 INSTITUTION_LOGO_ASSET_MANAGER
               </h3>
             </div>
-            
+             
             <div className="flex flex-col items-center gap-4">
               <div className="relative group w-32 h-32 border border-white/10 bg-black/40 p-1 overflow-hidden">
                 {preview ? (
@@ -199,7 +205,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                 INSTITUTION_IDENTITY_PROTOCOL
               </h3>
             </div>
-            
+             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className={labelStyles}>CENTER_IDENTITY_NAME</label>
@@ -238,49 +244,57 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                 GEOGRAPHIC_HIERARCHY_SYSTEM
               </h3>
             </div>
-            
-            {/* NUEVOS 5 SELECTORES INDIVIDUALES */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4 bg-black/20 border border-[var(--palantir-border)]/30">
-              <FieldSelect
-                label="Country"
-                value={null} // Siempre Venezuela (id=1) por defecto
-                options={countries}
-                onChange={handleCountryChange}
-                disabled={false}
-                loading={loadingCountries}
-              />
+             
+            {/* 5 SELECTORES CON LAYOUT CORREGIDO */}
+            <div className="grid grid-cols-12 gap-4 p-4 bg-black/20 border border-white/10/30">
+              <div className="col-span-12 md:col-span-2">
+                <FieldSelect
+                  label="Country"
+                  value={formData.countryId}
+                  options={countries}
+                  onChange={handleCountryChange}
+                  disabled={false}
+                  loading={loadingCountries}
+                />
+              </div>
               
-              <FieldSelect
-                label="State"
-                value={formData.stateId}
-                options={states}
-                onChange={handleStateChange}
-                disabled={!formData.countryId}
-                loading={loadingStates}
-              />
+              <div className="col-span-12 md:col-span-2">
+                <FieldSelect
+                  label="State"
+                  value={formData.stateId}
+                  options={states}
+                  onChange={handleStateChange}
+                  disabled={!formData.countryId}
+                  loading={loadingStates}
+                />
+              </div>
               
-              <FieldSelect
-                label="Municipality"
-                value={formData.municipalityId}
-                options={municipalities}
-                onChange={handleMunicipalityChange}
-                disabled={!formData.stateId}
-                loading={loadingMunis}
-              />
+              <div className="col-span-12 md:col-span-2">
+                <FieldSelect
+                  label="Municipality"
+                  value={formData.municipalityId}
+                  options={municipalities}
+                  onChange={handleMunicipalityChange}
+                  disabled={!formData.stateId}
+                  loading={loadingMunis}
+                />
+              </div>
               
-              <FieldSelect
-                label="Parish"
-                value={formData.parishId}
-                options={parishes}
-                onChange={handleParishChange}
-                disabled={!formData.municipalityId}
-                loading={loadingParishes}
-              />
+              <div className="col-span-12 md:col-span-2">
+                <FieldSelect
+                  label="Parish"
+                  value={formData.parishId}
+                  options={parishes}
+                  onChange={handleParishChange}
+                  disabled={!formData.municipalityId}
+                  loading={loadingParishes}
+                />
+              </div>
               
-              <div className={`flex flex-col gap-1.5 flex-1 min-w-[200px] ${!formData.parishId ? 'opacity-30' : 'opacity-100'}`}>
-                <label className="text-[8px] font-black font-mono text-[var(--palantir-muted)] uppercase tracking-[0.2em] flex items-center justify-between px-1">
+              <div className="col-span-12 md:col-span-2">
+                <label className="text-[8px] font-black font-mono text-white/30 uppercase tracking-[0.2em] flex items-center justify-between px-1">
                   <span>Neighborhood / Sector</span>
-                  {loadingHoods && <CpuChipIcon className="w-2.5 h-2.5 animate-spin text-[var(--palantir-active)]" />}
+                  {loadingHoods && <CpuChipIcon className="w-2.5 h-2.5 animate-spin text-white/60" />}
                 </label>
                 <div className="relative">
                   <input
@@ -289,7 +303,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                     disabled={!formData.parishId || loadingHoods}
                     onChange={(e) => handleNeighborhoodChange(e.target.value)}
                     placeholder={!formData.parishId ? "-- LOCKED --" : "-- TYPE_OR_SELECT_NEIGHBORHOOD --"}
-                    className="w-full bg-black/60 border border-[var(--palantir-border)] text-[10px] font-mono p-3 rounded-none focus:border-[var(--palantir-active)] outline-none placeholder:text-white/20 uppercase"
+                    className="w-full bg-black/60 border border-white/10 text-[10px] font-mono p-3 rounded-none focus:border-white/30 outline-none placeholder:text-white/20 uppercase"
                   />
                   <datalist id="neighborhood-options">
                     {neighborhoods.map((n) => (
@@ -298,7 +312,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                   </datalist>
                   {formData.neighborhood && !neighborhoods.some(n => n.name.toLowerCase() === formData.neighborhood.toLowerCase()) && (
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
-                      <span className="text-[7px] font-black text-[var(--palantir-active)] uppercase tracking-tighter animate-pulse">New_Entry</span>
+                      <span className="text-[7px] font-black text-emerald-400 uppercase tracking-tighter animate-pulse">New_Entry</span>
                     </div>
                   )}
                 </div>
