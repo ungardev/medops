@@ -2691,6 +2691,13 @@ def start_consultation_from_entry(request, entry_id):
     Inicia una consulta convirtiendo un WaitingRoomEntry en Appointment.
     Maneja tanto walk-ins como citas programadas.
     """
+    # Verificar autenticación explícita
+    if not request.user.is_authenticated:
+        return Response(
+            {"error": "Usuario no autenticado. Inicie sesión primero."}, 
+            status=401
+        )
+    
     try:
         entry = get_object_or_404(WaitingRoomEntry, pk=entry_id)
         
@@ -2759,4 +2766,5 @@ def start_consultation_from_entry(request, entry_id):
         return Response(serializer.data, status=201)
     
     except Exception as e:
+        logger.error(f"Error en start_consultation_from_entry: {str(e)}")
         return Response({"error": str(e)}, status=500)
