@@ -1977,7 +1977,7 @@ class AppointmentDetailSerializer(AppointmentSerializer):
             return {
                 "id": order.id,
                 "status": order.status,
-                "total_amount": float(order.total_amount),
+                "total_amount": float(order.total),
                 "order_number": getattr(order, 'order_number', f"ORD-{order.id}")
             }
         return None
