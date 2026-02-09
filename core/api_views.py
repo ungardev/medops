@@ -2691,14 +2691,46 @@ def start_consultation_from_entry(request, entry_id):
     Inicia una consulta convirtiendo un WaitingRoomEntry en Appointment.
     Maneja tanto walk-ins como citas programadas.
     """
-    # Verificar autenticación SOLO si DRF tiene authentication classes configuradas
     from django.conf import settings
-    has_auth_classes = bool(settings.REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES'))
+    from rest_framework.authtoken.models import Token
+    from core.models import DoctorOperator
     
-    if has_auth_classes and not request.user.is_authenticated:
+    # =====================================================
+    # AUTENTICACIÓN MANUAL EN DEBUG MODE
+    # =====================================================
+    has_auth_classes = bool(settings.REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES', []))
+    
+    user = request.user
+    
+    # En DEBUG mode sin auth classes, intentar extraer usuario del token manualmente
+    if not has_auth_classes:
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Token '):
+            token_key = auth_header[6:]  # Extraer después de "Token "
+            try:
+                token = Token.objects.get(key=token_key)
+                user = token.user
+            except Token.DoesNotExist:
+                return Response(
+                    {"error": "Token de autenticación inválido"}, 
+                    status=401
+                )
+    
+    # Verificar autenticación si hay auth classes configuradas
+    if has_auth_classes and not user.is_authenticated:
         return Response(
             {"error": "Usuario no autenticado. Inicie sesión primero."}, 
             status=401
+        )
+    
+    # =====================================================
+    # OBTENER DOCTOR PROFILE
+    # =====================================================
+    doctor = getattr(user, 'doctor_profile', None)
+    if not doctor:
+        return Response(
+            {"error": "Doctor profile not found. El usuario no tiene un perfil de médico asociado."}, 
+            status=404
         )
     
     try:
@@ -2724,7 +2756,6 @@ def start_consultation_from_entry(request, entry_id):
         institution = get_object_or_404(InstitutionSettings, pk=institution_id)
         
         # Obtener o crear Appointment para este paciente
-        # Si viene de cita programada (entry.appointment existe)
         if entry.appointment:
             appointment = entry.appointment
             appointment.status = "in_consultation"
@@ -2732,11 +2763,6 @@ def start_consultation_from_entry(request, entry_id):
             appointment.save(update_fields=['status', 'started_at'])
         else:
             # WALK-IN: Crear Appointment desde cero
-            doctor = getattr(request.user, 'doctor_profile', None)
-            if not doctor:
-                return Response({"error": "Doctor profile not found"}, status=404)
-            
-            # Crear Appointment para walk-in
             appointment = Appointment.objects.create(
                 patient=entry.patient,
                 doctor=doctor,
