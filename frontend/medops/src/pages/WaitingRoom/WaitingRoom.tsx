@@ -25,19 +25,19 @@ import {
   CheckCircleIcon
 } from "@heroicons/react/24/outline";
 const renderStatusBadge = (status: string) => {
-  const base = "inline-flex items-center justify-center px-2 py-0.5 text-[9px] rounded-sm font-black uppercase tracking-tighter border whitespace-nowrap transition-all";
+  const base = "inline-flex items-center justify-center px-2 py-0.5 text-[8px] rounded-sm font-black uppercase tracking-wider border whitespace-nowrap transition-all duration-300";
   
   switch (status) {
     case "waiting":
-      return <span className={`bg-amber-500/10 text-amber-500 border-amber-500/20`}>In_Queue</span>;
+      return <span className={`${base} bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-[0_0_8px_rgba(245,158,11,0.15)]`}>IN_QUEUE</span>;
     case "in_consultation":
-      return <span className={`bg-white/10 text-white border-white/20 animate-pulse`}>In_Consult</span>;
+      return <span className={`${base} bg-white/20 text-white border-white/40 shadow-[0_0_8px_rgba(255,255,255,0.15)] animate-pulse`}>IN_CONSULT</span>;
     case "completed":
-      return <span className={`bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]`}>Resolved</span>;
+      return <span className={`${base} bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.15)]`}>RESOLVED</span>;
     case "canceled":
-      return <span className={`bg-red-500/10 text-red-500 border-red-500/20`}>Aborted</span>;
+      return <span className={`${base} bg-red-500/20 text-red-400 border-red-500/40 shadow-[0_0_8px_rgba(239,68,68,0.15)]`}>ABORTED</span>;
     default:
-      return <span className={`bg-white/5 text-white/40 border-white/10`}>{status}</span>;
+      return <span className={`${base} bg-white/5 text-white/40 border-white/10`}>{status.toUpperCase()}</span>;
   }
 };
 const renderWaitTime = (entry: WaitingRoomEntry) => {
