@@ -2853,3 +2853,61 @@ def vital_signs_detail_api(request, vital_signs_id):
     elif request.method == 'DELETE':
         vitals.delete()
         return Response(status=204)
+
+
+@api_view(['GET'])
+@permission_classes([conditional_permission()])
+def appointment_charge_order_api(request, appointment_id):
+    """
+    Obtener charge order asociado a una cita.
+    GET /api/appointments/<appointment_id>/charge-order/
+    """
+    try:
+        charge_order = ChargeOrder.objects.get(appointment_id=appointment_id)
+        serializer = ChargeOrderSerializer(charge_order)
+        return Response(serializer.data)
+    except ChargeOrder.DoesNotExist:
+        return Response({"error": "No hay charge order para esta cita"}, status=404)
+    except ChargeOrder.MultipleObjectsReturned:
+        # Si hay múltiples, retornar el primero
+        charge_order = ChargeOrder.objects.filter(appointment_id=appointment_id).first()
+        serializer = ChargeOrderSerializer(charge_order)
+        return Response(serializer.data)
+
+
+@api_view(['POST'])
+@permission_classes([conditional_permission()])
+def create_charge_order_from_appointment(request, appointment_id):
+    """
+    Crear charge order para una cita desde el panel de consulta.
+    POST /api/appointments/<appointment_id>/charge-order/
+    """
+    try:
+        # Verificar que la cita exista
+        appointment = get_object_or_404(Appointment, pk=appointment_id)
+        
+        # Verificar que no exista ya un charge order
+        if ChargeOrder.objects.filter(appointment_id=appointment_id).exists():
+            return Response(
+                {"error": "Ya existe un charge order para esta cita"},
+                status=400
+            )
+        
+        # Crear charge order básico
+        charge_order = ChargeOrder.objects.create(
+            appointment=appointment,
+            patient=appointment.patient,
+            doctor=appointment.doctor,
+            institution=appointment.institution,
+            currency="USD",
+            status="open",
+            total=Decimal('0.00'),
+            balance_due=Decimal('0.00'),
+        )
+        
+        serializer = ChargeOrderSerializer(charge_order)
+        return Response(serializer.data, status=201)
+    
+    except Exception as e:
+        logger.error(f"Error en create_charge_order_from_appointment: {str(e)}")
+        return Response({"error": str(e)}, status=500)

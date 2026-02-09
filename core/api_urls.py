@@ -107,6 +107,9 @@ from .api_views import (
     # ✅ NUEVOS ENDPOINTS DE SIGNOS VITALES ---
     vital_signs_api,
     vital_signs_detail_api,
+    # ✅ NUEVOS ENDPOINTS DE CHARGE ORDER POR APPOINTMENT ---
+    appointment_charge_order_api,
+    create_charge_order_from_appointment,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -187,6 +190,10 @@ urlpatterns = [
     # ✅ ENDPOINTS DE SIGNOS VITALES ---
     path("appointments/<int:appointment_id>/vital-signs/", vital_signs_api, name="vital-signs-api"),
     path("vital-signs/<int:vital_signs_id>/", vital_signs_detail_api, name="vital-signs-detail-api"),
+    
+    # ✅ ENDPOINTS DE CHARGE ORDER POR APPOINTMENT ---
+    path("appointments/<int:appointment_id>/charge-order/", appointment_charge_order_api, name="appointment-charge-order-api"),
+    path("appointments/<int:appointment_id>/charge-order/create/", create_charge_order_from_appointment, name="create-charge-order-from-appointment"),
     
     path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),
     path("consultations/current/", current_consultation_api, name="current-consultation-api"),
