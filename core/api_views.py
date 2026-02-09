@@ -2691,8 +2691,11 @@ def start_consultation_from_entry(request, entry_id):
     Inicia una consulta convirtiendo un WaitingRoomEntry en Appointment.
     Maneja tanto walk-ins como citas programadas.
     """
-    # Verificar autenticación explícita
-    if not request.user.is_authenticated:
+    # Verificar autenticación SOLO si DRF tiene authentication classes configuradas
+    from django.conf import settings
+    has_auth_classes = bool(settings.REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES'))
+    
+    if has_auth_classes and not request.user.is_authenticated:
         return Response(
             {"error": "Usuario no autenticado. Inicie sesión primero."}, 
             status=401
