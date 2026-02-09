@@ -1606,7 +1606,7 @@ def current_consultation_api(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def update_appointment_status(request, pk):
     try:
         appointment = get_object_or_404(Appointment, pk=pk)
