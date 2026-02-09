@@ -137,7 +137,7 @@ export function useInstitutions() {
       localStorage.setItem("active_institution_id", String(id));
       setLocalActiveId(id);
       
-      await api.put(`config/institution/set-active/`, { institution: id });
+      await api.put(`config/institutions/${id}/set-active/`, { institution: id });
       api.defaults.headers.common["X-Institution-ID"] = String(id);
     },
     onSuccess: () => {
