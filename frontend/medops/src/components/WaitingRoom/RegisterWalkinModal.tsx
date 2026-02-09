@@ -8,8 +8,9 @@ import type { WaitingRoomEntry } from "../../types/waitingRoom";
 import { XMarkIcon, UserPlusIcon, MagnifyingGlassIcon, ArrowLeftIcon, CheckIcon } from "@heroicons/react/24/outline";
 interface Props {
   onClose: () => void;
-  onSuccess: (patientId: number) => void;
+  onSuccess: (patientId: number, institutionId: number | null) => void;
   existingEntries: WaitingRoomEntry[];
+  institutionId?: number | null;
 }
 interface FormValues {
   first_name: string;
@@ -20,7 +21,12 @@ interface FormValues {
   phone?: string;
   email?: string;
 }
-const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntries }) => {
+const RegisterWalkinModal: React.FC<Props> = ({ 
+  onClose, 
+  onSuccess, 
+  existingEntries,
+  institutionId 
+}) => {
   const {
     register,
     handleSubmit,
@@ -63,7 +69,7 @@ const RegisterWalkinModal: React.FC<Props> = ({ onClose, onSuccess, existingEntr
         const patient: Patient = await createPatient(payload);
         patientId = patient.id;
       }
-      onSuccess(patientId);
+      onSuccess(patientId, institutionId || null);
       onClose();
     } catch (e: any) {
       alert(e.message || "Error en el registro");

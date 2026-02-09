@@ -720,13 +720,18 @@ def get_payment_summary() -> List[Dict[str, Any]]:
 def get_waived_consultations():
     return Payment.objects.filter(status="waived")
 
+
 def get_waitingroom_today_data():
     today = timezone.localdate()
     return WaitingRoomEntry.objects.filter(
         Q(appointment__appointment_date=today) | 
         Q(arrival_time__date=today) | 
         Q(created_at__date=today)
-    ).select_related("patient", "appointment").order_by("order", "arrival_time")
+    ).select_related(
+        "patient", 
+        "appointment",
+        "institution"  # ✅ AGREGADO
+    ).order_by("order", "arrival_time")
 
 def get_pending_appointments():
     # Mueve aquí la lógica de cálculo de saldo que estaba en la vista

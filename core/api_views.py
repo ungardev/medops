@@ -659,9 +659,50 @@ def appointment_detail_api(request, pk): return Response({})
 @api_view(['POST'])
 def update_appointment_notes(request, pk): return Response({"ok": True})
 
-@api_view(['POST'])
-def register_arrival(request): return Response({"ok": True})
 
+@api_view(['POST'])
+def register_arrival(request):
+    """
+    Registra la llegada de un paciente a la sala de espera.
+    Crea un WaitingRoomEntry asociado al paciente.
+    """
+    try:
+        patient_id = request.data.get('patient_id')
+        appointment_id = request.data.get('appointment_id')
+        
+        # Obtener institution_id del header
+        institution_id = request.headers.get('X-Institution-ID')
+        if not institution_id:
+            return Response({"error": "Institution ID required"}, status=400)
+        
+        # Obtener objetos
+        patient = get_object_or_404(Patient, pk=patient_id)
+        institution = get_object_or_404(InstitutionSettings, pk=institution_id)
+        
+        # Si viene appointment_id, verificar y asociar
+        appointment = None
+        if appointment_id:
+            appointment = get_object_or_404(Appointment, pk=appointment_id)
+        
+        # Crear o obtener entrada
+        entry, created = WaitingRoomEntry.objects.get_or_create(
+            patient=patient,
+            institution=institution,
+            appointment=appointment,
+            defaults={
+                'status': 'waiting',
+                'source_type': 'walkin' if not appointment else 'scheduled',
+                'arrival_time': timezone.now(),
+            }
+        )
+        
+        if not created:
+            return Response({"error": "Patient already in waiting room"}, status=400)
+        
+        serializer = WaitingRoomEntrySerializer(entry)
+        return Response(serializer.data, status=201)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 # Auditoría y Logs

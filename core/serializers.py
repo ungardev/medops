@@ -894,17 +894,18 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
 
 
 class WaitingRoomEntryWriteSerializer(serializers.ModelSerializer):
-    """
-    Serializer de ESCRITURA: Para registrar llegadas (Check-in).
-    """
+    institution = serializers.PrimaryKeyRelatedField(
+        queryset=InstitutionSettings.objects.all(),
+        required=True
+    )
+    
     class Meta:
         model = WaitingRoomEntry
-        fields = ["patient", "appointment", "priority", "source_type", "notes"]
-
+        fields = ["patient", "appointment", "priority", "source_type", "notes", "institution"]
     def validate(self, attrs):
-        # Evitar duplicados: Un paciente no puede estar dos veces en espera activa
         patient = attrs.get('patient')
-        if WaitingRoomEntry.objects.filter(patient=patient, status='waiting').exists():
+        institution = attrs.get('institution')
+        if WaitingRoomEntry.objects.filter(patient=patient, institution=institution, status='waiting').exists():
             raise serializers.ValidationError("El paciente ya se encuentra en la sala de espera.")
         return attrs
 

@@ -55,7 +55,7 @@ const renderWaitTime = (entry: WaitingRoomEntry) => {
   return (
     <div className="flex items-center gap-1 font-mono text-[10px] text-[var(--palantir-muted)]">
       <ClockIcon className="w-3 h-3 text-amber-500/70" />
-      <span>{minutes < 60 ? `M` : `H M`}</span>
+      <span>{minutes < 60 ? `${minutes}m` : `${Math.floor(minutes/60)}h ${minutes%60}m`}</span>
     </div>
   );
 };
@@ -63,7 +63,7 @@ export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [entryToCancel, setEntryToCancel] = useState<WaitingRoomEntry | null>(null);
-  const [showConfirmCancel, setShowConfirmCancel] = useState(false); // ✅ AGREGADO: Variable de estado para cancelación
+  const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
@@ -228,7 +228,7 @@ export default function WaitingRoom() {
                         )}
                         {entry.status !== 'completed' && (
                           <button 
-                            onClick={() => {setEntryToCancel(entry); setShowConfirmCancel(true);}} // ✅ CORREGIDO: Manejo de estado de cancelación
+                            onClick={() => {setEntryToCancel(entry); setShowConfirmCancel(true);}}
                             className="p-1.5 text-red-500/60 hover:text-red-500 hover:bg-red-500/10 rounded-sm"
                           >
                             <XMarkIcon className="w-5 h-5" />
@@ -290,15 +290,19 @@ export default function WaitingRoom() {
       
       {showModal && (
         <RegisterWalkinModal 
-          onClose={() => setShowModal(false)} 
-          onSuccess={(id) => registerArrival.mutate({ patient_id: id })} 
-          existingEntries={entries ?? []} 
+          onClose={() => setShowModal(false)}
+          onSuccess={(id, institutionId) => registerArrival.mutate({ 
+            patient_id: id, 
+            institution_id: institutionId 
+          })} 
+          existingEntries={entries ?? []}
+          institutionId={selectedInstitutionId}
         />
       )}
       
       {entryToCancel && (
         <ConfirmGenericModal
-          open={showConfirmCancel} // ✅ CORREGIDO: Agregar propiedad open
+          open={showConfirmCancel}
           title="DESTRUCTIVE_ACTION_CONFIRMATION"
           message={`Protocol: Cancel operational flow for subject ${entryToCancel.patient.full_name}?`}
           confirmLabel="ABORT_OPERATION"
@@ -307,11 +311,11 @@ export default function WaitingRoom() {
           onConfirm={() => { 
             handleStatusChange(entryToCancel, "canceled"); 
             setEntryToCancel(null); 
-            setShowConfirmCancel(false); // ✅ CORREGIDO: Resetear estado de cancelación
+            setShowConfirmCancel(false);
           }}
           onCancel={() => { 
             setEntryToCancel(null); 
-            setShowConfirmCancel(false); // ✅ CORREGIDO: Resetear estado de cancelación
+            setShowConfirmCancel(false);
           }}
         />
       )}
