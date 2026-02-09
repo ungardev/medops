@@ -2682,3 +2682,81 @@ def active_institution_with_metrics(request):
     except Exception as e:
         logger.error(f"Error en active_institution_with_metrics: {str(e)}")
         return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([conditional_permission()])
+def start_consultation_from_entry(request, entry_id):
+    """
+    Inicia una consulta convirtiendo un WaitingRoomEntry en Appointment.
+    Maneja tanto walk-ins como citas programadas.
+    """
+    try:
+        entry = get_object_or_404(WaitingRoomEntry, pk=entry_id)
+        
+        # Validar que no haya otra consulta activa
+        if Appointment.objects.filter(status="in_consultation").exists():
+            return Response(
+                {"error": "Ya hay una consulta activa. Complete primero."},
+                status=400
+            )
+        
+        # Obtener institution_id del header
+        institution_id = request.headers.get('X-Institution-ID')
+        if not institution_id:
+            return Response({"error": "Institution ID required"}, status=400)
+        
+        try:
+            institution_id = int(institution_id)
+        except ValueError:
+            return Response({"error": "Invalid institution ID"}, status=400)
+        
+        institution = get_object_or_404(InstitutionSettings, pk=institution_id)
+        
+        # Obtener o crear Appointment para este paciente
+        # Si viene de cita programada (entry.appointment existe)
+        if entry.appointment:
+            appointment = entry.appointment
+            appointment.status = "in_consultation"
+            appointment.started_at = timezone.now()
+            appointment.save(update_fields=['status', 'started_at'])
+        else:
+            # WALK-IN: Crear Appointment desde cero
+            doctor = getattr(request.user, 'doctor_profile', None)
+            if not doctor:
+                return Response({"error": "Doctor profile not found"}, status=404)
+            
+            # Crear Appointment para walk-in
+            appointment = Appointment.objects.create(
+                patient=entry.patient,
+                doctor=doctor,
+                institution=institution,
+                appointment_date=timezone.now().date(),
+                status="in_consultation",
+                started_at=timezone.now(),
+                priority=entry.priority,
+                notes=f"Walk-in desde Waiting Room (Entry #{entry.id})"
+            )
+            
+            # Crear ChargeOrder vacío para el walk-in
+            from .models import ChargeOrder
+            ChargeOrder.objects.create(
+                appointment=appointment,
+                patient=entry.patient,
+                doctor=doctor,
+                institution=institution,
+                currency="USD",
+                status="open",
+                total=Decimal('0.00'),
+                balance_due=Decimal('0.00'),
+            )
+        
+        # Actualizar status del WaitingRoomEntry
+        entry.status = "in_consultation"
+        entry.save(update_fields=['status'])
+        
+        serializer = AppointmentDetailSerializer(appointment)
+        return Response(serializer.data, status=201)
+    
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

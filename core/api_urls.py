@@ -65,7 +65,7 @@ from .api_views import (
     generate_chargeorder_pdf,
     generate_used_documents,
     # 🔥 NUEVO: Sistema PDF Profesional
-    generate_professional_pdf,  # ✅ Ya estaba importado, ahora se usará
+    generate_professional_pdf,
     icd_search_api,
     treatment_choices_api,
     prescription_choices_api,
@@ -101,7 +101,9 @@ from .api_views import (
     # 🆕 NUEVO: Dashboard de institución activa
     active_institution_dashboard_api,
     # ✅ NUEVO: Dashboard con 8 métricas y filtros
-    active_institution_with_metrics,  # 🆕 AGREGAR ESTA LÍNEA
+    active_institution_with_metrics,
+    # 🆕 NUEVO: Start Consultation from Waiting Room Entry
+    start_consultation_from_entry,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -155,9 +157,9 @@ urlpatterns = [
     
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
-    path("dashboard/active-institution/", active_institution_dashboard_api, name="active-institution-dashboard-api"),  # ✅ NUEVO
+    path("dashboard/active-institution/", active_institution_dashboard_api, name="active-institution-dashboard-api"),
     # 🆕 NUEVO: Dashboard con 8 métricas y filtros completos
-    path("dashboard/active-institution-metrics/", active_institution_with_metrics, name="active-institution-metrics-api"),  # 🆕 AGREGAR ESTA LÍNEA
+    path("dashboard/active-institution-metrics/", active_institution_with_metrics, name="active-institution-metrics-api"),
     path("reports/", reports_api, name="reports-api"),
     path("reports/export/", reports_export_api, name="reports-export-api"),
     path("config/institution/", institution_settings_api, name="institution-settings-api"),
@@ -224,6 +226,8 @@ urlpatterns = [
     path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
+    # 🆕 NUEVO: Iniciar consulta desde Waiting Room Entry
+    path("waitingroom/<int:entry_id>/start-consultation/", start_consultation_from_entry, name="start-consultation-from-entry"),
     
     # --- Tasa BCV ---
     path("bcv-rate/", bcv_rate_api, name="bcv-rate-api"),

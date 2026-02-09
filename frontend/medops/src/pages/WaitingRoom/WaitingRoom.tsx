@@ -1,5 +1,6 @@
 // src/pages/WaitingRoom/WaitingRoom.tsx
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import RegisterWalkinModal from "@/components/WaitingRoom/RegisterWalkinModal";
 import ConfirmCloseDayModal from "@/components/WaitingRoom/ConfirmCloseDayModal";
 import ConfirmGenericModal from "@/components/Common/ConfirmGenericModal";
@@ -11,6 +12,7 @@ import { useWaitingRoomEntriesToday } from "@/hooks/waitingroom/useWaitingRoomEn
 import { useUpdateWaitingRoomStatus } from "@/hooks/waitingroom/useUpdateWaitingRoomStatus";
 import { useRegisterArrival } from "@/hooks/waitingroom/useRegisterArrival";
 import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
+import { useStartConsultation } from "@/hooks/waitingroom/useStartConsultation";
 import type { WaitingRoomEntry, WaitingRoomStatus } from "@/types/waitingRoom";
 import type { Appointment } from "@/types/appointments";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -67,11 +69,13 @@ export default function WaitingRoom() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   
   const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
+  const navigate = useNavigate();
   
   const { data: entries, isLoading, isFetching } = useWaitingRoomEntriesToday();
   const updateWaitingRoomStatus = useUpdateWaitingRoomStatus();
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
+  const startConsultation = useStartConsultation();
   const queryClient = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
   
@@ -114,6 +118,16 @@ export default function WaitingRoom() {
       updateAppointmentStatus.mutate({ id: entry.appointment, status: newStatus });
     } else {
       updateWaitingRoomStatus.mutate({ id: Number(entry.id), status: newStatus });
+    }
+  };
+  
+  const handleStartConsultation = async (entry: WaitingRoomEntry) => {
+    try {
+      await startConsultation.mutateAsync(Number(entry.id));
+      navigate("/consultation");
+    } catch (error) {
+      console.error("Error iniciando consulta:", error);
+      setToast({ message: "Error al iniciar consulta", type: "error" });
     }
   };
   
@@ -189,14 +203,14 @@ export default function WaitingRoom() {
                 {filteredEntries.map((entry, index) => (
                   <div 
                     key={entry.id} 
-                    className={`group flex justify-between items-center px-4 py-3 transition-colors border-l-2 `}
+                    className="group flex justify-between items-center px-4 py-3 transition-colors border-l-2"
                   >
                     <div className="flex items-start gap-4">
                       <span className="mt-1 font-mono text-xs font-bold text-[var(--palantir-muted)] opacity-50">
                         {String(index + 1).padStart(2, '0')}.
                       </span>
                       <div className="flex flex-col gap-0.5">
-                        <p className={`text-[13px] font-black uppercase tracking-tight `}>
+                        <p className="text-[13px] font-black uppercase tracking-tight">
                           {entry.patient.full_name}
                         </p>
                         
@@ -220,7 +234,7 @@ export default function WaitingRoom() {
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {entry.status === 'waiting' && (
                           <button 
-                            onClick={() => handleStatusChange(entry, "in_consultation")}
+                            onClick={() => handleStartConsultation(entry)}
                             className="p-1.5 text-white hover:bg-white/10 rounded-sm"
                           >
                             <PlayIcon className="w-5 h-5 fill-current" />
