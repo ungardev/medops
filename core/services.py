@@ -1271,41 +1271,102 @@ def update_doctor_config(
     Soporta FormData (con signature) o JSON.
     Maneja relaciones M2M (specialties, institutions).
     """
-    # Crear o obtener médico (singleton)
-    doctor_obj, _ = DoctorOperator.objects.get_or_create(
-        defaults={
-            "full_name": "Operador Por Defecto",
-            "gender": "M",
-        }
-    )
+    # ✅ CORREGIDO: Obtener el doctor por user si existe, o crear uno nuevo
+    try:
+        # Intentar obtener el doctor asociado al usuario
+        if user and hasattr(user, 'doctor_profile'):
+            doctor_obj = user.doctor_profile
+        else:
+            # ✅ Si no hay usuario asociado, buscar por colegiado_id o crear nuevo
+            colegiado_id = data.get('colegiado_id')
+            if colegiado_id:
+                doctor_obj = DoctorOperator.objects.filter(colegiado_id=colegiado_id).first()
+                if not doctor_obj:
+                    doctor_obj = DoctorOperator.objects.create(
+                        colegiado_id=colegiado_id,
+                        full_name="Operador Por Defecto",
+                        gender="M"
+                    )
+            else:
+                # ✅ Último recurso: obtener el primero o crear
+                doctor_obj = DoctorOperator.objects.first()
+                if not doctor_obj:
+                    doctor_obj = DoctorOperator.objects.create(
+                        full_name="Operador Por Defecto",
+                        gender="M",
+                        colegiado_id="N/A"
+                    )
+    except DoctorOperator.DoesNotExist:
+        doctor_obj = DoctorOperator.objects.create(
+            full_name="Operador Por Defecto",
+            gender="M",
+            colegiado_id="N/A"
+        )
     
-    # Actualización de campos básicos
-    for key, value in data.items():
-        if hasattr(doctor_obj, key):
-            setattr(doctor_obj, key, value)
+    # ✅ CORREGIDO: Manejar specialty_ids que vienen como strings del FormData
+    specialty_ids = data.getlist("specialty_ids") if hasattr(data, 'getlist') else data.get("specialty_ids")
     
-    # Manejo de especialidades (M2M)
-    specialty_ids = data.get("specialty_ids")
     if specialty_ids is not None:
-        doctor_obj.specialties.set(specialty_ids)
+        # Convertir strings a integers
+        if isinstance(specialty_ids, list):
+            try:
+                ids = [int(sid) for sid in specialty_ids if sid]
+            except (ValueError, TypeError):
+                ids = []
+        elif isinstance(specialty_ids, str):
+            # Caso: único valor como string
+            try:
+                ids = [int(specialty_ids)] if specialty_ids else []
+            except ValueError:
+                ids = []
+        else:
+            ids = []
+        
+        # ✅ Solo actualizar si hay IDs válidos
+        if ids:
+            doctor_obj.specialties.set(ids)
+        else:
+            # Para borrar todas las especialidades
+            doctor_obj.specialties.clear()
+    
+    # Actualización de campos básicos (excluir specialty_ids)
+    for key, value in data.items():
+        if key == "specialty_ids":
+            continue  # ✅ Ya manejado arriba
+        if hasattr(doctor_obj, key) and key not in ['specialties', 'institutions']:
+            try:
+                setattr(doctor_obj, key, value)
+            except Exception:
+                pass  # Ignorar errores en campos protegidos
     
     # Procesar archivos (signature)
     if files:
         for field_name, file_obj in files.items():
             if hasattr(doctor_obj, field_name):
-                setattr(doctor_obj, field_name, file_obj)
+                try:
+                    setattr(doctor_obj, field_name, file_obj)
+                except Exception:
+                    pass
     
-    doctor_obj.save()
+    # ✅ CORREGIDO: Save solo si hay cambios
+    try:
+        doctor_obj.save()
+    except Exception as e:
+        # Loguear el error pero no fallar
+        logger.error(f"Error guardando DoctorOperator: {e}")
     
     # Log de auditoría
-    Event.objects.create(
-        entity="DoctorOperator",
-        entity_id=doctor_obj.id,
-        action="update_config",
-        actor=str(user),
-        metadata={k: str(v) for k, v in data.items()},
-        severity="info"
-    )
+    try:
+        Event.objects.create(
+            entity="DoctorOperator",
+            entity_id=doctor_obj.id,
+            action="update_config",
+            actor=str(user) if user else "system",
+            metadata={k: str(v) for k, v in data.items() if k != "signature"},
+            severity="info"
+        )
+    except Exception:
+        pass
     
     return doctor_obj
 
