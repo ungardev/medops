@@ -670,10 +670,19 @@ def register_arrival(request):
         patient_id = request.data.get('patient_id')
         appointment_id = request.data.get('appointment_id')
         
-        # Obtener institution_id del header
-        institution_id = request.headers.get('X-Institution-ID')
+        # ✅ MEJORADO: Obtener institution_id del body O del header
+        institution_id = request.data.get('institution_id')
+        if not institution_id:
+            institution_id = request.headers.get('X-Institution-ID')
+        
         if not institution_id:
             return Response({"error": "Institution ID required"}, status=400)
+        
+        # ✅ CORREGIDO: Convertir a integer para la consulta
+        try:
+            institution_id = int(institution_id)
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid institution ID format"}, status=400)
         
         # Obtener objetos
         patient = get_object_or_404(Patient, pk=patient_id)
@@ -682,7 +691,10 @@ def register_arrival(request):
         # Si viene appointment_id, verificar y asociar
         appointment = None
         if appointment_id:
-            appointment = get_object_or_404(Appointment, pk=appointment_id)
+            try:
+                appointment = get_object_or_404(Appointment, pk=int(appointment_id))
+            except (ValueError, TypeError):
+                appointment = None
         
         # Crear o obtener entrada
         entry, created = WaitingRoomEntry.objects.get_or_create(
