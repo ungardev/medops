@@ -2763,6 +2763,7 @@ def start_consultation_from_entry(request, entry_id):
             appointment.save(update_fields=['status', 'started_at'])
         else:
             # WALK-IN: Crear Appointment desde cero
+            # NOTA: Appointment NO tiene campo 'priority'
             appointment = Appointment.objects.create(
                 patient=entry.patient,
                 doctor=doctor,
@@ -2770,7 +2771,6 @@ def start_consultation_from_entry(request, entry_id):
                 appointment_date=timezone.now().date(),
                 status="in_consultation",
                 started_at=timezone.now(),
-                priority=entry.priority,
                 notes=f"Walk-in desde Waiting Room (Entry #{entry.id})"
             )
             
