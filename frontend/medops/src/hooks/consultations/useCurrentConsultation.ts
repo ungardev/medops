@@ -14,7 +14,7 @@ export function useCurrentConsultation() {
   const consultationQuery = useQuery<AppointmentUI | null>({
     queryKey: ["appointment", "current"],
     queryFn: async () => {
-      const res = await apiFetch("appointment/current/");
+      const res = await apiFetch("consultations/current/");
       if (!res) return null;
       const clinical = res as ClinicalAppointment;
       // mapAppointment normaliza status y maneja el cronómetro con started_at
