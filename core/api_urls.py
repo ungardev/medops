@@ -104,6 +104,9 @@ from .api_views import (
     active_institution_with_metrics,
     # 🆕 NUEVO: Start Consultation from Waiting Room Entry
     start_consultation_from_entry,
+    # ✅ NUEVOS ENDPOINTS DE SIGNOS VITALES ---
+    vital_signs_api,
+    vital_signs_detail_api,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -180,6 +183,10 @@ urlpatterns = [
     path("appointments/<int:pk>/notes/", update_appointment_notes, name="appointment-notes-api"),
     path("appointments/pending/", appointments_pending_api, name="appointments-pending-api"),
     path("appointments/<int:pk>/", appointment_detail_api, name="appointment-detail-api"),
+    
+    # ✅ ENDPOINTS DE SIGNOS VITALES ---
+    path("appointments/<int:appointment_id>/vital-signs/", vital_signs_api, name="vital-signs-api"),
+    path("vital-signs/<int:vital_signs_id>/", vital_signs_detail_api, name="vital-signs-detail-api"),
     
     path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),
     path("consultations/current/", current_consultation_api, name="current-consultation-api"),

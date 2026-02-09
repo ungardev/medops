@@ -2797,3 +2797,59 @@ def start_consultation_from_entry(request, entry_id):
     except Exception as e:
         logger.error(f"Error en start_consultation_from_entry: {str(e)}")
         return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([conditional_permission()])
+def vital_signs_api(request, appointment_id):
+    """Obtener o crear signos vitales para una cita."""
+    if request.method == 'GET':
+        try:
+            vitals = VitalSigns.objects.get(appointment_id=appointment_id)
+            serializer = VitalSignsSerializer(vitals)
+            return Response(serializer.data)
+        except VitalSigns.DoesNotExist:
+            return Response({"error": "No hay signos vitales registrados"}, status=404)
+    
+    elif request.method == 'POST':
+        try:
+            # Verificar que no existan ya
+            if VitalSigns.objects.filter(appointment_id=appointment_id).exists():
+                return Response({"error": "Ya existen signos vitales para esta cita"}, status=400)
+            
+            serializer = VitalSignsSerializer(data={
+                **request.data,
+                'appointment': appointment_id
+            })
+            if serializer.is_valid():
+                vitals = serializer.save()
+                return Response(VitalSignsSerializer(vitals).data, status=201)
+            return Response(serializer.errors, status=400)
+        except Exception as e:
+            logger.error(f"Error en vital_signs_api: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET', 'PATCH', 'DELETE'])
+@permission_classes([conditional_permission()])
+def vital_signs_detail_api(request, vital_signs_id):
+    """Obtener, actualizar o eliminar signos vitales por ID."""
+    try:
+        vitals = VitalSigns.objects.get(pk=vital_signs_id)
+    except VitalSigns.DoesNotExist:
+        return Response({"error": "Signos vitales no encontrados"}, status=404)
+    
+    if request.method == 'GET':
+        serializer = VitalSignsSerializer(vitals)
+        return Response(serializer.data)
+    
+    elif request.method == 'PATCH':
+        serializer = VitalSignsSerializer(vitals, data=request.data, partial=True)
+        if serializer.is_valid():
+            vitals = serializer.save()
+            return Response(VitalSignsSerializer(vitals).data)
+        return Response(serializer.errors, status=400)
+    
+    elif request.method == 'DELETE':
+        vitals.delete()
+        return Response(status=204)
