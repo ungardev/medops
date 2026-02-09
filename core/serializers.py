@@ -855,25 +855,131 @@ class EventSerializer(serializers.ModelSerializer):
         return obj.actor_name or "System"
 
 
+class InstitutionSettingsSerializer(serializers.ModelSerializer):
+    logo = serializers.ImageField(required=False, allow_null=True, use_url=True)
+    
+    # Representación de lectura para la dirección completa (Propiedad del modelo)
+    full_address = serializers.ReadOnlyField()
+    # Usamos PrimaryKeyRelatedField para que el Frontend envíe solo el ID en POST/PATCH
+    neighborhood = serializers.PrimaryKeyRelatedField(
+        queryset=Neighborhood.objects.all(),
+        required=False,
+        allow_null=True
+    )
+    class Meta:
+        model = InstitutionSettings
+        fields = [
+            "id", 
+            "name", 
+            "tax_id", 
+            "logo", 
+            "phone", 
+            "address", 
+            "neighborhood", 
+            "full_address",
+            "is_active",
+            # --- CAMPOS FINTECH UNIVERSALES ---
+            "active_gateway", 
+            "gateway_api_key", 
+            "gateway_api_secret", 
+            "settlement_bank_name", 
+            "settlement_account_id", 
+            "is_gateway_test_mode"
+        ]
+        # Seguridad Elite: El secreto de la API se puede escribir pero nunca leer desde el Frontend
+        extra_kwargs = {
+            'gateway_api_secret': {'write_only': True}
+        }
+    def to_representation(self, instance):
+        """
+        Inflamos el objeto para que el Frontend vea la jerarquía geográfica completa
+        y la configuración de pagos sea fácil de procesar.
+        """
+        response = super().to_representation(instance)
+        
+        # --- Lógica de Jerarquía Geográfica ---
+        n = instance.neighborhood
+        if n:
+            # ✅ MANEJO DEFENSIVO usando getattr()
+            p = getattr(n, 'parish', None)
+            m = getattr(p, 'municipality', None) if p else None
+            s = getattr(m, 'state', None) if m else None
+            c = getattr(s, 'country', None) if s else None
+            
+            neighborhood_data = {
+                'id': n.id,
+                'name': n.name,
+                'parish': None,
+                'municipality': None,
+                'state': None,
+                'country': None
+            }
+            
+            if p:
+                neighborhood_data['parish'] = {
+                    'id': p.id,
+                    'name': p.name,
+                    'municipality': None,
+                    'state': None,
+                    'country': None
+                }
+                
+                if m:
+                    neighborhood_data['parish']['municipality'] = {
+                        'id': m.id,
+                        'name': m.name,
+                        'state': None,
+                        'country': None
+                    }
+                    
+                    if s:
+                        neighborhood_data['parish']['municipality']['state'] = {
+                            'id': s.id,
+                            'name': s.name,
+                            'country': None
+                        }
+                        
+                        if c:
+                            neighborhood_data['parish']['municipality']['state']['country'] = {
+                                'id': c.id,
+                                'name': c.name
+                            }
+            
+            response['neighborhood'] = neighborhood_data
+        
+        # --- Lógica de Seguridad para el Frontend ---
+        # Si existe un secret, enviamos un indicador pero no el valor real
+        if instance.gateway_api_secret:
+            response['has_api_secret_configured'] = True
+        else:
+            response['has_api_secret_configured'] = False
+            
+        return response
+
+
 # --- Sala de espera (básico) ---
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     """
     Serializer de LISTADO: Optimizado para el tablero de control de recepción.
     Muestra quién está en fila, su prioridad y cuánto tiempo lleva esperando.
     """
+    # ✅ AGREGAR: Patient anidado para el frontend
+    patient = PatientReadSerializer(read_only=True)
     patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
     patient_id_number = serializers.CharField(source='patient.national_id', read_only=True)
     appointment_status = serializers.CharField(source='appointment.status', read_only=True)
     waiting_time_minutes = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-
+    
+    # ✅ AGREGAR: Institution anidado
+    institution_data = InstitutionSettingsSerializer(source='institution', read_only=True)
     class Meta:
         model = WaitingRoomEntry
         fields = [
             "id", 
-            "patient", 
-            "patient_name", 
-            "patient_id_number",
+            "patient",           # ✅ Objeto completo del paciente
+            "patient_name",       # ✅ Nombre formateado
+            "patient_id_number",  # ✅ Cédula del paciente
             "appointment", 
             "appointment_status",
             "arrival_time", 
@@ -882,9 +988,10 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "status_display",
             "priority", 
             "source_type", 
-            "order"
+            "order",
+            "institution",       # ✅ ID de la institución
+            "institution_data",  # ✅ Objeto completo de la institución
         ]
-
     def get_waiting_time_minutes(self, obj) -> int:
         """Calcula el tiempo transcurrido desde la llegada en tiempo real."""
         if obj.status == 'waiting' and obj.arrival_time:
@@ -1379,108 +1486,6 @@ class ReportExportSerializer(serializers.Serializer):
     data: Any = cast(Any, ReportRowSerializer(many=True))
     # Alternativa:
     # data = ReportRowSerializer(many=True)  # type: ignore[assignment]
-
-
-class InstitutionSettingsSerializer(serializers.ModelSerializer):
-    logo = serializers.ImageField(required=False, allow_null=True, use_url=True)
-    
-    # Representación de lectura para la dirección completa (Propiedad del modelo)
-    full_address = serializers.ReadOnlyField()
-    # Usamos PrimaryKeyRelatedField para que el Frontend envíe solo el ID en POST/PATCH
-    neighborhood = serializers.PrimaryKeyRelatedField(
-        queryset=Neighborhood.objects.all(),
-        required=False,
-        allow_null=True
-    )
-    class Meta:
-        model = InstitutionSettings
-        fields = [
-            "id", 
-            "name", 
-            "tax_id", 
-            "logo", 
-            "phone", 
-            "address", 
-            "neighborhood", 
-            "full_address",
-            "is_active",
-            # --- CAMPOS FINTECH UNIVERSALES ---
-            "active_gateway", 
-            "gateway_api_key", 
-            "gateway_api_secret", 
-            "settlement_bank_name", 
-            "settlement_account_id", 
-            "is_gateway_test_mode"
-        ]
-        # Seguridad Elite: El secreto de la API se puede escribir pero nunca leer desde el Frontend
-        extra_kwargs = {
-            'gateway_api_secret': {'write_only': True}
-        }
-    def to_representation(self, instance):
-        """
-        Inflamos el objeto para que el Frontend vea la jerarquía geográfica completa
-        y la configuración de pagos sea fácil de procesar.
-        """
-        response = super().to_representation(instance)
-        
-        # --- Lógica de Jerarquía Geográfica ---
-        n = instance.neighborhood
-        if n:
-            # ✅ MANEJO DEFENSIVO usando getattr()
-            p = getattr(n, 'parish', None)
-            m = getattr(p, 'municipality', None) if p else None
-            s = getattr(m, 'state', None) if m else None
-            c = getattr(s, 'country', None) if s else None
-            
-            neighborhood_data = {
-                'id': n.id,
-                'name': n.name,
-                'parish': None,
-                'municipality': None,
-                'state': None,
-                'country': None
-            }
-            
-            if p:
-                neighborhood_data['parish'] = {
-                    'id': p.id,
-                    'name': p.name,
-                    'municipality': None,
-                    'state': None,
-                    'country': None
-                }
-                
-                if m:
-                    neighborhood_data['parish']['municipality'] = {
-                        'id': m.id,
-                        'name': m.name,
-                        'state': None,
-                        'country': None
-                    }
-                    
-                    if s:
-                        neighborhood_data['parish']['municipality']['state'] = {
-                            'id': s.id,
-                            'name': s.name,
-                            'country': None
-                        }
-                        
-                        if c:
-                            neighborhood_data['parish']['municipality']['state']['country'] = {
-                                'id': c.id,
-                                'name': c.name
-                            }
-            
-            response['neighborhood'] = neighborhood_data
-        
-        # --- Lógica de Seguridad para el Frontend ---
-        # Si existe un secret, enviamos un indicador pero no el valor real
-        if instance.gateway_api_secret:
-            response['has_api_secret_configured'] = True
-        else:
-            response['has_api_secret_configured'] = False
-            
-        return response
 
 
 class SpecialtySerializer(serializers.ModelSerializer):
