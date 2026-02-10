@@ -2804,34 +2804,23 @@ def start_consultation_from_entry(request, entry_id):
 def vital_signs_api(request, appointment_id):
     """
     Obtener o crear signos vitales para una cita.
-    
-    GET /api/appointments/<appointment_id>/vital-signs/
-        - Retorna 200 con los signos vitales si existen
-        - Retorna 200 con null si no existen (en lugar de 404)
-    
-    POST /api/appointments/<appointment_id>/vital-signs/
-        - Crea nuevos signos vitales para la cita
     """
+    
     if request.method == 'GET':
-        # GET: Retornar signos vitales o null (NO 404)
         vitals = VitalSigns.objects.filter(appointment_id=appointment_id).first()
         if vitals:
             serializer = VitalSignsSerializer(vitals)
             return Response(serializer.data)
-        # Retornar null con 200 en lugar de 404 con error
         return Response(None, status=200)
     
     elif request.method == 'POST':
-        # POST: Crear nuevos signos vitales
         try:
-            # Verificar que no existan ya
             if VitalSigns.objects.filter(appointment_id=appointment_id).exists():
                 return Response(
-                    {"error": "Ya existen signos vitales para esta cita. Usa PATCH para actualizar."}, 
+                    {"error": "Ya existen signos vitales. Usa PATCH."}, 
                     status=400
                 )
             
-            # Obtener la cita para validar
             try:
                 appointment = Appointment.objects.get(pk=appointment_id)
             except Appointment.DoesNotExist:
@@ -2846,14 +2835,16 @@ def vital_signs_api(request, appointment_id):
                 return Response(VitalSignsSerializer(vitals).data, status=201)
             return Response(serializer.errors, status=400)
         except Exception as e:
-            logger.error(f"Error en vital_signs_api POST: {str(e)}")
             return Response({"error": str(e)}, status=500)
 
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([conditional_permission()])
 def vital_signs_detail_api(request, vital_signs_id):
-    """Obtener, actualizar o eliminar signos vitales por ID."""
+    """
+    Obtener, actualizar o eliminar signos vitales por ID.
+    """
+    
     try:
         vitals = VitalSigns.objects.get(pk=vital_signs_id)
     except VitalSigns.DoesNotExist:
