@@ -2922,3 +2922,106 @@ def create_charge_order_from_appointment(request, appointment_id):
     except Exception as e:
         logger.error(f"Error en create_charge_order_from_appointment: {str(e)}")
         return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET', 'POST', 'PATCH'])
+@permission_classes([conditional_permission()])
+def clinical_note_api(request, appointment_id):
+    """
+    API para notas clínicas SOAP.
+    
+    GET /api/appointments/<appointment_id>/clinical-note/
+        - Retorna 200 con la nota si existe
+        - Retorna 200 con null si no existe
+    
+    POST /api/appointments/<appointment_id>/clinical-note/
+        - Crea nueva nota clínica
+    
+    PATCH /api/appointments/<appointment_id>/clinical-note/
+        - Actualiza nota existente
+    """
+    
+    if request.method == 'GET':
+        note = ClinicalNote.objects.filter(appointment_id=appointment_id).first()
+        if note:
+            serializer = ClinicalNoteSerializer(note)
+            return Response(serializer.data)
+        return Response(None, status=200)
+    
+    elif request.method == 'POST':
+        try:
+            if ClinicalNote.objects.filter(appointment_id=appointment_id).exists():
+                return Response(
+                    {"error": "Ya existe una nota clínica. Usa PATCH para actualizar."}, 
+                    status=400
+                )
+            
+            from .models import Appointment
+            try:
+                appointment = Appointment.objects.get(pk=appointment_id)
+            except Appointment.DoesNotExist:
+                return Response({"error": "Cita no encontrada"}, status=404)
+            
+            serializer = ClinicalNoteSerializer(data={
+                **request.data,
+                'appointment': appointment_id
+            })
+            if serializer.is_valid():
+                note = serializer.save()
+                return Response(ClinicalNoteSerializer(note).data, status=201)
+            return Response(serializer.errors, status=400)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+    
+    elif request.method == 'PATCH':
+        try:
+            note = ClinicalNote.objects.get(appointment_id=appointment_id)
+            
+            if note.is_locked:
+                return Response(
+                    {"error": "La nota está bloqueada y no puede editarse"}, 
+                    status=400
+                )
+            
+            serializer = ClinicalNoteSerializer(note, data=request.data, partial=True)
+            if serializer.is_valid():
+                note = serializer.save()
+                return Response(ClinicalNoteSerializer(note).data)
+            return Response(serializer.errors, status=400)
+        except ClinicalNote.DoesNotExist:
+            return Response({"error": "Nota clínica no encontrada"}, status=404)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([conditional_permission()])
+def clinical_note_lock_api(request, appointment_id):
+    """
+    Bloquear/Desbloquear nota clínica.
+    
+    POST /api/appointments/<appointment_id>/clinical-note/lock/ → Bloquear
+    POST /api/appointments/<appointment_id>/clinical-note/unlock/ → Desbloquear
+    """
+    
+    try:
+        note = ClinicalNote.objects.get(appointment_id=appointment_id)
+        
+        action = request.data.get('action', 'lock')
+        
+        if action == 'lock':
+            note.lock_note()
+            return Response({"status": "locked", "locked_at": note.locked_at})
+        
+        elif action == 'unlock':
+            note.is_locked = False
+            note.locked_at = None
+            note.save()
+            return Response({"status": "unlocked"})
+        
+        return Response({"error": "Acción inválida. Usa 'lock' o 'unlock'"}, status=400)
+    
+    except ClinicalNote.DoesNotExist:
+        return Response({"error": "Nota clínica no encontrada"}, status=404)
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)

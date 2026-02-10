@@ -96,7 +96,7 @@ from .api_views import (
     mercantil_p2c_check_status,
     mercantil_p2c_webhook,
     mercantil_p2c_config_status,
-    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES (nuevo endpoint) ---
+    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES ---
     verify_mobile_payment,
     # 🆕 NUEVO: Dashboard de institución activa
     active_institution_dashboard_api,
@@ -110,6 +110,9 @@ from .api_views import (
     # ✅ NUEVOS ENDPOINTS DE CHARGE ORDER POR APPOINTMENT ---
     appointment_charge_order_api,
     create_charge_order_from_appointment,
+    # ✅ NUEVOS ENDPOINTS DE CLINICAL NOTE ---
+    clinical_note_api,
+    clinical_note_lock_api,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -195,6 +198,10 @@ urlpatterns = [
     path("appointments/<int:appointment_id>/charge-order/", appointment_charge_order_api, name="appointment-charge-order-api"),
     path("appointments/<int:appointment_id>/charge-order/create/", create_charge_order_from_appointment, name="create-charge-order-from-appointment"),
     
+    # ✅ ENDPOINTS DE CLINICAL NOTE ---
+    path("appointments/<int:appointment_id>/clinical-note/", clinical_note_api, name="clinical-note-api"),
+    path("appointments/<int:appointment_id>/clinical-note/lock/", clinical_note_lock_api, name="clinical-note-lock-api"),
+    
     path("consultations/<int:pk>/", appointment_detail_api, name="consultation-detail-api"),
     path("consultations/current/", current_consultation_api, name="current-consultation-api"),
     path("consultations/<int:pk>/generate-report/", generate_medical_report, name="generate-medical-report"),
@@ -218,13 +225,13 @@ urlpatterns = [
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
-    # 🆕 MERCANTIL P2C ENDPOINTS (ya existen en api_views.py pero faltaban registrar) ---
+    # 🆕 MERCANTIL P2C ENDPOINTS ---
     path("payments/p2c/mercantil/generate-qr/", mercantil_p2c_generate_qr, name="mercantil_p2c_generate_qr"),
     path("payments/p2c/mercantil/status/<str:merchant_order_id>/", mercantil_p2c_check_status, name="mercantil_p2c_check_status"),
     path("webhooks/mercantil-p2c/", mercantil_p2c_webhook, name="mercantil_p2c_webhook"),
     path("payments/p2c/mercantil/config-status/", mercantil_p2c_config_status, name="mercantil_p2c_config_status"),
     
-    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES (nuevo endpoint que crearemos) ---
+    # 🆕 VERIFICACIÓN DE PAGOS MÓVILES ---
     path("payments/verify-mobile-payment/", verify_mobile_payment, name="verify-mobile-payment"),
     
     # --- Auditoría ---
@@ -260,7 +267,7 @@ urlpatterns = [
     path("address-chain/", AddressChainView.as_view(), name="address-chain-api"),
     path("neighborhood-search/", NeighborhoodSearchView.as_view(), name="neighborhood-search-api"),
     
-    # --- Multi-Institución (NUEVOS ENDPOINTS) ---
+    # --- Multi-Institución ---
     path("config/institutions/", institutions_list_api, name="institutions-list-api"),
     path("config/institutions/create/", create_institution_api, name="create-institution-api"),
     path("config/institutions/add/", add_institution_api, name="add-institution-api"),
