@@ -664,57 +664,53 @@ def update_appointment_notes(request, pk): return Response({"ok": True})
 def register_arrival(request):
     """
     Registra la llegada de un paciente a la sala de espera.
-    Crea un WaitingRoomEntry asociado al paciente.
+    Permite múltiples visitas del mismo paciente (si la anterior ya completó).
     """
+    patient_id = request.data.get('patient_id')
+    institution_id = request.data.get('institution_id') or request.headers.get('X-Institution-ID')
+    
+    if not institution_id:
+        return Response({"error": "Institution ID required"}, status=400)
+    
     try:
-        patient_id = request.data.get('patient_id')
-        appointment_id = request.data.get('appointment_id')
-        
-        # ✅ MEJORADO: Obtener institution_id del body O del header
-        institution_id = request.data.get('institution_id')
-        if not institution_id:
-            institution_id = request.headers.get('X-Institution-ID')
-        
-        if not institution_id:
-            return Response({"error": "Institution ID required"}, status=400)
-        
-        # ✅ CORREGIDO: Convertir a integer para la consulta
-        try:
-            institution_id = int(institution_id)
-        except (ValueError, TypeError):
-            return Response({"error": "Invalid institution ID format"}, status=400)
-        
-        # Obtener objetos
-        patient = get_object_or_404(Patient, pk=patient_id)
-        institution = get_object_or_404(InstitutionSettings, pk=institution_id)
-        
-        # Si viene appointment_id, verificar y asociar
-        appointment = None
-        if appointment_id:
-            try:
-                appointment = get_object_or_404(Appointment, pk=int(appointment_id))
-            except (ValueError, TypeError):
-                appointment = None
-        
-        # Crear o obtener entrada
-        entry, created = WaitingRoomEntry.objects.get_or_create(
-            patient=patient,
-            institution=institution,
-            appointment=appointment,
-            defaults={
-                'status': 'waiting',
-                'source_type': 'walkin' if not appointment else 'scheduled',
-                'arrival_time': timezone.now(),
-            }
-        )
-        
-        if not created:
-            return Response({"error": "Patient already in waiting room"}, status=400)
-        
-        serializer = WaitingRoomEntrySerializer(entry)
-        return Response(serializer.data, status=201)
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
+        institution_id = int(institution_id)
+    except (ValueError, TypeError):
+        return Response({"error": "Invalid institution ID format"}, status=400)
+    
+    patient = get_object_or_404(Patient, pk=patient_id)
+    institution = get_object_or_404(InstitutionSettings, pk=institution_id)
+    
+    # ✅ NUEVA LÓGICA: Verificar si hay entrada ACTIVA
+    active_entry = WaitingRoomEntry.objects.filter(
+        patient=patient,
+        institution=institution,
+        status__in=['waiting', 'in_consultation']
+    ).first()
+    
+    if active_entry:
+        return Response({
+            "error": "Patient already in waiting room",
+            "entry_id": active_entry.id,
+            "status": active_entry.status
+        }, status=400)
+    
+    # ✅ NUEVA LÓGICA: Crear nueva entrada (permitir múltiples visitas)
+    appointment_id = request.data.get('appointment_id')
+    appointment = None
+    if appointment_id:
+        appointment = get_object_or_404(Appointment, pk=int(appointment_id))
+    
+    entry = WaitingRoomEntry.objects.create(
+        patient=patient,
+        institution=institution,
+        appointment=appointment,
+        status='waiting',
+        source_type='walkin' if not appointment else 'scheduled',
+        arrival_time=timezone.now(),
+    )
+    
+    serializer = WaitingRoomEntrySerializer(entry)
+    return Response(serializer.data, status=201)
 
 
 # Auditoría y Logs
