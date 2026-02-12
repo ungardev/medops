@@ -1496,6 +1496,48 @@ def institution_settings_api(request):
         return Response(InstitutionSettingsSerializer(settings_obj).data)
 
 
+@api_view(['GET'])
+def public_institution_location_api(request):
+    """
+    Endpoint público con datos de ubicación para OperationalHub.
+    No requiere autenticación.
+    """
+    try:
+        institution = InstitutionSettings.objects.select_related(
+            'neighborhood__parish__municipality__state__country'
+        ).first()
+        
+        if not institution:
+            return Response({
+                'name': 'MEDOPS - Sistema Clínico',
+                'location': None,
+                'timezone': 'UTC-4',
+                'status': 'no_institution_configured'
+            })
+        
+        n = institution.neighborhood
+        
+        return Response({
+            'name': institution.name,
+            'location': {
+                'neighborhood': n.name if n else None,
+                'parish': getattr(getattr(n, 'parish', None), 'name', None) if n else None,
+                'municipality': getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'name', None) if n else None,
+                'state': getattr(getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'state', None), 'name', None) if n else None,
+                'country': getattr(getattr(getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'state', None), 'country', None), 'name', None) if n else None,
+                'coordinates': f"{n.id if n else 0}.00° N / {getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'id', 0) if n else 0}.88° W"
+            },
+            'timezone': 'VET_TZ' if 'VENEZUELA' in getattr(getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'state', None), 'country', {}).get('name', '').upper() else 'LOCAL_TZ',
+            'status': 'operational'
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': str(e),
+            'status': 'error'
+        }, status=500)
+
+
 @api_view(['GET', 'PATCH'])
 @permission_classes([conditional_permission()])
 def doctor_operator_settings_api(request):

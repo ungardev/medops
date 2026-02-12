@@ -2,39 +2,37 @@
 import React, { useState, useEffect, useMemo } from "react";
 import moment from "moment";
 import { MapPinIcon, ClockIcon, CalendarIcon } from "@heroicons/react/24/outline";
-import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings";
-import { Neighborhood } from "@/types/config";
-
+import { usePublicInstitutionLocation } from "@/hooks/settings/usePublicInstitutionLocation";
 const OperationalHub: React.FC = () => {
   const [now, setNow] = useState(moment());
-  const { data: instData } = useInstitutionSettings();
-
+  const { data: locationData } = usePublicInstitutionLocation();
   useEffect(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
     return () => clearInterval(timer);
   }, []);
-
   const locationInfo = useMemo(() => {
-    const geo = instData?.neighborhood as Neighborhood | undefined;
-    
-    if (!instData || !geo?.parish) {
+    if (!locationData || locationData.status !== 'operational') {
       return { 
-        full: "INITIALIZING_STATION...", 
+        full: "STATION_OFFLINE", 
         tz: "UTC_SYNC", 
         coords: "00.00° / 00.00°" 
       };
     }
-
-    const stateName = geo.parish.municipality?.state?.name || "Unknown State";
-    const countryName = geo.parish.municipality?.state?.country?.name || "Global";
-
+    
+    const loc = locationData.location;
+    const full = [
+      loc.neighborhood,
+      loc.municipality,
+      loc.state,
+      loc.country
+    ].filter(Boolean).join(', ');
+    
     return {
-      full: `${stateName}, ${countryName}`,
-      tz: countryName.toUpperCase().includes("VENEZUELA") ? "VET_TZ" : "LOCAL_TZ",
-      coords: `${geo.parish.id || '00'}.${geo.id || '00'}° N / ${geo.parish.municipality?.id || '00'}.88° W`
+      full: full || locationData.name,
+      tz: locationData.timezone,
+      coords: loc.coordinates || "00.00° / 00.00°"
     };
-  }, [instData]);
-
+  }, [locationData]);
   return (
     <div className="bg-[#0c0e12] border border-white/[0.05] rounded-sm p-5 flex flex-col h-full shadow-2xl group transition-all duration-500">
       {/* HEADER DE MÓDULO */}
@@ -49,7 +47,6 @@ const OperationalHub: React.FC = () => {
           UPLINK_STABLE
         </span>
       </div>
-
       <div className="flex-1 flex flex-col justify-between gap-6">
         {/* CRONÓMETRO DE SISTEMA */}
         <div className="flex flex-col relative">
@@ -67,7 +64,6 @@ const OperationalHub: React.FC = () => {
             <div className="h-[1px] flex-1 bg-white/[0.03]"></div>
           </div>
         </div>
-
         {/* CALENDARIO DE DESPLIEGUE */}
         <div className="flex flex-col border-l-2 border-white/[0.05] pl-4 py-1 group-hover:border-[var(--palantir-active)]/30 transition-colors">
           <div className="flex items-center gap-2 text-white/20 mb-1">
@@ -78,7 +74,6 @@ const OperationalHub: React.FC = () => {
             {now.format("dddd, DD MMMM YYYY")}
           </span>
         </div>
-
         {/* GEOLOCALIZACIÓN Y COORDENADAS */}
         <div className="bg-white/[0.02] border border-white/[0.05] p-3 rounded-sm group-hover:bg-white/[0.04] transition-all">
           <div className="flex items-center gap-2 text-white/20 mb-2">
@@ -99,5 +94,4 @@ const OperationalHub: React.FC = () => {
     </div>
   );
 };
-
 export default OperationalHub;

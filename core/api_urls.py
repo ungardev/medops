@@ -113,6 +113,8 @@ from .api_views import (
     # ✅ NUEVOS ENDPOINTS DE CLINICAL NOTE ---
     clinical_note_api,
     clinical_note_lock_api,
+    # ✅ NUEVO: Endpoint público de ubicación ---
+    public_institution_location_api,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -177,6 +179,9 @@ urlpatterns = [
     # ✅ NUEVOS ENDPOINTS DE PERMISOS INSTITUCIONALES ---
     path("config/institution-permissions/", institution_permissions_api, name="institution-permissions-api"),
     path("config/institution-permissions/emergency-refresh/", refresh_emergency_access, name="refresh-emergency-access-api"),
+    
+    # ✅ NUEVO: Endpoint público de ubicación (OperationalHub) ---
+    path("public/institution/location/", public_institution_location_api, name="public-institution-location-api"),
     
     path("patients/search/", patient_search_api, name="patient-search-api"),
     path("patients/<int:pk>/documents/", PatientViewSet.as_view({"get": "documents", "post": "documents"}), name="patient-documents-api"),
