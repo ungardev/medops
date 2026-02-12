@@ -660,7 +660,9 @@ def appointment_detail_api(request, pk): return Response({})
 def update_appointment_notes(request, pk): return Response({"ok": True})
 
 
+
 @api_view(['POST'])
+@permission_classes([conditional_permission()])
 def register_arrival(request):
     """
     Registra la llegada de un paciente a la sala de espera.
