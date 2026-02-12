@@ -1517,17 +1517,47 @@ def public_institution_location_api(request):
         
         n = institution.neighborhood
         
+        if not n:
+            return Response({
+                'name': institution.name,
+                'location': {
+                    'neighborhood': None,
+                    'parish': None,
+                    'municipality': None,
+                    'state': None,
+                    'country': None,
+                    'coordinates': "0.00° N / 0.00° W"
+                },
+                'timezone': 'LOCAL_TZ',
+                'status': 'no_location_configured'
+            })
+        
+        # Acceder a objetos relacionados
+        p = getattr(n, 'parish', None)
+        m = getattr(p, 'municipality', None) if p else None
+        s = getattr(m, 'state', None) if m else None
+        c = getattr(s, 'country', None) if s else None
+        
+        neighborhood_name = n.name if n else None
+        parish_name = p.name if p else None
+        municipality_name = m.name if m else None
+        state_name = s.name if s else None
+        country_name = c.name if c else None
+        
+        # Determinar timezone
+        timezone = 'VET_TZ' if country_name and 'VENEZUELA' in country_name.upper() else 'LOCAL_TZ'
+        
         return Response({
             'name': institution.name,
             'location': {
-                'neighborhood': n.name if n else None,
-                'parish': getattr(getattr(n, 'parish', None), 'name', None) if n else None,
-                'municipality': getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'name', None) if n else None,
-                'state': getattr(getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'state', None), 'name', None) if n else None,
-                'country': getattr(getattr(getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'state', None), 'country', None), 'name', None) if n else None,
-                'coordinates': f"{n.id if n else 0}.00° N / {getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'id', 0) if n else 0}.88° W"
+                'neighborhood': neighborhood_name,
+                'parish': parish_name,
+                'municipality': municipality_name,
+                'state': state_name,
+                'country': country_name,
+                'coordinates': f"{n.id if n else 0}.00° N / {m.id if m else 0}.88° W"
             },
-            'timezone': 'VET_TZ' if 'VENEZUELA' in getattr(getattr(getattr(getattr(n, 'parish', None), 'municipality', None), 'state', None), 'country', {}).get('name', '').upper() else 'LOCAL_TZ',
+            'timezone': timezone,
             'status': 'operational'
         })
         
