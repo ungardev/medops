@@ -1699,7 +1699,7 @@ class MedicalReportSerializer(serializers.ModelSerializer):
 class ICD11EntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = ICD11Entry
-        fields = ["icd_code", "title", "definition", "synonyms", "parent_code"]
+        fields = ["icd_code", "title", "definition", "synonyms", "parent_code", "foundation_id"]
 
 
 class MedicalTestCatalogSerializer(serializers.ModelSerializer):
