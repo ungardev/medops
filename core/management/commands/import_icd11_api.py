@@ -5,8 +5,8 @@ from core.models import ICD11Entry, ICD11UpdateLog
 # Contenedores Docker locales ICD-API
 API_BASE_ES = "http://172.18.0.1:8081/icd/release/11/2025-01/mms"
 API_BASE_EN = "http://172.18.0.1:8082/icd/release/11/2025-01/mms"
-# Base URL de WHO para construir URLs completas
-WHO_BASE_URL = "http://id.who.int/icd/release/11/2025-01/mms"
+# Base URL de WHO para mapear URLs
+WHO_BASE = "http://id.who.int/icd/release/11/2025-01/mms"
 HEADERS_ES = {
     "Accept": "application/json",
     "API-Version": "v2",
@@ -19,6 +19,12 @@ HEADERS_EN = {
 }
 MAX_RETRIES = 5
 RETRY_DELAY = 2  # segundos
+def map_who_to_local(who_url, local_base):
+    """Convierte URL de WHO a URL del contenedor local."""
+    if who_url.startswith(WHO_BASE):
+        entity_id = who_url[len(WHO_BASE):].lstrip('/')  # Extraer ID después del /
+        return f"{local_base}/{entity_id}"
+    return who_url
 class Command(BaseCommand):
     help = "Importa ICD-11 completo desde contenedores Docker locales (español + inglés)"
     def handle(self, *args, **kwargs):
@@ -37,7 +43,6 @@ class Command(BaseCommand):
         
         # Limpiar registros obsoletos
         removed = ICD11Entry.objects.exclude(icd_code__in=all_seen).count()
-        ICD11UpdateLog.objects.filter(source__contains="ICD-11").exclude(source__in=list(all_seen)).delete()
         ICD11Entry.objects.exclude(icd_code__in=all_seen).delete()
         
         self.stdout.write(self.style.SUCCESS(
@@ -61,9 +66,9 @@ class Command(BaseCommand):
         raise last_exc if last_exc else RuntimeError("safe_get falló sin excepción")
     def fetch_entity(self, api_base, headers, entity_id=""):
         """Obtiene una entidad del ICD-API."""
-        # Si es URL completa de WHO, usarla directamente
+        # Si es URL completa de WHO, mapearla al contenedor local
         if entity_id.startswith("http://id.who.int/") or entity_id.startswith("https://id.who.int/"):
-            url = entity_id
+            url = map_who_to_local(entity_id, api_base)
         elif entity_id:
             url = f"{api_base}/{entity_id}"
         else:
@@ -88,7 +93,7 @@ class Command(BaseCommand):
                 continue
             seen.add(child_url)
             
-            # Obtener datos de la entidad usando URL completa de WHO
+            # Obtener datos de la entidad usando URL mapeada
             data = self.fetch_entity(api_base, headers, child_url)
             
             code = data.get("code", "") or child_url.split("/")[-1]
@@ -120,9 +125,10 @@ class Command(BaseCommand):
             
             # Filtrar y encolar hijos válidos
             for child in children:
-                child_id = child  # Ya viene como URL completa de WHO
+                child_id = child
                 if child_id not in seen:
-                    if child_id.split("/")[-1] not in ("unspecified", "other"):
+                    entity_id = child_id.split("/")[-1]
+                    if entity_id not in ("unspecified", "other"):
                         queue.append(child_id)
             
             import time
