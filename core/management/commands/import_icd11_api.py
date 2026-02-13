@@ -2,9 +2,11 @@
 import requests
 from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
-# Usar IP del gateway de Docker (172.18.0.1) porque localhost dentro del contenedor no funciona
+# Contenedores Docker locales ICD-API
 API_BASE_ES = "http://172.18.0.1:8081/icd/release/11/2025-01/mms"
 API_BASE_EN = "http://172.18.0.1:8082/icd/release/11/2025-01/mms"
+# Base URL de WHO para construir URLs completas
+WHO_BASE_URL = "http://id.who.int/icd/release/11/2025-01/mms"
 HEADERS_ES = {
     "Accept": "application/json",
     "API-Version": "v2",
@@ -35,6 +37,7 @@ class Command(BaseCommand):
         
         # Limpiar registros obsoletos
         removed = ICD11Entry.objects.exclude(icd_code__in=all_seen).count()
+        ICD11UpdateLog.objects.filter(source__contains="ICD-11").exclude(source__in=list(all_seen)).delete()
         ICD11Entry.objects.exclude(icd_code__in=all_seen).delete()
         
         self.stdout.write(self.style.SUCCESS(
@@ -58,7 +61,14 @@ class Command(BaseCommand):
         raise last_exc if last_exc else RuntimeError("safe_get falló sin excepción")
     def fetch_entity(self, api_base, headers, entity_id=""):
         """Obtiene una entidad del ICD-API."""
-        url = f"{api_base}/{entity_id}" if entity_id else api_base
+        # Si es URL completa de WHO, usarla directamente
+        if entity_id.startswith("http://id.who.int/") or entity_id.startswith("https://id.who.int/"):
+            url = entity_id
+        elif entity_id:
+            url = f"{api_base}/{entity_id}"
+        else:
+            url = api_base
+        
         resp = requests.get(url, headers=headers)
         resp.raise_for_status()
         return resp.json()
@@ -72,17 +82,16 @@ class Command(BaseCommand):
         queue = root.get("child", [])
         
         while queue:
-            entity_url = queue.pop(0)
-            entity_id = entity_url.split("/")[-1]
+            child_url = queue.pop(0)
             
-            if entity_id in seen:
+            if child_url in seen:
                 continue
-            seen.add(entity_id)
+            seen.add(child_url)
             
-            # Obtener datos de la entidad
-            data = self.fetch_entity(api_base, headers, entity_id)
+            # Obtener datos de la entidad usando URL completa de WHO
+            data = self.fetch_entity(api_base, headers, child_url)
             
-            code = data.get("code", "") or entity_id
+            code = data.get("code", "") or child_url.split("/")[-1]
             title = data.get("title", {}).get("@value", "")
             foundation_id = data.get("source")
             definition = data.get("definition", {}).get("@value")
@@ -111,9 +120,10 @@ class Command(BaseCommand):
             
             # Filtrar y encolar hijos válidos
             for child in children:
-                child_id = child.split("/")[-1]
-                if child_id not in ("unspecified", "other"):
-                    queue.append(child_id)
+                child_id = child  # Ya viene como URL completa de WHO
+                if child_id not in seen:
+                    if child_id.split("/")[-1] not in ("unspecified", "other"):
+                        queue.append(child_id)
             
             import time
             time.sleep(0.02)
