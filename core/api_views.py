@@ -2,6 +2,7 @@ from rest_framework import viewsets, status, views
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
@@ -13,6 +14,7 @@ from datetime import date
 from . import services
 from datetime import datetime, timedelta, date as python_date
 from django.utils import timezone
+from django.utils.timezone import localdate
 import logging
 from weasyprint import HTML
 from openpyxl import Workbook
@@ -2761,9 +2763,6 @@ def start_consultation_from_entry(request, entry_id):
     Inicia una consulta convirtiendo un WaitingRoomEntry en Appointment.
     Maneja tanto walk-ins como citas programadas.
     """
-    from django.conf import settings
-    from rest_framework.authtoken.models import Token
-    from core.models import DoctorOperator
     
     # =====================================================
     # AUTENTICACIÓN MANUAL EN DEBUG MODE
@@ -2838,7 +2837,7 @@ def start_consultation_from_entry(request, entry_id):
                 patient=entry.patient,
                 doctor=doctor,
                 institution=institution,
-                appointment_date=timezone.now().date(),
+                appointment_date=localdate(),
                 status="in_consultation",
                 started_at=timezone.now(),
                 notes=f"Walk-in desde Waiting Room (Entry #{entry.id})"

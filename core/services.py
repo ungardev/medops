@@ -319,12 +319,17 @@ def get_daily_appointments() -> List[Dict[str, Any]]:
 
 
 def get_current_consultation() -> Optional[Dict[str, Any]]:
-    today = localdate()
+    """
+    Obtiene la consulta activa actual.
+    Busca cualquier appointment con status "in_consultation",
+    ordenando por started_at descendente (más reciente primero).
+    """
     appointment = (
         Appointment.objects
-        .filter(appointment_date=today, status="in_consultation")
+        .filter(status="in_consultation")
         .select_related("patient")
         .prefetch_related("diagnoses__treatments", "diagnoses__prescriptions")
+        .order_by("-started_at")
         .first()
     )
     if not appointment:
