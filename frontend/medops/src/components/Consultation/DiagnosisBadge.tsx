@@ -1,119 +1,121 @@
 // src/components/Consultation/DiagnosisBadge.tsx
-import React, { useState } from "react";
-import { 
-  PencilSquareIcon, 
-  TrashIcon, 
-  CheckIcon, 
-  XMarkIcon,
-  ChatBubbleLeftRightIcon
-} from "@heroicons/react/24/outline";
-
-export interface DiagnosisBadgeProps {
+import React from "react";
+import { PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { DiagnosisType, DiagnosisStatus } from "../../types/consultation";
+interface DiagnosisBadgeProps {
   id: number;
   icd_code: string;
   title: string;
   description?: string;
-  onEdit?: (id: number, newDescription: string) => void;
+  type?: DiagnosisType;
+  status?: DiagnosisStatus;
+  onEdit?: (id: number, description: string) => void;
   onDelete?: (id: number) => void;
 }
-
+const TYPE_LABELS: Record<DiagnosisType, string> = {
+  presumptive: "PRESUNTIVO",
+  definitive: "DEFINITIVO",
+  differential: "DIFERENCIAL",
+  provisional: "PROVISIONAL",
+};
+const STATUS_COLORS: Record<DiagnosisStatus, string> = {
+  under_investigation: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  awaiting_results: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  confirmed: "bg-green-500/20 text-green-400 border-green-500/30",
+  ruled_out: "bg-red-500/20 text-red-400 border-red-500/30",
+  chronic: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+};
+const STATUS_LABELS: Record<DiagnosisStatus, string> = {
+  under_investigation: "EN ESTUDIO",
+  awaiting_results: "ESPERANDO RESULTADOS",
+  confirmed: "CONFIRMADO",
+  ruled_out: "DESCARTADO",
+  chronic: "CRÓNICO",
+};
 export default function DiagnosisBadge({
   id,
   icd_code,
   title,
   description,
+  type = "presumptive",
+  status = "under_investigation",
   onEdit,
   onDelete,
 }: DiagnosisBadgeProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedDescription, setEditedDescription] = useState(description || "");
-
-  const handleSave = () => {
-    if (onEdit) {
-      onEdit(id, editedDescription.trim());
-    }
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setEditedDescription(description || "");
-    setIsEditing(false);
-  };
-
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editDesc, setEditDesc] = React.useState(description || "");
+  const statusColor = STATUS_COLORS[status] || STATUS_COLORS.under_investigation;
+  const typeLabel = TYPE_LABELS[type] || TYPE_LABELS.presumptive;
+  const statusLabel = STATUS_LABELS[status] || STATUS_LABELS.under_investigation;
   return (
-    <div className="group border border-[var(--palantir-border)] bg-white/5 p-3 rounded-sm transition-all hover:border-[var(--palantir-active)]/50">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="bg-[var(--palantir-active)] text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm font-mono tracking-tighter">
+    <div className="group relative bg-[var(--palantir-panel)] border border-[var(--palantir-border)] p-3 hover:border-[var(--palantir-active)]/50 transition-all">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] font-black font-mono text-[var(--palantir-active)] bg-[var(--palantir-active)]/10 px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/20">
               {icd_code}
             </span>
-            <span className="text-[11px] font-bold uppercase tracking-tight text-[var(--palantir-text)]">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-[var(--palantir-text)]">
               {title}
             </span>
+            <span className={`text-[7px] font-black px-1.5 py-0.5 rounded border uppercase ${type === "definitive" ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-white/10 text-white/60 border-white/10"}`}>
+              {typeLabel}
+            </span>
+            <span className={`text-[7px] font-mono px-1.5 py-0.5 rounded border uppercase ${statusColor}`}>
+              {statusLabel}
+            </span>
           </div>
-          
-          {!isEditing && description && (
-            <div className="flex items-start gap-2 mt-1 opacity-70">
-              <ChatBubbleLeftRightIcon className="w-3 h-3 mt-0.5 text-[var(--palantir-active)]" />
-              <p className="text-[10px] font-mono leading-relaxed text-[var(--palantir-text)] whitespace-pre-line">
-                {description}
-              </p>
-            </div>
+          {description && (
+            <p className="text-[10px] font-mono text-[var(--palantir-muted)] mt-1.5 pl-1 border-l-2 border-[var(--palantir-border)]">
+              {description}
+            </p>
           )}
         </div>
-
-        {/* Action Controls */}
-        {!isEditing && (
+        {onEdit && onDelete && (
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {onEdit && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="p-1 hover:bg-white/10 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors"
-                title="Edit Entry"
-              >
-                <PencilSquareIcon className="w-4 h-4" />
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => {
-                  if (confirm("CONFIRM_DELETION: This action cannot be undone.")) {
-                    onDelete(id);
-                  }
-                }}
-                className="p-1 hover:bg-red-500/10 text-[var(--palantir-muted)] hover:text-red-400 transition-colors"
-                title="Delete Entry"
-              >
-                <TrashIcon className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className="p-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/10 rounded transition-colors"
+              title="Edit diagnosis"
+            >
+              <PencilSquareIcon className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => onDelete(id)}
+              className="p-1.5 text-[var(--palantir-muted)] hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+              title="Delete diagnosis"
+            >
+              <TrashIcon className="w-3.5 h-3.5" />
+            </button>
           </div>
         )}
       </div>
-
-      {/* Inline Editor */}
       {isEditing && (
-        <div className="mt-3 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="mt-3 pt-3 border-t border-[var(--palantir-border)] animate-in fade-in slide-in-from-top-2">
           <textarea
-            value={editedDescription}
-            onChange={(e) => setEditedDescription(e.target.value)}
-            placeholder="ADD_CLINICAL_OBSERVATIONS..."
-            className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none min-h-[60px] resize-none"
-            autoFocus
+            value={editDesc}
+            onChange={(e) => setEditDesc(e.target.value)}
+            className="w-full bg-black/40 border border-[var(--palantir-active)]/30 p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] min-h-[60px]"
+            placeholder="Edit description..."
           />
-          <div className="flex justify-end gap-2">
+          <div className="flex gap-2 mt-2">
             <button
-              onClick={handleCancel}
-              className="flex items-center gap-1 px-2 py-1 text-[9px] font-black uppercase text-[var(--palantir-muted)] hover:text-white transition-colors"
+              onClick={() => {
+                onEdit?.(id, editDesc);
+                setIsEditing(false);
+              }}
+              className="flex-1 bg-[var(--palantir-active)] text-white py-1.5 text-[9px] font-black uppercase tracking-wider hover:bg-blue-600 transition-colors"
             >
-              <XMarkIcon className="w-3 h-3" /> Cancel
+              Save
             </button>
             <button
-              onClick={handleSave}
-              className="flex items-center gap-1 px-2 py-1 bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] text-[9px] font-black uppercase border border-[var(--palantir-active)]/30 hover:bg-[var(--palantir-active)] hover:text-white transition-all"
+              onClick={() => {
+                setEditDesc(description || "");
+                setIsEditing(false);
+              }}
+              className="flex-1 bg-white/5 text-[var(--palantir-muted)] py-1.5 text-[9px] font-black uppercase tracking-wider hover:bg-white/10 transition-colors"
             >
-              <CheckIcon className="w-3 h-3" /> Commit_Changes
+              Cancel
             </button>
           </div>
         </div>
