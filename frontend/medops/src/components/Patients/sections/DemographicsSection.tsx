@@ -77,10 +77,11 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   }, [patientLocationIds]);
   
   const countriesResult = useCountries();
-  const statesResult = useStates(patientLocationIds.country_id);
-  const municipalitiesResult = useMunicipalities(patientLocationIds.state_id);
-  const parishesResult = useParishes(patientLocationIds.municipality_id);
-  const neighborhoodsResult = useNeighborhoods(patientLocationIds.parish_id);
+  // ✅ FIX: Usar form en lugar de patientLocationIds para que responda a cambios del usuario
+  const statesResult = useStates(form.country_id);
+  const municipalitiesResult = useMunicipalities(form.state_id);
+  const parishesResult = useParishes(form.municipality_id);
+  const neighborhoodsResult = useNeighborhoods(form.parish_id);
   
   const countries = countriesResult.data || [];
   const states = statesResult.data || [];
