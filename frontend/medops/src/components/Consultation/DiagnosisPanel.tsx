@@ -61,6 +61,8 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
     setDescription("");
     setType("presumptive");
     setStatus("under_investigation");
+    setQuery("");           // ✅ FIX: Limpiar búsqueda al seleccionar
+    setHighlightIndex(-1);  // ✅ FIX: Resetear highlight
   };
   const handleSave = () => {
     if (!selectedDiagnosis) return;
