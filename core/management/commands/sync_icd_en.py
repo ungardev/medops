@@ -3,7 +3,7 @@ import requests
 from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
 # Usar el contenedor ICD-API en inglés
-BASE_URL = "http://icdapi_en:80/icd/release/11/2025-01/mms"
+BASE_URL = "http://172.18.0.1:8082/icd/release/11/2025-01/mms"
 HEADERS = {
     "Accept": "application/json",
     "API-Version": "v2",
