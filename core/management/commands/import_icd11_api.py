@@ -2,9 +2,9 @@
 import requests
 from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
-# Contenedores locales ICD-API (mismo patrón que sync_icd.py)
-API_BASE_ES = "http://icdapi_es:80/icd/release/11/2025-01/mms"
-API_BASE_EN = "http://icdapi_en:80/icd/release/11/2025-01/mms"
+# Usar puertos externos (localhost) porque el puerto 80 no está accesible internamente
+API_BASE_ES = "http://localhost:8081/icd/release/11/2025-01/mms"
+API_BASE_EN = "http://localhost:8082/icd/release/11/2025-01/mms"
 HEADERS_ES = {
     "Accept": "application/json",
     "API-Version": "v2",
@@ -16,9 +16,9 @@ HEADERS_EN = {
     "Accept-Language": "en"
 }
 MAX_RETRIES = 5
-RETRY_DELAY = 10  # segundos
+RETRY_DELAY = 2  # segundos
 class Command(BaseCommand):
-    help = "Importa ICD-11 completo desde contenedores Docker locales ICD-API (español + inglés)"
+    help = "Importa ICD-11 completo desde contenedores Docker locales (español + inglés)"
     def handle(self, *args, **kwargs):
         self.stdout.write(self.style.NOTICE("🗃️ Iniciando importación ICD-11 bilingüe (ES + EN)..."))
         
@@ -41,7 +41,7 @@ class Command(BaseCommand):
             f"✅ ICD-11 bilingüe completado: {len(seen_es)} ES, {len(seen_en)} EN, {removed} eliminados"
         ))
     def safe_get(self, url, headers):
-        """Realiza GET con reintentos para evitar ConnectionRefused."""
+        """Realiza GET con reintentos."""
         last_exc = None
         for attempt in range(MAX_RETRIES):
             try:
@@ -57,7 +57,7 @@ class Command(BaseCommand):
                     raise
         raise last_exc if last_exc else RuntimeError("safe_get falló sin excepción")
     def fetch_entity(self, api_base, headers, entity_id=""):
-        """Obtiene una entidad del ICD-API local."""
+        """Obtiene una entidad del ICD-API."""
         url = f"{api_base}/{entity_id}" if entity_id else api_base
         resp = requests.get(url, headers=headers)
         resp.raise_for_status()
@@ -73,7 +73,7 @@ class Command(BaseCommand):
         
         while queue:
             entity_url = queue.pop(0)
-            entity_id = entity_url.split("/")[-1]  # ✅ Extraer solo el ID
+            entity_id = entity_url.split("/")[-1]
             
             if entity_id in seen:
                 continue
@@ -109,13 +109,12 @@ class Command(BaseCommand):
             else:
                 updated += 1
             
-            # Filtrar y encolar hijos válidos (mismo patrón que sync_icd.py)
+            # Filtrar y encolar hijos válidos
             for child in children:
                 child_id = child.split("/")[-1]
                 if child_id not in ("unspecified", "other"):
                     queue.append(child_id)
             
-            # Pequeño delay para no saturar el API
             import time
             time.sleep(0.02)
         
