@@ -24,7 +24,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   
   const { createNeighborhood, useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
   
-  // ✅ OBTENER IDs DEL PATIENT DE FORMA SEGURA
   const patientLocationIds = useMemo(() => {
     const neighborhood = patient.neighborhood;
     const parish = neighborhood?.parish;
@@ -42,7 +41,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     };
   }, [patient.neighborhood]);
   
-  // ✅ INICIALIZAR FORM CON TODOS LOS CAMPOS
   const getInitialForm = () => ({
     national_id: patient.national_id ?? "",
     first_name: patient.first_name ?? "",
@@ -54,6 +52,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     birth_country: patient.birth_country ?? "",
     email: patient.email ?? "",
     contact_info: patient.contact_info ?? "",
+    gender: patient.gender ?? "",
     country_id: null as number | null,
     state_id: null as number | null,
     municipality_id: null as number | null,
@@ -65,7 +64,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   
   const [form, setForm] = useState(getInitialForm);
   
-  // ✅ ACTUALIZAR FORM CUANDO patient.neighborhood ESTÉ DISPONIBLE
   useEffect(() => {
     setForm(prev => ({
       ...prev,
@@ -78,7 +76,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     }));
   }, [patientLocationIds]);
   
-  // ✅ HOOKS DE UBICACIÓN - usar patientLocationIds directamente
   const countriesResult = useCountries();
   const statesResult = useStates(patientLocationIds.country_id);
   const municipalitiesResult = useMunicipalities(patientLocationIds.state_id);
@@ -116,6 +113,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         email: form.email || undefined,
         contact_info: form.contact_info || undefined,
         address: form.address || undefined,
+        gender: (form.gender || undefined) as "M" | "F" | "Other" | "Unknown" | null | undefined,
         neighborhood_id: finalNeighborhoodId || undefined,
       };
       
@@ -256,7 +254,23 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <input type="date" value={form.birthdate} onChange={(e) => setForm({...form, birthdate: e.target.value})} disabled={!editing} className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30" style={{colorScheme: 'dark'}} />
         </div>
         
-        <div className="col-span-12 md:col-span-6">
+        <div className="col-span-12 md:col-span-3">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Gender</label>
+          <select 
+            value={form.gender} 
+            onChange={(e) => setForm({...form, gender: e.target.value as any})}
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30"
+          >
+            <option value="">NO_DATA</option>
+            <option value="M">MASCULINO</option>
+            <option value="F">FEMENINO</option>
+            <option value="Other">OTHER</option>
+            <option value="Unknown">UNKNOWN</option>
+          </select>
+        </div>
+        
+        <div className="col-span-12 md:col-span-3">
           <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Email_Address</label>
           <input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} disabled={!editing} className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30" />
         </div>

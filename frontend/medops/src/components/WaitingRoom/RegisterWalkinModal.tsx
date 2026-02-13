@@ -20,6 +20,7 @@ interface FormValues {
   national_id?: string;
   phone?: string;
   email?: string;
+  gender?: "M" | "F" | "Other" | "Unknown";
 }
 const RegisterWalkinModal: React.FC<Props> = ({ 
   onClose, 
@@ -185,6 +186,16 @@ const RegisterWalkinModal: React.FC<Props> = ({
                 className={`${inputStyles} font-mono placeholder:text-white/10`} 
                 placeholder="DOCUMENT_ID_FORMAT: V-00000000" 
               />
+            </div>
+            <div className="space-y-1 pb-4">
+              <label className={labelStyles}>BIOLOGICAL_SEX</label>
+              <select {...register("gender")} className={`${inputStyles} uppercase`}>
+                <option value="">SELECT_OPTION</option>
+                <option value="M">MASCULINO</option>
+                <option value="F">FEMENINO</option>
+                <option value="Other">OTHER</option>
+                <option value="Unknown">UNKNOWN</option>
+              </select>
             </div>
             <div className="flex flex-col gap-3 pt-4 border-t border-white/5">
               <button 

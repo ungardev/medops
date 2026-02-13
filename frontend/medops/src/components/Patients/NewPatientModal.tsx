@@ -17,6 +17,7 @@ interface FormValues {
   national_id: string;
   phone_number?: string;
   email?: string;
+  gender?: "M" | "F" | "Other" | "Unknown";
 }
 const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>();
@@ -31,6 +32,7 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
       ...(values.second_last_name?.trim() && { second_last_name: values.second_last_name.trim() }),
       ...(values.phone_number?.trim() && { phone_number: values.phone_number.trim() }),
       ...(values.email?.trim() && { email: values.email.trim() }),
+      ...(values.gender && { gender: values.gender }),
     };
     createPatient.mutate(payload, {
       onSuccess: () => {
@@ -82,6 +84,18 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
           <div className="space-y-1">
             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Comms_Email</label>
             <input {...register("email")} className={inputClass} placeholder="SUBJECT@NETWORK.OPS" />
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 border-t border-white/10 pt-4 mt-2">
+          <div className="space-y-1">
+            <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Biological_Sex</label>
+            <select {...register("gender")} className={inputClass}>
+              <option value="">SELECT_OPTION</option>
+              <option value="M">MASCULINO</option>
+              <option value="F">FEMENINO</option>
+              <option value="Other">OTHER</option>
+              <option value="Unknown">UNKNOWN</option>
+            </select>
           </div>
         </div>
         
