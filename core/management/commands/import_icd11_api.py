@@ -2,9 +2,9 @@
 import requests
 from django.core.management.base import BaseCommand
 from core.models import ICD11Entry, ICD11UpdateLog
-# Usar puertos externos (localhost) porque el puerto 80 no está accesible internamente
-API_BASE_ES = "http://localhost:8081/icd/release/11/2025-01/mms"
-API_BASE_EN = "http://localhost:8082/icd/release/11/2025-01/mms"
+# Usar IP del gateway de Docker (172.18.0.1) porque localhost dentro del contenedor no funciona
+API_BASE_ES = "http://172.18.0.1:8081/icd/release/11/2025-01/mms"
+API_BASE_EN = "http://172.18.0.1:8082/icd/release/11/2025-01/mms"
 HEADERS_ES = {
     "Accept": "application/json",
     "API-Version": "v2",
