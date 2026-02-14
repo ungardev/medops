@@ -5,7 +5,6 @@ import TreatmentPanel from "./TreatmentPanel";
 import PrescriptionPanel from "./PrescriptionPanel";
 import MedicalTestsPanel from "./MedicalTestsPanel";
 import MedicalReferralsPanel from "./MedicalReferralsPanel";
-// 🆕 IMPORTAR NUEVOS COMPONENTES
 import VitalSignsPanel from "./VitalSignsPanel";
 import ClinicalNotePanel from "./ClinicalNotePanel";
 import { Tabs, Tab } from "../ui/Tabs";
@@ -19,16 +18,14 @@ import {
   QueueListIcon, 
   ShieldCheckIcon,
   ArrowRightCircleIcon,
-  HeartIcon, // 🆕 ICONO VITAL SIGNS
-  DocumentTextIcon, // 🆕 ICONO CLINICAL NOTE
-  BuildingOfficeIcon // 🆕 ICONO INSTITUCIONAL
+  HeartIcon,
+  DocumentTextIcon,
+  BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
-// 🔥 CORRECCIÓN CRÍTICA: Interface sin parámetro obsoleto
 interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
   appointmentId: number;
   readOnly: boolean;
-  // ❌ ELIMINADO: notes?: string | null; (parámetro obsoleto que causaba el error)
 }
 export default function ConsultationWorkflow({
   diagnoses,
@@ -37,9 +34,8 @@ export default function ConsultationWorkflow({
 }: ConsultationWorkflowProps) {
   const createTreatment = useCreateTreatment();
   const createPrescription = useCreatePrescription();
-  const [activeTab, setActiveTab] = useState("vital-signs"); // 🆕 EMPEZAR CON VITAL SIGNS
+  const [activeTab, setActiveTab] = useState("vital-signs");
   
-  // 🆕 OBJETO DE ÍCONOS CONSISTENTE
   const tabIcons = {
     "vital-signs": <HeartIcon className="w-4 h-4" />,
     "clinical-note": <DocumentTextIcon className="w-4 h-4" />,
@@ -49,9 +45,38 @@ export default function ConsultationWorkflow({
     tests: <QueueListIcon className="w-4 h-4" />,
     referrals: <ArrowRightCircleIcon className="w-4 h-4" />,
   };
+  const handleCreateTreatment = async (data: {
+    appointment: number;
+    diagnosis: number;
+    plan: string;
+    start_date?: string;
+    end_date?: string;
+    status: "active" | "completed" | "cancelled";
+    treatment_type: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other";
+  }) => {
+    const selectedDiagnosis = diagnoses.find(d => d.id === data.diagnosis);
+    const diagnosisTitle = selectedDiagnosis 
+      ? selectedDiagnosis.title || selectedDiagnosis.icd_code 
+      : `Diagnóstico #${data.diagnosis}`;
+    
+    try {
+      await createTreatment.mutateAsync({
+        appointment: appointmentId,
+        diagnosis: data.diagnosis,
+        title: `Tratamiento: ${diagnosisTitle}`,
+        plan: data.plan,
+        treatment_type: data.treatment_type,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        status: data.status
+      });
+    } catch (error) {
+      console.error("Error creando tratamiento:", error);
+      alert("Error al crear tratamiento. Por favor intenta de nuevo.");
+    }
+  };
   return (
     <div className="w-full space-y-6">
-      {/* 🆕 BANNER DE INSTITUCIÓN - MEJORADO VISUALMENTE */}
       {readOnly && (
         <div className="bg-red-500/5 border border-red-500/10 rounded-lg p-4">
           <div className="flex items-center gap-3">
@@ -66,14 +91,12 @@ export default function ConsultationWorkflow({
         </div>
       )}
       
-      {/* 🆕 SISTEMA DE TABS MEJORADO - FIJADO EL RENDERIZADO */}
       <Tabs
         value={activeTab}
         onChange={setActiveTab}
         layout="horizontal"
         className="w-full space-y-6"
       >
-        {/* 🆕 TAB: VITAL SIGNS */}
         <Tab 
           id="vital-signs" 
           label={<span className="flex items-center gap-2">{tabIcons["vital-signs"]} Vital Signs</span>}
@@ -82,7 +105,7 @@ export default function ConsultationWorkflow({
             <VitalSignsPanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
-        {/* 🆕 TAB: CLINICAL NOTE */}
+        
         <Tab 
           id="clinical-note" 
           label={<span className="flex items-center gap-2">{tabIcons["clinical-note"]} Clinical Note</span>}
@@ -91,7 +114,7 @@ export default function ConsultationWorkflow({
             <ClinicalNotePanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
-        {/* TAB: DIAGNOSIS */}
+        
         <Tab 
           id="diagnosis" 
           label={<span className="flex items-center gap-2">{tabIcons.diagnosis} Diagnosis</span>}
@@ -104,7 +127,7 @@ export default function ConsultationWorkflow({
             />
           </div>
         </Tab>
-        {/* TAB: TREATMENT */}
+        
         <Tab 
           id="treatment" 
           label={<span className="flex items-center gap-2">{tabIcons.treatment} Treatment</span>}
@@ -114,20 +137,11 @@ export default function ConsultationWorkflow({
               diagnoses={diagnoses}
               appointmentId={appointmentId} 
               readOnly={readOnly}
-              onAdd={(data) => createTreatment.mutateAsync({
-                appointment: appointmentId,
-                diagnosis: data.diagnosis,
-                title: `Tratamiento para ${data.diagnosis}`,
-                plan: data.plan,
-                treatment_type: data.treatment_type,
-                start_date: data.start_date,
-                end_date: data.end_date,
-                status: data.status
-              })}
+              onAdd={handleCreateTreatment}
             />
           </div>
         </Tab>
-        {/* TAB: PRESCRIPTION */}
+        
         <Tab 
           id="prescription" 
           label={<span className="flex items-center gap-2">{tabIcons.prescription} Prescription</span>}
@@ -141,7 +155,7 @@ export default function ConsultationWorkflow({
             />
           </div>
         </Tab>
-        {/* TAB: TESTS */}
+        
         <Tab 
           id="tests" 
           label={<span className="flex items-center gap-2">{tabIcons.tests} Tests</span>}
@@ -150,7 +164,7 @@ export default function ConsultationWorkflow({
             <MedicalTestsPanel appointmentId={appointmentId} readOnly={readOnly} />
           </div>
         </Tab>
-        {/* TAB: REFERRALS */}
+        
         <Tab 
           id="referrals" 
           label={<span className="flex items-center gap-2">{tabIcons.referrals} Referrals</span>}
