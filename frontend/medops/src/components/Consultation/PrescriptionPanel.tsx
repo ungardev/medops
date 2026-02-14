@@ -74,11 +74,13 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   const [frequency, setFrequency] = useState<UpdatePrescriptionInput["frequency"]>("once_daily");
   const [route, setRoute] = useState<UpdatePrescriptionInput["route"]>("oral");
   const [components, setComponents] = useState<PrescriptionComponent[]>([]);
+  
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnosisId || (!medicationCatalogId && !medicationText) || !appointmentId) return;
+    
     const payload: CreatePrescriptionInput = {
       appointment: appointmentId,
       diagnosis: Number(diagnosisId),
@@ -93,6 +95,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
         unit: c.unit,
       })),
     };
+    
     onAdd?.(payload);
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
@@ -179,7 +182,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   value={diagnosisId}
                   onChange={(e) => setDiagnosisId(Number(e.target.value))}
                   required
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none appearance-none text-[var(--palantir-text)]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none appearance-none text-[var(--palantir-text)]"
                 >
                   <option value="">SELECT_DIAGNOSIS</option>
                   {diagnoses.map((d) => (
@@ -279,7 +282,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   placeholder="e.g. 7_DAYS"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
                 />
               </div>
               <div className="space-y-1">
@@ -289,7 +292,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as any)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
                 >
                   {frequencyOptions.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-gray-900">{opt.label.toUpperCase()}</option>
@@ -303,7 +306,7 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 <select
                   value={route}
                   onChange={(e) => setRoute(e.target.value as any)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
                 >
                   {routeOptions.map((opt) => (
                     <option key={opt.value} value={opt.value} className="bg-gray-900">{opt.label.toUpperCase()}</option>
@@ -311,9 +314,10 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 </select>
               </div>
             </div>
+            {/* FIXED BUTTON: Dark background with visible text */}
             <button
               type="submit"
-              className="w-full bg-[var(--palantir-active)] hover:bg-blue-600 text-white py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20"
+              className="w-full bg-gray-900 hover:bg-gray-800 border border-[var(--palantir-active)] text-[var(--palantir-active)] py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg"
             >
               <PlusIcon className="w-5 h-5" />
               <span className="text-[10px] font-black uppercase tracking-[0.2em]">Generate_Medical_Prescription</span>

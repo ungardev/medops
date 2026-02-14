@@ -50,11 +50,13 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
   const [treatmentType, setTreatmentType] = useState<
     "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"
   >("pharmacological");
+  
   const { mutate: updateTreatment } = useUpdateTreatment();
   const { mutate: deleteTreatment } = useDeleteTreatment();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnosisId || !plan.trim() || !appointmentId || !onAdd) return;
+    
     onAdd({
       appointment: appointmentId,
       diagnosis: Number(diagnosisId),
@@ -64,6 +66,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
       status,
       treatment_type: treatmentType,
     });
+    
     setDiagnosisId("");
     setPlan("");
     setStartDate("");
@@ -126,11 +129,9 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                     {diagnosisTreatments.map((t) => (
                       <TreatmentBadge
                         key={t.id}
-                        // 🔄 CAMBIO: Ahora pasa objeto Treatment completo en lugar de campos individuales
                         treatment={t}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
-                        // 🆕 Agregada prop para mostrar metadata
                         showMetadata={true}
                       />
                     ))}
@@ -160,7 +161,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 <select
                   value={diagnosisId}
                   onChange={(e) => setDiagnosisId(Number(e.target.value))}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
                   required
                 >
                   <option value="">SELECT_DIAGNOSIS</option>
@@ -179,7 +180,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 <select
                   value={treatmentType}
                   onChange={(e) => setTreatmentType(e.target.value as any)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
                 >
                   <option value="pharmacological">PHARMACOLOGICAL</option>
                   <option value="surgical">SURGICAL</option>
@@ -196,35 +197,39 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
                 >
                   <option value="active">ACTIVE</option>
                   <option value="completed">COMPLETED</option>
                   <option value="cancelled">CANCELLED</option>
                 </select>
               </div>
-              {/* DATES */}
+              {/* FIXED DATE INPUTS: Proper styling for dark mode date picker */}
               <div>
                 <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
                   Init_Date
                 </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)] [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
                   End_Date
                 </label>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]"
-                />
+                <div className="relative">
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)] [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                </div>
               </div>
               {/* PLAN TEXTAREA */}
               <div className="col-span-2">
@@ -235,7 +240,7 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                   value={plan}
                   onChange={(e) => setPlan(e.target.value)}
                   placeholder="Enter treatment protocol..."
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] min-h-[80px]"
+                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-3 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] min-h-[80px] text-[var(--palantir-text)]"
                   required
                 />
               </div>
