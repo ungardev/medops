@@ -8,6 +8,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onCreated: () => void;
+  onPatientCreated?: (patientId: number) => void;
 }
 interface FormValues {
   first_name: string;
@@ -19,7 +20,7 @@ interface FormValues {
   email?: string;
   gender?: "M" | "F" | "Other" | "Unknown";
 }
-const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
+const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientCreated }) => {
   const { register, handleSubmit, formState: { errors }, reset } = useForm<FormValues>();
   const createPatient = useCreatePatient();
   if (!open) return null;
@@ -35,14 +36,18 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
       ...(values.gender && { gender: values.gender }),
     };
     createPatient.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        if (onPatientCreated) {
+          onPatientCreated(data.id);
+        }
         onCreated();
         reset();
         onClose();
       },
     });
   };
-  const inputClass = "w-full bg-black border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-all font-mono uppercase";
+  // ✅ FIX: Eliminado "uppercase" para que el usuario vea el texto tal como lo escribe
+  const inputClass = "w-full bg-black border border-white/10 rounded-sm px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-white/40 transition-all font-mono";
   return (
     <EliteModal 
       open={open} 
@@ -55,19 +60,19 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated }) => {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Primary_Name*</label>
-            <input {...register("first_name", { required: true })} className={inputClass} placeholder="NAME_ALPHA" />
+            <input {...register("first_name", { required: true })} className={inputClass} placeholder="Name_Alpha" />
           </div>
           <div className="space-y-1">
             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Middle_Name</label>
-            <input {...register("middle_name")} className={inputClass} placeholder="NAME_BRAVO" />
+            <input {...register("middle_name")} className={inputClass} placeholder="Name_Bravo" />
           </div>
           <div className="space-y-1">
             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Surname_A*</label>
-            <input {...register("last_name", { required: true })} className={inputClass} placeholder="SURNAME_ALPHA" />
+            <input {...register("last_name", { required: true })} className={inputClass} placeholder="Surname_Alpha" />
           </div>
           <div className="space-y-1">
             <label className="text-[9px] font-black text-white/30 uppercase tracking-widest">Surname_B</label>
-            <input {...register("second_last_name")} className={inputClass} placeholder="SURNAME_BRAVO" />
+            <input {...register("second_last_name")} className={inputClass} placeholder="Surname_Bravo" />
           </div>
         </div>
         

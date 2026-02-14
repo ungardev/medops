@@ -133,17 +133,15 @@ class Patient(models.Model):
         ('Other', 'Otro'),
         ('Unknown', 'No especificado'),
     ]
-
     BLOOD_TYPES = [
         ("A+", "A+"), ("A-", "A-"),
         ("B+", "B+"), ("B-", "B-"),
         ("AB+", "AB+"), ("AB-", "AB-"),
         ("O+", "O+"), ("O-", "O-"),
     ]
-
     # --- Identificación ---
     national_id = models.CharField(
-        max_length=12, # Aumentado por si incluyes letras tipo 'V-' o 'E-'
+        max_length=12,
         unique=True,
         verbose_name="Documento de Identidad",
         null=True, blank=True,
@@ -152,17 +150,14 @@ class Patient(models.Model):
             MaxLengthValidator(12)
         ]
     )
-
     first_name = models.CharField(max_length=100)
     middle_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100)
     second_last_name = models.CharField(max_length=100, blank=True, null=True)
-
     # --- Datos Demográficos ---
     birthdate = models.DateField(blank=True, null=True)
     birth_place = models.CharField(max_length=255, blank=True, null=True)
     
-    # Normalizamos país de nacimiento usando el modelo Country que ya tienes
     birth_country = models.ForeignKey(
         "Country", 
         on_delete=models.SET_NULL, 
@@ -170,14 +165,12 @@ class Patient(models.Model):
         related_name="born_patients",
         verbose_name="País de nacimiento"
     )
-
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     
     # --- Contacto ---
     email = models.EmailField(max_length=255, blank=True, null=True)
-    phone_number = models.CharField(max_length=20, blank=True, null=True) # Campo vital separado
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
     contact_info = models.TextField(blank=True, null=True, help_text="Contactos de emergencia, etc.")
-
     # --- Ubicación (Jerarquía Geográfica) ---
     neighborhood = models.ForeignKey(
         "Neighborhood",
@@ -186,41 +179,50 @@ class Patient(models.Model):
         related_name="patients"
     )
     address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Dirección detallada")
-
     # --- Perfil Clínico Base ---
-    # Nota: Peso y Altura suelen variar, pero los dejamos aquí como "Base" 
-    # (Lo ideal es tomarlos de Vitals en cada cita)
     weight = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Peso base en kg")
     height = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Altura base en cm")
     blood_type = models.CharField(max_length=3, choices=BLOOD_TYPES, null=True, blank=True)
-
     genetic_predispositions = models.ManyToManyField(
         "GeneticPredisposition",
         blank=True,
         related_name="patients"
     )
-
     # --- Metadatos y Auditoría ---
     history = HistoricalRecords()
     active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         db_table = "patients"
         verbose_name = "Paciente"
         verbose_name_plural = "Pacientes"
         ordering = ['last_name', 'first_name']
-
     @property
     def full_name(self):
         """Retorna el nombre completo formateado."""
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
         return " ".join([p for p in parts if p]).strip()
-
     def __str__(self):
         return f"{self.national_id or 'S/I'} - {self.full_name}"
-
+    def save(self, *args, **kwargs):
+        """
+        Normaliza los campos de nombre a Title Case antes de guardar.
+        Ejemplo: "JUAN CARLOS" → "Juan Carlos"
+        """
+        # Normalizar nombres (Title Case)
+        if self.first_name:
+            self.first_name = self.first_name.title()
+        if self.middle_name:
+            self.middle_name = self.middle_name.title()
+        if self.last_name:
+            self.last_name = self.last_name.title()
+        if self.second_last_name:
+            self.second_last_name = self.second_last_name.title()
+        
+        # NOTA: national_id y email NO se normalizan (case-sensitive por diseño)
+        
+        super().save(*args, **kwargs)
     def delete(self, *args, **kwargs):
         """Soft delete."""
         self.active = False
