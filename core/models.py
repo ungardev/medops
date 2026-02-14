@@ -15,26 +15,38 @@ from django.conf import settings
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES
 import hashlib
 
+
+def normalize_title_case(value):
+    """Normaliza texto a Title Case."""
+    if value:
+        return value.title()
+    return value
+
+
 # Create your models here.
 class GeneticPredisposition(models.Model):
-    name = models.CharField(max_length=100, unique=True)  # catálogo global, único por nombre
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
-
     class Meta:
         verbose_name = "Genetic Predisposition"
         verbose_name_plural = "Genetic Predispositions"
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        if self.description:
+            self.description = normalize_title_case(self.description)
+        super().save(*args, **kwargs)
     def __str__(self):
         return self.name
 
 
 class Country(models.Model):
     name = models.CharField(max_length=100, unique=True)
-
     class Meta:
         verbose_name = "Country"
         verbose_name_plural = "Countries"
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
     def __str__(self):
         return self.name
 
@@ -42,12 +54,13 @@ class Country(models.Model):
 class State(models.Model):
     country = models.ForeignKey(Country, on_delete=models.CASCADE, related_name="states")
     name = models.CharField(max_length=100)
-
     class Meta:
         unique_together = ("country", "name")
         verbose_name = "State"
         verbose_name_plural = "States"
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name}, {self.country.name}"
 
@@ -55,12 +68,13 @@ class State(models.Model):
 class Municipality(models.Model):
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="municipalities")
     name = models.CharField(max_length=100)
-
     class Meta:
         unique_together = ("state", "name")
         verbose_name = "Municipality"
         verbose_name_plural = "Municipalities"
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name}, {self.state.name}"
 
@@ -68,12 +82,13 @@ class Municipality(models.Model):
 class City(models.Model):
     state = models.ForeignKey(State, on_delete=models.CASCADE, related_name="cities")
     name = models.CharField(max_length=100)
-
     class Meta:
         unique_together = ("state", "name")
         verbose_name = "City"
         verbose_name_plural = "Cities"
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name}, {self.state.name}"
 
@@ -83,11 +98,10 @@ class Parish(models.Model):
         "core.Municipality",
         on_delete=models.CASCADE,
         related_name="parishes",
-        null=True,   # ⚡ temporal en desarrollo
-        blank=True   # ⚡ temporal en desarrollo
+        null=True,
+        blank=True
     )
     name = models.CharField(max_length=100)
-
     class Meta:
         verbose_name = "Parish"
         verbose_name_plural = "Parishes"
@@ -97,7 +111,9 @@ class Parish(models.Model):
                 name="unique_parish_per_municipality"
             )
         ]
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name}, {self.municipality.name if self.municipality else 'SIN-MUNICIPIO'}"
 
@@ -107,11 +123,10 @@ class Neighborhood(models.Model):
         "core.Parish",
         on_delete=models.CASCADE,
         related_name="neighborhoods",
-        null=True,   # ⚡ temporal en desarrollo
-        blank=True   # ⚡ temporal en desarrollo
+        null=True,
+        blank=True
     )
     name = models.CharField(max_length=100)
-
     class Meta:
         verbose_name = "Neighborhood"
         verbose_name_plural = "Neighborhoods"
@@ -121,7 +136,9 @@ class Neighborhood(models.Model):
                 name="unique_neighborhood_per_parish"
             )
         ]
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name}, {self.parish.name if self.parish else 'SIN-PARROQUIA'}"
 
@@ -203,26 +220,20 @@ class Patient(models.Model):
         """Retorna el nombre completo formateado."""
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
         return " ".join([p for p in parts if p]).strip()
+    
     def __str__(self):
         return f"{self.national_id or 'S/I'} - {self.full_name}"
+    
     def save(self, *args, **kwargs):
-        """
-        Normaliza los campos de nombre a Title Case antes de guardar.
-        Ejemplo: "JUAN CARLOS" → "Juan Carlos"
-        """
-        # Normalizar nombres (Title Case)
-        if self.first_name:
-            self.first_name = self.first_name.title()
+        self.first_name = normalize_title_case(self.first_name)
         if self.middle_name:
-            self.middle_name = self.middle_name.title()
-        if self.last_name:
-            self.last_name = self.last_name.title()
+            self.middle_name = normalize_title_case(self.middle_name)
+        self.last_name = normalize_title_case(self.last_name)
         if self.second_last_name:
-            self.second_last_name = self.second_last_name.title()
-        
-        # NOTA: national_id y email NO se normalizan (case-sensitive por diseño)
+            self.second_last_name = normalize_title_case(self.second_last_name)
         
         super().save(*args, **kwargs)
+        
     def delete(self, *args, **kwargs):
         """Soft delete."""
         self.active = False
@@ -1372,8 +1383,10 @@ class InstitutionSettings(models.Model):
         verbose_name = "Configuración de Sede"
         verbose_name_plural = "Configuraciones de Sedes"
         ordering = ['name']
+        
     def __str__(self):
         return f"{self.name} ({self.tax_id})"
+    
     @property
     def full_address(self):
         """Genera la dirección completa incluyendo jerarquía geográfica."""
@@ -1394,6 +1407,12 @@ class InstitutionSettings(models.Model):
                         parts.append(self.neighborhood.parish.municipality.state.name)
         
         return ", ".join(parts) if parts else "Sin dirección"
+    
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        if self.address:
+            self.address = normalize_title_case(self.address)
+        super().save(*args, **kwargs)
 
 
 class DoctorOperator(models.Model):
@@ -1509,6 +1528,10 @@ class DoctorOperator(models.Model):
             raise ValidationError(
                 "Seguridad MedOpz: Un Médico Verificado requiere firma digitalizada para operar."
             )
+    
+    def save(self, *args, **kwargs):
+        self.full_name = normalize_title_case(self.full_name)
+        super().save(*args, **kwargs)
 
 
 class BCVRateCache(models.Model):
@@ -1610,16 +1633,12 @@ class ICD11UpdateLog(models.Model):
 
 
 class MedicalTestCatalog(models.Model):
-    """
-    Catálogo institucional de exámenes disponibles. 
-    Permite que cada clínica tenga sus propios precios y códigos.
-    """
     institution = models.ForeignKey(
         "InstitutionSettings", 
         on_delete=models.CASCADE, 
         related_name="test_catalog"
     )
-    name = models.CharField(max_length=255, help_text="Nombre del examen (ej: Perfil Lipídico)")
+    name = models.CharField(max_length=255, help_text="Nombre del examen")
     code = models.CharField(max_length=50, help_text="Código interno, CUPS o CPT")
     category = models.CharField(
         max_length=50, 
@@ -1634,12 +1653,15 @@ class MedicalTestCatalog(models.Model):
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
-
     class Meta:
         verbose_name = "Catálogo de Examen"
         verbose_name_plural = "Catálogo de Exámenes"
-        unique_together = ('institution', 'code') # No repetir códigos en la misma clínica
-
+        unique_together = ('institution', 'code')
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        if self.description:
+            self.description = normalize_title_case(self.description)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"[{self.institution.name}] {self.name} ({self.code})"
 
@@ -1951,6 +1973,12 @@ class Specialty(models.Model):
         if self.parent:
             return f"{self.parent.name} > {self.name}"
         return self.name
+    
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        if self.description:
+            self.description = normalize_title_case(self.description)
+        super().save(*args, **kwargs)
 
 
 class MedicationCatalog(models.Model):
@@ -2008,6 +2036,12 @@ class MedicationCatalog(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.generic_name or ''}) — {self.presentation} — {self.concentration}"
+    
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        if self.generic_name:
+            self.generic_name = normalize_title_case(self.generic_name)
+        super().save(*args, **kwargs)
 
 
 class PersonalHistory(models.Model):
@@ -2020,7 +2054,6 @@ class PersonalHistory(models.Model):
         ("toxico", "Tóxico"),
         ("gineco_obstetrico", "Gineco-Obstétrico"),
     ]
-
     patient = models.ForeignKey(
         Patient,
         on_delete=models.CASCADE,
@@ -2029,14 +2062,15 @@ class PersonalHistory(models.Model):
     type = models.CharField(max_length=50, choices=HISTORY_TYPES)
     description = models.TextField()
     date = models.DateField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         verbose_name = "Personal History"
         verbose_name_plural = "Personal Histories"
-
+    def save(self, *args, **kwargs):
+        if self.description:
+            self.description = normalize_title_case(self.description)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.patient} — {self.get_type_display()}"
 
@@ -2048,15 +2082,16 @@ class FamilyHistory(models.Model):
         related_name="family_history"
     )
     condition = models.CharField(max_length=255)
-    relative = models.CharField(max_length=100)  # madre, padre, abuelo, etc.
+    relative = models.CharField(max_length=100)
     notes = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         verbose_name = "Family History"
         verbose_name_plural = "Family Histories"
-
+    def save(self, *args, **kwargs):
+        self.condition = normalize_title_case(self.condition)
+        self.relative = normalize_title_case(self.relative)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.patient} — {self.condition} ({self.relative})"
 
@@ -2071,13 +2106,15 @@ class Surgery(models.Model):
     date = models.DateField()
     hospital = models.CharField(max_length=255, blank=True, null=True)
     complications = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
         verbose_name = "Surgery"
         verbose_name_plural = "Surgeries"
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        if self.hospital:
+            self.hospital = normalize_title_case(self.hospital)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.patient} — {self.name}"
 
@@ -2114,11 +2151,14 @@ class Vaccine(models.Model):
     code = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True, null=True)
     country = models.CharField(max_length=100, default="Venezuela")
-
     class Meta:
         verbose_name = "Vaccine"
         verbose_name_plural = "Vaccines"
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        if self.country:
+            self.country = normalize_title_case(self.country)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name} ({self.code})"
 
@@ -2185,20 +2225,18 @@ class Allergy(models.Model):
         help_text="Fuente: historia clínica, verbal, prueba"
     )
     notes = models.TextField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    # Auditoría institucional
+    updated_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
-
     class Meta:
         verbose_name = "Allergy"
         verbose_name_plural = "Allergies"
         indexes = [
             models.Index(fields=["patient", "name"]),
         ]
-
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.name} ({self.severity or 'N/A'})"
 
@@ -2212,14 +2250,12 @@ class MedicalHistory(models.Model):
         ("remission", "En Remisión"),
         ("permanent", "Permanente / Crónico"),
     ]
-
     patient = models.ForeignKey(
         "Patient",
         on_delete=models.CASCADE,
         related_name="medical_history"
     )
     
-    # El nombre de la enfermedad o antecedente
     condition = models.CharField(max_length=255, verbose_name="Afección / Antecedente")
     
     status = models.CharField(
@@ -2240,25 +2276,25 @@ class MedicalHistory(models.Model):
         null=True, 
         verbose_name="Observaciones clínicas"
     )
-
-    # Control de tiempos
     onset_date = models.DateField(
         null=True, 
         blank=True, 
         verbose_name="Fecha de aparición aproximada"
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
+    updated_at = models.DateTimeField(auto_now_add=True)
     history = HistoricalRecords()
-
     class Meta:
         verbose_name = "Antecedente Médico"
         verbose_name_plural = "Historial de Antecedentes"
         indexes = [
             models.Index(fields=["patient", "status"]),
         ]
-
+    def save(self, *args, **kwargs):
+        self.condition = normalize_title_case(self.condition)
+        if self.notes:
+            self.notes = normalize_title_case(self.notes)
+        super().save(*args, **kwargs)
     def __str__(self):
         return f"{self.condition} ({self.get_status_display()})"
 
