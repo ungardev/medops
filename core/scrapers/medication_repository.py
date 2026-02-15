@@ -7,7 +7,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from django.db import transaction
-from django.utils.timezone import local_now
+from django.utils.timezone import now
 from core.models import MedicationCatalog
 audit = logging.getLogger("audit")
 class MedicationRepository:
@@ -34,7 +34,7 @@ class MedicationRepository:
             return {'created': 0, 'updated': 0, 'errors': 0}
         
         stats = {'created': 0, 'updated': 0, 'errors': 0}
-        timestamp = local_now()
+        timestamp = now()
         
         try:
             with transaction.atomic():
