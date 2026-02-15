@@ -14,35 +14,52 @@ import {
 } from "@heroicons/react/24/outline";
 import type { Treatment, TreatmentStatus, TreatmentType } from "../../types/consultation";
 import type { UpdateTreatmentInput } from "../../types/consultation";
-// 🔄 CAMBIO: Props ahora recibe objeto Treatment completo en lugar de campos individuales
 export interface TreatmentBadgeProps {
-  treatment: Treatment;  // 🆕 Objeto Treatment completo
-  onEdit?: (id: number, newData: UpdateTreatmentInput) => void;  // 🔄 Actualizado
+  treatment: Treatment;
+  onEdit?: (id: number, newData: UpdateTreatmentInput) => void;
   onDelete?: (id: number) => void;
-  showMetadata?: boolean;  // 🆕 Control para mostrar/esconder metadata
+  showMetadata?: boolean;
 }
 export default function TreatmentBadge({
   treatment,
   onEdit,
   onDelete,
-  showMetadata = false,  // 🆕 Default: false para mantener compatibilidad
+  showMetadata = false,
 }: TreatmentBadgeProps) {
   const [isEditing, setIsEditing] = useState(false);
   
-  // 🔄 CAMBIO: Estado de edición ahora usa propiedades del objeto treatment
   const [editedPlan, setEditedPlan] = useState(treatment.plan);
   const [editedStart, setEditedStart] = useState(treatment.start_date || "");
   const [editedEnd, setEditedEnd] = useState(treatment.end_date || "");
   const [editedStatus, setEditedStatus] = useState<TreatmentStatus>(treatment.status);
   const [editedType, setEditedType] = useState<TreatmentType>(treatment.treatment_type);
+  
   const statusConfig = {
     active: { color: "text-emerald-400", icon: <ClockIcon className="w-3 h-3" />, label: "ACTIVE" },
     completed: { color: "text-blue-400", icon: <CheckCircleIcon className="w-3 h-3" />, label: "COMPLETED" },
     cancelled: { color: "text-red-400", icon: <XCircleIcon className="w-3 h-3" />, label: "CANCELLED" },
     suspended: { color: "text-amber-400", icon: <XCircleIcon className="w-3 h-3" />, label: "SUSPENDED" },
   };
+  const typeConfig: Record<string, string> = {
+    pharmacological: "FARMACOLÓGICO",
+    surgical: "QUIRÚRGICO",
+    rehabilitation: "REHABILITACIÓN",
+    lifestyle: "ESTILO DE VIDA",
+    psychological: "PSICOLÓGICO",
+    other: "OTRO",
+  };
+  const getDisplayTitle = () => {
+    if (treatment.title && treatment.title !== `Tratamiento para ${treatment.diagnosis}`) {
+      return treatment.title;
+    }
+    // Si el título es genérico, usar el tipo + fecha
+    const typeLabel = typeConfig[treatment.treatment_type] || treatment.treatment_type;
+    const date = treatment.start_date 
+      ? new Date(treatment.start_date).toLocaleDateString("es-VE") 
+      : "Sin fecha";
+    return `${typeLabel} (${date})`;
+  };
   const handleSave = () => {
-    // 🔄 CAMBIO: Construir objeto UpdateTreatmentInput en lugar de pasar campos individuales
     const updateData: UpdateTreatmentInput = {
       id: treatment.id,
       plan: editedPlan.trim(),
@@ -61,11 +78,11 @@ export default function TreatmentBadge({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-3">
           <span className="text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">
-            Type__{treatment.treatment_type}
+            Type__{typeConfig[treatment.treatment_type] || treatment.treatment_type}
           </span>
-          <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 ${statusConfig[treatment.status].color}`}>
-            {statusConfig[treatment.status].icon}
-            {statusConfig[treatment.status].label}
+          <div className={`flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-white/5 ${statusConfig[treatment.status]?.color || "text-gray-400"}`}>
+            {statusConfig[treatment.status]?.icon || <ClockIcon className="w-3 h-3" />}
+            {statusConfig[treatment.status]?.label || treatment.status}
           </div>
         </div>
         {!isEditing && (
@@ -104,7 +121,7 @@ export default function TreatmentBadge({
               <option value="surgical">SURGICAL</option>
               <option value="rehabilitation">REHABILITATION</option>
               <option value="lifestyle">LIFESTYLE</option>
-              <option value="therapeutic">THERAPEUTIC</option>
+              <option value="psychological">PSYCHOLOGICAL</option>
               <option value="other">OTHER</option>
             </select>
           </div>
@@ -117,14 +134,15 @@ export default function TreatmentBadge({
         <div className="space-y-4">
           {/* TÍTULO DEL TRATAMIENTO */}
           <h3 className="font-semibold text-[12px] text-[var(--palantir-text)] leading-relaxed">
-            {treatment.title || treatment.treatment_type}
+            {getDisplayTitle()}
           </h3>
           
           {/* PLAN */}
           <p className="text-[12px] text-[var(--palantir-text)] leading-relaxed font-medium">
             {treatment.plan}
           </p>
-          {/* 🆕 SECCIÓN DE METADATA (FASE 1) - Doctor e Institución */}
+          
+          {/* METADATA */}
           {showMetadata && (treatment.doctor || treatment.institution) && (
             <div className="flex items-center gap-3 text-xs font-mono text-[var(--palantir-muted)] mb-2 border-t border-white/5 pt-2">
               {treatment.doctor && (
