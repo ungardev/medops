@@ -12,13 +12,12 @@ Opciones:
 import asyncio
 import logging
 from django.core.management.base import BaseCommand, CommandError
-from django.utils.timezone import local_now
+from django.utils.timezone import now
 from core.scrapers.inhrr_scraper import run_inhrr_scraper, INHRRScraper
 from core.scrapers.medication_repository import MedicationRepository
 audit = logging.getLogger("audit")
 class Command(BaseCommand):
     help = "Scrapea medicamentos desde el INHRR y los guarda en MedicationCatalog"
-    
     def add_arguments(self, parser):
         parser.add_argument(
             '--dry-run',
@@ -53,7 +52,6 @@ class Command(BaseCommand):
             dest='headless',
             help='Hacer visible el navegador (para debugging)',
         )
-        
     async def async_handle(self, *args, **options):
         """Handle asíncrono del command."""
         dry_run = options['dry_run']
@@ -61,11 +59,9 @@ class Command(BaseCommand):
         sample = options['sample']
         force = options['force']
         headless = options['headless']
-        
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(self.style.SUCCESS("INHRR MEDICATION SCRAPER"))
         self.stdout.write(self.style.SUCCESS("=" * 60))
-        
         # Mostrar configuración
         self.stdout.write("")
         self.stdout.write(self.style.HTTP_INFO(f"Modo: {'Dry Run' if dry_run else 'PRODUCCIÓN'}"))
@@ -74,21 +70,14 @@ class Command(BaseCommand):
         self.stdout.write(f"Force re-scrape: {'Sí' if force else 'No'}")
         self.stdout.write(f"Navegador: {'Headless' if headless else 'Visible'}")
         self.stdout.write("")
-        
         # Contar actuales
         current_count = MedicationRepository.count(source='INHRR')
         self.stdout.write(self.style.WARNING(f"Medicamentos INHRR actuales: {current_count}"))
         self.stdout.write("")
-        
+        # Eliminar cache si --force
         if force and not dry_run:
-            confirm = input("⚠️  Esto BORRARÁ todos los medicamentos del INHRR. ¿Continuar? (s/N): ")
-            if confirm.lower() != 's':
-                self.stdout.write(self.style.WARNING("Operación cancelada"))
-                return
-                
             deleted = MedicationRepository.clear_by_source('INHRR')
-            self.stdout.write(self.style.WARNING(f"Eliminados {deleted} medicamentos"))
-            
+            self.stdout.write(self.style.WARNING(f"Eliminados {deleted} medicamentos del cache"))
         if sample:
             self.stdout.write(self.style.HTTP_INFO("Extrayendo muestra de 10 medicamentos..."))
             medications = await run_inhrr_scraper(
@@ -96,20 +85,15 @@ class Command(BaseCommand):
                 sample=True,
                 sample_count=10
             )
-            
         elif dry_run:
             self.stdout.write(self.style.HTTP_INFO("Dry run: Solo contando páginas..."))
-            
             async with INHRRScraper(headless=headless) as scraper:
                 if not await scraper._safe_goto(scraper.SEARCH_URL):
                     raise CommandError("No se pudo acceder al INHRR")
-                    
                 total_pages = await scraper._get_total_pages()
-                
             self.stdout.write(self.style.SUCCESS(f"Páginas totales en INHRR: {total_pages}"))
             self.stdout.write(self.style.WARNING("Usa --limit para limitar páginas"))
             return
-            
         else:
             self.stdout.write(self.style.HTTP_INFO("Iniciando scraping completo..."))
             medications = await run_inhrr_scraper(
@@ -117,24 +101,18 @@ class Command(BaseCommand):
                 max_pages=max_pages,
                 sample=False
             )
-            
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS(f"Medicamentos extraídos: {len(medications)}"))
-        
         if dry_run:
             self.stdout.write(self.style.WARNING("Dry run: No se guardará nada"))
             return
-            
         if not medications:
             self.stdout.write(self.style.ERROR("No se extrajeron medicamentos"))
             return
-            
         # Guardar en base de datos
         self.stdout.write("")
         self.stdout.write(self.style.HTTP_INFO("Guardando en base de datos..."))
-        
         stats = MedicationRepository.upsert_many(medications)
-        
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(self.style.SUCCESS("RESULTADO DEL SCRAPING"))
@@ -144,12 +122,10 @@ class Command(BaseCommand):
         self.stdout.write(f"Errores: {stats['errors']}")
         self.stdout.write(f"Total procesados: {len(medications)}")
         self.stdout.write("")
-        
         # Verificar totals
         new_count = MedicationRepository.count(source='INHRR')
         self.stdout.write(self.style.SUCCESS(f"Total en BD: {new_count}"))
         self.stdout.write("")
-        
     def handle(self, *args, **options):
         """Entry point del command."""
         try:
