@@ -6,11 +6,18 @@ Extrae el catálogo oficial de medicamentos registrados en Venezuela.
 import asyncio
 import re
 import logging
+import sys
 from typing import List, Dict, Any, Optional, cast
 from datetime import datetime
 from urllib.parse import urljoin
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeout
 audit = logging.getLogger("audit")
+# Configurar logging para ver todo en stdout
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
 PRESENTATION_MAP = {
     'TABLETAS': 'tablet',
     'TABLETAS RECUBIERTAS': 'tablet_coated',
@@ -111,6 +118,7 @@ class INHRRScraper:
         self.timeout = timeout
         self.browser: Optional[Browser] = None
         self._page: Optional[Page] = None
+        self.playwright = None
     
     @property
     def page(self) -> Page:
@@ -129,46 +137,83 @@ class INHRRScraper:
         
     async def launch(self) -> None:
         """Inicia el navegador Playwright."""
-        audit.info("INHRR_SCRAPER: Lanzando navegador Playwright...")
+        print("=" * 60, flush=True)
+        print("INHRR_SCRAPER: Lanzando navegador Playwright...", flush=True)
+        print("=" * 60, flush=True)
         
         try:
-            audit.info("INHRR_SCRAPER: Starting async_playwright...")
-            playwright = await async_playwright().start()
-            audit.info(f"INHRR_SCRAPER: Playwright started: {playwright}")
+            print("INHRR_SCRAPER: Step 1 - Creating async_playwright...", flush=True)
+            self.playwright = await async_playwright().start()
+            print(f"INHRR_SCRAPER: Playwright created: {type(self.playwright)}", flush=True)
             
-            audit.info(f"INHRR_SCRAPER: Launching chromium with headless={self.headless}...")
-            self.browser = await playwright.chromium.launch(
+            if self.playwright is None:
+                print("ERROR: playwright is None!", flush=True)
+                raise Exception("playwright is None")
+            
+            print(f"INHRR_SCRAPER: Step 2 - Launching chromium (headless={self.headless})...", flush=True)
+            print(f"INHRR_SCRAPER: chromium attribute: {self.playwright.chromium}", flush=True)
+            
+            # Verificar que chromium existe y es callable
+            if self.playwright.chromium is None:
+                print("ERROR: playwright.chromium is None!", flush=True)
+                raise Exception("playwright.chromium is None")
+            
+            print("INHRR_SCRAPER: Calling chromium.launch()...", flush=True)
+            browser_result = self.playwright.chromium.launch(
                 headless=self.headless,
                 args=['--no-sandbox', '--disable-setuid-sandbox']
             )
-            audit.info(f"INHRR_SCRAPER: Browser launched: {self.browser}")
+            
+            print(f"INHRR_SCRAPER: browser_result type: {type(browser_result)}", flush=True)
+            print(f"INHRR_SCRAPER: browser_result is coroutine: {asyncio.iscoroutine(browser_result)}", flush=True)
+            
+            # Si es coroutine, await it
+            if asyncio.iscoroutine(browser_result):
+                print("INHRR_SCRAPER: Awaiting browser_result...", flush=True)
+                self.browser = await browser_result
+            else:
+                print("INHRR_SCRAPER: Using browser_result directly...", flush=True)
+                self.browser = browser_result
+            
+            print(f"INHRR_SCRAPER: Browser created: {type(self.browser)}", flush=True)
             
             if self.browser is None:
-                audit.error("INHRR_SCRAPER: Browser is None after launch!")
-                raise Exception("Browser launch failed - returned None")
+                print("ERROR: browser is None after launch!", flush=True)
+                raise Exception("Browser is None after launch")
             
-            audit.info("INHRR_SCRAPER: Creating new page...")
-            page_obj = await self.browser.new_page()
-            audit.info(f"INHRR_SCRAPER: Page created: {page_obj}")
+            print("INHRR_SCRAPER: Step 3 - Creating new page...", flush=True)
+            page_result = self.browser.new_page()
             
-            if page_obj is None:
-                audit.error("INHRR_SCRAPER: Page is None after new_page!")
-                raise Exception("Page creation failed - returned None")
+            print(f"INHRR_SCRAPER: page_result type: {type(page_result)}", flush=True)
+            print(f"INHRR_SCRAPER: page_result is coroutine: {asyncio.iscoroutine(page_result)}", flush=True)
             
-            self._page = page_obj
-            assert self._page is not None, "Failed to create browser page"
+            if asyncio.iscoroutine(page_result):
+                self._page = await page_result
+            else:
+                self._page = page_result
             
-            page = cast(Page, self._page)
-            await page.set_default_timeout(self.timeout)  # type: ignore
+            print(f"INHRR_SCRAPER: Page created: {type(self._page)}", flush=True)
             
-            await page.set_extra_http_headers({
+            if self._page is None:
+                print("ERROR: page is None after new_page!", flush=True)
+                raise Exception("Page is None after new_page")
+            
+            print("INHRR_SCRAPER: Step 4 - Setting timeout...", flush=True)
+            await self._page.set_default_timeout(self.timeout) # type: ignore
+            
+            print("INHRR_SCRAPER: Step 5 - Setting headers...", flush=True)
+            await self._page.set_extra_http_headers({
                 'User-Agent': 'MEDOPZ-Bot/1.0 (+https://medopz.software)'
             })
             
-            audit.info("INHRR_SCRAPER: Navegador listo")
+            print("=" * 60, flush=True)
+            print("INHRR_SCRAPER: Navegador LISTO", flush=True)
+            print("=" * 60, flush=True)
             
         except Exception as e:
-            audit.error(f"INHRR_SCRAPER: Error in launch(): {e}")
+            print(f"ERROR in launch(): {type(e).__name__}: {e}", flush=True)
+            import traceback
+            traceback.print_exc()
             raise
         
     async def close(self) -> None:
@@ -176,11 +221,17 @@ class INHRRScraper:
         try:
             if self.browser:
                 await self.browser.close()
-                audit.info("INHRR_SCRAPER: Navegador cerrado")
+                print("INHRR_SCRAPER: Navegador cerrado", flush=True)
         except Exception as e:
-            audit.error(f"INHRR_SCRAPER: Error closing browser: {e}")
+            print(f"Error closing browser: {e}", flush=True)
         finally:
             self._page = None
+            if self.playwright:
+                try:
+                    await self.playwright.stop()
+                except:
+                    pass
+                self.playwright = None
             
     async def _safe_goto(self, url: str, retries: Optional[int] = None) -> bool:
         """
@@ -196,25 +247,21 @@ class INHRRScraper:
         
         for attempt in range(retries):
             try:
-                audit.info(f"INHRR_SCRAPER: Navigating to {url} (attempt {attempt + 1}/{retries})...")
+                print(f"INHRR_SCRAPER: Navigating to {url} (attempt {attempt + 1}/{retries})...", flush=True)
                 response = await page.goto(url, wait_until='networkidle')
-                audit.info(f"INHRR_SCRAPER: Navigation response: {response}")
+                print(f"INHRR_SCRAPER: Response: {response}", flush=True)
                 await asyncio.sleep(self.rate_limit)
                 return True
                 
             except PlaywrightTimeout:
-                audit.warning(
-                    f"INHRR_SCRAPER: Timeout en {url}, intento {attempt + 1}/{retries}"
-                )
+                print(f"INHRR_SCRAPER: Timeout en {url}, intento {attempt + 1}/{retries}", flush=True)
                 await asyncio.sleep(2 ** attempt)
                 
             except Exception as e:
-                audit.error(
-                    f"INHRR_SCRAPER: Error navegando a {url}: {e}, intento {attempt + 1}/{retries}"
-                )
+                print(f"INHRR_SCRAPER: Error navigating to {url}: {e}", flush=True)
                 await asyncio.sleep(2 ** attempt)
                 
-        audit.error(f"INHRR_SCRAPER: Falló navegación a {url} después de {retries} intentos")
+        print(f"INHRR_SCRAPER: Falló navegación a {url} después de {retries} intentos", flush=True)
         return False
         
     async def _accept_cookies(self) -> bool:
@@ -225,10 +272,10 @@ class INHRRScraper:
             if await accept_btn.count() > 0:
                 await accept_btn.click()
                 await asyncio.sleep(0.5)
-                audit.info("INHRR_SCRAPER: Cookies aceptadas")
+                print("INHRR_SCRAPER: Cookies aceptadas", flush=True)
                 return True
         except Exception as e:
-            audit.warning(f"INHRR_SCRAPER: Error accepting cookies: {e}")
+            print(f"INHRR_SCRAPER: Error accepting cookies: {e}", flush=True)
         return False
         
     async def _get_total_pages(self) -> int:
@@ -257,9 +304,9 @@ class INHRRScraper:
             return 1
             
         except Exception as e:
-            audit.warning(f"INHRR_SCRAPER: Error obteniendo páginas: {e}")
+            print(f"INHRR_SCRAPER: Error obteniendo páginas: {e}", flush=True)
             return 1
-        
+    
     async def _parse_medication_row(self, row) -> Optional[Dict[str, Any]]:
         """
         Parsea una fila de la tabla de medicamentos.
@@ -275,7 +322,7 @@ class INHRRScraper:
             all_cols = await cols.all()
             
             if len(all_cols) < 4:
-                audit.warning("INHRR_SCRAPER: Fila con menos de 4 columnas, saltando...")
+                print("INHRR_SCRAPER: Fila con menos de 4 columnas, saltando...", flush=True)
                 return None
                 
             registration_code = (await all_cols[0].inner_text()).strip()
@@ -342,7 +389,7 @@ class INHRRScraper:
             }
             
         except Exception as e:
-            audit.error(f"INHRR_SCRAPER: Error parseando fila: {e}")
+            print(f"INHRR_SCRAPER: Error parseando fila: {e}", flush=True)
             return None
             
     async def scrape_all(self, max_pages: Optional[int] = None) -> List[Dict[str, Any]]:
@@ -355,7 +402,7 @@ class INHRRScraper:
         Returns:
             Lista de diccionarios con datos de medicamentos
         """
-        audit.info("INHRR_SCRAPER: Initiating scraping completo...")
+        print("INHRR_SCRAPER: Iniciando scraping completo...", flush=True)
         all_medications: List[Dict[str, Any]] = []
         
         try:
@@ -365,21 +412,21 @@ class INHRRScraper:
             await self._accept_cookies()
             
             total_pages = await self._get_total_pages()
-            audit.info(f"INHRR_SCRAPER: Total de páginas detectadas: {total_pages}")
+            print(f"INHRR_SCRAPER: Total de páginas detectadas: {total_pages}", flush=True)
             
             if max_pages and max_pages < total_pages:
                 total_pages = max_pages
-                audit.info(f"INHRR_SCRAPER: Limitando a {max_pages} páginas")
+                print(f"INHRR_SCRAPER: Limitando a {max_pages} páginas", flush=True)
                 
             page = self.page
             
             for page_num in range(1, total_pages + 1):
-                audit.info(f"INHRR_SCRAPER: Procesando página {page_num}/{total_pages}")
+                print(f"INHRR_SCRAPER: Procesando página {page_num}/{total_pages}", flush=True)
                 
                 if page_num > 1:
                     page_url = f"{self.SEARCH_URL}?page={page_num}"
                     if not await self._safe_goto(page_url):
-                        audit.error(f"INHRR_SCRAPER: Error en página {page_num}, continuando...")
+                        print(f"INHRR_SCRAPER: Error en página {page_num}, continuando...", flush=True)
                         continue
                         
                 await page.wait_for_selector('table tbody tr', timeout=10000)
@@ -394,19 +441,21 @@ class INHRRScraper:
                         all_medications.append(medication)
                         page_count += 1
                         
-                audit.info(
+                print(
                     f"INHRR_SCRAPER: Página {page_num} completada, "
-                    f"medicamentos: {page_count}, total: {len(all_medications)}"
+                    f"medicamentos: {page_count}, total: {len(all_medications)}",
+                    flush=True
                 )
                 
                 await asyncio.sleep(self.rate_limit)
                 
         except Exception as e:
-            audit.error(f"INHRR_SCRAPER: Error durante scraping: {e}")
+            print(f"INHRR_SCRAPER: Error durante scraping: {e}", flush=True)
             
-        audit.info(
+        print(
             f"INHRR_SCRAPER: Scraping completado. "
-            f"Total de medicamentos extraídos: {len(all_medications)}"
+            f"Total de medicamentos extraídos: {len(all_medications)}",
+            flush=True
         )
         
         return all_medications
@@ -421,7 +470,7 @@ class INHRRScraper:
         Returns:
             Lista de diccionarios con datos de medicamentos
         """
-        audit.info(f"INHRR_SCRAPER: Scraping muestra de {count} medicamentos...")
+        print(f"INHRR_SCRAPER: Scraping muestra de {count} medicamentos...", flush=True)
         
         try:
             if not await self._safe_goto(self.SEARCH_URL):
@@ -441,15 +490,16 @@ class INHRRScraper:
                 if medication:
                     medications.append(medication)
                     
-            audit.info(
+            print(
                 f"INHRR_SCRAPER: Muestra completada. "
-                f"Medicamentos extraídos: {len(medications)}"
+                f"Medicamentos extraídos: {len(medications)}",
+                flush=True
             )
             
             return medications
             
         except Exception as e:
-            audit.error(f"INHRR_SCRAPER: Error en sample: {e}")
+            print(f"INHRR_SCRAPER: Error en sample: {e}", flush=True)
             return []
 async def run_inhrr_scraper(
     headless: bool = True,
