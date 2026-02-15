@@ -38,7 +38,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--force',
             action='store_true',
-            help='Forzar re-scrapeo completo (borra cache del INHRR primero)',
+            help='crapeo completoForzar re-s (borra cache del INHRR primero)',
         )
         parser.add_argument(
             '--headless',
@@ -52,13 +52,8 @@ class Command(BaseCommand):
             dest='headless',
             help='Hacer visible el navegador (para debugging)',
         )
-    async def async_handle(self, *args, **options):
+    async def async_handle(self, dry_run, max_pages, sample, force, headless, current_count):
         """Handle asíncrono del command."""
-        dry_run = options['dry_run']
-        max_pages = options['limit'] if options['limit'] > 0 else None
-        sample = options['sample']
-        force = options['force']
-        headless = options['headless']
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(self.style.SUCCESS("INHRR MEDICATION SCRAPER"))
         self.stdout.write(self.style.SUCCESS("=" * 60))
@@ -70,14 +65,10 @@ class Command(BaseCommand):
         self.stdout.write(f"Force re-scrape: {'Sí' if force else 'No'}")
         self.stdout.write(f"Navegador: {'Headless' if headless else 'Visible'}")
         self.stdout.write("")
-        # Contar actuales
-        current_count = MedicationRepository.count(source='INHRR')
         self.stdout.write(self.style.WARNING(f"Medicamentos INHRR actuales: {current_count}"))
         self.stdout.write("")
-        # Eliminar cache si --force
-        if force and not dry_run:
-            deleted = MedicationRepository.clear_by_source('INHRR')
-            self.stdout.write(self.style.WARNING(f"Eliminados {deleted} medicamentos del cache"))
+        # Inicializar medications
+        medications = []
         if sample:
             self.stdout.write(self.style.HTTP_INFO("Extrayendo muestra de 10 medicamentos..."))
             medications = await run_inhrr_scraper(
@@ -93,7 +84,6 @@ class Command(BaseCommand):
                 total_pages = await scraper._get_total_pages()
             self.stdout.write(self.style.SUCCESS(f"Páginas totales en INHRR: {total_pages}"))
             self.stdout.write(self.style.WARNING("Usa --limit para limitar páginas"))
-            return
         else:
             self.stdout.write(self.style.HTTP_INFO("Iniciando scraping completo..."))
             medications = await run_inhrr_scraper(
@@ -105,10 +95,10 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Medicamentos extraídos: {len(medications)}"))
         if dry_run:
             self.stdout.write(self.style.WARNING("Dry run: No se guardará nada"))
-            return
+            return medications
         if not medications:
             self.stdout.write(self.style.ERROR("No se extrajeron medicamentos"))
-            return
+            return medications
         # Guardar en base de datos
         self.stdout.write("")
         self.stdout.write(self.style.HTTP_INFO("Guardando en base de datos..."))
@@ -126,10 +116,27 @@ class Command(BaseCommand):
         new_count = MedicationRepository.count(source='INHRR')
         self.stdout.write(self.style.SUCCESS(f"Total en BD: {new_count}"))
         self.stdout.write("")
+        return medications
     def handle(self, *args, **options):
         """Entry point del command."""
+        dry_run = options['dry_run']
+        max_pages = options['limit'] if options['limit'] > 0 else None
+        sample = options['sample']
+        force = options['force']
+        headless = options['headless']
+        # LLAMADAS SYNC - ejecutadas antes del contexto async
+        current_count = MedicationRepository.count(source='INHRR')
+        # Eliminar cache si --force (sync)
+        if force and not dry_run:
+            deleted = MedicationRepository.clear_by_source('INHRR')
         try:
-            asyncio.run(self.async_handle(*args, **options))
+            # Ejecutar el handle async y obtener medicamentos
+            medications = asyncio.run(
+                self.async_handle(dry_run, max_pages, sample, force, headless, current_count)
+            )
+            # Mostrar mensaje de cache borrado aquí si applyo --force
+            if force and not dry_run:
+                self.stdout.write(self.style.WARNING(f"Eliminados {deleted} medicamentos del cache"))
         except KeyboardInterrupt:
             self.stdout.write(self.style.WARNING("\nOperación cancelada por el usuario"))
         except Exception as e:
