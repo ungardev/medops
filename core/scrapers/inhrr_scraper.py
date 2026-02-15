@@ -131,29 +131,56 @@ class INHRRScraper:
         """Inicia el navegador Playwright."""
         audit.info("INHRR_SCRAPER: Lanzando navegador Playwright...")
         
-        playwright = await async_playwright().start()
-        self.browser = await playwright.chromium.launch(
-            headless=self.headless,
-            args=['--no-sandbox', '--disable-setuid-sandbox']
-        )
-        
-        self._page = await self.browser.new_page()
-        assert self._page is not None, "Failed to create browser page"
-        page = cast(Page, self._page)
-        await page.set_default_timeout(self.timeout) # type: ignore
-        
-        await page.set_extra_http_headers({
-            'User-Agent': 'MEDOPZ-Bot/1.0 (+https://medopz.software)'
-        })
-        
-        audit.info("INHRR_SCRAPER: Navegador listo")
+        try:
+            audit.info("INHRR_SCRAPER: Starting async_playwright...")
+            playwright = await async_playwright().start()
+            audit.info(f"INHRR_SCRAPER: Playwright started: {playwright}")
+            
+            audit.info(f"INHRR_SCRAPER: Launching chromium with headless={self.headless}...")
+            self.browser = await playwright.chromium.launch(
+                headless=self.headless,
+                args=['--no-sandbox', '--disable-setuid-sandbox']
+            )
+            audit.info(f"INHRR_SCRAPER: Browser launched: {self.browser}")
+            
+            if self.browser is None:
+                audit.error("INHRR_SCRAPER: Browser is None after launch!")
+                raise Exception("Browser launch failed - returned None")
+            
+            audit.info("INHRR_SCRAPER: Creating new page...")
+            page_obj = await self.browser.new_page()
+            audit.info(f"INHRR_SCRAPER: Page created: {page_obj}")
+            
+            if page_obj is None:
+                audit.error("INHRR_SCRAPER: Page is None after new_page!")
+                raise Exception("Page creation failed - returned None")
+            
+            self._page = page_obj
+            assert self._page is not None, "Failed to create browser page"
+            
+            page = cast(Page, self._page)
+            await page.set_default_timeout(self.timeout)  # type: ignore
+            
+            await page.set_extra_http_headers({
+                'User-Agent': 'MEDOPZ-Bot/1.0 (+https://medopz.software)'
+            })
+            
+            audit.info("INHRR_SCRAPER: Navegador listo")
+            
+        except Exception as e:
+            audit.error(f"INHRR_SCRAPER: Error in launch(): {e}")
+            raise
         
     async def close(self) -> None:
         """Cierra el navegador."""
-        if self.browser:
-            await self.browser.close()
-            audit.info("INHRR_SCRAPER: Navegador cerrado")
-        self._page = None
+        try:
+            if self.browser:
+                await self.browser.close()
+                audit.info("INHRR_SCRAPER: Navegador cerrado")
+        except Exception as e:
+            audit.error(f"INHRR_SCRAPER: Error closing browser: {e}")
+        finally:
+            self._page = None
             
     async def _safe_goto(self, url: str, retries: Optional[int] = None) -> bool:
         """
@@ -169,7 +196,9 @@ class INHRRScraper:
         
         for attempt in range(retries):
             try:
-                await page.goto(url, wait_until='networkidle')
+                audit.info(f"INHRR_SCRAPER: Navigating to {url} (attempt {attempt + 1}/{retries})...")
+                response = await page.goto(url, wait_until='networkidle')
+                audit.info(f"INHRR_SCRAPER: Navigation response: {response}")
                 await asyncio.sleep(self.rate_limit)
                 return True
                 
@@ -198,8 +227,8 @@ class INHRRScraper:
                 await asyncio.sleep(0.5)
                 audit.info("INHRR_SCRAPER: Cookies aceptadas")
                 return True
-        except Exception:
-            pass
+        except Exception as e:
+            audit.warning(f"INHRR_SCRAPER: Error accepting cookies: {e}")
         return False
         
     async def _get_total_pages(self) -> int:
