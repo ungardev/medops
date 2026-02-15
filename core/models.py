@@ -12,7 +12,7 @@ from decimal import Decimal
 from django.utils import timezone
 from django.apps import apps
 from django.conf import settings
-from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES
 import hashlib
 
 
@@ -1982,66 +1982,244 @@ class Specialty(models.Model):
 
 
 class MedicationCatalog(models.Model):
-    # --- Identificación Core ---
+    """
+    Catálogo maestro de medicamentos para MEDOPZ.
+    
+    Puede almacenar:
+    1. Medicamentos del catálogo global (institution=NULL)
+    2. Medicamentos personalizados por institución (institution=ID)
+    
+    Los datos del INHRR se scrapean y guardan como catálogo global.
+    """
+    # --------------------------------------------------------------------------
+    # IDENTIFICACIÓN CORE
+    # --------------------------------------------------------------------------
     name = models.CharField(
-        max_length=200, 
-        help_text="Nombre comercial o genérico principal (ej: Atamel)"
+        max_length=500,
+        help_text="Nombre comercial o genérico principal (ej: Atamel, Loratadina + Pseudoefedrina)"
     )
     generic_name = models.CharField(
-        max_length=200, 
-        blank=True, 
-        null=True, 
-        help_text="Principio activo (ej: Acetaminofén)"
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text="Principio activo (ej: Acetaminofén, Loratadina + Pseudoefedrina)"
     )
     
-    # --- Especificaciones Técnicas ---
-    presentation = models.CharField(max_length=50, choices=PRESENTATION_CHOICES)
-    concentration = models.CharField(max_length=100, help_text="Ej: 500 mg, 250 mg/5 ml")
-    route = models.CharField(max_length=20, choices=ROUTE_CHOICES)
-    unit = models.CharField(max_length=20, choices=UNIT_CHOICES)
+    # --------------------------------------------------------------------------
+    # ESPECIFICACIONES TÉCNICAS
+    # --------------------------------------------------------------------------
+    presentation = models.CharField(
+        max_length=50,
+        choices=PRESENTATION_CHOICES,
+        help_text="Forma farmacéutica (tableta, jarabe, cápsula, etc.)"
+    )
+    concentration = models.CharField(
+        max_length=200,
+        help_text="Concentración del medicamento (ej: 500 mg, 5mg/60mg por 5ml)"
+    )
+    route = models.CharField(
+        max_length=20,
+        choices=ROUTE_CHOICES,
+        help_text="Vía de administración"
+    )
+    unit = models.CharField(
+        max_length=20,
+        choices=UNIT_CHOICES,
+        help_text="Unidad de medida de la concentración"
+    )
     
-    # --- Clasificación y Códigos ---
+    # --------------------------------------------------------------------------
+    # PRESENTACIÓN COMPLETA
+    # --------------------------------------------------------------------------
+    # Ejemplo: "Jarabe x 60 ml", "Tableta x 30", "Frasco x 100 ml"
+    presentation_size = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Tamaño de la presentación (ej: Jarabe x 60 ml, Tableta x 30)"
+    )
+    
+    # --------------------------------------------------------------------------
+    # CONCENTRACIÓN DETALLADA (PARA MEDICAMENTOS COMBINADOS)
+    # --------------------------------------------------------------------------
+    # Ejemplo: [{"principio": "Loratadina", "cantidad": "5mg"}, {"principio": "Pseudoefedrina", "cantidad": "60mg"}]
+    concentration_detail = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Concentración detallada para medicamentos combinados"
+    )
+    
+    # --------------------------------------------------------------------------
+    # CLASIFICACIÓN Y CÓDIGOS
+    # --------------------------------------------------------------------------
     code = models.CharField(
-        max_length=50, 
-        unique=True, 
-        blank=True, 
-        null=True, 
+        max_length=50,
+        unique=True,
+        blank=True,
+        null=True,
         help_text="Código de barras, SKU o código nacional de fármaco"
     )
+    
+    # Código de registro del INHRR (ej: E.F.42.246)
+    inhrr_code = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Código de registro sanitario del INHRR (ej: E.F.42.246)"
+    )
+    
+    # Clasificación ATC (si está disponible)
+    atc_code = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text="Código ATC (Clasificación Anatómica Terapéutica)"
+    )
+    
     is_controlled = models.BooleanField(
-        default=False, 
+        default=False,
         help_text="Marcar si requiere receta médica especial (psicotrópicos, etc.)"
     )
     
-    # --- Gestión Institucional ---
+    # --------------------------------------------------------------------------
+    # ACCIÓN TERAPÉUTICA
+    # --------------------------------------------------------------------------
+    therapeutic_action = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Acción terapéutica (ej: Antihistamínico, Antiinflamatorio)"
+    )
+    
+    # --------------------------------------------------------------------------
+    # GESTIÓN INSTITUCIONAL
+    # --------------------------------------------------------------------------
     institution = models.ForeignKey(
-        "InstitutionSettings", 
-        on_delete=models.SET_NULL, 
-        null=True, 
-        blank=True, 
+        "InstitutionSettings",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name="custom_medications",
         help_text="Si es nulo, es parte del catálogo maestro global de MedOpz"
+    )
+    
+    # --------------------------------------------------------------------------
+    # ESTATUS Y AUDITORÍA
+    # --------------------------------------------------------------------------
+    inhrr_status = models.CharField(
+        max_length=20,
+        choices=MEDICATION_STATUS_CHOICES,
+        default='VIGENTE',
+        help_text="Estatus del medicamento según el INHRR"
     )
     
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    
+    # --------------------------------------------------------------------------
+    # METADATOS DEL SCRAPING
+    # --------------------------------------------------------------------------
+    source = models.CharField(
+        max_length=20,
+        default='INHRR',
+        help_text="Fuente de los datos (INHRR, MANUAL, etc.)"
+    )
+    last_scraped_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Fecha del último scraping"
+    )
+    
+    # --------------------------------------------------------------------------
+    # BÚSQUEDA FULL-TEXT
+    # --------------------------------------------------------------------------
+    search_vector = models.TextField(
+        blank=True,
+        help_text="Vector de búsqueda para full-text search"
+    )
+    
     class Meta:
         verbose_name = "Medicamento"
         verbose_name_plural = "Catálogo de Medicamentos"
-        # Refinamos la unicidad para incluir la institución
-        unique_together = ["name", "presentation", "concentration", "institution"]
+        unique_together = [
+            ["name", "presentation", "concentration", "institution"],
+        ]
         ordering = ["name", "presentation"]
-
+        indexes = [
+            models.Index(fields=['name']),
+            models.Index(fields=['generic_name']),
+            models.Index(fields=['presentation']),
+            models.Index(fields=['route']),
+            models.Index(fields=['institution']),
+            models.Index(fields=['inhrr_status']),
+            models.Index(fields=['is_active']),
+        ]
+    
     def __str__(self):
-        return f"{self.name} ({self.generic_name or ''}) — {self.presentation} — {self.concentration}"
+        """Representación legible del medicamento."""
+        institution_suffix = f" ({self.institution.name})" if self.institution else ""
+        return f"{self.name} {self.get_presentation_display()} {self.concentration}{institution_suffix}"
     
     def save(self, *args, **kwargs):
-        self.name = normalize_title_case(self.name)
+        """Normalización de texto y actualización de search_vector."""
+        
+        # Normalizar nombre y nombre genérico a Title Case
+        if self.name:
+            self.name = self.name.title()
         if self.generic_name:
-            self.generic_name = normalize_title_case(self.generic_name)
+            self.generic_name = self.generic_name.title()
+        
+        # Generar search_vector para full-text search
+        search_parts = [
+            self.name or '',
+            self.generic_name or '',
+            self.presentation or '',
+            self.concentration or '',
+            self.therapeutic_action or '',
+            self.inhrr_code or '',
+        ]
+        self.search_vector = ' '.join(filter(None, search_parts))
+        
         super().save(*args, **kwargs)
+    
+    # --------------------------------------------------------------------------
+    # PROPIEDADES PARA UI
+    # --------------------------------------------------------------------------
+    @property
+    def full_name(self):
+        """Nombre completo para display en UI."""
+        return f"{self.name} {self.get_presentation_display()} {self.concentration}"
+    
+    @property
+    def display_name(self):
+        """Nombre para mostrar en dropdowns."""
+        return self.name
+    
+    @property
+    def medication_type(self):
+        """Tipo de medicamento para display."""
+        return self.presentation
+    
+    def to_dict(self):
+        """Convierte el modelo a diccionario para APIs."""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'generic_name': self.generic_name,
+            'presentation': self.presentation,
+            'concentration': self.concentration,
+            'route': self.route,
+            'unit': self.unit,
+            'presentation_size': self.presentation_size,
+            'concentration_detail': self.concentration_detail,
+            'code': self.code,
+            'inhrr_code': self.inhrr_code,
+            'atc_code': self.atc_code,
+            'is_controlled': self.is_controlled,
+            'therapeutic_action': self.therapeutic_action,
+            'is_active': self.is_active,
+            'source': self.source,
+        }
 
 
 class PersonalHistory(models.Model):

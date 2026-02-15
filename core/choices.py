@@ -1,26 +1,35 @@
 # core/choices.py
 
 UNIT_CHOICES = [
-    ("mg", "Miligramos"),
-    ("ml", "Mililitros"),
-    ("g", "Gramos"),
-    ("tablet", "Tableta"),
-    ("capsule", "Cápsula"),
-    ("drop", "Gotas"),
-    ("puff", "Inhalación"),
-    ("unit", "Unidad"),
+    ("mg", "Miligramos (mg)"),
+    ("ml", "Mililitros (ml)"),
+    ("g", "Gramos (g)"),
+    ("mcg", "Microgramos (mcg)"),
+    ("L", "Litros (L)"),
+    ("tablet_unit", "Tableta(s)"),
+    ("capsule_unit", "Cápsula(s)"),
+    ("drop_unit", "Gota(s)"),
+    ("puff_unit", "Puff(s)"),
+    ("unit", "Unidad(es)"),
+    ("IU", "Unidades Internacionales (IU)"),
+    ("mEq", "Miliequivalentes (mEq)"),
+    ("percent", "Porcentaje (%)"),
     ("patch", "Parche"),
+    ("other", "Otro"),
 ]
 
 ROUTE_CHOICES = [
     ("oral", "Oral"),
-    ("iv", "Intravenosa"),
-    ("im", "Intramuscular"),
-    ("sc", "Subcutánea"),
+    ("intravenous", "Intravenosa (IV)"),
+    ("intramuscular", "Intramuscular (IM)"),
+    ("subcutaneous", "Subcutánea (SC)"),
     ("topical", "Tópica"),
     ("sublingual", "Sublingual"),
     ("inhalation", "Inhalación"),
     ("rectal", "Rectal"),
+    ("ophthalmic", "Oftálmica"),
+    ("otic", "Ótica"),
+    ("nasal", "Nasal"),
     ("other", "Otro"),
 ]
 
@@ -44,6 +53,7 @@ FREQUENCY_CHOICES = [
 ]
 
 PRESENTATION_CHOICES = [
+    # Existentes
     ("tablet", "Tableta"),
     ("capsule", "Cápsula"),
     ("syrup", "Jarabe"),
@@ -54,4 +64,20 @@ PRESENTATION_CHOICES = [
     ("patch", "Parche"),
     ("spray", "Spray"),
     ("other", "Otro"),
+    ("tablet_coated", "Tableta Recubierta"),
+    ("suspension", "Suspensión"),
+    ("solution", "Solución"),
+    ("ointment", "Ungüento"),
+    ("inhaler", "Inhalador"),
+    ("suppository", "Supositorio"),
+    ("powder", "Polvo"),
+    ("granules", "Gránulos"),
+    ("mouthwash", "Enjuague"),
+]
+
+MEDICATION_STATUS_CHOICES = [
+    ("VIGENTE", "Vigente"),
+    ("CANCELADO", "Cancelado"),
+    ("SUSPENDIDO", "Suspendido"),
+    ("VENCIDO", "Vencido"),
 ]
