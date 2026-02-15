@@ -8,7 +8,7 @@ import MedicalReferralsPanel from "./MedicalReferralsPanel";
 import VitalSignsPanel from "./VitalSignsPanel";
 import ClinicalNotePanel from "./ClinicalNotePanel";
 import { Tabs, Tab } from "../ui/Tabs";
-import { Diagnosis } from "../../types/consultation";
+import { Diagnosis, Treatment } from "../../types/consultation";
 import { useCreateTreatment, useCreatePrescription } from "../../hooks/consultations";
 import type { CreatePrescriptionInput } from "../../types/consultation";
 import { 
@@ -25,11 +25,13 @@ import {
 interface ConsultationWorkflowProps {
   diagnoses: Diagnosis[];
   appointmentId: number;
+  treatments?: Treatment[];
   readOnly: boolean;
 }
 export default function ConsultationWorkflow({
   diagnoses,
   appointmentId,
+  treatments,
   readOnly,
 }: ConsultationWorkflowProps) {
   const createTreatment = useCreateTreatment();
@@ -136,6 +138,7 @@ export default function ConsultationWorkflow({
             <TreatmentPanel 
               diagnoses={diagnoses}
               appointmentId={appointmentId} 
+              treatments={treatments}
               readOnly={readOnly}
               onAdd={handleCreateTreatment}
             />

@@ -228,7 +228,7 @@ export default function Consultation() {
               <ConsultationWorkflow
                 diagnoses={appointment.diagnoses}
                 appointmentId={appointment.id}
-                // ❌ ELIMINAR PARÁMETRO OBSOLETO: notes={appointment.notes ?? null}
+                treatments={appointment.treatments}
                 readOnly={Boolean(!isInstitutionMatch || isCrossInstitution)} // 🔧 CORREGIDO: Boolean() explícito
               />
             </div>
