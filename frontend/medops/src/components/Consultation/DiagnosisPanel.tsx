@@ -41,6 +41,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
   const [status, setStatus] = useState<DiagnosisStatus>("under_investigation");
   const [highlightIndex, setHighlightIndex] = useState<number>(-1);
   const [selectedDiagnosis, setSelectedDiagnosis] = useState<IcdResult | null>(null);
+  const [showResults, setShowResults] = useState(false);
   const { data: results = [], isLoading } = useIcdSearch(query);
   const { mutate: createDiagnosis, isPending: isCreating } = useCreateDiagnosis();
   const { mutate: updateDiagnosis } = useUpdateDiagnosis();
@@ -61,8 +62,9 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
     setDescription("");
     setType("presumptive");
     setStatus("under_investigation");
-    setQuery("");           // ✅ FIX: Limpiar búsqueda al seleccionar
-    setHighlightIndex(-1);  // ✅ FIX: Resetear highlight
+    setQuery("");
+    setShowResults(false);
+    setHighlightIndex(-1);
   };
   const handleSave = () => {
     if (!selectedDiagnosis) return;
@@ -132,19 +134,27 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
               type="text"
               placeholder="BUSCAR EN ICD-11..."
               value={query}
-              onChange={(e) => { setQuery(e.target.value); setHighlightIndex(-1); }}
+              onChange={(e) => { 
+                setQuery(e.target.value); 
+                setShowResults(true);
+                setHighlightIndex(-1); 
+              }}
               onKeyDown={(e) => {
                 if (!results?.length) return;
                 if (e.key === "ArrowDown") { e.preventDefault(); setHighlightIndex(p => (p + 1) % results.length); }
                 else if (e.key === "ArrowUp") { e.preventDefault(); setHighlightIndex(p => (p - 1 + results.length) % results.length); }
                 else if (e.key === "Enter" && highlightIndex >= 0) { e.preventDefault(); handleSelect(results[highlightIndex]); }
               }}
+              onFocus={() => query.length > 0 && setShowResults(true)}
               className="w-full bg-black/40 border border-[var(--palantir-border)] pl-10 pr-4 py-3 text-[11px] font-mono uppercase tracking-wider focus:border-[var(--palantir-active)] outline-none transition-all"
             />
           </div>
           {/* SEARCH RESULTS DROPDOWN */}
-          {results.length > 0 && (
-            <div className="border border-[var(--palantir-border)] bg-[#0a0a0a] shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--palantir-border)]">
+          {showResults && results.length > 0 && (
+            <div 
+              className="border border-[var(--palantir-border)] bg-[#0a0a0a] shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--palantir-border)]"
+              onMouseDown={(e) => e.preventDefault()}
+            >
               {results.map((r, idx) => (
                 <div
                   key={r.icd_code}
@@ -162,7 +172,7 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
             </div>
           )}
           {/* SELECTION WORK AREA */}
-          {selectedDiagnosis && (
+          {!showResults && selectedDiagnosis && (
             <div className="bg-[var(--palantir-active)]/5 border border-[var(--palantir-active)]/30 p-4 space-y-4 animate-in fade-in zoom-in-95 duration-200">
               {/* Header con código ICD */}
               <div className="flex items-center justify-between pb-3 border-b border-[var(--palantir-active)]/20">
@@ -226,11 +236,11 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                   className="w-full bg-black/60 border border-[var(--palantir-border)] pl-10 p-3 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none min-h-[80px]"
                 />
               </div>
-              {/* BOTÓN DE GUARDADO */}
+              {/* BOTÓN CON FONDO OSCURO Y TEXTO VISIBLE */}
               <button
                 onClick={handleSave}
                 disabled={isCreating}
-                className="w-full bg-[var(--palantir-active)] hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 flex items-center justify-center gap-2 transition-all"
+                className="w-full bg-gray-900 hover:bg-gray-800 border border-[var(--palantir-active)] text-[var(--palantir-active)] py-3 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <PlusCircleIcon className="w-5 h-5" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">
