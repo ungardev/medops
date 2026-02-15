@@ -199,7 +199,7 @@ class INHRRScraper:
                 raise Exception("Page is None after new_page")
             
             print("INHRR_SCRAPER: Step 4 - Setting timeout...", flush=True)
-            await self._page.set_default_timeout(self.timeout) # type: ignore
+            self._page.set_default_timeout(self.timeout)
             
             print("INHRR_SCRAPER: Step 5 - Setting headers...", flush=True)
             await self._page.set_extra_http_headers({
