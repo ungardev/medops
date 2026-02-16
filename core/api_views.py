@@ -24,6 +24,9 @@ import hashlib
 import hmac
 import uuid
 from typing import Dict, Optional, Any
+from django.db.models import Q
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 logger = logging.getLogger(__name__)
@@ -342,22 +345,63 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
 
 class MedicationCatalogViewSet(viewsets.ModelViewSet):
     """
-    Catálogo maestro de medicamentos.
-    Expone el modelo MedicationCatalog con CRUD completo.
+    Catálogo maestro de medicamentos con búsqueda y filtrado avanzado.
+    
+    Endpoints:
+    - GET /api/medications/?search=paracetamol
+    - GET /api/medications/?presentation=tablet&route=oral
+    - GET /api/medications/?ordering=name
     """
     queryset = MedicationCatalog.objects.all()
     serializer_class = MedicationCatalogSerializer
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = [
+        'presentation',
+        'route',
+        'is_controlled',
+        'source',
+        'is_active',
+    ]
+    search_fields = [
+        'name',
+        'generic_name',
+        'therapeutic_action',
+        'concentration',
+        'inhrr_code',
+    ]
+    ordering_fields = [
+        'name',
+        'generic_name',
+        'presentation',
+        'created_at',
+        'last_scraped_at',
+    ]
+    ordering = ['name']
     
     def get_queryset(self):
         """
         Filtra medicamentos activos y del contexto institucional.
-        - Si hay institución activa: muestra solo medicamentos de esa institución + catálogo maestro (institution is null)
-        - Si no hay institución: muestra solo catálogo maestro
+        Agrega búsqueda por múltiples campos.
         """
         user = self.request.user
         
         # Filtro básico: solo activos
         queryset = super().get_queryset().filter(is_active=True)
+        
+        # Búsqueda personalizada más flexible
+        search = self.request.query_params.get('search', None)
+        if search and len(search) >= 2:
+            queryset = queryset.filter(
+                Q(name__icontains=search) |
+                Q(generic_name__icontains=search) |
+                Q(therapeutic_action__icontains=search) |
+                Q(concentration__icontains=search) |
+                Q(inhrr_code__icontains=search)
+            ).distinct()
         
         # Filtrado institucional opcional
         if user.is_authenticated and hasattr(user, 'doctor_profile'):
@@ -375,7 +419,7 @@ class MedicationCatalogViewSet(viewsets.ModelViewSet):
                 # Sin institución activa: solo catálogo maestro
                 queryset = queryset.filter(institution__isnull=True)
         
-        return queryset
+        return queryset[:50]  # Limitar a 50 resultados por búsqueda
 
 
 # ViewSets Automáticos (Mocks de serializers y modelos)

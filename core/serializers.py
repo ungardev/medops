@@ -357,12 +357,47 @@ class PatientDetailSerializer(serializers.ModelSerializer):
 
 
 class MedicationCatalogSerializer(serializers.ModelSerializer):
-    """Catálogo maestro de medicamentos"""
+    """
+    Serializer mejorado para el catálogo de medicamentos.
+    Expone todos los campos útiles para el frontend de prescripciones.
+    """
+    presentation_display = serializers.CharField(
+        source='get_presentation_display', 
+        read_only=True
+    )
+    route_display = serializers.CharField(
+        source='get_route_display', 
+        read_only=True
+    )
+    unit_display = serializers.CharField(
+        source='get_unit_display', 
+        read_only=True
+    )
+    
     class Meta:
         model = MedicationCatalog
         fields = [
-            "id", "name", "generic_name", "presentation", 
-            "concentration", "route", "unit", "is_controlled"
+            "id", 
+            "name", 
+            "generic_name", 
+            "presentation",
+            "presentation_display",
+            "concentration",
+            "route",
+            "route_display",
+            "unit",
+            "unit_display",
+            "presentation_size",
+            "concentration_detail",
+            "code",
+            "inhrr_code",
+            "inhrr_status",
+            "atc_code",
+            "is_controlled",
+            "therapeutic_action",
+            "source",
+            "is_active",
+            "last_scraped_at",
         ]
 
 

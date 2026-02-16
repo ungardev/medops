@@ -1,5 +1,5 @@
 // src/components/Consultation/PrescriptionPanel.tsx
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Diagnosis,
   Prescription,
@@ -7,10 +7,12 @@ import {
   UpdatePrescriptionInput,
   PrescriptionComponent,
 } from "../../types/consultation";
+import { MedicationCatalogItem } from "../../types/medication";
 import PrescriptionBadge from "./PrescriptionBadge";
+import MedicationSelector from "./MedicationSelector";
 import { useUpdatePrescription } from "../../hooks/consultations/useUpdatePrescription";
 import { useDeletePrescription } from "../../hooks/consultations/useDeletePrescription";
-import MedicationSelector from "./MedicationSelector";
+import { useRecentMedications } from "../../hooks/medications/useRecentMedications";
 import { 
   BeakerIcon, 
   PlusIcon, 
@@ -18,7 +20,11 @@ import {
   DocumentTextIcon,
   ClockIcon,
   ArrowsRightLeftIcon,
-  ClipboardDocumentCheckIcon
+  ClipboardDocumentCheckIcon,
+  SparklesIcon,
+  PencilSquareIcon,
+  BoltIcon,
+  BeakerIcon as FlaskIcon,
 } from "@heroicons/react/24/outline";
 interface Option {
   value: string;
@@ -67,16 +73,77 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   readOnly,
   onAdd,
 }) => {
+  // Estados del formulario
   const [diagnosisId, setDiagnosisId] = useState<number | "">("");
   const [medicationCatalogId, setMedicationCatalogId] = useState<number | undefined>(undefined);
   const [medicationText, setMedicationText] = useState<string | undefined>(undefined);
+  const [selectedMedication, setSelectedMedication] = useState<MedicationCatalogItem | null>(null);
   const [duration, setDuration] = useState("");
   const [frequency, setFrequency] = useState<UpdatePrescriptionInput["frequency"]>("once_daily");
   const [route, setRoute] = useState<UpdatePrescriptionInput["route"]>("oral");
+  const [indications, setIndications] = useState("");
   const [components, setComponents] = useState<PrescriptionComponent[]>([]);
+  
+  // UI States
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false);
+  const [isAutofilled, setIsAutofilled] = useState(false);
   
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
+  const { addRecent } = useRecentMedications();
+  // Mapa de rutas del backend a frontend
+  const routeMapping: Record<string, string> = {
+    'oral': 'oral',
+    'intravenous': 'iv',
+    'intramuscular': 'im',
+    'subcutaneous': 'sc',
+    'sublingual': 'sublingual',
+    'inhalation': 'inhalation',
+    'rectal': 'rectal',
+    'topical': 'topical',
+    'ophthalmic': 'topical',
+    'otic': 'topical',
+    'nasal': 'topical',
+  };
+  // Auto-fill cuando se selecciona del catálogo
+  const handleMedicationChange = useCallback((data: { 
+    catalogId?: number; 
+    text?: string;
+    medication?: MedicationCatalogItem;
+  }) => {
+    setMedicationCatalogId(data.catalogId);
+    setMedicationText(data.text);
+    
+    if (data.medication) {
+      setSelectedMedication(data.medication);
+      addRecent(data.medication);
+      
+      // Auto-fill route si viene del catálogo
+      if (data.medication.route && data.medication.route !== 'other') {
+        const mappedRoute = routeMapping[data.medication.route];
+        if (mappedRoute) {
+          setRoute(mappedRoute as any);
+        }
+      }
+      
+      // Auto-fill componentes si hay generic_name
+      if (data.medication.generic_name && !isAdvancedMode) {
+        setComponents([
+          {
+            substance: data.medication.generic_name,
+            dosage: data.medication.concentration || "",
+            unit: (data.medication.unit as any) || "mg"
+          }
+        ]);
+      }
+      
+      setIsAutofilled(true);
+      setTimeout(() => setIsAutofilled(false), 1000);
+    } else {
+      setSelectedMedication(null);
+      setComponents([]);
+    }
+  }, [addRecent, isAdvancedMode]);
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!diagnosisId || (!medicationCatalogId && !medicationText) || !appointmentId) return;
@@ -89,30 +156,47 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       duration: duration.trim() || undefined,
       frequency,
       route,
-      components: components.map((c) => ({
+      indications: indications.trim() || undefined,
+      components: components.length > 0 ? components.map((c) => ({
         substance: c.substance.trim(),
         dosage: String(c.dosage),
         unit: c.unit,
-      })),
+      })) : undefined,
     };
     
     onAdd?.(payload);
+    
+    // Reset form
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
     setMedicationText(undefined);
+    setSelectedMedication(null);
     setDuration("");
     setFrequency("once_daily");
     setRoute("oral");
+    setIndications("");
     setComponents([]);
+    setIsAdvancedMode(false);
+  };
+  const getQuickDuration = (days: number) => {
+    setDuration(`${days} días`);
   };
   return (
     <div className="space-y-8">
       {/* HEADER SECTION */}
-      <div className="flex items-center gap-2 mb-6 border-b border-[var(--palantir-border)] pb-4">
-        <BeakerIcon className="w-5 h-5 text-[var(--palantir-active)]" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-          Pharmacological_Orders
-        </span>
+      <div className="flex items-center justify-between mb-6 border-b border-[var(--palantir-border)] pb-4">
+        <div className="flex items-center gap-2">
+          <BeakerIcon className="w-5 h-5 text-[var(--palantir-active)]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
+            Pharmacological_Orders
+          </span>
+        </div>
+        {selectedMedication?.source === 'INHRR' && (
+          <span className="text-[8px] font-black bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] px-2 py-1 rounded border border-[var(--palantir-active)]/30 flex items-center gap-1">
+            <FlaskIcon className="w-3 h-3" />
+            CATÁLOGO INHRR OFICIAL
+          </span>
+        )}
       </div>
       {/* RENDER DIAGNOSES AND THEIR PRESCRIPTIONS */}
       <div className="space-y-6">
@@ -169,15 +253,38 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       {/* NEW PRESCRIPTION FORM */}
       {!readOnly && diagnoses.length > 0 && appointmentId && (
         <div className="mt-10 pt-6">
-          <form onSubmit={handleSubmit} className="bg-white/5 border border-[var(--palantir-border)] p-5 space-y-6 rounded-sm shadow-xl">
-            <div className="flex items-center gap-2 mb-2 border-b border-white/5 pb-3">
-              <ClipboardDocumentCheckIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-              <span className="text-[9px] font-black uppercase tracking-widest">New_Prescription_Draft</span>
+          <form onSubmit={handleSubmit} className="bg-white/5 border border-[var(--palantir-border)] p-5 space-y-5 rounded-sm shadow-xl">
+            
+            {/* FORM HEADER */}
+            <div className="flex items-center justify-between mb-2 border-b border-white/5 pb-3">
+              <div className="flex items-center gap-2">
+                <ClipboardDocumentCheckIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+                <span className="text-[9px] font-black uppercase tracking-widest">New_Prescription_Draft</span>
+              </div>
+              
+              {/* Mode Toggle */}
+              <button
+                type="button"
+                onClick={() => setIsAdvancedMode(!isAdvancedMode)}
+                className="flex items-center gap-1 text-[8px] font-black text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] uppercase transition-all"
+              >
+                {isAdvancedMode ? (
+                  <>
+                    <BoltIcon className="w-3 h-3" /> Modo Rápido
+                  </>
+                ) : (
+                  <>
+                    <PencilSquareIcon className="w-3 h-3" /> Modo Avanzado
+                  </>
+                )}
+              </button>
             </div>
-            {/* Top Grid: Diagnosis & Medication */}
+            {/* Diagnosis & Medication Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Condition_Reference</label>
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">
+                  Condition_Reference
+                </label>
                 <select
                   value={diagnosisId}
                   onChange={(e) => setDiagnosisId(Number(e.target.value))}
@@ -192,84 +299,80 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   ))}
                 </select>
               </div>
+              
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Agent_Selector</label>
+                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
+                  Agent_Selector
+                  {isAutofilled && (
+                    <span className="text-[7px] text-green-400 animate-pulse flex items-center gap-0.5">
+                      <SparklesIcon className="w-3 h-3" /> Auto-filled
+                    </span>
+                  )}
+                </label>
                 <MedicationSelector
                   valueCatalogId={medicationCatalogId}
                   valueText={medicationText}
-                  onChange={({ catalogId, text }) => {
-                    setMedicationCatalogId(catalogId);
-                    setMedicationText(text);
-                  }}
+                  onChange={handleMedicationChange}
                 />
               </div>
             </div>
-            {/* Components Subform */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">Molecular_Components</label>
+            {/* Medication Info Display (if selected from catalog) */}
+            {selectedMedication && (
+              <div className="bg-[var(--palantir-active)]/5 border border-[var(--palantir-active)]/20 rounded p-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center justify-between">
+                  <span className="text-[8px] font-bold text-[var(--palantir-active)] uppercase tracking-wider">
+                    Información del Catálogo
+                  </span>
+                  <div className="flex gap-1">
+                    {selectedMedication.is_controlled && (
+                      <span className="text-[7px] font-black bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">
+                        CONTROLADO
+                      </span>
+                    )}
+                    {selectedMedication.source === 'INHRR' && (
+                      <span className="text-[7px] font-black bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] px-1.5 py-0.5 rounded">
+                        INHRR OFICIAL
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+                  {selectedMedication.generic_name && (
+                    <div>
+                      <span className="text-[var(--palantir-muted)]">Principio activo:</span>
+                      <span className="text-white ml-1">{selectedMedication.generic_name}</span>
+                    </div>
+                  )}
+                  {selectedMedication.concentration && (
+                    <div>
+                      <span className="text-[var(--palantir-muted)]">Concentración:</span>
+                      <span className="text-white ml-1">{selectedMedication.concentration}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-[var(--palantir-muted)]">Presentación:</span>
+                    <span className="text-white ml-1">{selectedMedication.presentation_display}</span>
+                  </div>
+                  <div>
+                    <span className="text-[var(--palantir-muted)]">Vía:</span>
+                    <span className="text-white ml-1">{selectedMedication.route_display}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Quick Duration Buttons */}
+            <div className="flex items-center gap-2">
+              <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)]">Rápido:</span>
+              {[7, 10, 14, 30].map(days => (
                 <button
+                  key={days}
                   type="button"
-                  onClick={() => setComponents([...components, { substance: "", dosage: "", unit: "mg" }])}
-                  className="flex items-center gap-1 text-[9px] font-black text-[var(--palantir-active)] hover:opacity-80 uppercase transition-all"
+                  onClick={() => getQuickDuration(days)}
+                  className="px-2 py-1 text-[9px] bg-white/5 hover:bg-[var(--palantir-active)]/20 border border-white/10 hover:border-[var(--palantir-active)]/30 rounded transition-colors"
                 >
-                  <PlusIcon className="w-3 h-3" /> Add_Component
+                  {days} días
                 </button>
-              </div>
-              
-              <div className="space-y-2">
-                {components.length === 0 && (
-                  <div className="text-center py-4 bg-black/10 border border-dashed border-white/5 rounded">
-                    <span className="text-[8px] font-mono uppercase text-[var(--palantir-muted)]">No_Components_Defined</span>
-                  </div>
-                )}
-                {components.map((comp, index) => (
-                  <div key={index} className="flex gap-2 items-center bg-black/20 p-2 border border-white/5 animate-in slide-in-from-left-2 duration-200">
-                    <input
-                      type="text"
-                      placeholder="SUBSTANCE"
-                      value={comp.substance}
-                      onChange={(e) => {
-                        const newComps = [...components];
-                        newComps[index].substance = e.target.value;
-                        setComponents(newComps);
-                      }}
-                      className="flex-1 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
-                    />
-                    <input
-                      type="text"
-                      placeholder="VAL"
-                      value={comp.dosage}
-                      onChange={(e) => {
-                        const newComps = [...components];
-                        newComps[index].dosage = e.target.value;
-                        setComponents(newComps);
-                      }}
-                      className="w-16 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-center text-[var(--palantir-text)]"
-                    />
-                    <select
-                      value={comp.unit}
-                      onChange={(e) => {
-                        const newComps = [...components];
-                        newComps[index].unit = e.target.value as any;
-                        setComponents(newComps);
-                      }}
-                      className="bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none text-[var(--palantir-text)]"
-                    >
-                      <option value="mg" className="bg-gray-900">mg</option>
-                      <option value="ml" className="bg-gray-900">ml</option>
-                      <option value="g" className="bg-gray-900">g</option>
-                      <option value="tablet" className="bg-gray-900">tab</option>
-                      <option value="capsule" className="bg-gray-900">cap</option>
-                      <option value="drop" className="bg-gray-900">gtt</option>
-                      <option value="unit" className="bg-gray-900">UI</option>
-                    </select>
-                    <button type="button" onClick={() => setComponents(components.filter((_, i) => i !== index))} className="text-red-400/60 hover:text-red-400 p-1 transition-colors">
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
+              ))}
             </div>
             {/* Dosage Parameters Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -295,7 +398,9 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
                 >
                   {frequencyOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-gray-900">{opt.label.toUpperCase()}</option>
+                    <option key={opt.value} value={opt.value} className="bg-gray-900">
+                      {opt.label.toUpperCase()}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -309,18 +414,116 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                   className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
                 >
                   {routeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-gray-900">{opt.label.toUpperCase()}</option>
+                    <option key={opt.value} value={opt.value} className="bg-gray-900">
+                      {opt.label.toUpperCase()}
+                    </option>
                   ))}
                 </select>
               </div>
             </div>
-            {/* FIXED BUTTON: Dark background with visible text */}
+            {/* ADVANCED MODE: Components & Indications */}
+            {isAdvancedMode && (
+              <div className="space-y-4 border-t border-white/5 pt-4 animate-in slide-in-from-top-2 duration-300">
+                
+                {/* Components Section */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">
+                      Molecular_Components
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setComponents([...components, { substance: "", dosage: "", unit: "mg" }])}
+                      className="flex items-center gap-1 text-[9px] font-black text-[var(--palantir-active)] hover:opacity-80 uppercase transition-all"
+                    >
+                      <PlusIcon className="w-3 h-3" /> Add_Component
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    {components.length === 0 && (
+                      <div className="text-center py-4 bg-black/10 border border-dashed border-white/5 rounded">
+                        <span className="text-[8px] font-mono uppercase text-[var(--palantir-muted)]">
+                          No_Components_Defined
+                        </span>
+                      </div>
+                    )}
+                    {components.map((comp, index) => (
+                      <div key={index} className="flex gap-2 items-center bg-black/20 p-2 border border-white/5 animate-in slide-in-from-left-2 duration-200">
+                        <input
+                          type="text"
+                          placeholder="SUBSTANCE"
+                          value={comp.substance}
+                          onChange={(e) => {
+                            const newComps = [...components];
+                            newComps[index].substance = e.target.value;
+                            setComponents(newComps);
+                          }}
+                          className="flex-1 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                        />
+                        <input
+                          type="text"
+                          placeholder="VAL"
+                          value={comp.dosage}
+                          onChange={(e) => {
+                            const newComps = [...components];
+                            newComps[index].dosage = e.target.value;
+                            setComponents(newComps);
+                          }}
+                          className="w-16 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-center text-[var(--palantir-text)]"
+                        />
+                        <select
+                          value={comp.unit}
+                          onChange={(e) => {
+                            const newComps = [...components];
+                            newComps[index].unit = e.target.value as any;
+                            setComponents(newComps);
+                          }}
+                          className="bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none text-[var(--palantir-text)]"
+                        >
+                          <option value="mg" className="bg-gray-900">mg</option>
+                          <option value="ml" className="bg-gray-900">ml</option>
+                          <option value="g" className="bg-gray-900">g</option>
+                          <option value="tablet" className="bg-gray-900">tab</option>
+                          <option value="capsule" className="bg-gray-900">cap</option>
+                          <option value="drop" className="bg-gray-900">gtt</option>
+                          <option value="unit" className="bg-gray-900">UI</option>
+                        </select>
+                        <button 
+                          type="button" 
+                          onClick={() => setComponents(components.filter((_, i) => i !== index))} 
+                          className="text-red-400/60 hover:text-red-400 p-1 transition-colors"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Indications */}
+                <div className="space-y-1">
+                  <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">
+                    Indicaciones / Notas
+                  </label>
+                  <textarea
+                    value={indications}
+                    onChange={(e) => setIndications(e.target.value)}
+                    placeholder="Indicaciones específicas para el paciente..."
+                    rows={2}
+                    className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)] resize-none"
+                  />
+                </div>
+              </div>
+            )}
+            {/* SUBMIT BUTTON */}
             <button
               type="submit"
               className="w-full bg-gray-900 hover:bg-gray-800 border border-[var(--palantir-active)] text-[var(--palantir-active)] py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg"
             >
               <PlusIcon className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Generate_Medical_Prescription</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">
+                Generate_Medical_Prescription
+              </span>
             </button>
           </form>
         </div>
