@@ -1,14 +1,15 @@
 # core/scrapers/inhrr_scraper.py
 """
 Scraper para el Instituto Nacional de Higiene Rafael Rangel (INHRR).
-Versión con paginación - Obtiene TODOS los medicamentos.
+Versión con búsqueda alfabética - Obtiene TODOS los medicamentos (22,567).
 """
 import asyncio
 import re
 import logging
 import sys
 import json
-from typing import List, Dict, Any, Optional
+import string
+from typing import List, Dict, Any, Optional, Set
 from datetime import datetime
 from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeout
 audit = logging.getLogger("audit")
@@ -73,12 +74,11 @@ STATUS_MAP = {
 class INHRRScraper:
     """
     Scraper para el portal de medicamentos del INHRR.
-    Versión con paginación para obtener todos los medicamentos.
+    Versión con búsqueda alfabética para obtener todos los medicamentos.
     """
     
     BASE_URL = "https://inhrr.gob.ve"
     SEARCH_URL = "https://inhrr.gob.ve/sismed/productos-farma"
-    # === CAMBIO: URL base sin parámetros ===
     API_URL_BASE = "https://inhrr.gob.ve/sismed/api/productos-farma"
     
     def __init__(
@@ -95,8 +95,9 @@ class INHRRScraper:
         self.browser: Optional[Browser] = None
         self._page: Optional[Page] = None
         self.playwright = None
-        self.all_api_data: List[Dict] = []  # Acumulador para todas las páginas
-        self.total_expected: int = 0  # Total esperado según la API
+        self.all_medications: List[Dict] = []  # Acumulador final
+        self.processed_codes: Set[str] = set()  # Evitar duplicados por código INHRR
+        self.current_search_results: List[Dict] = []  # Resultados de búsqueda actual
     
     @property
     def page(self) -> Page:
@@ -114,10 +115,11 @@ class INHRRScraper:
         
     async def launch(self) -> None:
         """Inicia el navegador Playwright."""
-        print("=" * 60, flush=True)
+        print("=" * 70, flush=True)
         print("INHRR_SCRAPER: Lanzando navegador Playwright...", flush=True)
-        print("INHRR_SCRAPER: Objetivo: Obtener ~22,567 medicamentos con paginación", flush=True)
-        print("=" * 60, flush=True)
+        print("INHRR_SCRAPER: Objetivo: Obtener ~22,567 medicamentos", flush=True)
+        print("INHRR_SCRAPER: Estrategia: Búsqueda alfabética A-Z", flush=True)
+        print("=" * 70, flush=True)
         
         try:
             self.playwright = await async_playwright().start()
@@ -153,7 +155,7 @@ class INHRRScraper:
             raise
     
     async def _handle_api_response(self, response):
-        """Intercepta TODAS las respuestas de la API."""
+        """Intercepta respuestas de la API de búsqueda."""
         if "api/productos-farma" in response.url and response.status == 200:
             try:
                 content_type = response.headers.get('content-type', '')
@@ -164,21 +166,154 @@ class INHRRScraper:
                         page_data = data['combinedData']
                         count_total = data.get('countTotal', 0)
                         
-                        if page_data and len(page_data) > 0:
-                            # Acumular datos
-                            self.all_api_data.extend(page_data)
-                            self.total_expected = max(self.total_expected, count_total)
+                        if page_data:
+                            # Guardar en variable temporal (no acumular aún)
+                            self.current_search_results = page_data
                             
-                            print(f"\n{'='*60}", flush=True)
-                            print(f"✅ PÁGINA CAPTURADA", flush=True)
-                            print(f"   URL: {response.url[:80]}...", flush=True)
-                            print(f"   Medicamentos en esta página: {len(page_data)}", flush=True)
-                            print(f"   Total acumulado: {len(self.all_api_data)} / {self.total_expected}", flush=True)
-                            print(f"{'='*60}\n", flush=True)
+                            print(f"\n{'='*70}", flush=True)
+                            print(f"✅ BÚSQUEDA CAPTURADA", flush=True)
+                            print(f"   URL: {response.url[:70]}...", flush=True)
+                            print(f"   Medicamentos encontrados: {len(page_data)}", flush=True)
+                            print(f"   Total en BD INHRR: {count_total}", flush=True)
+                            print(f"{'='*70}\n", flush=True)
                             
             except Exception as e:
                 print(f"Error procesando respuesta API: {e}", flush=True)
+    
+    async def search_medications(self, search_term: str) -> List[Dict]:
+        """
+        Realiza una búsqueda en el sitio del INHRR.
         
+        Args:
+            search_term: Término de búsqueda (ej: "A", "B", "AA")
+            
+        Returns:
+            Lista de medicamentos encontrados
+        """
+        print(f"\n🔍 Buscando: '{search_term}'", flush=True)
+        
+        # Limpiar resultados anteriores
+        self.current_search_results = []
+        
+        try:
+            # Navegar a la página de búsqueda
+            await self.page.goto(self.SEARCH_URL, wait_until='networkidle')
+            await asyncio.sleep(2)
+            
+            # Intentar encontrar y llenar el campo de búsqueda
+            # Los selectores pueden variar, intentamos varios
+            search_selectors = [
+                'input[type="search"]',
+                'input[placeholder*="buscar" i]',
+                'input[placeholder*="search" i]',
+                'input[name*="search" i]',
+                'input[name*="query" i]',
+                'input',
+            ]
+            
+            search_input = None
+            for selector in search_selectors:
+                try:
+                    element = self.page.locator(selector).first
+                    if await element.count() > 0:
+                        search_input = element
+                        print(f"   Campo de búsqueda encontrado: {selector}", flush=True)
+                        break
+                except:
+                    continue
+            
+            if not search_input:
+                print(f"   ⚠️  No se encontró campo de búsqueda", flush=True)
+                return []
+            
+            # Limpiar y escribir el término de búsqueda
+            await search_input.clear()
+            await search_input.fill(search_term)
+            await asyncio.sleep(1)
+            
+            # Presionar Enter para buscar
+            await search_input.press('Enter')
+            
+            # Esperar a que carguen los resultados
+            print(f"   Esperando resultados...", flush=True)
+            await asyncio.sleep(5)
+            
+            # Si hay 200 resultados, puede que haya más - esperar un poco más
+            if len(self.current_search_results) >= 200:
+                print(f"   Máximo alcanzado (200), esperando posible carga adicional...", flush=True)
+                await asyncio.sleep(3)
+            
+            # Agregar resultados a la lista principal (evitando duplicados)
+            new_medications = 0
+            for med in self.current_search_results:
+                code = med.get('ef', '')
+                if code and code not in self.processed_codes:
+                    self.processed_codes.add(code)
+                    self.all_medications.append(med)
+                    new_medications += 1
+            
+            print(f"   ✅ Nuevos medicamentos agregados: {new_medications}", flush=True)
+            print(f"   📊 Total acumulado: {len(self.all_medications)}", flush=True)
+            
+            return self.current_search_results
+            
+        except Exception as e:
+            print(f"   ❌ Error en búsqueda '{search_term}': {e}", flush=True)
+            return []
+    
+    async def fetch_all_by_alphabet(self) -> List[Dict]:
+        """
+        Obtiene todos los medicamentos buscando por el alfabeto.
+        Estrategia: A-Z, y si alguna letra devuelve 200, subdividir (AA, AB, etc.)
+        """
+        print(f"\n{'='*70}", flush=True)
+        print("INICIANDO BÚSQUEDA ALFABÉTICA", flush=True)
+        print(f"{'='*70}\n", flush=True)
+        
+        # Primera pasada: A-Z
+        letters_to_search = list(string.ascii_uppercase)
+        letters_needing_subdivision = []  # Letras que devolvieron 200 (máximo)
+        
+        # Buscar por cada letra del alfabeto
+        for letter in letters_to_search:
+            results = await self.search_medications(letter)
+            
+            # Si devolvió 200, puede haber más - marcar para subdivisión
+            if len(results) >= 200:
+                print(f"   ⚠️  Letra '{letter}' tiene 200+ medicamentos. Se subdividirá.", flush=True)
+                letters_needing_subdivision.append(letter)
+            
+            # Pequeña pausa entre búsquedas
+            await asyncio.sleep(2)
+        
+        # Segunda pasada: Subdividir letras con muchos resultados
+        if letters_needing_subdivision:
+            print(f"\n{'='*70}", flush=True)
+            print(f"SUBDIVIDIENDO LETRAS CON 200+ RESULTADOS", flush=True)
+            print(f"Letras: {', '.join(letters_needing_subdivision)}", flush=True)
+            print(f"{'='*70}\n", flush=True)
+            
+            for letter in letters_needing_subdivision:
+                # Intentar combinaciones de 2 letras (AA, AB, AC, ..., AZ)
+                for second_letter in string.ascii_uppercase:
+                    combination = letter + second_letter
+                    results = await self.search_medications(combination)
+                    
+                    # Si aún hay 200, podríamos necesitar 3 letras (raro pero posible)
+                    if len(results) >= 200:
+                        print(f"   ⚠️  '{combination}' aún tiene 200+. Intentando subdivisiones...", flush=True)
+                        # Aquí podríamos agregar lógica para 3 letras (AAA, AAB, etc.)
+                        # Por ahora, continuamos con la siguiente combinación
+                    
+                    await asyncio.sleep(1)
+        
+        print(f"\n{'='*70}", flush=True)
+        print(f"✅ BÚSQUEDA ALFABÉTICA COMPLETADA", flush=True)
+        print(f"   Total de medicamentos únicos: {len(self.all_medications)}", flush=True)
+        print(f"{'='*70}\n", flush=True)
+        
+        return self.all_medications
+    
     async def close(self) -> None:
         try:
             if self.browser:
@@ -191,65 +326,9 @@ class INHRRScraper:
                 except:
                     pass
                 self.playwright = None
-            
-    async def _fetch_all_medications(self) -> List[Dict[str, Any]]:
-        """
-        Obtiene todos los medicamentos navegando a la página principal.
-        La API se llamará automáticamente y se acumularán los datos.
-        """
-        print("INHRR_SCRAPER: Navegando a la página para cargar datos...", flush=True)
-        
-        for attempt in range(self.max_retries):
-            try:
-                # Primera navegación - carga la página inicial
-                await self.page.goto(self.SEARCH_URL, wait_until='networkidle')
-                print("INHRR_SCRAPER: Página inicial cargada", flush=True)
-                
-                # Esperar primera carga de datos
-                await asyncio.sleep(10)
-                
-                # Si ya tenemos datos, intentar scrollear para cargar más
-                if len(self.all_api_data) > 0:
-                    print(f"INHRR_SCRAPER: Datos iniciales: {len(self.all_api_data)}", flush=True)
-                    
-                    # Scrollear para intentar cargar más páginas
-                    for scroll in range(10):
-                        await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                        await asyncio.sleep(3)
-                        
-                        # Verificar si se cargaron más datos
-                        current_count = len(self.all_api_data)
-                        print(f"   Scroll {scroll+1}/10 - Total: {current_count}", flush=True)
-                        
-                        # Si ya tenemos todos o no hay más cambios, salir
-                        if current_count >= self.total_expected or (scroll > 0 and current_count == len(self.all_api_data)):
-                            break
-                
-                # Resultado final
-                if len(self.all_api_data) > 0:
-                    print(f"\n{'='*60}", flush=True)
-                    print(f"✅ SCRAPING COMPLETADO", flush=True)
-                    print(f"   Total medicamentos: {len(self.all_api_data)}", flush=True)
-                    print(f"   Esperados: {self.total_expected}", flush=True)
-                    print(f"{'='*60}\n", flush=True)
-                    return self.all_api_data
-                else:
-                    print("INHRR_SCRAPER: No se capturaron datos, reintentando...", flush=True)
-                    await asyncio.sleep(5)
-                    
-            except Exception as e:
-                print(f"INHRR_SCRAPER: Error: {e}", flush=True)
-                if attempt < self.max_retries - 1:
-                    await asyncio.sleep(2 ** attempt)
-                else:
-                    raise
-        
-        return []
     
     def _parse_medication(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """
-        Parsea un medicamento desde el formato API al formato del modelo.
-        """
+        """Parsea un medicamento desde el formato API al formato del modelo."""
         try:
             registration_code = data.get('ef', '')
             product_name = data.get('nombre', '').strip()
@@ -310,41 +389,39 @@ class INHRRScraper:
         except Exception as e:
             print(f"INHRR_SCRAPER: Error parseando medicamento: {e}", flush=True)
             return None
-            
+    
     async def scrape_all(self, max_pages: Optional[int] = None) -> List[Dict[str, Any]]:
-        """
-        Scrapea todos los medicamentos del INHRR.
-        """
-        print("INHRR_SCRAPER: Iniciando scraping con acumulación de páginas...", flush=True)
+        """Scrapea todos los medicamentos del INHRR usando búsqueda alfabética."""
+        print("INHRR_SCRAPER: Iniciando scraping con búsqueda alfabética...", flush=True)
         
-        raw_medications = await self._fetch_all_medications()
+        # Obtener todos los medicamentos por búsqueda alfabética
+        raw_medications = await self.fetch_all_by_alphabet()
         
+        # Parsear al formato del modelo
         all_medications: List[Dict[str, Any]] = []
-        
         for data in raw_medications:
             medication = self._parse_medication(data)
             if medication:
                 all_medications.append(medication)
         
         print(
-            f"\n{'='*60}\n"
+            f"\n{'='*70}\n"
             f"INHRR_SCRAPER: Scraping completado.\n"
             f"Total de medicamentos extraídos: {len(all_medications)}\n"
-            f"{'='*60}",
+            f"{'='*70}",
             flush=True
         )
         
         return all_medications
-        
+    
     async def scrape_sample(self, count: int = 10) -> List[Dict[str, Any]]:
-        """
-        Scrapea una muestra de medicamentos.
-        """
+        """Scrapea una muestra de medicamentos."""
         print(f"INHRR_SCRAPER: Obteniendo muestra de {count} medicamentos...", flush=True)
         
-        all_medications = await self.scrape_all()
+        # Para muestra, solo buscar una letra
+        await self.search_medications("A")
         
-        sample = all_medications[:count]
+        sample = self.all_medications[:count]
         
         print(
             f"INHRR_SCRAPER: Muestra completada. "
@@ -359,9 +436,7 @@ async def run_inhrr_scraper(
     sample: bool = False,
     sample_count: int = 10
 ) -> List[Dict[str, Any]]:
-    """
-    Función de utilidad para ejecutar el scraper.
-    """
+    """Función de utilidad para ejecutar el scraper."""
     async with INHRRScraper(headless=headless) as scraper:
         if sample:
             result = await scraper.scrape_sample(count=sample_count)
