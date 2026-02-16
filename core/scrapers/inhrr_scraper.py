@@ -218,7 +218,6 @@ class INHRRScraper:
             registration_code = data.get('ef', '')
             product_name = data.get('nombre', '').strip()
             active_ingredient = data.get('principioActivo', '').strip()
-            laboratory = data.get('representante', '').strip()
             
             status = 'VIGENTE'
             fecha_cancelado = data.get('fechaCancelado')
@@ -258,6 +257,7 @@ class INHRRScraper:
             elif 'mcg' in product_lower:
                 unit = 'mcg'
             
+            # === FIX: Eliminado 'laboratory' porque no existe en el modelo ===
             return {
                 'name': product_name,
                 'generic_name': active_ingredient,
@@ -265,7 +265,6 @@ class INHRRScraper:
                 'concentration': concentration or 'N/A',
                 'route': route,
                 'unit': unit,
-                'laboratory': laboratory,
                 'inhrr_code': registration_code,
                 'inhrr_status': status,
                 'source': 'INHRR',
