@@ -1,7 +1,7 @@
 # core/scrapers/inhrr_scraper.py
 """
 Scraper para el Instituto Nacional de Higiene Rafael Rangel (INHRR).
-Versión con parámetro ?limit=25000 para obtener todos los medicamentos.
+Versión con paginación - Obtiene TODOS los medicamentos.
 """
 import asyncio
 import re
@@ -73,13 +73,13 @@ STATUS_MAP = {
 class INHRRScraper:
     """
     Scraper para el portal de medicamentos del INHRR.
-    Versión con parámetro ?limit=25000 para obtener todos los medicamentos.
+    Versión con paginación para obtener todos los medicamentos.
     """
     
     BASE_URL = "https://inhrr.gob.ve"
     SEARCH_URL = "https://inhrr.gob.ve/sismed/productos-farma"
-    # === CAMBIO: URL con parámetro limit para obtener todos los medicamentos ===
-    API_URL = "https://inhrr.gob.ve/sismed/api/productos-farma?limit=25000"
+    # === CAMBIO: URL base sin parámetros ===
+    API_URL_BASE = "https://inhrr.gob.ve/sismed/api/productos-farma"
     
     def __init__(
         self,
@@ -95,7 +95,8 @@ class INHRRScraper:
         self.browser: Optional[Browser] = None
         self._page: Optional[Page] = None
         self.playwright = None
-        self.api_data: Optional[List[Dict]] = None
+        self.all_api_data: List[Dict] = []  # Acumulador para todas las páginas
+        self.total_expected: int = 0  # Total esperado según la API
     
     @property
     def page(self) -> Page:
@@ -115,7 +116,7 @@ class INHRRScraper:
         """Inicia el navegador Playwright."""
         print("=" * 60, flush=True)
         print("INHRR_SCRAPER: Lanzando navegador Playwright...", flush=True)
-        print(f"INHRR_SCRAPER: Objetivo: Obtener ~22,567 medicamentos con ?limit=25000", flush=True)
+        print("INHRR_SCRAPER: Objetivo: Obtener ~22,567 medicamentos con paginación", flush=True)
         print("=" * 60, flush=True)
         
         try:
@@ -136,8 +137,7 @@ class INHRRScraper:
             else:
                 self._page = page_result
             
-            # === CAMBIO: Aumentar timeout para cargar 22,567 medicamentos ===
-            self._page.set_default_timeout(120000)  # 2 minutos
+            self._page.set_default_timeout(self.timeout)
             await self._page.set_extra_http_headers({
                 'User-Agent': 'MEDOPZ-Bot/1.0 (+https://medopz.software)'
             })
@@ -153,8 +153,7 @@ class INHRRScraper:
             raise
     
     async def _handle_api_response(self, response):
-        """Intercepta respuestas de la API."""
-        # === CAMBIO: Verificar si la URL contiene el parámetro limit ===
+        """Intercepta TODAS las respuestas de la API."""
         if "api/productos-farma" in response.url and response.status == 200:
             try:
                 content_type = response.headers.get('content-type', '')
@@ -162,17 +161,20 @@ class INHRRScraper:
                     data = await response.json()
                     
                     if data.get('success') and 'combinedData' in data:
-                        self.api_data = data['combinedData']
-                        count_total = data.get('countTotal', 'N/A')
+                        page_data = data['combinedData']
+                        count_total = data.get('countTotal', 0)
                         
-                        if self.api_data is not None:
+                        if page_data and len(page_data) > 0:
+                            # Acumular datos
+                            self.all_api_data.extend(page_data)
+                            self.total_expected = max(self.total_expected, count_total)
+                            
                             print(f"\n{'='*60}", flush=True)
-                            print(f"✅ API DATA CAPTURADA", flush=True)
-                            print(f"   Total en BD INHRR: {count_total}", flush=True)
-                            print(f"   Recibidos en esta llamada: {len(self.api_data)}", flush=True)
+                            print(f"✅ PÁGINA CAPTURADA", flush=True)
+                            print(f"   URL: {response.url[:80]}...", flush=True)
+                            print(f"   Medicamentos en esta página: {len(page_data)}", flush=True)
+                            print(f"   Total acumulado: {len(self.all_api_data)} / {self.total_expected}", flush=True)
                             print(f"{'='*60}\n", flush=True)
-                        else:
-                            print("⚠️  API DATA es None", flush=True)
                             
             except Exception as e:
                 print(f"Error procesando respuesta API: {e}", flush=True)
@@ -192,29 +194,45 @@ class INHRRScraper:
             
     async def _fetch_all_medications(self) -> List[Dict[str, Any]]:
         """
-        Obtiene todos los medicamentos navegando a la página con ?limit=25000.
+        Obtiene todos los medicamentos navegando a la página principal.
+        La API se llamará automáticamente y se acumularán los datos.
         """
-        print(f"INHRR_SCRAPER: Navegando a URL con limit=25000...", flush=True)
-        print(f"INHRR_SCRAPER: {self.API_URL}", flush=True)
+        print("INHRR_SCRAPER: Navegando a la página para cargar datos...", flush=True)
         
         for attempt in range(self.max_retries):
             try:
-                # === CAMBIO: Usar la URL con parámetro limit directamente ===
-                await self.page.goto(self.API_URL, wait_until='networkidle')
+                # Primera navegación - carga la página inicial
+                await self.page.goto(self.SEARCH_URL, wait_until='networkidle')
+                print("INHRR_SCRAPER: Página inicial cargada", flush=True)
                 
-                # Esperar a que se complete la carga (puede tomar tiempo con 22k medicamentos)
-                print("INHRR_SCRAPER: Esperando carga de datos (puede tomar 30-60 seg)...", flush=True)
-                await asyncio.sleep(30)  # Aumentado a 30 segundos
+                # Esperar primera carga de datos
+                await asyncio.sleep(10)
                 
-                if self.api_data:
-                    print(f"INHRR_SCRAPER: {len(self.api_data)} medicamentos obtenidos", flush=True)
+                # Si ya tenemos datos, intentar scrollear para cargar más
+                if len(self.all_api_data) > 0:
+                    print(f"INHRR_SCRAPER: Datos iniciales: {len(self.all_api_data)}", flush=True)
                     
-                    # === VERIFICACIÓN: Si no obtuvimos todos, informar ===
-                    if len(self.api_data) < 22000:
-                        print(f"⚠️  ADVERTENCIA: Se esperaban ~22,567 pero se obtuvieron {len(self.api_data)}", flush=True)
-                        print(f"   La API probablemente ignora el parámetro limit.", flush=True)
-                    
-                    return self.api_data
+                    # Scrollear para intentar cargar más páginas
+                    for scroll in range(10):
+                        await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                        await asyncio.sleep(3)
+                        
+                        # Verificar si se cargaron más datos
+                        current_count = len(self.all_api_data)
+                        print(f"   Scroll {scroll+1}/10 - Total: {current_count}", flush=True)
+                        
+                        # Si ya tenemos todos o no hay más cambios, salir
+                        if current_count >= self.total_expected or (scroll > 0 and current_count == len(self.all_api_data)):
+                            break
+                
+                # Resultado final
+                if len(self.all_api_data) > 0:
+                    print(f"\n{'='*60}", flush=True)
+                    print(f"✅ SCRAPING COMPLETADO", flush=True)
+                    print(f"   Total medicamentos: {len(self.all_api_data)}", flush=True)
+                    print(f"   Esperados: {self.total_expected}", flush=True)
+                    print(f"{'='*60}\n", flush=True)
+                    return self.all_api_data
                 else:
                     print("INHRR_SCRAPER: No se capturaron datos, reintentando...", flush=True)
                     await asyncio.sleep(5)
@@ -297,7 +315,7 @@ class INHRRScraper:
         """
         Scrapea todos los medicamentos del INHRR.
         """
-        print("INHRR_SCRAPER: Iniciando scraping con ?limit=25000...", flush=True)
+        print("INHRR_SCRAPER: Iniciando scraping con acumulación de páginas...", flush=True)
         
         raw_medications = await self._fetch_all_medications()
         
