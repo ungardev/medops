@@ -12,7 +12,8 @@ export function useMedicationCatalog(searchTerm: string, enabled: boolean = true
         return [];
       }
       
-      const response = await axios.get<MedicationCatalogItem[]>("/api/medications/", {
+      // ✅ Usar ruta relativa y tipo explícito
+      const response = await axios.get<MedicationCatalogItem[]>("/medications/", {
         params: { 
           search: debouncedSearch,
           ordering: 'name'
@@ -22,20 +23,20 @@ export function useMedicationCatalog(searchTerm: string, enabled: boolean = true
       return response.data || [];
     },
     enabled: enabled && debouncedSearch.length >= 2,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
     placeholderData: (previousData) => previousData,
   });
 }
-// Hook para obtener detalles completos de un medicamento por ID
 export function useMedicationDetail(id: number | null): UseQueryResult<MedicationCatalogItem, Error> {
   return useQuery<MedicationCatalogItem>({
     queryKey: ["medication", id],
     queryFn: async (): Promise<MedicationCatalogItem> => {
       if (!id) throw new Error("ID requerido");
-      const response = await axios.get<MedicationCatalogItem>(`/api/medications/${id}/`);
+      // ✅ Tipo explícito
+      const response = await axios.get<MedicationCatalogItem>(`/medications/${id}/`);
       return response.data;
     },
     enabled: !!id,
-    staleTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 10 * 60 * 1000,
   });
 }
