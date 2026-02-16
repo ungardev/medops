@@ -1,7 +1,7 @@
 # core/scrapers/inhrr_scraper.py
 """
 Scraper para el Instituto Nacional de Higiene Rafael Rangel (INHRR).
-Versión API - Usa el endpoint directo en lugar de scraping HTML.
+Versión híbrida - Usa Playwright para interceptar la API.
 """
 import asyncio
 import re
@@ -10,7 +10,7 @@ import sys
 import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-import httpx
+from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeout
 audit = logging.getLogger("audit")
 logging.basicConfig(
     level=logging.INFO,
@@ -72,73 +72,134 @@ STATUS_MAP = {
 }
 class INHRRScraper:
     """
-    Scraper para el portal de medicamentos del INHRR usando API directa.
+    Scraper para el portal de medicamentos del INHRR usando Playwright + API.
     """
     
     BASE_URL = "https://inhrr.gob.ve"
+    SEARCH_URL = "https://inhrr.gob.ve/sismed/productos-farma"
     API_URL = "https://inhrr.gob.ve/sismed/api/productos-farma"
     
     def __init__(
         self,
-        headless: bool = True,  # Mantenido para compatibilidad
+        headless: bool = True,
         rate_limit: float = 1.5,
         max_retries: int = 3,
         timeout: int = 30000
     ):
+        self.headless = headless
         self.rate_limit = rate_limit
         self.max_retries = max_retries
         self.timeout = timeout
-        self.client: Optional[httpx.AsyncClient] = None
+        self.browser: Optional[Browser] = None
+        self._page: Optional[Page] = None
+        self.playwright = None
+        self.api_data: Optional[List[Dict]] = None
+    
+    @property
+    def page(self) -> Page:
+        assert self._page is not None, "Browser not initialized."
+        return self._page
     
     async def __aenter__(self) -> 'INHRRScraper':
         """Entry point para async context manager."""
-        self.client = httpx.AsyncClient(
-            timeout=httpx.Timeout(self.timeout / 1000),
-            headers={
-                'User-Agent': 'MEDOPZ-Bot/1.0 (+https://medopz.software)',
-                'Accept': 'application/json',
-            }
-        )
+        await self.launch()
         return self
         
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Exit point para async context manager."""
-        if self.client:
-            await self.client.aclose()
+        await self.close()
         
+    async def launch(self) -> None:
+        """Inicia el navegador Playwright."""
+        print("=" * 60, flush=True)
+        print("INHRR_SCRAPER: Lanzando navegador Playwright...", flush=True)
+        print("=" * 60, flush=True)
+        
+        try:
+            self.playwright = await async_playwright().start()
+            browser_result = self.playwright.chromium.launch(
+                headless=self.headless,
+                args=['--no-sandbox', '--disable-setuid-sandbox']
+            )
+            
+            if asyncio.iscoroutine(browser_result):
+                self.browser = await browser_result
+            else:
+                self.browser = browser_result
+            
+            page_result = self.browser.new_page()
+            if asyncio.iscoroutine(page_result):
+                self._page = await page_result
+            else:
+                self._page = page_result
+            
+            self._page.set_default_timeout(self.timeout)
+            await self._page.set_extra_http_headers({
+                'User-Agent': 'MEDOPZ-Bot/1.0 (+https://medopz.software)'
+            })
+            
+            # Configurar interceptación de respuestas API
+            print("INHRR_SCRAPER: Configurando interceptación de API...", flush=True)
+            self._page.on("response", self._handle_api_response)
+            
+            print("INHRR_SCRAPER: Navegador LISTO", flush=True)
+            
+        except Exception as e:
+            print(f"ERROR in launch(): {e}", flush=True)
+            raise
+    
+    async def _handle_api_response(self, response):
+        """Intercepta respuestas de la API."""
+        if self.API_URL in response.url and response.status == 200:
+            try:
+                content_type = response.headers.get('content-type', '')
+                if 'json' in content_type:
+                    data = await response.json()
+                    if data.get('success') and 'combinedData' in data:
+                        self.api_data = data['combinedData']
+                        # === FIX: Verificar que api_data no es None antes de len() ===
+                        if self.api_data is not None:
+                            print(f"✅ API DATA CAPTURADA: {len(self.api_data)} medicamentos", flush=True)
+                        else:
+                            print("⚠️  API DATA es None", flush=True)
+            except Exception as e:
+                print(f"Error procesando respuesta API: {e}", flush=True)
+        
+    async def close(self) -> None:
+        try:
+            if self.browser:
+                await self.browser.close()
+        finally:
+            self._page = None
+            if self.playwright:
+                try:
+                    await self.playwright.stop()
+                except:
+                    pass
+                self.playwright = None
+            
     async def _fetch_all_medications(self) -> List[Dict[str, Any]]:
         """
-        Obtiene todos los medicamentos desde la API.
-        
-        Returns:
-            Lista de diccionarios con datos de medicamentos
+        Obtiene todos los medicamentos navegando a la página y capturando la API.
         """
-        # === FIX: Verificar que el cliente está inicializado ===
-        if self.client is None:
-            raise RuntimeError("HTTP client not initialized. Use 'async with' context manager.")
-        
-        print("INHRR_SCRAPER: Obteniendo medicamentos desde API...", flush=True)
+        print("INHRR_SCRAPER: Navegando para obtener datos de API...", flush=True)
         
         for attempt in range(self.max_retries):
             try:
-                print(f"INHRR_SCRAPER: Llamando API (intento {attempt + 1}/{self.max_retries})...", flush=True)
-                response = await self.client.get(self.API_URL)
+                print(f"INHRR_SCRAPER: Navegando a {self.SEARCH_URL}...", flush=True)
+                await self.page.goto(self.SEARCH_URL, wait_until='networkidle')
                 
-                print(f"INHRR_SCRAPER: Status: {response.status_code}", flush=True)
+                # Esperar a que se complete la carga
+                print("INHRR_SCRAPER: Esperando carga de datos...", flush=True)
+                await asyncio.sleep(5)
                 
-                if response.status_code == 200:
-                    data = response.json()
-                    
-                    if data.get('success') and 'combinedData' in data:
-                        medications = data['combinedData']
-                        print(f"INHRR_SCRAPER: {len(medications)} medicamentos recibidos", flush=True)
-                        return medications
-                    else:
-                        print(f"INHRR_SCRAPER: Respuesta inesperada: {data}", flush=True)
-                        return []
-                        
+                # === FIX: Verificar que api_data no es None ===
+                if self.api_data is not None:
+                    print(f"INHRR_SCRAPER: {len(self.api_data)} medicamentos obtenidos", flush=True)
+                    return self.api_data
                 else:
-                    print(f"INHRR_SCRAPER: Error HTTP {response.status_code}", flush=True)
+                    print("INHRR_SCRAPER: No se capturaron datos, reintentando...", flush=True)
+                    await asyncio.sleep(2)
                     
             except Exception as e:
                 print(f"INHRR_SCRAPER: Error: {e}", flush=True)
@@ -152,27 +213,18 @@ class INHRRScraper:
     def _parse_medication(self, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
         Parsea un medicamento desde el formato API al formato del modelo.
-        
-        Args:
-            data: Diccionario con datos del medicamento desde la API
-            
-        Returns:
-            Diccionario con datos en formato del modelo o None si hay error
         """
         try:
-            # Extraer campos básicos
             registration_code = data.get('ef', '')
             product_name = data.get('nombre', '').strip()
             active_ingredient = data.get('principioActivo', '').strip()
             laboratory = data.get('representante', '').strip()
             
-            # Determinar estatus basado en fechas
             status = 'VIGENTE'
             fecha_cancelado = data.get('fechaCancelado')
             if fecha_cancelado:
                 status = 'CANCELADO'
             
-            # Determinar forma farmacéutica desde el nombre
             presentation = 'other'
             product_upper = product_name.upper()
             for key, value in PRESENTATION_MAP.items():
@@ -180,7 +232,6 @@ class INHRRScraper:
                     presentation = value
                     break
             
-            # Extraer concentración del nombre
             concentration = ""
             concentration_match = re.search(
                 r'([\d,\.]+\s*(?:mg|g|ml|mcg|IU|mEq|%)\s*[-–/]?\s*[\d,\.]*\s*(?:mg|g|ml|mcg|IU|mEq|%)?)',
@@ -190,14 +241,12 @@ class INHRRScraper:
             if concentration_match:
                 concentration = concentration_match.group(1).strip()
             
-            # Determinar vía de administración
             route = 'oral'
             for key, value in ROUTE_MAP.items():
                 if key in product_upper:
                     route = value
                     break
             
-            # Determinar unidad
             unit = 'unit'
             product_lower = product_name.lower()
             if 'mg' in product_lower:
@@ -231,14 +280,8 @@ class INHRRScraper:
     async def scrape_all(self, max_pages: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Scrapea todos los medicamentos del INHRR.
-        
-        Args:
-            max_pages: No usado en versión API (mantenido para compatibilidad)
-            
-        Returns:
-            Lista de diccionarios con datos de medicamentos
         """
-        print("INHRR_SCRAPER: Iniciando scraping desde API...", flush=True)
+        print("INHRR_SCRAPER: Iniciando scraping...", flush=True)
         
         raw_medications = await self._fetch_all_medications()
         
@@ -260,18 +303,11 @@ class INHRRScraper:
     async def scrape_sample(self, count: int = 10) -> List[Dict[str, Any]]:
         """
         Scrapea una muestra de medicamentos.
-        
-        Args:
-            count: Número de medicamentos a scrapear
-            
-        Returns:
-            Lista de diccionarios con datos de medicamentos
         """
         print(f"INHRR_SCRAPER: Obteniendo muestra de {count} medicamentos...", flush=True)
         
         all_medications = await self.scrape_all()
         
-        # Tomar solo los primeros 'count' medicamentos
         sample = all_medications[:count]
         
         print(
@@ -289,15 +325,6 @@ async def run_inhrr_scraper(
 ) -> List[Dict[str, Any]]:
     """
     Función de utilidad para ejecutar el scraper.
-    
-    Args:
-        headless: No usado en versión API (mantenido para compatibilidad)
-        max_pages: No usado en versión API
-        sample: Si True, solo extrae una muestra
-        sample_count: Cantidad de la muestra
-        
-    Returns:
-        Lista de diccionarios con medicamentos
     """
     async with INHRRScraper(headless=headless) as scraper:
         if sample:
