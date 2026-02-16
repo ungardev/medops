@@ -1,7 +1,7 @@
 # core/scrapers/inhrr_scraper.py
 """
 Scraper para el Instituto Nacional de Higiene Rafael Rangel (INHRR).
-Versión híbrida - Usa Playwright para interceptar la API.
+Versión de investigación - Detecta paginación y obtiene TODOS los medicamentos.
 """
 import asyncio
 import re
@@ -72,7 +72,8 @@ STATUS_MAP = {
 }
 class INHRRScraper:
     """
-    Scraper para el portal de medicamentos del INHRR usando Playwright + API.
+    Scraper para el portal de medicamentos del INHRR.
+    Versión investigación - Detecta paginación.
     """
     
     BASE_URL = "https://inhrr.gob.ve"
@@ -94,6 +95,8 @@ class INHRRScraper:
         self._page: Optional[Page] = None
         self.playwright = None
         self.api_data: Optional[List[Dict]] = None
+        self.api_metadata: Optional[Dict] = None  # Para guardar metadatos de paginación
+        self.all_medications: List[Dict] = []  # Acumulador para múltiples páginas
     
     @property
     def page(self) -> Page:
@@ -149,19 +152,48 @@ class INHRRScraper:
             raise
     
     async def _handle_api_response(self, response):
-        """Intercepta respuestas de la API."""
+        """Intercepta respuestas de la API y analiza estructura completa."""
         if self.API_URL in response.url and response.status == 200:
             try:
                 content_type = response.headers.get('content-type', '')
                 if 'json' in content_type:
                     data = await response.json()
-                    if data.get('success') and 'combinedData' in data:
+                    
+                    # === INVESTIGACIÓN: Log de estructura completa ===
+                    print(f"\n{'='*60}", flush=True)
+                    print("API RESPONSE STRUCTURE:", flush=True)
+                    print(f"{'='*60}", flush=True)
+                    print(f"Keys en respuesta: {list(data.keys())}", flush=True)
+                    print(f"Total keys: {len(data)}", flush=True)
+                    
+                    # Guardar metadatos si existen
+                    self.api_metadata = {k: v for k, v in data.items() if k != 'combinedData'}
+                    if self.api_metadata:
+                        print(f"\nMETADATOS:", flush=True)
+                        for key, value in self.api_metadata.items():
+                            print(f"  {key}: {value}", flush=True)
+                    
+                    # Verificar combinedData
+                    if 'combinedData' in data:
                         self.api_data = data['combinedData']
-                        # === FIX: Verificar que api_data no es None antes de len() ===
                         if self.api_data is not None:
-                            print(f"✅ API DATA CAPTURADA: {len(self.api_data)} medicamentos", flush=True)
+                            print(f"\ncombinedData: {len(self.api_data)} items", flush=True)
+                            # Agregar a lista acumuladora
+                            self.all_medications.extend(self.api_data)
+                            print(f"Total acumulado: {len(self.all_medications)} medicamentos", flush=True)
                         else:
-                            print("⚠️  API DATA es None", flush=True)
+                            print("combinedData es None", flush=True)
+                    
+                    # Buscar indicadores de paginación
+                    pagination_keys = ['total', 'count', 'page', 'pages', 'hasMore', 'next', 'offset', 'limit']
+                    found_pagination = {k: data.get(k) for k in pagination_keys if k in data}
+                    if found_pagination:
+                        print(f"\nPAGINATION INFO:", flush=True)
+                        for k, v in found_pagination.items():
+                            print(f"  {k}: {v}", flush=True)
+                    
+                    print(f"{'='*60}\n", flush=True)
+                    
             except Exception as e:
                 print(f"Error procesando respuesta API: {e}", flush=True)
         
@@ -180,7 +212,8 @@ class INHRRScraper:
             
     async def _fetch_all_medications(self) -> List[Dict[str, Any]]:
         """
-        Obtiene todos los medicamentos navegando a la página y capturando la API.
+        Obtiene todos los medicamentos navegando a la página.
+        Versión investigación - Detecta paginación.
         """
         print("INHRR_SCRAPER: Navegando para obtener datos de API...", flush=True)
         
@@ -190,13 +223,22 @@ class INHRRScraper:
                 await self.page.goto(self.SEARCH_URL, wait_until='networkidle')
                 
                 # Esperar a que se complete la carga
-                print("INHRR_SCRAPER: Esperando carga de datos...", flush=True)
+                print("INHRR_SCRAPER: Esperando carga de datos (15 seg)...", flush=True)
+                await asyncio.sleep(15)  # Aumentado a 15 segundos para capturar más
+                
+                # Intentar scrollear para cargar más datos (lazy loading)
+                print("INHRR_SCRAPER: Scrolleando para cargar más datos...", flush=True)
+                for i in range(5):  # 5 scrolls
+                    await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    await asyncio.sleep(2)
+                    print(f"  Scroll {i+1}/5 completado", flush=True)
+                
+                # Esperar un poco más
                 await asyncio.sleep(5)
                 
-                # === FIX: Verificar que api_data no es None ===
-                if self.api_data is not None:
-                    print(f"INHRR_SCRAPER: {len(self.api_data)} medicamentos obtenidos", flush=True)
-                    return self.api_data
+                if self.all_medications:
+                    print(f"INHRR_SCRAPER: {len(self.all_medications)} medicamentos obtenidos en total", flush=True)
+                    return self.all_medications
                 else:
                     print("INHRR_SCRAPER: No se capturaron datos, reintentando...", flush=True)
                     await asyncio.sleep(2)
@@ -257,7 +299,6 @@ class INHRRScraper:
             elif 'mcg' in product_lower:
                 unit = 'mcg'
             
-            # === FIX: Eliminado 'laboratory' porque no existe en el modelo ===
             return {
                 'name': product_name,
                 'generic_name': active_ingredient,
