@@ -248,6 +248,12 @@ class INHRRScraper:
                 print(f"INHRR_SCRAPER: Navigating to {url} (attempt {attempt + 1}/{retries})...", flush=True)
                 response = await page.goto(url, wait_until='networkidle')
                 print(f"INHRR_SCRAPER: Response: {response}", flush=True)
+                
+                # === AGREGADO: Esperar a que cargue contenido dinámico ===
+                print("INHRR_SCRAPER: Waiting for network to be idle...", flush=True)
+                await page.wait_for_load_state('networkidle', timeout=30000)
+                print("INHRR_SCRAPER: Network idle - contenido dinámico cargado", flush=True)
+                
                 await asyncio.sleep(self.rate_limit)
                 return True
                 
@@ -478,68 +484,33 @@ class INHRRScraper:
             
             page = self.page
             
-            # === DEBUG: Guardar HTML de la página ===
-            print("INHRR_SCRAPER: DEBUG - Guardando HTML de la página...", flush=True)
-            html_content = await page.content()
-            print(f"INHRR_SCRAPER: HTML length: {len(html_content)}", flush=True)
-            print(f"INHRR_SCRAPER: HTML sample (first 3000 chars):\n{html_content[:3000]}", flush=True)
+            # === AGREGADO: Esperar a que cargue el contenido dinámico ===
+            print("INHRR_SCRAPER: Esperando a que cargue el contenido dinámico...", flush=True)
+            await page.wait_for_load_state('networkidle', timeout=30000)
             
-            # Guardar a archivo para revisar después
-            with open('/tmp/inhrr_page.html', 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            print("INHRR_SCRAPER: HTML guardado en /tmp/inhrr_page.html", flush=True)
+            # También esperar un poco más por si hay más llamadas API
+            print("INHRR_SCRAPER: Esperando 3 segundos adicionales...", flush=True)
+            await asyncio.sleep(3)
             
-            # Intentar esperar y ver qué selectores existen
-            print("INHRR_SCRAPER: DEBUG - Buscando tablas en la página...", flush=True)
+            # Buscar tablas
             table_count = await page.locator('table').count()
             print(f"INHRR_SCRAPER: Número de tablas encontradas: {table_count}", flush=True)
             
-            div_count = await page.locator('div').count()
-            print(f"INHRR_SCRAPER: Número de divs encontrados: {div_count}", flush=True)
-            
-            # Intentar esperar más tiempo
-            print("INHRR_SCRAPER: DEBUG - Esperando 5 segundos adicionales...", flush=True)
-            await asyncio.sleep(5)
-            
-            # Intentar selector alternativo
-            print("INHRR_SCRAPER: DEBUG - Intentando wait_for_selector con diferentes selectores...", flush=True)
-            
-            # Probar diferentes selectores
-            selectors_to_try = [
-                'table tbody tr',
-                'table tr',
-                '.table tbody tr',
-                '[class*="table"] tbody tr',
-                'div.table-responsive tr',
-            ]
-            
-            found_selector = None
-            for selector in selectors_to_try:
-                try:
-                    print(f"INHRR_SCRAPER: Probando selector: {selector}", flush=True)
-                    elem = page.locator(selector)
-                    elem_count = await elem.count()
-                    print(f"INHRR_SCRAPER: Elementos encontrados con '{selector}': {elem_count}", flush=True)
-                    if elem_count > 0:
-                        found_selector = selector
-                        break
-                except Exception as e:
-                    print(f"INHRR_SCRAPER: Error con selector '{selector}': {e}", flush=True)
-            
-            if found_selector:
-                print(f"INHRR_SCRAPER: Selector encontrado: {found_selector}", flush=True)
-                await page.wait_for_selector(found_selector, timeout=15000)
-            
             medications: List[Dict[str, Any]] = []
-            rows = page.locator(found_selector or 'table tbody tr')
-            all_rows = await rows.all()
-            print(f"INHRR_SCRAPER: Total de filas encontradas: {len(all_rows)}", flush=True)
             
-            for row in all_rows[:count]:
-                medication = await self._parse_medication_row(row)
-                if medication:
-                    medications.append(medication)
-                    
+            if table_count > 0:
+                await page.wait_for_selector('table tbody tr', timeout=15000)
+                rows = page.locator('table tbody tr')
+                all_rows = await rows.all()
+                print(f"INHRR_SCRAPER: Total de filas encontradas: {len(all_rows)}", flush=True)
+                
+                for row in all_rows[:count]:
+                    medication = await self._parse_medication_row(row)
+                    if medication:
+                        medications.append(medication)
+            else:
+                print("INHRR_SCRAPER: No se encontraron tablas después de esperar", flush=True)
+            
             print(
                 f"INHRR_SCRAPER: Muestra completada. "
                 f"Medicamentos extraídos: {len(medications)}",
