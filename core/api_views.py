@@ -419,7 +419,21 @@ class MedicationCatalogViewSet(viewsets.ModelViewSet):
                 # Sin institución activa: solo catálogo maestro
                 queryset = queryset.filter(institution__isnull=True)
         
-        return queryset[:50]  # Limitar a 50 resultados por búsqueda
+        return queryset  # ✅ CORREGIDO: Sin slicing [:50]
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Override list para limitar resultados sin romper paginación.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+        
+        # Limitar a 50 resultados máximo para búsquedas
+        search = request.query_params.get('search', None)
+        if search:
+            queryset = queryset[:50]
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 # ViewSets Automáticos (Mocks de serializers y modelos)
