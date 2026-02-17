@@ -293,9 +293,33 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     """
     Control Élite de Citas y Notas Clínicas.
     Maneja el ciclo de vida de la consulta y el bloqueo de integridad.
+    
+    Endpoints:
+    - GET /api/appointments/ - Lista todas las citas (filtrado por institución)
+    - GET /api/appointments/?patient=123 - Citas de un paciente específico
+    - GET /api/appointments/?status=completed - Filtrar por estado
+    - POST /api/appointments/{id}/lock-note/ - Sellar nota clínica
     """
     queryset = Appointment.objects.all().select_related('patient', 'doctor', 'note', 'institution')
     serializer_class = AppointmentSerializer
+    
+    # Configuración de filtros
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = [
+        'patient',      # ✅ CRÍTICO: Filtrar por paciente
+        'status',       # Filtrar por estado
+        'doctor',       # Filtrar por médico
+        'institution',  # Filtrar por institución
+        'appointment_date',  # Filtrar por fecha
+    ]
+    search_fields = [
+        'patient__first_name',
+        'patient__last_name',
+        'patient__national_id',
+        'doctor__full_name',
+    ]
+    ordering_fields = ['appointment_date', 'created_at', 'status']
+    ordering = ['-appointment_date', '-created_at']
     
     @action(detail=True, methods=['post'], url_path='lock-note')
     def lock_clinical_note(self, request, pk=None):
@@ -325,12 +349,38 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         })
     
     def get_queryset(self):
-        # Filtro institucional: Seguridad Elite
+        """
+        Filtrado multi-nivel para seguridad y datos correctos:
+        1. Base: Solo citas de la institución del usuario
+        2. Query params: patient, status, doctor, etc.
+        """
         user = self.request.user
         qs = super().get_queryset()
+        
+        # Filtro institucional (seguridad Elite)
         if not user.is_superuser and hasattr(user, 'doctor_profile'):
-            # Aseguramos que solo vea citas de su institución
-            return qs.filter(institution=user.doctor_profile.institution)
+            qs = qs.filter(institution=user.doctor_profile.institution)
+        
+        # ✅ CRÍTICO: Filtro explícito por patient (query param)
+        patient_id = self.request.query_params.get('patient')
+        if patient_id:
+            qs = qs.filter(patient_id=patient_id)
+        
+        # Filtro por status (query param)
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            qs = qs.filter(status=status_param)
+        
+        # Filtro por doctor (query param)
+        doctor_id = self.request.query_params.get('doctor')
+        if doctor_id:
+            qs = qs.filter(doctor_id=doctor_id)
+        
+        # Filtro por fecha (query param)
+        appointment_date = self.request.query_params.get('appointment_date')
+        if appointment_date:
+            qs = qs.filter(appointment_date=appointment_date)
+        
         return qs
 
 

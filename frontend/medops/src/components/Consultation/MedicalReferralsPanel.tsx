@@ -1,5 +1,5 @@
 // src/components/Consultation/MedicalReferralsPanel.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useMedicalReferrals,
   useCreateMedicalReferral,
@@ -41,6 +41,16 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
   const [urgency, setUrgency] = useState<"routine" | "urgent" | "stat">("routine");
   const [status, setStatus] = useState<"issued" | "accepted" | "rejected">("issued");
   const [editingReferral, setEditingReferral] = useState<MedicalReferral | null>(null);
+  
+  // ✅ FIX: Limpiar formulario cuando cambia la consulta
+  useEffect(() => {
+    setReferredTo("");
+    setReason("");
+    setSelectedSpecialties([]);
+    setUrgency("routine");
+    setStatus("issued");
+    setEditingReferral(null);
+  }, [appointmentId]);
   
   const handleAdd = async () => {
     if (!referredTo || readOnly) return;
@@ -230,7 +240,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                 </select>
               </div>
               
-              {/* 🔧 FIX: Botón con fondo oscuro y texto visible */}
               <button
                 onClick={handleAdd}
                 disabled={!referredTo}

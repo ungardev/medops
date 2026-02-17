@@ -22,6 +22,7 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
   const createVitalSigns = useCreateVitalSigns(appointmentId);
   const updateVitalSigns = useUpdateVitalSigns(vitalSigns?.id, appointmentId);
   const deleteVitalSigns = useDeleteVitalSigns(appointmentId);
+  
   const [form, setForm] = useState<Partial<VitalSigns>>({});
   // Sincronizar formulario con datos existentes
   useEffect(() => {
@@ -51,8 +52,10 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
     if (systolic >= 140 || diastolic >= 90) return "warning";
     return "normal";
   };
-  const getTempStatus = (temp?: number): "normal" | "fever" | "critical" => {
+  // ✅ CORREGIDO: Agregar estado "hypothermia" para temperatura baja < 35°C
+  const getTempStatus = (temp?: number): "normal" | "hypothermia" | "fever" | "critical" => {
     if (!temp) return "normal";
+    if (temp < 35) return "hypothermia"; // 🆕 Hipotermia: temperatura corporal baja
     if (temp >= 39) return "critical";
     if (temp >= 37.5) return "fever";
     return "normal";
@@ -156,16 +159,18 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
           )}
         </div>
         
-        {/* Temperature con Semáforo */}
+        {/* ✅ Temperature con Semáforo - CORREGIDO con Hipotermia */}
         <div className={`border rounded-sm p-3 transition-colors ${
           tempStatus === 'critical' ? 'bg-red-500/10 border-red-500/30' :
           tempStatus === 'fever' ? 'bg-yellow-500/10 border-yellow-500/30' :
+          tempStatus === 'hypothermia' ? 'bg-cyan-500/10 border-cyan-500/30' : // 🆕 Color azul para hipotermia
           'bg-black/40 border-white/10'
         }`}>
           <label className="text-[8px] font-mono uppercase flex justify-between mb-2">
             <span className={
               tempStatus === 'critical' ? 'text-red-400' :
               tempStatus === 'fever' ? 'text-yellow-400' :
+              tempStatus === 'hypothermia' ? 'text-cyan-400' : // 🆕 Texto cyan para hipotermia
               'text-white/60'
             }>
               Temperature (°C)
@@ -173,6 +178,7 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             <div className="flex items-center gap-1">
               {tempStatus === 'critical' && <ExclamationTriangleIcon className="w-3 h-3 text-red-400" />}
               {tempStatus === 'fever' && <ExclamationTriangleIcon className="w-3 h-3 text-yellow-400" />}
+              {tempStatus === 'hypothermia' && <ExclamationTriangleIcon className="w-3 h-3 text-cyan-400" />}
               {tempStatus === 'normal' && <CheckCircleIcon className="w-3 h-3 text-emerald-400" />}
             </div>
           </label>
@@ -185,10 +191,17 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             className={`w-full bg-transparent text-[14px] font-mono outline-none placeholder:text-white/20 ${
               tempStatus === 'critical' ? 'text-red-400' :
               tempStatus === 'fever' ? 'text-yellow-400' :
+              tempStatus === 'hypothermia' ? 'text-cyan-400' : // 🆕 Texto cyan para hipotermia
               'text-white'
             }`}
             placeholder="36.5"
           />
+          {/* 🆕 Badge de estado para hipotermia */}
+          {tempStatus === 'hypothermia' && (
+            <div className="text-[7px] font-mono text-cyan-400 mt-1 uppercase">
+              HYPOTHERMIA
+            </div>
+          )}
         </div>
       </div>
       {/* Blood Pressure con Semáforo */}

@@ -12,25 +12,27 @@ import {
   ExclamationTriangleIcon,
   ClipboardDocumentCheckIcon
 } from "@heroicons/react/24/outline";
-
 export interface MedicalTestsPanelProps {
   appointmentId: number;
   diagnosisId?: number;
   readOnly?: boolean;
 }
-
 export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly = false }: MedicalTestsPanelProps) {
   const { data, isLoading } = useMedicalTest(appointmentId);
   const { mutateAsync: createTest } = useCreateMedicalTest();
   const { mutateAsync: deleteTest } = useDeleteMedicalTest();
-
   const tests = Array.isArray(data) ? data : [];
-
   const [testType, setTestType] = useState("");
   const [description, setDescription] = useState("");
   const [urgency, setUrgency] = useState<"routine" | "urgent" | "stat">("routine");
   const [status, setStatus] = useState<"pending" | "completed" | "cancelled">("pending");
-
+  // ✅ FIX: Limpiar formulario cuando cambia la consulta
+  useEffect(() => {
+    setTestType("");
+    setDescription("");
+    setUrgency("routine");
+    setStatus("pending");
+  }, [appointmentId]);
   const handleAdd = async () => {
     if (!testType || readOnly) return;
     const payload: any = {
@@ -41,7 +43,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
       status,
     };
     if (diagnosisId) payload.diagnosis = diagnosisId;
-
     try {
       await createTest(payload);
       setTestType("");
@@ -52,7 +53,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
       console.error("❌ Error:", err.message);
     }
   };
-
   return (
     <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden">
       {/* HEADER TÉCNICO */}
@@ -67,7 +67,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
           COUNT: {tests.length}
         </span>
       </div>
-
       <div className="p-4 space-y-4">
         {/* LISTA DE EXÁMENES */}
         <div className="space-y-2">
@@ -90,7 +89,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     {t.description || "NO_DESCRIPTION_PROVIDED"}
                   </div>
                 </div>
-
                 {!readOnly && (
                   <button 
                     onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
@@ -103,7 +101,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
             ))
           )}
         </div>
-
         {/* FORMULARIO DE ENTRADA (SOLO SI NO ES READONLY) */}
         {!readOnly && (
           <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
@@ -134,7 +131,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                   </optgroup>
                 </select>
               </div>
-
               {/* Selector de Urgencia */}
               <div className="space-y-1">
                 <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Priority_Level</label>
@@ -149,7 +145,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                 </select>
               </div>
             </div>
-
             {/* Notas del Examen */}
             <div className="space-y-1">
               <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Procedure_Directives</label>
@@ -160,7 +155,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                 className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none min-h-[60px] resize-none"
               />
             </div>
-
             <button
               onClick={handleAdd}
               disabled={!testType}
@@ -172,7 +166,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
           </div>
         )}
       </div>
-
       {/* FOOTER METADATA */}
       <div className="bg-black/20 px-4 py-2 border-t border-[var(--palantir-border)] flex justify-between">
         <div className="flex items-center gap-2">

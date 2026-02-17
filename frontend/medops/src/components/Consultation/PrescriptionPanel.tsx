@@ -222,10 +222,22 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                       key={p.id}
                       id={p.id}
                       medication={p.medication_catalog?.name || p.medication_text || "—"}
+                      // ✅ NUEVAS PROPS para mostrar metadata completa
+                      medicationCatalog={p.medication_catalog ? {
+                        name: p.medication_catalog.name,
+                        presentation: p.medication_catalog.presentation,
+                        concentration: p.medication_catalog.concentration,
+                        generic_name: p.medication_catalog.generic_name,
+                      } : null}
+                      isFromCatalog={!!p.medication_catalog}
                       duration={p.duration ?? undefined}
                       frequency={p.frequency}
                       route={p.route}
-                      components={p.components}
+                      components={p.components || []}
+                      indications={p.indications || undefined}
+                      issuedAt={p.issued_at || undefined}
+                      doctor={p.doctor}
+                      institution={p.institution}
                       {...(!readOnly && {
                         onEdit: (id, med, dur, freq, rt, comps) =>
                           updatePrescription({
