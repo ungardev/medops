@@ -318,8 +318,9 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         'patient__national_id',
         'doctor__full_name',
     ]
-    ordering_fields = ['appointment_date', 'created_at', 'status']
-    ordering = ['-appointment_date', '-created_at']
+    # ✅ CORREGIDO: Removido 'created_at' que no existe en el modelo
+    ordering_fields = ['appointment_date', 'status']
+    ordering = ['-appointment_date']
     
     @action(detail=True, methods=['post'], url_path='lock-note')
     def lock_clinical_note(self, request, pk=None):
