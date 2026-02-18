@@ -411,24 +411,54 @@ class PrescriptionComponentSerializer(serializers.ModelSerializer):
 
 # --- Prescripciones ---
 class PrescriptionSerializer(serializers.ModelSerializer):
+    """
+    Serializer de lectura para prescripciones.
+    
+    ✅ CORREGIDO: Anida objetos completos para el frontend:
+    - medication_catalog: Objeto completo del catálogo INHRR
+    - doctor: Objeto con full_name e is_verified
+    - institution: Objeto con name
+    """
     route_display = serializers.CharField(source="get_route_display", read_only=True)
     frequency_display = serializers.CharField(source="get_frequency_display", read_only=True)
     components = PrescriptionComponentSerializer(many=True, read_only=True)
+    
+    # ✅ CRÍTICO: Anidar objeto completo del catálogo INHRR
+    medication_catalog = MedicationCatalogSerializer(read_only=True)
+    
+    # ✅ Campos de metadata
     medication_name = serializers.SerializerMethodField()
-    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
-
+    doctor = serializers.SerializerMethodField()
+    institution = serializers.SerializerMethodField()
     class Meta:
         model = Prescription
         fields = [
             "id", "diagnosis", "medication_catalog", "medication_text", "medication_name",
             "dosage_form", "route", "route_display", "frequency", "frequency_display",
-            "duration", "indications", "components", "doctor_name", "issued_at"
+            "duration", "indications", "components", "doctor", "institution", "issued_at"
         ]
-
     def get_medication_name(self, obj):
+        """Fallback si medication_catalog no existe"""
         if obj.medication_catalog:
-            return f"{obj.medication_catalog.name} ({obj.medication_catalog.generic_name})"
-        return obj.medication_text
+            return obj.medication_catalog.name
+        return obj.medication_text or "—"
+    def get_doctor(self, obj):
+        """Retorna objeto doctor con campos necesarios para PrescriptionBadge"""
+        if obj.doctor:
+            return {
+                'id': obj.doctor.id,
+                'full_name': obj.doctor.full_name,
+                'is_verified': getattr(obj.doctor, 'is_verified', False),
+            }
+        return None
+    def get_institution(self, obj):
+        """Retorna objeto institution con campos necesarios"""
+        if obj.institution:
+            return {
+                'id': obj.institution.id,
+                'name': obj.institution.name,
+            }
+        return None
 
 
 class PrescriptionComponentWriteSerializer(serializers.ModelSerializer):
