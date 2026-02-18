@@ -493,7 +493,38 @@ class WaitingRoomEntryViewSet(viewsets.ModelViewSet): queryset = WaitingRoomEntr
 class GeneticPredispositionViewSet(viewsets.ModelViewSet): queryset = GeneticPredisposition.objects.all(); serializer_class = GeneticPredispositionSerializer
 class DiagnosisViewSet(viewsets.ModelViewSet): queryset = Diagnosis.objects.all(); serializer_class = DiagnosisSerializer
 class TreatmentViewSet(viewsets.ModelViewSet): queryset = Treatment.objects.all(); serializer_class = TreatmentSerializer
-class PrescriptionViewSet(viewsets.ModelViewSet): queryset = Prescription.objects.all(); serializer_class = PrescriptionSerializer
+
+
+class PrescriptionViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar prescripciones médicas.
+    
+    ✅ Usa serializers diferenciados:
+    - Lectura (GET): PrescriptionSerializer (anida medication_catalog completo)
+    - Escritura (POST/PATCH): PrescriptionWriteSerializer (acepta IDs)
+    """
+    queryset = Prescription.objects.all()
+    serializer_class = PrescriptionSerializer
+    def get_serializer_class(self):
+        """
+        Retorna el serializer apropiado según la acción:
+        - create, update, partial_update: PrescriptionWriteSerializer
+        - list, retrieve: PrescriptionSerializer
+        """
+        if self.action in ['create', 'update', 'partial_update']:
+            return PrescriptionWriteSerializer
+        return PrescriptionSerializer
+    def get_queryset(self):
+        """
+        Optimiza queries con select_related y prefetch_related.
+        """
+        return Prescription.objects.select_related(
+            'diagnosis__appointment',
+            'medication_catalog',
+            'doctor',
+            'institution',
+            'patient'
+        ).prefetch_related('components')
 
 
 class ChargeOrderViewSet(viewsets.ModelViewSet):
