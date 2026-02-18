@@ -550,8 +550,51 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet): queryset = ChargeItem.objects.all(); serializer_class = ChargeItemSerializer
-class MedicalTestViewSet(viewsets.ModelViewSet): queryset = MedicalTest.objects.all(); serializer_class = MedicalTestSerializer
-class MedicalReferralViewSet(viewsets.ModelViewSet): queryset = MedicalReferral.objects.all(); serializer_class = MedicalReferralSerializer
+
+
+class MedicalTestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar órdenes de exámenes médicos.
+    ✅ Filtra por appointment para aislar datos por consulta.
+    """
+    queryset = MedicalTest.objects.all()
+    serializer_class = MedicalTestSerializer
+    def get_queryset(self):
+        """
+        Filtra por appointment si se proporciona en query params.
+        Esto garantiza aislamiento total entre consultas de diferentes pacientes.
+        """
+        queryset = MedicalTest.objects.select_related('appointment', 'appointment__patient')
+        appointment_id = self.request.query_params.get('appointment')
+        if appointment_id:
+            queryset = queryset.filter(appointment_id=appointment_id)
+        return queryset.order_by('-requested_at')
+
+
+class MedicalReferralViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar referencias médicas inter-institucionales.
+    ✅ Filtra por appointment para aislar datos por consulta.
+    """
+    queryset = MedicalReferral.objects.all()
+    serializer_class = MedicalReferralSerializer
+    def get_queryset(self):
+        """
+        Filtra por appointment si se proporciona en query params.
+        Esto garantiza aislamiento total entre consultas de diferentes pacientes.
+        """
+        queryset = MedicalReferral.objects.select_related(
+            'appointment', 
+            'appointment__patient',
+            'doctor',
+            'institution'
+        ).prefetch_related('specialties')
+        appointment_id = self.request.query_params.get('appointment')
+        if appointment_id:
+            queryset = queryset.filter(appointment_id=appointment_id)
+        return queryset.order_by('-issued_at')
+
+
 class SpecialtyViewSet(viewsets.ModelViewSet): queryset = Specialty.objects.all(); serializer_class = SpecialtySerializer
 class PersonalHistoryViewSet(viewsets.ModelViewSet): queryset = PersonalHistory.objects.all(); serializer_class = PersonalHistorySerializer
 class FamilyHistoryViewSet(viewsets.ModelViewSet): queryset = FamilyHistory.objects.all(); serializer_class = FamilyHistorySerializer
