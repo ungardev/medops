@@ -564,11 +564,11 @@ class MedicalTestViewSet(viewsets.ModelViewSet):
         Filtra por appointment si se proporciona en query params.
         Esto garantiza aislamiento total entre consultas de diferentes pacientes.
         """
-        queryset = MedicalTest.objects.select_related('appointment', 'appointment__patient')
+        queryset = MedicalTest.objects.select_related('appointment')
         appointment_id = self.request.query_params.get('appointment')
         if appointment_id:
             queryset = queryset.filter(appointment_id=appointment_id)
-        return queryset.order_by('-requested_at')
+        return queryset.order_by('-created_at')
 
 
 class MedicalReferralViewSet(viewsets.ModelViewSet):
@@ -585,7 +585,6 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
         """
         queryset = MedicalReferral.objects.select_related(
             'appointment', 
-            'appointment__patient',
             'doctor',
             'institution'
         ).prefetch_related('specialties')
