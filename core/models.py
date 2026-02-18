@@ -1643,12 +1643,63 @@ class MedicalTestCatalog(models.Model):
     category = models.CharField(
         max_length=50, 
         choices=[
-            ("laboratory", "Laboratorio"),
-            ("imaging", "Imagenología"),
-            ("cardiology", "Cardiología"),
-            ("special", "Pruebas Especiales"),
+            # === LABORATORIO CLÍNICO ===
+            ("lab_hematology", "Laboratorio → Hematología"),
+            ("lab_biochemistry", "Laboratorio → Bioquímica"),
+            ("lab_immunology", "Laboratorio → Inmunología"),
+            ("lab_microbiology", "Laboratorio → Microbiología"),
+            ("lab_parasitology", "Laboratorio → Parasitología"),
+            ("lab_urinalysis", "Laboratorio → Uroanálisis"),
+            ("lab_endocrinology", "Laboratorio → Endocrinología"),
+            ("lab_toxicology", "Laboratorio → Toxicología"),
+            ("lab_coagulation", "Laboratorio → Coagulación"),
+            ("lab_special", "Laboratorio → Pruebas Especiales"),
+            
+            # === IMAGENOLOGÍA ===
+            ("img_xray", "Imagenología → Rayos X"),
+            ("img_ultrasound", "Imagenología → Ecografía"),
+            ("img_ct", "Imagenología → Tomografía (TC)"),
+            ("img_mri", "Imagenología → Resonancia (RM)"),
+            ("img_mammography", "Imagenología → Mamografía"),
+            ("img_densitometry", "Imagenología → Densitometría"),
+            ("img_fluoroscopy", "Imagenología → Fluoroscopía"),
+            ("img_angiography", "Imagenología → Angiografía"),
+            ("img_nuclear", "Imagenología → Medicina Nuclear"),
+            
+            # === CARDIOLOGÍA ===
+            ("card_ecg", "Cardiología → Electrocardiograma"),
+            ("card_echo", "Cardiología → Ecocardiograma"),
+            ("card_stress", "Cardiología → Prueba de Esfuerzo"),
+            ("card_holter", "Cardiología → Holter / Monitoreo"),
+            
+            # === NEUROLOGÍA ===
+            ("neuro_eeg", "Neurología → Electroencefalograma"),
+            ("neuro_emg", "Neurología → Electromiografía"),
+            ("neuro_evoked", "Neurología → Potenciales Evocados"),
+            
+            # === FUNCIÓN PULMONAR ===
+            ("pulmo_spirometry", "Neumología → Espirometría"),
+            ("pulmo_pft", "Neumología → Pruebas Funcionales"),
+            ("pulmo_oximetry", "Neumología → Oximetría"),
+            
+            # === ENDOSCOPIA ===
+            ("endo_gastro", "Endoscopía → Gastroscopía"),
+            ("endo_colono", "Endoscopía → Colonoscopía"),
+            ("endo_broncho", "Endoscopía → Broncoscopía"),
+            
+            # === OFTALMOLOGÍA ===
+            ("ophth_slit", "Oftalmología → Lámpara de Hendidura"),
+            ("ophth_oct", "Oftalmología → OCT"),
+            ("ophth_visual", "Oftalmología → Campo Visual"),
+            ("ophth_tonometry", "Oftalmología → Tonometría"),
+            
+            # === OTROS ===
+            ("other_audiometry", "Otros → Audiometría"),
+            ("other_biopsy", "Otros → Biopsia"),
+            ("other_genetic", "Otros → Genética"),
+            ("other_special", "Otros → Especiales"),
         ],
-        default="laboratory"
+        default="lab_special"
     )
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_active = models.BooleanField(default=True)
@@ -1668,31 +1719,290 @@ class MedicalTestCatalog(models.Model):
 
 class MedicalTest(models.Model):
     TEST_TYPE_CHOICES = [
-        ("blood_test", "Análisis de sangre"),
-        ("urine_test", "Análisis de orina"),
-        ("stool_test", "Análisis de heces"),
+        # === HEMATOLOGÍA ===
+        ("hemogram", "Hemograma Completo"),
+        ("hemoglobin", "Hemoglobina / Hematocrito"),
+        ("platelets", "Conteo de Plaquetas"),
+        ("reticulocytes", "Reticulocitos"),
+        ("coag_pt", "Tiempos de Coagulación (PT/PTT/INR)"),
+        ("blood_type", "Grupo Sanguíneo y Rh"),
+        ("peripheral_smear", "Frotis de Sangre Periférica"),
+        ("bone_marrow", "Aspirado de Médula Ósea"),
+        
+        # === BIOQUÍMICA ===
+        ("glucose", "Glucemia"),
+        ("glucose_2h", "Glucemia Post-Prandial (2h)"),
+        ("glycated_hgb", "Hemoglobina Glicosilada (HbA1c)"),
+        ("curva_glucosa", "Curva de Tolerancia a Glucosa"),
+        ("lipid_profile", "Perfil Lipídico"),
+        ("renal_panel", "Perfil Renal (BUN/Cr)"),
+        ("liver_panel", "Perfil Hepático"),
+        ("electrolytes", "Electrolitos Séricos"),
+        ("thyroid_panel", "Perfil Tiroideo (TSH/T3/T4)"),
+        ("bone_profile", "Perfil Óseo (Ca/P/FA)"),
+        ("cardiac_enzymes", "Enzimas Cardíacas (Troponina/CK)"),
+        ("tumor_markers", "Marcadores Tumorales"),
+        ("iron_studies", "Perfil de Hierro (Ferritina)"),
+        ("vitamin_d", "Vitamina D (25-OH)"),
+        ("vitamin_b12", "Vitamina B12"),
+        ("folate", "Ácido Fólico"),
+        ("amylase", "Amilasa / Lipasa"),
+        ("uric_acid", "Ácido Úrico"),
+        ("protein_total", "Proteínas Totales / Albúmina"),
+        ("bilirubin", "Bilirrubinas"),
+        ("creatinine_clearance", "Depuración de Creatinina"),
+        
+        # === UROANÁLISIS ===
+        ("urinalysis", "Uroanálisis Completo"),
+        ("urine_culture", "Urocultivo"),
+        ("urine_24h", "Orina 24 Horas"),
+        ("urine_protein", "Proteinuria 24h"),
+        ("urine_microalbumin", "Microalbuminuria"),
+        
+        # === HECES ===
+        ("stool_routine", "Examen de Heces"),
+        ("stool_occult", "Sangre Oculta en Heces"),
+        ("stool_parasites", "Parasitológico en Heces"),
+        ("stool_culture", "Coprocultivo"),
+        ("stool_elisa", "Antígeno en Heces (ELISA)"),
+        
+        # === MICROBIOLOGÍA ===
+        ("blood_culture", "Hemocultivo"),
+        ("wound_culture", "Cultivo de Herida"),
+        ("throat_culture", "Exudado Faríngeo"),
+        ("sputum_culture", "Cultivo de Esputo"),
+        ("csf_analysis", "Líquido Cefalorraquídeo"),
+        ("synovial_fluid", "Líquido Sinovial"),
+        ("pleural_fluid", "Líquido Pleural"),
+        ("ascitic_fluid", "Líquido Ascítico"),
+        ("covid_pcr", "PCR COVID-19"),
+        ("covid_antigen", "Antígeno COVID-19"),
+        ("covid_antibodies", "Anticuerpos COVID-19"),
+        ("viral_panel", "Panel Viral"),
+        ("bacterial_panel", "Panel Bacteriano"),
+        ("fungus_culture", "Cultivo de Hongos"),
+        ("mycobacteria", "Micobacterias (BK)"),
+        
+        # === INMUNOLOGÍA ===
+        ("hiv_test", "Prueba VIH (ELISA/Rápida)"),
+        ("hepatitis_panel", "Panel Hepatitis (A/B/C)"),
+        ("autoimmune_panel", "Panel Autoinmune (ANA/ENA)"),
+        ("rheumatoid_factor", "Factor Reumatoideo"),
+        ("anti_ccp", "Anti-CCP"),
+        ("crp", "Proteína C Reactiva (PCR)"),
+        ("esr", "Velocidad de Sedimentación (VSG)"),
+        ("allergy_panel", "Panel Alérgico (IgE)"),
+        ("immunoglobulins", "Inmunoglobulinas (IgG/IgA/IgM)"),
+        ("complement", "Complemento (C3/C4)"),
+        ("cryoglobulins", "Cryoglobulinas"),
+        
+        # === HORMONAS ===
+        ("cortisol", "Cortisol"),
+        ("acth", "ACTH"),
+        ("growth_hormone", "Hormona de Crecimiento"),
+        ("prolactin", "Prolactina"),
+        ("lh_fsh", "LH / FSH"),
+        ("testosterone", "Testosterona"),
+        ("estradiol", "Estradiol"),
+        ("progesterone", "Progesterona"),
+        ("dhea", "DHEA-S"),
+        ("insulin", "Insulina"),
+        ("peptide_c", "Péptido C"),
+        
+        # === IMAGENOLOGÍA - RAYOS X ===
+        ("xray_chest", "Radiografía de Tórax"),
+        ("xray_abdomen", "Radiografía de Abdomen"),
+        ("xray_bone", "Radiografía Ósea"),
+        ("xray_spine_cervical", "Radiografía Cervical"),
+        ("xray_spine_lumbar", "Radiografía Lumbar"),
+        ("xray_spine_dorsal", "Radiografía Dorsal"),
+        ("xray_pelvis", "Radiografía de Pelvis"),
+        ("xray_skull", "Radiografía de Cráneo"),
+        ("xray_sinus", "Radiografía de Senos Paranasales"),
+        ("xray_extremity", "Radiografía de Extremidades"),
+        ("xray_dental", "Radiografía Dental"),
+        ("xray_contrast", "Radiografía con Contraste"),
+        
+        # === IMAGENOLOGÍA - ECOGRAFÍA ===
+        ("ultrasound_abdo", "Ecografía Abdominal"),
+        ("ultrasound_pelvic", "Ecografía Pélvica"),
+        ("ultrasound_thyroid", "Ecografía Tiroidea"),
+        ("ultrasound_obstetric", "Ecografía Obstétrica"),
+        ("ultrasound_doppler", "Doppler Vascular"),
+        ("ultrasound_cardiac", "Ecocardiograma"),
+        ("ultrasound_breast", "Ecografía Mamaria"),
+        ("ultrasound_prostate", "Ecografía Prostática"),
+        ("ultrasound_testicular", "Ecografía Testicular"),
+        ("ultrasound_soft_tissue", "Ecografía de Partes Blandas"),
+        ("ultrasound_joint", "Ecografía Articular"),
+        
+        # === IMAGENOLOGÍA - TOMOGRAFÍA ===
+        ("ct_head", "TC de Cráneo"),
+        ("ct_brain_angio", "TC Cerebral con Angio"),
+        ("ct_abdomen", "TC Abdominal"),
+        ("ct_chest", "TC de Tórax"),
+        ("ct_spine", "TC de Columna"),
+        ("ct_pelvis", "TC de Pelvis"),
+        ("ct_neck", "TC de Cuello"),
+        ("ct_sinus", "TC de Senos Paranasales"),
+        ("ct_cardiac", "TC Cardíaca"),
+        ("ct_angio", "TC Angiografía"),
+        
+        # === IMAGENOLOGÍA - RESONANCIA ===
+        ("mri_brain", "RM Cerebral"),
+        ("mri_spine", "RM de Columna"),
+        ("mri_joint", "RM Articular"),
+        ("mri_abdomen", "RM Abdominal"),
+        ("mri_pelvis", "RM Pélvica"),
+        ("mri_cardiac", "RM Cardíaca"),
+        ("mri_angio", "RM Angiografía"),
+        ("mri_prostate", "RM Prostática"),
+        ("mri_breast", "RM Mamaria"),
+        
+        # === IMAGENOLOGÍA - OTROS ===
+        ("mammography", "Mamografía"),
+        ("mammography_3d", "Tomosíntesis Mamaria"),
+        ("densitometry", "Densitometría Ósea"),
+        ("fluoroscopy", "Fluoroscopía"),
+        ("angiography", "Angiografía"),
+        ("hysterosalpingography", "Histerosalpingografía"),
+        ("urography", "Urografía"),
+        ("cholangiography", "Colangiografía"),
+        ("pet_ct", "PET-CT"),
+        ("bone_scan", "Gammagrafía Ósea"),
+        ("thyroid_scan", "Gammagrafía Tiroidea"),
+        ("lung_scan", "Gammagrafía Pulmonar"),
+        ("renal_scan", "Gammagrafía Renal"),
+        
+        # === CARDIOLOGÍA ===
+        ("ecg_12lead", "ECG 12 Derivaciones"),
+        ("ecg_holter", "Holter 24h"),
+        ("ecg_event", "Monitoreo de Eventos"),
+        ("echo_cardiac", "Ecocardiograma Transtorácico"),
+        ("echo_transesophageal", "Ecocardiograma Transesofágico"),
+        ("stress_test", "Prueba de Esfuerzo"),
+        ("stress_echo", "Eco-Estrés"),
+        ("ambulatory_bp", "MAPA (Presión 24h)"),
+        ("tilt_test", "Prueba de Mesa Inclinada"),
+        ("abi", "Índice Tobillo-Brazo"),
+        
+        # === NEUMOLOGÍA ===
+        ("spirometry", "Espirometría"),
+        ("spirometry_post", "Espirometría Post-Broncodilatador"),
+        ("plethysmography", "Pletismografía"),
+        ("pulse_oximetry", "Oximetría de Pulso"),
+        ("sleep_study", "Polisomnografía"),
+        ("capnography", "Capnografía"),
+        ("diffusion_capacity", "Capacidad de Difusión"),
+        
+        # === NEUROLOGÍA ===
+        ("eeg", "Electroencefalograma"),
+        ("eeg_video", "Video-EEG"),
+        ("emg", "Electromiografía"),
+        ("nerve_conduction", "Conducción Nerviosa"),
+        ("evoked_potentials", "Potenciales Evocados"),
+        ("vep", "Potenciales Evocados Visuales"),
+        ("baep", "Potenciales Evocados Auditivos"),
+        ("sep", "Potenciales Evocados Somatosensoriales"),
+        
+        # === ENDOSCOPIA ===
+        ("endoscopy_ugi", "Endoscopía Alta (EGD)"),
+        ("colonoscopy", "Colonoscopía"),
+        ("colonoscopy_virtual", "Colonoscopía Virtual"),
+        ("bronchoscopy", "Broncoscopía"),
+        ("cystoscopy", "Cistoscopía"),
+        ("gastroscopy", "Gastroscopía"),
+        ("sigmoidoscopy", "Sigmoidoscopía"),
+        ("capsule_endoscopy", "Cápsula Endoscópica"),
+        ("ercp", "CPRE"),
+        ("thoracoscopy", "Toracoscopía"),
+        ("laparoscopy", "Laparoscopía Diagnóstica"),
+        ("arthroscopy", "Artroscopía"),
+        
+        # === OFTALMOLOGÍA ===
+        ("visual_acuity", "Agudeza Visual"),
+        ("tonometry", "Tonometría"),
+        ("oct_eye", "OCT Ocular"),
+        ("fundoscopy", "Fondo de Ojo"),
+        ("slit_lamp", "Lámpara de Hendidura"),
+        ("visual_field", "Campo Visual"),
+        ("retinography", "Retinografía"),
+        ("corneal_topography", "Topografía Corneal"),
+        ("pachymetry", "Paquimetría"),
+        ("biometry", "Biometría Ocular"),
+        ("color_vision", "Test de Visión de Colores"),
+        
+        # === OTORRINOLARINGOLOGÍA ===
+        ("audiometry", "Audiometría"),
+        ("audiometry_speech", "Audiometría con Logoaudiometría"),
+        ("tympanometry", "Timpanometría"),
+        ("otoacoustic", "Emisiones Otoacústicas"),
+        ("bera", "BERA (Potenciales Auditivos)"),
+        ("nasendoscopy", "Nasofibroscopía"),
+        ("laryngoscopy", "Laringoscopía"),
+        ("vestibular_test", "Pruebas Vestibulares"),
+        
+        # === GINECO-OBSTETRICIA ===
+        ("papanicolaou", "Papanicolaou"),
+        ("colposcopy", "Colposcopía"),
+        ("hysteroscopy", "Histeroscopía"),
+        ("amniocentesis", "Amniocentesis"),
+        ("chorionic_villus", "Biopsia de Vellosidades Coriónicas"),
+        ("nfetal_monitoring", "Monitoreo Fetal"),
+        ("biophysical_profile", "Perfil Biofísico Fetal"),
+        ("semen_analysis", "Espermatograma"),
+        
+        # === PROCEDIMIENTOS ESPECIALES ===
         ("biopsy", "Biopsia"),
-        ("genetic_test", "Prueba genética"),
-        ("microbiology_culture", "Cultivo microbiológico"),
-        ("xray", "Rayos X / Radiografía"),
-        ("ultrasound", "Ecografía"),
-        ("ct_scan", "Tomografía computarizada (TC)"),
-        ("mri", "Resonancia magnética (RM)"),
-        ("ecg", "Electrocardiograma"),
+        ("biopsy_skin", "Biopsia de Piel"),
+        ("biopsy_bone", "Biopsia Ósea"),
+        ("biopsy_liver", "Biopsia Hepática"),
+        ("biopsy_kidney", "Biopsia Renal"),
+        ("biopsy_lung", "Biopsia Pulmonar"),
+        ("biopsy_prostate", "Biopsia de Próstata"),
+        ("biopsy_breast", "Biopsia de Mama"),
+        ("puncture_lumbar", "Punción Lumbar"),
+        ("thoracentesis", "Toracocentesis"),
+        ("paracentesis", "Paracentesis"),
+        ("arthrocentesis", "Artrocentesis"),
+        ("bonemarrow_biopsy", "Biopsia de Médula Ósea"),
+        
+        # === GENÉTICA ===
+        ("genetic_test", "Prueba Genética"),
+        ("karyotype", "Cariotipo"),
+        ("fish", "FISH"),
+        ("pcr_genetic", "PCR Genética"),
+        ("newborn_screening", "Tamizaje Neonatal"),
+        ("paternity_test", "Prueba de Paternidad"),
+        ("pharmacogenomics", "Farmacogenómica"),
+        
+        # === TOXICOLOGÍA ===
+        ("drug_screen", "Tamizaje de Drogas"),
+        ("alcohol_test", "Prueba de Alcohol"),
+        ("heavy_metals", "Metales Pesados"),
+        ("therapeutic_drug", "Monitoreo de Fármacos"),
+        
+        # === OTROS ===
+        ("pregnancy_test", "Prueba de Embarazo"),
+        ("sweat_test", "Test del Sudor"),
+        ("mantoux", "Prueba de Mantoux (PPD)"),
+        ("allergy_skin", "Pruebas Cutáneas de Alergia"),
+        ("patch_test", "Test de Parche"),
+        ("other", "Otro Examen"),
     ]
-
     URGENCY_CHOICES = [
         ("routine", "Rutina"),
         ("priority", "Prioridad"),
         ("urgent", "Urgente"),
+        ("stat", "STAT (Inmediato)"),
     ]
-
     STATUS_CHOICES = [
         ("pending", "Pendiente"),
+        ("collected", "Muestra Recolectada"),
+        ("in_process", "En Proceso"),
         ("completed", "Completado"),
         ("cancelled", "Cancelado"),
     ]
-
     # --- Relaciones de Contexto ---
     appointment = models.ForeignKey(
         "Appointment",
@@ -1713,7 +2023,6 @@ class MedicalTest(models.Model):
         blank=True,
         related_name="medical_tests"
     )
-
     # --- El Vínculo con el Catálogo ---
     catalog_item = models.ForeignKey(
         MedicalTestCatalog,
@@ -1723,7 +2032,6 @@ class MedicalTest(models.Model):
         related_name="orders",
         help_text="Vínculo al catálogo institucional para precios y códigos"
     )
-
     # --- Datos de la Orden ---
     test_type = models.CharField(
         max_length=50,
@@ -1748,15 +2056,12 @@ class MedicalTest(models.Model):
         blank=True, 
         help_text="Instrucciones para el paciente (ej: Ayuno, toma de agua)"
     )
-
     # Auditoría
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         verbose_name = "Orden de Examen"
         verbose_name_plural = "Órdenes de Exámenes"
-
     def save(self, *args, **kwargs):
         # 1. Heredar la institución de la cita si no se provee
         if not self.institution and self.appointment:
@@ -1767,7 +2072,6 @@ class MedicalTest(models.Model):
             self.test_name_override = self.catalog_item.name
             
         super().save(*args, **kwargs)
-
     def __str__(self):
         name = self.test_name_override or self.get_test_type_display()
         return f"{name} — {self.get_status_display()}"
