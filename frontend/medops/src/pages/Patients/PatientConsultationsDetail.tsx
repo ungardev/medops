@@ -339,7 +339,10 @@ export default function PatientConsultationsDetail() {
               </div>
               <div className="h-px flex-1 mx-8 bg-gradient-to-r from-white/10 to-transparent"></div>
             </div>
-            <ConsultationDocumentsActions consultationId={appointment?.id || safeAppointmentId} />
+            <ConsultationDocumentsActions 
+              consultationId={appointment?.id || safeAppointmentId} 
+              patientId={appointment?.patient?.id || Number(patientId)}
+            />
           </div>
         </div>
       </div>
