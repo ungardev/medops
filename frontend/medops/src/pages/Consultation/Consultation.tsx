@@ -9,7 +9,7 @@ import {
   ChevronRightIcon,
   ExclamationTriangleIcon,
   FingerPrintIcon,
-  BuildingOfficeIcon // 🆕 ICONO INSTITUCIONAL
+  BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
 // Componentes Tácticos
 import { PatientHeader, DocumentsPanel, ChargeOrderPanel } from "../../components/Consultation";
@@ -24,7 +24,6 @@ import MedicalReportSuccessToast from "../../components/Common/MedicalReportSucc
 import { useCurrentConsultation } from "../../hooks/consultations/useCurrentConsultation";
 import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
 import { useGenerateConsultationDocuments } from "../../hooks/consultations/useGenerateConsultationDocuments";
-// 🆕 IMPORTAR CONTEXTO INSTITUCIONAL
 import { useInstitutions } from "../../hooks/settings/useInstitutions";
 // Tipos y Utils
 import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
@@ -64,7 +63,6 @@ export default function Consultation() {
   const { consultationQuery, updateStatus } = useCurrentConsultation();
   const { data: appointment, isLoading } = consultationQuery;
   
-  // 🆕 OBTENER CONTEXTO INSTITUCIONAL
   const { activeInstitution } = useInstitutions();
   
   const generateReport = useGenerateMedicalReport();
@@ -99,7 +97,6 @@ export default function Consultation() {
   if (!appointment) return null;
   const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
   const canGenerateReport = appointment.status === "in_consultation" || appointment.status === "completed";
-  // 🆕 VALIDACIÓN INSTITUCIONAL - MEJORADA CON TIPO EXPLÍCITO
   const isInstitutionMatch = !appointment.institution || appointment.institution === activeInstitution?.id;
   const isCrossInstitution = !!appointment.institution && appointment.institution !== activeInstitution?.id;
   const handleGenerateReport = async () => {
@@ -113,7 +110,11 @@ export default function Consultation() {
   };
   const handleGenerateDocuments = async () => {
     try {
-      const resp: GenerateDocumentsResponse = await generateDocuments.mutateAsync(appointment.id);
+      // ✅ FIX: Pasar objeto con consultationId y patientId
+      const resp: GenerateDocumentsResponse = await generateDocuments.mutateAsync({
+        consultationId: appointment.id,
+        patientId: appointment.patient.id,
+      });
       queryClient.invalidateQueries({ queryKey: ["documents", appointment.patient.id, appointment.id] });
       if (resp.errors?.length > 0) {
         setExportErrors(resp.errors);
@@ -127,7 +128,7 @@ export default function Consultation() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-6 space-y-6">
       
-      {/* 🚀 HEADER TÉCNICO: Foco en Metadatos de Sesión + Contexto Institucional */}
+      {/* HEADER TÉCNICO */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -150,7 +151,6 @@ export default function Consultation() {
             color: appointment.status === 'in_consultation' ? "text-emerald-500" : "text-amber-500"
           },
           { 
-            // 🆕 MOSTRAR INSTITUCIÓN ACTIVA
             label: "INSTITUTION", 
             value: activeInstitution?.name?.toUpperCase().slice(0, 15) || "NONE_SELECTED",
             color: isCrossInstitution ? "text-yellow-500" : "text-purple-500"
@@ -163,7 +163,6 @@ export default function Consultation() {
         ]}
         actions={
           <div className="flex items-center gap-3 px-3">
-            {/* 🆕 BADGE INSTITUCIONAL */}
             {activeInstitution && (
               <div className="flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/20 rounded-sm">
                 <BuildingOfficeIcon className="w-3 h-3 text-purple-400" />
@@ -179,7 +178,7 @@ export default function Consultation() {
           </div>
         }
       />
-      {/* 🆕 BANNER DE ALERTA CROSS-INSTITUCION */}
+      {/* BANNER DE ALERTA CROSS-INSTITUCION */}
       {isCrossInstitution && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-sm p-4">
           <div className="flex items-center justify-between">
@@ -224,12 +223,11 @@ export default function Consultation() {
         <main className="lg:col-span-9 space-y-6">
           <div className="bg-black/20 border border-white/10 p-1 relative min-h-[600px] flex flex-col shadow-2xl">
             <div className="flex-1 bg-black/10 p-4 sm:p-6">
-              {/* 🆕 PASAR READ-ONLY BASADO EN CONTEXTO INSTITUCIONAL */}
               <ConsultationWorkflow
                 diagnoses={appointment.diagnoses}
                 appointmentId={appointment.id}
                 treatments={appointment.treatments}
-                readOnly={Boolean(!isInstitutionMatch || isCrossInstitution)} // 🔧 CORREGIDO: Boolean() explícito
+                readOnly={Boolean(!isInstitutionMatch || isCrossInstitution)}
               />
             </div>
             
@@ -242,7 +240,7 @@ export default function Consultation() {
                       navigate("/waitingroom");
                     }
                   }}
-                  disabled={updateStatus.isPending || !isInstitutionMatch} // 🆕 VALIDACIÓN INSTITUCIONAL
+                  disabled={updateStatus.isPending || !isInstitutionMatch}
                   className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 border border-red-500/20 transition-all disabled:opacity-50"
                 >
                   <ExclamationTriangleIcon className="w-4 h-4" /> Abort_Mission
@@ -274,7 +272,7 @@ export default function Consultation() {
                     setToast({ message: "Surgical Session Complete", type: "success" });
                     navigate("/waitingroom");
                   }}
-                  disabled={updateStatus.isPending || !isInstitutionMatch} // 🆕 VALIDACIÓN INSTITUCIONAL
+                  disabled={updateStatus.isPending || !isInstitutionMatch}
                   className="group flex items-center gap-3 px-6 py-2 bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all"
                 >
                   <span className="text-[10px] font-black uppercase tracking-widest">

@@ -46,7 +46,7 @@ export type PrescriptionUnit =
 export type MedicalTestUrgency = "routine" | "urgent" | "stat";
 export type MedicalTestStatus = "pending" | "completed" | "cancelled";
 export type MedicalReferralUrgency = "routine" | "urgent" | "stat";
-export type MedicalReferralStatus = "issued" | "accepted" | "rejected";
+export type MedicalReferralStatus = "issued" | "accepted" | "rejected" | "completed";
 // =====================================================
 // DIAGNÓSTICOS - Alineado con DiagnosisSerializer (backend)
 // =====================================================
@@ -72,9 +72,8 @@ export interface Diagnosis {
   created_by?: number | null;
   created_at?: string;
   updated_at?: string;
-  // 🆕 AGREGADO: name (compatibilidad con componente)
+  // Compatibilidad con componente
   name?: string;
-  // 🆕 AGREGADO: notes (compatibilidad con componente)
   notes?: string | null;
 }
 // =====================================================
@@ -221,7 +220,7 @@ export interface MedicalTest {
   updated_by?: number | null;
 }
 // =====================================================
-// REFERENCIA MÉDICA - Alineado con backend migración 0003
+// REFERENCIA MÉDICA - Alineado con MedicalReferralSerializer
 // =====================================================
 export interface MedicalReferral {
   id: number;
@@ -229,28 +228,51 @@ export interface MedicalReferral {
   diagnosis?: number | null;
   issued_by?: number | null;
   
-  // 🆕 CAMPOS AGREGADOS EN MIGRACIÓN 0003
+  // ✅ Campos CACHED (emisor)
   patient?: IdentityPatient;
   doctor?: IdentityDoctor;
   institution?: IdentityInstitution;
   
-  referred_to: string;
+  // ✅ Campo computado: nombre del destinatario (string)
+  referred_to?: string;
+  
+  // ✅ Doctor interno de destino (FK)
+  referred_to_doctor?: number | null;
+  referred_to_doctor_detail?: {
+    id: number;
+    full_name: string;
+    colegiado_id?: string;
+    specialty?: string | null;
+  } | null;
+  
+  // ✅ Doctor/centro externo (string)
+  referred_to_external?: string | null;
+  
+  // Metadatos clínicos
   reason?: string;
+  clinical_summary?: string | null;
+  
+  // Especialidades
   specialties: any[];
   specialty_ids?: number[];
   
+  // Estado y urgencia
   urgency: MedicalReferralUrgency;
   urgency_display?: string;
   status: MedicalReferralStatus;
   status_display?: string;
   
+  // Tracking
+  is_internal?: boolean;
   issued_at: string;
   created_at: string;
   updated_at: string;
   created_by?: number | null;
   updated_by?: number | null;
 }
-// Representa una nota clínica asociada a un paciente
+// =====================================================
+// NOTA CLÍNICA
+// =====================================================
 export interface ConsultationNote {
   id: number;
   patient_id: number;

@@ -20,8 +20,23 @@ import {
   CheckIcon,
   XMarkIcon,
   UserGroupIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  ClockIcon,
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
+// ✅ CONFIG: Urgencia en español
+const URGENCY_CONFIG = {
+  routine: { label: "RUTINA", color: "text-slate-400", bgColor: "bg-slate-400/10", borderColor: "border-slate-400/30" },
+  urgent: { label: "URGENTE", color: "text-amber-400", bgColor: "bg-amber-400/10", borderColor: "border-amber-400/30" },
+  stat: { label: "STAT", color: "text-red-400", bgColor: "bg-red-400/10", borderColor: "border-red-400/30" },
+};
+// ✅ CONFIG: Status en español
+const STATUS_CONFIG = {
+  issued: { label: "EMITIDA", color: "text-blue-400", bgColor: "bg-blue-400/10", borderColor: "border-blue-400/30" },
+  accepted: { label: "ACEPTADA", color: "text-emerald-400", bgColor: "bg-emerald-400/10", borderColor: "border-emerald-400/30" },
+  rejected: { label: "RECHAZADA", color: "text-red-400", bgColor: "bg-red-400/10", borderColor: "border-red-400/30" },
+  completed: { label: "COMPLETADA", color: "text-purple-400", bgColor: "bg-purple-400/10", borderColor: "border-purple-400/30" },
+};
 export interface MedicalReferralsPanelProps {
   appointmentId: number;
   readOnly?: boolean;
@@ -86,6 +101,10 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
     } catch (err: any) { console.error("Error updating referral:", err); }
   };
   
+  // ✅ HELPER: Obtener display del destinatario
+  const getReferredToDisplay = (r: MedicalReferral): string => {
+    return r.referred_to || r.referred_to_external || "Sin destino especificado";
+  };
   return (
     <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden">
       {/* HEADER */}
@@ -107,88 +126,122 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
               NO_OUTGOING_REFERRALS_REGISTERED
             </div>
           ) : (
-            referrals.map((r) => (
-              <div key={r.id} className="border border-white/5 bg-white/[0.02] p-3 rounded-sm space-y-3">
-                {editingReferral?.id === r.id ? (
-                  <div className="space-y-3 animate-in fade-in duration-200">
-                    <input
-                      type="text"
-                      value={editingReferral.referred_to}
-                      onChange={(e) => setEditingReferral({ ...editingReferral, referred_to: e.target.value })}
-                      className="w-full bg-black/60 border border-[var(--palantir-active)]/50 p-2 text-[10px] font-mono text-white outline-none"
-                    />
-                    <textarea
-                      value={editingReferral.reason || ""}
-                      onChange={(e) => setEditingReferral({ ...editingReferral, reason: e.target.value })}
-                      className="w-full bg-black/60 border border-[var(--palantir-active)]/50 p-2 text-[10px] font-mono text-white min-h-[60px] outline-none"
-                    />
-                    <div className="flex gap-2">
-                      <button onClick={handleUpdate} className="flex items-center gap-1 bg-[var(--palantir-active)] text-white px-3 py-1 text-[9px] font-black uppercase">
-                        <CheckIcon className="w-3 h-3" /> Save
-                      </button>
-                      <button onClick={() => setEditingReferral(null)} className="flex items-center gap-1 bg-white/10 text-white px-3 py-1 text-[9px] font-black uppercase">
-                        <XMarkIcon className="w-3 h-3" /> Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex justify-between items-start">
-                      <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
-                          To: {r.referred_to}
-                        </span>
-                        <span className="text-[10px] font-mono text-[var(--palantir-muted)] leading-relaxed mt-1">
-                          {r.reason}
-                        </span>
+            referrals.map((r) => {
+              const urgencyConfig = URGENCY_CONFIG[r.urgency] || URGENCY_CONFIG.routine;
+              const statusConfig = STATUS_CONFIG[r.status] || STATUS_CONFIG.issued;
+              
+              return (
+                <div key={r.id} className="border border-white/5 bg-white/[0.02] p-3 rounded-sm space-y-3">
+                  {editingReferral?.id === r.id ? (
+                    <div className="space-y-3 animate-in fade-in duration-200">
+                      <input
+                        type="text"
+                        value={editingReferral.referred_to || ""}
+                        onChange={(e) => setEditingReferral({ ...editingReferral, referred_to: e.target.value })}
+                        className="w-full bg-black/60 border border-[var(--palantir-active)]/50 p-2 text-[10px] font-mono text-white outline-none"
+                        placeholder="Destino de la referencia..."
+                      />
+                      <textarea
+                        value={editingReferral.reason || ""}
+                        onChange={(e) => setEditingReferral({ ...editingReferral, reason: e.target.value })}
+                        className="w-full bg-black/60 border border-[var(--palantir-active)]/50 p-2 text-[10px] font-mono text-white min-h-[60px] outline-none"
+                        placeholder="Motivo clínico..."
+                      />
+                      <div className="flex gap-2">
+                        <button onClick={handleUpdate} className="flex items-center gap-1 bg-[var(--palantir-active)] text-white px-3 py-1 text-[9px] font-black uppercase">
+                          <CheckIcon className="w-3 h-3" /> Guardar
+                        </button>
+                        <button onClick={() => setEditingReferral(null)} className="flex items-center gap-1 bg-white/10 text-white px-3 py-1 text-[9px] font-black uppercase">
+                          <XMarkIcon className="w-3 h-3" /> Cancelar
+                        </button>
                       </div>
-                      {!readOnly && (
-                        <div className="flex gap-1">
-                          <button onClick={() => setEditingReferral(r)} className="p-1 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors">
-                            <PencilSquareIcon className="w-3.5 h-3.5" />
-                          </button>
-                          <button onClick={() => deleteReferral({ id: r.id, appointment: appointmentId })} className="p-1 text-[var(--palantir-muted)] hover:text-red-400 transition-colors">
-                            <TrashIcon className="w-3.5 h-3.5" />
-                          </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* DESTINATARIO Y RAZÓN */}
+                      <div className="flex justify-between items-start">
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
+                            → {getReferredToDisplay(r)}
+                          </span>
+                          {r.reason && (
+                            <span className="text-[10px] font-mono text-[var(--palantir-muted)] leading-relaxed mt-1">
+                              {r.reason}
+                            </span>
+                          )}
+                          {r.clinical_summary && (
+                            <span className="text-[9px] font-mono text-white/40 leading-relaxed mt-1 italic">
+                              {r.clinical_summary}
+                            </span>
+                          )}
+                        </div>
+                        {!readOnly && (
+                          <div className="flex gap-1">
+                            <button onClick={() => setEditingReferral(r)} className="p-1 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors">
+                              <PencilSquareIcon className="w-3.5 h-3.5" />
+                            </button>
+                            <button onClick={() => deleteReferral({ id: r.id, appointment: appointmentId })} className="p-1 text-[var(--palantir-muted)] hover:text-red-400 transition-colors">
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* METADATA: Doctor emisor e Institución */}
+                      {(r.doctor || r.institution) && (
+                        <div className="flex items-center gap-3 text-xs font-mono text-[var(--palantir-muted)] mt-1 border-t border-white/5 pt-2">
+                          {r.doctor && (
+                            <div className="flex items-center gap-1">
+                              <UserGroupIcon className="w-3.5 h-3.5" />
+                              <span>{r.doctor.full_name}</span>
+                              {r.doctor.is_verified && (
+                                <ShieldCheckIcon className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />
+                              )}
+                            </div>
+                          )}
+                          {r.doctor && r.institution && <span className="text-white/20">•</span>}
+                          {r.institution && (
+                            <div className="flex items-center gap-1">
+                              <BuildingOfficeIcon className="w-3.5 h-3.5" />
+                              <span>{r.institution.name}</span>
+                            </div>
+                          )}
                         </div>
                       )}
-                    </div>
-                    
-                    {(r.doctor || r.institution) && (
-                      <div className="flex items-center gap-3 text-xs font-mono text-[var(--palantir-muted)] mt-1 border-t border-white/5 pt-2">
-                        {r.doctor && (
-                          <div className="flex items-center gap-1">
-                            <UserGroupIcon className="w-3.5 h-3.5" />
-                            <span>{r.doctor.full_name}</span>
-                            {r.doctor.is_verified && (
-                              <ShieldCheckIcon className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />
-                            )}
-                          </div>
-                        )}
-                        {r.doctor && r.institution && <span className="text-white/20">•</span>}
-                        {r.institution && (
-                          <div className="flex items-center gap-1">
-                            <BuildingOfficeIcon className="w-3.5 h-3.5" />
-                            <span>{r.institution.name}</span>
-                          </div>
+                      
+                      {/* ESPECIALIDADES Y BADGES */}
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 items-center">
+                        {/* Especialidades */}
+                        {r.specialties?.map(s => (
+                          <span key={s.id} className="flex items-center gap-1 text-[8px] font-black bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/20 uppercase">
+                            <TagIcon className="w-2.5 h-2.5" /> {s.name}
+                          </span>
+                        ))}
+                        
+                        {/* Badge de Urgencia */}
+                        <span className={`flex items-center gap-1 text-[8px] font-black ${urgencyConfig.bgColor} ${urgencyConfig.color} ${urgencyConfig.borderColor} border px-1.5 py-0.5 rounded uppercase`}>
+                          {r.urgency === "stat" && <ExclamationTriangleIcon className="w-2.5 h-2.5" />}
+                          {r.urgency === "urgent" && <ClockIcon className="w-2.5 h-2.5" />}
+                          {urgencyConfig.label}
+                        </span>
+                        
+                        {/* Badge de Status */}
+                        <span className={`text-[8px] font-mono ${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor} border px-1.5 py-0.5 rounded uppercase`}>
+                          {statusConfig.label}
+                        </span>
+                        
+                        {/* Referencia interna/externa */}
+                        {r.is_internal && (
+                          <span className="text-[7px] font-mono text-purple-400 bg-purple-400/10 border border-purple-400/20 px-1.5 py-0.5 rounded uppercase">
+                            INTERNA
+                          </span>
                         )}
                       </div>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
-                      {r.specialties?.map(s => (
-                        <span key={s.id} className="flex items-center gap-1 text-[8px] font-black bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/20 uppercase">
-                          <TagIcon className="w-2.5 h-2.5" /> {s.name}
-                        </span>
-                      ))}
-                      <span className="text-[8px] font-mono text-[var(--palantir-muted)] border border-white/10 px-1.5 py-0.5 rounded uppercase">
-                        {r.urgency}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))
+                    </>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
         
@@ -234,9 +287,9 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                   onChange={(e) => setUrgency(e.target.value as any)} 
                   className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono text-[var(--palantir-text)] outline-none focus:border-[var(--palantir-active)]"
                 >
-                  <option value="routine">Routine</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="stat">STAT</option>
+                  <option value="routine">Rutina</option>
+                  <option value="urgent">Urgente</option>
+                  <option value="stat">STAT (Inmediato)</option>
                 </select>
               </div>
               

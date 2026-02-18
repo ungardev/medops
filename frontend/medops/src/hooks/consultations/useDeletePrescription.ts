@@ -1,24 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-
 // 👇 definimos el tipo de contexto para rollback
 interface MutationContext {
   previous: unknown;
 }
-
 export function useDeletePrescription() {
   const queryClient = useQueryClient();
-
   return useMutation<void, Error, number, MutationContext>({
     mutationFn: async (id: number) => {
       return apiFetch(`prescriptions/${id}/`, { method: "DELETE" });
     },
     onMutate: async (id: number) => {
-      await queryClient.cancelQueries({ queryKey: ["consultation", "current"] });
-      const previous = queryClient.getQueryData(["consultation", "current"]);
-
+      await queryClient.cancelQueries({ queryKey: ["appointment", "current"] });
+      const previous = queryClient.getQueryData(["appointment", "current"]);
       // 🔹 Optimistic update: eliminamos la prescripción del cache
-      queryClient.setQueryData(["consultation", "current"], (old: any) => {
+      queryClient.setQueryData(["appointment", "current"], (old: any) => {
         if (!old?.diagnoses) return old;
         return {
           ...old,
@@ -28,19 +24,18 @@ export function useDeletePrescription() {
           })),
         };
       });
-
       // 👇 devolvemos el contexto tipado
       return { previous };
     },
     onError: (_err, _id, ctx) => {
       // 🔹 rollback si falla
       if (ctx?.previous) {
-        queryClient.setQueryData(["consultation", "current"], ctx.previous);
+        queryClient.setQueryData(["appointment", "current"], ctx.previous);
       }
     },
     onSettled: () => {
       // 🔹 refresca datos reales desde backend
-      queryClient.invalidateQueries({ queryKey: ["consultation", "current"] });
+      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     },
   });
 }

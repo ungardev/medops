@@ -1,51 +1,49 @@
 // src/hooks/consultations/useUpdateDiagnosis.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-
-export interface UpdateDiagnosisInput {
+import type { Diagnosis } from "../../types/consultation";
+interface UpdateDiagnosisInput {
   id: number;
-  description: string;
+  [key: string]: any;
 }
-
+interface MutationContext {
+  previous: unknown;
+}
 export function useUpdateDiagnosis() {
   const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async ({ id, description }: UpdateDiagnosisInput) => {
-      return apiFetch(`diagnoses/${id}/`, {
+  return useMutation<Diagnosis, Error, UpdateDiagnosisInput, MutationContext>({
+    mutationFn: async ({ id, ...data }) => {
+      // 🔹 filtramos undefined para no enviar campos vacíos
+      const body = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => v !== undefined)
+      );
+      return apiFetch<Diagnosis>(`diagnoses/${id}/`, {
         method: "PATCH",
-        body: JSON.stringify({ description }),
+        body: JSON.stringify(body),
       });
     },
-    onMutate: async ({ id, description }) => {
-      await queryClient.cancelQueries({ queryKey: ["consultation", "current"] });
-
-      const previous = queryClient.getQueryData(["consultation", "current"]);
-
-      queryClient.setQueryData(["consultation", "current"], (old: any) => {
+    onMutate: async ({ id, ...data }) => {
+      await queryClient.cancelQueries({ queryKey: ["appointment", "current"] });
+      const previous = queryClient.getQueryData(["appointment", "current"]);
+      // 🔹 Optimistic update
+      queryClient.setQueryData(["appointment", "current"], (old: any) => {
         if (!old?.diagnoses) return old;
         return {
           ...old,
           diagnoses: old.diagnoses.map((d: any) =>
-            d.id === id ? { ...d, description } : d
+            d.id === id ? { ...d, ...data } : d
           ),
         };
       });
-
       return { previous };
     },
-    onError: (_error, _variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["consultation", "current"], context.previous);
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(["appointment", "current"], ctx.previous);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["consultation", "current"] });
+      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     },
   });
-
-  return {
-    ...mutation,
-    isPending: mutation.isPending,
-  };
 }

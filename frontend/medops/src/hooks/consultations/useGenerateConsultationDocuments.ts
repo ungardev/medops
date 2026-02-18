@@ -1,7 +1,6 @@
 // src/hooks/consultations/useGenerateConsultationDocuments.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-
 export interface GeneratedDocument {
   category: string;
   title: string;
@@ -9,7 +8,6 @@ export interface GeneratedDocument {
   audit_code: string;
   file_url: string | null;
 }
-
 export interface GenerateDocumentsResponse {
   consultation_id: number;
   audit_code: string | null;
@@ -18,20 +16,26 @@ export interface GenerateDocumentsResponse {
   skipped: string[];
   errors: { category: string; error: string }[];
 }
-
+export interface GenerateDocumentsVariables {
+  consultationId: number;
+  patientId: number;
+}
 export function useGenerateConsultationDocuments() {
   const queryClient = useQueryClient();
-
-  return useMutation<GenerateDocumentsResponse, Error, number>({
-    mutationFn: async (consultationId: number) => {
+  return useMutation<GenerateDocumentsResponse, Error, GenerateDocumentsVariables>({
+    mutationFn: async ({ consultationId }) => {
       return apiFetch<GenerateDocumentsResponse>(
         `consultations/${consultationId}/generate-used-documents/`,
         { method: "POST" }
       );
     },
-    onSuccess: (_data, consultationId) => {
+    onSuccess: (_data, variables) => {
+      const { patientId, consultationId } = variables;
       queryClient.invalidateQueries({
-        queryKey: ["documents", undefined, consultationId],
+        queryKey: ["documents", patientId, consultationId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["documents", patientId, undefined],
       });
     },
   });

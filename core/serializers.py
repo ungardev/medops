@@ -1838,6 +1838,7 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
     
     ✅ ACTUALIZADO: Ahora incluye campos CACHED (patient, doctor, institution)
                   usando SerializerMethodField para evitar errores de definición
+    ✅ ACTUALIZADO: Agregado referred_to (computed) y referred_to_doctor_detail
     """
     # Relaciones de lectura detalladas
     specialties = SpecialtySerializer(many=True, read_only=True)
@@ -1846,10 +1847,17 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
     urgency_display = serializers.CharField(source="get_urgency_display", read_only=True)
     status_display = serializers.CharField(source="get_status_display", read_only=True)
     
-    # ✅ NUEVOS: Campos CACHED usando SerializerMethodField (solución definitiva)
+    # ✅ Campos CACHED usando SerializerMethodField
     patient = serializers.SerializerMethodField()
     doctor = serializers.SerializerMethodField()
     institution = serializers.SerializerMethodField()
+    
+    # ✅ NUEVO: Campo computado para el destinatario (frontend lo espera como string)
+    referred_to = serializers.SerializerMethodField()
+    
+    # ✅ NUEVO: Detalle del doctor interno de destino (si existe)
+    referred_to_doctor_detail = serializers.SerializerMethodField()
+    
     class Meta:
         model = MedicalReferral
         fields = [
@@ -1860,8 +1868,11 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
             "patient",
             "doctor",
             "institution",
+            # ✅ Campo computado para frontend
+            "referred_to",
             # Doctor de destino (interno o externo)
             "referred_to_doctor",
+            "referred_to_doctor_detail",
             "referred_to_external",
             # Metadatos clínicos
             "reason",
@@ -1890,7 +1901,7 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
         return None
     
     def get_doctor(self, obj):
-        """Devuelve el médico con datos básicos."""
+        """Devuelve el médico emisor con datos básicos."""
         if obj.doctor:
             return {
                 "id": obj.doctor.id,
@@ -1909,6 +1920,28 @@ class MedicalReferralSerializer(serializers.ModelSerializer):
                 "name": obj.institution.name,
                 "tax_id": obj.institution.tax_id,
                 "is_active": obj.institution.is_active,
+            }
+        return None
+    
+    def get_referred_to(self, obj):
+        """
+        ✅ NUEVO: Devuelve el nombre del destinatario.
+        Prioriza el doctor interno, sino usa el campo externo.
+        """
+        if obj.referred_to_doctor:
+            return obj.referred_to_doctor.full_name
+        return obj.referred_to_external or ""
+    
+    def get_referred_to_doctor_detail(self, obj):
+        """
+        ✅ NUEVO: Devuelve el detalle del doctor interno de destino (si existe).
+        """
+        if obj.referred_to_doctor:
+            return {
+                "id": obj.referred_to_doctor.id,
+                "full_name": obj.referred_to_doctor.full_name,
+                "colegiado_id": obj.referred_to_doctor.colegiado_id,
+                "specialty": obj.referred_to_doctor.specialty.name if hasattr(obj.referred_to_doctor, 'specialty') and obj.referred_to_doctor.specialty else None,
             }
         return None
 

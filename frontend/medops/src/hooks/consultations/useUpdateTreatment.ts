@@ -1,59 +1,45 @@
 // src/hooks/consultations/useUpdateTreatment.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-import type { Treatment } from "../../types/consultation"; // 👈 tipado explícito
-
-// 👇 ahora incluye status y treatment_type alineados con backend
-export interface UpdateTreatmentInput {
-  id: number;
-  plan?: string;
-  start_date?: string | null;
-  end_date?: string | null;
-  status?: "active" | "completed" | "cancelled"; // 👈 corregido
-  treatment_type?: "pharmacological" | "surgical" | "rehabilitation" | "lifestyle" | "other"; // 👈 corregido
-}
-
+import type { Treatment, UpdateTreatmentInput } from "../../types/consultation";
 interface MutationContext {
   previous: unknown;
 }
-
 export function useUpdateTreatment() {
   const queryClient = useQueryClient();
-
   return useMutation<Treatment, Error, UpdateTreatmentInput, MutationContext>({
     mutationFn: async ({ id, ...data }) => {
-      console.debug("Payload enviado a PATCH /api/treatments/:id", data);
+      // 🔹 filtramos undefined para no enviar campos vacíos
+      const body = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => v !== undefined)
+      );
       return apiFetch<Treatment>(`treatments/${id}/`, {
         method: "PATCH",
-        body: JSON.stringify(data),
+        body: JSON.stringify(body),
       });
     },
     onMutate: async ({ id, ...data }) => {
-      await queryClient.cancelQueries({ queryKey: ["consultation", "current"] });
-      const previous = queryClient.getQueryData(["consultation", "current"]);
-
-      queryClient.setQueryData(["consultation", "current"], (old: any) => {
-        if (!old?.diagnoses) return old;
+      await queryClient.cancelQueries({ queryKey: ["appointment", "current"] });
+      const previous = queryClient.getQueryData(["appointment", "current"]);
+      // 🔹 Optimistic update
+      queryClient.setQueryData(["appointment", "current"], (old: any) => {
+        if (!old?.treatments) return old;
         return {
           ...old,
-          diagnoses: old.diagnoses.map((diag: any) => ({
-            ...diag,
-            treatments: diag.treatments.map((t: any) =>
-              t.id === id ? { ...t, ...data } : t
-            ),
-          })),
+          treatments: old.treatments.map((t: any) =>
+            t.id === id ? { ...t, ...data } : t
+          ),
         };
       });
-
       return { previous };
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previous) {
-        queryClient.setQueryData(["consultation", "current"], ctx.previous);
+        queryClient.setQueryData(["appointment", "current"], ctx.previous);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["consultation", "current"] });
+      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     },
   });
 }

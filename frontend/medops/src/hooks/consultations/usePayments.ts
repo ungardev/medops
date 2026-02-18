@@ -1,54 +1,29 @@
 // src/hooks/consultations/usePayments.ts
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-
-export interface Payment {
-  id: number;
+interface PaymentInput {
+  appointmentId: number;
   amount: number;
   method: string;
-  status: string;
-  reference_number?: string | null;
-  bank_name?: string | null;
-  received_by?: string | null;
-  received_at?: string | null;
+  reference?: string;
 }
-
-interface CreatePaymentInput {
-  appointment: number;
-  amount: number;
-  method: string;
-  reference_number?: string | null;
-  bank_name?: string | null;
-}
-
-export function usePayments(appointmentId: number) {
-  return useQuery<Payment[]>({
-    queryKey: ["payments", appointmentId],
-    queryFn: async () => {
-      const res = await apiFetch(`payments/?appointment=${appointmentId}`);
-      return res as Payment[];
-    },
-  });
-}
-
-export function useCreatePayment(appointmentId: number) {
+export function usePayments() {
   const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: async (data: CreatePaymentInput) => {
+  const createPayment = useMutation({
+    mutationFn: async (data: PaymentInput) => {
       return apiFetch("payments/", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          appointment: data.appointmentId,
+          amount: data.amount,
+          method: data.method,
+          reference: data.reference,
+        }),
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["payments", appointmentId] });
-      queryClient.invalidateQueries({ queryKey: ["consultation", "current"] });
+      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     },
   });
-
-  return {
-    ...mutation,
-    isPending: mutation.isPending, // ✅ v5
-  };
+  return { createPayment };
 }
