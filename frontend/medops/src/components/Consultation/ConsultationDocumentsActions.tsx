@@ -7,19 +7,20 @@ import {
   ArrowPathIcon,
   DocumentDuplicateIcon 
 } from "@heroicons/react/24/outline";
-
 interface ConsultationDocumentsActionsProps {
   consultationId: number;
+  patientId: number;
 }
-
 export default function ConsultationDocumentsActions({
   consultationId,
+  patientId,
 }: ConsultationDocumentsActionsProps) {
   const generateReport = useGenerateMedicalReport();
   const generateDocuments = useGenerateConsultationDocuments();
-
   const canGenerate = !generateReport.isPending && !generateDocuments.isPending;
-
+  const handleGenerateDocuments = () => {
+    generateDocuments.mutate({ consultationId, patientId });
+  };
   return (
     <div className="flex flex-wrap gap-3 mt-6">
       {/* BOTÓN: INFORME MÉDICO (ACCIÓN PRIMARIA) */}
@@ -42,11 +43,10 @@ export default function ConsultationDocumentsActions({
           {generateReport.isPending ? "COMPILLING_REPORT..." : "GENERATE_MEDICAL_REPORT"}
         </span>
       </button>
-
       {/* BOTÓN: DOCUMENTOS DE CONSULTA (RECETAS, ÓRDENES, ETC) */}
       <button
         disabled={generateDocuments.isPending || !canGenerate}
-        onClick={() => generateDocuments.mutate(consultationId)}
+        onClick={handleGenerateDocuments}
         className={`
           flex items-center gap-3 px-5 py-2.5 rounded-sm border text-[10px] font-black uppercase tracking-[0.15em] transition-all
           ${generateDocuments.isPending 
@@ -63,7 +63,6 @@ export default function ConsultationDocumentsActions({
           {generateDocuments.isPending ? "BUILDING_ASSETS..." : "PRINT_CONSULTATION_PACK"}
         </span>
       </button>
-
       {/* INDICADOR DE ESTADO DE SALIDA (LOG) */}
       <div className="flex items-center ml-auto">
         <div className="flex flex-col items-end gap-1 px-3 border-r border-white/10">

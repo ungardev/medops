@@ -18,5 +18,17 @@ export function useConsultationActions() {
       queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     },
   });
-  return { updateStatus };
+  // ✅ Alias para compatibilidad con ConsultationActions.tsx
+  const complete = async (id: number) => {
+    return updateStatus.mutateAsync({ id, status: "completed" });
+  };
+  const cancel = async (id: number) => {
+    return updateStatus.mutateAsync({ id, status: "canceled" });
+  };
+  return {
+    updateStatus,
+    complete,
+    cancel,
+    isPending: updateStatus.isPending,
+  };
 }

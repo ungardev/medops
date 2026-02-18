@@ -14,7 +14,7 @@ import { useRegisterArrival } from "@/hooks/waitingroom/useRegisterArrival";
 import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
 import { useStartConsultation } from "@/hooks/waitingroom/useStartConsultation";
 import type { WaitingRoomEntry, WaitingRoomStatus } from "@/types/waitingRoom";
-import type { Appointment } from "@/types/appointments";
+import type { Appointment, AppointmentStatus } from "@/types/appointments";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   PlayIcon, 
@@ -60,6 +60,23 @@ const renderWaitTime = (entry: WaitingRoomEntry) => {
       <span>{minutes < 60 ? `${minutes}m` : `${Math.floor(minutes/60)}h ${minutes%60}m`}</span>
     </div>
   );
+};
+// ✅ HELPER: Convertir WaitingRoomStatus a AppointmentStatus
+const waitingRoomToAppointmentStatus = (status: WaitingRoomStatus): AppointmentStatus => {
+  switch (status) {
+    case "waiting":
+      return "arrived"; // ✅ "waiting" en WaitingRoom → "arrived" en Appointment
+    case "in_consultation":
+      return "in_consultation";
+    case "completed":
+      return "completed";
+    case "canceled":
+      return "canceled";
+    case "no_show":
+      return "canceled";
+    default:
+      return "pending";
+  }
 };
 export default function WaitingRoom() {
   const [showModal, setShowModal] = useState(false);
@@ -115,7 +132,9 @@ export default function WaitingRoom() {
   
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (entry.appointment) {
-      updateAppointmentStatus.mutate({ id: entry.appointment, status: newStatus });
+      // ✅ Convertir status antes de enviar a appointment
+      const appointmentStatus = waitingRoomToAppointmentStatus(newStatus);
+      updateAppointmentStatus.mutate({ id: entry.appointment, status: appointmentStatus });
     } else {
       updateWaitingRoomStatus.mutate({ id: Number(entry.id), status: newStatus });
     }
@@ -288,7 +307,7 @@ export default function WaitingRoom() {
                     </div>
                     <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => updateAppointmentStatus.mutate({ id: appt.id, status: "waiting" })}
+                        onClick={() => updateAppointmentStatus.mutate({ id: appt.id, status: "arrived" })}
                         className="p-1 text-emerald-500 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-sm"
                       >
                         <PlayIcon className="w-4 h-4 fill-current" />
