@@ -1030,7 +1030,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     template_map = {
         'prescriptions': 'documents/prescription.html',
         'treatments': 'documents/treatment.html',
-        'referrals': 'documents/medical_referral.html',
+        'referrals': 'medical/documents/medical_referral.html',
         'medical_tests': 'documents/medical_test_order.html',
         'medical_reports': 'pdf/medical_report.html',
         'charge_orders': 'pdf/charge_order.html',
