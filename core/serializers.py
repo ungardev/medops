@@ -1967,7 +1967,7 @@ class MedicalReferralWriteSerializer(serializers.ModelSerializer):
             "id",
             "appointment",
             "diagnosis",
-            "referred_to",
+            "referred_to_external",
             "reason",
             "specialty_ids",  # Se mapea automáticamente a 'specialties' en el modelo
             "urgency",
@@ -1978,7 +1978,7 @@ class MedicalReferralWriteSerializer(serializers.ModelSerializer):
         """
         Validación institucional: Asegura que la referencia tenga un destino claro.
         """
-        if not data.get("specialties") and not data.get("referred_to"):
+        if not data.get("specialties") and not data.get("referred_to_external"):
             raise serializers.ValidationError(
                 "Debe indicar al menos una especialidad o un médico/centro de destino."
             )

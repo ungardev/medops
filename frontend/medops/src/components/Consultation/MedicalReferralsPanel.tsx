@@ -24,13 +24,11 @@ import {
   ClockIcon,
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
-// ✅ CONFIG: Urgencia en español
 const URGENCY_CONFIG = {
   routine: { label: "RUTINA", color: "text-slate-400", bgColor: "bg-slate-400/10", borderColor: "border-slate-400/30" },
   urgent: { label: "URGENTE", color: "text-amber-400", bgColor: "bg-amber-400/10", borderColor: "border-amber-400/30" },
   stat: { label: "STAT", color: "text-red-400", bgColor: "bg-red-400/10", borderColor: "border-red-400/30" },
 };
-// ✅ CONFIG: Status en español
 const STATUS_CONFIG = {
   issued: { label: "EMITIDA", color: "text-blue-400", bgColor: "bg-blue-400/10", borderColor: "border-blue-400/30" },
   accepted: { label: "ACEPTADA", color: "text-emerald-400", bgColor: "bg-emerald-400/10", borderColor: "border-emerald-400/30" },
@@ -49,7 +47,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
   const { mutateAsync: updateReferralMutation } = useUpdateMedicalReferral();
   const { mutateAsync: deleteReferral } = useDeleteMedicalReferral();
   
-  const [referredTo, setReferredTo] = useState("");
+  const [referredToExternal, setReferredToExternal] = useState("");
   const [reason, setReason] = useState("");
   const [selectedSpecialties, setSelectedSpecialties] = useState<Specialty[]>([]);
   const { data: specialties = [] } = useSpecialties("");
@@ -57,9 +55,8 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
   const [status, setStatus] = useState<"issued" | "accepted" | "rejected">("issued");
   const [editingReferral, setEditingReferral] = useState<MedicalReferral | null>(null);
   
-  // ✅ FIX: Limpiar formulario cuando cambia la consulta
   useEffect(() => {
-    setReferredTo("");
+    setReferredToExternal("");
     setReason("");
     setSelectedSpecialties([]);
     setUrgency("routine");
@@ -68,17 +65,17 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
   }, [appointmentId]);
   
   const handleAdd = async () => {
-    if (!referredTo || readOnly) return;
+    if (!referredToExternal || readOnly) return;
     try {
       await createReferral({
         appointment: appointmentId,
-        referred_to: referredTo,
+        referred_to_external: referredToExternal,
         reason,
         specialty_ids: selectedSpecialties.map((s) => s.id),
         urgency,
         status,
       });
-      setReferredTo("");
+      setReferredToExternal("");
       setReason("");
       setSelectedSpecialties([]);
       setUrgency("routine");
@@ -91,7 +88,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       await updateReferralMutation({
         id: editingReferral.id,
         appointment: appointmentId,
-        referred_to: editingReferral.referred_to,
+        referred_to_external: editingReferral.referred_to_external,
         reason: editingReferral.reason,
         specialty_ids: editingReferral.specialties?.map((s) => s.id) || [],
         urgency: editingReferral.urgency,
@@ -101,7 +98,6 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
     } catch (err: any) { console.error("Error updating referral:", err); }
   };
   
-  // ✅ HELPER: Obtener display del destinatario
   const getReferredToDisplay = (r: MedicalReferral): string => {
     return r.referred_to || r.referred_to_external || "Sin destino especificado";
   };
@@ -136,8 +132,8 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                     <div className="space-y-3 animate-in fade-in duration-200">
                       <input
                         type="text"
-                        value={editingReferral.referred_to || ""}
-                        onChange={(e) => setEditingReferral({ ...editingReferral, referred_to: e.target.value })}
+                        value={editingReferral.referred_to_external || ""}
+                        onChange={(e) => setEditingReferral({ ...editingReferral, referred_to_external: e.target.value })}
                         className="w-full bg-black/60 border border-[var(--palantir-active)]/50 p-2 text-[10px] font-mono text-white outline-none"
                         placeholder="Destino de la referencia..."
                       />
@@ -211,26 +207,22 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                       
                       {/* ESPECIALIDADES Y BADGES */}
                       <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 items-center">
-                        {/* Especialidades */}
                         {r.specialties?.map(s => (
                           <span key={s.id} className="flex items-center gap-1 text-[8px] font-black bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/20 uppercase">
                             <TagIcon className="w-2.5 h-2.5" /> {s.name}
                           </span>
                         ))}
                         
-                        {/* Badge de Urgencia */}
                         <span className={`flex items-center gap-1 text-[8px] font-black ${urgencyConfig.bgColor} ${urgencyConfig.color} ${urgencyConfig.borderColor} border px-1.5 py-0.5 rounded uppercase`}>
                           {r.urgency === "stat" && <ExclamationTriangleIcon className="w-2.5 h-2.5" />}
                           {r.urgency === "urgent" && <ClockIcon className="w-2.5 h-2.5" />}
                           {urgencyConfig.label}
                         </span>
                         
-                        {/* Badge de Status */}
                         <span className={`text-[8px] font-mono ${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor} border px-1.5 py-0.5 rounded uppercase`}>
                           {statusConfig.label}
                         </span>
                         
-                        {/* Referencia interna/externa */}
                         {r.is_internal && (
                           <span className="text-[7px] font-mono text-purple-400 bg-purple-400/10 border border-purple-400/20 px-1.5 py-0.5 rounded uppercase">
                             INTERNA
@@ -254,8 +246,8 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
                 <input
                   type="text"
                   placeholder="E.G. CLINICAL_ONCOLOGY_UNIT"
-                  value={referredTo}
-                  onChange={(e) => setReferredTo(e.target.value)}
+                  value={referredToExternal}
+                  onChange={(e) => setReferredToExternal(e.target.value)}
                   className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none"
                 />
               </div>
@@ -295,7 +287,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
               
               <button
                 onClick={handleAdd}
-                disabled={!referredTo}
+                disabled={!referredToExternal}
                 className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 border border-[var(--palantir-active)] text-[var(--palantir-active)] px-5 py-2.5 text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <PlusIcon className="w-3.5 h-3.5" />
