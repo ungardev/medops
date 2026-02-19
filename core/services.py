@@ -1052,10 +1052,16 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
     generated_files = []
     errors = []
     
+    # ✅ FIX: Acceder a las relaciones correctas
+    # Prescription y Treatment están vinculados a Diagnosis, no directamente a Appointment
+    
+    prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
+    treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
+    
     # Mapeo de categorías y sus respectivos QuerySets vinculados a la cita
     generators = {
-        'prescriptions': appointment.prescriptions.all(),
-        'treatments': appointment.treatments.all(),
+        'prescriptions': prescriptions,
+        'treatments': treatments,
         'referrals': appointment.referrals.all(),
         'medical_tests': appointment.medical_tests.all(),
     }
@@ -1096,7 +1102,6 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
         "documents": generated_files,
         "errors": errors if errors else None
     }
-
 
 
 def get_advanced_metrics() -> Dict[str, Any]:
