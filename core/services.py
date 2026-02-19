@@ -982,8 +982,15 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     Fábrica universal de PDFs médicos con QR de auditoría.
     Soporta: prescriptions, treatments, referrals, medical_tests.
     """
-    # 1. Preparar datos base
-    patient = instance.patient
+    # 1. Preparar datos base - ✅ FIX: Obtener patient según el tipo de instancia
+    if hasattr(instance, 'patient'):
+        # Prescription, Treatment (tienen patient directo)
+        patient = instance.patient
+    elif hasattr(instance, 'appointment'):
+        # MedicalTest, MedicalReferral (tienen appointment → patient)
+        patient = instance.appointment.patient
+    else:
+        patient = None
     
     # ✅ FIX: Obtener appointment según el tipo de instancia
     if hasattr(instance, 'appointment'):
