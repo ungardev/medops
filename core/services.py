@@ -1043,6 +1043,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     return pdf_bytes, filename, audit_code
 
 
+
 def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
     """
     Genera automáticamente todos los documentos PDF de una cita.
