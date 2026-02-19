@@ -1066,15 +1066,16 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
                 # Ejecutamos la fábrica de PDFs
                 pdf_bytes, filename, audit_code = generate_generic_pdf(item, category) 
                 
-                # Guardamos el registro en la base de datos (MedicalDocument)
+                # ✅ FIX: Usar campos correctos del modelo MedicalDocument
                 doc = MedicalDocument.objects.create(
                     patient=appointment.patient,
                     appointment=appointment,
-                    user=user,
-                    file_name=filename,
+                    doctor=appointment.doctor,
+                    institution=appointment.institution,
+                    generated_by=user,
                     category=category,
                     audit_code=audit_code,
-                    origin_panel="bulk_generator"
+                    origin_panel="bulk_generator",
                 )
                 
                 # Guardamos el archivo físico en el almacenamiento (Media)
@@ -1089,7 +1090,6 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
             except Exception as e:
                 # Si un documento falla, lo registramos pero permitimos que los demás continúen
                 errors.append(f"Error en {category} (ID: {item.id}): {str(e)}")
-
     return {
         "status": "success" if not errors else "partial_success",
         "total_generated": len(generated_files),
