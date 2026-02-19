@@ -1053,7 +1053,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
     errors = []
     
     # ✅ FIX: Acceder a las relaciones correctas
-    # Prescription y Treatment están vinculados a Diagnosis, no directamente a Appointment
+    from core.models import Prescription, Treatment
     
     prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
     treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
@@ -1087,20 +1087,25 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
                 # Guardamos el archivo físico en el almacenamiento (Media)
                 doc.file.save(filename, ContentFile(pdf_bytes))
                 
+                # ✅ FIX: Usar nombres de campos que espera el frontend
                 generated_files.append({
                     "id": doc.id, 
-                    "name": filename, 
                     "category": category,
-                    "url": doc.file.url if doc.file else None
+                    "title": filename,           # ✅ Cambiado de "name" a "title"
+                    "filename": filename,
+                    "audit_code": audit_code,
+                    "file_url": doc.file.url if doc.file else None,  # ✅ Cambiado de "url" a "file_url"
                 })
             except Exception as e:
                 # Si un documento falla, lo registramos pero permitimos que los demás continúen
-                errors.append(f"Error en {category} (ID: {item.id}): {str(e)}")
+                errors.append({"category": category, "error": str(e)})
     return {
         "status": "success" if not errors else "partial_success",
         "total_generated": len(generated_files),
-        "documents": generated_files,
-        "errors": errors if errors else None
+        "documents": generated_files,  # ✅ Nombre correcto para el frontend
+        "generated_files": generated_files,  # ✅ Mantener por retrocompatibilidad
+        "skipped": [],  # ✅ Agregar campo que espera el frontend
+        "errors": errors if errors else [],
     }
 
 

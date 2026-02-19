@@ -1472,11 +1472,14 @@ def generate_used_documents(request, pk):
         # Usar el servicio existente de generación en lote
         result = services.bulk_generate_appointment_docs(appointment, user)
         
+        # ✅ FIX: Devolver estructura que coincide con el interface del frontend
         return Response({
-            'status': 'success',
-            'generated_files': result.get('generated_files', []),
-            'errors': result.get('errors', []),
-            'total_generated': len(result.get('generated_files', [])),
+            'consultation_id': pk,
+            'audit_code': result.get('audit_code'),
+            'generated_at': timezone.now().isoformat(),
+            'documents': result.get('documents', []),      # ✅ Array de documentos
+            'skipped': result.get('skipped', []),          # ✅ Array de categorías omitidas
+            'errors': result.get('errors', []),            # ✅ Array de errores
         })
         
     except Exception as e:
