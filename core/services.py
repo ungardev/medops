@@ -1099,11 +1099,11 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "first_name": first_name,
             "last_name": last_name,
             "national_id": patient.national_id or "",
-            "age": calculate_age(patient.birth_date),
+            "age": calculate_age(patient.birthdate),
             "gender": format_gender(getattr(patient, 'gender', None)),
-            "phone": getattr(patient, 'phone', None) or getattr(patient, 'mobile', None) or "",
+            "phone": getattr(patient, 'phone_number', None) or "",
             "email": getattr(patient, 'email', None) or "",
-            "birth_date": patient.birth_date,
+            "birth_date": patient.birthdate,
         }
     
     # ========================================
