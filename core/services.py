@@ -984,37 +984,44 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     """
     # 1. Preparar datos base
     patient = instance.patient
-    appointment = instance.appointment
+    
+    # ✅ FIX: Obtener appointment según el tipo de instancia
+    if hasattr(instance, 'appointment'):
+        # MedicalTest, MedicalReferral (tienen appointment directo)
+        appointment = instance.appointment
+    elif hasattr(instance, 'diagnosis') and hasattr(instance.diagnosis, 'appointment'):
+        # Prescription, Treatment (tienen diagnosis → appointment)
+        appointment = instance.diagnosis.appointment
+    else:
+        appointment = None
+    
     doctor = appointment.doctor if appointment else None
+    
     # Obtenemos la configuración de la clínica (Logo, Dirección, etc.)
     institution = InstitutionSettings.objects.first()
     
     # 2. Generar Código de Auditoría Único (Sello de autenticidad inalterable)
     raw_code = f"{category}-{instance.id}-{timezone.now().timestamp()}"
     audit_code = hashlib.sha256(raw_code.encode()).hexdigest()[:12].upper()
-
     # 3. Generar QR de Verificación
-    # Cambiamos 'format' por 'kind' para solucionar el error de Pylance
     qr = qrcode.QRCode(box_size=10, border=2)
     qr.add_data(f"VERIFY_DOC:{audit_code}")
     qr.make(fit=True)
     img_qr = qr.make_image(fill_color="black", back_color="white")
     
     buffer = BytesIO()
-    img_qr.save(buffer, kind="PNG") # Fix Pylance: usando kind en lugar de format
+    img_qr.save(buffer, kind="PNG")
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-
     # 4. Selección Dinámica de Plantilla HTML
     template_map = {
-    'prescriptions': 'documents/prescription.html',       # ✅ CORREGIDO
-    'treatments': 'documents/treatment.html',           # ✅ CORREGIDO
-    'referrals': 'documents/medical_referral.html',     # ✅ CORREGIDO
-    'medical_tests': 'documents/medical_test_order.html', # ✅ CORREGIDO
-    'medical_reports': 'pdf/medical_report.html',       # ✅ NUEVO
-    'charge_orders': 'pdf/charge_order.html',           # ✅ NUEVO
+        'prescriptions': 'documents/prescription.html',
+        'treatments': 'documents/treatment.html',
+        'referrals': 'documents/medical_referral.html',
+        'medical_tests': 'documents/medical_test_order.html',
+        'medical_reports': 'pdf/medical_report.html',
+        'charge_orders': 'pdf/charge_order.html',
     }
     template_path = template_map.get(category, 'pdf/generic_medical_doc.html')
-
     # 5. Renderizado de PDF con WeasyPrint
     context = {
         "data": instance,
@@ -1025,7 +1032,6 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         "qr_code_url": f"data:image/png;base64,{qr_base64}",
         "generated_at": timezone.now(),
     }
-
     html_string = render_to_string(template_path, context)
     
     # Generar los bytes del PDF con WeasyPrint
@@ -1033,9 +1039,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         string=html_string, 
         base_url=settings.MEDIA_ROOT
     ).write_pdf() or b""
-
     filename = f"{category}_{instance.id}_{audit_code}.pdf"
-    
     return pdf_bytes, filename, audit_code
 
 
