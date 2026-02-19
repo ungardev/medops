@@ -981,36 +981,40 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     """
     Fábrica universal de PDFs médicos con QR de auditoría.
     Soporta: prescriptions, treatments, referrals, medical_tests.
+    
+    ✅ OPCIÓN A: Context enriquecido con datos calculados y formateados.
     """
-    # 1. Preparar datos base - ✅ FIX: Obtener patient según el tipo de instancia
+    # ========================================
+    # 1. OBTENER DATOS BASE SEGÚN CATEGORÍA
+    # ========================================
+    
+    # Obtener patient según el tipo de instancia
     if hasattr(instance, 'patient'):
-        # Prescription, Treatment (tienen patient directo)
         patient = instance.patient
     elif hasattr(instance, 'appointment'):
-        # MedicalTest, MedicalReferral (tienen appointment → patient)
         patient = instance.appointment.patient
     else:
         patient = None
     
-    # ✅ FIX: Obtener appointment según el tipo de instancia
+    # Obtener appointment según el tipo de instancia
     if hasattr(instance, 'appointment'):
-        # MedicalTest, MedicalReferral (tienen appointment directo)
         appointment = instance.appointment
     elif hasattr(instance, 'diagnosis') and hasattr(instance.diagnosis, 'appointment'):
-        # Prescription, Treatment (tienen diagnosis → appointment)
         appointment = instance.diagnosis.appointment
     else:
         appointment = None
     
     doctor = appointment.doctor if appointment else None
     
-    # Obtenemos la configuración de la clínica (Logo, Dirección, etc.)
+    # Institución
     institution = InstitutionSettings.objects.first()
     
-    # 2. Generar Código de Auditoría Único (Sello de autenticidad inalterable)
+    # ========================================
+    # 2. CÓDIGO DE AUDITORÍA Y QR
+    # ========================================
+    
     raw_code = f"{category}-{instance.id}-{timezone.now().timestamp()}"
     audit_code = hashlib.sha256(raw_code.encode()).hexdigest()[:12].upper()
-    # 3. Generar QR de Verificación
     qr = qrcode.QRCode(box_size=10, border=2)
     qr.add_data(f"VERIFY_DOC:{audit_code}")
     qr.make(fit=True)
@@ -1019,7 +1023,10 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     buffer = BytesIO()
     img_qr.save(buffer, kind="PNG")
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
-    # 4. Selección Dinámica de Plantilla HTML
+    # ========================================
+    # 3. SELECCIÓN DE PLANTILLA
+    # ========================================
+    
     template_map = {
         'prescriptions': 'documents/prescription.html',
         'treatments': 'documents/treatment.html',
@@ -1029,19 +1036,236 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         'charge_orders': 'pdf/charge_order.html',
     }
     template_path = template_map.get(category, 'pdf/generic_medical_doc.html')
-    # 5. Renderizado de PDF con WeasyPrint
-    context = {
-        "data": instance,
-        "patient": patient,
-        "doctor": doctor,
-        "institution": institution,
-        "audit_code": audit_code,
-        "qr_code_url": f"data:image/png;base64,{qr_base64}",
-        "generated_at": timezone.now(),
-    }
+    # ========================================
+    # 4. CONSTRUIR CONTEXT ESPECÍFICO POR CATEGORÍA
+    # ========================================
+    
+    # Helper para calcular edad
+    def calculate_age(birth_date):
+        if not birth_date:
+            return None
+        today = date.today()
+        try:
+            birth = birth_date if isinstance(birth_date, date) else datetime.strptime(str(birth_date), "%Y-%m-%d").date()
+            age = today.year - birth.year - ((today.month, today.day) < (birth.month, birth.day))
+            return age
+        except:
+            return None
+    
+    # Helper para formatear género
+    def format_gender(gender):
+        gender_map = {
+            'M': 'Masculino',
+            'F': 'Femenino',
+            'male': 'Masculino',
+            'female': 'Femenino',
+            'O': 'Otro',
+            'other': 'Otro',
+        }
+        return gender_map.get(gender, gender or 'No especificado')
+    
+    # Helper para formatear urgencia
+    def format_urgency(urgency):
+        urgency_map = {
+            'routine': 'RUTINA',
+            'urgent': 'URGENTE',
+            'stat': 'STAT (INMEDIATO)',
+            'priority': 'PRIORIDAD',
+        }
+        return urgency_map.get(urgency, urgency or 'No especificado')
+    
+    # Helper para formatear status
+    def format_status(status):
+        status_map = {
+            'issued': 'EMITIDA',
+            'accepted': 'ACEPTADA',
+            'rejected': 'RECHAZADA',
+            'completed': 'COMPLETADA',
+        }
+        return status_map.get(status, status or 'No especificado')
+    
+    # Construir patient_data con todos los campos que la plantilla espera
+    patient_data = None
+    if patient:
+        # Obtener first_name y last_name desde full_name
+        full_name = patient.full_name or ""
+        name_parts = full_name.split(None, 1)
+        first_name = name_parts[0] if name_parts else ""
+        last_name = name_parts[1] if len(name_parts) > 1 else ""
+        
+        patient_data = {
+            "id": patient.id,
+            "full_name": patient.full_name or "",
+            "first_name": first_name,
+            "last_name": last_name,
+            "national_id": patient.national_id or "",
+            "age": calculate_age(patient.birth_date),
+            "gender": format_gender(getattr(patient, 'gender', None)),
+            "phone": getattr(patient, 'phone', None) or getattr(patient, 'mobile', None) or "",
+            "email": getattr(patient, 'email', None) or "",
+            "birth_date": patient.birth_date,
+        }
+    
+    # ========================================
+    # 5. CONTEXT ESPECÍFICO POR CATEGORÍA
+    # ========================================
+    
+    if category == 'referrals':
+        # --- REFERENCIAS MÉDICAS ---
+        # Obtener especialidades del médico referente
+        doctor_specialties = []
+        if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
+            doctor_specialties = [doctor.specialty.name]
+        elif doctor and hasattr(doctor, 'specialties'):
+            doctor_specialties = [s.name for s in doctor.specialties.all()]
+        
+        referring_doctor_data = None
+        if doctor:
+            referring_doctor_data = {
+                "id": doctor.id,
+                "full_name": doctor.full_name or "",
+                "colegiado_id": getattr(doctor, 'colegiado_id', None) or "",
+                "specialties": doctor_specialties,
+                "signature": getattr(doctor, 'signature', None),
+            }
+        
+        # Obtener especialidades requeridas de la referencia
+        required_specialties = []
+        if hasattr(instance, 'specialties'):
+            required_specialties = [s.name for s in instance.specialties.all()]
+        
+        # Obtener doctor de destino
+        referred_to_doctor_name = ""
+        if hasattr(instance, 'referred_to_doctor') and instance.referred_to_doctor:
+            referred_to_doctor_name = instance.referred_to_doctor.full_name
+        elif hasattr(instance, 'referred_to_external') and instance.referred_to_external:
+            referred_to_doctor_name = instance.referred_to_external
+        
+        # Construir context para referencias
+        context = {
+            "referral": instance,
+            "patient": patient_data,
+            "referring_doctor": referring_doctor_data,
+            "institution": institution,
+            "audit_code": audit_code,
+            "qr_code_url": f"data:image/png;base64,{qr_base64}",
+            "generated_at": timezone.now(),
+            # Campos adicionales que la plantilla espera
+            "required_specialties": required_specialties,
+            "referred_to_doctor": referred_to_doctor_name,
+            "referred_to_institution": getattr(instance, 'referred_to_institution', None) or "",
+            "referred_to_contact": getattr(instance, 'referred_to_contact', None) or "",
+            "urgency_display": format_urgency(getattr(instance, 'urgency', None)),
+            "status_display": format_status(getattr(instance, 'status', None)),
+        }
+        
+    elif category == 'prescriptions':
+        # --- PRESCRIPCIONES ---
+        doctor_specialties = []
+        if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
+            doctor_specialties = [doctor.specialty.name]
+        
+        prescribing_doctor_data = None
+        if doctor:
+            prescribing_doctor_data = {
+                "id": doctor.id,
+                "full_name": doctor.full_name or "",
+                "colegiado_id": getattr(doctor, 'colegiado_id', None) or "",
+                "specialties": doctor_specialties,
+                "is_verified": getattr(doctor, 'is_verified', False),
+            }
+        
+        # Obtener nombre del medicamento
+        medication_name = ""
+        if hasattr(instance, 'medication_catalog') and instance.medication_catalog:
+            medication_name = instance.medication_catalog.name
+        elif hasattr(instance, 'medication_text') and instance.medication_text:
+            medication_name = instance.medication_text
+        
+        context = {
+            "prescription": instance,
+            "patient": patient_data,
+            "doctor": prescribing_doctor_data,
+            "institution": institution,
+            "audit_code": audit_code,
+            "qr_code_url": f"data:image/png;base64,{qr_base64}",
+            "generated_at": timezone.now(),
+            "medication_name": medication_name,
+        }
+        
+    elif category == 'treatments':
+        # --- TRATAMIENTOS ---
+        doctor_specialties = []
+        if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
+            doctor_specialties = [doctor.specialty.name]
+        
+        treating_doctor_data = None
+        if doctor:
+            treating_doctor_data = {
+                "id": doctor.id,
+                "full_name": doctor.full_name or "",
+                "colegiado_id": getattr(doctor, 'colegiado_id', None) or "",
+                "specialties": doctor_specialties,
+            }
+        
+        context = {
+            "treatment": instance,
+            "patient": patient_data,
+            "doctor": treating_doctor_data,
+            "institution": institution,
+            "audit_code": audit_code,
+            "qr_code_url": f"data:image/png;base64,{qr_base64}",
+            "generated_at": timezone.now(),
+        }
+        
+    elif category == 'medical_tests':
+        # --- ÓRDENES DE EXÁMENES ---
+        doctor_specialties = []
+        if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
+            doctor_specialties = [doctor.specialty.name]
+        
+        ordering_doctor_data = None
+        if doctor:
+            ordering_doctor_data = {
+                "id": doctor.id,
+                "full_name": doctor.full_name or "",
+                "colegiado_id": getattr(doctor, 'colegiado_id', None) or "",
+                "specialties": doctor_specialties,
+            }
+        
+        # Obtener display del tipo de examen
+        test_type_display = instance.get_test_type_display() if hasattr(instance, 'get_test_type_display') else instance.test_type
+        
+        context = {
+            "test_order": instance,
+            "patient": patient_data,
+            "doctor": ordering_doctor_data,
+            "institution": institution,
+            "audit_code": audit_code,
+            "qr_code_url": f"data:image/png;base64,{qr_base64}",
+            "generated_at": timezone.now(),
+            "test_type_display": test_type_display,
+            "urgency_display": format_urgency(getattr(instance, 'urgency', None)),
+            "status_display": format_status(getattr(instance, 'status', None)),
+        }
+        
+    else:
+        # --- CATEGORÍA GENÉRICA ---
+        context = {
+            "data": instance,
+            "patient": patient_data,
+            "doctor": doctor,
+            "institution": institution,
+            "audit_code": audit_code,
+            "qr_code_url": f"data:image/png;base64,{qr_base64}",
+            "generated_at": timezone.now(),
+        }
+    # ========================================
+    # 6. RENDERIZAR PDF
+    # ========================================
+    
     html_string = render_to_string(template_path, context)
     
-    # Generar los bytes del PDF con WeasyPrint
     pdf_bytes = HTML(
         string=html_string, 
         base_url=settings.MEDIA_ROOT
