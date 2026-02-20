@@ -1291,10 +1291,10 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
     
     # Mapeo de categorías y sus respectivos QuerySets vinculados a la cita
     generators = {
-        'prescriptions': prescriptions,
-        'treatments': treatments,
-        'referrals': appointment.referrals.all(),
-        'medical_tests': appointment.medical_tests.all(),
+        'prescription': prescriptions,           # ✅ Era 'prescriptions'
+        'treatment': treatments,                  # ✅ Era 'treatments'
+        'medical_referral': appointment.referrals.all(),   # ✅ Era 'referrals'
+        'medical_test_order': appointment.medical_tests.all(),  # ✅ Era 'medical_tests'
     }
     
     for category, queryset in generators.items():
