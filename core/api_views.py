@@ -53,50 +53,29 @@ class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
     
     def get_serializer_class(self):
-        # 1. Si está viendo la tabla (lista)
         if self.action == 'list':
             return PatientListSerializer
-        
-        # 2. Si está viendo el perfil completo (detalle)
         if self.action == 'retrieve':
             return PatientReadSerializer
-        
-        # 3. Si está creando o editando (escritura)
         return PatientWriteSerializer
     
     def get_queryset(self):
-        """
-        Opcional: Filtrado por institución automática.
-        Si el usuario no es superuser, solo ve pacientes de su institución.
-        """
         user = self.request.user
         queryset = super().get_queryset()
-        
-        # ✅ Solo pacientes activos (excluye soft deletes)
         queryset = queryset.filter(active=True)
-        
-        # ✅ REMOVED: Patient model NO tiene campo 'institution'
-        # El filtrado por institución debe hacerse a través de la jerarquía geográfica
-        # o agregando el campo institution al modelo Patient
-        # Por ahora, devolvemos todos los pacientes activos
-        
         return queryset
     
     @action(detail=True, methods=['get'])
     def clinical_summary(self, request, pk=None):
         """Endpoint extra para un resumen rápido en el Frontend."""
         patient = self.get_object()
-        # Aquí podrías usar un serializer aún más específico
         return Response({"status": "Success", "data": "Resumen clínico generado"})
     
     @action(detail=True, methods=['get'])
     def profile(self, request, pk=None):
         """
         Endpoint completo del perfil clínico del paciente.
-        Devuelve todos los antecedentes, alergias, hábitos, cirugías y vacunaciones
-        en una sola respuesta optimizada.
         """
-        # ✅ AGREGADO: select_related para incluir la estructura jerárquica del neighborhood
         patient = Patient.objects.filter(pk=pk).select_related(
             'neighborhood__parish__municipality__state__country'
         ).prefetch_related(
@@ -112,7 +91,6 @@ class PatientViewSet(viewsets.ModelViewSet):
         if not patient:
             return Response({"error": "Patient not found"}, status=404)
         
-        # Serializar cada módulo clínico (convertir a list de Python para evitar error Pylance)
         allergies_data = list(AllergySerializer(patient.allergies.all(), many=True).data)
         personal_history_data = list(PersonalHistorySerializer(patient.personal_history.all(), many=True).data)
         family_history_data = list(FamilyHistorySerializer(patient.family_history.all(), many=True).data)
@@ -122,12 +100,10 @@ class PatientViewSet(viewsets.ModelViewSet):
         genetic_data = list(GeneticPredispositionSerializer(patient.genetic_predispositions.all(), many=True).data)
         medical_history_data = list(MedicalHistorySerializer(patient.medical_history.all(), many=True).data)
         
-        # ✅ AGREGADO: Serializar neighborhood con su estructura jerárquica
         neighborhood_data = None
         if patient.neighborhood:
             neighborhood_data = NeighborhoodSerializer(patient.neighborhood).data
         
-        # Construir objeto de respuesta unificado
         profile_data = {
             'id': patient.id,
             'first_name': patient.first_name,
@@ -151,11 +127,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             'active': patient.active,
             'created_at': patient.created_at.isoformat() if patient.created_at else None,
             'updated_at': patient.updated_at.isoformat() if patient.updated_at else None,
-            
-            # ✅ AGREGADO: Neighborhood con estructura jerárquica completa
             'neighborhood': neighborhood_data,
-            
-            # Datos clínicos completos
             'allergies': allergies_data,
             'personal_history': personal_history_data,
             'family_history': family_history_data,
@@ -164,8 +136,6 @@ class PatientViewSet(viewsets.ModelViewSet):
             'vaccinations': vaccinations_data,
             'genetic_predispositions': genetic_data,
             'medical_history': medical_history_data,
-            
-            # clinical_background = unión de todos los antecedentes
             'clinical_background': personal_history_data + family_history_data + [
                 {'id': g['id'], 'type': 'genetic', 'condition': g['name'], 'description': g.get('description', '')}
                 for g in genetic_data
@@ -176,10 +146,6 @@ class PatientViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def completed_appointments(self, request, pk=None):
-        """
-        Citas completadas del paciente.
-        Retorna las últimas 20 citas con status='completed'.
-        """
         try:
             patient = self.get_object()
             appointments = Appointment.objects.filter(
@@ -195,10 +161,6 @@ class PatientViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def pending_appointments(self, request, pk=None):
-        """
-        Citas pendientes del paciente.
-        Retorna citas con status='pending' o 'arrived' ordenadas por fecha.
-        """
         try:
             patient = self.get_object()
             appointments = Appointment.objects.filter(
@@ -214,23 +176,16 @@ class PatientViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get', 'patch'])
     def notes(self, request, pk=None):
-        """
-        Notas del paciente (lectura/escritura).
-        GET: Retorna las notas del paciente (campo contact_info).
-        PATCH: Actualiza las notas del paciente.
-        """
         try:
             patient = self.get_object()
             
             if request.method == 'GET':
-                # GET: Retornar notas existentes
                 return Response({
                     'patient_id': patient.id,
                     'content': patient.contact_info or '',
                     'updated_at': patient.updated_at.isoformat() if patient.updated_at else None,
                 })
             
-            # PATCH: Actualizar notas
             content = request.data.get('content', '')
             patient.contact_info = content
             patient.save(update_fields=['contact_info'])
@@ -246,17 +201,9 @@ class PatientViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def payments(self, request, pk=None):
-        """
-        Pagos del paciente.
-        Retorna todos los pagos relacionados con órdenes de cobro del paciente.
-        """
         try:
             patient = self.get_object()
-            
-            # Buscar órdenes de cobro del paciente
             charge_orders = ChargeOrder.objects.filter(patient=patient).values_list('id', flat=True)
-            
-            # Buscar pagos de esas órdenes de cobro
             payments = Payment.objects.filter(
                 charge_order__in=charge_orders
             ).select_related('charge_order', 'charge_order__patient', 'charge_order__appointment').order_by('-received_at')
@@ -267,23 +214,42 @@ class PatientViewSet(viewsets.ModelViewSet):
             logger.error(f"Error en payments: {str(e)}")
             return Response({"error": str(e)}, status=500)
     
+    # ✅ NUEVO: Endpoint para listar documentos del paciente
+    @action(detail=True, methods=['get'])
+    def documents(self, request, pk=None):
+        """
+        GET /api/patients/{pk}/documents/
+        Retorna todos los documentos del paciente, opcionalmente filtrados por cita.
+        """
+        try:
+            patient = self.get_object()
+            appointment_id = request.query_params.get('appointment')
+            
+            queryset = MedicalDocument.objects.filter(patient=patient).select_related(
+                'appointment', 'doctor', 'institution', 'diagnosis'
+            ).order_by('-created_at')
+            
+            if appointment_id:
+                queryset = queryset.filter(appointment_id=appointment_id)
+            
+            serializer = MedicalDocumentReadSerializer(queryset, many=True)
+            return Response({"list": serializer.data})
+        except Exception as e:
+            logger.error(f"Error en documents: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+    
     def delete_document(self, request, pk=None, document_id=None):
         """
-        Eliminar documento del paciente.
         DELETE /api/patients/{pk}/documents/{document_id}/
         """
         try:
-            # Verificar que el documento pertenece al paciente
             document = get_object_or_404(
                 MedicalDocument,
                 pk=document_id,
                 patient=pk
             )
-            
-            # Eliminar el documento
             document.delete()
-            
-            return Response(status=204)  # No Content
+            return Response(status=204)
         except Exception as e:
             logger.error(f"Error en delete_document: {str(e)}")
             return Response({"error": str(e)}, status=500)
@@ -386,12 +352,39 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
 
 class MedicalDocumentViewSet(viewsets.ModelViewSet):
+    """
+    Gestión de documentos médicos con filtrado por paciente y cita.
+    
+    Endpoints:
+    - GET /api/documents/                           # Todos los documentos
+    - GET /api/documents/?patient=123               # Documentos de un paciente
+    - GET /api/documents/?appointment=456           # Documentos de una cita
+    - GET /api/documents/?patient=123&appointment=456  # Combinado
+    """
     queryset = MedicalDocument.objects.all()
     
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
             return MedicalDocumentReadSerializer
         return MedicalDocumentWriteSerializer
+    
+    def get_queryset(self):
+        """
+        Filtra documentos por patient y/o appointment según query params.
+        """
+        queryset = MedicalDocument.objects.select_related(
+            'patient', 'appointment', 'doctor', 'institution', 'diagnosis'
+        )
+        
+        patient_id = self.request.query_params.get('patient')
+        appointment_id = self.request.query_params.get('appointment')
+        
+        if patient_id:
+            queryset = queryset.filter(patient_id=patient_id)
+        if appointment_id:
+            queryset = queryset.filter(appointment_id=appointment_id)
+        
+        return queryset.order_by('-created_at')
 
 
 class MedicationCatalogViewSet(viewsets.ModelViewSet):
