@@ -227,7 +227,7 @@ class PatientViewSet(viewsets.ModelViewSet):
             
             queryset = MedicalDocument.objects.filter(patient=patient).select_related(
                 'appointment', 'doctor', 'institution', 'diagnosis'
-            ).order_by('-created_at')
+            ).order_by('-uploaded_at')
             
             if appointment_id:
                 queryset = queryset.filter(appointment_id=appointment_id)
