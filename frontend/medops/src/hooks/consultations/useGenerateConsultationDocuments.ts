@@ -31,11 +31,27 @@ export function useGenerateConsultationDocuments() {
     },
     onSuccess: (_data, variables) => {
       const { patientId, consultationId } = variables;
+      
+      // ✅ FIX: Invalidar TODAS las query keys relacionadas con documentos
+      
+      // 1. Invalidar PatientDocumentsTab (useDocumentsByPatient)
+      queryClient.invalidateQueries({
+        queryKey: ["patient-documents", patientId],
+      });
+      
+      // 2. Invalidar DocumentsPanel (useDocuments) - con appointment
       queryClient.invalidateQueries({
         queryKey: ["documents", patientId, consultationId],
       });
+      
+      // 3. Invalidar DocumentsPanel (useDocuments) - sin appointment
       queryClient.invalidateQueries({
         queryKey: ["documents", patientId, undefined],
+      });
+      
+      // 4. Invalidar appointment actual para reflejar cambios
+      queryClient.invalidateQueries({
+        queryKey: ["appointment", "current"],
       });
     },
   });
