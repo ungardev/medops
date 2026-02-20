@@ -5,6 +5,6 @@ import { useInstitutionalList } from "../core/useInstitutionalList";
 export function useDocumentsByPatient(patientId: number) {
   return useInstitutionalList<MedicalDocument>(
     ["patient-documents", patientId],
-    () => apiFetch(`patients/${patientId}/documents`) // 🔧 FIX: Removido trailing slash
+    () => apiFetch(`patients/${patientId}/documents/`)
   );
 }
