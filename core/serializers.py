@@ -1349,7 +1349,8 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
     Diseñado para auditoría legal y visualización de expedientes.
     
     ✅ ACTUALIZADO: Ahora incluye campos CACHED (doctor, institution)
-                  usando SerializerMethodField para evitar errores de definición
+                   usando SerializerMethodField para evitar errores de definición
+    ✅ NUEVO: Agregado file_url para compatibilidad con frontend
     """
     # 1. Identidad del Paciente
     patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
@@ -1365,6 +1366,10 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
     # ✅ NUEVOS: Campos CACHED usando SerializerMethodField (solución definitiva)
     doctor = serializers.SerializerMethodField()
     institution = serializers.SerializerMethodField()
+    
+    # ✅ NUEVO: file_url como alias de file para compatibilidad con frontend
+    file_url = serializers.SerializerMethodField()
+    
     class Meta:
         model = MedicalDocument
         fields = [
@@ -1383,6 +1388,7 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
             # Archivo
             "description", 
             "file", 
+            "file_url",  # ✅ NUEVO: alias para frontend
             "mime_type", 
             "size_bytes",
             # Seguridad
@@ -1419,6 +1425,15 @@ class MedicalDocumentReadSerializer(serializers.ModelSerializer):
                 "tax_id": obj.institution.tax_id,
                 "is_active": obj.institution.is_active,
             }
+        return None
+    
+    def get_file_url(self, obj):
+        """Devuelve la URL del archivo para compatibilidad con frontend."""
+        if obj.file:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
+            return obj.file.url
         return None
 
 

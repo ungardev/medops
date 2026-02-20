@@ -385,6 +385,15 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(appointment_id=appointment_id)
         
         return queryset.order_by('-created_at')
+    
+    def list(self, request, *args, **kwargs):
+        """
+        Override de list() para devolver estructura esperada por frontend:
+        { "documents": [...] }
+        """
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({"documents": serializer.data})
 
 
 class MedicationCatalogViewSet(viewsets.ModelViewSet):
