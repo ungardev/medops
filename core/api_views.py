@@ -584,6 +584,13 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
     """
     queryset = MedicalReferral.objects.all()
     serializer_class = MedicalReferralSerializer
+    
+    def get_serializer_class(self):
+        """✅ Usa serializer de escritura para create/update"""
+        if self.action in ['create', 'update', 'partial_update']:
+            return MedicalReferralWriteSerializer
+        return MedicalReferralSerializer
+    
     def get_queryset(self):
         """
         Filtra por appointment si se proporciona en query params.
