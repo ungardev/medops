@@ -290,7 +290,15 @@
       <tbody>
         {% for p in prescriptions %}
         <tr>
-          <td>{{ p.medication }}</td>
+          <td>
+            {% if p.medication_catalog %}
+              {{ p.medication_catalog.name }}
+            {% elif p.medication_text %}
+              {{ p.medication_text }}
+            {% else %}
+              <span class="empty">Sin nombre</span>
+            {% endif %}
+          </td>
           <td>
             {% if p.components.all %}
               {% for c in p.components.all %}{{ c.substance }} {{ c.dosage }}{{ c.unit }}{% if not forloop.last %}, {% endif %}{% endfor %}
@@ -327,7 +335,13 @@
       <tbody>
         {% for test in medical_tests %}
         <tr>
-          <td>{{ test.name }}</td>
+          <td>
+            {% if test.test_name_override %}
+              {{ test.test_name_override }}
+            {% else %}
+              {{ test.get_test_type_display|default:test.test_type|default:"Examen" }}
+            {% endif %}
+          </td>
           <td>{{ test.get_test_type_display|default:test.test_type|default:"General" }}</td>
           <td>{{ test.get_urgency_display|default:test.urgency|default:"Rutina" }}</td>
           <td>{{ test.get_status_display|default:test.status|default:"Pendiente" }}</td>
@@ -358,7 +372,15 @@
       <tbody>
         {% for r in referrals %}
         <tr>
-          <td>{{ r.referred_to|default:"Por asignar" }}</td>
+          <td>
+            {% if r.referred_to_doctor %}
+              {{ r.referred_to_doctor.full_name }}
+            {% elif r.referred_to_external %}
+              {{ r.referred_to_external }}
+            {% else %}
+              <span class="empty">Por asignar</span>
+            {% endif %}
+          </td>
           <td>
             {% if r.specialties.all %}
               {% for s in r.specialties.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}

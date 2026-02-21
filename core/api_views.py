@@ -1273,7 +1273,7 @@ def notifications_api(request):
 @api_view(['POST', 'GET'])
 def generate_medical_report(request, pk):
     """
-    Genera PDF de informe médico completo.
+    Genera PDF de informe médico completo y lo persiste en MedicalDocument.
     pk = appointment_id (ID de la consulta)
     """
     try:
@@ -1315,7 +1315,6 @@ def generate_medical_report(request, pk):
         except Exception:
             clinical_note = None
         
-        # ✅ Serializar especialidades del médico
         doctor_specialties = []
         if doctor and hasattr(doctor, 'specialties'):
             doctor_specialties = [s.name for s in doctor.specialties.all()]
@@ -1348,14 +1347,32 @@ def generate_medical_report(request, pk):
         }
         
         html_string = render_to_string('medical/documents/medical_report_universal.html', context)
-        pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+        pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf() or b""
+        
+        filename = f"medical_report_{appointment.id}_{report.id}_{audit_code}.pdf"
+        
+        from django.core.files.base import ContentFile
+        from core.models import MedicalDocument, DocumentCategory, DocumentSource
+        
+        doc = MedicalDocument.objects.create(
+            patient=patient,
+            appointment=appointment,
+            doctor=doctor,
+            institution=institution,
+            category=DocumentCategory.MEDICAL_REPORT,
+            source=DocumentSource.SYSTEM_GENERATED,
+            audit_code=audit_code,
+            origin_panel="medical_report",
+            description=f"Informe Médico General - Consulta #{appointment.id}",
+        )
+        
+        doc.file.save(filename, ContentFile(pdf_bytes))
+        
+        report.file_url = doc.file.url if doc.file else f"/media/medical_reports/{filename}"
+        report.save()
         
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        filename = f"medical_report_{appointment.id}_{report.id}_{audit_code}.pdf"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        report.file_url = f"/media/medical_reports/{filename}"
-        report.save()
         
         return response
         
