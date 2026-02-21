@@ -6,7 +6,7 @@ export function useDeleteDocument(patientId: number) {
   return useMutation({
     mutationFn: async (documentId: number) => {
       // 🔧 FIX: Usar apiFetch con autenticación automática y endpoint correcto
-      return apiFetch(`patients/${patientId}/documents/${documentId}`, {
+      return apiFetch(`patients/${patientId}/documents/${documentId}/`, {
         method: "DELETE",
       });
     },
