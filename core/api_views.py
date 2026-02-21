@@ -1275,9 +1275,6 @@ def generate_medical_report(request, pk):
     """
     Genera PDF de informe médico completo.
     pk = appointment_id (ID de la consulta)
-    
-    Incluye signos vitales, notas clínicas (SOAP), diagnósticos, tratamientos, 
-    recetas, exámenes, y referencias.
     """
     try:
         appointment = get_object_or_404(Appointment, pk=pk)
@@ -1285,7 +1282,6 @@ def generate_medical_report(request, pk):
         doctor = appointment.doctor
         institution = appointment.institution
         
-        # ✅ CREAR OBTENER MedicalReport
         report, created = MedicalReport.objects.get_or_create(
             appointment=appointment,
             defaults={
@@ -1319,6 +1315,11 @@ def generate_medical_report(request, pk):
         except Exception:
             clinical_note = None
         
+        # ✅ Serializar especialidades del médico
+        doctor_specialties = []
+        if doctor and hasattr(doctor, 'specialties'):
+            doctor_specialties = [s.name for s in doctor.specialties.all()]
+        
         audit_code = generate_audit_code(appointment, patient)
         qr_payload = f"Consulta:{appointment.id}|MedicalReport:{report.id}|Audit:{audit_code}"
         qr_img = qrcode.make(qr_payload)
@@ -1332,6 +1333,7 @@ def generate_medical_report(request, pk):
             'patient': patient,
             'appointment': appointment,
             'doctor': doctor,
+            'doctor_specialties': doctor_specialties,
             'institution': institution,
             'diagnoses': diagnoses,
             'treatments': treatments,
