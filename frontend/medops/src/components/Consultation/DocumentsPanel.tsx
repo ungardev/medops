@@ -70,8 +70,8 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
             <span className="text-[9px] font-mono text-white/60">ENCRYPTION: AES_256_ACTIVE</span>
           </div>
           <form onSubmit={handleUpload} className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <div className="md:col-span-1 relative group">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="relative group">
                 <input
                   type="file"
                   accept=".pdf,image/*"
@@ -79,7 +79,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
                 <div className={`h-10 flex items-center justify-center border border-dashed rounded-sm transition-all ${file ? 'border-blue-400 bg-blue-400/5' : 'border-white/10 group-hover:border-blue-400/50'}`}>
-                  <span className="text-[9px] font-mono text-white/60 truncate px-2">
+                  <span className="text-[10px] font-mono text-white/60 truncate px-2">
                     {file ? file.name : "SELECT_FILE_RAW"}
                   </span>
                 </div>
@@ -104,7 +104,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
               <button
                 type="submit"
                 disabled={uploadDocument.isPending}
-                className="h-10 bg-white/5 border border-white/10 text-[9px] font-mono font-black tracking-widest uppercase hover:bg-blue-400/10 hover:text-white hover:border-blue-400 transition-all disabled:opacity-50"
+                className="h-10 bg-white/5 border border-white/10 text-[10px] font-mono font-black tracking-widest uppercase hover:bg-blue-400/10 hover:text-white hover:border-blue-400 transition-all disabled:opacity-50"
               >
                 {uploadDocument.isPending ? "UPLOADING..." : "EXEC_UPLOAD"}
               </button>
@@ -192,4 +192,3 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
     </div>
   );
 };
-export default DocumentsPanel;
