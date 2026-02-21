@@ -27,7 +27,6 @@ import { useGenerateConsultationDocuments } from "../../hooks/consultations/useG
 import { useInstitutions } from "../../hooks/settings/useInstitutions";
 // Tipos y Utils
 import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
-import type { MedicalReport } from "../../types/medicalReport";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
 import { getPatient } from "../../api/patients";
 // 🕒 SUB-COMPONENTE: CRONÓMETRO DE SESIÓN
@@ -99,18 +98,18 @@ export default function Consultation() {
   const canGenerateReport = appointment.status === "in_consultation" || appointment.status === "completed";
   const isInstitutionMatch = !appointment.institution || appointment.institution === activeInstitution?.id;
   const isCrossInstitution = !!appointment.institution && appointment.institution !== activeInstitution?.id;
+  // ✅ FIX: No espera retorno, el PDF se descarga automáticamente
   const handleGenerateReport = async () => {
     try {
-      const report: MedicalReport = await generateReport.mutateAsync(appointment.id);
+      await generateReport.mutateAsync(appointment.id);
       queryClient.invalidateQueries({ queryKey: ["documents", appointment.patient.id, appointment.id] });
-      setReportSuccess({ fileUrl: report.file_url, auditCode: report.audit_code });
+      setToast({ message: "Informe médico generado correctamente", type: "success" });
     } catch (err: any) {
       setToast({ message: err.message || "Error al generar informe", type: "error" });
     }
   };
   const handleGenerateDocuments = async () => {
     try {
-      // ✅ FIX: Pasar objeto con consultationId y patientId
       const resp: GenerateDocumentsResponse = await generateDocuments.mutateAsync({
         consultationId: appointment.id,
         patientId: appointment.patient.id,
