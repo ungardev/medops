@@ -1303,7 +1303,8 @@ def generate_medical_report(request, pk):
             institution=appointment.institution
         )
         medical_tests = MedicalTest.objects.filter(appointment=appointment)
-        referrals = MedicalReferral.objects.filter(appointment=appointment)
+        # ✅ FIX: Agregar prefetch_related para cargar especialidades de las referencias
+        referrals = MedicalReferral.objects.filter(appointment=appointment).prefetch_related('specialties')
         
         try:
             vital_signs = appointment.vital_signs

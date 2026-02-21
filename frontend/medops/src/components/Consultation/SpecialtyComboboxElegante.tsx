@@ -25,9 +25,10 @@ export default function SpecialtyComboboxElegante({ value, onChange, options }: 
       onChange(dedupedValue);
     }
   }, [value, dedupedValue, onChange]);
+  // ✅ FIX: Buscar en o.name, no en string vacío literal
   const filtered = search.length
     ? options.filter((o) =>
-        ` `.toLowerCase().includes(search.toLowerCase())
+        o.name.toLowerCase().includes(search.toLowerCase())
       )
     : options;
   const addSpecialty = (s: Specialty | null) => {
