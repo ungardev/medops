@@ -21,7 +21,6 @@ interface AddressChain {
   country: string; state: string; municipality: string;
   parish: string; neighborhood: string;
 }
-// Utils de limpieza de datos
 const extractPhone = (contact: any): string => {
   if (!contact) return "NO_DATA_LINK";
   try {
@@ -39,10 +38,10 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
   const fullAddress = buildFullAddress(patient);
   return (
     <div className="relative overflow-hidden bg-black/40 border border-[var(--palantir-border)] p-4 group">
-      {/* Decoración Cyberpunk de fondo */}
       <div className="absolute top-0 right-0 p-1 opacity-10 pointer-events-none">
         <IdentificationIcon className="w-24 h-24 -mr-8 -mt-8" />
       </div>
+      
       <div className="flex flex-col md:flex-row gap-6 relative z-10">
         
         {/* AVATAR / STATUS SECTION */}
@@ -71,7 +70,7 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
               </span>
             </div>
             <Link
-              to={`/patients/`}
+              to={`/patients/${patient.id}`}
               className="flex items-center gap-2 text-[10px] font-black uppercase text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors"
             >
               Master_Profile <ArrowTopRightOnSquareIcon className="w-3 h-3" />
@@ -134,7 +133,7 @@ export default function PatientHeader({ patient }: PatientHeaderProps) {
           <div className={`p-2 border `}>
             <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest">Financial_Ledger</span>
             <p className={`text-sm font-black `}>
-              {patient.balance_due && patient.balance_due > 0 ? `DEBIT: {patient.balance_due.toFixed(2)}` : 'CREDIT_CLEAR'}
+              {patient.balance_due && patient.balance_due > 0 ? `DEBIT: ${patient.balance_due.toFixed(2)}` : 'CREDIT_CLEAR'}
             </p>
           </div>
         </div>
