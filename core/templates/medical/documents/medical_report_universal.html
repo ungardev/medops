@@ -108,7 +108,7 @@
   <div class="section">
     <strong>Médico Tratante:</strong> {{ doctor.full_name }}<br>
     {% if doctor.colegiado_id %}Nº Colegiado: {{ doctor.colegiado_id }}<br>{% endif %}
-    {% if doctor.specialties %}Especialidades: {{ doctor.specialties|join:", " }}{% endif %}
+    {% if doctor_specialties %}Especialidades: {{ doctor_specialties|join:", " }}{% endif %}
     {% if doctor.signature %}
     <div style="margin-top:6px;">
       <img src="{{ doctor.signature.path }}" alt="Firma" style="height:40px;">
@@ -223,7 +223,7 @@
         <tr>
           <td>{{ d.icd_code }}</td>
           <td>{{ d.title }}</td>
-          <td>{{ d.type_display|default:"Diagnóstico" }}</td>
+          <td>{{ d.get_type_display|default:"Diagnóstico" }}</td>
           <td>{{ d.description|default:"Sin descripción" }}</td>
         </tr>
         {% empty %}
@@ -252,7 +252,7 @@
         {% for t in treatments %}
         <tr>
           <td>{{ t.plan }}</td>
-          <td>{{ t.treatment_type_display|default:t.treatment_type|default:"General" }}</td>
+          <td>{{ t.get_treatment_type_display|default:t.treatment_type|default:"General" }}</td>
           <td>
             {% if t.start_date and t.end_date %}
               {{ t.start_date|date:"d/m/Y" }} - {{ t.end_date|date:"d/m/Y" }}
@@ -262,7 +262,7 @@
               No especificada
             {% endif %}
           </td>
-          <td>{{ t.status_display|default:t.status|default:"Activo" }}</td>
+          <td>{{ t.get_status_display|default:t.status|default:"Activo" }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="4" class="empty">Sin tratamientos registrados</td></tr>
@@ -292,14 +292,14 @@
         <tr>
           <td>{{ p.medication }}</td>
           <td>
-            {% if p.components %}
-              {% for c in p.components %}{{ c.substance }} {{ c.dosage }}{{ c.unit }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% if p.components.all %}
+              {% for c in p.components.all %}{{ c.substance }} {{ c.dosage }}{{ c.unit }}{% if not forloop.last %}, {% endif %}{% endfor %}
             {% else %}
               <span class="empty">Sin componentes</span>
             {% endif %}
           </td>
-          <td>{{ p.route_display|default:p.route|default:"N/A" }}</td>
-          <td>{{ p.frequency_display|default:p.frequency|default:"N/A" }}</td>
+          <td>{{ p.get_route_display|default:p.route|default:"N/A" }}</td>
+          <td>{{ p.get_frequency_display|default:p.frequency|default:"N/A" }}</td>
           <td>{{ p.duration|default:"N/A" }}</td>
         </tr>
         {% empty %}
@@ -328,9 +328,9 @@
         {% for test in medical_tests %}
         <tr>
           <td>{{ test.name }}</td>
-          <td>{{ test.test_type_display|default:test.test_type|default:"General" }}</td>
-          <td>{{ test.urgency_display|default:test.urgency|default:"Rutina" }}</td>
-          <td>{{ test.status_display|default:test.status|default:"Pendiente" }}</td>
+          <td>{{ test.get_test_type_display|default:test.test_type|default:"General" }}</td>
+          <td>{{ test.get_urgency_display|default:test.urgency|default:"Rutina" }}</td>
+          <td>{{ test.get_status_display|default:test.status|default:"Pendiente" }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="4" class="empty">Sin exámenes ordenados</td></tr>
@@ -360,15 +360,15 @@
         <tr>
           <td>{{ r.referred_to|default:"Por asignar" }}</td>
           <td>
-            {% if r.specialties %}
-              {{ r.specialties|join:", " }}
+            {% if r.specialties.all %}
+              {% for s in r.specialties.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
             {% else %}
               <span class="empty">No especificada</span>
             {% endif %}
           </td>
           <td>{{ r.reason|default:"Sin motivo" }}</td>
-          <td>{{ r.urgency_display|default:r.urgency|default:"Rutina" }}</td>
-          <td>{{ r.status_display|default:r.status|default:"Emitida" }}</td>
+          <td>{{ r.get_urgency_display|default:r.urgency|default:"Rutina" }}</td>
+          <td>{{ r.get_status_display|default:r.status|default:"Emitida" }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="5" class="empty">Sin referencias registradas</td></tr>
@@ -387,8 +387,8 @@
         <td width="50%">
           <strong>{{ doctor.full_name }}</strong><br>
           Nº Colegiado: {{ doctor.colegiado_id|default:"N/A" }}<br>
-          {% if doctor.specialties %}
-          Especialidades: {{ doctor.specialties|join:", " }}<br>
+          {% if doctor_specialties %}
+          Especialidades: {{ doctor_specialties|join:", " }}<br>
           {% endif %}
           {% if doctor.signature %}
           <div style="margin-top:10px;">
