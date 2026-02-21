@@ -980,9 +980,9 @@ def lock_consultation_integrity(appointment_id: int):
 def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]:
     """
     Fábrica universal de PDFs médicos con QR de auditoría.
-    Soporta: prescriptions, treatments, referrals, medical_tests.
+    Soporta: prescription, treatment, medical_referral, medical_test_order.
     
-    ✅ OPCIÓN A: Context enriquecido con datos calculados y formateados.
+    ✅ FASE 1: Context completamente enriquecido con TODOS los datos necesarios.
     """
     # ========================================
     # 1. OBTENER DATOS BASE SEGÚN CATEGORÍA
@@ -1023,6 +1023,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     buffer = BytesIO()
     img_qr.save(buffer, kind="PNG")
     qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    
     # ========================================
     # 3. SELECCIÓN DE PLANTILLA
     # ========================================
@@ -1036,11 +1037,11 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         'charge_order': 'medical/documents/charge_order.html',
     }
     template_path = template_map.get(category, 'pdf/generic_medical_doc.html')
+    
     # ========================================
-    # 4. CONSTRUIR CONTEXT ESPECÍFICO POR CATEGORÍA
+    # 4. HELPERS DE FORMATEO
     # ========================================
     
-    # Helper para calcular edad
     def calculate_age(birth_date):
         if not birth_date:
             return None
@@ -1052,7 +1053,6 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         except:
             return None
     
-    # Helper para formatear género
     def format_gender(gender):
         gender_map = {
             'M': 'Masculino',
@@ -1060,11 +1060,11 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             'male': 'Masculino',
             'female': 'Femenino',
             'O': 'Otro',
+            'Other': 'Otro',
             'other': 'Otro',
         }
         return gender_map.get(gender, gender or 'No especificado')
     
-    # Helper para formatear urgencia
     def format_urgency(urgency):
         urgency_map = {
             'routine': 'RUTINA',
@@ -1074,20 +1074,60 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         }
         return urgency_map.get(urgency, urgency or 'No especificado')
     
-    # Helper para formatear status
     def format_status(status):
         status_map = {
+            'pending': 'PENDIENTE',
+            'collected': 'RECOLECTADA',
+            'in_process': 'EN PROCESO',
+            'completed': 'COMPLETADO',
+            'cancelled': 'CANCELADO',
             'issued': 'EMITIDA',
             'accepted': 'ACEPTADA',
             'rejected': 'RECHAZADA',
-            'completed': 'COMPLETADA',
         }
         return status_map.get(status, status or 'No especificado')
     
-    # Construir patient_data con todos los campos que la plantilla espera
+    def format_route(route):
+        route_map = {
+            'oral': 'Oral',
+            'iv': 'Intravenosa',
+            'im': 'Intramuscular',
+            'sc': 'Subcutánea',
+            'topical': 'Tópica',
+            'sublingual': 'Sublingual',
+            'inhalation': 'Inhalación',
+            'rectal': 'Rectal',
+            'other': 'Otra',
+        }
+        return route_map.get(route, route or 'No especificada')
+    
+    def format_frequency(frequency):
+        frequency_map = {
+            'once_daily': 'Una vez al día',
+            'bid': 'Dos veces al día',
+            'tid': 'Tres veces al día',
+            'qid': 'Cuatro veces al día',
+            'q4h': 'Cada 4 horas',
+            'q6h': 'Cada 6 horas',
+            'q8h': 'Cada 8 horas',
+            'q12h': 'Cada 12 horas',
+            'q24h': 'Cada 24 horas',
+            'qod': 'Cada dos días',
+            'stat': 'Inmediato',
+            'prn': 'Según necesidad',
+            'hs': 'Al acostarse',
+            'ac': 'Antes de comer',
+            'pc': 'Después de comer',
+            'achs': 'Antes de comer y al acostarse',
+        }
+        return frequency_map.get(frequency, frequency or 'No especificada')
+    
+    # ========================================
+    # 5. CONSTRUIR PATIENT_DATA
+    # ========================================
+    
     patient_data = None
     if patient:
-        # Obtener first_name y last_name desde full_name
         full_name = patient.full_name or ""
         name_parts = full_name.split(None, 1)
         first_name = name_parts[0] if name_parts else ""
@@ -1107,12 +1147,27 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         }
     
     # ========================================
-    # 5. CONTEXT ESPECÍFICO POR CATEGORÍA
+    # 6. APPOINTMENT_DATA (para todas las categorías)
     # ========================================
     
-    if category == 'referrals':
-        # --- REFERENCIAS MÉDICAS ---
-        # Obtener especialidades del médico referente
+    appointment_data = None
+    if appointment:
+        appointment_data = {
+            "id": appointment.id,
+            "appointment_date": appointment.appointment_date,
+            "status": appointment.status,
+        }
+    
+    # ========================================
+    # 7. CONTEXT ESPECÍFICO POR CATEGORÍA
+    # ========================================
+    
+    if category == 'medical_referral':
+        # ========================================
+        # REFERENCIA MÉDICA
+        # ========================================
+        
+        # Especialidades del médico referente
         doctor_specialties = []
         if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
             doctor_specialties = [doctor.specialty.name]
@@ -1129,41 +1184,59 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
                 "signature": getattr(doctor, 'signature', None),
             }
         
-        # Obtener especialidades requeridas de la referencia
+        # Especialidades requeridas
         required_specialties = []
         if hasattr(instance, 'specialties'):
             required_specialties = [s.name for s in instance.specialties.all()]
         
-        # Obtener doctor de destino
+        # Doctor de destino
         referred_to_doctor_name = ""
         if hasattr(instance, 'referred_to_doctor') and instance.referred_to_doctor:
             referred_to_doctor_name = instance.referred_to_doctor.full_name
         elif hasattr(instance, 'referred_to_external') and instance.referred_to_external:
             referred_to_doctor_name = instance.referred_to_external
         
-        # Construir context para referencias
+        # ✅ NUEVO: Diagnósticos relacionados con la referencia
+        diagnoses_data = []
+        if hasattr(instance, 'diagnosis') and instance.diagnosis:
+            diag = instance.diagnosis
+            diagnoses_data.append({
+                "icd_code": getattr(diag, 'icd_code', ''),
+                "title": getattr(diag, 'title', '') or getattr(diag, 'name', ''),
+                "description": getattr(diag, 'description', '') or getattr(diag, 'notes', ''),
+            })
+        
         context = {
             "referral": instance,
             "patient": patient_data,
+            "appointment": appointment_data,
             "referring_doctor": referring_doctor_data,
             "institution": institution,
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
-            # Campos adicionales que la plantilla espera
             "required_specialties": required_specialties,
             "referred_to_doctor": referred_to_doctor_name,
             "referred_to_institution": getattr(instance, 'referred_to_institution', None) or "",
             "referred_to_contact": getattr(instance, 'referred_to_contact', None) or "",
             "urgency_display": format_urgency(getattr(instance, 'urgency', None)),
             "status_display": format_status(getattr(instance, 'status', None)),
+            # ✅ NUEVO: Diagnósticos
+            "diagnoses": diagnoses_data,
+            # ✅ NUEVO: Instrucciones
+            "instructions": getattr(instance, 'clinical_summary', None) or getattr(instance, 'instructions', None) or "",
         }
+    
+    elif category == 'prescription':
+        # ========================================
+        # PRESCRIPCIÓN / RECETA
+        # ========================================
         
-    elif category == 'prescriptions':
-        # --- PRESCRIPCIONES ---
         doctor_specialties = []
         if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
             doctor_specialties = [doctor.specialty.name]
+        elif doctor and hasattr(doctor, 'specialties'):
+            doctor_specialties = [s.name for s in doctor.specialties.all()]
         
         prescribing_doctor_data = None
         if doctor:
@@ -1172,32 +1245,63 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
                 "full_name": doctor.full_name or "",
                 "colegiado_id": getattr(doctor, 'colegiado_id', None) or "",
                 "specialties": doctor_specialties,
+                "signature": getattr(doctor, 'signature', None),
                 "is_verified": getattr(doctor, 'is_verified', False),
             }
         
-        # Obtener nombre del medicamento
+        # Nombre del medicamento
         medication_name = ""
         if hasattr(instance, 'medication_catalog') and instance.medication_catalog:
             medication_name = instance.medication_catalog.name
         elif hasattr(instance, 'medication_text') and instance.medication_text:
             medication_name = instance.medication_text
         
+        # ✅ NUEVO: Construir items para la plantilla
+        items_data = []
+        item = {
+            "medication": medication_name,
+            "route": format_route(getattr(instance, 'route', None)),
+            "frequency": format_frequency(getattr(instance, 'frequency', None)),
+            "duration": getattr(instance, 'duration', None) or "",
+            "notes": getattr(instance, 'indications', None) or "",
+            "components": [],
+        }
+        
+        # Agregar componentes si existen
+        if hasattr(instance, 'components'):
+            for comp in instance.components.all():
+                item["components"].append({
+                    "substance": comp.substance,
+                    "dosage": comp.dosage,
+                    "unit": comp.unit,
+                })
+        
+        items_data.append(item)
+        
         context = {
             "prescription": instance,
             "patient": patient_data,
+            "appointment": appointment_data,
             "doctor": prescribing_doctor_data,
             "institution": institution,
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
             "medication_name": medication_name,
+            # ✅ NUEVO: Items para la plantilla
+            "items": items_data,
         }
+    
+    elif category == 'treatment':
+        # ========================================
+        # TRATAMIENTO
+        # ========================================
         
-    elif category == 'treatments':
-        # --- TRATAMIENTOS ---
         doctor_specialties = []
         if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
             doctor_specialties = [doctor.specialty.name]
+        elif doctor and hasattr(doctor, 'specialties'):
+            doctor_specialties = [s.name for s in doctor.specialties.all()]
         
         treating_doctor_data = None
         if doctor:
@@ -1206,23 +1310,39 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
                 "full_name": doctor.full_name or "",
                 "colegiado_id": getattr(doctor, 'colegiado_id', None) or "",
                 "specialties": doctor_specialties,
+                "signature": getattr(doctor, 'signature', None),
             }
+        
+        # ✅ NUEVO: Construir items para la plantilla
+        items_data = []
+        items_data.append({
+            "description": getattr(instance, 'plan', None) or getattr(instance, 'title', None) or "",
+            "notes": getattr(instance, 'notes', None) or "",
+        })
         
         context = {
             "treatment": instance,
             "patient": patient_data,
+            "appointment": appointment_data,
             "doctor": treating_doctor_data,
             "institution": institution,
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
+            # ✅ NUEVO: Items para la plantilla
+            "items": items_data,
         }
+    
+    elif category == 'medical_test_order':
+        # ========================================
+        # ORDEN DE EXÁMENES MÉDICOS
+        # ========================================
         
-    elif category == 'medical_tests':
-        # --- ÓRDENES DE EXÁMENES ---
         doctor_specialties = []
         if doctor and hasattr(doctor, 'specialty') and doctor.specialty:
             doctor_specialties = [doctor.specialty.name]
+        elif doctor and hasattr(doctor, 'specialties'):
+            doctor_specialties = [s.name for s in doctor.specialties.all()]
         
         ordering_doctor_data = None
         if doctor:
@@ -1234,11 +1354,47 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             }
         
         # Obtener display del tipo de examen
-        test_type_display = instance.get_test_type_display() if hasattr(instance, 'get_test_type_display') else instance.test_type
+        test_type_display = instance.get_test_type_display() if hasattr(instance, 'get_test_type_display') else getattr(instance, 'test_type', '')
+        
+        # ✅ NUEVO: Clasificar exámenes en laboratorios e imágenes
+        # Categorías típicas de laboratorio
+        lab_prefixes = ['hemogram', 'glucose', 'hemoglobin', 'platelets', 'coag', 'blood', 
+                       'lipid', 'renal', 'liver', 'electrolytes', 'thyroid', 'bone', 
+                       'cardiac', 'tumor', 'iron', 'vitamin', 'folate', 'amylase', 
+                       'uric', 'protein', 'bilirubin', 'creatinine', 'urinalysis', 
+                       'urine', 'stool', 'culture', 'hiv', 'hepatitis', 'autoimmune',
+                       'rheumatoid', 'anti', 'crp', 'esr', 'allergy', 'immunoglobulin',
+                       'complement', 'cryoglobulin', 'cortisol', 'acth', 'growth',
+                       'prolactin', 'lh', 'testosterone', 'estradiol', 'progesterone',
+                       'dhea', 'insulin', 'peptide', 'drug', 'alcohol', 'heavy',
+                       'therapeutic', 'pregnancy', 'sweat', 'mantoux', 'patch']
+        
+        # ✅ NUEVO: Separar en lab_tests e image_tests
+        lab_tests = []
+        image_tests = []
+        
+        test_item = {
+            "type": test_type_display,
+            "description": getattr(instance, 'description', None) or "",
+            "urgency": format_urgency(getattr(instance, 'urgency', None)),
+            "status": format_status(getattr(instance, 'status', None)),
+        }
+        
+        # Clasificar según el tipo de examen
+        test_type = getattr(instance, 'test_type', '').lower()
+        if any(test_type.startswith(prefix) for prefix in lab_prefixes):
+            lab_tests.append(test_item)
+        else:
+            image_tests.append(test_item)
+        
+        # Si no hay clasificación, agregar a lab_tests por defecto
+        if not lab_tests and not image_tests:
+            lab_tests.append(test_item)
         
         context = {
             "test_order": instance,
             "patient": patient_data,
+            "appointment": appointment_data,
             "doctor": ordering_doctor_data,
             "institution": institution,
             "audit_code": audit_code,
@@ -1247,21 +1403,28 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "test_type_display": test_type_display,
             "urgency_display": format_urgency(getattr(instance, 'urgency', None)),
             "status_display": format_status(getattr(instance, 'status', None)),
+            # ✅ NUEVO: Listas separadas
+            "lab_tests": lab_tests,
+            "image_tests": image_tests,
         }
-        
+    
     else:
-        # --- CATEGORÍA GENÉRICA ---
+        # ========================================
+        # CATEGORÍA GENÉRICA
+        # ========================================
         context = {
             "data": instance,
             "patient": patient_data,
+            "appointment": appointment_data,
             "doctor": doctor,
             "institution": institution,
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
         }
+    
     # ========================================
-    # 6. RENDERIZAR PDF
+    # 8. RENDERIZAR PDF
     # ========================================
     
     html_string = render_to_string(template_path, context)
@@ -1270,7 +1433,9 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         string=html_string, 
         base_url=settings.MEDIA_ROOT
     ).write_pdf() or b""
+    
     filename = f"{category}_{instance.id}_{audit_code}.pdf"
+    
     return pdf_bytes, filename, audit_code
 
 
@@ -1279,31 +1444,90 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
     """
     Genera automáticamente todos los documentos PDF de una cita.
     Incluye un sistema de protección contra fallos (Fail-safe).
+    
+    ✅ ETAPA 2: Agrega descripción significativa a cada documento.
     """
     generated_files = []
     errors = []
     
-    # ✅ FIX: Acceder a las relaciones correctas
     from core.models import Prescription, Treatment
     
-    prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment)
-    treatments = Treatment.objects.filter(diagnosis__appointment=appointment)
+    prescriptions = Prescription.objects.filter(diagnosis__appointment=appointment).select_related(
+        'medication_catalog', 'diagnosis'
+    ).prefetch_related('components')
+    
+    treatments = Treatment.objects.filter(diagnosis__appointment=appointment).select_related('diagnosis')
     
     # Mapeo de categorías y sus respectivos QuerySets vinculados a la cita
     generators = {
-        'prescription': prescriptions,           # ✅ Era 'prescriptions'
-        'treatment': treatments,                  # ✅ Era 'treatments'
-        'medical_referral': appointment.referrals.all(),   # ✅ Era 'referrals'
-        'medical_test_order': appointment.medical_tests.all(),  # ✅ Era 'medical_tests'
+        'prescription': prescriptions,
+        'treatment': treatments,
+        'medical_referral': appointment.referrals.all().select_related('diagnosis').prefetch_related('specialties'),
+        'medical_test_order': appointment.medical_tests.all(),
     }
     
     for category, queryset in generators.items():
         for item in queryset:
             try:
                 # Ejecutamos la fábrica de PDFs
-                pdf_bytes, filename, audit_code = generate_generic_pdf(item, category) 
+                pdf_bytes, filename, audit_code = generate_generic_pdf(item, category)
                 
-                # ✅ FIX: Usar campos correctos del modelo MedicalDocument
+                # ========================================
+                # ✅ ETAPA 2: GENERAR DESCRIPCIÓN SIGNIFICATIVA
+                # ========================================
+                
+                description = ""
+                
+                if category == 'prescription':
+                    # Obtener nombre del medicamento
+                    if hasattr(item, 'medication_catalog') and item.medication_catalog:
+                        med_name = item.medication_catalog.name
+                    elif hasattr(item, 'medication_text') and item.medication_text:
+                        med_name = item.medication_text
+                    else:
+                        med_name = "Medicamento"
+                    description = f"Receta: {med_name}"
+                
+                elif category == 'treatment':
+                    # Obtener título del tratamiento
+                    title = getattr(item, 'title', None) or getattr(item, 'plan', None) or "Tratamiento"
+                    # Truncar si es muy largo
+                    if len(title) > 100:
+                        title = title[:97] + "..."
+                    description = f"Tratamiento: {title}"
+                
+                elif category == 'medical_referral':
+                    # Obtener especialidad de destino
+                    specialties = []
+                    if hasattr(item, 'specialties'):
+                        specialties = [s.name for s in item.specialties.all()[:3]]  # Máximo 3
+                    
+                    # Obtener nombre del doctor de destino
+                    referred_to = ""
+                    if hasattr(item, 'referred_to_doctor') and item.referred_to_doctor:
+                        referred_to = item.referred_to_doctor.full_name
+                    elif hasattr(item, 'referred_to_external') and item.referred_to_external:
+                        referred_to = item.referred_to_external
+                    
+                    if specialties:
+                        description = f"Referencia: {', '.join(specialties)}"
+                    elif referred_to:
+                        description = f"Referencia a: {referred_to}"
+                    else:
+                        description = "Referencia Médica"
+                
+                elif category == 'medical_test_order':
+                    # Obtener tipo de examen
+                    test_type = item.get_test_type_display() if hasattr(item, 'get_test_type_display') else getattr(item, 'test_type', 'Examen')
+                    description = f"Orden de Examen: {test_type}"
+                
+                else:
+                    description = f"Documento: {category.replace('_', ' ').title()}"
+                
+                # ========================================
+                # CREAR DOCUMENTO EN BD
+                # ========================================
+                
                 doc = MedicalDocument.objects.create(
                     patient=appointment.patient,
                     appointment=appointment,
@@ -1313,29 +1537,37 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
                     category=category,
                     audit_code=audit_code,
                     origin_panel="bulk_generator",
+                    description=description,  # ✅ ETAPA 2: Descripción significativa
                 )
                 
                 # Guardamos el archivo físico en el almacenamiento (Media)
                 doc.file.save(filename, ContentFile(pdf_bytes))
                 
-                # ✅ FIX: Usar nombres de campos que espera el frontend
+                # Preparar datos para el frontend
                 generated_files.append({
-                    "id": doc.id, 
+                    "id": doc.id,
                     "category": category,
-                    "title": filename,           # ✅ Cambiado de "name" a "title"
+                    "title": filename,
                     "filename": filename,
                     "audit_code": audit_code,
-                    "file_url": doc.file.url if doc.file else None,  # ✅ Cambiado de "url" a "file_url"
+                    "file_url": doc.file.url if doc.file else None,
+                    "description": description,  # ✅ ETAPA 2: Incluir descripción
                 })
+                
             except Exception as e:
                 # Si un documento falla, lo registramos pero permitimos que los demás continúen
-                errors.append({"category": category, "error": str(e)})
+                errors.append({
+                    "category": category,
+                    "item_id": getattr(item, 'id', None),
+                    "error": str(e)
+                })
+    
     return {
         "status": "success" if not errors else "partial_success",
         "total_generated": len(generated_files),
-        "documents": generated_files,  # ✅ Nombre correcto para el frontend
-        "generated_files": generated_files,  # ✅ Mantener por retrocompatibilidad
-        "skipped": [],  # ✅ Agregar campo que espera el frontend
+        "documents": generated_files,
+        "generated_files": generated_files,  # Retrocompatibilidad
+        "skipped": [],
         "errors": errors if errors else [],
     }
 
