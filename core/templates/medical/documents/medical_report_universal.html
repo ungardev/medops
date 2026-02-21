@@ -382,11 +382,11 @@
             {% endif %}
           </td>
           <td>
-            {% if r.specialties.all %}
-              {% for s in r.specialties.all %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% with specialties_list=r.specialties.all %}{% if specialties_list %}
+              {% for s in specialties_list %}{{ s.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
             {% else %}
               <span class="empty">No especificada</span>
-            {% endif %}
+            {% endif %}{% endwith %}
           </td>
           <td>{{ r.reason|default:"Sin motivo" }}</td>
           <td>{{ r.get_urgency_display|default:r.urgency|default:"Rutina" }}</td>
