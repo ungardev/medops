@@ -59,7 +59,6 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
   const documents: MedicalDocument[] = Array.isArray(data?.list) ? data.list : [];
   return (
     <div className="space-y-6">
-      {/* --- SECTION 01: FILE UPLOAD TERMINAL --- */}
       {!readOnly && (
         <div className="bg-black/40 border border-white/10 rounded-sm overflow-hidden">
           <div className="px-4 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
@@ -112,7 +111,6 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
           </form>
         </div>
       )}
-      {/* --- SECTION 02: DOCUMENT REPOSITORY --- */}
       <div className="space-y-2">
         <div className="flex items-center justify-between border-b border-[var(--palantir-border)] pb-2">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
@@ -182,7 +180,6 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
           </div>
         )}
       </div>
-      {/* --- SECTION 03: FOOTER AUDIT --- */}
       <div className="pt-3 border-t border-white/10 flex items-center gap-2 opacity-50">
         <ShieldCheckIcon className="w-3 h-3 text-emerald-500" />
         <span className="text-[8px] font-mono text-white/60 uppercase tracking-widest">
@@ -192,3 +189,4 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
     </div>
   );
 };
+export default DocumentsPanel;
