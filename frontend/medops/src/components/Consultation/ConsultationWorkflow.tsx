@@ -173,7 +173,11 @@ export default function ConsultationWorkflow({
           label={<span className="flex items-center gap-2">{tabIcons.referrals} Referrals</span>}
         >
           <div className="w-full">
-            <MedicalReferralsPanel appointmentId={appointmentId} readOnly={readOnly} />
+            <MedicalReferralsPanel 
+              appointmentId={appointmentId} 
+              diagnoses={diagnoses}
+              readOnly={readOnly} 
+            />
           </div>
         </Tab>
       </Tabs>

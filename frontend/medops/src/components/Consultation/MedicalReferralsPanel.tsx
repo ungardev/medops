@@ -8,7 +8,7 @@ import {
 } from "../../hooks/consultations/useMedicalReferrals";
 import { useSpecialties } from "../../hooks/consultations/useSpecialties";
 import type { Specialty } from "../../types/config";
-import type { MedicalReferral } from "../../types/consultation";
+import type { MedicalReferral, Diagnosis } from "../../types/consultation";
 import SpecialtyComboboxElegante from "./SpecialtyComboboxElegante";
 import { 
   ArrowTopRightOnSquareIcon, 
@@ -37,9 +37,14 @@ const STATUS_CONFIG = {
 };
 export interface MedicalReferralsPanelProps {
   appointmentId: number;
+  diagnoses?: Diagnosis[];
   readOnly?: boolean;
 }
-export default function MedicalReferralsPanel({ appointmentId, readOnly = false }: MedicalReferralsPanelProps) {
+export default function MedicalReferralsPanel({ 
+  appointmentId, 
+  diagnoses = [], 
+  readOnly = false 
+}: MedicalReferralsPanelProps) {
   const { data, isLoading } = useMedicalReferrals(appointmentId);
   const referrals = Array.isArray(data) ? data : [];
   
@@ -50,6 +55,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
   const [referredToExternal, setReferredToExternal] = useState("");
   const [reason, setReason] = useState("");
   const [selectedSpecialties, setSelectedSpecialties] = useState<Specialty[]>([]);
+  const [selectedDiagnosisId, setSelectedDiagnosisId] = useState<number | null>(null);
   const { data: specialties = [] } = useSpecialties("");
   const [urgency, setUrgency] = useState<"routine" | "urgent" | "stat">("routine");
   const [status, setStatus] = useState<"issued" | "accepted" | "rejected">("issued");
@@ -59,6 +65,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
     setReferredToExternal("");
     setReason("");
     setSelectedSpecialties([]);
+    setSelectedDiagnosisId(null);
     setUrgency("routine");
     setStatus("issued");
     setEditingReferral(null);
@@ -69,6 +76,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
     try {
       await createReferral({
         appointment: appointmentId,
+        diagnosis: selectedDiagnosisId,
         referred_to_external: referredToExternal,
         reason,
         specialty_ids: selectedSpecialties.map((s) => s.id),
@@ -78,6 +86,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       setReferredToExternal("");
       setReason("");
       setSelectedSpecialties([]);
+      setSelectedDiagnosisId(null);
       setUrgency("routine");
     } catch (err: any) { console.error("Error creating referral:", err); }
   };
@@ -88,6 +97,7 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
       await updateReferralMutation({
         id: editingReferral.id,
         appointment: appointmentId,
+        diagnosis: editingReferral.diagnosis,
         referred_to_external: editingReferral.referred_to_external,
         reason: editingReferral.reason,
         specialty_ids: editingReferral.specialties?.map((s) => s.id) || [],
@@ -240,6 +250,27 @@ export default function MedicalReferralsPanel({ appointmentId, readOnly = false 
         {/* FORMULARIO DE NUEVA REFERENCIA */}
         {!readOnly && (
           <div className="mt-6 pt-6 border-t border-white/10 space-y-4">
+            {/* SELECTOR DE DIAGNÓSTICO */}
+            {diagnoses.length > 0 && (
+              <div className="space-y-1">
+                <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">
+                  Related_Diagnosis_(Recommended)
+                </label>
+                <select 
+                  value={selectedDiagnosisId || ""} 
+                  onChange={(e) => setSelectedDiagnosisId(Number(e.target.value) || null)}
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[10px] font-mono text-[var(--palantir-text)] outline-none focus:border-[var(--palantir-active)]"
+                >
+                  <option value="">Sin diagnóstico específico</option>
+                  {diagnoses.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.icd_code} - {d.title || d.name || "Sin título"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Target_Facility_Specialist</label>
