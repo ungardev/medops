@@ -1,208 +1,245 @@
 <!DOCTYPE html>
-<html lang="es" class="medical-document">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Informe Médico - {{ institution.name }}</title>
-  <link rel="stylesheet" href="medical/css/universal.css">
-  {% if institution.country_code %}
-  <link rel="stylesheet" href="medical/css/country_{{ institution.country_code|lower }}.css">
-  {% endif %}
-  <meta name="generator" content="MEDOPZ Universal Medical System v2.0" />
-  <meta name="audit_code" content="{{ audit_code }}" />
-  <meta name="institution_id" content="{{ institution.id }}" />
-  <meta name="patient_id" content="{{ patient.id }}" />
-  <meta name="generated_at" content="{{ generated_at|date:'Y-m-d H:i:s' }}" />
+  <title>Informe Médico Completo - {{ institution.name }}</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 1.5cm;
+    }
+    body {
+      font-family: "DejaVu Sans", sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0;
+      padding: 0;
+      color: #000;
+    }
+    header {
+      text-align: center;
+      border-bottom: 1px solid #000;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+    }
+    h1 { font-size: 16px; margin: 0; color: #000; }
+    h2 { font-size: 13px; margin: 10px 0 6px 0; border-bottom: 1px solid #ccc; color: #000; }
+    h3 { font-size: 12px; margin: 6px 0 4px 0; color: #374151; }
+    .section { margin-bottom: 12px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 11px;
+    }
+    th, td { 
+      border: 1px solid #000; 
+      padding: 4px; 
+      text-align: left; 
+      vertical-align: top; 
+    }
+    th { background: #f0f0f0; color: #000; font-weight: 600; }
+    .label { font-weight: 600; color: #374151; }
+    .empty { color: #666; font-style: italic; }
+    .soap-section { 
+      margin-bottom: 10px; 
+      padding: 8px; 
+      background: #fafafa; 
+      border-left: 3px solid #000; 
+    }
+    .soap-header { 
+      font-weight: 600; 
+      font-size: 11px; 
+      text-transform: uppercase; 
+      margin-bottom: 4px; 
+      color: #374151;
+    }
+    .vitals-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .vital-item {
+      flex: 1;
+      min-width: 100px;
+      padding: 6px;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+    }
+    .vital-label { font-size: 9px; color: #666; text-transform: uppercase; }
+    .vital-value { font-size: 14px; font-weight: 600; }
+    footer {
+      margin-top: 12px;
+      font-size: 10px;
+      text-align: center;
+      border-top: 1px solid #000;
+      padding-top: 6px;
+    }
+    .qr { margin-top: 8px; }
+    .signature-area {
+      margin-top: 20px;
+      border-top: 1px dashed #ccc;
+      padding-top: 15px;
+    }
+    .section, table, .soap-section { page-break-inside: avoid; }
+  </style>
 </head>
-<body class="country-{{ institution.country_code|default:'ve' }}">
-  
-  <!-- 🏥 Header Institucional Universal -->
-  <header class="medical-header">
-    <div class="institution-logo">
-      {% if institution.logo %}
-        <img src="{{ institution.logo.path }}" alt="Logo Institución" class="institution-logo">
-      {% endif %}
-    </div>
-    
-    <div class="institution-info">
-      <h1 class="institution-name">{{ institution.name }}</h1>
-      <p class="institution-details">
-        {{ institution.address }}<br>
-        Tel: {{ institution.phone }}<br>
-        {% if institution.tax_id %}RIF: {{ institution.tax_id }}{% endif %}
-        {% if institution.email %}Email: {{ institution.email }}{% endif %}
-      </p>
-      <div class="audit-code">
-        <strong>Código Auditoría:</strong> {{ audit_code }}
-      </div>
-    </div>
-    
-    <div class="institution-info">
-      <div class="generated-date">
-        Emitido: {{ generated_at|date:'d/m/Y H:i' }}
-      </div>
-      <div class="consultation-id">
-        Consulta #{{ appointment.id }}
-      </div>
-    </div>
+<body>
+  <!-- HEADER INSTITUCIONAL -->
+  <header>
+    {% if institution.logo %}
+      <img src="{{ institution.logo.path }}" alt="Logo Institucional"
+           style="max-width:120px; max-height:70px; object-fit:contain; margin-bottom:6px;">
+    {% endif %}
+    <h1>{{ institution.name }}</h1>
+    <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
+    <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
+    <p><strong>Consulta #{{ appointment.id }} — Código de auditoría: {{ audit_code }}</strong></p>
   </header>
-  <!-- 👤 Sección de Paciente -->
-  <section class="patient-section">
-    <div class="patient-header">
-      <div class="patient-name">{{ patient.first_name }} {{ patient.last_name }}</div>
-      <div class="patient-detail">
-        <span class="detail-label">Edad:</span>
-        <span class="detail-value">{{ patient.age }} años</span>
-      </div>
-      <div class="patient-detail">
-        <span class="detail-label">Sexo:</span>
-        <span class="detail-value">{{ patient.gender }}</span>
-      </div>
-      <div class="patient-detail">
-        <span class="detail-label">CI:</span>
-        <span class="detail-value">{{ patient.national_id }}</span>
-      </div>
+  <!-- SECCIÓN DE PACIENTE -->
+  <div class="section">
+    <strong>Paciente:</strong> {{ patient.full_name }}<br>
+    C.I.: {{ patient.national_id }} - Edad: {{ patient.age }} años - Sexo: {{ patient.gender }}<br>
+    {% if patient.phone %}Teléfono: {{ patient.phone }} - {% endif %}
+    {% if patient.email %}Email: {{ patient.email }}{% endif %}
+  </div>
+  <!-- SECCIÓN DEL MÉDICO -->
+  <div class="section">
+    <strong>Médico Tratante:</strong> {{ doctor.full_name }}<br>
+    {% if doctor.colegiado_id %}Nº Colegiado: {{ doctor.colegiado_id }}<br>{% endif %}
+    {% if doctor.specialties %}Especialidades: {{ doctor.specialties|join:", " }}{% endif %}
+    {% if doctor.signature %}
+    <div style="margin-top:6px;">
+      <img src="{{ doctor.signature.path }}" alt="Firma" style="height:40px;">
     </div>
-    
-    <div class="patient-details-grid">
-      <div class="patient-detail">
-        <span class="detail-label">Fecha Nac:</span>
-        <span class="detail-value">{{ patient.birthdate|date:'d/m/Y' }}</span>
+    {% endif %}
+  </div>
+  <!-- SIGNOS VITALES (Solo si hay datos) -->
+  {% if vital_signs %}
+  <div class="section">
+    <h2>Signos Vitales</h2>
+    <div class="vitals-grid">
+      {% if vital_signs.weight %}
+      <div class="vital-item">
+        <div class="vital-label">Peso</div>
+        <div class="vital-value">{{ vital_signs.weight }} kg</div>
       </div>
-      <div class="patient-detail">
-        <span class="detail-label">Teléfono:</span>
-        <span class="detail-value">{{ patient.phone|default:'N/A' }}</span>
+      {% endif %}
+      {% if vital_signs.height %}
+      <div class="vital-item">
+        <div class="vital-label">Talla</div>
+        <div class="vital-value">{{ vital_signs.height }} cm</div>
       </div>
-      <div class="patient-detail">
-        <span class="detail-label">Email:</span>
-        <span class="detail-value">{{ patient.email|default:'N/A' }}</span>
+      {% endif %}
+      {% if vital_signs.bmi %}
+      <div class="vital-item">
+        <div class="vital-label">IMC</div>
+        <div class="vital-value">{{ vital_signs.bmi|floatformat:1 }}</div>
       </div>
-      <div class="patient-detail">
-        <span class="detail-label">Tipo Sangre:</span>
-        <span class="detail-value">{{ patient.blood_type|default:'N/A' }}</span>
+      {% endif %}
+      {% if vital_signs.bp_systolic and vital_signs.bp_diastolic %}
+      <div class="vital-item">
+        <div class="vital-label">Presión Arterial</div>
+        <div class="vital-value">{{ vital_signs.bp_systolic }}/{{ vital_signs.bp_diastolic }} mmHg</div>
       </div>
-    </div>
-  </section>
-  <!-- 🏥 Información del Médico -->
-  <section class="doctor-section">
-    <h2 class="section-title">Médico Tratante</h2>
-    <div class="doctor-details">
-      <div class="doctor-name">{{ doctor.full_name }}</div>
-      <div class="doctor-info">
-        {% if doctor.colegiado_id %}<strong>Nº Colegiado:</strong> {{ doctor.colegiado_id }}<br>{% endif %}
-        {% if doctor.specialties %}<strong>Especialidades:</strong> {{ doctor.specialties|join:", " }}<br>{% endif %}
-        {% if doctor.email %}<strong>Email:</strong> {{ doctor.email }}<br>{% endif %}
-        {% if doctor.phone %}<strong>Teléfono:</strong> {{ doctor.phone }}{% endif %}
+      {% endif %}
+      {% if vital_signs.temperature %}
+      <div class="vital-item">
+        <div class="vital-label">Temperatura</div>
+        <div class="vital-value">{{ vital_signs.temperature }} °C</div>
       </div>
-      {% if doctor.signature %}
-      <div class="signature-info">
-        <strong>Firma Digital:</strong><br>
-        <img src="{{ doctor.signature.path }}" alt="Firma Médico" class="signature-image">
+      {% endif %}
+      {% if vital_signs.heart_rate %}
+      <div class="vital-item">
+        <div class="vital-label">Frecuencia Cardíaca</div>
+        <div class="vital-value">{{ vital_signs.heart_rate }} lpm</div>
+      </div>
+      {% endif %}
+      {% if vital_signs.respiratory_rate %}
+      <div class="vital-item">
+        <div class="vital-label">Frecuencia Respiratoria</div>
+        <div class="vital-value">{{ vital_signs.respiratory_rate }} rpm</div>
+      </div>
+      {% endif %}
+      {% if vital_signs.oxygen_saturation %}
+      <div class="vital-item">
+        <div class="vital-label">Saturación O₂</div>
+        <div class="vital-value">{{ vital_signs.oxygen_saturation }}%</div>
       </div>
       {% endif %}
     </div>
-  </section>
-  <!-- 📋 Estructura SOAP -->
-  <section class="soap-structure">
-    <!-- Subjective -->
+  </div>
+  {% endif %}
+  <!-- NOTA CLÍNICA (Estructura SOAP) -->
+  {% if clinical_note %}
+  <div class="section">
+    <h2>Nota Clínica</h2>
+    
+    {% if clinical_note.subjective %}
     <div class="soap-section">
-      <div class="soap-header">
-        <span class="soap-icon">👂</span>
-        SUBJETIVO
-      </div>
-      <div class="soap-content">
-        {% if clinical_note and clinical_note.subjective %}
-          {{ clinical_note.subjective|linebreaks }}
-        {% else %}
-          <p class="soap-empty">No hay datos subjetivos registrados</p>
-        {% endif %}
-      </div>
+      <div class="soap-header">Subjetivo</div>
+      <p>{{ clinical_note.subjective }}</p>
     </div>
-    <!-- Objective -->
+    {% endif %}
+    
+    {% if clinical_note.objective %}
     <div class="soap-section">
-      <div class="soap-header">
-        <span class="soap-icon">👁️</span>
-        OBJETIVO
-      </div>
-      <div class="soap-content">
-        {% if clinical_note and clinical_note.objective %}
-          {{ clinical_note.objective|linebreaks }}
-        {% else %}
-          <p class="soap-empty">No hay hallazgos objetivos registrados</p>
-        {% endif %}
-      </div>
+      <div class="soap-header">Objetivo</div>
+      <p>{{ clinical_note.objective }}</p>
     </div>
-    <!-- Analysis -->
+    {% endif %}
+    
+    {% if clinical_note.analysis %}
     <div class="soap-section">
-      <div class="soap-header">
-        <span class="soap-icon">🧠</span>
-        ANÁLISIS
-      </div>
-      <div class="soap-content">
-        {% if clinical_note and clinical_note.analysis %}
-          {{ clinical_note.analysis|linebreaks }}
-        {% else %}
-          <p class="soap-empty">No hay análisis registrado</p>
-        {% endif %}
-      </div>
+      <div class="soap-header">Análisis</div>
+      <p>{{ clinical_note.analysis }}</p>
     </div>
-    <!-- Plan -->
+    {% endif %}
+    
+    {% if clinical_note.plan %}
     <div class="soap-section">
-      <div class="soap-header">
-        <span class="soap-icon">📋</span>
-        PLAN
-      </div>
-      <div class="soap-content">
-        {% if clinical_note and clinical_note.plan %}
-          {{ clinical_note.plan|linebreaks }}
-        {% else %}
-          <p class="soap-empty">No hay plan registrado</p>
-        {% endif %}
-      </div>
+      <div class="soap-header">Plan</div>
+      <p>{{ clinical_note.plan }}</p>
     </div>
-  </section>
-  <!-- 🔬 Diagnósticos -->
-  {% if diagnoses %}
-  <section class="diagnosis-section">
-    <h2 class="section-title">Diagnósticos</h2>
-    <table class="medical-table">
+    {% endif %}
+  </div>
+  {% endif %}
+  <!-- DIAGNÓSTICOS -->
+  <div class="section">
+    <h2>Diagnósticos</h2>
+    {% if diagnoses %}
+    <table>
       <thead>
         <tr>
-          <th>Código ICD-11</th>
+          <th>Código</th>
           <th>Diagnóstico</th>
+          <th>Tipo</th>
           <th>Descripción</th>
-          <th>Severidad</th>
         </tr>
       </thead>
       <tbody>
-        {% for diagnosis in diagnoses %}
+        {% for d in diagnoses %}
         <tr>
-          <td class="number-cell">{{ diagnosis.icd_code|default:'N/A' }}</td>
-          <td>{{ diagnosis.title }}</td>
-          <td>{{ diagnosis.description|default:'Sin descripción' }}</td>
-          <td>
-            {% if diagnosis.severity == 'high' %}
-              <span class="status-high">ALTA</span>
-            {% elif diagnosis.severity == 'medium' %}
-              <span class="status-normal">MEDIA</span>
-            {% else %}
-              <span class="status-low">BAJA</span>
-            {% endif %}
-          </td>
+          <td>{{ d.icd_code }}</td>
+          <td>{{ d.title }}</td>
+          <td>{{ d.type_display|default:"Diagnóstico" }}</td>
+          <td>{{ d.description|default:"Sin descripción" }}</td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="4" class="soap-empty">No hay diagnósticos registrados</td>
-        </tr>
+        <tr><td colspan="4" class="empty">Sin diagnósticos registrados</td></tr>
         {% endfor %}
       </tbody>
     </table>
-  </section>
-  {% endif %}
-  <!-- 💊 Tratamientos -->
-  {% if treatments %}
-  <section class="treatments-section">
-    <h2 class="section-title">Tratamientos</h2>
-    <table class="medical-table">
+    {% else %}
+    <p class="empty">No hay diagnósticos registrados</p>
+    {% endif %}
+  </div>
+  <!-- TRATAMIENTOS -->
+  <div class="section">
+    <h2>Tratamientos</h2>
+    {% if treatments %}
+    <table>
       <thead>
         <tr>
           <th>Tratamiento</th>
@@ -212,79 +249,78 @@
         </tr>
       </thead>
       <tbody>
-        {% for treatment in treatments %}
+        {% for t in treatments %}
         <tr>
-          <td>{{ treatment.plan }}</td>
-          <td>{{ treatment.treatment_type|default:'General' }}</td>
+          <td>{{ t.plan }}</td>
+          <td>{{ t.treatment_type_display|default:t.treatment_type|default:"General" }}</td>
           <td>
-            {% if treatment.start_date and treatment.end_date %}
-              {{ treatment.start_date|date:'d/m/Y' }} - {{ treatment.end_date|date:'d/m/Y' }}
+            {% if t.start_date and t.end_date %}
+              {{ t.start_date|date:"d/m/Y" }} - {{ t.end_date|date:"d/m/Y" }}
+            {% elif t.start_date %}
+              Desde {{ t.start_date|date:"d/m/Y" }}
             {% else %}
               No especificada
             {% endif %}
           </td>
-          <td>
-            {% if treatment.status == 'completed' %}
-              <span class="status-low">COMPLETADO</span>
-            {% elif treatment.status == 'in_progress' %}
-              <span class="status-normal">EN PROGRESO</span>
-            {% else %}
-              <span class="status-high">PENDIENTE</span>
-            {% endif %}
-          </td>
+          <td>{{ t.status_display|default:t.status|default:"Activo" }}</td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="4" class="soap-empty">No hay tratamientos registrados</td>
-        </tr>
+        <tr><td colspan="4" class="empty">Sin tratamientos registrados</td></tr>
         {% endfor %}
       </tbody>
     </table>
-  </section>
-  {% endif %}
-  <!-- 📋 Prescripciones -->
-  {% if prescriptions %}
-  <section class="prescriptions-section">
-    <h2 class="section-title">Prescripciones</h2>
-    <table class="medical-table">
+    {% else %}
+    <p class="empty">No hay tratamientos registrados</p>
+    {% endif %}
+  </div>
+  <!-- PRESCRIPCIONES -->
+  <div class="section">
+    <h2>Prescripciones</h2>
+    {% if prescriptions %}
+    <table>
       <thead>
         <tr>
           <th>Medicamento</th>
-          <th>Dosis</th>
+          <th>Composición</th>
           <th>Vía</th>
           <th>Frecuencia</th>
           <th>Duración</th>
         </tr>
       </thead>
       <tbody>
-        {% for prescription in prescriptions %}
+        {% for p in prescriptions %}
         <tr>
-          <td>{{ prescription.medication }}</td>
-          <td>{{ prescription.dosage|default:'N/A' }}</td>
-          <td>{{ prescription.route|default:'N/A' }}</td>
-          <td>{{ prescription.frequency|default:'N/A' }}</td>
-          <td>{{ prescription.duration|default:'N/A' }}</td>
+          <td>{{ p.medication }}</td>
+          <td>
+            {% if p.components %}
+              {% for c in p.components %}{{ c.substance }} {{ c.dosage }}{{ c.unit }}{% if not forloop.last %}, {% endif %}{% endfor %}
+            {% else %}
+              <span class="empty">Sin componentes</span>
+            {% endif %}
+          </td>
+          <td>{{ p.route_display|default:p.route|default:"N/A" }}</td>
+          <td>{{ p.frequency_display|default:p.frequency|default:"N/A" }}</td>
+          <td>{{ p.duration|default:"N/A" }}</td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="5" class="soap-empty">No hay prescripciones registradas</td>
-        </tr>
+        <tr><td colspan="5" class="empty">Sin prescripciones registradas</td></tr>
         {% endfor %}
       </tbody>
     </table>
-  </section>
-  {% endif %}
-  <!-- 🧪 Órdenes de Exámenes -->
-  {% if medical_tests %}
-  <section class="tests-section">
-    <h2 class="section-title">Órdenes de Exámenes Médicos</h2>
-    <table class="medical-table">
+    {% else %}
+    <p class="empty">No hay prescripciones registradas</p>
+    {% endif %}
+  </div>
+  <!-- ÓRDENES DE EXÁMENES -->
+  <div class="section">
+    <h2>Órdenes de Exámenes</h2>
+    {% if medical_tests %}
+    <table>
       <thead>
         <tr>
           <th>Examen</th>
           <th>Tipo</th>
           <th>Urgencia</th>
-          <th>Notas</th>
           <th>Estado</th>
         </tr>
       </thead>
@@ -292,74 +328,100 @@
         {% for test in medical_tests %}
         <tr>
           <td>{{ test.name }}</td>
-          <td>{{ test.test_type|default:'General' }}</td>
-          <td>
-            {% if test.urgency == 'high' %}
-              <span class="status-high">ALTA</span>
-            {% elif test.urgency == 'normal' %}
-              <span class="status-normal">NORMAL</span>
-            {% else %}
-              <span class="status-low">BAJA</span>
-            {% endif %}
-          </td>
-          <td>{{ test.notes|default:'Sin notas' }}</td>
-          <td>
-            {% if test.status == 'completed' %}
-              <span class="status-low">COMPLETADO</span>
-            {% elif test.status == 'ordered' %}
-              <span class="status-normal">ORDENADO</span>
-            {% else %}
-              <span class="status-high">PENDIENTE</span>
-            {% endif %}
-          </td>
+          <td>{{ test.test_type_display|default:test.test_type|default:"General" }}</td>
+          <td>{{ test.urgency_display|default:test.urgency|default:"Rutina" }}</td>
+          <td>{{ test.status_display|default:test.status|default:"Pendiente" }}</td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="5" class="soap-empty">No hay exámenes ordenados</td>
-        </tr>
+        <tr><td colspan="4" class="empty">Sin exámenes ordenados</td></tr>
         {% endfor %}
       </tbody>
     </table>
-  </section>
-  {% endif %}
-  <!-- 📋 Sección de Firmas -->
-  <footer class="medical-footer">
-    <div class="signature-section">
-      <div class="signature-grid">
-        <div class="signature-info">
-          <h3>Firma del Médico Tratante</h3>
-          <p><strong>{{ doctor.full_name }}</strong></p>
-          <p>Nº Colegiado: {{ doctor.colegiado_id|default:'N/A' }}</p>
+    {% else %}
+    <p class="empty">No hay órdenes de exámenes registradas</p>
+    {% endif %}
+  </div>
+  <!-- REFERENCIAS MÉDICAS -->
+  <div class="section">
+    <h2>Referencias Médicas</h2>
+    {% if referrals %}
+    <table>
+      <thead>
+        <tr>
+          <th>Destino</th>
+          <th>Especialidad</th>
+          <th>Motivo</th>
+          <th>Urgencia</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in referrals %}
+        <tr>
+          <td>{{ r.referred_to|default:"Por asignar" }}</td>
+          <td>
+            {% if r.specialties %}
+              {{ r.specialties|join:", " }}
+            {% else %}
+              <span class="empty">No especificada</span>
+            {% endif %}
+          </td>
+          <td>{{ r.reason|default:"Sin motivo" }}</td>
+          <td>{{ r.urgency_display|default:r.urgency|default:"Rutina" }}</td>
+          <td>{{ r.status_display|default:r.status|default:"Emitida" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty">Sin referencias registradas</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No hay referencias médicas registradas</p>
+    {% endif %}
+  </div>
+  <!-- ÁREA DE FIRMA -->
+  <div class="signature-area">
+    <h3>Firma del Médico Tratante</h3>
+    <table>
+      <tr>
+        <td width="50%">
+          <strong>{{ doctor.full_name }}</strong><br>
+          Nº Colegiado: {{ doctor.colegiado_id|default:"N/A" }}<br>
           {% if doctor.specialties %}
-          <p>Especialidades: {{ doctor.specialties|join:", " }}</p>
+          Especialidades: {{ doctor.specialties|join:", " }}<br>
           {% endif %}
-        </div>
-        
-        <div class="signature-fields">
-          <div class="signature-field">
-            <span class="field-label">Firma:</span>
-            <div class="field-input"></div>
+          {% if doctor.signature %}
+          <div style="margin-top:10px;">
+            <img src="{{ doctor.signature.path }}" alt="Firma" style="height:45px;">
           </div>
-          <div class="signature-field">
-            <span class="field-label">Fecha:</span>
-            <div class="field-input">{{ generated_at|date:'d/m/Y' }}</div>
-          </div>
-          <div class="signature-field">
-            <span class="field-label">Sello:</span>
-            <div class="field-input"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="footer-text">
-      Este informe médico forma parte del expediente clínico institucional.<br>
-      Generado por el sistema MEDOPZ v2.0 - {{ institution.name }}<br>
-      <strong>Código de Auditoría: {{ audit_code }}</strong>
-    </div>
-    
-    <div class="qr-code">
-      <img src="{{ qr_code_url }}" alt="QR Auditoría" />
+          {% endif %}
+        </td>
+        <td width="50%">
+          <table style="border: none; width: 100%;">
+            <tr>
+              <td><span class="label">Firma:</span></td>
+              <td>_________________________</td>
+            </tr>
+            <tr>
+              <td><span class="label">Fecha:</span></td>
+              <td>{{ generated_at|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+              <td><span class="label">Sello:</span></td>
+              <td>_________________________</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <!-- FOOTER -->
+  <footer>
+    Este informe médico forma parte del expediente clínico institucional.<br>
+    Generado por {{ doctor.full_name }} - {{ institution.name }}<br>
+    Código de auditoría: {{ audit_code }}
+    <div class="qr">
+      <img src="{{ qr_code_url }}" alt="QR Auditoría" style="height:80px;">
     </div>
   </footer>
 </body>

@@ -27,6 +27,10 @@ from typing import Dict, Optional, Any
 from django.db.models import Q
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
+import qrcode
+import base64
+from io import BytesIO
+from .services import generate_audit_code
 
 
 logger = logging.getLogger(__name__)
@@ -1270,32 +1274,54 @@ def notifications_api(request):
 def generate_medical_report(request, pk):
     """
     Genera PDF de informe médico completo.
-    Incluye diagnósticos, tratamientos, recetas, exámenes, y referencias.
+    Incluye signos vitales, notas clínicas (SOAP), diagnósticos, tratamientos, 
+    recetas, exámenes, y referencias.
     """
     try:
-        # Obtener el informe médico
         report = get_object_or_404(MedicalReport, pk=pk)
         appointment = report.appointment
         patient = appointment.patient
         doctor = appointment.doctor
         institution = appointment.institution
         
-        # Obtener datos de la consulta (CORREGIDO)
-        diagnoses = Diagnosis.objects.filter(appointment=appointment)  # ✅ CORRECTO - Tiene appointment
-        treatments = Treatment.objects.filter(  # ✅ CORREGIDO - No tiene appointment
+        diagnoses = Diagnosis.objects.filter(appointment=appointment)
+        treatments = Treatment.objects.filter(
             patient=appointment.patient,
             doctor=appointment.doctor,
             institution=appointment.institution
         )
-        prescriptions = Prescription.objects.filter(  # ✅ CORREGIDO - No tiene appointment
+        prescriptions = Prescription.objects.filter(
             patient=appointment.patient,
             doctor=appointment.doctor,
             institution=appointment.institution
         )
-        medical_tests = MedicalTest.objects.filter(appointment=appointment)  # ✅ CORRECTO - Tiene appointment
-        referrals = MedicalReferral.objects.filter(appointment=appointment)  # ✅ CORRECTO - Tiene appointment
+        medical_tests = MedicalTest.objects.filter(appointment=appointment)
+        referrals = MedicalReferral.objects.filter(appointment=appointment)
         
-        # Preparar contexto para plantilla
+        try:
+            vital_signs = appointment.vital_signs
+        except Exception:
+            vital_signs = None
+        
+        try:
+            clinical_note = appointment.note
+        except Exception:
+            clinical_note = None
+        
+        audit_code = generate_audit_code(appointment, patient)
+        qr_payload = f"Consulta:{appointment.id}|MedicalReport:{report.id}|Audit:{audit_code}"
+        qr_img = qrcode.make(qr_payload)
+        buffer = BytesIO()
+        qr_img.save(buffer, "PNG")
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        qr_code_url = f"data:image/png;base64,{qr_base64}"
+        
+        doctor_specialties = []
+        if hasattr(doctor, 'specialties'):
+            doctor_specialties = [s.name for s in doctor.specialties.all()]
+        elif hasattr(doctor, 'specialty') and doctor.specialty:
+            doctor_specialties = [doctor.specialty.name]
+        
         context = {
             'data': report,
             'patient': patient,
@@ -1307,21 +1333,21 @@ def generate_medical_report(request, pk):
             'prescriptions': prescriptions,
             'medical_tests': medical_tests,
             'referrals': referrals,
+            'vital_signs': vital_signs,
+            'clinical_note': clinical_note,
+            'audit_code': audit_code,
+            'qr_code_url': qr_code_url,
             'generated_at': timezone.now(),
         }
         
-        # Renderizar HTML desde plantilla
-        html_string = render_to_string('medical/documents/medical_report.html', context)
+        html_string = render_to_string('medical/documents/medical_report_universal.html', context)
         
-        # Generar PDF con WeasyPrint
         pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
         
-        # Crear respuesta HTTP con PDF
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        filename = f"medical_report_{appointment.id}_{report.id}.pdf"
+        filename = f"medical_report_{appointment.id}_{report.id}_{audit_code}.pdf"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
-        # Actualizar el reporte con la URL del PDF
         report.file_url = f"/media/medical_reports/{filename}"
         report.save()
         
