@@ -1274,15 +1274,26 @@ def notifications_api(request):
 def generate_medical_report(request, pk):
     """
     Genera PDF de informe médico completo.
+    pk = appointment_id (ID de la consulta)
+    
     Incluye signos vitales, notas clínicas (SOAP), diagnósticos, tratamientos, 
     recetas, exámenes, y referencias.
     """
     try:
-        report = get_object_or_404(MedicalReport, pk=pk)
-        appointment = report.appointment
+        appointment = get_object_or_404(Appointment, pk=pk)
         patient = appointment.patient
         doctor = appointment.doctor
         institution = appointment.institution
+        
+        # ✅ CREAR OBTENER MedicalReport
+        report, created = MedicalReport.objects.get_or_create(
+            appointment=appointment,
+            defaults={
+                'patient': patient,
+                'doctor': doctor,
+                'institution': institution,
+            }
+        )
         
         diagnoses = Diagnosis.objects.filter(appointment=appointment)
         treatments = Treatment.objects.filter(
@@ -1316,12 +1327,6 @@ def generate_medical_report(request, pk):
         qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
         qr_code_url = f"data:image/png;base64,{qr_base64}"
         
-        doctor_specialties = []
-        if hasattr(doctor, 'specialties'):
-            doctor_specialties = [s.name for s in doctor.specialties.all()]
-        elif hasattr(doctor, 'specialty') and doctor.specialty:
-            doctor_specialties = [doctor.specialty.name]
-        
         context = {
             'data': report,
             'patient': patient,
@@ -1341,7 +1346,6 @@ def generate_medical_report(request, pk):
         }
         
         html_string = render_to_string('medical/documents/medical_report_universal.html', context)
-        
         pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
         
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
