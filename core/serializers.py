@@ -2462,9 +2462,6 @@ class BillingItemSerializer(serializers.ModelSerializer):
 
 class BillingItemWriteSerializer(serializers.ModelSerializer):
     """Serializer de escritura para items de facturación."""
-    bank_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    detail = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-    
     class Meta:
         model = BillingItem
         fields = [
@@ -2472,30 +2469,25 @@ class BillingItemWriteSerializer(serializers.ModelSerializer):
             'unit_price', 'currency', 'estimated_duration',
             'sort_order', 'is_active'
         ]
-    
     def validate_unit_price(self, value):
         if value < Decimal('0.00'):
             raise serializers.ValidationError("El precio no puede ser negativo")
         return value
-    
     def validate_code(self, value):
         # Obtener institución del header o del perfil del doctor
         request = self.context.get('request')
         institution_id = request.headers.get('X-Institution-ID') if request else None
-        
         if institution_id:
             institution = InstitutionSettings.objects.get(pk=institution_id)
         else:
             doctor = getattr(request.user, 'doctor_profile', None) if request else None
             institution = doctor.active_institution or doctor.institutions.first() if doctor else None
-        
         if institution:
             qs = BillingItem.objects.filter(institution=institution, code=value.upper())
             if self.instance:
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise serializers.ValidationError("Ya existe un item con este código")
-        
         return value.upper()
 
 
