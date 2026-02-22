@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { ChargeOrder, ChargeItem, Payment } from "../../types/payments";
 import { useChargeOrder, useCreatePayment, PaymentPayload } from "../../hooks/consultations/useChargeOrder";
-import axios from "axios";
+import { apiFetch } from "../../api/client";
 import { 
   CurrencyDollarIcon, 
   ChevronDownIcon, 
@@ -16,25 +16,20 @@ import {
   ArrowsRightLeftIcon,
   ReceiptPercentIcon
 } from "@heroicons/react/24/outline";
-
 export type ChargeOrderPanelProps =
   | { appointmentId: number; readOnly?: boolean }
   | { chargeOrder: ChargeOrder; readOnly?: boolean };
-
 function isAppointmentMode(props: ChargeOrderPanelProps): props is { appointmentId: number; readOnly?: boolean } {
   return (props as any).appointmentId !== undefined;
 }
-
 const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const readOnly = props.readOnly ?? false;
   const [order, setOrder] = useState<ChargeOrder | null>(null);
   const [showItems, setShowItems] = useState(false);
   const [showPayments, setShowPayments] = useState(false);
-
   const { data, isLoading, refetch } = isAppointmentMode(props)
     ? useChargeOrder(props.appointmentId)
     : { data: null, isLoading: false, refetch: async () => {} };
-
   useEffect(() => {
     if (!isAppointmentMode(props)) {
       setOrder(props.chargeOrder ?? null);
@@ -42,25 +37,33 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     }
     setOrder(data ?? null);
   }, [props, data]);
-
   const createPayment = useCreatePayment(
     order?.id ?? undefined,
     isAppointmentMode(props) ? props.appointmentId : order?.appointment
   );
-
   // Estados de Formulario de Pago
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"cash" | "card" | "transfer" | "other">("cash");
+  const [method, setMethod] = useState<"cash" | "card" | "transfer" | "zelle" | "crypto" | "other">("cash");
   const [reference, setReference] = useState("");
   const [bank, setBank] = useState("");
   const [otherDetail, setOtherDetail] = useState("");
-
   // Estados de Edición de Ítems
   const [editItemId, setEditItemId] = useState<number | null>(null);
   const [editDescription, setEditDescription] = useState("");
   const [editQty, setEditQty] = useState(1);
   const [editPrice, setEditPrice] = useState(0);
-
+  // ✅ FIX: Crear orden de cobro con endpoint correcto
+  const handleCreateOrder = async () => {
+    if (!isAppointmentMode(props)) return;
+    try {
+      await apiFetch(`appointments/${props.appointmentId}/charge-order/create/`, {
+        method: "POST",
+      });
+      void refetch();
+    } catch (err) {
+      console.error("Order_Create_Fault:", err);
+    }
+  };
   const handleAddItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!order) return;
@@ -68,39 +71,42 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     const formData = new FormData(form);
     
     try {
-      await axios.post("/charge-items/", {
-        order: order.id,
-        code: formData.get("code"),
-        description: formData.get("desc"),
-        qty: Number(formData.get("qty")),
-        unit_price: Number(formData.get("price")),
+      await apiFetch("charge-items/", {
+        method: "POST",
+        body: JSON.stringify({
+          order: order.id,
+          code: formData.get("code"),
+          description: formData.get("desc"),
+          qty: Number(formData.get("qty")),
+          unit_price: Number(formData.get("price")),
+        }),
       });
       form.reset();
       void refetch();
     } catch (err) { console.error("Item_Add_Fault:", err); }
   };
-
   const handleUpdateItem = async (id: number) => {
     try {
-      await axios.put(`/charge-items/${id}/`, {
-        code: order?.items?.find((i) => i.id === id)?.code,
-        description: editDescription,
-        qty: editQty,
-        unit_price: editPrice,
+      await apiFetch(`charge-items/${id}/`, {
+        method: "PUT",
+        body: JSON.stringify({
+          code: order?.items?.find((i) => i.id === id)?.code,
+          description: editDescription,
+          qty: editQty,
+          unit_price: editPrice,
+        }),
       });
       setEditItemId(null);
       void refetch();
     } catch (err) { console.error("Update_Fault:", err); }
   };
-
   const handleDeleteItem = async (id: number) => {
     if (!confirm("Confirm Item Deletion?")) return;
     try {
-      await axios.delete(`/charge-items/${id}/`);
+      await apiFetch(`charge-items/${id}/`, { method: "DELETE" });
       void refetch();
     } catch (err) { console.error("Delete_Fault:", err); }
   };
-
   const handleAddPayment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || !order) return;
@@ -118,25 +124,18 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       }
     });
   };
-
   if (isAppointmentMode(props) && isLoading) return <div className="animate-pulse h-20 bg-white/5 border border-[var(--palantir-border)]" />;
-
   if (!order) {
     return !readOnly && isAppointmentMode(props) ? (
       <button
-        onClick={async () => {
-          await axios.post(`/appointments/${props.appointmentId}/charge-order/`);
-          void refetch();
-        }}
+        onClick={handleCreateOrder}
         className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-[var(--palantir-active)] text-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/10 transition-all text-[10px] font-black uppercase tracking-[0.2em]"
       >
         <PlusIcon className="w-4 h-4" /> Initialize_Billing_Order
       </button>
     ) : null;
   }
-
   const isPaid = Number(order.balance_due) <= 0;
-
   return (
     <div className="space-y-4">
       {/* 01. FINANCIAL SUMMARY CARD */}
@@ -160,7 +159,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
         </div>
       </div>
-
       {/* 02. ITEMS SECTION */}
       <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
         <button 
@@ -173,7 +171,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
           {showItems ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
         </button>
-
         {showItems && (
           <div className="p-3 space-y-3 border-t border-[var(--palantir-border)]">
             {!readOnly && (
@@ -225,7 +222,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
         )}
       </div>
-
       {/* 03. PAYMENTS SECTION */}
       <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
         <button 
@@ -238,7 +234,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
           {showPayments ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
         </button>
-
         {showPayments && (
           <div className="p-3 space-y-3 border-t border-[var(--palantir-border)]">
             {!readOnly && (
@@ -249,6 +244,8 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                     <option value="cash">CASH_LIQUID</option>
                     <option value="card">CARD_POS</option>
                     <option value="transfer">WIRE_TRANSFER</option>
+                    <option value="zelle">ZELLE_USD</option>
+                    <option value="crypto">CRYPTO</option>
                     <option value="other">OTHER_ASSET</option>
                   </select>
                 </div>
@@ -276,5 +273,4 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     </div>
   );
 };
-
 export default ChargeOrderPanel;

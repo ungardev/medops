@@ -553,6 +553,46 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             'pending': pending,
             'failed': failed
         })
+    
+    @action(detail=True, methods=['post'])
+    def payments(self, request, pk=None):
+        """
+        Crear pago para esta orden de cobro.
+        POST /api/charge-orders/{id}/payments/
+        """
+        try:
+            charge_order = self.get_object()
+            
+            # Validar que la orden esté activa
+            if charge_order.status in ['void', 'waived']:
+                return Response(
+                    {"error": "No se pueden agregar pagos a una orden anulada o exonerada"},
+                    status=400
+                )
+            
+            serializer = PaymentWriteSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            
+            # Crear pago con datos auto-completados
+            payment = Payment.objects.create(
+                institution=charge_order.institution,
+                appointment=charge_order.appointment,
+                charge_order=charge_order,
+                amount=serializer.validated_data['amount'],
+                method=serializer.validated_data['method'],
+                reference_number=serializer.validated_data.get('reference_number'),
+                status='confirmed',  # Auto-confirmar pagos manuales
+            )
+            
+            # Recalcular totales de la orden
+            charge_order.recalc_totals()
+            charge_order.save()
+            
+            return Response(PaymentSerializer(payment).data, status=201)
+        
+        except Exception as e:
+            logger.error(f"Error creando pago: {str(e)}")
+            return Response({"error": str(e)}, status=500)
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet): queryset = ChargeItem.objects.all(); serializer_class = ChargeItemSerializer

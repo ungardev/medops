@@ -770,6 +770,30 @@ class PaymentSerializer(serializers.ModelSerializer):
         return None
 
 
+class PaymentWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer de ESCRITURA: Para crear pagos desde el panel de consulta.
+    Solo incluye campos editables, el resto se auto-completa desde charge_order.
+    """
+    bank_name = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    detail = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    
+    class Meta:
+        model = Payment
+        fields = ["amount", "method", "reference_number", "bank_name", "detail"]
+    
+    def validate_amount(self, value):
+        if value <= Decimal('0.00'):
+            raise serializers.ValidationError("El monto debe ser positivo")
+        return value
+    
+    def validate_method(self, value):
+        valid_methods = ['cash', 'card', 'transfer', 'zelle', 'crypto', 'other']
+        if value not in valid_methods:
+            raise serializers.ValidationError(f"Método inválido. Opciones: {valid_methods}")
+        return value
+
+
 class MedicalDocumentWriteSerializer(serializers.ModelSerializer):
     """
     Serializer de ESCRITURA: Gestiona la carga segura de archivos.
