@@ -31,7 +31,20 @@ from .models import (
     Habit,
     Vaccine,
     VaccinationSchedule,
-    PatientVaccination
+    PatientVaccination,
+    # --- NUEVOS: Direcciones ---
+    Country,
+    State,
+    Municipality,
+    City,
+    Parish,
+    Neighborhood,
+    # --- NUEVOS: Auditoría y Config ---
+    Event,
+    InstitutionSettings,
+    # --- NUEVOS: Catálogo de Facturación ---
+    BillingCategory,
+    BillingItem,
 )
 
 logger = logging.getLogger("core")
@@ -452,6 +465,150 @@ class PatientVaccinationAdmin(admin.ModelAdmin):
     )
     ordering = ("-date_administered",)
     list_per_page = 25
+
+
+@admin.register(Country)
+class CountryAdmin(admin.ModelAdmin):
+    list_display = ("id", "name")
+    search_fields = ("name",)
+    ordering = ("name",)
+    list_per_page = 50
+
+
+@admin.register(State)
+class StateAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "country")
+    list_filter = ("country",)
+    search_fields = ("name", "country__name")
+    ordering = ("country__name", "name")
+    list_per_page = 50
+
+
+@admin.register(Municipality)
+class MunicipalityAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "state")
+    list_filter = ("state__country", "state")
+    search_fields = ("name", "state__name")
+    ordering = ("state__name", "name")
+    list_per_page = 50
+
+
+@admin.register(City)
+class CityAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "state")
+    list_filter = ("state__country", "state")
+    search_fields = ("name", "state__name")
+    ordering = ("state__name", "name")
+    list_per_page = 50
+
+
+@admin.register(Parish)
+class ParishAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "municipality")
+    list_filter = ("municipality__state", "municipality")
+    search_fields = ("name", "municipality__name")
+    ordering = ("municipality__name", "name")
+    list_per_page = 50
+
+
+@admin.register(Neighborhood)
+class NeighborhoodAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "parish")
+    list_filter = ("parish__municipality", "parish")
+    search_fields = ("name", "parish__name")
+    ordering = ("parish__name", "name")
+    list_per_page = 50
+
+
+# =====================================================
+# EVENTOS - AUDITORÍA DEL SISTEMA
+# =====================================================
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ("id", "timestamp", "institution", "entity", "entity_id", "action", "severity", "is_read")
+    list_filter = ("severity", "entity", "institution", "is_read")
+    search_fields = ("entity", "entity_id", "action", "actor_name")
+    ordering = ("-timestamp",)
+    list_per_page = 50
+    readonly_fields = ("timestamp", "institution", "actor_user", "actor_name", "entity", "entity_id", "action", "metadata", "severity", "notify")
+
+
+# =====================================================
+# INSTITUTION SETTINGS - CONFIGURACIÓN DE SEDE
+# =====================================================
+@admin.register(InstitutionSettings)
+class InstitutionSettingsAdmin(admin.ModelAdmin):
+    list_display = ("id", "name", "tax_id", "phone", "active_gateway", "is_active")
+    list_filter = ("is_active", "active_gateway")
+    search_fields = ("name", "tax_id", "phone")
+    ordering = ("name",)
+    list_per_page = 25
+    readonly_fields = ("created_at", "updated_at")
+    fieldsets = (
+        ("Identidad", {
+            "fields": ("name", "tax_id", "logo", "phone", "address", "neighborhood")
+        }),
+        ("Pasarela de Pagos", {
+            "fields": ("active_gateway", "gateway_api_key", "gateway_secret_key", "gateway_webhook_secret")
+        }),
+        ("Configuración P2C Mercantil", {
+            "classes": ("collapse",),
+            "fields": ("mercantil_client_id", "mercantil_secret_key", "mercantil_test_mode")
+        }),
+        ("Estado", {
+            "fields": ("is_active", "created_at", "updated_at", "created_by", "updated_by")
+        }),
+    )
+# =====================================================
+# CATÁLOGO DE FACTURACIÓN - BILLING CATALOG
+# =====================================================
+class BillingItemInline(admin.TabularInline):
+    model = BillingItem
+    extra = 0
+    fields = ("code", "name", "unit_price", "is_active")
+    readonly_fields = ("code", "name", "unit_price")
+    show_change_link = True
+
+
+@admin.register(BillingCategory)
+class BillingCategoryAdmin(admin.ModelAdmin):
+    list_display = ("id", "code_prefix", "name", "institution", "is_active", "sort_order", "items_count")
+    list_filter = ("institution", "is_active")
+    search_fields = ("name", "code_prefix")
+    ordering = ("institution", "sort_order", "name")
+    list_per_page = 50
+    inlines = [BillingItemInline]
+    
+    @admin.display(description="Items")
+    def items_count(self, obj):
+        return obj.items.count()
+
+
+@admin.register(BillingItem)
+class BillingItemAdmin(admin.ModelAdmin):
+    list_display = ("id", "code", "name", "category", "unit_price", "currency", "is_active", "institution")
+    list_filter = ("institution", "category", "is_active", "currency")
+    search_fields = ("code", "name", "description")
+    ordering = ("institution", "category__sort_order", "sort_order", "code")
+    list_per_page = 50
+    list_editable = ("unit_price", "is_active")
+    readonly_fields = ("created_at", "updated_at", "created_by")
+    
+    fieldsets = (
+        ("Identificación", {
+            "fields": ("institution", "category", "code", "name", "description")
+        }),
+        ("Precio", {
+            "fields": ("unit_price", "currency")
+        }),
+        ("Metadatos", {
+            "fields": ("estimated_duration", "sort_order", "is_active")
+        }),
+        ("Auditoría", {
+            "classes": ("collapse",),
+            "fields": ("created_at", "updated_at", "created_by")
+        }),
+    )
 
 
 # Personalización del panel de administración

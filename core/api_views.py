@@ -3378,3 +3378,77 @@ def clinical_note_lock_api(request, appointment_id):
         return Response({"error": "Nota clínica no encontrada"}, status=404)
     except Exception as e:
         return Response({"error": str(e)}, status=500)
+
+
+class BillingCategoryViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar categorías de facturación.
+    Filtra automáticamente por institución activa.
+    """
+    queryset = BillingCategory.objects.all()
+    serializer_class = BillingCategorySerializer
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return BillingCategoryWriteSerializer
+        return BillingCategorySerializer
+    
+    def get_queryset(self):
+        institution = self.request.user.profile.institution
+        return BillingCategory.objects.filter(
+            institution=institution
+        ).order_by('sort_order', 'name')
+    
+    def perform_create(self, serializer):
+        institution = self.request.user.profile.institution
+        serializer.save(institution=institution)
+class BillingItemViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar items de facturación.
+    Incluye búsqueda y filtros por categoría.
+    """
+    queryset = BillingItem.objects.all()
+    serializer_class = BillingItemSerializer
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return BillingItemWriteSerializer
+        if self.action == 'search':
+            return BillingItemSearchSerializer
+        return BillingItemSerializer
+    
+    def get_queryset(self):
+        institution = self.request.user.profile.institution
+        queryset = BillingItem.objects.filter(
+            institution=institution
+        ).select_related('category').order_by('category__sort_order', 'sort_order', 'code')
+        
+        # Filtros
+        category_id = self.request.query_params.get('category')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+        
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(code__icontains=search) |
+                models.Q(name__icontains=search) |
+                models.Q(description__icontains=search)
+            )
+        
+        return queryset
+    
+    def perform_create(self, serializer):
+        institution = self.request.user.profile.institution
+        serializer.save(institution=institution, created_by=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Endpoint de búsqueda rápida para autocomplete."""
+        queryset = self.get_queryset()[:20]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

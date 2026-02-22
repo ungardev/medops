@@ -7,7 +7,8 @@ from .models import (
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
-    ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig
+    ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
+    BillingItem
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -2411,3 +2412,85 @@ class MercantilP2CCreateTransactionSerializer(serializers.Serializer):
         if value <= 0:
             raise serializers.ValidationError("Amount must be greater than 0")
         return value
+
+
+class BillingCategorySerializer(serializers.ModelSerializer):
+    """Serializer para categorías de facturación."""
+    items_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BillingCategory
+        fields = [
+            'id', 'name', 'code_prefix', 'description',
+            'icon', 'sort_order', 'is_active',
+            'items_count', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_items_count(self, obj):
+        return obj.items.filter(is_active=True).count()
+
+
+class BillingCategoryWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para categorías."""
+    
+    class Meta:
+        model = BillingCategory
+        fields = ['name', 'code_prefix', 'description', 'icon', 'sort_order', 'is_active']
+
+
+class BillingItemSerializer(serializers.ModelSerializer):
+    """Serializer para items de facturación."""
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    category_prefix = serializers.CharField(source='category.code_prefix', read_only=True)
+    unit_price_display = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BillingItem
+        fields = [
+            'id', 'category', 'category_name', 'category_prefix',
+            'code', 'name', 'description',
+            'unit_price', 'unit_price_display', 'currency',
+            'estimated_duration', 'sort_order', 'is_active',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_unit_price_display(self, obj):
+        return f"{obj.currency} {obj.unit_price:.2f}"
+
+
+class BillingItemWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para items de facturación."""
+    
+    class Meta:
+        model = BillingItem
+        fields = [
+            'category', 'code', 'name', 'description',
+            'unit_price', 'currency', 'estimated_duration',
+            'sort_order', 'is_active'
+        ]
+    
+    def validate_unit_price(self, value):
+        if value < Decimal('0.00'):
+            raise serializers.ValidationError("El precio no puede ser negativo")
+        return value
+    
+    def validate_code(self, value):
+        # Verificar unicidad dentro de la institución
+        institution = self.context['request'].user.profile.institution
+        qs = BillingItem.objects.filter(institution=institution, code=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError("Ya existe un item con este código")
+        return value.upper()
+
+
+class BillingItemSearchSerializer(serializers.ModelSerializer):
+    """Serializer liviano para búsqueda/autocomplete."""
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    
+    class Meta:
+        model = BillingItem
+        fields = ['id', 'code', 'name', 'unit_price', 'currency', 'category_name']

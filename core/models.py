@@ -3255,3 +3255,103 @@ class MercantilP2CConfig(models.Model):
     def get_api_environment(self):
         """Retorna el entorno de API correspondiente"""
         return "sandbox" if self.is_test_mode else "production"
+
+
+class BillingCategory(models.Model):
+    """
+    Categorías de servicios médicos para facturación.
+    Ej: Consultas, Laboratorio, Imagenología, Procedimientos.
+    """
+    institution = models.ForeignKey(
+        'InstitutionSettings',
+        on_delete=models.CASCADE,
+        related_name='billing_categories'
+    )
+    name = models.CharField(max_length=100, verbose_name="Nombre")
+    code_prefix = models.CharField(max_length=10, verbose_name="Prefijo de código")
+    description = models.TextField(blank=True, null=True)
+    icon = models.CharField(max_length=50, blank=True, null=True)
+    sort_order = models.IntegerField(default=0, verbose_name="Orden")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['sort_order', 'name']
+        unique_together = ['institution', 'code_prefix']
+        verbose_name = "Categoría de Facturación"
+        verbose_name_plural = "Categorías de Facturación"
+    
+    def __str__(self):
+        return f"{self.code_prefix} - {self.name}"
+
+
+class BillingItem(models.Model):
+    """
+    Items de facturación: servicios y productos médicos.
+    Ej: Consulta General, Hemograma, Radiografía de Tórax.
+    """
+    institution = models.ForeignKey(
+        'InstitutionSettings',
+        on_delete=models.CASCADE,
+        related_name='billing_items'
+    )
+    category = models.ForeignKey(
+        BillingCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='items'
+    )
+    
+    # Identificación
+    code = models.CharField(max_length=20, verbose_name="Código")
+    name = models.CharField(max_length=150, verbose_name="Nombre")
+    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
+    
+    # Pricing
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Precio Unitario"
+    )
+    currency = models.CharField(max_length=10, default='USD', verbose_name="Moneda")
+    
+    # Metadatos
+    estimated_duration = models.IntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Duración estimada (min)"
+    )
+    sort_order = models.IntegerField(default=0, verbose_name="Orden")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
+    
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='billing_items_created'
+    )
+    
+    history = HistoricalRecords()
+    
+    class Meta:
+        ordering = ['category__sort_order', 'sort_order', 'code']
+        unique_together = ['institution', 'code']
+        verbose_name = "Item de Facturación"
+        verbose_name_plural = "Items de Facturación"
+        indexes = [
+            models.Index(fields=['institution', 'is_active']),
+            models.Index(fields=['institution', 'category']),
+        ]
+    
+    def __str__(self):
+        return f"{self.code} - {self.name}"
+    
+    def clean(self):
+        if self.unit_price < Decimal('0.00'):
+            raise ValidationError({"unit_price": "El precio no puede ser negativo"})

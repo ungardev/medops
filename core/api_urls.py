@@ -40,6 +40,9 @@ from .api_views import (
     NeighborhoodViewSet,
     # --- ✅ NUEVO: ViewSet de Medicamentos ---
     MedicationCatalogViewSet,
+    # --- ✅ NUEVO: ViewSets de Catálogo de Facturación ---
+    BillingCategoryViewSet,
+    BillingItemViewSet,
     AddressChainView,
     NeighborhoodSearchView,
     # --- Funciones ---
@@ -151,6 +154,9 @@ router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, ba
 router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")
 # --- ✅ NUEVO: Catálogo de Medicamentos ---
 router.register(r"medications", MedicationCatalogViewSet, basename="medication")
+# --- ✅ NUEVO: Catálogo de Facturación ---
+router.register(r"billing-categories", BillingCategoryViewSet, basename="billingcategory")
+router.register(r"billing-items", BillingItemViewSet, basename="billingitem")
 # --- Direcciones ---
 router.register(r"countries", CountryViewSet, basename="country")
 router.register(r"states", StateViewSet, basename="state")
@@ -164,12 +170,9 @@ patients_router.register(r"allergies", AllergyViewSet, basename="patient-allergi
 patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
 # --- Funciones personalizadas ---
 urlpatterns = [
-    # ❌ Eliminado el endpoint legacy de login que causaba CSRF
-    
     path("metrics/", api_views.metrics_api, name="metrics-api"),
     path("dashboard/summary/", api_views.dashboard_summary_api, name="dashboard-summary-api"),
     path("dashboard/active-institution/", active_institution_dashboard_api, name="active-institution-dashboard-api"),
-    # 🆕 NUEVO: Dashboard con 8 métricas y filtros completos
     path("dashboard/active-institution-metrics/", active_institution_with_metrics, name="active-institution-metrics-api"),
     path("reports/", reports_api, name="reports-api"),
     path("reports/export/", reports_export_api, name="reports-export-api"),
@@ -230,6 +233,7 @@ urlpatterns = [
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
     path("payments/waived/", api_views.waived_consultations_api, name="waived-consultations-api"),
     path("charge-orders/search/", chargeorder_search_api, name="chargeorder-search-api"),
+    
     # 🆕 MERCANTIL P2C ENDPOINTS ---
     path("payments/p2c/mercantil/generate-qr/", mercantil_p2c_generate_qr, name="mercantil_p2c_generate_qr"),
     path("payments/p2c/mercantil/status/<str:merchant_order_id>/", mercantil_p2c_check_status, name="mercantil_p2c_check_status"),
@@ -252,7 +256,6 @@ urlpatterns = [
     path("waitingroom/today/entries/", waitingroom_entries_today_api, name="waitingroom-entries-today-api"),
     path("waitingroom/<int:pk>/status/", update_waitingroom_status, name="waitingroom-status-api"),
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
-    # 🆕 NUEVO: Iniciar consulta desde Waiting Room Entry
     path("waitingroom/<int:entry_id>/start-consultation/", start_consultation_from_entry, name="start-consultation-from-entry"),
     
     # --- Tasa BCV ---
