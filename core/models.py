@@ -1167,28 +1167,28 @@ class ChargeOrder(models.Model):
         ('partially_paid', 'Partially Paid'),
         ('paid', 'Paid'),
         ('void', 'Void'),
-        ('waived', 'Waived'), # Exoneraciones para casos especiales o cortesías
+        ('waived', 'Waived'),
     ]
-    # --- RELACIONES DE PODER Y TRAZABILIDAD ---
+    
     appointment = models.ForeignKey(
         'Appointment', 
         on_delete=models.CASCADE, 
         related_name='charge_orders'
     )
     
-    # NUEVO: Anclaje financiero directo a la sede para reportes de rentabilidad inmediatos
     institution = models.ForeignKey(
         'InstitutionSettings',
         on_delete=models.PROTECT,
         related_name='charge_orders',
         verbose_name="Sede emisora de cobro"
     )
+    
     patient = models.ForeignKey(
         'Patient', 
         on_delete=models.CASCADE, 
         related_name='charge_orders'
     )
-    # NUEVO: CACHÉ de doctor para rendimiento y reportes
+    
     doctor = models.ForeignKey(
         'DoctorOperator',
         on_delete=models.SET_NULL,
@@ -1198,18 +1198,17 @@ class ChargeOrder(models.Model):
         related_name='charge_orders',
         verbose_name="Médico emisor de cobro"
     )
-    # --- MONETIZACIÓN ---
+    
     currency = models.CharField(max_length=10, default='USD')
     total = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     balance_due = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
-    # --- REGISTRO Y AUDITORÍA ---
+    
     issued_at = models.DateTimeField(auto_now_add=True)
     issued_by = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
     
-    # Importante: Vinculamos al usuario que creó la orden para control interno
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -1218,7 +1217,6 @@ class ChargeOrder(models.Model):
         related_name="charge_orders_created"
     )
     
-    # ✅ NUEVO CAMPO - Auditoría de actualizaciones (consistente con InstitutionSettings y DoctorOperator)
     updated_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -1231,11 +1229,12 @@ class ChargeOrder(models.Model):
     history = HistoricalRecords()
     
     class Meta:
+        ordering = ['-issued_at']  # ← AGREGAR ESTA LÍNEA
         indexes = [
             models.Index(fields=['appointment', 'status']),
             models.Index(fields=['patient', 'status']),
             models.Index(fields=['institution', 'status']),
-            models.Index(fields=['doctor', 'status']), # NUEVO: Optimización para reportes por médico
+            models.Index(fields=['doctor', 'status']),
         ]
         verbose_name = "Orden de Cobro"
         verbose_name_plural = "Órdenes de Cobro"
@@ -1244,7 +1243,6 @@ class ChargeOrder(models.Model):
         return f"Order #{self.pk} — {self.institution.name} — {self.status}"
     
     def save(self, *args, **kwargs):
-        # NUEVO: Auto-completar doctor e institution desde appointment
         if self.appointment:
             if not self.doctor:
                 self.doctor = self.appointment.doctor
@@ -1252,9 +1250,7 @@ class ChargeOrder(models.Model):
                 self.institution = self.appointment.institution
         super().save(*args, **kwargs)
     
-    # --- LÓGICA DE CÁLCULO ELITE ---
     def recalc_totals(self):
-        """Recalcula la salud financiera de la orden basándose en ítems y pagos."""
         items_sum = self.items.aggregate(s=Sum('subtotal')).get('s') or Decimal('0.00')
         self.total = items_sum
         confirmed_payments = self.payments.filter(status='confirmed').aggregate(s=Sum('amount')).get('s') or Decimal('0.00')
@@ -1269,19 +1265,16 @@ class ChargeOrder(models.Model):
             self.status = 'open'
     
     def clean(self):
-        # Reglas de negocio inquebrantables
         if self.status == 'paid' and self.balance_due != Decimal('0.00'):
             raise ValidationError("Inconsistencia: Una orden pagada no puede tener deuda pendiente.")
         if self.status == 'waived' and self.balance_due != Decimal('0.00'):
             raise ValidationError("Inconsistencia: Una orden exonerada debe quedar con deuda cero.")
     
-    # --- FLUJO DE EVENTOS CRÍTICOS ---
     def mark_void(self, reason: str = '', actor: str = ''):
         if self.status == 'paid':
             raise ValidationError("Operación Denegada: No se puede anular un ingreso ya confirmado en caja.")
         self.status = 'void'
         self.save(update_fields=['status'])
-        # Registro en el log de eventos de MedOpz
         Event = apps.get_model('core', 'Event')
         Event.objects.create(
             entity='ChargeOrder',
@@ -1704,7 +1697,7 @@ class MedicalTestCatalog(models.Model):
         ],
         default="lab_special"
     )
-    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
     class Meta:
