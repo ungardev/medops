@@ -1,4 +1,4 @@
-// src/components/Sidebar.tsx
+// src/components/Layout/Sidebar.tsx
 import { Link, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import {
@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  Briefcase,
 } from "lucide-react";
 interface SidebarProps {
   collapsed: boolean;
@@ -27,6 +28,7 @@ const navItems = [
   { path: "/patients", label: "Pacientes", icon: Users },
   { path: "/appointments", label: "Citas", icon: CalendarDays },
   { path: "/payments", label: "Pagos", icon: CreditCard },
+  { path: "/billing/catalog", label: "Servicios", icon: Briefcase },
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
 ];
@@ -62,7 +64,7 @@ export default function Sidebar({
       `}
     >
       <div className="flex flex-col h-full pt-4 pb-6 px-3">
-        {/* LOGO AREA - ENCAJE QUIRÚRGICO */}
+        {/* LOGO AREA */}
         <div className="flex flex-col mb-6">
             <div className={`flex relative ${
                 mobileOpen 
@@ -100,7 +102,7 @@ export default function Sidebar({
                             alt="Medopz"
                             className={`object-contain transition-all duration-500 ${
                                 mobileOpen 
-                                ? "h-[22px] w-auto -mt-2 -ml-1 opacity-95" // Altura controlada y margen negativo para el encaje en D-O
+                                ? "h-[22px] w-auto -mt-2 -ml-1 opacity-95"
                                 : "h-4 w-auto"
                             }`}
                         />

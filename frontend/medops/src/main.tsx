@@ -26,6 +26,7 @@ import ReportsPage from "./pages/Reports/ReportsPage";
 import ConfigPage from "./pages/Settings/ConfigPage";
 import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
+import BillingCatalogPage from "./pages/Billing/BillingCatalogPage";
 // 🔹 Configuración global de axios
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
@@ -59,8 +60,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 {/* ✅ FIX CRÍTICO: Corregir ruta para detalle de pagos */}
                 <Route path="payments/:id" element={<ChargeOrderDetail />} />
                 
-                {/* ❌ ELIMINADO: Ruta duplicada innecesaria */}
-                {/* <Route path="charge-orders/:id" element={<ChargeOrderDetail />} /> */}
+                {/* ✅ NUEVO: Catálogo de Servicios / Tarifario */}
+                <Route path="billing/catalog" element={<BillingCatalogPage />} />
                 
                 <Route path="events" element={<Events />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
