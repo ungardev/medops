@@ -24,7 +24,7 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
   const appt = detail ?? appointment;
 
   const co = appt?.charge_order ?? null;
-  const payments = Array.isArray(co?.payments) ? co.payments : [];
+  const payments = Array.isArray(appt?.payments) ? appt.payments : [];
 
   const totalPagado = payments.reduce(
     (acc: number, p: any) => acc + Number(p.amount ?? p.total ?? 0),
