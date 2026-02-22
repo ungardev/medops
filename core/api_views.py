@@ -24,7 +24,6 @@ import hashlib
 import hmac
 import uuid
 from typing import Dict, Optional, Any
-from django.db.models import Q
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 import qrcode
@@ -3402,6 +3401,8 @@ class BillingCategoryViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         institution = self.request.user.profile.institution
         serializer.save(institution=institution)
+
+
 class BillingItemViewSet(viewsets.ModelViewSet):
     """
     ViewSet para gestionar items de facturación.
@@ -3448,7 +3449,7 @@ class BillingItemViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def search(self, request):
-        """Endpoint de búsqueda rápida para autocomplete."""
+        """Endpoint de búsqueda rápido para autocomplete."""
         queryset = self.get_queryset()[:20]
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
