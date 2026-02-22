@@ -35,4 +35,5 @@ export { default as MedicalReferralsPanel } from "./MedicalReferralsPanel";
 export type { MedicalReferralsPanelProps } from "./MedicalReferralsPanel";
 // 🔹 ACCIONES DE DOCUMENTOS
 export { default as ConsultationDocumentsActions } from "./ConsultationDocumentsActions";
+export { default as CommitSessionModal } from "./CommitSessionModal";
 // ❌ NO EXPORTAR: ConsultationDocumentsActionsProps (interface sin export en archivo original)

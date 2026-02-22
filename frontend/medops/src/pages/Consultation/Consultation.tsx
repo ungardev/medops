@@ -4,32 +4,28 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   ShieldCheckIcon, 
-  BeakerIcon, 
   DocumentTextIcon, 
   ChevronRightIcon,
   ExclamationTriangleIcon,
   FingerPrintIcon,
   BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
-// Componentes Tácticos
 import { PatientHeader, DocumentsPanel, ChargeOrderPanel } from "../../components/Consultation";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
+import CommitSessionModal from "../../components/Consultation/CommitSessionModal";
 import PageHeader from "../../components/Common/PageHeader";
 import CollapsiblePanel from "../../components/Common/CollapsiblePanel";
 import Toast from "../../components/Common/Toast";
 import ExportErrorToast from "../../components/Common/ExportErrorToast";
 import ExportSuccessToast from "../../components/Common/ExportSuccessToast";
 import MedicalReportSuccessToast from "../../components/Common/MedicalReportSuccessToast";
-// Hooks
 import { useCurrentConsultation } from "../../hooks/consultations/useCurrentConsultation";
 import { useGenerateMedicalReport } from "../../hooks/consultations/useGenerateMedicalReport";
 import { useGenerateConsultationDocuments } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import { useInstitutions } from "../../hooks/settings/useInstitutions";
-// Tipos y Utils
 import type { GenerateDocumentsResponse, GeneratedDocument } from "../../hooks/consultations/useGenerateConsultationDocuments";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
 import { getPatient } from "../../api/patients";
-// 🕒 SUB-COMPONENTE: CRONÓMETRO DE SESIÓN
 const SessionTimer = ({ startTime }: { startTime: string | undefined | null }) => {
   const [elapsed, setElapsed] = useState("00:00");
   useEffect(() => {
@@ -71,6 +67,7 @@ export default function Consultation() {
   const [exportSuccess, setExportSuccess] = useState<{ documents: GeneratedDocument[]; skipped: string[] } | null>(null);
   const [reportSuccess, setReportSuccess] = useState<{ fileUrl?: string | null; auditCode?: string | null } | null>(null);
   const [patientProfile, setPatientProfile] = useState<any | null>(null);
+  const [showCommitModal, setShowCommitModal] = useState(false);
   useEffect(() => {
     if (!isLoading && !appointment) {
       navigate("/waitingroom");
@@ -98,7 +95,6 @@ export default function Consultation() {
   const canGenerateReport = appointment.status === "in_consultation" || appointment.status === "completed";
   const isInstitutionMatch = !appointment.institution || appointment.institution === activeInstitution?.id;
   const isCrossInstitution = !!appointment.institution && appointment.institution !== activeInstitution?.id;
-  // ✅ FIX: No espera retorno, el PDF se descarga automáticamente
   const handleGenerateReport = async () => {
     try {
       await generateReport.mutateAsync(appointment.id);
@@ -124,10 +120,18 @@ export default function Consultation() {
       setToast({ message: err.message || "Error al generar documentos", type: "error" });
     }
   };
+  const handleCommitSession = async () => {
+    await updateStatus.mutateAsync({ id: appointment.id, status: "completed" });
+    setShowCommitModal(false);
+    setToast({ message: "Sesión completada exitosamente", type: "success" });
+    navigate("/waitingroom");
+  };
+  const billingTotal = appointment.charge_order?.total || 0;
+  const billingPending = appointment.balance_due || 0;
+  const documentsCount = appointment.documents?.length || 0;
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-6 space-y-6">
       
-      {/* HEADER TÉCNICO */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -177,7 +181,6 @@ export default function Consultation() {
           </div>
         }
       />
-      {/* BANNER DE ALERTA CROSS-INSTITUCION */}
       {isCrossInstitution && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-sm p-4">
           <div className="flex items-center justify-between">
@@ -266,16 +269,12 @@ export default function Consultation() {
                   </>
                 )}
                 <button
-                  onClick={async () => {
-                    await updateStatus.mutateAsync({ id: appointment.id, status: "completed" });
-                    setToast({ message: "Surgical Session Complete", type: "success" });
-                    navigate("/waitingroom");
-                  }}
+                  onClick={() => setShowCommitModal(true)}
                   disabled={updateStatus.isPending || !isInstitutionMatch}
                   className="group flex items-center gap-3 px-6 py-2 bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all"
                 >
                   <span className="text-[10px] font-black uppercase tracking-widest">
-                    {updateStatus.isPending ? "Finalizing..." : "Commit_Session"}
+                    Commit_Session
                   </span>
                   <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -284,6 +283,21 @@ export default function Consultation() {
           </div>
         </main>
       </div>
+      {/* Commit Session Modal */}
+      <CommitSessionModal
+        open={showCommitModal}
+        onClose={() => setShowCommitModal(false)}
+        onConfirm={handleCommitSession}
+        isPending={updateStatus.isPending}
+        sessionId={appointment.id}
+        patientName={appointment.patient?.full_name || "Paciente"}
+        startedAt={appointment.started_at}
+        diagnosesCount={appointment.diagnoses?.length || 0}
+        treatmentsCount={appointment.treatments?.length || 0}
+        billingTotal={billingTotal}
+        billingPending={billingPending}
+        documentsCount={documentsCount}
+      />
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       {exportErrors && <ExportErrorToast errors={exportErrors} onClose={() => setExportErrors(null)} />}
       {exportSuccess && <ExportSuccessToast documents={exportSuccess.documents} skipped={exportSuccess.skipped} onClose={() => setExportSuccess(null)} />}
