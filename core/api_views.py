@@ -3393,13 +3393,38 @@ class BillingCategoryViewSet(viewsets.ModelViewSet):
         return BillingCategorySerializer
     
     def get_queryset(self):
-        institution = self.request.user.profile.institution
-        return BillingCategory.objects.filter(
-            institution=institution
-        ).order_by('sort_order', 'name')
+        # Obtener institución del header o del perfil del doctor
+        institution_id = self.request.headers.get('X-Institution-ID')
+        
+        if institution_id:
+            queryset = BillingCategory.objects.filter(institution_id=institution_id)
+        else:
+            # Fallback: usar institución activa del doctor
+            doctor = getattr(self.request.user, 'doctor_profile', None)
+            if doctor:
+                institution = doctor.active_institution or doctor.institutions.first()
+                if institution:
+                    queryset = BillingCategory.objects.filter(institution=institution)
+                else:
+                    return BillingCategory.objects.none()
+            else:
+                return BillingCategory.objects.none()
+        
+        return queryset.order_by('sort_order', 'name')
     
     def perform_create(self, serializer):
-        institution = self.request.user.profile.institution
+        # Obtener institución del header o del perfil
+        institution_id = self.request.headers.get('X-Institution-ID')
+        
+        if institution_id:
+            institution = InstitutionSettings.objects.get(pk=institution_id)
+        else:
+            doctor = getattr(self.request.user, 'doctor_profile', None)
+            institution = doctor.active_institution or doctor.institutions.first() if doctor else None
+        
+        if not institution:
+            raise ValidationError("No se pudo determinar la institución")
+        
         serializer.save(institution=institution)
 
 
@@ -3419,10 +3444,24 @@ class BillingItemViewSet(viewsets.ModelViewSet):
         return BillingItemSerializer
     
     def get_queryset(self):
-        institution = self.request.user.profile.institution
-        queryset = BillingItem.objects.filter(
-            institution=institution
-        ).select_related('category').order_by('category__sort_order', 'sort_order', 'code')
+        # Obtener institución del header o del perfil del doctor
+        institution_id = self.request.headers.get('X-Institution-ID')
+        
+        if institution_id:
+            queryset = BillingItem.objects.filter(institution_id=institution_id)
+        else:
+            # Fallback: usar institución activa del doctor
+            doctor = getattr(self.request.user, 'doctor_profile', None)
+            if doctor:
+                institution = doctor.active_institution or doctor.institutions.first()
+                if institution:
+                    queryset = BillingItem.objects.filter(institution=institution)
+                else:
+                    return BillingItem.objects.none()
+            else:
+                return BillingItem.objects.none()
+        
+        queryset = queryset.select_related('category').order_by('category__sort_order', 'sort_order', 'code')
         
         # Filtros
         category_id = self.request.query_params.get('category')
@@ -3444,7 +3483,18 @@ class BillingItemViewSet(viewsets.ModelViewSet):
         return queryset
     
     def perform_create(self, serializer):
-        institution = self.request.user.profile.institution
+        # Obtener institución del header o del perfil
+        institution_id = self.request.headers.get('X-Institution-ID')
+        
+        if institution_id:
+            institution = InstitutionSettings.objects.get(pk=institution_id)
+        else:
+            doctor = getattr(self.request.user, 'doctor_profile', None)
+            institution = doctor.active_institution or doctor.institutions.first() if doctor else None
+        
+        if not institution:
+            raise ValidationError("No se pudo determinar la institución")
+        
         serializer.save(institution=institution, created_by=self.request.user)
     
     @action(detail=False, methods=['get'])
