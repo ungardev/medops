@@ -126,9 +126,9 @@ export default function Consultation() {
     setToast({ message: "Sesión completada exitosamente", type: "success" });
     navigate("/waitingroom");
   };
-  const billingTotal = appointment.charge_order?.total || 0;
-  const billingPending = appointment.balance_due || 0;
-  const documentsCount = appointment.documents?.length || 0;
+  const billingTotal = Number(appointment.charge_order?.total_amount || 0);
+  const billingPending = Number(appointment.balance_due || 0);
+  const documentsCount = appointment.documents_count || 0;
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 sm:p-6 space-y-6">
       

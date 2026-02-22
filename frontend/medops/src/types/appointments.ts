@@ -3,12 +3,20 @@
 // IMPORTAR TIPOS DESDE identity.ts
 // =====================================================
 import type { IdentityPatient, IdentityDoctor, IdentityInstitution } from "./identity";
-import type { ChargeOrder } from "./payments";
 // =====================================================
 // ENUMS - Alineados con backend
 // =====================================================
 export type AppointmentStatus = "pending" | "arrived" | "in_consultation" | "completed" | "canceled";
 export type AppointmentType = "general" | "specialized";
+// =====================================================
+// TIPO PARA CHARGE_ORDER (del serializer)
+// =====================================================
+export interface ChargeOrderSummary {
+  id: number;
+  status: string;
+  total_amount: number;
+  order_number?: string;
+}
 // =====================================================
 // MODELO DE CITA (lo que devuelve el backend)
 // =====================================================
@@ -42,7 +50,8 @@ export interface Appointment {
   documents?: any[];
   payments: any[];
   balance_due?: number;
-  charge_order?: ChargeOrder;
+  charge_order?: ChargeOrderSummary | null;
+  documents_count?: number;
   
   // Nuevos campos (médicos, exámenes)
   medical_tests?: any[];

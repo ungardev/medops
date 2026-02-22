@@ -2,7 +2,7 @@
 import type { Appointment, AppointmentStatus } from "../types/appointments";
 import type { Patient as PatientAdmin } from "../types/patients";
 import type { InstitutionSettings } from "../types/config";
-import { IdentityInstitution } from "../types/identity"; // 🆕 IMPORTANTE: Añadir este import
+import { IdentityInstitution } from "../types/identity";
 import { mapPatient } from "./patientMapper";
 type ClinicalPayment = NonNullable<Appointment["payments"]>[number];
 interface PaymentUI extends Omit<ClinicalPayment, "amount"> {
@@ -10,7 +10,6 @@ interface PaymentUI extends Omit<ClinicalPayment, "amount"> {
   currency: string;
   idempotency_key?: string | null;
 }
-// 🆕 INTERFAZ EXPANDIDA CON DATOS INSTITUCIONALES
 export interface AppointmentUI {
   id: number;
   status: AppointmentStatus;
@@ -27,19 +26,16 @@ export interface AppointmentUI {
   documents: Appointment["documents"];
   payments: PaymentUI[];
   
-  // 🆕 CAMPOS INSTITUCIONALES ACTUALIZADOS
-  institution?: number | null;  // ID de la institución
-  institution_name?: string | null; // Nombre de la institución
-  // ❌ ELIMINAR: institution_obj?: InstitutionSettings | null; // No necesario, causa más problemas
+  institution?: number | null;
+  institution_name?: string | null;
   
-  // 🆕 CAMPOS ADICIONALES QUE PUEDEN SER NULL
-  charge_order?: Appointment["charge_order"] | null;  // Puede ser null
-  medical_tests?: Appointment["medical_tests"] | null;    // Puede ser null
-  referrals?: Appointment["referrals"] | null;          // Puede ser null
-  balance_due?: number | null;                           // Puede ser null
+  charge_order?: Appointment["charge_order"] | null;
+  medical_tests?: Appointment["medical_tests"] | null;
+  referrals?: Appointment["referrals"] | null;
+  balance_due?: number | null;
+  documents_count?: number;  // ← NUEVO
   
-  // 🆕 CAMPOS DOCTOR
-  doctor_obj?: Appointment["doctor"] | null;           // Puede ser null
+  doctor_obj?: Appointment["doctor"] | null;
 }
 export function normalizeStatus(status: string | null | undefined): AppointmentStatus {
   switch (status) {
@@ -57,29 +53,23 @@ export function normalizeStatus(status: string | null | undefined): AppointmentS
       return "pending";
   }
 }
-// 🆕 FUNCIÓN UNIFICADA PARA OBTENER NOMBRE DE INSTITUCIÓN
 function getInstitutionName(institution?: number | InstitutionSettings | IdentityInstitution | null): string | null {
   if (!institution) return null;
   
-  // Si es objeto (cualquier tipo que tenga 'name')
   if (typeof institution === 'object' && institution !== null && 'name' in institution) {
     return institution.name || null;
   }
   
-  // Si es solo ID
   if (typeof institution === 'number') {
     return `Institution ${institution}`;
   }
   
   return null;
 }
-// 🆕 FUNCIÓN CORREGIDA PARA OBTENER INSTITUCIÓN COMO OBJETO
 function getInstitutionAsObject(institution?: number | IdentityInstitution | null): InstitutionSettings | null {
   if (!institution) return null;
   
-  // Si es objeto IdentityInstitution
   if (typeof institution === 'object' && institution !== null && 'name' in institution) {
-    // 🆕 CONVERTIR IdentityInstitution a InstitutionSettings
     const identityInst = institution as IdentityInstitution;
     return {
       id: identityInst.id,
@@ -89,15 +79,11 @@ function getInstitutionAsObject(institution?: number | IdentityInstitution | nul
       address: identityInst.address || "",
       is_active: identityInst.is_active || true,
       logo: identityInst.logo || null,
-      
-      // 🆕 CAMPOS GEOGRÁFICOS
       neighborhood: identityInst.neighborhood || null,
       country: identityInst.country || null,
       state_name: identityInst.state_name || null,
       municipality_name: identityInst.municipality_name || null,
       parish_name: identityInst.parish_name || null,
-      
-      // 🆕 CAMPOS FINANCIEROS
       active_gateway: identityInst.active_gateway || 'none',
       is_gateway_test_mode: identityInst.is_gateway_test_mode,
       settlement_bank_name: identityInst.settlement_bank_name || null,
@@ -105,7 +91,6 @@ function getInstitutionAsObject(institution?: number | IdentityInstitution | nul
     };
   }
   
-  // Si es solo ID, no podemos obtener el objeto completo
   if (typeof institution === 'number') {
     return {
       id: institution,
@@ -115,8 +100,6 @@ function getInstitutionAsObject(institution?: number | IdentityInstitution | nul
       address: "",
       is_active: true,
       logo: null,
-      
-      // Valores por defecto
       neighborhood: null,
       country: null,
       state_name: null,
@@ -153,17 +136,15 @@ export function mapAppointment(clinical: Appointment): AppointmentUI {
       idempotency_key: p.idempotency_key ?? null,
     })),
     
-    // 🆕 MAPEO CORREGIDO DE CAMPOS INSTITUCIONALES
     institution: clinical.institution?.id ?? null,
-    institution_name: getInstitutionName(clinical.institution), // 🆕 Simplificado y corregido
+    institution_name: getInstitutionName(clinical.institution),
     
-    // 🆕 MAPEO DE CAMPOS ADICIONALES QUE PUEDEN SER NULL
     charge_order: clinical.charge_order ?? null,
     medical_tests: clinical.medical_tests ?? null,
     referrals: clinical.referrals ?? null,
     balance_due: clinical.balance_due ?? null,
+    documents_count: clinical.documents_count ?? 0,  // ← NUEVO
     
-    // 🆕 MAPEO DE CAMPOS DOCTOR
     doctor_obj: clinical.doctor ?? null,
   };
 }

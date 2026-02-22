@@ -2044,7 +2044,6 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     vital_signs = VitalSignsSerializer(read_only=True)
     note = ClinicalNoteSerializer(read_only=True)
     patient = PatientReadSerializer(read_only=True)
-
     # 2. Lógica de Negocio Inyectada (Tratamientos y Recetas)
     treatments = serializers.SerializerMethodField()
     prescriptions = serializers.SerializerMethodField()
@@ -2052,7 +2051,7 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     # 3. Bloque Financiero y de Auditoría
     charge_order = serializers.SerializerMethodField()
     balance_due = serializers.SerializerMethodField()
-
+    documents_count = serializers.SerializerMethodField()  # ← NUEVO
     class Meta(AppointmentSerializer.Meta):
         fields = AppointmentSerializer.Meta.fields + [
             "diagnoses",
@@ -2064,14 +2063,14 @@ class AppointmentDetailSerializer(AppointmentSerializer):
             "note",
             "charge_order",
             "balance_due",
+            "documents_count",  # ← NUEVO
             "started_at",
             "completed_at",
-            "notes",  # Notas administrativas
+            "notes",
         ]
         read_only_fields = AppointmentSerializer.Meta.read_only_fields + [
             "started_at", "completed_at"
         ]
-
     @extend_schema_field(serializers.FloatField())
     def get_balance_due(self, obj) -> float:
         """Extrae el saldo pendiente directamente de la lógica del modelo."""
@@ -2079,7 +2078,10 @@ class AppointmentDetailSerializer(AppointmentSerializer):
             return float(obj.balance_due())
         except (AttributeError, TypeError, InvalidOperation):
             return 0.0
-
+    @extend_schema_field(serializers.IntegerField())
+    def get_documents_count(self, obj) -> int:
+        """Cuenta los documentos médicos asociados a esta cita."""
+        return obj.documents.count()
     def get_treatments(self, obj):
         """
         Obtiene tratamientos vinculados a los diagnósticos de esta cita.
@@ -2087,14 +2089,12 @@ class AppointmentDetailSerializer(AppointmentSerializer):
         """
         qs = Treatment.objects.filter(diagnosis__appointment=obj).select_related("diagnosis")
         return TreatmentSerializer(qs, many=True).data
-
     def get_prescriptions(self, obj):
         """
         Obtiene recetas y sus componentes (medicamentos) asociados a la cita.
         """
         qs = Prescription.objects.filter(diagnosis__appointment=obj).prefetch_related("components")
         return PrescriptionSerializer(qs, many=True).data
-
     def get_charge_order(self, obj):
         """
         Devuelve la orden de cobro principal de la cita con lógica de prioridad.
@@ -2119,26 +2119,6 @@ class AppointmentDetailSerializer(AppointmentSerializer):
                 "order_number": getattr(order, 'order_number', f"ORD-{order.id}")
             }
         return None
-
-    def to_representation(self, instance):
-        """
-        Añade indicadores de estado para el Frontend.
-        """
-        representation = super().to_representation(instance)
-        
-        # Flags de UI
-        representation['has_vitals'] = hasattr(instance, 'vital_signs')
-        
-        # Estado de la Nota Médica
-        note = getattr(instance, 'note', None)
-        representation['is_locked'] = note.is_locked if note else False
-        
-        # Métricas de tiempo de consulta
-        if instance.started_at and instance.completed_at:
-            delta = instance.completed_at - instance.started_at
-            representation['duration_seconds'] = delta.total_seconds()
-            
-        return representation
 
 
 class PersonalHistorySerializer(serializers.ModelSerializer):
