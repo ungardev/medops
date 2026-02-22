@@ -1301,20 +1301,23 @@ class ChargeItem(models.Model):
     qty = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
-
     class Meta:
         verbose_name = "Ítem de Cobro"
         verbose_name_plural = "Ítems de Cobro"
-
     def __str__(self):
         return f"{self.description or self.code} (x{self.qty})"
-
+    
     def save(self, *args, **kwargs):
         self.subtotal = (self.qty or Decimal('0')) * (self.unit_price or Decimal('0'))
         super().save(*args, **kwargs)
-        # Sincronizamos con la orden madre para actualizar deuda y status
         self.order.recalc_totals()
         self.order.save(update_fields=['total', 'balance_due', 'status'])
+    
+    def delete(self, *args, **kwargs):
+        order = self.order
+        super().delete(*args, **kwargs)
+        order.recalc_totals()
+        order.save(update_fields=['total', 'balance_due', 'status'])
 
 
 class InstitutionSettings(models.Model):

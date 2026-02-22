@@ -6,19 +6,16 @@ import { apiFetch } from "../../api/client";
 import type { BillingItem } from "../../types/billing";
 import ServiceSearchCombobox from "./ServiceSearchCombobox";
 import { 
-  CurrencyDollarIcon, 
   ChevronDownIcon, 
   ChevronRightIcon, 
   PlusIcon,
   TrashIcon,
   XMarkIcon,
   MinusIcon,
-  CheckBadgeIcon,
   BanknotesIcon,
   CreditCardIcon,
   ArrowsRightLeftIcon,
-  ReceiptPercentIcon,
-  PlusCircleIcon
+  ReceiptPercentIcon
 } from "@heroicons/react/24/outline";
 export type ChargeOrderPanelProps =
   | { appointmentId: number; readOnly?: boolean }
@@ -34,7 +31,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const readOnly = props.readOnly ?? false;
   const [order, setOrder] = useState<ChargeOrder | null>(null);
   const [showItems, setShowItems] = useState(false);
-  const [showPayments, setShowPayments] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [isSavingItems, setIsSavingItems] = useState(false);
   const { data, isLoading, refetch } = isAppointmentMode(props)
@@ -266,12 +263,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                         </div>
                       ))}
                     </div>
-                    {/* BOTÓN GUARDAR */}
+                    {/* BOTÓN GUARDAR - FIX: text-black para legibilidad */}
                     <button
                       type="button"
                       onClick={handleSavePendingItems}
                       disabled={isSavingItems}
-                      className="w-full bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-white py-2 text-[9px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-50"
+                      className="w-full bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-black py-2 text-[9px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-50"
                     >
                       {isSavingItems ? "Guardando..." : "Agregar_a_Orden"}
                     </button>
@@ -312,22 +309,22 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
         )}
       </div>
-      {/* 03. SECCIÓN DE PAGOS */}
-      <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
-        <button 
-          onClick={() => setShowPayments(!showPayments)}
-          className="w-full flex items-center justify-between p-2 hover:bg-white/5 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <CheckBadgeIcon className="w-4 h-4 text-emerald-500" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Log_Transacciones</span>
-          </div>
-          {showPayments ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
-        </button>
-        
-        {showPayments && (
-          <div className="p-3 space-y-3 border-t border-[var(--palantir-border)]">
-            {!readOnly && !isPaid && (
+      {/* 03. FORMULARIO DE PAGO RÁPIDO (Solo si hay deuda) */}
+      {!readOnly && !isPaid && (
+        <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
+          <button 
+            onClick={() => setShowPaymentForm(!showPaymentForm)}
+            className="w-full flex items-center justify-between p-2 hover:bg-white/5 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <BanknotesIcon className="w-4 h-4 text-emerald-500" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Registrar_Pago</span>
+            </div>
+            {showPaymentForm ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
+          </button>
+          
+          {showPaymentForm && (
+            <div className="p-3 space-y-2 border-t border-[var(--palantir-border)]">
               <form onSubmit={handleAddPayment} className="space-y-2">
                 <div className="grid grid-cols-2 gap-1">
                   <input 
@@ -336,13 +333,13 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                     value={amount} 
                     onChange={e => setAmount(e.target.value)} 
                     placeholder="MONTO_USD" 
-                    className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none" 
+                    className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" 
                     required 
                   />
                   <select 
                     value={method} 
                     onChange={e => setMethod(e.target.value as any)} 
-                    className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none"
+                    className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]"
                   >
                     <option value="cash">EFECTIVO</option>
                     <option value="card">TARJETA_POS</option>
@@ -356,7 +353,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                   placeholder="NUMERO_REFERENCIA" 
                   value={reference} 
                   onChange={e => setReference(e.target.value)} 
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none" 
+                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" 
                 />
                 <button 
                   type="submit" 
@@ -365,25 +362,10 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                   Ejecutar_Pago
                 </button>
               </form>
-            )}
-            
-            <div className="space-y-1">
-              {order.payments?.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 p-2 bg-emerald-500/5 border-l-2 border-emerald-500">
-                  {p.method === 'cash' ? <BanknotesIcon className="w-4 h-4" /> : p.method === 'card' ? <CreditCardIcon className="w-4 h-4" /> : <ArrowsRightLeftIcon className="w-4 h-4" />}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black uppercase tracking-tighter">${Number(p.amount).toFixed(2)}</span>
-                      <span className="text-[8px] font-mono opacity-50 uppercase">{p.method}</span>
-                    </div>
-                    {p.reference_number && <p className="text-[8px] font-mono truncate">REF: {p.reference_number}</p>}
-                  </div>
-                </div>
-              ))}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
