@@ -1,7 +1,8 @@
 // src/components/Consultation/ChargeOrderPanel.tsx
 import React, { useEffect, useState } from "react";
-import { ChargeOrder, ChargeItem, Payment } from "../../types/payments";
-import { useChargeOrder, useCreatePayment, PaymentPayload } from "../../hooks/consultations/useChargeOrder";
+import { useNavigate } from "react-router-dom";
+import { ChargeOrder } from "../../types/payments";
+import { useChargeOrder } from "../../hooks/consultations/useChargeOrder";
 import { apiFetch } from "../../api/client";
 import type { BillingItem } from "../../types/billing";
 import ServiceSearchCombobox from "./ServiceSearchCombobox";
@@ -12,10 +13,8 @@ import {
   TrashIcon,
   XMarkIcon,
   MinusIcon,
-  BanknotesIcon,
-  CreditCardIcon,
-  ArrowsRightLeftIcon,
-  ReceiptPercentIcon
+  ReceiptPercentIcon,
+  ArrowRightIcon
 } from "@heroicons/react/24/outline";
 export type ChargeOrderPanelProps =
   | { appointmentId: number; readOnly?: boolean }
@@ -29,9 +28,9 @@ interface PendingItem {
 }
 const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const readOnly = props.readOnly ?? false;
+  const navigate = useNavigate();
   const [order, setOrder] = useState<ChargeOrder | null>(null);
   const [showItems, setShowItems] = useState(false);
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [isSavingItems, setIsSavingItems] = useState(false);
   const { data, isLoading, refetch } = isAppointmentMode(props)
@@ -44,15 +43,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     }
     setOrder(data ?? null);
   }, [props, data]);
-  const createPayment = useCreatePayment(
-    order?.id ?? undefined,
-    isAppointmentMode(props) ? props.appointmentId : order?.appointment
-  );
-  const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState<"cash" | "card" | "transfer" | "zelle" | "crypto" | "other">("cash");
-  const [reference, setReference] = useState("");
-  const [bank, setBank] = useState("");
-  const [otherDetail, setOtherDetail] = useState("");
   const handleCreateOrder = async () => {
     if (!isAppointmentMode(props)) return;
     try {
@@ -125,22 +115,10 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       void refetch();
     } catch (err) { console.error("Delete_Fault:", err); }
   };
-  const handleAddPayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!amount || !order) return;
-    createPayment.mutate({
-      charge_order: order.id,
-      amount: parseFloat(amount),
-      method,
-      reference_number: reference || null,
-      bank_name: method === "transfer" ? bank : null,
-      detail: method === "other" ? otherDetail : null,
-    }, {
-      onSuccess: () => {
-        setAmount(""); setReference(""); setBank(""); setOtherDetail("");
-        void refetch();
-      }
-    });
+  const handleGoToPayments = () => {
+    if (order?.id) {
+      navigate(`/payments/${order.id}`);
+    }
   };
   if (isAppointmentMode(props) && isLoading) return <div className="animate-pulse h-20 bg-white/5 border border-[var(--palantir-border)]" />;
   
@@ -154,26 +132,27 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       </button>
     ) : null;
   }
-  const isPaid = Number(order.balance_due) <= 0;
+  const hasBalance = Number(order.balance_due) > 0;
+  const isPaid = !hasBalance;
   return (
     <div className="space-y-4">
       {/* 01. RESUMEN FINANCIERO */}
-      <div className={`relative overflow-hidden border p-3 ${isPaid ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+      <div className={`relative overflow-hidden border p-3 ${isPaid ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/5'}`}>
         <div className="flex justify-between items-start mb-2">
           <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Libro_Financiero</span>
-          <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${isPaid ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
+          <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${isPaid ? 'bg-emerald-500 text-black' : 'bg-amber-500 text-black'}`}>
             {order.status}
           </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-[10px] text-[var(--palantir-muted)] font-mono uppercase">Total_Debido</p>
-            <p className="text-lg font-black tracking-tighter">${Number(order.total).toFixed(2)}</p>
+            <p className="text-lg font-black tracking-tighter">${Number(order.total || 0).toFixed(2)}</p>
           </div>
           <div className="text-right">
             <p className="text-[10px] text-[var(--palantir-muted)] font-mono uppercase italic">Balance_Rem</p>
-            <p className={`text-lg font-black tracking-tighter ${isPaid ? 'text-emerald-500' : 'text-red-500'}`}>
-              ${Number(order.balance_due).toFixed(2)}
+            <p className={`text-lg font-black tracking-tighter ${isPaid ? 'text-emerald-500' : 'text-amber-500'}`}>
+              ${Number(order.balance_due || 0).toFixed(2)}
             </p>
           </div>
         </div>
@@ -187,6 +166,9 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           <div className="flex items-center gap-2">
             <ReceiptPercentIcon className="w-4 h-4 text-[var(--palantir-active)]" />
             <span className="text-[10px] font-black uppercase tracking-widest">Items_Facturacion</span>
+            {order.items && order.items.length > 0 && (
+              <span className="text-[8px] font-mono text-[var(--palantir-muted)]">({order.items.length})</span>
+            )}
           </div>
           {showItems ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
         </button>
@@ -225,7 +207,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                           </div>
                           
                           <div className="flex items-center gap-2">
-                            {/* CONTROLES DE CANTIDAD */}
                             <div className="flex items-center gap-1 bg-black/40 border border-[var(--palantir-border)]">
                               <button
                                 type="button"
@@ -246,12 +227,10 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                               </button>
                             </div>
                             
-                            {/* SUBTOTAL */}
                             <span className="text-[10px] font-black font-mono w-16 text-right">
                               ${(Number(p.billingItem.unit_price) * p.quantity).toFixed(2)}
                             </span>
                             
-                            {/* ELIMINAR */}
                             <button
                               type="button"
                               onClick={() => removePendingItem(p.billingItem.id)}
@@ -263,7 +242,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                         </div>
                       ))}
                     </div>
-                    {/* BOTÓN GUARDAR - FIX: text-black para legibilidad */}
                     <button
                       type="button"
                       onClick={handleSavePendingItems}
@@ -309,62 +287,24 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
         )}
       </div>
-      {/* 03. FORMULARIO DE PAGO RÁPIDO (Solo si hay deuda) */}
-      {!readOnly && !isPaid && (
-        <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
-          <button 
-            onClick={() => setShowPaymentForm(!showPaymentForm)}
-            className="w-full flex items-center justify-between p-2 hover:bg-white/5 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <BanknotesIcon className="w-4 h-4 text-emerald-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Registrar_Pago</span>
-            </div>
-            {showPaymentForm ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
-          </button>
-          
-          {showPaymentForm && (
-            <div className="p-3 space-y-2 border-t border-[var(--palantir-border)]">
-              <form onSubmit={handleAddPayment} className="space-y-2">
-                <div className="grid grid-cols-2 gap-1">
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    value={amount} 
-                    onChange={e => setAmount(e.target.value)} 
-                    placeholder="MONTO_USD" 
-                    className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" 
-                    required 
-                  />
-                  <select 
-                    value={method} 
-                    onChange={e => setMethod(e.target.value as any)} 
-                    className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]"
-                  >
-                    <option value="cash">EFECTIVO</option>
-                    <option value="card">TARJETA_POS</option>
-                    <option value="transfer">TRANSFERENCIA</option>
-                    <option value="zelle">ZELLE_USD</option>
-                    <option value="crypto">CRYPTO</option>
-                    <option value="other">OTRO</option>
-                  </select>
-                </div>
-                <input 
-                  placeholder="NUMERO_REFERENCIA" 
-                  value={reference} 
-                  onChange={e => setReference(e.target.value)} 
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)]" 
-                />
-                <button 
-                  type="submit" 
-                  className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-2 text-[9px] font-black uppercase tracking-[0.2em] transition-all"
-                >
-                  Ejecutar_Pago
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
+      {/* 03. BOTÓN NAVEGAR A PAGOS */}
+      {!readOnly && (
+        <button
+          onClick={handleGoToPayments}
+          className="w-full flex items-center justify-between p-3 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-all group"
+        >
+          <span className="text-[10px] font-black uppercase tracking-widest">
+            Gestionar_Pagos
+          </span>
+          <div className="flex items-center gap-2">
+            {hasBalance && (
+              <span className="text-[9px] font-mono">
+                ${Number(order.balance_due).toFixed(2)} pendiente
+              </span>
+            )}
+            <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </button>
       )}
     </div>
   );
