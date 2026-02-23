@@ -97,13 +97,13 @@ export function useCreateAppointment() {
   });
 }
 
-// --- PATCH: cancelar cita ---
+// --- POST: cancelar cita (cambiar status a canceled) ---
 export function useCancelAppointment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
       const raw = await apiFetch<Appointment>(`appointments/${id}/status/`, {
-        method: "PATCH",
+        method: "POST",  // ✅ FIX: Cambiado de PATCH a POST
         body: JSON.stringify({ status: "canceled" }),
       });
       return mapAppointmentList(raw);

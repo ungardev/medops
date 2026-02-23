@@ -2215,9 +2215,13 @@ def current_consultation_api(request):
         return Response({"error": str(e)}, status=500)
 
 
-@api_view(['POST'])
+@api_view(['POST', 'PATCH'])  # ✅ FIX: Agregado PATCH
 @permission_classes([conditional_permission()])
 def update_appointment_status(request, pk):
+    """
+    Actualiza el status de un appointment.
+    Acepta POST y PATCH para mayor flexibilidad del frontend.
+    """
     try:
         appointment = get_object_or_404(Appointment, pk=pk)
         new_status = request.data.get('status')

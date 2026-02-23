@@ -4,14 +4,13 @@ import { Appointment, AppointmentStatus } from "types/appointments";
 import { 
   XMarkIcon, 
   EyeIcon, 
-  TrashIcon, 
   ClockIcon, 
   EllipsisVerticalIcon 
 } from "@heroicons/react/24/outline";
 interface AppointmentsListProps {
   appointments: Appointment[];
   onEdit: (a: Appointment) => void;
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => void;  // ✅ Mantenido por compatibilidad
   onStatusChange: (id: number, status: AppointmentStatus) => void;
 }
 const STATUS_CONFIG: Record<AppointmentStatus, { label: string; bg: string; text: string; dot: string }> = {
@@ -24,7 +23,7 @@ const STATUS_CONFIG: Record<AppointmentStatus, { label: string; bg: string; text
 export default function AppointmentsList({
   appointments,
   onEdit,
-  onDelete,
+  onDelete,  // ✅ Mantenida la prop por compatibilidad pero no se usa
   onStatusChange,
 }: AppointmentsListProps) {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
@@ -112,12 +111,12 @@ export default function AppointmentsList({
                                 <XMarkIcon className="h-3.5 w-3.5" /> Abort_Mission
                               </button>
                             )}
-                            <button
-                              onClick={() => onDelete(a.id)}
-                              className="w-full flex items-center gap-3 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-600 hover:text-white transition-colors"
-                            >
-                              <TrashIcon className="h-3.5 w-3.5" /> Purge_System
-                            </button>
+                            
+                            {a.status === "canceled" && (
+                              <div className="px-4 py-2 text-[9px] font-mono text-white/30 border-b border-white/5">
+                                STATUS: LOCKED
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

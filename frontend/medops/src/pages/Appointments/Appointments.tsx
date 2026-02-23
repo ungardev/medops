@@ -87,11 +87,11 @@ export default function Appointments() {
     }
   };
 
-  const deleteAppointmentSafe = (id: number) => {
-    if (window.confirm("CONFIRM_ACTION: ELIMINATE_RECORD_PERMANENTLY?")) {
-      cancelMutation.mutate(id);
-    }
-  };
+  //const deleteAppointmentSafe = (id: number) => {
+  //  if (window.confirm("CONFIRM_ACTION: ELIMINATE_RECORD_PERMANENTLY?")) {
+  //    cancelMutation.mutate(id);
+  //  }
+  //};
 
   const isSearchingActive = search.trim().length > 0;
 
@@ -207,7 +207,7 @@ export default function Appointments() {
             <AppointmentsList
               appointments={paginatedAppointments}
               onEdit={(a: Appointment) => setViewingAppointment(a)}
-              onDelete={(id: number) => deleteAppointmentSafe(id)}
+              onDelete={() => {}}
               onStatusChange={(id: number, status: AppointmentStatus) => statusMutation.mutate({ id, status })}
             />
           </div>
