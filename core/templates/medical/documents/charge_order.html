@@ -4,54 +4,41 @@
   <meta charset="UTF-8">
   <title>Orden de Cobro #{{ charge_order.id }}</title>
   <style>
-    @page { size: A4; margin: 1.2cm; }
-    * { box-sizing: border-box; }
-    body {
-      font-family: "DejaVu Sans", Arial, sans-serif;
-      font-size: 11px;
-      line-height: 1.5;
-      margin: 0;
-      padding: 0;
-      color: #1a1a1a;
-    }
-    header {
-      text-align: center;
-      border-bottom: 2px solid #1a1a1a;
-      padding-bottom: 12px;
-      margin-bottom: 16px;
-    }
-    .logo { max-width: 100px; max-height: 60px; object-fit: contain; margin-bottom: 8px; }
-    .institution-name { font-size: 18px; font-weight: 700; margin: 0 0 4px 0; letter-spacing: 0.5px; }
+    @page { size: A4; margin: 1.5cm; }
+    body { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 11px; line-height: 1.4; margin: 0; padding: 0; color: #1a1a1a; }
+    header { text-align: center; border-bottom: 2px solid #1a1a1a; padding-bottom: 12px; margin-bottom: 16px; }
+    .logo { max-width: 100px; max-height: 60px; margin-bottom: 8px; }
+    .institution-name { font-size: 18px; font-weight: 700; margin: 0 0 4px 0; }
     .institution-meta { font-size: 10px; color: #555; margin: 2px 0; }
-    .order-badge { display: inline-block; background: #1a1a1a; color: #fff; padding: 6px 16px; font-size: 12px; font-weight: 700; letter-spacing: 1px; margin-top: 10px; }
+    .order-badge { background: #1a1a1a; color: #fff; padding: 6px 16px; font-size: 12px; font-weight: 700; margin-top: 10px; display: inline-block; }
     .order-status { font-size: 10px; color: #666; margin-top: 4px; }
-    .section { margin-bottom: 14px; page-break-inside: avoid; }
-    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #1a1a1a; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin: 0 0 8px 0; }
-    .info-grid { display: flex; gap: 24px; }
-    .info-block { flex: 1; }
-    .info-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #666; letter-spacing: 0.5px; }
-    .info-value { font-size: 12px; font-weight: 500; }
+    .section { margin-bottom: 14px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin: 0 0 8px 0; }
+    .info-grid { width: 100%; }
+    .info-grid td { width: 50%; vertical-align: top; padding-right: 12px; }
+    .info-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #666; }
+    .info-value { font-size: 12px; font-weight: 500; margin-bottom: 2px; }
     table { width: 100%; border-collapse: collapse; font-size: 10px; }
-    th { background: #f5f5f5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; font-size: 9px; padding: 8px 6px; text-align: left; border-bottom: 2px solid #1a1a1a; }
-    td { padding: 7px 6px; border-bottom: 1px solid #e5e5e5; vertical-align: top; }
-    td.num { text-align: right; font-family: "DejaVu Sans Mono", monospace; }
-    tr:last-child td { border-bottom: none; }
-    .financial-box { background: #fafafa; border: 1px solid #e5e5e5; padding: 12px; margin-top: 4px; }
-    .financial-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; }
-    .financial-row.total { border-top: 2px solid #1a1a1a; margin-top: 6px; padding-top: 8px; font-weight: 700; font-size: 13px; }
-    .financial-row.paid { color: #2d7a3d; }
-    .financial-row.pending { color: #c44; }
-    .doctor-block { display: flex; justify-content: space-between; align-items: flex-start; }
-    .doctor-info { flex: 1; }
-    .doctor-name { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+    th { background: #f5f5f5; font-weight: 700; text-transform: uppercase; font-size: 9px; padding: 8px 6px; text-align: left; border-bottom: 2px solid #1a1a1a; }
+    td { padding: 7px 6px; border-bottom: 1px solid #e5e5e5; }
+    td.num { text-align: right; font-family: monospace; }
+    .financial-box { background: #fafafa; border: 1px solid #e5e5e5; padding: 12px; }
+    .financial-row { width: 100%; }
+    .financial-row td { border: none; padding: 4px 0; }
+    .financial-row.total td { border-top: 2px solid #1a1a1a; font-weight: 700; font-size: 13px; padding-top: 8px; }
+    .financial-row.paid td:last-child { color: #2d7a3d; }
+    .financial-row.pending td:last-child { color: #c44; }
+    .doctor-block { width: 100%; }
+    .doctor-block td { border: none; }
+    .doctor-name { font-size: 13px; font-weight: 700; }
     .doctor-meta { font-size: 10px; color: #555; }
-    .doctor-signature { max-height: 40px; margin-left: 20px; }
+    .doctor-signature { max-height: 40px; }
     footer { margin-top: 20px; padding-top: 12px; border-top: 2px solid #1a1a1a; text-align: center; }
     .footer-main { font-size: 10px; color: #333; margin-bottom: 8px; }
-    .qr-container { display: inline-block; text-align: center; }
+    .qr-container { text-align: center; }
     .qr-container img { height: 70px; }
-    .audit-label { font-size: 8px; color: #888; margin-top: 4px; letter-spacing: 0.5px; }
-    .audit-code { font-family: "DejaVu Sans Mono", monospace; font-size: 9px; font-weight: 700; color: #555; background: #f5f5f5; padding: 2px 8px; display: inline-block; margin-top: 2px; }
+    .audit-label { font-size: 8px; color: #888; margin-top: 4px; }
+    .audit-code { font-family: monospace; font-size: 9px; font-weight: 700; color: #555; background: #f5f5f5; padding: 2px 8px; }
     .empty { color: #999; font-style: italic; text-align: center; padding: 16px; }
   </style>
 </head>
@@ -66,40 +53,31 @@
       {% if institution.phone %} | Tel: {{ institution.phone }}{% endif %}
       {% if institution.tax_id %} | RIF: {{ institution.tax_id }}{% endif %}
     </p>
-    {% if institution.email or institution.website %}
-      <p class="institution-meta">
-        {% if institution.email %}{{ institution.email }}{% endif %}
-        {% if institution.website %} | {{ institution.website }}{% endif %}
-      </p>
-    {% endif %}
     <div class="order-badge">ORDEN DE COBRO #{{ charge_order.id }}</div>
-    <p class="order-status">
-      Estado: <strong>{{ status_label }}</strong> | Emitido: {{ generated_at|date:"d/m/Y H:i" }}
-    </p>
+    <p class="order-status">Estado: <strong>{{ status_label }}</strong> | Emitido: {{ generated_at|date:"d/m/Y H:i" }}</p>
   </header>
   <div class="section">
-    <div class="info-grid">
-      <div class="info-block">
-        <p class="info-label">Paciente</p>
-        <p class="info-value">{{ patient.first_name|default:"" }} {{ patient.last_name|default:"" }}</p>
-        <p style="font-size: 10px; color: #555;">
-          {% if patient.national_id %}C.I.: {{ patient.national_id }}{% endif %}
-          {% if patient.age %} | Edad: {{ patient.age }} años{% endif %}
-          {% if patient.gender %} | Sexo: {{ patient.gender }}{% endif %}
-        </p>
-      </div>
-      <div class="info-block">
-        <p class="info-label">Consulta</p>
-        {% if appointment %}
-          <p class="info-value">#{{ appointment.id }}</p>
+    <table class="info-grid">
+      <tr>
+        <td>
+          <p class="info-label">Paciente</p>
+          <p class="info-value">{{ patient.first_name|default:"" }} {{ patient.last_name|default:"" }}</p>
           <p style="font-size: 10px; color: #555;">
-            Fecha: {{ appointment.appointment_date|date:"d/m/Y" }}
+            {% if patient.national_id %}C.I.: {{ patient.national_id }}{% endif %}
+            {% if patient.age %} | Edad: {{ patient.age }} años{% endif %}
           </p>
-        {% else %}
-          <p class="info-value">Sin consulta asociada</p>
-        {% endif %}
-      </div>
-    </div>
+        </td>
+        <td>
+          <p class="info-label">Consulta</p>
+          {% if appointment %}
+            <p class="info-value">#{{ appointment.id }}</p>
+            <p style="font-size: 10px; color: #555;">Fecha: {{ appointment.appointment_date|date:"d/m/Y" }}</p>
+          {% else %}
+            <p class="info-value">Sin consulta</p>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
   </div>
   <div class="section">
     <h2 class="section-title">Detalle de Servicios</h2>
@@ -123,9 +101,7 @@
           <td class="num">${{ item.subtotal }}</td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="5" class="empty">Sin servicios registrados</td>
-        </tr>
+        <tr><td colspan="5" class="empty">Sin servicios registrados</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -133,34 +109,18 @@
   <div class="section">
     <h2 class="section-title">Resumen Financiero</h2>
     <div class="financial-box">
-      <div class="financial-row">
-        <span>Subtotal</span>
-        <span>${{ subtotal }}</span>
-      </div>
-      {% if discount and discount != '0.00' %}
-      <div class="financial-row">
-        <span>Descuento</span>
-        <span>-${{ discount }}</span>
-      </div>
-      {% endif %}
-      {% if tax and tax != '0.00' %}
-      <div class="financial-row">
-        <span>Impuestos</span>
-        <span>${{ tax }}</span>
-      </div>
-      {% endif %}
-      <div class="financial-row total">
-        <span>TOTAL</span>
-        <span>${{ total }}</span>
-      </div>
-      <div class="financial-row paid">
-        <span>Pagado</span>
-        <span>${{ paid_amount }}</span>
-      </div>
-      <div class="financial-row pending">
-        <span>Pendiente</span>
-        <span>${{ balance_due }}</span>
-      </div>
+      <table class="financial-row">
+        <tr><td>Subtotal</td><td class="num">${{ subtotal }}</td></tr>
+      </table>
+      <table class="financial-row total">
+        <tr><td>TOTAL</td><td class="num">${{ total }}</td></tr>
+      </table>
+      <table class="financial-row paid">
+        <tr><td>Pagado</td><td class="num">${{ paid_amount }}</td></tr>
+      </table>
+      <table class="financial-row pending">
+        <tr><td>Pendiente</td><td class="num">${{ balance_due }}</td></tr>
+      </table>
     </div>
   </div>
   <div class="section">
@@ -185,29 +145,29 @@
           <td>{{ pay.status }}</td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="5" class="empty">Sin pagos registrados</td>
-        </tr>
+        <tr><td colspan="5" class="empty">Sin pagos registrados</td></tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   <div class="section">
     <h2 class="section-title">Médico Responsable</h2>
-    <div class="doctor-block">
-      <div class="doctor-info">
-        <p class="doctor-name">{{ doctor_name }}</p>
-        <p class="doctor-meta">
-          {% if doctor_colegiado %}Nº Colegiado: {{ doctor_colegiado }}{% endif %}
-          {% if doctor_specialties %}
-            <br>Especialidades: {{ doctor_specialties|join:", " }}
+    <table class="doctor-block">
+      <tr>
+        <td>
+          <p class="doctor-name">{{ doctor_name }}</p>
+          <p class="doctor-meta">
+            {% if doctor_colegiado %}Nº Colegiado: {{ doctor_colegiado }}{% endif %}
+            {% if doctor_specialties %}<br>Especialidades: {{ doctor_specialties|join:", " }}{% endif %}
+          </p>
+        </td>
+        <td style="text-align: right;">
+          {% if doctor_signature_path %}
+            <img src="{{ doctor_signature_path }}" alt="Firma" class="doctor-signature">
           {% endif %}
-        </p>
-      </div>
-      {% if doctor_signature_path %}
-        <img src="{{ doctor_signature_path }}" alt="Firma" class="doctor-signature">
-      {% endif %}
-    </div>
+        </td>
+      </tr>
+    </table>
   </div>
   <footer>
     <p class="footer-main">
@@ -215,7 +175,7 @@
       Emitido por {{ doctor_name }} | {{ institution.name|default:"Institución" }}
     </p>
     <div class="qr-container">
-      <img src="{{ qr_code_url }}" alt="Código QR de Auditoría">
+      <img src="{{ qr_code_url }}" alt="QR">
       <p class="audit-label">CÓDIGO DE VERIFICACIÓN</p>
       <span class="audit-code">{{ audit_code }}</span>
     </div>

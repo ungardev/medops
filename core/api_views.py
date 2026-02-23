@@ -1611,14 +1611,11 @@ def generate_chargeorder_pdf(request, pk):
         
         status_label = ORDER_STATUS_LABELS.get(charge_order.status, charge_order.status)
         
-        # Doctor info con fallback
         doctor = charge_order.doctor
         doctor_name = doctor.full_name if doctor else "Sin médico asignado"
         doctor_colegiado = doctor.colegiado_id if doctor else None
         doctor_specialties = list(doctor.specialties.values_list('name', flat=True)) if doctor else []
         doctor_signature_path = doctor.signature.path if doctor and doctor.signature else None
-        
-        # Institution logo path
         institution_logo_path = charge_order.institution.logo.path if charge_order.institution.logo else None
         
         context = {
@@ -1647,7 +1644,21 @@ def generate_chargeorder_pdf(request, pk):
         }
         
         html_string = render_to_string('medical/documents/charge_order.html', context)
-        pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
+        
+        # DEBUG: Verificar que el HTML se renderizó
+        logger.info(f"[CHARGE_ORDER_PDF] HTML length: {len(html_string)} chars")
+        logger.info(f"[CHARGE_ORDER_PDF] HTML preview: {html_string[:200]}...")
+        
+        # Generar PDF con fallback
+        pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf() or b""
+        
+        # DEBUG: Verificar PDF
+        logger.info(f"[CHARGE_ORDER_PDF] PDF length: {len(pdf_bytes)} bytes")
+        logger.info(f"[CHARGE_ORDER_PDF] PDF starts with %PDF: {pdf_bytes[:4] == b'%PDF'}")
+        
+        if not pdf_bytes or not pdf_bytes.startswith(b'%PDF'):
+            logger.error(f"[CHARGE_ORDER_PDF] PDF generation failed - returning error")
+            return Response({"error": "Error generando PDF"}, status=500)
         
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         filename = f"ORD-{charge_order.id}.pdf"
@@ -1656,6 +1667,8 @@ def generate_chargeorder_pdf(request, pk):
         
     except Exception as e:
         logger.error(f"Error generando orden de cobro: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return Response({"error": str(e)}, status=500)
 
 
