@@ -1398,10 +1398,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
         Flujo:
         1. Crear Appointment
         2. Crear ChargeOrder automáticamente
-        3. Crear ChargeItems desde BillingItems del catálogo
+        3. Crear ChargeItems directamente desde los datos del frontend
         4. [OPCIONAL] Crear Payment si se incluye initial_payment
         """
-        from .models import ChargeOrder, ChargeItem, BillingItem, Payment
+        from .models import ChargeOrder, ChargeItem, Payment
         from decimal import Decimal
         
         # Extraer servicios y pago inicial
@@ -1423,7 +1423,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             balance_due=Decimal('0.00'),
         )
         
-        # 3. Crear ChargeItems desde el catálogo de BillingItems
+        # 3. Crear ChargeItems directamente desde los datos recibidos
         total_amount = Decimal('0.00')
         
         for service in services_data:
@@ -1431,26 +1431,37 @@ class AppointmentSerializer(serializers.ModelSerializer):
             qty = service.get('qty', 1)
             
             if billing_item_id:
+                # ✅ FIX: Intentar buscar BillingItem, pero si no existe, usar datos directos
+                billing_item = None
                 try:
-                    billing_item = BillingItem.objects.get(
+                    billing_item = BillingItem.objects.filter(
                         id=billing_item_id,
                         is_active=True
-                    )
-                    
-                    # Crear ChargeItem con precio INMUTABLE del catálogo
-                    item = ChargeItem.objects.create(
-                        order=charge_order,
-                        code=billing_item.code,
-                        description=billing_item.name,
-                        qty=Decimal(str(qty)),
-                        unit_price=billing_item.unit_price,
-                    )
-                    
-                    total_amount += item.subtotal
-                    
-                except BillingItem.DoesNotExist:
-                    # Silently skip if billing item not found
+                    ).first()
+                except Exception:
                     pass
+                
+                # Si existe BillingItem, usar sus datos; si no, usar datos del servicio
+                if billing_item:
+                    code = billing_item.code
+                    description = billing_item.name
+                    unit_price = billing_item.unit_price
+                else:
+                    # Usar datos del servicio directamente
+                    code = service.get('code', f'ITEM-{billing_item_id}')
+                    description = service.get('description', f'Servicio {billing_item_id}')
+                    unit_price = Decimal(str(service.get('unit_price', service.get('price', 0))))
+                
+                # Crear ChargeItem
+                item = ChargeItem.objects.create(
+                    order=charge_order,
+                    code=code,
+                    description=description,
+                    qty=Decimal(str(qty)),
+                    unit_price=unit_price,
+                )
+                
+                total_amount += item.subtotal
         
         # Recalcular totales del ChargeOrder
         charge_order.recalc_totals()
@@ -2154,6 +2165,11 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     vital_signs = VitalSignsSerializer(read_only=True)
     note = ClinicalNoteSerializer(read_only=True)
     patient = PatientReadSerializer(read_only=True)
+    
+    # ✅ AGREGAR: Institution y Doctor como objetos completos
+    institution = serializers.SerializerMethodField()
+    doctor = serializers.SerializerMethodField()
+    
     # 2. Lógica de Negocio Inyectada (Tratamientos y Recetas)
     treatments = serializers.SerializerMethodField()
     prescriptions = serializers.SerializerMethodField()
@@ -2161,7 +2177,8 @@ class AppointmentDetailSerializer(AppointmentSerializer):
     # 3. Bloque Financiero y de Auditoría
     charge_order = serializers.SerializerMethodField()
     balance_due = serializers.SerializerMethodField()
-    documents_count = serializers.SerializerMethodField()  # ← NUEVO
+    documents_count = serializers.SerializerMethodField()
+    
     class Meta(AppointmentSerializer.Meta):
         fields = AppointmentSerializer.Meta.fields + [
             "diagnoses",
@@ -2173,14 +2190,35 @@ class AppointmentDetailSerializer(AppointmentSerializer):
             "note",
             "charge_order",
             "balance_due",
-            "documents_count",  # ← NUEVO
+            "documents_count",
             "started_at",
             "completed_at",
             "notes",
+            # ✅ AGREGAR estos campos
+            "institution",
+            "doctor",
         ]
-        read_only_fields = AppointmentSerializer.Meta.read_only_fields + [
-            "started_at", "completed_at"
-        ]
+    
+    # ✅ AGREGAR estos métodos
+    def get_institution(self, obj):
+        """Devuelve la institución con datos completos."""
+        if obj.institution:
+            return {
+                "id": obj.institution.id,
+                "name": obj.institution.name,
+                "tax_id": obj.institution.tax_id,
+            }
+        return None
+    
+    def get_doctor(self, obj):
+        """Devuelve el doctor con datos completos."""
+        if obj.doctor:
+            return {
+                "id": obj.doctor.id,
+                "full_name": obj.doctor.full_name,
+                "colegiado_id": obj.doctor.colegiado_id,
+            }
+        return None
     @extend_schema_field(serializers.FloatField())
     def get_balance_due(self, obj) -> float:
         """Extrae el saldo pendiente directamente de la lógica del modelo."""
