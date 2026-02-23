@@ -27,7 +27,7 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
     try {
       const token = localStorage.getItem("authToken");
       const response = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/charge-orders/${order.id}/export/`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/charge-orders/${order.id}/export/`,
         {
           method: "GET",
           headers: { ...(token ? { Authorization: `Token ${token}` } : {}) },

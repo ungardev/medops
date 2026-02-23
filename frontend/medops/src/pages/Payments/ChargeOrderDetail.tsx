@@ -115,7 +115,8 @@ export default function ChargeOrderDetail() {
     if (!order?.id) return;
     try {
       const token = localStorage.getItem("authToken");
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/charge-orders/${order.id}/export/`, {
+      const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+      const response = await fetch(`${API_BASE}/charge-orders/${order.id}/export/`, {
         headers: { ...(token ? { Authorization: `Token ${token}` } : {}) },
       });
       if (!response.ok) throw new Error();
