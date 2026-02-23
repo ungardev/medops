@@ -28,6 +28,13 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
   
   // ✅ Fetch del appointment completo con datos financieros
   const { data: detailData, isLoading, isError } = useAppointment(appointment.id);
+
+  // DEBUG
+  console.log('[AppointmentDetail] props.appointment:', appointment);
+  console.log('[AppointmentDetail] appointment.id:', appointment?.id);
+  console.log('[AppointmentDetail] detailData:', detailData);
+  console.log('[AppointmentDetail] isLoading:', isLoading);
+  console.log('[AppointmentDetail] isError:', isError);
   
   // Usar datos del fetch si están disponibles, si no usar prop
   const appt = detailData || appointment;
