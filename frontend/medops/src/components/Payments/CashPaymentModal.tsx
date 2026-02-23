@@ -16,7 +16,6 @@ interface CashPaymentData {
   received_by?: number;
   payment_date: string;
   notes?: string;
-  payment_reference?: string;
 }
 interface Props {
   appointmentId: number;
@@ -48,12 +47,10 @@ export default function CashPaymentModal({
       const response = await apiFetch('/api/payments/', {
         method: 'POST',
         body: JSON.stringify({
-          ...data,
+          amount: data.amount,
+          method: 'cash',
           charge_order: chargeOrderId,
           appointment: appointmentId,
-          method: 'cash',
-          status: 'confirmed',
-          cash_verification: true
         })
       });
       return response;
@@ -89,15 +86,6 @@ export default function CashPaymentModal({
       return;
     }
     
-    const paymentDate = new Date(form.payment_date);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    
-    if (paymentDate > today) {
-      setError('La fecha de pago no puede ser futura');
-      return;
-    }
-    
     mutation.mutate(form);
   };
   
@@ -121,6 +109,7 @@ export default function CashPaymentModal({
             <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
+        
         {/* Institution Badge */}
         {activeInstitution && (
           <div className="px-4 py-2 border-b border-white/5 bg-white/[0.02]">
@@ -132,6 +121,7 @@ export default function CashPaymentModal({
             </div>
           </div>
         )}
+        
         {/* Amount Display */}
         <div className="p-4 border-b border-white/5 bg-emerald-500/5">
           <div className="flex items-center justify-between">
@@ -143,6 +133,7 @@ export default function CashPaymentModal({
             </span>
           </div>
         </div>
+        
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Amount Input */}
@@ -163,36 +154,22 @@ export default function CashPaymentModal({
               />
             </div>
           </div>
-          {/* Date and Reference */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
-                Fecha_Pago
-              </label>
-              <input
-                type="date"
-                name="payment_date"
-                value={form.payment_date}
-                onChange={handleChange}
-                max={new Date().toISOString().split('T')[0]}
-                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-emerald-500/50 transition-all"
-                style={{colorScheme: 'dark'}}
-              />
+          
+          {/* Reference Info - Autogenerada */}
+          <div className="p-3 bg-white/[0.02] border border-white/5">
+            <div className="flex items-center justify-between">
+              <span className="text-[8px] font-black uppercase tracking-widest text-white/40">
+                Referencia_Autogenerada
+              </span>
+              <span className="text-[10px] font-mono text-white/60">
+                REC-{chargeOrderId}-{new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)}
+              </span>
             </div>
-            <div>
-              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
-                Referencia_Interna
-              </label>
-              <input
-                type="text"
-                name="payment_reference"
-                value={form.payment_reference || ''}
-                onChange={handleChange}
-                placeholder="REC-001"
-                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/20"
-              />
-            </div>
+            <p className="text-[7px] text-white/30 mt-1">
+              El sistema generará una referencia única al confirmar
+            </p>
           </div>
+          
           {/* Notes */}
           <div>
             <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
@@ -207,6 +184,7 @@ export default function CashPaymentModal({
               placeholder="Notas adicionales..."
             />
           </div>
+          
           {/* Error */}
           {error && (
             <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20">
@@ -214,6 +192,7 @@ export default function CashPaymentModal({
               <span className="text-[10px] text-red-300">{error}</span>
             </div>
           )}
+          
           {/* Actions */}
           <div className="flex gap-2 pt-2">
             <button
@@ -239,11 +218,12 @@ export default function CashPaymentModal({
             </button>
           </div>
         </form>
+        
         {/* Footer */}
         <div className="px-4 py-3 border-t border-white/5 flex items-center justify-center gap-2">
           <ShieldCheckIcon className="w-3 h-3 text-emerald-400/40" />
           <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">
-            Cash_Verified_In_Office // Secured_Transaction
+            Cash_Verified_In_Office // Ref_Autogenerated
           </span>
         </div>
       </div>

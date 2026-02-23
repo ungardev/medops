@@ -30,6 +30,7 @@ import qrcode
 import base64
 from io import BytesIO
 from .services import generate_audit_code
+from typing import cast, Any
 
 
 logger = logging.getLogger(__name__)
@@ -493,7 +494,49 @@ class MedicationCatalogViewSet(viewsets.ModelViewSet):
 
 
 # ViewSets Automáticos (Mocks de serializers y modelos)
-class PaymentViewSet(viewsets.ModelViewSet): queryset = Payment.objects.all(); serializer_class = PaymentSerializer
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    
+    def create(self, request):
+        """
+        Crear pago con referencia autogenerada.
+        """
+        serializer = PaymentWriteSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Type assertion para Pylance
+        validated_data: dict[str, Any] = cast(dict[str, Any], serializer.validated_data)
+        
+        charge_order_id = request.data.get('charge_order')
+        
+        if not charge_order_id:
+            return Response({"error": "charge_order es requerido"}, status=400)
+        
+        charge_order = ChargeOrder.objects.get(pk=charge_order_id)
+        
+        # Autogenerar referencia si no se proporciona
+        reference_number = validated_data.get('reference_number')
+        if not reference_number:
+            timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
+            reference_number = f"REC-{charge_order.id}-{timestamp}"
+        
+        payment = Payment.objects.create(
+            institution=charge_order.institution,
+            appointment=charge_order.appointment,
+            charge_order=charge_order,
+            amount=validated_data['amount'],
+            method=validated_data['method'],
+            reference_number=reference_number,
+            status='confirmed',
+        )
+        
+        charge_order.recalc_totals()
+        charge_order.save()
+        
+        return Response(PaymentSerializer(payment).data, status=201)
+
+
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet): queryset = WaitingRoomEntry.objects.all(); serializer_class = WaitingRoomEntrySerializer
 class GeneticPredispositionViewSet(viewsets.ModelViewSet): queryset = GeneticPredisposition.objects.all(); serializer_class = GeneticPredispositionSerializer
 class DiagnosisViewSet(viewsets.ModelViewSet): queryset = Diagnosis.objects.all(); serializer_class = DiagnosisSerializer
