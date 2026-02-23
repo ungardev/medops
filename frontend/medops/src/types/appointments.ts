@@ -20,6 +20,17 @@ export interface ChargeOrderPayment {
   received_at?: string | null;
 }
 // =====================================================
+// CHARGE ORDER ITEM (del serializer - NUEVO)
+// =====================================================
+export interface ChargeOrderItem {
+  id: number;
+  code: string;
+  description: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+}
+// =====================================================
 // TIPO PARA CHARGE_ORDER (del serializer)
 // =====================================================
 export interface ChargeOrderSummary {
@@ -28,6 +39,7 @@ export interface ChargeOrderSummary {
   total_amount: number;
   balance_due: number;
   order_number?: string;
+  items?: ChargeOrderItem[];  // ✅ NUEVO
   payments?: ChargeOrderPayment[];
 }
 // =====================================================
@@ -85,50 +97,23 @@ export interface AppointmentUI extends Appointment {
   started_at: string | null;
 }
 // =====================================================
-// DATOS DE ENTRADA PARA CREAR/EDITAR CITA
-// =====================================================
-export interface AppointmentInput {
-  patient: number;
-  institution: number;
-  doctor: number;
-  appointment_date: string;
-  start_time?: string;
-  appointment_type: AppointmentType;
-  expected_amount?: string;
-  status?: AppointmentStatus;
-  notes?: string;
-}
-
-
-// =====================================================
-// SERVICIOS DEL CATÁLOGO (para AppointmentInput)
+// SERVICIOS DEL CATÁLOGO (para AppointmentInput - NUEVO)
 // =====================================================
 export interface AppointmentServiceInput {
   billing_item_id: number;
   qty: number;
 }
 // =====================================================
-// PAGO INICIAL (para AppointmentInput)
+// PAGO INICIAL (para AppointmentInput - NUEVO)
 // =====================================================
-export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'zelle' | 'crypto' | 'other';
+// ✅ FIX: Usar string literal en lugar de exportar PaymentMethod para evitar conflicto con payments.ts
 export interface InitialPaymentInput {
   amount: number;
-  method: PaymentMethod;
+  method: 'cash' | 'card' | 'transfer' | 'zelle' | 'crypto' | 'other';
   reference_number?: string;
 }
 // =====================================================
-// CHARGE ORDER ITEM (del serializer)
-// =====================================================
-export interface ChargeOrderItem {
-  id: number;
-  code: string;
-  description: string;
-  qty: number;
-  unit_price: number;
-  subtotal: number;
-}
-// =====================================================
-// ACTUALIZAR AppointmentInput
+// DATOS DE ENTRADA PARA CREAR/EDITAR CITA
 // =====================================================
 export interface AppointmentInput {
   patient: number;
@@ -143,16 +128,4 @@ export interface AppointmentInput {
   // ✅ NUEVOS CAMPOS
   services?: AppointmentServiceInput[];
   initial_payment?: InitialPaymentInput;
-}
-// =====================================================
-// ACTUALIZAR ChargeOrderSummary
-// =====================================================
-export interface ChargeOrderSummary {
-  id: number;
-  status: string;
-  total_amount: number;
-  balance_due: number;
-  order_number?: string;
-  items?: ChargeOrderItem[];  // ✅ NUEVO
-  payments?: ChargeOrderPayment[];
 }
