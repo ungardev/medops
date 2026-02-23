@@ -1,14 +1,16 @@
 // src/components/Payments/PaymentMethodSelectorModal.tsx
 import React, { useState } from 'react';
-import { CreditCardIcon, CurrencyDollarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import EliteModal from '../Common/EliteModal';
+import { 
+  CreditCardIcon, 
+  CurrencyDollarIcon, 
+  ChevronRightIcon,
+  XMarkIcon 
+} from '@heroicons/react/24/outline';
 interface PaymentMethod {
   id: 'mobile' | 'cash';
   name: string;
   icon: React.ReactNode;
   description: string;
-  available: boolean;
-  popular?: boolean;
 }
 interface PaymentMethodSelectorModalProps {
   chargeOrderId: number;
@@ -19,18 +21,15 @@ interface PaymentMethodSelectorModalProps {
 const PAYMENT_METHODS: PaymentMethod[] = [
   {
     id: 'mobile',
-    name: 'VERIFICACIÓN MÓVIL',
-    icon: <CreditCardIcon className="w-8 h-8 text-cyan-500" />,
-    description: 'Verificar pagos móviles automáticamente',
-    available: true,
-    popular: true
+    name: 'MOVIL_VERIFICACION',
+    icon: <CreditCardIcon className="w-5 h-5 text-blue-400" />,
+    description: 'Verificar pagos móviles automáticamente vía API bancaria'
   },
   {
     id: 'cash',
-    name: 'PAGO EN EFECTIVO',
-    icon: <CurrencyDollarIcon className="w-8 h-8 text-emerald-500" />,
-    description: 'Registrar pagos en efectivo',
-    available: true
+    name: 'EFECTIVO_MANUAL',
+    icon: <CurrencyDollarIcon className="w-5 h-5 text-emerald-400" />,
+    description: 'Registrar pago en efectivo manualmente'
   }
 ];
 export default function PaymentMethodSelectorModal({
@@ -40,97 +39,88 @@ export default function PaymentMethodSelectorModal({
   onSuccess
 }: PaymentMethodSelectorModalProps) {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
-  const handleMethodSelect = (method: PaymentMethod) => {
+  const handleSelect = (method: PaymentMethod) => {
     setSelectedMethod(method);
   };
-  const handleClose = () => {
-    setSelectedMethod(null);
+  const handleContinue = () => {
+    if (!selectedMethod) return;
+    onSuccess({ method: selectedMethod.id, chargeOrderId });
     onClose();
   };
-  const renderPaymentMethodCard = (method: PaymentMethod) => (
-    <div
-      onClick={() => handleMethodSelect(method)}
-      className={`
-        relative p-6 border-2 rounded-lg transition-all cursor-pointer
-        ${selectedMethod?.id === method.id 
-          ? 'border-blue-500 bg-blue-500/20 shadow-lg' 
-          : 'border-gray-600 bg-gray-700/50 hover:border-gray-500 hover:bg-gray-600'
-        }
-      `}
-    >
-      <div className="flex items-center gap-4">
-        <div className="flex-shrink-0 mt-1">
-          {method.icon}
+  return (
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
+            Select_Payment_Method
+          </h2>
+          <button 
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors"
+          >
+            <XMarkIcon className="w-4 h-4" />
+          </button>
         </div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-white mb-1">
-            {method.name}
-          </h3>
-          <p className="text-sm text-gray-300">
-            {method.description}
-          </p>
-          {method.popular && (
-            <span className="inline-block px-2 py-1 bg-blue-500 text-xs text-white rounded-full mt-2">
-              POPULAR
+        {/* Amount Display */}
+        <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">
+              Monto_A_Pagar
             </span>
-          )}
-          {!method.available && (
-            <span className="inline-block px-2 py-1 bg-gray-500 text-xs text-white rounded-full mt-2">
-              PRÓXIMAMENTE
+            <span className="text-xl font-black text-emerald-400">
+              ${expectedAmount.toFixed(2)}
             </span>
-          )}
-        </div>
-        <div className="absolute top-2 right-2">
-          <div className={`w-6 h-6 flex items-center justify-center rounded-full ${
-            selectedMethod?.id === method.id ? 'bg-blue-500 text-white' : 'border-2 border-gray-400 text-gray-400'
-          }`}>
-            {selectedMethod?.id === method.id && <CheckCircleIcon className="w-4 h-4" />}
           </div>
+        </div>
+        {/* Methods List */}
+        <div className="p-4 space-y-2">
+          {PAYMENT_METHODS.map((method) => (
+            <button
+              key={method.id}
+              onClick={() => handleSelect(method)}
+              className={`w-full flex items-center gap-4 p-4 border transition-all text-left ${
+                selectedMethod?.id === method.id
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.03]'
+              }`}
+            >
+              <div className="flex-shrink-0">
+                {method.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-[10px] font-black uppercase tracking-widest ${
+                  selectedMethod?.id === method.id ? 'text-emerald-400' : 'text-white'
+                }`}>
+                  {method.name}
+                </p>
+                <p className="text-[9px] text-white/40 mt-0.5 truncate">
+                  {method.description}
+                </p>
+              </div>
+              <ChevronRightIcon className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                selectedMethod?.id === method.id ? 'text-emerald-400' : 'text-white/20'
+              }`} />
+            </button>
+          ))}
+        </div>
+        {/* Actions */}
+        <div className="p-4 border-t border-white/10">
+          <button
+            onClick={handleContinue}
+            disabled={!selectedMethod}
+            className="w-full py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Continuar
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-3 mt-2 bg-transparent text-white/40 text-[9px] font-black uppercase tracking-widest hover:text-white/60 transition-all"
+          >
+            Cancelar
+          </button>
         </div>
       </div>
     </div>
-  );
-  return (
-    <EliteModal
-      open={true}
-      onClose={handleClose}
-      title="SELECCIONAR MÉTODO DE PAGO"
-      maxWidth="max-w-4xl"
-    >
-      <div className="mb-6">
-        <p className="text-center text-gray-300 mb-4">
-          Seleccione el método de pago para procesar el cargo de <strong>${expectedAmount.toFixed(2)}</strong>
-        </p>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {PAYMENT_METHODS.map(renderPaymentMethodCard)}
-      </div>
-      
-      <div className="mt-8 flex justify-center gap-4">
-        <button
-          onClick={handleClose}
-          className="px-6 py-3 bg-gray-500 text-gray-300 rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          CANCELAR
-        </button>
-        
-        <button
-          onClick={() => {
-            if (selectedMethod?.id === 'mobile') {
-              onSuccess({ method: 'mobile', chargeOrderId });
-              handleClose();
-            } else if (selectedMethod?.id === 'cash') {
-              onSuccess({ method: 'cash', chargeOrderId });
-              handleClose();
-            }
-          }}
-          disabled={!selectedMethod}
-          className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:text-gray-400"
-        >
-          CONTINUAR
-        </button>
-      </div>
-    </EliteModal>
   );
 }
