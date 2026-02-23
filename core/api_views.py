@@ -273,6 +273,15 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all().select_related('patient', 'doctor', 'note', 'institution')
     serializer_class = AppointmentSerializer
     
+    def get_serializer_class(self):
+        """
+        Usar AppointmentDetailSerializer para retrieve (detalle individual).
+        Incluye charge_order con payments para datos financieros completos.
+        """
+        if self.action == 'retrieve':
+            return AppointmentDetailSerializer
+        return AppointmentSerializer
+    
     # Configuración de filtros
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = [
@@ -288,7 +297,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         'patient__national_id',
         'doctor__full_name',
     ]
-    # ✅ CORREGIDO: Removido 'created_at' que no existe en el modelo
     ordering_fields = ['appointment_date', 'status']
     ordering = ['-appointment_date']
     
