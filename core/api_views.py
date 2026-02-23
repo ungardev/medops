@@ -1551,6 +1551,12 @@ def generate_chargeorder_pdf(request, pk):
     try:
         charge_order = get_object_or_404(ChargeOrder, pk=pk)
         
+        # Validar relaciones requeridas
+        if not charge_order.patient:
+            return Response({"error": "La orden no tiene paciente asociado"}, status=400)
+        if not charge_order.institution:
+            return Response({"error": "La orden no tiene institución asociada"}, status=400)
+        
         items = ChargeItem.objects.filter(order=charge_order)
         payments = Payment.objects.filter(charge_order=charge_order)
         
@@ -1569,7 +1575,6 @@ def generate_chargeorder_pdf(request, pk):
         qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
         qr_code_url = f"data:image/png;base64,{qr_base64}"
         
-        # Mapeo de métodos de pago
         METHOD_LABELS = {
             'cash': 'Efectivo',
             'card': 'Tarjeta / Punto de Venta',
@@ -1579,7 +1584,6 @@ def generate_chargeorder_pdf(request, pk):
             'other': 'Otro',
         }
         
-        # Mapeo de estados de pago
         PAYMENT_STATUS_LABELS = {
             'pending': 'Pendiente',
             'confirmed': 'Confirmado',
@@ -1587,7 +1591,6 @@ def generate_chargeorder_pdf(request, pk):
             'void': 'Anulado',
         }
         
-        # Mapeo de estados de orden
         ORDER_STATUS_LABELS = {
             'open': 'Abierta',
             'partially_paid': 'Parcialmente Pagada',
@@ -1596,7 +1599,6 @@ def generate_chargeorder_pdf(request, pk):
             'waived': 'Exonerada',
         }
         
-        # Formatear pagos para el template
         payments_formatted = []
         for p in payments:
             payments_formatted.append({
@@ -1607,17 +1609,29 @@ def generate_chargeorder_pdf(request, pk):
                 'status': PAYMENT_STATUS_LABELS.get(p.status, p.status),
             })
         
-        # Estado de orden traducido
         status_label = ORDER_STATUS_LABELS.get(charge_order.status, charge_order.status)
         
+        # Doctor info con fallback
+        doctor = charge_order.doctor
+        doctor_name = doctor.full_name if doctor else "Sin médico asignado"
+        doctor_colegiado = doctor.colegiado_id if doctor else None
+        doctor_specialties = list(doctor.specialties.values_list('name', flat=True)) if doctor else []
+        doctor_signature_path = doctor.signature.path if doctor and doctor.signature else None
+        
+        # Institution logo path
+        institution_logo_path = charge_order.institution.logo.path if charge_order.institution.logo else None
+        
         context = {
-            'data': charge_order,
             'charge_order': charge_order,
-            'order': charge_order,
             'patient': charge_order.patient,
             'appointment': charge_order.appointment,
-            'doctor': charge_order.doctor,
+            'doctor': doctor,
+            'doctor_name': doctor_name,
+            'doctor_colegiado': doctor_colegiado,
+            'doctor_specialties': doctor_specialties,
+            'doctor_signature_path': doctor_signature_path,
             'institution': charge_order.institution,
+            'institution_logo_path': institution_logo_path,
             'items': items,
             'payments': payments_formatted,
             'subtotal': str(subtotal),
