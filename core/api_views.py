@@ -945,9 +945,114 @@ def search(request):
 
 # Citas y Sala de Espera
 @api_view(['GET'])
-def appointments_pending_api(request): return Response([])
+def appointments_pending_api(request):
+    """
+    Obtiene TODAS las citas pendientes/programadas de la institución.
+    Incluye resumen financiero completo por cita.
+    Orden: más recientes primero (descendente por fecha).
+    """
+    try:
+        # Institución desde header o perfil del doctor
+        institution_id = (
+            request.headers.get('X-Institution-ID') or 
+            request.user.doctor_profile.institution_id
+        )
+        
+        # Query: todas las citas no completadas/canceladas
+        appointments = Appointment.objects.filter(
+            institution_id=institution_id,
+            status__in=['pending', 'scheduled', 'arrived', 'in_consultation']
+        ).select_related(
+            'patient', 'institution'
+        ).prefetch_related(
+            'charge_orders', 'charge_orders__payments'
+        ).order_by('-appointment_date', '-id')  # Más recientes primero
+        
+        results = []
+        for appt in appointments:
+            # Obtener charge_order principal (excluir anuladas)
+            co = appt.charge_orders.exclude(status='void').first()
+            
+            # Calcular totales
+            expected = float(co.total if co else (appt.expected_amount or 0))
+            payments = []
+            total_paid = 0.0
+            
+            if co:
+                for p in co.payments.filter(status='confirmed'):
+                    payment_amount = float(p.amount or 0)
+                    total_paid += payment_amount
+                    payments.append({
+                        "id": p.id,
+                        "amount": payment_amount,
+                        "method": p.method,
+                        "reference_number": p.reference_number,
+                        "received_at": p.received_at.isoformat() if p.received_at else None
+                    })
+            
+            balance_due = expected - total_paid
+            
+            # Determinar estado financiero
+            if total_paid >= expected and expected > 0:
+                financial_status = "paid"
+            elif total_paid > 0:
+                financial_status = "partially_paid"
+            else:
+                financial_status = "pending"
+            
+            results.append({
+                "id": appt.id,
+                "appointment_date": appt.appointment_date.isoformat(),
+                "appointment_type": appt.appointment_type,
+                "status": appt.status,
+                "expected_amount": str(expected),
+                "patient": {
+                    "id": appt.patient.id,
+                    "full_name": appt.patient.full_name,
+                    "national_id": appt.patient.national_id,
+                    "phone_number": appt.patient.phone_number
+                },
+                "financial_summary": {
+                    "expected": expected,
+                    "paid": total_paid,
+                    "balance_due": balance_due,
+                    "status": financial_status
+                },
+                "payments": payments,
+                "charge_order": {
+                    "id": co.id,
+                    "status": co.status,
+                    "total_amount": expected
+                } if co else None
+            })
+        
+        return Response(results)
+        
+    except Exception as e:
+        logger.error(f"Error en appointments_pending_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
 @api_view(['GET'])
-def appointment_detail_api(request, pk): return Response({})
+def appointment_detail_api(request, pk):
+    """
+    Obtiene el detalle completo de una cita con datos financieros.
+    Usa AppointmentDetailSerializer para incluir charge_order con payments.
+    """
+    try:
+        appointment = Appointment.objects.select_related(
+            'patient', 'doctor', 'institution', 'note'
+        ).prefetch_related(
+            'diagnoses', 'documents'
+        ).get(pk=pk)
+        
+        serializer = AppointmentDetailSerializer(appointment)
+        return Response(serializer.data)
+    except Appointment.DoesNotExist:
+        return Response({"error": "Cita no encontrada"}, status=404)
+    except Exception as e:
+        logger.error(f"Error en appointment_detail_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
 
 
 @api_view(['POST'])
