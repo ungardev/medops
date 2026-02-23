@@ -8,7 +8,8 @@ import {
   InformationCircleIcon, 
   BanknotesIcon,
   ShieldCheckIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  BeakerIcon
 } from "@heroicons/react/24/outline";
 interface Props {
   appointment: Appointment;
@@ -24,11 +25,10 @@ const METHOD_LABELS: Record<string, string> = {
   other: "Otro",
 };
 export default function AppointmentDetail({ appointment, onClose, onEdit }: Props) {
-  const [activeTab, setActiveTab] = useState<"info" | "payments">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "services" | "payments">("info");
   
   // ✅ Fetch del appointment completo con datos financieros
   const { data: detailData, isLoading, isError } = useAppointment(appointment.id);
-
   // DEBUG
   console.log('[AppointmentDetail] props.appointment:', appointment);
   console.log('[AppointmentDetail] appointment.id:', appointment?.id);
@@ -39,8 +39,9 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
   // Usar datos del fetch si están disponibles, si no usar prop
   const appt = detailData || appointment;
   
-  // ✅ Obtener charge_order y payments
+  // ✅ Obtener charge_order, items y payments
   const chargeOrder = appt?.charge_order;
+  const items = Array.isArray(chargeOrder?.items) ? chargeOrder.items : [];
   const payments = Array.isArray(chargeOrder?.payments) ? chargeOrder.payments : [];
   
   const totalAmount = Number(chargeOrder?.total_amount ?? appt?.expected_amount ?? 0);
@@ -142,6 +143,7 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
             <div className="flex border-b border-white/10 bg-black/20">
               {[
                 { id: "info", label: "INTEL_REPORT", icon: InformationCircleIcon },
+                { id: "services", label: "SERVICE_MANIFEST", icon: BeakerIcon },
                 { id: "payments", label: "FISCAL_LEDGER", icon: BanknotesIcon }
               ].map((tab) => (
                 <button
@@ -198,6 +200,55 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
                   </div>
                 </div>
               )}
+              {/* ✅ NUEVO: Pestaña de Servicios */}
+              {activeTab === "services" && (
+                <div className="space-y-3">
+                  <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Service_Order_Manifest</h3>
+                  
+                  {items.length > 0 ? (
+                    <>
+                      <div className="p-3 bg-white/5 border border-white/10 mb-4">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <span className="text-[8px] text-white/40 uppercase">Order_ID</span>
+                            <p className="text-sm font-mono text-white">#{chargeOrder?.id}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-[8px] text-white/40 uppercase">Items</span>
+                            <p className="text-sm font-bold text-white">{items.length}</p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {items.map((item: any, idx: number) => (
+                        <div key={item.id || idx} className="flex justify-between items-center p-3 bg-black/20 border border-white/5">
+                          <div className="flex flex-col">
+                            <span className="text-sm text-white font-medium">{item.description || item.code}</span>
+                            <span className="text-[8px] text-white/40">{item.code} × {item.qty}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-sm text-white font-mono">${item.subtotal?.toFixed(2) || '0.00'}</span>
+                            <span className="text-[8px] text-white/30 block">${item.unit_price?.toFixed(2)} c/u</span>
+                          </div>
+                        </div>
+                      ))}
+                      
+                      <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center">
+                        <span className="text-sm font-bold text-white uppercase">Total_Services</span>
+                        <span className="text-lg font-bold text-emerald-400">${totalAmount.toFixed(2)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-8 text-center border border-dashed border-white/10">
+                      <span className="text-[10px] font-mono text-white/30">-- NO_SERVICES_REGISTERED --</span>
+                      <p className="text-[9px] font-mono text-white/20 mt-2">
+                        Los servicios se definen al crear la orden de cobro
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {activeTab === "payments" && (
                 <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
                   <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Transaction_History</h3>

@@ -1351,10 +1351,27 @@ class AppointmentSerializer(serializers.ModelSerializer):
     """
     Serializer de LISTADO y ESCRITURA: Optimizado para el calendario y la 
     gestión administrativa de citas.
+    
+    ✅ ACTUALIZADO: Ahora acepta services (lista de servicios del catálogo)
+                   y optional initial_payment para pago inmediato
     """
     patient_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     appointment_type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
+    
+    # ✅ NUEVOS CAMPOS para servicios del catálogo
+    services = serializers.ListField(
+        child=serializers.DictField(
+            child=serializers.CharField()
+        ),
+        write_only=True,
+        required=False,
+        help_text="Lista de servicios: [{'billing_item_id': 1, 'qty': 1}]"
+    )
+    
+    # ✅ NUEVO: Pago inicial opcional
+    initial_payment = serializers.DictField(required=False, write_only=True)
+    
     class Meta:
         model = Appointment
         fields = [
@@ -1362,13 +1379,103 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "appointment_date", "appointment_type",
             "appointment_type_display", "status", "status_display",
             "expected_amount", "arrival_time",
+            # ✅ Nuevos campos
+            "services",
+            "initial_payment",
         ]
         read_only_fields = ["id"]
+        
     def get_patient_name(self, obj):
         """Obtiene el nombre completo del paciente de forma explícita."""
         if obj.patient:
             return obj.patient.full_name
         return "UNKNOWN_SUBJECT"
+    
+    def create(self, validated_data):
+        """
+        Creación Élite de Appointment con ChargeOrder automático.
+        
+        Flujo:
+        1. Crear Appointment
+        2. Crear ChargeOrder automáticamente
+        3. Crear ChargeItems desde BillingItems del catálogo
+        4. [OPCIONAL] Crear Payment si se incluye initial_payment
+        """
+        from .models import ChargeOrder, ChargeItem, BillingItem, Payment
+        from decimal import Decimal
+        
+        # Extraer servicios y pago inicial
+        services_data = validated_data.pop('services', [])
+        initial_payment = validated_data.pop('initial_payment', None)
+        
+        # 1. Crear el Appointment
+        appointment = Appointment.objects.create(**validated_data)
+        
+        # 2. Crear ChargeOrder automáticamente
+        charge_order = ChargeOrder.objects.create(
+            appointment=appointment,
+            patient=appointment.patient,
+            doctor=appointment.doctor,
+            institution=appointment.institution,
+            currency="USD",
+            status="open",
+            total=Decimal('0.00'),
+            balance_due=Decimal('0.00'),
+        )
+        
+        # 3. Crear ChargeItems desde el catálogo de BillingItems
+        total_amount = Decimal('0.00')
+        
+        for service in services_data:
+            billing_item_id = service.get('billing_item_id')
+            qty = service.get('qty', 1)
+            
+            if billing_item_id:
+                try:
+                    billing_item = BillingItem.objects.get(
+                        id=billing_item_id,
+                        institution=appointment.institution,
+                        is_active=True
+                    )
+                    
+                    # Crear ChargeItem con precio INMUTABLE del catálogo
+                    item = ChargeItem.objects.create(
+                        order=charge_order,
+                        code=billing_item.code,
+                        description=billing_item.name,
+                        qty=Decimal(str(qty)),
+                        unit_price=billing_item.unit_price,
+                    )
+                    
+                    total_amount += item.subtotal
+                    
+                except BillingItem.DoesNotExist:
+                    # Silently skip if billing item not found
+                    pass
+        
+        # Recalcular totales del ChargeOrder
+        charge_order.recalc_totals()
+        charge_order.save(update_fields=['total', 'balance_due', 'status'])
+        
+        # 4. [OPCIONAL] Procesar pago inicial
+        if initial_payment and total_amount > 0:
+            payment_amount = Decimal(str(initial_payment.get('amount', 0)))
+            if payment_amount > 0:
+                payment = Payment.objects.create(
+                    institution=appointment.institution,
+                    appointment=appointment,
+                    charge_order=charge_order,
+                    amount=payment_amount,
+                    method=initial_payment.get('method', 'cash'),
+                    reference_number=initial_payment.get('reference_number', f"PRE-{charge_order.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"),
+                    status='confirmed',
+                )
+                
+                # Recalcular después del pago
+                charge_order.recalc_totals()
+                charge_order.save(update_fields=['total', 'balance_due', 'status'])
+        
+        return appointment
 
 
 # --- Documentos clínicos ---
@@ -2103,7 +2210,7 @@ class AppointmentDetailSerializer(AppointmentSerializer):
         """
         Devuelve la orden de cobro principal de la cita con lógica de prioridad.
         Prioriza: Pagada > Parcial > Abierta.
-        Incluye payments para el frontend.
+        ✅ ACTUALIZADO: Ahora incluye items (detalle de servicios)
         """
         order = obj.charge_orders.exclude(status="void").order_by(
             models.Case(
@@ -2129,12 +2236,25 @@ class AppointmentDetailSerializer(AppointmentSerializer):
                     "received_at": p.received_at.isoformat() if p.received_at else None,
                 })
             
+            # ✅ NUEVO: Obtener items (detalle de servicios)
+            items_data = []
+            for item in order.items.all():
+                items_data.append({
+                    "id": item.id,
+                    "code": item.code,
+                    "description": item.description,
+                    "qty": float(item.qty),
+                    "unit_price": float(item.unit_price),
+                    "subtotal": float(item.subtotal),
+                })
+            
             return {
                 "id": order.id,
                 "status": order.status,
                 "total_amount": float(order.total),
                 "balance_due": float(order.balance_due),
                 "order_number": getattr(order, 'order_number', f"ORD-{order.id}"),
+                "items": items_data,  # ✅ NUEVO
                 "payments": payments_data,
             }
         return None

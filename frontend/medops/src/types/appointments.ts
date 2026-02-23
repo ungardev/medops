@@ -98,3 +98,61 @@ export interface AppointmentInput {
   status?: AppointmentStatus;
   notes?: string;
 }
+
+
+// =====================================================
+// SERVICIOS DEL CATÁLOGO (para AppointmentInput)
+// =====================================================
+export interface AppointmentServiceInput {
+  billing_item_id: number;
+  qty: number;
+}
+// =====================================================
+// PAGO INICIAL (para AppointmentInput)
+// =====================================================
+export type PaymentMethod = 'cash' | 'card' | 'transfer' | 'zelle' | 'crypto' | 'other';
+export interface InitialPaymentInput {
+  amount: number;
+  method: PaymentMethod;
+  reference_number?: string;
+}
+// =====================================================
+// CHARGE ORDER ITEM (del serializer)
+// =====================================================
+export interface ChargeOrderItem {
+  id: number;
+  code: string;
+  description: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+}
+// =====================================================
+// ACTUALIZAR AppointmentInput
+// =====================================================
+export interface AppointmentInput {
+  patient: number;
+  institution: number;
+  doctor: number;
+  appointment_date: string;
+  start_time?: string;
+  appointment_type: AppointmentType;
+  expected_amount?: string;
+  status?: AppointmentStatus;
+  notes?: string;
+  // ✅ NUEVOS CAMPOS
+  services?: AppointmentServiceInput[];
+  initial_payment?: InitialPaymentInput;
+}
+// =====================================================
+// ACTUALIZAR ChargeOrderSummary
+// =====================================================
+export interface ChargeOrderSummary {
+  id: number;
+  status: string;
+  total_amount: number;
+  balance_due: number;
+  order_number?: string;
+  items?: ChargeOrderItem[];  // ✅ NUEVO
+  payments?: ChargeOrderPayment[];
+}

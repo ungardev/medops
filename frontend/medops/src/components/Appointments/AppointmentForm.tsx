@@ -153,6 +153,9 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     (sum, s) => sum + (Number(s.billingItem.unit_price) * s.quantity),
     0
   );
+  // =====================================================
+  // ✅ FIX: handleSubmit - Ahora envía los servicios
+  // =====================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ patient: true, services: true, appointment_date: true });
@@ -171,12 +174,18 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     setSubmitError(null);
     
     try {
-      // El expected_amount se calcula automáticamente desde los servicios
+      // ✅ CONSTRUIR PAYLOAD CON SERVICIOS DEL CATÁLOGO
       const payload: AppointmentInput = {
         ...form,
         patient: selectedPatient!.id,
         expected_amount: totalAmount.toFixed(2),
+        // ✅ ENVÍAR SERVICIOS SELECCIONADOS AL BACKEND
+        services: selectedServices.map(s => ({
+          billing_item_id: s.billingItem.id,
+          qty: s.quantity,
+        })),
       };
+      
       await onSubmit(payload);
       setHasChanges(false);
       onClose();
@@ -282,6 +291,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               </span>
             )}
           </div>
+          
           {/* INSTITUTION */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
@@ -301,6 +311,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               ))}
             </select>
           </div>
+          
           {/* DOCTOR INFO */}
           <div className="p-3 bg-white/5 border border-white/10 flex items-center gap-3">
             <UserCircleIcon className="w-6 h-6 text-blue-400" />
@@ -309,6 +320,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               <p className="text-sm font-bold text-white">{doctorConfig?.full_name || "NOT_CONFIGURED"}</p>
             </div>
           </div>
+          
           {/* SERVICES SELECTION */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
@@ -390,6 +402,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               </span>
             )}
           </div>
+          
           {/* DATE */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
@@ -408,6 +421,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               <span className="text-[9px] text-red-400">{errors.appointment_date}</span>
             )}
           </div>
+          
           {/* NOTES */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
@@ -422,6 +436,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               className="w-full bg-black/40 border border-white/10 px-3 py-2 text-sm font-mono text-white placeholder:text-white/20"
             />
           </div>
+          
           {/* ACTIONS */}
           <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 text-[10px] font-black uppercase text-white/40 hover:text-white">
