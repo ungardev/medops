@@ -40,7 +40,7 @@ class MedicalHistorySerializer(serializers.ModelSerializer):
     """
     # Representaciones amigables para el Frontend
     status_display = serializers.CharField(source='get_status_display', read_only=True)
-    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True)
 
     class Meta:
         model = MedicalHistory
