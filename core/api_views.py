@@ -581,19 +581,25 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def summary(self, request):
-        """Estadísticas de órdenes de cobro para el dashboard"""
-        from django.db.models import Count
+        """Estadísticas financieras de órdenes de cobro"""
+        from django.db.models import Count, Sum
         
-        total = ChargeOrder.objects.count()
-        confirmed = ChargeOrder.objects.filter(status='paid').count()
-        pending = ChargeOrder.objects.filter(status='open').count()
-        failed = ChargeOrder.objects.filter(status='void').count()
+        # Suma de pagos confirmados (dinero real)
+        total_revenue = Payment.objects.filter(status='confirmed').aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+        
+        # Conteo de órdenes por estado
+        total_orders = ChargeOrder.objects.count()
+        paid_orders = ChargeOrder.objects.filter(status='paid').count()
+        pending_orders = ChargeOrder.objects.filter(status='open').count()
+        failed_orders = ChargeOrder.objects.filter(status='void').count()
         
         return Response({
-            'total': total,
-            'confirmed': confirmed,
-            'pending': pending,
-            'failed': failed
+            'total': total_orders,              # Cantidad total de órdenes
+            'confirmed': float(total_revenue),  # Suma de pagos confirmados ($)
+            'pending': pending_orders,          # Cantidad de órdenes pendientes
+            'failed': failed_orders,            # Cantidad de órdenes fallidas
         })
     
     @action(detail=True, methods=['post'])
