@@ -2,98 +2,334 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <title>Orden de Cobro #{{ charge_order.id }}</title>
   <style>
-    @page { size: A4; margin: 1.5cm; }
+    @page { size: A4; margin: 1.2cm; }
+    * { box-sizing: border-box; }
     body {
-      font-family: "DejaVu Sans", sans-serif;
-      font-size: 12px;
-      line-height: 1.4;
-      margin: 0; padding: 0;
+      font-family: "DejaVu Sans", Arial, sans-serif;
+      font-size: 11px;
+      line-height: 1.5;
+      margin: 0;
+      padding: 0;
+      color: #1a1a1a;
     }
+    
+    /* HEADER */
     header {
       text-align: center;
-      border-bottom: 1px solid #000;
-      margin-bottom: 12px;
-      padding-bottom: 6px;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 12px;
+      margin-bottom: 16px;
     }
-    h1 { font-size: 16px; margin: 0; }
-    h2 { font-size: 13px; margin: 8px 0 6px 0; border-bottom: 1px solid #ccc; }
-    .section { margin-bottom: 12px; }
+    .logo {
+      max-width: 100px;
+      max-height: 60px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
+    .institution-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.5px;
+    }
+    .institution-meta {
+      font-size: 10px;
+      color: #555;
+      margin: 2px 0;
+    }
+    .order-badge {
+      display: inline-block;
+      background: #1a1a1a;
+      color: #fff;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-top: 10px;
+    }
+    .order-status {
+      font-size: 10px;
+      color: #666;
+      margin-top: 4px;
+    }
+    
+    /* SECTIONS */
+    .section {
+      margin-bottom: 14px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #1a1a1a;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 4px;
+      margin: 0 0 8px 0;
+    }
+    
+    /* PATIENT INFO */
+    .info-grid {
+      display: flex;
+      gap: 24px;
+    }
+    .info-block {
+      flex: 1;
+    }
+    .info-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #666;
+      letter-spacing: 0.5px;
+    }
+    .info-value {
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    /* TABLES */
     table {
-      width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 11px;
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
     }
-    th, td { border: 1px solid #000; padding: 4px; text-align: left; }
-    th { background: #f0f0f0; }
-    td.num { text-align: right; }
-    .empty { color: #666; font-style: italic; }
+    th {
+      background: #f5f5f5;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 9px;
+      padding: 8px 6px;
+      text-align: left;
+      border-bottom: 2px solid #1a1a1a;
+    }
+    td {
+      padding: 7px 6px;
+      border-bottom: 1px solid #e5e5e5;
+      vertical-align: top;
+    }
+    td.num {
+      text-align: right;
+      font-family: "DejaVu Sans Mono", monospace;
+    }
+    tr:last-child td {
+      border-bottom: none;
+    }
+    
+    /* FINANCIAL SUMMARY */
+    .financial-box {
+      background: #fafafa;
+      border: 1px solid #e5e5e5;
+      padding: 12px;
+      margin-top: 4px;
+    }
+    .financial-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 11px;
+    }
+    .financial-row.total {
+      border-top: 2px solid #1a1a1a;
+      margin-top: 6px;
+      padding-top: 8px;
+      font-weight: 700;
+      font-size: 13px;
+    }
+    .financial-row.paid {
+      color: #2d7a3d;
+    }
+    .financial-row.pending {
+      color: #c44;
+    }
+    
+    /* DOCTOR */
+    .doctor-block {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .doctor-info {
+      flex: 1;
+    }
+    .doctor-name {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .doctor-meta {
+      font-size: 10px;
+      color: #555;
+    }
+    .doctor-signature {
+      max-height: 40px;
+      margin-left: 20px;
+    }
+    
+    /* FOOTER */
     footer {
-      margin-top: 12px; font-size: 10px; text-align: center;
-      border-top: 1px solid #000; padding-top: 6px;
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 2px solid #1a1a1a;
+      text-align: center;
     }
-    .qr { margin-top: 8px; }
-    .section, table, ul, p { page-break-inside: avoid; }
+    .footer-main {
+      font-size: 10px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+    .qr-container {
+      display: inline-block;
+      text-align: center;
+    }
+    .qr-container img {
+      height: 70px;
+    }
+    .audit-label {
+      font-size: 8px;
+      color: #888;
+      margin-top: 4px;
+      letter-spacing: 0.5px;
+    }
+    .audit-code {
+      font-family: "DejaVu Sans Mono", monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: #555;
+      background: #f5f5f5;
+      padding: 2px 8px;
+      display: inline-block;
+      margin-top: 2px;
+    }
+    
+    /* EMPTY STATE */
+    .empty {
+      color: #999;
+      font-style: italic;
+      text-align: center;
+      padding: 16px;
+    }
   </style>
 </head>
 <body>
   <header>
     {% if institution.logo %}
-      <img src="{{ institution.logo.path }}" alt="Logo"
-           style="max-width:120px; max-height:70px; object-fit:contain; margin-bottom:6px;">
+      <img src="{{ institution.logo.path }}" alt="Logo" class="logo">
     {% endif %}
-    <h1>{{ institution.name }}</h1>
-    <p>{{ institution.address }} - Tel: {{ institution.phone }} - RIF: {{ institution.tax_id }}</p>
-    {% if institution.email %}<p>Email: {{ institution.email }}</p>{% endif %}
-    {% if institution.website %}<p>Web: {{ institution.website }}</p>{% endif %}
-    <p>Emitido el {{ generated_at|date:"d/m/Y H:i" }}</p>
-    <p><strong>Orden de Cobro #{{ charge_order.id }} — Estado: {{ charge_order.status|upper }}</strong></p>
-    <p><strong>Código de auditoría: {{ data.id }}-{{ patient.id }}</strong></p>
+    <h1 class="institution-name">{{ institution.name|upper }}</h1>
+    <p class="institution-meta">
+      {% if institution.address %}{{ institution.address }}{% endif %}
+      {% if institution.phone %} | Tel: {{ institution.phone }}{% endif %}
+      {% if institution.tax_id %} | RIF: {{ institution.tax_id }}{% endif %}
+    </p>
+    {% if institution.email or institution.website %}
+      <p class="institution-meta">
+        {% if institution.email %}{{ institution.email }}{% endif %}
+        {% if institution.website %} | {{ institution.website }}{% endif %}
+      </p>
+    {% endif %}
+    <div class="order-badge">ORDEN DE COBRO #{{ charge_order.id }}</div>
+    <p class="order-status">
+      Estado: <strong>{{ status_label }}</strong> | Emitido: {{ generated_at|date:"d/m/Y H:i" }}
+    </p>
   </header>
   <div class="section">
-    <strong>Paciente:</strong> {{ patient.first_name }} {{ patient.last_name }}<br>
-    C.I.: {{ patient.national_id }}{% if patient.age %} - Edad: {{ patient.age }}{% endif %}{% if patient.gender %} - Sexo: {{ patient.gender }}{% endif %}
+    <div class="info-grid">
+      <div class="info-block">
+        <p class="info-label">Paciente</p>
+        <p class="info-value">{{ patient.first_name }} {{ patient.last_name }}</p>
+        <p style="font-size: 10px; color: #555;">
+          C.I.: {{ patient.national_id }}
+          {% if patient.age %} | Edad: {{ patient.age }} años{% endif %}
+          {% if patient.gender %} | Sexo: {{ patient.gender }}{% endif %}
+        </p>
+      </div>
+      <div class="info-block">
+        <p class="info-label">Consulta</p>
+        <p class="info-value">#{{ appointment.id }}</p>
+        <p style="font-size: 10px; color: #555;">
+          Fecha: {{ appointment.appointment_date|date:"d/m/Y" }}
+        </p>
+      </div>
+    </div>
   </div>
   <div class="section">
-    <strong>Consulta:</strong> #{{ appointment.id }} — Fecha: {{ appointment.appointment_date|date:"d/m/Y" }}
-  </div>
-  <div class="section">
-    <h2>Detalle de Cargos</h2>
+    <h2 class="section-title">Detalle de Servicios</h2>
     <table>
       <thead>
-        <tr><th>Código</th><th>Descripción</th><th>Cant.</th><th>Precio</th><th>Subtotal</th></tr>
+        <tr>
+          <th style="width: 15%;">Código</th>
+          <th style="width: 45%;">Descripción</th>
+          <th style="width: 10%;">Cant.</th>
+          <th style="width: 15%;">P. Unit.</th>
+          <th style="width: 15%;">Subtotal</th>
+        </tr>
       </thead>
       <tbody>
         {% for item in items %}
         <tr>
-          <td>{{ item.code }}</td>
+          <td>{{ item.code|default:"-" }}</td>
           <td>{{ item.description }}</td>
           <td class="num">{{ item.qty }}</td>
-          <td class="num">{{ item.unit_price }}</td>
-          <td class="num">{{ item.subtotal }}</td>
+          <td class="num">${{ item.unit_price }}</td>
+          <td class="num">${{ item.subtotal }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="empty">Sin ítems</td></tr>
+        <tr>
+          <td colspan="5" class="empty">Sin servicios registrados</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   <div class="section">
-    <h2>Resumen Financiero</h2>
-    <table>
-      <tbody>
-        <tr><td>Subtotal</td><td class="num">{{ subtotal }}</td></tr>
-        {% if discount %}<tr><td>Descuento</td><td class="num">-{{ discount }}</td></tr>{% endif %}
-        {% if tax %}<tr><td>Impuestos</td><td class="num">{{ tax }}</td></tr>{% endif %}
-        <tr><td><strong>Total</strong></td><td class="num"><strong>{{ total }}</strong></td></tr>
-        <tr><td>Pagado</td><td class="num">{{ paid_amount }}</td></tr>
-        <tr><td>Pendiente</td><td class="num">{{ balance_due }}</td></tr>
-      </tbody>
-    </table>
+    <h2 class="section-title">Resumen Financiero</h2>
+    <div class="financial-box">
+      <div class="financial-row">
+        <span>Subtotal</span>
+        <span>${{ subtotal }}</span>
+      </div>
+      {% if discount and discount != '0.00' %}
+      <div class="financial-row">
+        <span>Descuento</span>
+        <span>-${{ discount }}</span>
+      </div>
+      {% endif %}
+      {% if tax and tax != '0.00' %}
+      <div class="financial-row">
+        <span>Impuestos</span>
+        <span>${{ tax }}</span>
+      </div>
+      {% endif %}
+      <div class="financial-row total">
+        <span>TOTAL</span>
+        <span>${{ total }}</span>
+      </div>
+      <div class="financial-row paid">
+        <span>Pagado</span>
+        <span>${{ paid_amount }}</span>
+      </div>
+      <div class="financial-row pending">
+        <span>Pendiente</span>
+        <span>${{ balance_due }}</span>
+      </div>
+    </div>
   </div>
   <div class="section">
-    <h2>Pagos Registrados</h2>
+    <h2 class="section-title">Pagos Registrados</h2>
     <table>
       <thead>
-        <tr><th>Fecha</th><th>Método</th><th>Referencia</th><th>Monto</th><th>Estado</th></tr>
+        <tr>
+          <th style="width: 20%;">Fecha</th>
+          <th style="width: 25%;">Método</th>
+          <th style="width: 25%;">Referencia</th>
+          <th style="width: 15%;">Monto</th>
+          <th style="width: 15%;">Estado</th>
+        </tr>
       </thead>
       <tbody>
         {% for pay in payments %}
@@ -101,30 +337,44 @@
           <td>{{ pay.received_at|date:"d/m/Y H:i" }}</td>
           <td>{{ pay.method }}</td>
           <td>{{ pay.reference }}</td>
-          <td class="num">{{ pay.amount }}</td>
+          <td class="num">${{ pay.amount }}</td>
           <td>{{ pay.status }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="5" class="empty">Sin pagos</td></tr>
+        <tr>
+          <td colspan="5" class="empty">Sin pagos registrados</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
   <div class="section">
-    <h2>Médico Responsable</h2>
-    <p><strong>{{ doctor.full_name }}</strong><br>
-       Nº Colegiado: {{ doctor.colegiado_id }}<br>
-       Especialidades: {% if doctor.specialties.all %}{{ doctor.specialties.all|join:", " }}{% else %}No especificadas{% endif %}</p>
-    {% if doctor.signature %}
-      <div style="margin-top:6px;">
-        <img src="{{ doctor.signature.path }}" alt="Firma" style="height:45px;">
+    <h2 class="section-title">Médico Responsable</h2>
+    <div class="doctor-block">
+      <div class="doctor-info">
+        <p class="doctor-name">{{ doctor.full_name }}</p>
+        <p class="doctor-meta">
+          {% if doctor.colegiado_id %}Nº Colegiado: {{ doctor.colegiado_id }}{% endif %}
+          {% if doctor.specialties.all %}
+            <br>Especialidades: {{ doctor.specialties.all|join:", " }}
+          {% endif %}
+        </p>
       </div>
-    {% endif %}
+      {% if doctor.signature %}
+        <img src="{{ doctor.signature.path }}" alt="Firma" class="doctor-signature">
+      {% endif %}
+    </div>
   </div>
   <footer>
-    Este comprobante financiero forma parte del expediente clínico institucional.<br>
-    Emitido por {{ doctor.full_name }} - {{ institution.name }}<br>
-    Código de auditoría: {{ data.id }}-{{ patient.id }}
+    <p class="footer-main">
+      Este documento forma parte del expediente clínico institucional.<br>
+      Emitido por {{ doctor.full_name }} | {{ institution.name }}
+    </p>
+    <div class="qr-container">
+      <img src="{{ qr_code_url }}" alt="Código QR de Auditoría">
+      <p class="audit-label">CÓDIGO DE VERIFICACIÓN</p>
+      <span class="audit-code">{{ audit_code }}</span>
+    </div>
   </footer>
 </body>
 </html>

@@ -1503,32 +1503,80 @@ def generate_referral_pdf(request, pk):
 @api_view(['POST', 'GET'])
 def generate_chargeorder_pdf(request, pk):
     """
-    Genera PDF de orden de cobro.
+    Genera PDF de orden de cobro con código de auditoría QR.
     """
     try:
-        # Obtener la orden de cobro
         charge_order = get_object_or_404(ChargeOrder, pk=pk)
         
-        # Obtener datos relacionados para el contexto
         items = ChargeItem.objects.filter(order=charge_order)
         payments = Payment.objects.filter(charge_order=charge_order)
         
-        # Calcular totales
         subtotal = charge_order.total
         paid_amount = sum(p.amount for p in payments)
         balance_due = charge_order.balance_due
         
-        # Preparar contexto para plantilla
+        # Generar código de auditoría
+        audit_code = generate_audit_code(charge_order.appointment, charge_order.patient)
+        
+        # Generar QR
+        qr_payload = f"ORD:{charge_order.id}|PAC:{charge_order.patient.id}|AUDIT:{audit_code}"
+        qr_img = qrcode.make(qr_payload)
+        buffer = BytesIO()
+        qr_img.save(buffer, "PNG")
+        qr_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
+        qr_code_url = f"data:image/png;base64,{qr_base64}"
+        
+        # Mapeo de métodos de pago
+        METHOD_LABELS = {
+            'cash': 'Efectivo',
+            'card': 'Tarjeta / Punto de Venta',
+            'transfer': 'Transferencia / Pago Móvil',
+            'zelle': 'Zelle / Divisas',
+            'crypto': 'Criptomonedas',
+            'other': 'Otro',
+        }
+        
+        # Mapeo de estados de pago
+        PAYMENT_STATUS_LABELS = {
+            'pending': 'Pendiente',
+            'confirmed': 'Confirmado',
+            'rejected': 'Rechazado',
+            'void': 'Anulado',
+        }
+        
+        # Mapeo de estados de orden
+        ORDER_STATUS_LABELS = {
+            'open': 'Abierta',
+            'partially_paid': 'Parcialmente Pagada',
+            'paid': 'Pagada',
+            'void': 'Anulada',
+            'waived': 'Exonerada',
+        }
+        
+        # Formatear pagos para el template
+        payments_formatted = []
+        for p in payments:
+            payments_formatted.append({
+                'received_at': p.received_at,
+                'method': METHOD_LABELS.get(p.method, p.method),
+                'reference': p.reference_number or p.gateway_transaction_id or '-',
+                'amount': p.amount,
+                'status': PAYMENT_STATUS_LABELS.get(p.status, p.status),
+            })
+        
+        # Estado de orden traducido
+        status_label = ORDER_STATUS_LABELS.get(charge_order.status, charge_order.status)
+        
         context = {
             'data': charge_order,
             'charge_order': charge_order,
-            'order': charge_order,  # ✅ AGREGADO - Para compatibilidad con template
+            'order': charge_order,
             'patient': charge_order.patient,
             'appointment': charge_order.appointment,
             'doctor': charge_order.doctor,
             'institution': charge_order.institution,
             'items': items,
-            'payments': payments,
+            'payments': payments_formatted,
             'subtotal': str(subtotal),
             'discount': '0.00',
             'tax': '0.00',
@@ -1536,17 +1584,16 @@ def generate_chargeorder_pdf(request, pk):
             'paid_amount': str(paid_amount),
             'balance_due': str(balance_due),
             'generated_at': timezone.now(),
+            'audit_code': audit_code,
+            'qr_code_url': qr_code_url,
+            'status_label': status_label,
         }
         
-        # Renderizar HTML desde plantilla
         html_string = render_to_string('medical/documents/charge_order.html', context)
-        
-        # Generar PDF con WeasyPrint
         pdf_bytes = HTML(string=html_string, base_url=settings.MEDIA_ROOT).write_pdf()
         
-        # Crear respuesta HTTP con PDF
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
-        filename = f"charge_order_{charge_order.id}.pdf"
+        filename = f"ORD-{charge_order.id}.pdf"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
         
