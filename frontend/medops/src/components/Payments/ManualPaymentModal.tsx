@@ -1,6 +1,12 @@
 // src/components/Payments/ManualPaymentModal.tsx
 import React, { useState } from 'react';
-import { XMarkIcon, ExclamationTriangleIcon, CheckCircleIcon, CreditCardIcon } from '@heroicons/react/24/outline';
+import { 
+  XMarkIcon, 
+  ExclamationTriangleIcon, 
+  CheckCircleIcon, 
+  CreditCardIcon,
+  ArrowPathIcon
+} from '@heroicons/react/24/outline';
 import { apiFetch } from '@/api/client';
 interface ManualPaymentModalProps {
   open: boolean;
@@ -28,15 +34,13 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   onVerificationSuccess,
   onClose
 }) => {
-  // 🎯 ESTADOS DEL MODAL
   const [formData, setFormData] = useState<ManualPaymentData>({
     reference_number: '',
     bank_name: '',
     amount: expectedAmount.toFixed(2),
     payment_date: new Date().toISOString().split('T')[0],
-    notes: 'Pago móvil verificado manualmente - API caída'
+    notes: ''
   });
-  // 🏦 BANCOS VENEZOLANOS COMUNES
   const venezuelanBanks: VenezuelanBank[] = [
     { code: 'mercantil', name: 'Banco Mercantil', shortName: 'Mercantil' },
     { code: 'banesco', name: 'Banesco', shortName: 'Banesco' },
@@ -50,16 +54,13 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   ];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  // 🎯 MANEJO DE FORMULARIO
   const handleInputChange = (field: keyof ManualPaymentData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setSubmitError(null);
   };
-  // ✅ MANEJO DE REGISTRO MANUAL
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 🚨 VALIDACIONES BÁSICAS
     if (!formData.reference_number.trim()) {
       setSubmitError('Número de referencia requerido');
       return;
@@ -74,6 +75,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       setSubmitError('Monto inválido');
       return;
     }
+    
     if (parseFloat(formData.amount) !== expectedAmount) {
       setSubmitError(`El monto debe ser exactamente $${expectedAmount.toFixed(2)}`);
       return;
@@ -81,7 +83,6 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      // 🚀 REGISTRAR PAGO MANUAL
       const response = await apiFetch('/api/payments/', {
         method: 'POST',
         body: JSON.stringify({
@@ -96,59 +97,67 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
           reason: 'API_CONNECTION_DOWN'
         })
       });
+      
       if (response) {
-        console.log('[MANUAL_PAYMENT] Manual payment registered successfully');
         onVerificationSuccess(response);
         onClose();
       }
     } catch (error: any) {
-      console.error('[MANUAL_PAYMENT] Error:', error);
-      setSubmitError(`Error al registrar pago: ${error.message}`);
+      setSubmitError(error.message || 'Error al registrar pago');
     } finally {
       setIsSubmitting(false);
     }
   };
-  // 🎮 COMPONENTE VISUAL
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-lg max-w-md w-full mx-4 shadow-2xl">
-        
-        {/* 🎯 HEADER */}
-        <div className="flex justify-between items-center p-4 border-b border-[var(--palantir-border)]">
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
-            <h3 className="text-lg font-bold text-white">[MANUAL_PAYMENT_MODE]</h3>
+            <div className="w-3 h-3 border border-amber-400 border-t-transparent animate-spin" />
+            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
+              Manual_Payment_Mode
+            </h2>
           </div>
           <button 
-            onClick={onClose} 
-            className="text-gray-400 hover:text-white transition-colors"
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <XMarkIcon className="w-4 h-4" />
           </button>
         </div>
-        {/* 📋 CONTENIDO */}
-        <div className="p-4 text-center">
-          <p className="text-[10px] font-mono text-yellow-300 uppercase tracking-widest">
-            ⚠️ API_CONNECTION_DOWN - REGISTRO MANUAL
-          </p>
-          <p className="text-[9px] font-mono text-white/60 mt-2">
-            El sistema no pudo conectar con el Banco Mercantil. 
-            Por favor, registre el pago manualmente.
-          </p>
+        {/* Warning Banner */}
+        <div className="px-4 py-3 border-b border-white/5 bg-amber-500/5">
+          <div className="flex items-center gap-2">
+            <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
+            <span className="text-[9px] font-mono text-amber-300 uppercase tracking-widest">
+              Api_Connection_Down // Manual Registration Required
+            </span>
+          </div>
         </div>
-        {/* 📋 FORMULARIO */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* 🔢 BANCO ORIGEN */}
-          <div className="space-y-2">
-            <label className="text-[8px] font-mono text-gray-300 uppercase tracking-widest">
-              BANCO_ORIGEN
+        {/* Amount Display */}
+        <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">
+              Expected_Amount
+            </span>
+            <span className="text-xl font-black text-blue-400">
+              ${expectedAmount.toFixed(2)}
+            </span>
+          </div>
+        </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* Bank */}
+          <div>
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+              Banco_Origen
             </label>
             <select
               value={formData.bank_name}
               onChange={(e) => handleInputChange('bank_name', e.target.value)}
-              className="w-full bg-black/40 border-[var(--palantir-border)] p-3 text-[11px] font-mono text-white outline-none focus:border-cyan-500/50 transition-colors rounded-sm"
+              className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all"
               required
             >
               <option value="">Seleccionar banco...</option>
@@ -159,128 +168,103 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               ))}
             </select>
           </div>
-          {/* 📄 NÚMERO DE REFERENCIA */}
-          <div className="space-y-2">
-            <label className="text-[8px] font-mono text-gray-300 uppercase tracking-widest">
-              REFERENCE_NUMBER
+          {/* Reference */}
+          <div>
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+              Numero_Referencia
             </label>
             <input
               type="text"
               value={formData.reference_number}
               onChange={(e) => handleInputChange('reference_number', e.target.value)}
-              placeholder="Ej: 12345678901234567890"
-              className="w-full bg-black/40 border-[var(--palantir-border)] p-3 text-[11px] font-mono text-white outline-none focus:border-cyan-500/50 transition-colors rounded-sm"
+              placeholder="12345678901234567890"
+              className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all placeholder:text-white/20"
               required
             />
           </div>
-          {/* 💰 MONTO */}
-          <div className="space-y-2">
-            <label className="text-[8px] font-mono text-gray-300 uppercase tracking-widest">
-              AMOUNT
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => handleInputChange('amount', e.target.value)}
-              placeholder="0.00"
-              className="w-full bg-black/40 border-[var(--palantir-border)] p-3 text-[11px] font-mono text-white outline-none focus:border-cyan-500/50 transition-colors rounded-sm"
-              required
-            />
+          {/* Amount & Date */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+                Monto
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => handleInputChange('amount', e.target.value)}
+                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+                Fecha_Pago
+              </label>
+              <input
+                type="date"
+                value={formData.payment_date}
+                onChange={(e) => handleInputChange('payment_date', e.target.value)}
+                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all"
+                required
+              />
+            </div>
           </div>
-          {/* 📅 FECHA DEL PAGO */}
-          <div className="space-y-2">
-            <label className="text-[8px] font-mono text-gray-300 uppercase tracking-widest">
-              PAYMENT_DATE
-            </label>
-            <input
-              type="date"
-              value={formData.payment_date}
-              onChange={(e) => handleInputChange('payment_date', e.target.value)}
-              className="w-full bg-black/40 border-[var(--palantir-border)] p-3 text-[11px] font-mono text-white outline-none focus:border-cyan-500/50 transition-colors rounded-sm"
-              required
-            />
-          </div>
-          {/* 📝 NOTAS ADICIONES */}
-          <div className="space-y-2">
-            <label className="text-[8px] font-mono text-gray-300 uppercase tracking-widest">
-              NOTES
+          {/* Notes */}
+          <div>
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+              Notas
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
-              rows={3}
-              className="w-full bg-black/40 border-[var(--palantir-border)] p-3 text-[11px] font-mono text-white outline-none focus:border-cyan-500/50 transition-colors rounded-sm resize-none"
-              placeholder="Notas adicionales sobre el pago..."
+              rows={2}
+              className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all resize-none placeholder:text-white/20"
+              placeholder="Notas adicionales..."
             />
           </div>
-          {/* ❌ ERRORES */}
+          {/* Error */}
           {submitError && (
-            <div className="p-3 bg-red-500/10 border-red-500/20 rounded-sm">
-              <div className="flex items-center gap-2 mb-2">
-                <ExclamationTriangleIcon className="w-4 h-4 text-red-400" />
-                <span className="text-[8px] font-mono text-red-300 uppercase">ERROR:</span>
-              </div>
-              <span className="text-red-300 text-[9px] font-mono">{submitError}</span>
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20">
+              <ExclamationTriangleIcon className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <span className="text-[10px] text-red-300">{submitError}</span>
             </div>
           )}
-          {/* 🎯 BOTONES DE ACCIÓN */}
-          <div className="flex gap-2 pt-4">
+          {/* Actions */}
+          <div className="flex gap-2 pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`
-                flex-1 py-3 px-4 
-                bg-emerald-500/10 border-emerald-500/20 
-                text-emerald-400 text-[10px] font-bold uppercase 
-                tracking-widest 
-                hover:bg-emerald-500/20 
-                disabled:opacity-50 
-                transition-all
-                disabled:cursor-not-allowed
-                flex items-center justify-center gap-2
-              `}
+              className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                  <span>REGISTERING...</span>
+                  <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                  Registrando...
                 </>
               ) : (
                 <>
                   <CheckCircleIcon className="w-4 h-4" />
-                  <span>REGISTER_MANUAL_PAYMENT</span>
+                  Registrar_Pago
                 </>
               )}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className={`
-                flex-1 py-3 px-4 
-                bg-gray-500/10 
-                border-gray-500/20 
-                text-gray-400 
-                text-[10px] font-bold uppercase 
-                tracking-widest 
-                hover:bg-gray-500/20 
-                transition-all
-              `}
+              className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
             >
-              <span>CANCEL</span>
+              Cancelar
             </button>
           </div>
-          {/* 📋 INFO ADICIONES */}
-          <div className="mt-4 p-3 bg-blue-500/10 border-blue-500/20 rounded-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <CreditCardIcon className="w-5 h-5 text-blue-400" />
-              <span className="text-[9px] font-mono text-blue-300 uppercase">INFO:</span>
-            </div>
-            <p className="text-[8px] font-mono text-blue-300 text-[9px] font-mono">
-              ESTE MODAL SERÁ IMPLEMENTADO EN EL PASO 6
-            </p>
-          </div>
         </form>
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-white/5 flex items-center justify-center gap-2">
+          <CreditCardIcon className="w-3 h-3 text-blue-400/40" />
+          <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">
+            Manual_Verification_Mode // Fallback_Active
+          </span>
+        </div>
       </div>
     </div>
   );

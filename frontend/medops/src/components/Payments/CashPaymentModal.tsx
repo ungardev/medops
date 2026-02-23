@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from '@/api/client';
-import EliteModal from "../Common/EliteModal";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { 
+  XMarkIcon,
   ArrowPathIcon,
   ShieldCheckIcon,
   BuildingOfficeIcon,
-  CurrencyDollarIcon
+  CurrencyDollarIcon,
+  ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
 interface CashPaymentData {
   amount: string;
@@ -37,8 +38,10 @@ export default function CashPaymentModal({
   const [form, setForm] = useState<CashPaymentData>({
     amount: expectedAmount.toFixed(2),
     payment_date: new Date().toISOString().split('T')[0],
-    notes: 'Pago en efectivo'
+    notes: ''
   });
+  
+  const [error, setError] = useState<string | null>(null);
   
   const mutation = useMutation({
     mutationFn: async (data: CashPaymentData) => {
@@ -63,28 +66,26 @@ export default function CashPaymentModal({
     },
     onError: (error: any) => {
       console.error('[CASH_PAYMENT] Error:', error);
-      alert('Error al procesar el pago. Por favor, intente nuevamente.');
+      setError(error.message || 'Error al procesar el pago');
     }
   });
   
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    setError(null);
   };
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!form.amount || parseFloat(form.amount) <= 0) {
-      alert('El monto debe ser mayor a cero');
+      setError('El monto debe ser mayor a cero');
       return;
     }
     
     if (parseFloat(form.amount) !== expectedAmount) {
-      alert(`El monto debe ser exactamente $${expectedAmount.toFixed(2)}`);
+      setError(`El monto debe ser exactamente $${expectedAmount.toFixed(2)}`);
       return;
     }
     
@@ -93,7 +94,7 @@ export default function CashPaymentModal({
     today.setHours(23, 59, 59, 999);
     
     if (paymentDate > today) {
-      alert('La fecha de pago no puede ser futura');
+      setError('La fecha de pago no puede ser futura');
       return;
     }
     
@@ -101,52 +102,56 @@ export default function CashPaymentModal({
   };
   
   if (!open) return null;
+  
   return (
-    <EliteModal 
-      open={open} 
-      onClose={onClose} 
-      title="REGISTER_CASH_PAYMENT"
-      maxWidth="max-w-xl"
-      showDotIndicator={true}
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* Header institucional */}
+    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <CurrencyDollarIcon className="w-5 h-5 text-emerald-400" />
+            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
+              Register_Cash_Payment
+            </h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors"
+          >
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+        {/* Institution Badge */}
         {activeInstitution && (
-          <div className="bg-emerald-500/10 border-emerald-500/20 px-4 py-2 rounded-lg">
+          <div className="px-4 py-2 border-b border-white/5 bg-white/[0.02]">
             <div className="flex items-center gap-2">
-              <BuildingOfficeIcon className="w-4 h-4 text-emerald-400" />
-              <span className="text-[8px] font-mono text-emerald-300 uppercase tracking-[0.2em]">
+              <BuildingOfficeIcon className="w-3 h-3 text-purple-400" />
+              <span className="text-[8px] font-mono text-purple-300 uppercase tracking-[0.2em]">
                 {activeInstitution.name} // {activeInstitution.tax_id}
               </span>
             </div>
           </div>
         )}
-        
-        {/* Sección principal */}
-        <div className="bg-emerald-500/10 border-emerald-500/20 p-6 rounded-lg">
-          <div className="flex items-center gap-3 mb-6">
-            <CurrencyDollarIcon className="w-8 h-8 text-emerald-400" />
-            <div>
-              <h3 className="text-xl font-bold text-emerald-300 uppercase tracking-[0.2em]">
-                PAGO EN EFECTIVO
-              </h3>
-              <p className="text-sm text-emerald-400/80 mt-1">
-                Monto requerido: <span className="font-bold text-emerald-400">${expectedAmount.toFixed(2)}</span>
-              </p>
-              <p className="text-xs text-emerald-400/60">
-                Por favor, cuente el efectivo recibido antes de registrar
-              </p>
-            </div>
+        {/* Amount Display */}
+        <div className="p-4 border-b border-white/5 bg-emerald-500/5">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">
+              Monto_Requerido
+            </span>
+            <span className="text-2xl font-black text-emerald-400">
+              ${expectedAmount.toFixed(2)}
+            </span>
           </div>
-          
-          {/* Campo monto */}
-          <div className="space-y-4">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-emerald-400/60">
-              MONTO_RECIBIDO
+        </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* Amount Input */}
+          <div>
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+              Monto_Recibido
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400/60 font-mono text-xs">Bs.</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 font-mono text-sm">$</span>
               <input
                 type="number"
                 name="amount"
@@ -154,94 +159,93 @@ export default function CashPaymentModal({
                 onChange={handleChange}
                 required
                 step="0.01"
-                placeholder="0.00"
-                className="w-full bg-black/40 border-emerald-500/20 rounded-lg py-3 pl-12 pr-4 text-lg font-bold text-emerald-400 focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-500 outline-none transition-all placeholder:opacity-30"
+                className="w-full bg-black/40 border border-white/10 p-3 pl-8 text-lg font-black text-emerald-400 outline-none focus:border-emerald-500/50 transition-all"
               />
             </div>
           </div>
-        </div>
-        {/* Campos adicionales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-emerald-400/60">
-              REFERENCIA INTERNA
+          {/* Date and Reference */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+                Fecha_Pago
+              </label>
+              <input
+                type="date"
+                name="payment_date"
+                value={form.payment_date}
+                onChange={handleChange}
+                max={new Date().toISOString().split('T')[0]}
+                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-emerald-500/50 transition-all"
+              />
+            </div>
+            <div>
+              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+                Referencia_Interna
+              </label>
+              <input
+                type="text"
+                name="payment_reference"
+                value={form.payment_reference || ''}
+                onChange={handleChange}
+                placeholder="REC-001"
+                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/20"
+              />
+            </div>
+          </div>
+          {/* Notes */}
+          <div>
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+              Notas
             </label>
-            <input
-              type="text"
-              name="payment_reference"
-              value={form.payment_reference || ''}
+            <textarea
+              name="notes"
+              value={form.notes || ''}
               onChange={handleChange}
-              placeholder="REC-001234"
-              className="w-full bg-black/40 border-emerald-500/10 rounded-lg py-3 px-4 text-emerald-400 outline-none transition-all placeholder:opacity-20 text-sm"
+              rows={2}
+              className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-emerald-500/50 transition-all resize-none placeholder:text-white/20"
+              placeholder="Notas adicionales..."
             />
           </div>
-          
-          <div className="space-y-2">
-            <label className="text-[9px] font-mono uppercase tracking-widest text-emerald-400/60">
-              FECHA DEL PAGO
-            </label>
-            <input
-              type="date"
-              name="payment_date"
-              value={form.payment_date}
-              onChange={handleChange}
-              max={new Date().toISOString().split('T')[0]}
-              className="w-full bg-black/40 border-emerald-500/10 rounded-lg py-3 px-4 text-emerald-400 outline-none transition-all text-sm"
-            />
+          {/* Error */}
+          {error && (
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20">
+              <ExclamationTriangleIcon className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <span className="text-[10px] text-red-300">{error}</span>
+            </div>
+          )}
+          {/* Actions */}
+          <div className="flex gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={mutation.isPending}
+              className="flex-1 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {mutation.isPending ? (
+                <>
+                  <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                'Confirmar_Pago'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+            >
+              Cancelar
+            </button>
           </div>
-        </div>
-        {/* Notas */}
-        <div className="space-y-2">
-          <label className="text-[9px] font-mono uppercase tracking-widest text-emerald-400/60">
-            NOTAS DEL PAGO
-          </label>
-          <textarea
-            name="notes"
-            value={form.notes || ''}
-            onChange={handleChange}
-            rows={3}
-            className="w-full bg-black/40 border-emerald-500/10 rounded-lg py-3 px-4 text-emerald-400 outline-none transition-all placeholder:opacity-20 resize-none text-sm"
-            placeholder="Notas adicionales sobre el pago en efectivo..."
-          />
-        </div>
-        {/* Botones de acción */}
-        <div className="flex gap-3 pt-4">
-          <button
-            type="submit"
-            disabled={mutation.isPending}
-            className={`flex-1 py-4 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-              mutation.isPending 
-                ? "bg-emerald-500/30 text-emerald-400/60 cursor-not-allowed" 
-                : "bg-emerald-500 text-emerald-400 hover:bg-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.15)]"
-            }`}
-          >
-            {mutation.isPending ? (
-              <span className="flex items-center justify-center gap-2">
-                <ArrowPathIcon className="w-5 h-5 animate-spin" />
-                PROCESANDO PAGO...
-              </span>
-            ) : (
-              <span>CONFIRMAR_PAGO_EFECTIVO</span>
-            )}
-          </button>
-          
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-4 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20 transition-colors text-gray-400"
-          >
-            CANCELAR
-          </button>
-        </div>
-        
-        {/* Footer de seguridad */}
-        <div className="bg-emerald-500/10 px-6 py-3 border-t border-emerald-500/20 flex items-center justify-center gap-2 rounded-b-lg">
-          <ShieldCheckIcon className="w-4 h-4 text-emerald-400/60" />
-          <span className="text-[7px] font-mono text-emerald-400/60 uppercase tracking-[0.3em]">
-            EFECTIVO_VERIFIED_IN_OFFICE // SECURED_TRANSACTION
+        </form>
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-white/5 flex items-center justify-center gap-2">
+          <ShieldCheckIcon className="w-3 h-3 text-emerald-400/40" />
+          <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">
+            Cash_Verified_In_Office // Secured_Transaction
           </span>
         </div>
-      </form>
-    </EliteModal>
+      </div>
+    </div>
   );
 }

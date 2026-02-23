@@ -345,19 +345,30 @@ export default function ChargeOrderDetail() {
       
       {/* ✅ TOAST NOTIFICATIONS */}
       {toast && (
-        <div className="fixed bottom-4 right-4 p-4 rounded-lg bg-white shadow-lg border border-gray-200">
-          <div className={`text-sm font-medium ${
-            toast.type === "success" ? "text-green-600" :
-            toast.type === "error" ? "text-red-600" : "text-blue-600"
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className={`flex items-center gap-3 px-4 py-3 border ${
+            toast.type === "success" 
+              ? 'bg-emerald-500/10 border-emerald-500/30' :
+            toast.type === "error" 
+              ? 'bg-red-500/10 border-red-500/30' 
+              : 'bg-blue-500/10 border-blue-500/30'
           }`}>
-            {toast.message}
+            <span className={`text-[10px] font-black uppercase tracking-widest ${
+              toast.type === "success" 
+                ? 'text-emerald-400' :
+              toast.type === "error" 
+                ? 'text-red-400' 
+                : 'text-blue-400'
+            }`}>
+              {toast.message}
+            </span>
+            <button 
+              onClick={() => setToast(null)}
+              className="text-white/40 hover:text-white transition-colors"
+            >
+              ×
+            </button>
           </div>
-          <button 
-            onClick={() => setToast(null)}
-            className="ml-4 text-gray-400 hover:text-gray-600"
-          >
-            ×
-          </button>
         </div>
       )}
     </div>
