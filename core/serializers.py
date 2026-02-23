@@ -1352,10 +1352,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
     Serializer de LISTADO y ESCRITURA: Optimizado para el calendario y la 
     gestión administrativa de citas.
     """
-    patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
+    patient_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     appointment_type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
-
     class Meta:
         model = Appointment
         fields = [
@@ -1365,6 +1364,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "expected_amount", "arrival_time",
         ]
         read_only_fields = ["id"]
+    def get_patient_name(self, obj):
+        """Obtiene el nombre completo del paciente de forma explícita."""
+        if obj.patient:
+            return obj.patient.full_name
+        return "UNKNOWN_SUBJECT"
 
 
 # --- Documentos clínicos ---
