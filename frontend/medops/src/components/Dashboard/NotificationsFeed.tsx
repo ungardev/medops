@@ -4,7 +4,6 @@ import { useNotifications } from "@/hooks/dashboard/useNotifications";
 import { NotificationEvent } from "@/types/notifications";
 import moment from "moment";
 import AppointmentDetail from "@/components/Appointments/AppointmentDetail";
-import { useAppointment } from "@/hooks/appointments/useAppointments";
 import NotificationBadge from "@/components/Dashboard/NotificationBadge";
 function toArray<T>(raw: unknown): T[] {
   if (Array.isArray(raw)) return raw as T[];
@@ -14,24 +13,24 @@ function toArray<T>(raw: unknown): T[] {
   return [];
 }
 function AppointmentDetailWrapper({ appointmentId, onClose }: { appointmentId: number; onClose: () => void; }) {
-  const { data: appointment, isLoading, isError } = useAppointment(appointmentId);
-  if (isLoading) return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200]">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-[var(--palantir-active)]/20 border-t-[var(--palantir-active)] rounded-full animate-spin" />
-        <p className="text-[10px] text-white/40 font-mono uppercase tracking-[0.2em]">Synchronizing_Register...</p>
+  // ✅ FIX: Ya no necesitamos useAppointment aquí porque AppointmentDetail lo maneja internamente
+  // Solo verificamos si existe el ID
+  if (!appointmentId) {
+    return (
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200]">
+        <div className="bg-[#0c0e12] p-6 border border-red-500/30 rounded-sm text-center shadow-2xl">
+          <p className="text-[10px] font-mono text-red-500 mb-4 uppercase tracking-widest">Invalid_Appointment_ID</p>
+          <button onClick={onClose} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[9px] rounded-sm uppercase font-black tracking-widest transition-all">Abort</button>
+        </div>
       </div>
-    </div>
-  );
-  if (isError || !appointment) return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200]">
-      <div className="bg-[#0c0e12] p-6 border border-red-500/30 rounded-sm text-center shadow-2xl">
-        <p className="text-[10px] font-mono text-red-500 mb-4 uppercase tracking-widest">Error_in_Data_Node_Load</p>
-        <button onClick={onClose} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-[9px] rounded-sm uppercase font-black tracking-widest transition-all">Abort</button>
-      </div>
-    </div>
-  );
-  return <AppointmentDetail appointment={appointment} onClose={onClose} onEdit={() => onClose()} />;
+    );
+  }
+  
+  return <AppointmentDetail 
+    appointmentId={appointmentId} 
+    onClose={onClose} 
+    onEdit={() => {}} 
+  />;
 }
 export default function NotificationsFeed() {
   const { data, isLoading, refetch } = useNotifications();
