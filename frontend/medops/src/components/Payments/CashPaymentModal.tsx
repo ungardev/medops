@@ -44,7 +44,7 @@ export default function CashPaymentModal({
   
   const mutation = useMutation({
     mutationFn: async (data: CashPaymentData) => {
-      const response = await apiFetch('/api/payments/', {
+      const response = await apiFetch('payments/', {
         method: 'POST',
         body: JSON.stringify({
           amount: data.amount,
