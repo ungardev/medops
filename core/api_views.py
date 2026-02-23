@@ -3222,41 +3222,107 @@ def vital_signs_detail_api(request, vital_signs_id):
 @permission_classes([conditional_permission()])
 def appointment_charge_order_api(request, appointment_id):
     """
-    Obtener charge order asociado a una cita.
+    Obtener charge order ACTIVO asociado a una cita.
+    Excluye órdenes void/waived.
     GET /api/appointments/<appointment_id>/charge-order/
     """
     try:
-        charge_order = ChargeOrder.objects.get(appointment_id=appointment_id)
+        # Solo obtener órdenes activas (excluir void y waived)
+        charge_order = ChargeOrder.objects.filter(
+            appointment_id=appointment_id
+        ).exclude(status__in=['void', 'waived']).order_by('-issued_at').first()
+        
+        if not charge_order:
+            return Response(None, status=200)
+        
         serializer = ChargeOrderSerializer(charge_order)
         return Response(serializer.data)
-    except ChargeOrder.DoesNotExist:
-        return Response({"error": "No hay charge order para esta cita"}, status=404)
-    except ChargeOrder.MultipleObjectsReturned:
-        # Si hay múltiples, retornar el primero
-        charge_order = ChargeOrder.objects.filter(appointment_id=appointment_id).first()
+    
+    except Exception as e:
+        logger.error(f"Error en appointment_charge_order_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([conditional_permission()])
+def add_charge_order_items(request, appointment_id):
+    """
+    Agregar items a orden de cobro. Crea la orden automáticamente si no existe una activa.
+    POST /api/appointments/{appointment_id}/charge-order/add-items/
+    Body: { "items": [{ "code": "C001", "description": "Consulta", "qty": 1, "unit_price": 50.00 }] }
+    """
+    try:
+        appointment = get_object_or_404(Appointment, pk=appointment_id)
+        items_data = request.data.get('items', [])
+        
+        if not items_data or len(items_data) == 0:
+            return Response({"error": "No se proporcionaron items"}, status=400)
+        
+        # Buscar orden activa existente (excluir void)
+        charge_order = ChargeOrder.objects.filter(
+            appointment_id=appointment_id
+        ).exclude(status='void').order_by('-issued_at').first()
+        
+        # Si no existe orden activa, crear una nueva
+        if not charge_order:
+            charge_order = ChargeOrder.objects.create(
+                appointment=appointment,
+                patient=appointment.patient,
+                doctor=appointment.doctor,
+                institution=appointment.institution,
+                currency="USD",
+                status="open",
+                total=Decimal('0.00'),
+                balance_due=Decimal('0.00'),
+            )
+        
+        # Agregar items a la orden
+        created_items = []
+        for item_data in items_data:
+            item = ChargeItem.objects.create(
+                order=charge_order,
+                code=item_data.get('code', ''),
+                description=item_data.get('description', ''),
+                qty=Decimal(str(item_data.get('qty', 1))),
+                unit_price=Decimal(str(item_data.get('unit_price', 0))),
+            )
+            created_items.append(item)
+        
+        # Recalcular totales (se hace automáticamente en ChargeItem.save(), pero lo aseguramos)
+        charge_order.recalc_totals()
+        charge_order.save(update_fields=['total', 'balance_due', 'status'])
+        
         serializer = ChargeOrderSerializer(charge_order)
-        return Response(serializer.data)
+        return Response(serializer.data, status=200 if len(created_items) > 0 else 201)
+    
+    except Exception as e:
+        logger.error(f"Error en add_charge_order_items: {str(e)}")
+        return Response({"error": str(e)}, status=500)
 
 
 @api_view(['POST'])
 @permission_classes([conditional_permission()])
 def create_charge_order_from_appointment(request, appointment_id):
     """
-    Crear charge order para una cita desde el panel de consulta.
-    POST /api/appointments/<appointment_id>/charge-order/
+    Crear charge order para una cita.
+    NOTA: Este endpoint está deprecado. Usar add_charge_order_items en su lugar.
+    POST /api/appointments/<appointment_id>/charge-order/create/
     """
     try:
-        # Verificar que la cita exista
         appointment = get_object_or_404(Appointment, pk=appointment_id)
         
-        # Verificar que no exista ya un charge order
-        if ChargeOrder.objects.filter(appointment_id=appointment_id).exists():
+        # Verificar que no exista ya una orden ACTIVA (excluir void/waived)
+        existing = ChargeOrder.objects.filter(
+            appointment_id=appointment_id
+        ).exclude(status__in=['void', 'waived']).first()
+        
+        if existing:
             return Response(
-                {"error": "Ya existe un charge order para esta cita"},
+                {"error": "Ya existe una orden de cobro activa para esta cita", "order_id": existing.id},
                 status=400
             )
         
-        # Crear charge order básico
+        # Crear charge order
         charge_order = ChargeOrder.objects.create(
             appointment=appointment,
             patient=appointment.patient,

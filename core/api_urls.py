@@ -118,6 +118,7 @@ from .api_views import (
     clinical_note_lock_api,
     # ✅ NUEVO: Endpoint público de ubicación ---
     public_institution_location_api,
+    add_charge_order_items,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -205,6 +206,7 @@ urlpatterns = [
     # ✅ ENDPOINTS DE CHARGE ORDER POR APPOINTMENT ---
     path("appointments/<int:appointment_id>/charge-order/", appointment_charge_order_api, name="appointment-charge-order-api"),
     path("appointments/<int:appointment_id>/charge-order/create/", create_charge_order_from_appointment, name="create-charge-order-from-appointment"),
+    path("appointments/<int:appointment_id>/charge-order/add-items/", add_charge_order_items, name="add-charge-order-items"),
     
     # ✅ ENDPOINTS DE CLINICAL NOTE ---
     path("appointments/<int:appointment_id>/clinical-note/", clinical_note_api, name="clinical-note-api"),
