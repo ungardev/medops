@@ -6,26 +6,34 @@ import {
   PencilIcon, 
   InformationCircleIcon, 
   BanknotesIcon,
-  ShieldCheckIcon,
-  ExclamationTriangleIcon
+  ShieldCheckIcon
 } from "@heroicons/react/24/outline";
 interface Props {
   appointment: Appointment;
   onClose: () => void;
   onEdit: (appointment: Appointment) => void;
 }
+const METHOD_LABELS: Record<string, string> = {
+  cash: "Efectivo",
+  card: "Tarjeta / Punto de Venta",
+  transfer: "Transferencia / Pago Móvil",
+  zelle: "Zelle / Divisas",
+  crypto: "Criptomonedas",
+  other: "Otro",
+};
 export default function AppointmentDetail({ appointment, onClose, onEdit }: Props) {
   const [activeTab, setActiveTab] = useState<"info" | "payments">("info");
-  // Usar directamente el appointment que viene por props
-  // (evitamos fetch adicional que puede causar problemas)
   const appt = appointment;
-  // Manejo seguro de datos opcionales
-  const payments = Array.isArray(appt?.payments) ? appt.payments : [];
+  // ✅ FIX: Obtener payments desde charge_order
+  const chargeOrder = appt?.charge_order;
+  const payments = Array.isArray(chargeOrder?.payments) ? chargeOrder.payments : [];
+  
+  const totalAmount = Number(chargeOrder?.total_amount ?? appt?.expected_amount ?? 0);
   const totalPagado = payments.reduce(
-    (acc: number, p: any) => acc + Number(p.amount ?? p.total ?? 0),
+    (acc: number, p: any) => acc + Number(p.amount ?? 0),
     0
   );
-  // Formatear fecha de forma segura
+  const balanceDue = Number(chargeOrder?.balance_due ?? 0);
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return "---";
     try {
@@ -37,6 +45,21 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
       }).toUpperCase();
     } catch {
       return dateStr;
+    }
+  };
+  const formatPaymentDate = (isoString: string | null | undefined) => {
+    if (!isoString) return "---";
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return "---";
     }
   };
   return (
@@ -120,36 +143,66 @@ export default function AppointmentDetail({ appointment, onClose, onEdit }: Prop
                 </div>
                 <div className="flex justify-between items-end">
                   <div>
-                    <span className="text-[8px] text-white/40 uppercase">Expected_Resources</span>
-                    <p className="text-xl font-mono text-white">${appt.expected_amount || "0.00"}</p>
+                    <span className="text-[8px] text-white/40 uppercase">Total_Order</span>
+                    <p className="text-xl font-mono text-white">${totalAmount.toFixed(2)}</p>
                   </div>
                   <div className="text-right">
                     <span className="text-[8px] text-white/40 uppercase">Collected_To_Date</span>
                     <p className="text-xl font-mono text-emerald-500">${totalPagado.toFixed(2)}</p>
                   </div>
                 </div>
+                {balanceDue > 0 && (
+                  <div className="mt-3 pt-3 border-t border-white/10 flex justify-between items-end">
+                    <span className="text-[8px] text-white/40 uppercase">Outstanding_Balance</span>
+                    <p className="text-lg font-mono text-red-400">${balanceDue.toFixed(2)}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
           {activeTab === "payments" && (
             <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2">
               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Transaction_History</h3>
-              {payments.length > 0 ? (
-                payments.map((p: any, idx: number) => (
-                  <div key={p.id || idx} className="flex justify-between items-center p-3 bg-black/20 border border-white/5 font-mono">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-emerald-500 font-bold">+ ${Number(p.amount ?? p.total ?? 0).toFixed(2)}</span>
-                      <span className="text-[8px] text-white/40 uppercase">{p.method ?? "PAYMENT"}</span>
-                    </div>
-                    <div className="text-right flex flex-col">
-                      <span className="text-[9px] text-white uppercase">{p.status || "VERIFIED"}</span>
-                      {p.reference_number && <span className="text-[8px] text-white/40">REF: {p.reference_number}</span>}
+              
+              {chargeOrder ? (
+                <>
+                  <div className="p-3 bg-white/5 border border-white/10 mb-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <span className="text-[8px] text-white/40 uppercase">Order_ID</span>
+                        <p className="text-sm font-mono text-white">#{chargeOrder.id}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[8px] text-white/40 uppercase">Status</span>
+                        <p className="text-sm font-bold uppercase text-emerald-500">{chargeOrder.status}</p>
+                      </div>
                     </div>
                   </div>
-                ))
+                  
+                  {payments.length > 0 ? (
+                    payments.map((p: any, idx: number) => (
+                      <div key={p.id || idx} className="flex justify-between items-center p-3 bg-black/20 border border-white/5">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-emerald-500 font-bold">+ ${Number(p.amount).toFixed(2)}</span>
+                          <span className="text-[8px] text-white/40 uppercase">{METHOD_LABELS[p.method] || p.method}</span>
+                        </div>
+                        <div className="text-right flex flex-col">
+                          <span className="text-[9px] text-white uppercase">{p.status || "CONFIRMED"}</span>
+                          {p.reference_number && <span className="text-[8px] text-white/40">REF: {p.reference_number}</span>}
+                          {p.received_at && <span className="text-[7px] text-white/30">{formatPaymentDate(p.received_at)}</span>}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="py-8 text-center border border-dashed border-white/10">
+                      <span className="text-[10px] font-mono text-white/30">-- NO_PAYMENTS_REGISTERED --</span>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="py-8 text-center border border-dashed border-white/10">
-                  <span className="text-[10px] font-mono text-white/30">-- NO_FISCAL_RECORDS_FOUND --</span>
+                  <span className="text-[10px] font-mono text-white/30">-- NO_CHARGE_ORDER_FOUND --</span>
+                  <p className="text-[9px] font-mono text-white/20 mt-2">Expected Amount: ${appt.expected_amount || "0.00"}</p>
                 </div>
               )}
             </div>

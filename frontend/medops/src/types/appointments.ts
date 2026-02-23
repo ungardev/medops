@@ -9,13 +9,26 @@ import type { IdentityPatient, IdentityDoctor, IdentityInstitution } from "./ide
 export type AppointmentStatus = "pending" | "arrived" | "in_consultation" | "completed" | "canceled";
 export type AppointmentType = "general" | "specialized";
 // =====================================================
+// TIPO PARA PAGOS (dentro de charge_order)
+// =====================================================
+export interface ChargeOrderPayment {
+  id: number;
+  amount: number;
+  method: string;
+  status: string;
+  reference_number?: string | null;
+  received_at?: string | null;
+}
+// =====================================================
 // TIPO PARA CHARGE_ORDER (del serializer)
 // =====================================================
 export interface ChargeOrderSummary {
   id: number;
   status: string;
   total_amount: number;
+  balance_due: number;
   order_number?: string;
+  payments?: ChargeOrderPayment[];
 }
 // =====================================================
 // MODELO DE CITA (lo que devuelve el backend)

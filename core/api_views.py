@@ -768,13 +768,14 @@ def appointment_search_api(request):
         return Response([])
     
     try:
-        # Buscar en múltiples campos del paciente y cita
+        # ✅ FIX: Usar campos reales de BD, no properties (full_name es property)
         appointments = Appointment.objects.filter(
-            Q(patient__full_name__icontains=q) |
+            Q(patient__first_name__icontains=q) |
+            Q(patient__last_name__icontains=q) |
             Q(patient__national_id__icontains=q) |
             Q(id__icontains=q) |
             Q(appointment_date__icontains=q)
-        ).order_by('-appointment_date')[:limit]
+        ).select_related('patient', 'doctor', 'institution').order_by('-appointment_date')[:limit]
         
         serializer = AppointmentSerializer(appointments, many=True)
         return Response(serializer.data)

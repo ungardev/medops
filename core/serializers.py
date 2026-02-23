@@ -2103,6 +2103,7 @@ class AppointmentDetailSerializer(AppointmentSerializer):
         """
         Devuelve la orden de cobro principal de la cita con lógica de prioridad.
         Prioriza: Pagada > Parcial > Abierta.
+        Incluye payments para el frontend.
         """
         order = obj.charge_orders.exclude(status="void").order_by(
             models.Case(
@@ -2116,11 +2117,25 @@ class AppointmentDetailSerializer(AppointmentSerializer):
         ).first()
         
         if order:
+            # ✅ Obtener payments de la orden
+            payments_data = []
+            for p in order.payments.filter(status='confirmed'):
+                payments_data.append({
+                    "id": p.id,
+                    "amount": float(p.amount),
+                    "method": p.method,
+                    "status": p.status,
+                    "reference_number": p.reference_number,
+                    "received_at": p.received_at.isoformat() if p.received_at else None,
+                })
+            
             return {
                 "id": order.id,
                 "status": order.status,
                 "total_amount": float(order.total),
-                "order_number": getattr(order, 'order_number', f"ORD-{order.id}")
+                "balance_due": float(order.balance_due),
+                "order_number": getattr(order, 'order_number', f"ORD-{order.id}"),
+                "payments": payments_data,
             }
         return None
 
