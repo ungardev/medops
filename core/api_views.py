@@ -1033,11 +1033,13 @@ def appointments_pending_api(request):
         return Response({"error": str(e)}, status=500)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
 def appointment_detail_api(request, pk):
     """
     Obtiene el detalle completo de una cita con datos financieros.
     Usa AppointmentDetailSerializer para incluir charge_order con payments.
+    
+    ✅ ACTUALIZADO: Ahora acepta GET, PUT, PATCH, DELETE
     """
     try:
         appointment = Appointment.objects.select_related(
@@ -1046,8 +1048,24 @@ def appointment_detail_api(request, pk):
             'diagnoses', 'documents'
         ).get(pk=pk)
         
-        serializer = AppointmentDetailSerializer(appointment)
-        return Response(serializer.data)
+        # GET - Obtener detalle
+        if request.method == 'GET':
+            serializer = AppointmentDetailSerializer(appointment)
+            return Response(serializer.data)
+        
+        # DELETE - Eliminar appointment
+        if request.method == 'DELETE':
+            appointment.delete()
+            return Response({"message": "Appointment eliminado correctamente"}, status=204)
+        
+        # PUT/PATCH - Actualizar appointment
+        if request.method in ['PUT', 'PATCH']:
+            serializer = AppointmentSerializer(appointment, data=request.data, partial=(request.method == 'PATCH'))
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=400)
+    
     except Appointment.DoesNotExist:
         return Response({"error": "Cita no encontrada"}, status=404)
     except Exception as e:
