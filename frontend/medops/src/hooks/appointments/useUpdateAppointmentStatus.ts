@@ -16,7 +16,7 @@ export function useUpdateAppointmentStatus() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
     },
   });
 }
