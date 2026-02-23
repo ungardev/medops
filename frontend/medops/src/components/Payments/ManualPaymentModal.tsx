@@ -206,6 +206,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
                 value={formData.payment_date}
                 onChange={(e) => handleInputChange('payment_date', e.target.value)}
                 className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all"
+                style={{colorScheme: 'dark'}}
                 required
               />
             </div>

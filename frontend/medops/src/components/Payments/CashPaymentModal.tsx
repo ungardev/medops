@@ -176,6 +176,7 @@ export default function CashPaymentModal({
                 onChange={handleChange}
                 max={new Date().toISOString().split('T')[0]}
                 className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-emerald-500/50 transition-all"
+                style={{colorScheme: 'dark'}}
               />
             </div>
             <div>
