@@ -1,7 +1,8 @@
 // src/components/Appointments/AppointmentEditForm.tsx
 import React, { useState, useEffect, useMemo } from "react";
-import { Appointment, AppointmentInput } from "../../types/appointments";
+import { AppointmentInput } from "../../types/appointments";
 import type { BillingItem } from "../../types/billing";
+import { useAppointment } from "../../hooks/appointments";
 import { useBillingCategories } from "@/hooks/billing/useBillingCategories";
 import { useBillingItemsSearch } from "@/hooks/billing/useBillingItems";
 import { 
@@ -15,10 +16,11 @@ import {
   DocumentTextIcon,
   TrashIcon,
   BeakerIcon,
-  ExclamationCircleIcon
+  ExclamationCircleIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline";
 interface Props {
-  appointment: Appointment;
+  appointmentId: number;
   onClose: () => void;
   onSubmit?: (id: number, data: AppointmentInput) => Promise<void> | void;
 }
@@ -29,16 +31,20 @@ interface SelectedService {
   billingItem: BillingItem;
   quantity: number;
 }
-export default function AppointmentEditForm({ appointment, onClose, onSubmit }: Props) {
+export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }: Props) {
+  // ✅ FIX: Obtener datos completos del appointment
+  const { data: appointmentData, isLoading } = useAppointment(appointmentId);
+  
   const [form, setForm] = useState<AppointmentInput>({
-    patient: appointment?.patient?.id ?? 0,
-    institution: appointment?.institution?.id ?? 0,
-    doctor: appointment?.doctor?.id ?? 0,
-    appointment_date: appointment?.appointment_date ?? "",
-    appointment_type: appointment?.appointment_type ?? "general",
-    expected_amount: String(appointment?.expected_amount ?? ""),
-    notes: appointment?.notes ?? "",
+    patient: 0,
+    institution: 0,
+    doctor: 0,
+    appointment_date: "",
+    appointment_type: "general",
+    expected_amount: "",
+    notes: "",
   });
+  
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,23 +56,50 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
   const { data: categories = [] } = useBillingCategories();
   const { data: serviceResults = [] } = useBillingItemsSearch(serviceSearch);
   
-  // Servicios seleccionados (inicializar con expected_amount si existe)
-  const [selectedServices, setSelectedServices] = useState<SelectedService[]>(() => {
-    // Si hay expected_amount, crear un servicio genérico
-    if (appointment?.expected_amount) {
-      return [{
-        billingItem: {
-          id: 0,
-          code: 'CONSULT',
-          name: 'Consulta',
-          unit_price: Number(appointment.expected_amount),
-          category: null,
-        } as BillingItem,
-        quantity: 1
-      }];
+  // ✅ FIX: Estado de servicios seleccionados
+  const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
+  
+  // ✅ FIX: Actualizar form cuando appointmentData cargue
+  useEffect(() => {
+    if (appointmentData) {
+      setForm({
+        patient: appointmentData.patient?.id ?? 0,
+        institution: appointmentData.institution?.id ?? 0,
+        doctor: appointmentData.doctor?.id ?? 0,
+        appointment_date: appointmentData.appointment_date?.slice(0, 10) ?? "",
+        appointment_type: appointmentData.appointment_type ?? "general",
+        expected_amount: String(appointmentData.expected_amount ?? ""),
+        notes: appointmentData.notes ?? "",
+      });
+      
+      // ✅ FIX: Cargar servicios desde charge_order existente
+      const items = appointmentData.charge_order?.items ?? [];
+      if (items.length > 0) {
+        setSelectedServices(items.map((item: any) => ({
+          billingItem: {
+            id: item.id,
+            code: item.code,
+            name: item.description,
+            unit_price: item.unit_price,
+            category: null,
+          } as BillingItem,
+          quantity: item.qty
+        })));
+      } else if (appointmentData.expected_amount) {
+        setSelectedServices([{
+          billingItem: {
+            id: 0,
+            code: 'CONSULT',
+            name: 'Consulta',
+            unit_price: Number(appointmentData.expected_amount),
+            category: null,
+          } as BillingItem,
+          quantity: 1
+        }]);
+      }
     }
-    return [];
-  });
+  }, [appointmentData]);
+  
   // Agrupar servicios por categoría
   const groupedServices = useMemo(() => {
     const groups: Record<string, BillingItem[]> = {};
@@ -77,6 +110,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
     });
     return groups;
   }, [serviceResults]);
+  
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasChanges) {
@@ -87,6 +121,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasChanges]);
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === "patient") return;
@@ -97,6 +132,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
+  
   const handleAddService = (item: BillingItem) => {
     const existing = selectedServices.find(s => s.billingItem.id === item.id);
     if (existing) {
@@ -111,10 +147,12 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
     setServiceSearch("");
     setHasChanges(true);
   };
+  
   const handleRemoveService = (itemId: number) => {
     setSelectedServices(prev => prev.filter(s => s.billingItem.id !== itemId));
     setHasChanges(true);
   };
+  
   const handleServiceQuantity = (itemId: number, delta: number) => {
     setSelectedServices(prev => prev.map(s => 
       s.billingItem.id === itemId 
@@ -123,10 +161,12 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
     ));
     setHasChanges(true);
   };
+  
   const totalAmount = selectedServices.reduce(
     (sum, s) => sum + (Number(s.billingItem.unit_price) * s.quantity),
     0
   );
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ appointment_date: true });
@@ -145,8 +185,8 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
         expected_amount: totalAmount.toFixed(2),
       };
       
-      if (onSubmit && appointment?.id) {
-        await onSubmit(appointment.id, payload);
+      if (onSubmit && appointmentId) {
+        await onSubmit(appointmentId, payload);
       }
       
       setHasChanges(false);
@@ -158,6 +198,18 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
       setIsSubmitting(false);
     }
   };
+  
+  // ✅ FIX: Mostrar loading mientras carga
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60]">
+        <div className="flex flex-col items-center gap-4">
+          <ArrowPathIcon className="w-8 h-8 text-white/40 animate-spin" />
+          <span className="text-[10px] font-mono text-white/40 uppercase">Loading_Record...</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[60] p-4">
       <div className="max-w-2xl w-full bg-[#0a0a0b] border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
@@ -171,7 +223,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
             <div>
               <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Record_Modification</span>
               <h2 className="text-lg font-black text-white uppercase">
-                Edit_Entry <span className="text-white/40 font-mono ml-2">#ID-{appointment?.id}</span>
+                Edit_Entry <span className="text-white/40 font-mono ml-2">#ID-{appointmentId}</span>
               </h2>
             </div>
           </div>
@@ -179,19 +231,21 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
+        
         {submitError && (
           <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 flex items-center gap-2">
             <ExclamationCircleIcon className="w-4 h-4 text-red-400" />
             <span className="text-[10px] text-red-400 font-mono">{submitError}</span>
           </div>
         )}
+        
         <div className="p-3 mx-6 mt-4 bg-blue-500/5 border-l-2 border-blue-500/50">
           <p className="text-[9px] text-blue-400/80">SYSTEM_NOTICE: Subject identity locked. Services and date can be modified.</p>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           
-          {/* PATIENT (LOCKED) */}
+          {/* PATIENT (LOCKED) - ✅ Ahora muestra datos correctos */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
               <UserIcon className="w-3 h-3" /> Locked_Subject
@@ -199,12 +253,13 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
             <div className="p-3 bg-white/5 border border-white/10 flex items-center gap-3 opacity-80">
               <UserCircleIcon className="w-6 h-6 text-blue-400" />
               <div>
-                <p className="text-sm font-bold text-white">{appointment?.patient?.full_name || "UNKNOWN"}</p>
-                <span className="text-[9px] text-white/40">ID: {appointment?.patient?.id} | DOC: {appointment?.patient?.national_id || "N/A"}</span>
+                <p className="text-sm font-bold text-white">{appointmentData?.patient?.full_name || "UNKNOWN"}</p>
+                <span className="text-[9px] text-white/40">ID: {appointmentData?.patient?.id} | DOC: {appointmentData?.patient?.national_id || "N/A"}</span>
               </div>
             </div>
           </div>
-          {/* INSTITUTION (LOCKED) */}
+          
+          {/* INSTITUTION (LOCKED) - ✅ Ahora muestra datos correctos */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
               <BuildingOfficeIcon className="w-3 h-3" /> Medical_Center
@@ -212,19 +267,21 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
             <div className="p-3 bg-white/5 border border-white/10 flex items-center gap-3 opacity-60">
               <BuildingOfficeIcon className="w-5 h-5 text-purple-400" />
               <div>
-                <p className="text-sm font-bold text-white">{appointment?.institution?.name || "UNKNOWN"}</p>
-                <span className="text-[9px] text-white/40">TAX_ID: {appointment?.institution?.tax_id || "N/A"}</span>
+                <p className="text-sm font-bold text-white">{appointmentData?.institution?.name || "UNKNOWN_INSTITUTION"}</p>
+                <span className="text-[9px] text-white/40">TAX_ID: {appointmentData?.institution?.tax_id || "N/A"}</span>
               </div>
             </div>
           </div>
-          {/* DOCTOR */}
+          
+          {/* DOCTOR - ✅ Ahora muestra datos correctos */}
           <div className="p-3 bg-white/5 border border-white/10 flex items-center gap-3">
             <UserCircleIcon className="w-6 h-6 text-blue-400" />
             <div>
               <span className="text-[8px] text-white/40 uppercase">Attending_Physician</span>
-              <p className="text-sm font-bold text-white">{appointment?.doctor?.full_name || "NOT_CONFIGURED"}</p>
+              <p className="text-sm font-bold text-white">{appointmentData?.doctor?.full_name || "UNKNOWN_DOCTOR"}</p>
             </div>
           </div>
+          
           {/* SERVICES */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
@@ -280,6 +337,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               </div>
             )}
           </div>
+          
           {/* DATE */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
@@ -295,6 +353,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
             />
             {errors.appointment_date && <span className="text-[9px] text-red-400">{errors.appointment_date}</span>}
           </div>
+          
           {/* NOTES */}
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
@@ -308,6 +367,7 @@ export default function AppointmentEditForm({ appointment, onClose, onSubmit }: 
               className="w-full bg-black/40 border border-white/10 px-3 py-2 text-sm font-mono text-white"
             />
           </div>
+          
           {/* ACTIONS */}
           <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
             <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 text-[10px] font-black uppercase text-white/40 hover:text-white">

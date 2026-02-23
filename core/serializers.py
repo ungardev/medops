@@ -1434,7 +1434,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 try:
                     billing_item = BillingItem.objects.get(
                         id=billing_item_id,
-                        institution=appointment.institution,
                         is_active=True
                     )
                     

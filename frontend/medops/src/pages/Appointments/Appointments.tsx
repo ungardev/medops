@@ -10,7 +10,6 @@ import {
   ChartBarIcon, 
   ArrowPathIcon 
 } from "@heroicons/react/24/outline";
-
 // Componentes
 import AppointmentsList from "components/Appointments/AppointmentsList";
 import AppointmentForm from "components/Appointments/AppointmentForm";
@@ -20,7 +19,6 @@ import AppointmentFilters from "components/Appointments/AppointmentFilters";
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
 import Pagination from "components/Common/Pagination";
 import PageHeader from "../../components/Common/PageHeader"; 
-
 // Hooks
 import {
   useCreateAppointment,
@@ -30,42 +28,35 @@ import {
 } from "hooks/appointments";
 import { useAllAppointments } from "hooks/appointments/useAllAppointments";
 import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch";
-
 export default function Appointments() {
-  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [viewingAppointment, setViewingAppointment] = useState<Appointment | null>(null);
+  // ✅ CAMBIO: Usar IDs en lugar de objetos completos
+  const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
+  const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [statusFilter, setStatusFilter] = useState<AppointmentStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-
   // 1. DATA LOADING
   const { data: allData, isLoading, isFetching, error } = useAllAppointments();
   const allAppointments = allData?.list ?? [];
-
   // 2. SEARCH LOADING
   const { data: searchResults = [], isLoading: isSearching } = useAppointmentsSearch(search);
-
   // 3. MUTATIONS
   const createMutation = useCreateAppointment();
   const updateMutation = useUpdateAppointment();
   const cancelMutation = useCancelAppointment();
   const statusMutation = useUpdateAppointmentStatus();
-
   // Métricas para el PageHeader
   const todayStr = moment().format("YYYY-MM-DD");
   const appointmentsToday = allAppointments.filter(a => a.appointment_date.startsWith(todayStr)).length;
   const pendingCount = allAppointments.filter(a => a.status === 'pending').length;
-
   useEffect(() => {
     setCurrentPage(1);
   }, [search, statusFilter, selectedDate]);
-
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const statusParam = params.get("status") as AppointmentStatus | null;
@@ -76,47 +67,35 @@ export default function Appointments() {
       }, 300);
     }
   }, [location.search]);
-
   const saveAppointment = (data: AppointmentInput, id?: number) => {
     if (id) {
       updateMutation.mutate({ id, data });
-      setEditingAppointment(null);
+      setEditingAppointmentId(null);
     } else {
       createMutation.mutate(data);
       setShowCreateForm(false);
     }
   };
-
-  //const deleteAppointmentSafe = (id: number) => {
-  //  if (window.confirm("CONFIRM_ACTION: ELIMINATE_RECORD_PERMANENTLY?")) {
-  //    cancelMutation.mutate(id);
-  //  }
-  //};
-
   const isSearchingActive = search.trim().length > 0;
-
   const localFiltered = allAppointments
     .filter((appt) => 
       selectedDate ? moment(appt.appointment_date).isSame(selectedDate, "day") : true
     )
     .filter((appt) => (statusFilter === "all" ? true : appt.status === statusFilter))
     .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
-
   const finalAppointments = isSearchingActive ? searchResults : localFiltered;
   const totalItems = finalAppointments.length;
   const paginatedAppointments = isSearchingActive 
     ? finalAppointments 
     : finalAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-
   if (error) return (
     <div className="p-10 border border-red-500 bg-red-500/10 text-red-500 font-mono text-xs uppercase">
       Critical_Data_Link_Failure // Error loading appointments
     </div>
   );
-
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
-      
+       
       {/* HEADER ELITE */}
       <PageHeader 
         breadcrumbs={[
@@ -151,7 +130,6 @@ export default function Appointments() {
           </div>
         }
       />
-
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* COLUMNA IZQUIERDA: CALENDARIO */}
         <div className="xl:col-span-5 space-y-6">
@@ -163,11 +141,10 @@ export default function Appointments() {
             <CalendarGrid
               appointments={allAppointments} 
               onSelectDate={(date: Date) => setSelectedDate(date)}
-              onSelectAppointment={(appt: Appointment) => setViewingAppointment(appt)}
+              onSelectAppointment={(appt: Appointment) => setViewingAppointmentId(appt.id)}
             />
           </section>
         </div>
-
         {/* COLUMNA DERECHA: LISTA Y CONTROLES */}
         <div className="xl:col-span-7 space-y-4" ref={listRef}>
           <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md p-4 space-y-4 rounded-sm">
@@ -187,7 +164,6 @@ export default function Appointments() {
                 <AppointmentFilters activeFilter={statusFilter} onFilterChange={setStatusFilter} />
               )}
             </div>
-
             <div className="relative group">
               <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/20'}`} />
               <input
@@ -202,16 +178,14 @@ export default function Appointments() {
               )}
             </div>
           </div>
-
           <div className="border border-white/10 bg-[#0a0a0b]/40 overflow-hidden min-h-[450px] rounded-sm">
             <AppointmentsList
               appointments={paginatedAppointments}
-              onEdit={(a: Appointment) => setViewingAppointment(a)}
+              onEdit={(a: Appointment) => setViewingAppointmentId(a.id)}
               onDelete={() => {}}
               onStatusChange={(id: number, status: AppointmentStatus) => statusMutation.mutate({ id, status })}
             />
           </div>
-
           {/* PAGINACIÓN TÉCNICA */}
           {!isSearchingActive && totalItems > 0 && (
             <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md px-4 py-3 flex justify-between items-center rounded-sm">
@@ -228,23 +202,22 @@ export default function Appointments() {
           )}
         </div>
       </div>
-
       {/* MODALS */}
       {showCreateForm && (
         <AppointmentForm onSubmit={(data) => saveAppointment(data)} onClose={() => setShowCreateForm(false)} />
       )}
-      {viewingAppointment && (
+      {viewingAppointmentId && (
         <AppointmentDetail
-          appointment={viewingAppointment}
-          onClose={() => setViewingAppointment(null)}
-          onEdit={(appt: Appointment) => { setViewingAppointment(null); setEditingAppointment(appt); }}
+          appointmentId={viewingAppointmentId}
+          onClose={() => setViewingAppointmentId(null)}
+          onEdit={(id: number) => { setViewingAppointmentId(null); setEditingAppointmentId(id); }}
         />
       )}
-      {editingAppointment && (
+      {editingAppointmentId && (
         <AppointmentEditForm
-          appointment={editingAppointment}
+          appointmentId={editingAppointmentId}
           onSubmit={(id, data) => saveAppointment(data, id)}
-          onClose={() => setEditingAppointment(null)}
+          onClose={() => setEditingAppointmentId(null)}
         />
       )}
     </div>
