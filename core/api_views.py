@@ -23,14 +23,14 @@ import json
 import hashlib
 import hmac
 import uuid
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, cast, Any
 from rest_framework import filters
 from django_filters.rest_framework import DjangoFilterBackend
 import qrcode
 import base64
 from io import BytesIO
 from .services import generate_audit_code
-from typing import cast, Any
+import traceback
 
 
 logger = logging.getLogger(__name__)
@@ -1604,8 +1604,27 @@ def notifications_api(request):
         
         return Response(no_activity)
     except Exception as e:
-        logger.error(f"Error en notifications_api: {str(e)}")
-        return Response({"error": str(e)}, status=500)
+        logger.error(f"Error en notifications_api: {str(e)}\n{traceback.format_exc()}")
+        # En lugar de devolver 500, devolver datos seguros
+        return Response([
+            {
+                "id": 0,
+                "timestamp": datetime.now().isoformat(),
+                "actor": "Sistema",
+                "entity": "Dashboard",
+                "entity_id": 0,
+                "action": "error",
+                "metadata": {"message": "Error al cargar notificaciones"},
+                "severity": "warning",
+                "notify": False,
+                "title": "Error de sistema",
+                "description": "Contacte al administrador",
+                "category": "system.error",
+                "action_label": "Reintentar",
+                "action_href": None,
+                "badge_action": "error",
+            }
+        ])
 
 
 # PDF y Generación
