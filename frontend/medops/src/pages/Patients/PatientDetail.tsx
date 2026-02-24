@@ -1,6 +1,7 @@
 // src/pages/Patients/PatientDetail.tsx
 import { useParams, useSearchParams } from "react-router-dom";
 import { usePatient } from "../../hooks/patients/usePatient";
+import { useConsultationsByPatient } from "../../hooks/patients/useConsultationsByPatient";
 import { Tabs, Tab } from "../../components/ui/Tabs";
 // Componentes de Pestañas
 import PatientInfoTab from "../../components/Patients/PatientInfoTab";
@@ -18,9 +19,23 @@ import {
   IdentificationIcon, 
   HeartIcon, 
   GlobeAltIcon,
-  UserIcon
+  UserIcon,
+  BeakerIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { apiFetch } from "../../api/client";
+// 🆕 OPCIONES DE TIPOS DE SANGRE DEL MODELO PATIENT
+const BLOOD_TYPE_OPTIONS = [
+  { value: "A+", label: "A+" },
+  { value: "A-", label: "A-" },
+  { value: "B+", label: "B+" },
+  { value: "B-", label: "B-" },
+  { value: "AB+", label: "AB+" },
+  { value: "AB-", label: "AB-" },
+  { value: "O+", label: "O+" },
+  { value: "O-", label: "O-" },
+];
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -44,6 +59,63 @@ export default function PatientDetail() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
+  
+  // 🆕 ESTADO PARA BLOOD_TYPE EDITABLE
+  const [editableBloodType, setEditableBloodType] = useState<string>("");
+  const [isUpdatingBloodType, setIsUpdatingBloodType] = useState(false);
+  // 🆕 OBTENER APPOINTMENTS COMPLETADOS DEL PACIENTE
+  const { data: completedConsultations } = useConsultationsByPatient(patientId);
+  // 🆕 CORRECCIÓN: El hook devuelve { list: Appointment[], totalCount: number }
+  const appointmentsList = completedConsultations?.list ?? [];
+  // 🆕 SYNCHRONIZE blood_type CUANDO CAMBIA EL PACIENTE
+  useEffect(() => {
+    if (patient?.blood_type) {
+      setEditableBloodType(patient.blood_type);
+    }
+  }, [patient?.blood_type]);
+  // 🆕 OBTENER WEIGHT Y HEIGHT DEL ÚLTIMO APPOINTMENT COMPLETADO
+  const latestBiometrics = useMemo(() => {
+    if (!appointmentsList || appointmentsList.length === 0) {
+      return { weight: null, height: null };
+    }
+    
+    // Ordenar por fecha descendente (más reciente primero)
+    const sorted = [...appointmentsList].sort((a, b) => {
+      const dateA = new Date(a.appointment_date || 0).getTime();
+      const dateB = new Date(b.appointment_date || 0).getTime();
+      return dateB - dateA;
+    });
+    
+    // Buscar el primer appointment con weight o height
+    for (const appt of sorted) {
+      if (appt.weight || appt.height) {
+        return { 
+          weight: appt.weight ? Number(appt.weight) : null, 
+          height: appt.height ? Number(appt.height) : null 
+        };
+      }
+    }
+    
+    return { weight: null, height: null };
+  }, [appointmentsList]);
+  // 🆕 FUNCIÓN PARA GUARDAR BLOOD_TYPE
+  const handleBloodTypeSave = async (newBloodType: string) => {
+    if (!patientId) return;
+    
+    setIsUpdatingBloodType(true);
+    try {
+      await apiFetch(`patients/${patientId}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blood_type: newBloodType }),
+      });
+      setEditableBloodType(newBloodType);
+    } catch (err) {
+      console.error("Error updating blood_type:", err);
+    } finally {
+      setIsUpdatingBloodType(false);
+    }
+  };
   
   useEffect(() => {
     const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
@@ -73,9 +145,13 @@ export default function PatientDetail() {
       </div>
     </div>
   );
+  // 🆕 FORMATEAR VALORES BIOMÉTRICOS
+  const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} KG` : "--";
+  const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
+  const bloodTypeDisplay = editableBloodType || "--";
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      
+       
       {/* 🚀 ELITE_PAGE_HEADER: IDENTITY & TELEMETRY */}
       <PageHeader 
         breadcrumbs={[
@@ -92,28 +168,51 @@ export default function PatientDetail() {
           { 
             label: "BIOMETRIC_AGE", 
             value: `${patient.age || '--'} YRS`,
-            color: "text-blue-500"
+            color: "text-purple-400"
           },
           { 
             label: "MASS_INDEX", 
-            value: `${patient.weight || '--'} KG`,
-            color: "text-white/60"
+            value: weightDisplay,
+            color: weightDisplay !== "--" ? "text-orange-400" : "text-white/30"
           },
           { 
             label: "HEIGHT_INDEX", 
-            value: `${patient.height || '--'} CM`,
-            color: "text-white/60"
+            value: heightDisplay,
+            color: heightDisplay !== "--" ? "text-cyan-400" : "text-white/30"
           }
         ]}
         actions={
           <div className="flex items-center gap-3">
-             <div className="flex flex-col items-end px-3 border-r border-white/10">
-                 <span className="text-[8px] font-mono text-white/30 uppercase tracking-tighter">Blood_Group</span>
-                 <span className="text-xs font-black text-red-500">{patient.blood_type || 'N/A'}</span>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
-                 <UserIcon className="w-5 h-5 text-blue-500" />
-              </div>
+            {/* 🆕 SELECTOR DE BLOOD_GROUP EDITABLE */}
+            <div className="flex items-center gap-2">
+              <BeakerIcon className="w-4 h-4 text-red-400" />
+              <select
+                value={editableBloodType}
+                onChange={(e) => {
+                  setEditableBloodType(e.target.value);
+                  handleBloodTypeSave(e.target.value);
+                }}
+                disabled={isUpdatingBloodType}
+                className="bg-black/40 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase px-3 py-2 rounded-sm focus:outline-none focus:border-red-500/50"
+              >
+                <option value="">SELECT</option>
+                {BLOOD_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {isUpdatingBloodType && (
+                <ArrowPathIcon className="w-4 h-4 text-red-400 animate-spin" />
+              )}
+            </div>
+            <div className="flex flex-col items-end px-3 border-r border-white/10">
+                <span className="text-[8px] font-mono text-white/30 uppercase tracking-tighter">Blood_Group</span>
+                <span className="text-xs font-black text-red-500">{bloodTypeDisplay}</span>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
+               <UserIcon className="w-5 h-5 text-blue-500" />
+            </div>
           </div>
         }
       />

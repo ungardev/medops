@@ -1382,6 +1382,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             # ✅ Nuevos campos
             "services",
             "initial_payment",
+            # 🆕 MÉTRICAS ANTROPOMÉTRICAS
+            "weight",
+            "height",
         ]
         read_only_fields = ["id"]
         

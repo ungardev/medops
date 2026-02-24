@@ -89,6 +89,10 @@ export interface Appointment {
   // Metadatos
   created_at?: string;
   updated_at?: string;
+  
+  // 🆕 MÉTRICAS ANTROPOMÉTRICAS
+  weight?: number | string | null;
+  height?: number | string | null;
 }
 // =====================================================
 // APPOINTMENT UI (para componentes)

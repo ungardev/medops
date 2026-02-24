@@ -248,12 +248,10 @@ class Appointment(models.Model):
         ('completed', 'Completed'),
         ('canceled', 'Canceled'),
     ]
-
     TYPE_CHOICES = [
         ('general', 'Consulta General'),
         ('specialized', 'Consulta Especializada'),
     ]
-
     # --- RELACIONES DE PODER ---
     patient = models.ForeignKey(
         'Patient', 
@@ -276,7 +274,6 @@ class Appointment(models.Model):
         related_name='appointments',
         verbose_name="Médico tratante"
     )
-
     # --- DATOS TEMPORALES Y ESTADO ---
     appointment_date = models.DateField()
     status = models.CharField(
@@ -292,7 +289,6 @@ class Appointment(models.Model):
         default='general',
         verbose_name="Tipo de consulta"
     )
-
     # --- BRAZO FINANCIERO INICIAL ---
     expected_amount = models.DecimalField(
         max_digits=10,
@@ -301,19 +297,31 @@ class Appointment(models.Model):
         verbose_name="Monto esperado (Sede)"
     )
     
+    # --- MÉTRICAS ANTROPOMÉTRICAS (🆕 AGREGADOS) ---
+    weight = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        null=True, 
+        blank=True, 
+        help_text="Peso del paciente en kg"
+    )
+    height = models.DecimalField(
+        max_digits=5, 
+        decimal_places=2, 
+        null=True, 
+        blank=True, 
+        help_text="Altura del paciente en cm"
+    )
+    
     notes = models.TextField(blank=True, null=True)
-
     # --- MÉTRICAS DE TIEMPO ---
     started_at = models.DateTimeField(blank=True, null=True, verbose_name="Inicio de consulta")
     completed_at = models.DateTimeField(blank=True, null=True, verbose_name="Finalización de consulta")
-
     history = HistoricalRecords()
-
     class Meta:
         verbose_name = "Cita Médica"
         verbose_name_plural = "Citas Médicas"
         ordering = ['-appointment_date', 'arrival_time']
-
     def __str__(self):
         return f"{self.patient} - {self.institution.name} - {self.appointment_date}"
 

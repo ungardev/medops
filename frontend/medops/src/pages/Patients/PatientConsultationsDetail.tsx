@@ -12,17 +12,31 @@ import ConsultationWorkflow from "../../components/Consultation/ConsultationWork
 import ConsultationDocumentsActions from "../../components/Consultation/ConsultationDocumentsActions";
 import ExportSuccessToast from "../../components/Common/ExportSuccessToast";
 import ExportErrorToast from "../../components/Common/ExportErrorToast";
+import { apiFetch } from "../../api/client";
 import { 
   LockClosedIcon, 
   PencilSquareIcon, 
   CommandLineIcon,
   ShieldCheckIcon,
   ClockIcon,
-  CalendarIcon
+  CalendarIcon,
+  BeakerIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline";
 // 🆕 IMPORTACIONES CRÍTICAS PARA EL FUNCIONAMIENTO PERFECTO
 import { getPatient } from "../../api/patients";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
+// 🆕 OPCIONES DE TIPOS DE SANGRE DEL MODELO PATIENT
+const BLOOD_TYPE_OPTIONS = [
+  { value: "A+", label: "A+" },
+  { value: "A-", label: "A-" },
+  { value: "B+", label: "B+" },
+  { value: "B-", label: "B-" },
+  { value: "AB+", label: "AB+" },
+  { value: "AB-", label: "AB-" },
+  { value: "O+", label: "O+" },
+  { value: "O-", label: "O-" },
+];
 export default function PatientConsultationsDetail() {
   const { patientId, appointmentId } = useParams<{ patientId: string; appointmentId: string }>();
   const appointmentIdNum = Number(appointmentId);
@@ -38,6 +52,34 @@ export default function PatientConsultationsDetail() {
     const saved = localStorage.getItem("consultationReadOnly");
     return saved ? JSON.parse(saved) : true;
   });
+  
+  // 🆕 ESTADO PARA BLOOD_TYPE EDITABLE
+  const [editableBloodType, setEditableBloodType] = useState<string>("");
+  const [isUpdatingBloodType, setIsUpdatingBloodType] = useState(false);
+  // 🆕 ACTUALIZAR blood_type CUANDO CAMBIA EL PACIENTE
+  useEffect(() => {
+    if (patientProfile?.blood_type) {
+      setEditableBloodType(patientProfile.blood_type);
+    }
+  }, [patientProfile?.blood_type]);
+  // 🆕 FUNCIÓN PARA GUARDAR BLOOD_TYPE
+  const handleBloodTypeSave = async (newBloodType: string) => {
+    const patientIdNum = Number(patientProfile?.id || patientId);
+    if (!patientIdNum) return;
+    setIsUpdatingBloodType(true);
+    try {
+      await apiFetch(`patients/${patientIdNum}/`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blood_type: newBloodType }),
+      });
+      setPatientProfile((prev: any) => ({ ...prev, blood_type: newBloodType }));
+    } catch (error) {
+      console.error("Error updating blood_type:", error);
+    } finally {
+      setIsUpdatingBloodType(false);
+    }
+  };
   
   // 🆕 EFECTO PARA CARGAR PERFIL COMPLETO DEL PACIENTE
   useEffect(() => {
@@ -124,10 +166,15 @@ export default function PatientConsultationsDetail() {
     `PATIENTE_${appointment?.patient?.id || 'UNKNOWN'}`;
   const sessionDate = appointment.appointment_date || "";
   const statusLabel = appointment.status_display || appointment.status || "N/A";
+  // 🆕 DATOS BIOMÉTRICOS DEL PACIENTE
+  const biometricAge = patient?.age ?? "--";
+  const massIndex = patient?.weight ? `${patient.weight} kg` : "--";
+  const heightIndex = patient?.height ? `${patient.height} cm` : "--";
+  const bloodGroup = patient?.blood_type || "--";
   
   return (
     <div className="min-h-screen bg-black text-white p-4 lg:p-6 space-y-6">
-      
+       
       {/* 🚀 HEADER: Navegación de Carpeta Clínica */}
       <PageHeader 
         breadcrumbs={[
@@ -160,13 +207,59 @@ export default function PatientConsultationsDetail() {
             label: "CORE_STATUS", 
             value: statusLabel.toUpperCase(),
             color: "text-emerald-500"
-          }
+          },
+          // 🆕 NUEVOS CAMPOS BIOMÉTRICOS
+          { 
+            label: "BIOMETRIC_AGE", 
+            value: `${biometricAge} Years`,
+            color: "text-purple-400"
+          },
+          { 
+            label: "MASS_INDEX", 
+            value: massIndex,
+            color: massIndex !== "--" ? "text-orange-400" : "text-white/30"
+          },
+          { 
+            label: "HEIGHT_INDEX", 
+            value: heightIndex,
+            color: heightIndex !== "--" ? "text-cyan-400" : "text-white/30"
+          },
+          { 
+            label: "BLOOD_GROUP", 
+            value: bloodGroup,
+            color: bloodGroup !== "--" ? "text-red-400" : "text-white/30"
+          },
         ]}
         actions={
           <div className="flex items-center gap-3 px-3">
-             <div className="h-10 w-10 flex items-center justify-center bg-blue-500/10 border border-blue-500/20 rounded-sm">
-                <CommandLineIcon className="w-5 h-5 text-blue-500" />
-             </div>
+            {/* 🆕 SELECTOR DE BLOOD_GROUP EDITABLE */}
+            {!readOnly && (
+              <div className="flex items-center gap-2">
+                <BeakerIcon className="w-4 h-4 text-red-400" />
+                <select
+                  value={editableBloodType}
+                  onChange={(e) => {
+                    setEditableBloodType(e.target.value);
+                    handleBloodTypeSave(e.target.value);
+                  }}
+                  disabled={isUpdatingBloodType}
+                  className="bg-black/40 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase px-3 py-2 rounded-sm focus:outline-none focus:border-red-500/50"
+                >
+                  <option value="">SELECT_BLOOD_TYPE</option>
+                  {BLOOD_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {isUpdatingBloodType && (
+                  <ArrowPathIcon className="w-4 h-4 text-red-400 animate-spin" />
+                )}
+              </div>
+            )}
+            <div className="h-10 w-10 flex items-center justify-center bg-blue-500/10 border border-blue-500/20 rounded-sm">
+               <CommandLineIcon className="w-5 h-5 text-blue-500" />
+            </div>
           </div>
         }
       />
