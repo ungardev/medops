@@ -371,14 +371,39 @@ class Appointment(models.Model):
     def update_status(self, new_status: str):
         self.status = new_status
         updated_fields = ["status"]
-
         if new_status == "in_consultation":
             self.started_at = timezone.now()
             updated_fields.append("started_at")
         elif new_status == "completed":
             self.completed_at = timezone.now()
             updated_fields.append("completed_at")
-
+        elif new_status == "canceled":
+            # Sincronizar ChargeOrder: solo se puede cancelar si no hay pagos confirmados
+            for order in self.charge_orders.exclude(status__in=['void', 'waived', 'canceled']):
+                if order.payments.filter(status='confirmed').exists():
+                    raise ValidationError(
+                        f"No se puede cancelar: La orden #{order.id} tiene pagos confirmados. "
+                        "Reversa los pagos primero."
+                    )
+                try:
+                    order.status = 'void'
+                    order.save(update_fields=['status'])
+                    # Registrar evento de auditoría
+                    Event = apps.get_model('core', 'Event')
+                    Event.objects.create(
+                        entity='ChargeOrder',
+                        entity_id=order.pk,
+                        action='void_by_appointment_cancel',
+                        metadata={
+                            'appointment_id': self.pk,
+                            'reason': 'Appointment canceled by user'
+                        },
+                        institution=self.institution,
+                        severity='warning',
+                        notify=True
+                    )
+                except Exception:
+                    pass  # Si ya está void, ignorar
         self.save(update_fields=updated_fields)
 
     def mark_arrived(self, priority: str = "normal", source_type: str = "scheduled"):
