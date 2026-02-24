@@ -1372,6 +1372,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
     # ✅ NUEVO: Pago inicial opcional
     initial_payment = serializers.DictField(required=False, write_only=True)
     
+    # 🆕 AGREGADO: VitalSigns para obtener peso y talla desde signos vitales
+    vital_signs = VitalSignsSerializer(read_only=True)
+    
     class Meta:
         model = Appointment
         fields = [
@@ -1382,9 +1385,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
             # ✅ Nuevos campos
             "services",
             "initial_payment",
-            # 🆕 MÉTRICAS ANTROPOMÉTRICAS
+            # 🆕 MÉTRICAS ANTROPOMÉTRICAS del Appointment
             "weight",
             "height",
+            # 🆕 AGREGADO: VitalSigns (peso y talla desde signos vitales)
+            "vital_signs",
         ]
         read_only_fields = ["id"]
         
