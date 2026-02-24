@@ -649,6 +649,118 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         except Exception as e:
             logger.error(f"Error creando pago: {str(e)}")
             return Response({"error": str(e)}, status=500)
+    
+    @action(detail=True, methods=['post'])
+    def void(self, request, pk=None):
+        """
+        Anular una orden de cobro (void).
+        POST /api/charge-orders/{id}/void/
+        """
+        try:
+            charge_order = self.get_object()
+            
+            # Validaciones de negocio
+            if charge_order.status == 'paid':
+                return Response(
+                    {"error": "No se puede anular una orden completamente pagada. Reversa los pagos primero."},
+                    status=400
+                )
+            
+            if charge_order.status == 'void':
+                return Response(
+                    {"error": "La orden ya está anulada."},
+                    status=400
+                )
+            
+            if charge_order.status == 'waived':
+                return Response(
+                    {"error": "No se puede anular una orden exonerada."},
+                    status=400
+                )
+            
+            # Verificar pagos confirmados
+            confirmed_payments = charge_order.payments.filter(status='confirmed').exists()
+            if confirmed_payments:
+                return Response(
+                    {"error": "La orden tiene pagos confirmados. Reversa los pagos primero."},
+                    status=400
+                )
+            
+            # Anular la orden
+            charge_order.status = 'void'
+            charge_order.save(update_fields=['status'])
+            
+            # Registrar evento de auditoría
+            Event = apps.get_model('core', 'Event')
+            Event.objects.create(
+                entity='ChargeOrder',
+                entity_id=charge_order.pk,
+                action='void',
+                metadata={'actor': str(request.user) if request.user.is_authenticated else 'system'},
+                institution=charge_order.institution,
+                severity='warning',
+                notify=True
+            )
+            
+            return Response({"status": "void", "message": "Orden anulada correctamente"})
+        
+        except Exception as e:
+            logger.error(f"Error anulando orden: {str(e)}")
+            return Response({"error": str(e)}, status=500)
+    
+    @action(detail=True, methods=['post'])
+    def waive(self, request, pk=None):
+        """
+        Exonerar una orden de cobro (waive).
+        POST /api/charge-orders/{id}/waive/
+        """
+        try:
+            charge_order = self.get_object()
+            
+            # Validaciones de negocio
+            if charge_order.status == 'void':
+                return Response(
+                    {"error": "No se puede exonerar una orden anulada."},
+                    status=400
+                )
+            
+            if charge_order.status == 'waived':
+                return Response(
+                    {"error": "La orden ya está exonerada."},
+                    status=400
+                )
+            
+            if charge_order.status == 'paid':
+                return Response(
+                    {"error": "La orden ya está pagada. No necesita exoneración."},
+                    status=400
+                )
+            
+            # Exonerar la orden
+            charge_order.status = 'waived'
+            charge_order.balance_due = 0
+            charge_order.save(update_fields=['status', 'balance_due'])
+            
+            # Registrar evento de auditoría
+            Event = apps.get_model('core', 'Event')
+            Event.objects.create(
+                entity='ChargeOrder',
+                entity_id=charge_order.pk,
+                action='waive',
+                metadata={
+                    'actor': str(request.user) if request.user.is_authenticated else 'system',
+                    'reason': request.data.get('reason', 'Exoneración manual')
+                },
+                institution=charge_order.institution,
+                severity='info',
+                notify=True
+            )
+            
+            return Response({"status": "waived", "message": "Orden exonerada correctamente"})
+        
+        except Exception as e:
+            logger.error(f"Error exonerando orden: {str(e)}")
+            return Response({"error": str(e)}, status=500)
 
 
 class ChargeItemViewSet(viewsets.ModelViewSet): queryset = ChargeItem.objects.all(); serializer_class = ChargeItemSerializer
