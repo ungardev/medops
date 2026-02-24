@@ -52,6 +52,28 @@ function normalizeTab(id?: string): string {
   if (!id) return "info";
   return map[id.toLowerCase()] ?? id;
 }
+// 🆕 INTERFACE PARA VITAL SIGNS
+interface VitalSignsData {
+  id: number;
+  weight?: string | null;
+  height?: string | null;
+  temperature?: string | null;
+  bp_systolic?: number | null;
+  bp_diastolic?: number | null;
+  heart_rate?: number | null;
+  respiratory_rate?: number | null;
+  oxygen_saturation?: number | null;
+  bmi?: number | null;
+}
+// 🆕 INTERFACE PARA APPOINTMENT CON VITAL SIGNS
+interface AppointmentWithVitals {
+  id: number;
+  appointment_date: string;
+  status: string;
+  vital_signs?: VitalSignsData | null;
+  weight?: string | number | null;
+  height?: string | number | null;
+}
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
@@ -66,14 +88,14 @@ export default function PatientDetail() {
   // 🆕 OBTENER APPOINTMENTS COMPLETADOS DEL PACIENTE
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
   // 🆕 CORRECCIÓN: El hook devuelve { list: Appointment[], totalCount: number }
-  const appointmentsList = completedConsultations?.list ?? [];
+  const appointmentsList: AppointmentWithVitals[] = completedConsultations?.list ?? [];
   // 🆕 SYNCHRONIZE blood_type CUANDO CAMBIA EL PACIENTE
   useEffect(() => {
     if (patient?.blood_type) {
       setEditableBloodType(patient.blood_type);
     }
   }, [patient?.blood_type]);
-  // 🆕 OBTENER WEIGHT Y HEIGHT DEL ÚLTIMO APPOINTMENT COMPLETADO
+  // 🆕 OBTENER WEIGHT Y HEIGHT DEL ÚLTIMO APPOINTMENT COMPLETADO (DESDE VITAL_SIGNS)
   const latestBiometrics = useMemo(() => {
     if (!appointmentsList || appointmentsList.length === 0) {
       return { weight: null, height: null };
@@ -86,8 +108,16 @@ export default function PatientDetail() {
       return dateB - dateA;
     });
     
-    // Buscar el primer appointment con weight o height
+    // Buscar el primer appointment con vital_signs
     for (const appt of sorted) {
+      // 🆕 FIX: Leer desde vital_signs primero (viene del backend con datos)
+      if (appt.vital_signs?.weight || appt.vital_signs?.height) {
+        return { 
+          weight: appt.vital_signs?.weight ? Number(appt.vital_signs.weight) : null, 
+          height: appt.vital_signs?.height ? Number(appt.vital_signs.height) : null 
+        };
+      }
+      // Fallback: leer desde campos directos del appointment
       if (appt.weight || appt.height) {
         return { 
           weight: appt.weight ? Number(appt.weight) : null, 
@@ -145,10 +175,25 @@ export default function PatientDetail() {
       </div>
     </div>
   );
+  // 🆕 CALCULAR EDAD DESDE birthdate SI NO VIENE DEL BACKEND
+  const calculateAge = (birthdate: string | null | undefined): number | null => {
+    if (!birthdate) return null;
+    const birth = new Date(birthdate);
+    const today = new Date();
+    const age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      return age - 1;
+    }
+    return age;
+  };
+  
+  const patientAge = patient.age ?? calculateAge(patient.birthdate);
   // 🆕 FORMATEAR VALORES BIOMÉTRICOS
   const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} KG` : "--";
   const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
   const bloodTypeDisplay = editableBloodType || "--";
+  const ageDisplay = patientAge ? `${patientAge} YRS` : "--";
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
        
@@ -167,8 +212,8 @@ export default function PatientDetail() {
           },
           { 
             label: "BIOMETRIC_AGE", 
-            value: `${patient.age || '--'} YRS`,
-            color: "text-purple-400"
+            value: ageDisplay,
+            color: ageDisplay !== "--" ? "text-purple-400" : "text-white/30"
           },
           { 
             label: "MASS_INDEX", 
