@@ -116,6 +116,7 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
               value={form.date_administered}
               onChange={(e) => setForm({ ...form, date_administered: e.target.value })}
               className={inputStyles}
+              style={{ colorScheme: 'dark' }}
             />
           </div>
           <div>
