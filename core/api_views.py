@@ -821,7 +821,22 @@ class FamilyHistoryViewSet(viewsets.ModelViewSet): queryset = FamilyHistory.obje
 class SurgeryViewSet(viewsets.ModelViewSet): queryset = Surgery.objects.all(); serializer_class = SurgerySerializer
 class HabitViewSet(viewsets.ModelViewSet): queryset = Habit.objects.all(); serializer_class = HabitSerializer
 class VaccineViewSet(viewsets.ModelViewSet): queryset = Vaccine.objects.all(); serializer_class = VaccineSerializer
-class VaccinationScheduleViewSet(viewsets.ModelViewSet): queryset = VaccinationSchedule.objects.all(); serializer_class = VaccinationScheduleSerializer
+
+
+class VaccinationScheduleViewSet(viewsets.ModelViewSet):
+    queryset = VaccinationSchedule.objects.all()
+    serializer_class = VaccinationScheduleSerializer
+    pagination_class = None  # ✅ Deshabilitar paginación para devolver todos los registros
+    
+    def get_queryset(self):
+        """Filtra por país si se proporciona el parámetro"""
+        queryset = VaccinationSchedule.objects.all()
+        country = self.request.query_params.get('country')
+        if country:
+            queryset = queryset.filter(country=country)
+        return queryset.select_related('vaccine')
+
+
 class PatientVaccinationViewSet(viewsets.ModelViewSet): queryset = PatientVaccination.objects.all(); serializer_class = PatientVaccinationSerializer
 class PatientClinicalProfileViewSet(viewsets.ModelViewSet): queryset = ClinicalNote.objects.all(); serializer_class = ClinicalNoteSerializer
 class AllergyViewSet(viewsets.ModelViewSet): queryset = Allergy.objects.all(); serializer_class = AllergySerializer
