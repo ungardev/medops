@@ -210,7 +210,7 @@ class Patient(models.Model):
         verbose_name="Profesión/Ocupación"
     )
     skin_type = models.CharField(
-        max_length=2,
+        max_length=3,  # ✅ Cabe 'I', 'II', 'III', 'IV', 'V', 'VI'
         choices=FITZPATRICK_SCALE,
         null=True,
         blank=True,
