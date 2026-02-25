@@ -257,7 +257,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "neighborhood",  # ✅ AGREGADO: Para que los selectores se poblen automáticamente
             "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
-            "alerts", "address_chain", "active", "created_at", "updated_at"
+            "alerts", "address_chain", "active", "created_at", "updated_at",
             "tattoo", "profession", "skin_type"
         ]
     
