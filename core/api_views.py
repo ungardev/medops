@@ -1565,34 +1565,44 @@ def notifications_api(request):
     Filtra por notify=True (solo eventos que deben mostrarse).
     """
     try:
-        from . import services
-        from .serializers import EventSerializer
         
         # get_audit_logic devuelve directamente una LISTA de eventos
-        all_events = services.get_audit_logic(limit=3)
+        try:
+            all_events = services.get_audit_logic(limit=3)
+        except Exception as e:
+            logger.error(f"Error en get_audit_logic: {str(e)}")
+            all_events = []
         
         # Asegurar que es una lista
-        if not isinstance(all_events, list):
+        if not all_events:
+            all_events = []
+        elif not isinstance(all_events, list):
             all_events = list(all_events)
         
         # Filtrar por notify=True (solo notificaciones)
-        notifications = [e for e in all_events if e.get('notify', False)]
+        notifications = [e for e in all_events if isinstance(e, dict) and e.get('notify', False)]
         
         # Si hay eventos con notify=True, procesarlos
         if notifications:
             # Ordenar por timestamp descendente
-            notifications.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            try:
+                notifications.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+            except Exception:
+                pass
             
             # Tomar las 3 notificaciones más recientes
             top_3 = notifications[:3]
             
             # Filtrar por ventana de 7 días
-            cutoff = datetime.now() - timedelta(days=7)
-            recent = [
-                n for n in top_3 
-                if n.get('timestamp') and 
-                   datetime.fromisoformat(n['timestamp']) > cutoff
-            ]
+            try:
+                cutoff = datetime.now() - timedelta(days=7)
+                recent = [
+                    n for n in top_3 
+                    if n.get('timestamp') and 
+                    datetime.fromisoformat(n['timestamp']) > cutoff
+                ]
+            except Exception:
+                recent = top_3  # Si falla el filtro, devolver todos
             
             # Si hay notificaciones recientes, devolverlas
             if recent:
@@ -1618,28 +1628,28 @@ def notifications_api(request):
         }]
         
         return Response(no_activity)
+        
     except Exception as e:
+        import traceback
         logger.error(f"Error en notifications_api: {str(e)}\n{traceback.format_exc()}")
-        # En lugar de devolver 500, devolver datos seguros
-        return Response([
-            {
-                "id": 0,
-                "timestamp": datetime.now().isoformat(),
-                "actor": "Sistema",
-                "entity": "Dashboard",
-                "entity_id": 0,
-                "action": "error",
-                "metadata": {"message": "Error al cargar notificaciones"},
-                "severity": "warning",
-                "notify": False,
-                "title": "Error de sistema",
-                "description": "Contacte al administrador",
-                "category": "system.error",
-                "action_label": "Reintentar",
-                "action_href": None,
-                "badge_action": "error",
-            }
-        ])
+        # Devolver error seguro en lugar de 500
+        return Response([{
+            "id": 0,
+            "timestamp": datetime.now().isoformat(),
+            "actor": "Sistema",
+            "entity": "Dashboard",
+            "entity_id": 0,
+            "action": "error",
+            "metadata": {"message": f"Error al cargar notificaciones: {str(e)}"},
+            "severity": "warning",
+            "notify": False,
+            "title": "Error de sistema",
+            "description": "Contacte al administrador",
+            "category": "system.error",
+            "action_label": "Reintentar",
+            "action_href": None,
+            "badge_action": "error",
+        }])
 
 
 # PDF y Generación
