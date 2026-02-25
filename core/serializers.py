@@ -2561,6 +2561,9 @@ class PatientClinicalProfileSerializer(serializers.ModelSerializer):
             "address",         # Campo libre
             "full_address",    # Cadena de texto legible
             "address_chain",   # Estructura de IDs para el frontend
+            "tattoo",           # Para pruebas de imagen
+            "profession",       # Profesión del paciente
+            "skin_type",        # Tipo de piel del paciente
         ]
 
     def get_age(self, obj) -> Optional[int]:
