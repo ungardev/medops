@@ -13,9 +13,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { useDashboardFilters } from "@/context/DashboardFiltersContext";
 import { useActiveInstitution } from "@/hooks/dashboard/useActiveInstitution";
+import { useBCVRate } from "@/hooks/dashboard/useBCVRate";
 import ButtonGroup from "@/components/Common/ButtonGroup";
 import type { InstitutionSettings } from "@/types/config";
-// 🎨 Configuración de métricas integrada (desde MetricsRow)
+// 🎨 Configuración de métricas integrada
 const metricsConfig = {
   scheduled_count: {
     label: "Citas Agendadas",
@@ -73,14 +74,13 @@ export const ActiveInstitutionCard: React.FC = () => {
   // 🔥 Hook unificado con filtros
   const { data: activeData, isLoading } = useActiveInstitution({ range, currency });
   
+  // 🆕 Hook de tasa BCV
+  const { data: bcvRate } = useBCVRate();
+  
   const institution = activeData?.institution;
   const metrics = activeData?.metrics;
   
   const handleConfigure = () => {
-    navigate("/settings/config");
-  };
-  
-  const handleViewDetails = () => {
     navigate("/settings/config");
   };
   
@@ -99,7 +99,6 @@ export const ActiveInstitutionCard: React.FC = () => {
     }
     return value.toLocaleString();
   };
-  
   // Loading State
   if (isLoading) {
     return (
@@ -114,13 +113,8 @@ export const ActiveInstitutionCard: React.FC = () => {
             <div className="h-3 bg-white/5 rounded w-32 animate-pulse" />
           </div>
         </div>
-        {/* Controls Skeleton */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-          <div className="h-8 bg-white/5 rounded w-48 animate-pulse" />
-          <div className="h-8 bg-white/5 rounded w-24 animate-pulse" />
-        </div>
         {/* Metrics Grid Skeleton */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="bg-black/20 border border-white/5 rounded-sm p-3 animate-pulse">
               <div className="h-3 bg-white/10 rounded w-16 mb-2" />
@@ -144,18 +138,21 @@ export const ActiveInstitutionCard: React.FC = () => {
               onClick={handleConfigure}
               className="mt-3 text-[10px] font-black uppercase text-emerald-500 hover:text-emerald-400 transition-colors tracking-widest"
             >
-              Configurar Institución //
+              Configurar Institución
             </button>
           </div>
         </div>
       </div>
     );
   }
-  
+  // 🆕 FORMATEAR TASA BCV
+  const bcvDisplay = bcvRate 
+    ? `${Number(bcvRate.value).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
+    : "--";
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
-      {/* Header: Logo + Nombre + Status */}
+      {/* Header: Logo + Nombre + Status + Controles BCV en ESQUINA SUPERIOR DERECHA */}
       <div className="flex gap-6 mb-6">
         {/* Logo */}
         <div className="w-20 h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0 overflow-hidden">
@@ -187,43 +184,50 @@ export const ActiveInstitutionCard: React.FC = () => {
             </div>
           </div>
           
-          <div className="mt-2">
-            <span className="text-[8px] font-mono text-white/20 uppercase tracking-tighter">Fiscal_UID:</span>
-            <p className="text-[10px] font-mono text-white/60">{institution.tax_id || "PENDING_REGISTRATION"}</p>
+          <div className="flex items-center gap-4 mt-2">
+            <div className="flex items-center gap-2">
+              {/* 🆕 ICONO DE CONFIGURACIÓN JUNTO A FISCAL_UID */}
+              <button onClick={handleConfigure} className="p-1 hover:bg-white/5 rounded transition-colors">
+                <CogIcon className="w-3 h-3 text-white/30 hover:text-white/60" />
+              </button>
+              <span className="text-[8px] font-mono text-white/20 uppercase tracking-tighter">Fiscal_UID:</span>
+              <p className="text-[10px] font-mono text-white/60">{institution.tax_id || "PENDING_REGISTRATION"}</p>
+            </div>
+          </div>
+        </div>
+        {/* 🆕 CONTROLES EN ESQUINA SUPERIOR DERECHA */}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {/* 🆕 TASA BCV */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-sm">
+            <span className="text-[8px] font-black text-amber-500/70 uppercase tracking-wider">BCV:</span>
+            <span className="text-[10px] font-mono font-bold text-amber-500">{bcvDisplay}</span>
+          </div>
+          
+          {/* Time Range + Currency Buttons */}
+          <div className="flex items-center gap-2">
+            <ButtonGroup
+              items={[
+                { label: "D", value: "day" },
+                { label: "W", value: "week" },
+                { label: "M", value: "month" },
+              ]}
+              selected={range}
+              onSelect={(val) => setRange(val as any)}
+            />
+            <ButtonGroup
+              items={[
+                { label: "$", value: "USD" },
+                { label: "Bs", value: "VES" },
+              ]}
+              selected={currency}
+              onSelect={(val) => setCurrency(val as any)}
+            />
           </div>
         </div>
       </div>
       
-      {/* 🎛️ CONTROLES INTEGRADOS - Sin textos descriptivos */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-        {/* Time Range Buttons */}
-        <div className="flex items-center gap-3">
-          <ButtonGroup
-            items={[
-              { label: "DAY", value: "day" },
-              { label: "WEEK", value: "week" },
-              { label: "MONTH", value: "month" },
-            ]}
-            selected={range}
-            onSelect={(val) => setRange(val as any)}
-          />
-        </div>
-        
-        {/* Currency Buttons */}
-        <div className="flex items-center gap-3">
-          <ButtonGroup
-            items={[
-              { label: "USD", value: "USD" },
-              { label: "VES", value: "VES" },
-            ]}
-            selected={currency}
-            onSelect={(val) => setCurrency(val as any)}
-          />
-        </div>
-      </div>
-      
       {/* 📊 GRID DE 8 MÉTRICAS - 4x2 en desktop */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {metrics &&
           Object.entries(metricsConfig).map(([key, cfg]) => {
             const Icon = cfg.icon;
@@ -271,27 +275,7 @@ export const ActiveInstitutionCard: React.FC = () => {
           })}
       </div>
       
-      {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-4 border-t border-white/5">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={handleConfigure}
-            className="text-[9px] font-black uppercase text-white/40 hover:text-white transition-colors tracking-widest"
-          >
-            Configurar //
-          </button>
-          
-          <button 
-            onClick={handleViewDetails}
-            className="text-[9px] font-black uppercase text-emerald-500/50 hover:text-emerald-500 transition-colors tracking-widest"
-          >
-            Ver Detalles //
-          </button>
-        </div>
-        
-        {/* Corner Decorator (Solo visible en hover) */}
-        <div className="w-4 h-4 bg-emerald-500/5 rotate-45 translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform opacity-0 group-hover:opacity-100" />
-      </div>
+      {/* 🗑️ ELIMINADA: Línea inferior de "Configurar // Ver Detalles" */}
     </div>
   );
 };
