@@ -297,7 +297,7 @@ class PatientListSerializer(serializers.ModelSerializer):
         model = Patient
         fields = [
             "id", "full_name", "national_id", "age", "gender", 
-            "phone_number", "short_address", "active"
+            "phone_number", "contact_info", "short_address", "active"
         ]
     @extend_schema_field(serializers.CharField())
     def get_short_address(self, obj) -> str:

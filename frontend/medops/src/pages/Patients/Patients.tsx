@@ -5,11 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { 
   UserPlusIcon, 
   MagnifyingGlassIcon, 
-  EyeIcon, 
   TrashIcon,
   CpuChipIcon,
-  ServerIcon,
-  FingerPrintIcon
+  ServerIcon
 } from "@heroicons/react/24/outline";
 // Hooks
 import { usePatients } from "../../hooks/patients/usePatients";
@@ -43,6 +41,7 @@ export default function Patients() {
       : (paged?.results || []);
   }, [query, searchResults, paged]);
   const handleView = (id: number) => navigate(`/patients/${id}`);
+  
   const handleDelete = (p: Patient) => {
     if (window.confirm(`⚠️ CRITICAL_NOTICE: ¿Confirmar purga del registro #${p.id}? Esta operación es irreversible.`)) {
       deletePatient(p.id, {
@@ -118,7 +117,7 @@ export default function Patients() {
     <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
       <div className="overflow-x-auto">
         <PatientsTable
-          headers={["UID_Index", "Identity_Subject", "National_ID", "Class_Status", "Comm_Link", "Actions"]}
+          headers={["UID_Index", "Identity_Subject", "National_ID", "Gender", "Comm_Link", "Actions"]}
           isLoading={isLoadingPaged && query.length === 0}
         >
           {list.length === 0 ? (
@@ -135,20 +134,19 @@ export default function Patients() {
             list.map((p) => (
               <tr 
                 key={p.id} 
-                className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group"
+                className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                onClick={() => handleView(p.id)}
               >
                 <td className="px-4 py-4 text-[11px] font-mono text-white font-bold w-[120px]">
                   #{String(p.id).padStart(5, '0')}
                 </td>
                 
                 <td className="px-4 py-4 min-w-[280px]">
-                  <div className="flex items-center gap-2">
-                    <FingerPrintIcon className="w-3 h-3 text-white/20 shrink-0" />
-                    <div className="text-[11px] font-black text-white uppercase tracking-tight group-hover:text-emerald-400 transition-colors line-clamp-1">
-                      {p.full_name}
-                    </div>
+                  <div className="text-[12px] font-bold text-white uppercase group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer">
+                    {p.full_name}
                   </div>
                 </td>
+                
                 <td className="px-4 py-4 text-[11px] font-mono text-white/40 w-[160px]">
                   {p.national_id || "NOT_ASSIGNED"}
                 </td>
@@ -163,14 +161,10 @@ export default function Patients() {
                   </div>
                 </td>
                 <td className="px-4 py-4 w-[110px]">
-                  <div className="flex items-center gap-4 justify-end">
-                    <button 
-                      onClick={() => handleView(p.id)}
-                      className="flex items-center gap-1.5 text-white/20 hover:text-white transition-all group/btn"
-                    >
-                      <EyeIcon className="w-4 h-4" />
-                      <span className="text-[8px] font-black uppercase hidden group-hover/btn:inline">Access</span>
-                    </button>
+                  <div 
+                    className="flex items-center justify-end"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <button 
                       disabled={isDeleting}
                       onClick={() => handleDelete(p)}
@@ -216,6 +210,7 @@ export default function Patients() {
       {searchSection}
       
       {tableSection}
+      
       <NewPatientModal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
