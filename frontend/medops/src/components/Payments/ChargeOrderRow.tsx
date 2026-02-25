@@ -3,16 +3,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PaymentList from "./PaymentList";
 import { ChargeOrder } from "../../types/payments";
-import { formatCurrency } from "@/utils/format";  // 🆕 Import de utilidad de formateo
+import { formatCurrency } from "@/utils/format";
 import { 
   CreditCardIcon, 
   EyeIcon, 
   ArrowDownTrayIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  UserGroupIcon         // 🆕 Icono para doctor
+  UserGroupIcon
 } from "@heroicons/react/24/outline";
-// 🔄 CAMBIO: Interfaz ahora se llama ChargeOrderRowProps y está explícitamente definida
 interface ChargeOrderRowProps {
   order: ChargeOrder;
   isSelected?: boolean;
@@ -21,7 +20,7 @@ interface ChargeOrderRowProps {
 export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }: ChargeOrderRowProps) {
   const [expanded, setExpanded] = useState(false);
   const navigate = useNavigate();
-  // --- LÓGICA DE EXPORTACIÓN (Refactorizada a estética industrial) ---
+  // --- LÓGICA DE EXPORTACIÓN ---
   const handleExport = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try {
@@ -45,12 +44,11 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
       console.error("Export failed");
     }
   };
-  // 🔄 CAMBIO: Usar formatCurrency para formatear fecha y monto
   const formattedDate = order.appointment_date
     ? new Date(order.appointment_date).toLocaleDateString('en-GB')
     : "—";
   const patientName = order.patient_detail?.full_name ?? `SUBJECT_ID: ${order.patient}`;
-  // --- CONFIGURACIÓN DE STATUS (Terminal Style) ---
+  // --- CONFIGURACIÓN DE STATUS ---
   const statusConfig = {
     paid: { label: "SETTLED", class: "text-emerald-400 border-emerald-500/30 bg-emerald-500/5" },
     open: { label: "UNRESOLVED", class: "text-yellow-500 border-yellow-500/30 bg-yellow-500/5" },
@@ -77,11 +75,13 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
           {expanded ? <ChevronUpIcon className="w-3 h-3 text-[var(--palantir-muted)]" /> : <ChevronDownIcon className="w-3 h-3 text-[var(--palantir-muted)]" />}
           <span className="text-[9px] font-mono text-[var(--palantir-muted)]">#{order.id.toString().padStart(4, '0')}</span>
         </div>
-        {/* PACIENTE */}
+        {/* ✅ CAMBIO 1: PACIENTE - text-[12px] font-bold (era 10px font-black) */}
         <div className="col-span-11 sm:col-span-4">
-          <p className="text-[10px] font-black uppercase tracking-wider truncate">{patientName}</p>
+          <p className="text-[12px] font-bold uppercase tracking-wider truncate group-hover:text-emerald-400 transition-colors">
+            {patientName}
+          </p>
           
-          {/* 🆕 AGREGADO: Médico responsable (FASE 1) */}
+          {/* Médico responsable */}
           {order.doctor && (
             <div className="flex items-center gap-1 text-xs font-mono text-[var(--palantir-muted)] mt-1">
               <UserGroupIcon className="w-3.5 h-3.5" />
@@ -91,18 +91,18 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
               )}
             </div>
           )}
+          
           <p className="text-[8px] font-mono text-[var(--palantir-muted)] sm:hidden uppercase mt-1">
             {formattedDate} • {formatCurrency(order.total_amount ?? order.total, order.currency)}
           </p>
         </div>
-        {/* FECHA (Desktop) */}
-        <div className="col-span-2 hidden sm:block text-[10px] font-mono text-[var(--palantir-muted)]">
+        {/* ✅ CAMBIO 2: FECHA - text-[11px] font-mono (era 10px) */}
+        <div className="col-span-2 hidden sm:block text-[11px] font-mono text-[var(--palantir-muted)]">
           {formattedDate}
         </div>
-        {/* MONTO (Desktop) */}
+        {/* ✅ CAMBIO 3: MONTO - text-[12px] font-bold (era 11px font-black) */}
         <div className="col-span-2 hidden sm:block text-right">
-          {/* 🔄 CAMBIO: Usar formatCurrency para consistencia */}
-          <span className="text-[11px] font-black font-mono tracking-tighter text-[var(--palantir-text)]">
+          <span className="text-[12px] font-bold font-mono text-[var(--palantir-text)] group-hover:text-emerald-400 transition-colors">
             {formatCurrency(order.total_amount ?? order.total, order.currency)}
           </span>
         </div>
@@ -143,7 +143,7 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
             <div className="h-[1px] flex-grow bg-white/10"></div>
           </div>
           
-          {/* 🆕 AGREGADO: Metadata de institución en área expandida */}
+          {/* Metadata de institución */}
           <div className="mb-4 pb-4 border-b border-white/5">
             <div className="flex items-center gap-2 text-[9px] font-mono text-[var(--palantir-muted)]">
               <span className="uppercase tracking-wider">Institution:</span>
@@ -162,8 +162,8 @@ export default function ChargeOrderRow({ order, isSelected, onRegisterPayment }:
           </div>
           <div className="mt-4 flex justify-end gap-3">
              <button 
-                onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(order.id, order.appointment); }}
-                className="text-[9px] font-mono border border-emerald-500/50 text-emerald-500 px-3 py-1 hover:bg-emerald-500/10 transition-all uppercase tracking-widest"
+               onClick={(e) => { e.stopPropagation(); onRegisterPayment?.(order.id, order.appointment); }}
+               className="text-[9px] font-mono border border-emerald-500/50 text-emerald-500 px-3 py-1 hover:bg-emerald-500/10 transition-all uppercase tracking-widest"
              >
                Execute_New_Payment
              </button>

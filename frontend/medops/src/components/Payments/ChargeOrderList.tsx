@@ -7,7 +7,6 @@ import {
   ArchiveBoxIcon,
   ExclamationCircleIcon
 } from "@heroicons/react/24/outline";
-
 export interface ChargeOrderListProps {
   orders: ChargeOrder[];
   loading: boolean;
@@ -16,7 +15,6 @@ export interface ChargeOrderListProps {
   onQueryChange: (value: string) => void;
   onRegisterPayment?: (orderId: number, appointmentId: number) => void;
 }
-
 export default function ChargeOrderList({
   orders,
   loading,
@@ -52,10 +50,9 @@ export default function ChargeOrderList({
           </div>
         </div>
       </div>
-
       {/* ÁREA DE CONTENIDO / TABLA */}
       <div className="min-h-[400px]">
-        {/* HEADER DE LA TABLA (OPCIONAL PERO RECOMENDADO PARA ALINEACIÓN) */}
+        {/* HEADER DE LA TABLA */}
         <div className="hidden sm:grid grid-cols-12 gap-4 px-6 py-2 bg-white/[0.03] border-b border-white/5 text-[8px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
           <div className="col-span-1">Ref_ID</div>
           <div className="col-span-4">Subject_Identifier</div>
@@ -64,7 +61,6 @@ export default function ChargeOrderList({
           <div className="col-span-2 text-center">Status_Flag</div>
           <div className="col-span-1"></div>
         </div>
-
         {/* LOADING STATE */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -74,7 +70,6 @@ export default function ChargeOrderList({
             </span>
           </div>
         )}
-
         {/* ERROR STATE */}
         {error && (
           <div className="flex flex-col items-center justify-center py-20 text-red-500 gap-2">
@@ -84,7 +79,6 @@ export default function ChargeOrderList({
             </span>
           </div>
         )}
-
         {/* LISTA DE RESULTADOS */}
         {!loading && !error && (
           <div className="divide-y divide-white/5">

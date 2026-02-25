@@ -932,9 +932,12 @@ def chargeorder_search_api(request):
         return Response([])
     
     try:
-        # Buscar en múltiples campos de la orden y paciente
+        # ✅ CORREGIDO: Buscar en campos reales del paciente (no en property full_name)
         charge_orders = ChargeOrder.objects.filter(
-            Q(patient__full_name__icontains=q) |
+            Q(patient__first_name__icontains=q) |
+            Q(patient__middle_name__icontains=q) |
+            Q(patient__last_name__icontains=q) |
+            Q(patient__second_last_name__icontains=q) |
             Q(patient__national_id__icontains=q) |
             Q(id__icontains=q) |
             Q(appointment__id__icontains=q)
