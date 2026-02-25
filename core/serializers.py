@@ -868,6 +868,7 @@ class EventSerializer(serializers.ModelSerializer):
     action_href = serializers.SerializerMethodField()
     badge_action = serializers.SerializerMethodField()
     actor = serializers.SerializerMethodField()  # ✅ CORREGIDO: Ahora usa get_actor()
+    
     class Meta:
         model = Event
         fields = [
@@ -888,56 +889,163 @@ class EventSerializer(serializers.ModelSerializer):
             "action_href",
             "badge_action",  # 🔹 Incluido en la respuesta
         ]
+    
+    # 🆕 MEJORADO: Títulos más descriptivos para notificaciones
     def get_title(self, obj):
+        # === CHARGE ORDER ===
+        if obj.entity == "ChargeOrder" and obj.action == "void":
+            return f"Orden #{obj.entity_id} anulada"
+        if obj.entity == "ChargeOrder" and obj.action == "void_by_appointment_cancel":
+            return f"Orden #{obj.entity_id} anulada por cancelación"
+        if obj.entity == "ChargeOrder" and obj.action == "waive":
+            return f"Orden #{obj.entity_id} exonerada"
+        if obj.entity == "ChargeOrder" and obj.action == "create":
+            return f"Orden #{obj.entity_id} creada"
+        
+        # === PAYMENT ===
         if obj.entity == "Payment" and obj.action == "create":
             return "Pago confirmado"
+        if obj.entity == "Payment" and obj.action == "confirm":
+            return "Pago verificado"
+        if obj.entity == "Payment" and obj.action == "reverse":
+            return f"Pago #{obj.entity_id} reversado"
+        
+        # === APPOINTMENT ===
+        if obj.entity == "Appointment" and obj.action == "create":
+            return f"Cita #{obj.entity_id} creada"
         if obj.entity == "Appointment" and obj.action == "update":
             return "Cita actualizada"
+        if obj.entity == "Appointment" and obj.action == "cancel":
+            return f"Cita #{obj.entity_id} cancelada"
+        if obj.entity == "Appointment" and obj.action == "canceled":
+            return f"Cita #{obj.entity_id} cancelada"
+        if obj.entity == "Appointment" and obj.action == "completed":
+            return f"Cita #{obj.entity_id} completada"
+        if obj.entity == "Appointment" and obj.action == "arrived":
+            return f"Paciente llegó a cita #{obj.entity_id}"
+        
+        # === WAITING ROOM ===
         if obj.entity == "WaitingRoom" and obj.action == "delete":
             return "Paciente retirado de sala de espera"
         if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
             return "Paciente llegó a la sala de espera"
+        if obj.entity == "WaitingRoomEntry" and obj.action == "create":
+            return "Paciente agregado a sala de espera"
+        
+        # === PATIENT ===
+        if obj.entity == "Patient" and obj.action == "create":
+            return "Paciente registrado"
+        if obj.entity == "Patient" and obj.action == "update":
+            return "Datos del paciente actualizados"
+        
+        # Fallback genérico
         return f"{obj.entity} {obj.action}"
+    
+    # 🆕 MEJORADO: Descripciones con metadata relevante
     def get_description(self, obj):
+        # === CHARGE ORDER ===
+        if obj.entity == "ChargeOrder" and obj.action in ["void", "void_by_appointment_cancel", "waive"]:
+            reason = ""
+            actor = ""
+            if obj.metadata:
+                reason = obj.metadata.get("reason", "Anulación manual")
+                actor = obj.metadata.get("actor", "Sistema")
+            if reason and actor:
+                return f"Razón: {reason} | Por: {actor}"
+            elif reason:
+                return f"Razón: {reason}"
+            return f"Orden #{obj.entity_id} procesada"
+        
+        if obj.entity == "ChargeOrder":
+            return f"Orden #{obj.entity_id}"
+        
+        # === PAYMENT ===
         if obj.entity == "Payment":
-            return f"Orden #{obj.entity_id} confirmada"
+            amount = ""
+            if obj.metadata:
+                amount = obj.metadata.get("amount", "")
+            return f"Monto: ${amount}" if amount else f"Pago #{obj.entity_id} registrado"
+        
+        # === APPOINTMENT ===
         if obj.entity == "Appointment":
-            return f"Cita #{obj.entity_id} modificada"
+            if obj.metadata:
+                patient_id = obj.metadata.get("patient_id", "")
+                doctor_id = obj.metadata.get("doctor_id", "")
+                return f"ID Paciente: {patient_id} | ID Médico: {doctor_id}"
+            return f"Cita #{obj.entity_id}"
+        
+        # === WAITING ROOM ===
         if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
             pid = obj.metadata.get("patient_id") if obj.metadata else None
             aid = obj.metadata.get("appointment_id") if obj.metadata else None
-            return f"Paciente #{pid} con cita #{aid} registrado en sala de espera"
-        return obj.metadata.get("message", "") if obj.metadata else ""
+            return f"Paciente #{pid} con cita #{aid}"
+        
+        # === PATIENT ===
+        if obj.entity == "Patient" and obj.action == "create":
+            if obj.metadata:
+                full_name = obj.metadata.get("full_name", "")
+                return f"Nombre: {full_name}" if full_name else "Nuevo paciente registrado"
+            return "Nuevo paciente"
+        
+        # Metadata genérico
+        if obj.metadata:
+            # Intentar mostrar información relevante del metadata
+            if "message" in obj.metadata:
+                return obj.metadata.get("message", "")
+            # Mostrar las primeras 2 claves del metadata
+            keys = list(obj.metadata.keys())[:2]
+            parts = [f"{k}: {obj.metadata[k]}" for k in keys]
+            return " | ".join(parts)
+        
+        return ""
+    
     def get_category(self, obj):
         # Normaliza entity+action como clave única
         return f"{obj.entity.lower()}.{obj.action.lower()}"
+    
     def get_action_label(self, obj):
         if obj.entity == "Payment":
             return "Ver pago"
+        if obj.entity == "ChargeOrder":
+            return "Ver orden"
         if obj.entity == "Appointment":
             return "Ver cita"
         if obj.entity == "WaitingRoomEntry":
             return "Ver sala de espera"
         if obj.entity == "WaitingRoom":
             return "Ver sala de espera"
+        if obj.entity == "Patient":
+            return "Ver paciente"
         return "Ver detalle"
+    
+    # 🆕 MEJORADO: action_href correcto para cada entidad
     def get_action_href(self, obj):
         if obj.entity == "Payment":
             return f"/payments/{obj.entity_id}"
+        if obj.entity == "ChargeOrder":
+            return f"/payments/{obj.entity_id}"
         if obj.entity == "Appointment":
             return f"/appointments/{obj.entity_id}"
+        if obj.entity == "Patient":
+            return f"/patients/{obj.entity_id}"
         if obj.entity == "WaitingRoom":
             return "/waitingroom"
         if obj.entity == "WaitingRoomEntry":
             return "/waitingroom"
         return None
+    
     def get_badge_action(self, obj):
         # 🔹 Normaliza para NotificationBadge
         if obj.action in ["create", "update", "delete"]:
             return obj.action
+        if obj.action in ["void", "waive", "cancel", "canceled"]:
+            return "delete"
+        if obj.action in ["confirm", "completed", "patient_arrived"]:
+            return "create"
         if obj.entity == "WaitingRoomEntry" and obj.action == "patient_arrived":
             return "create"
         return "other"
+    
     def get_actor(self, obj):
         # ✅ CORREGIDO: Combina actor_user y actor_name
         if obj.actor_user:
