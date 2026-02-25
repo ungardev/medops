@@ -258,6 +258,7 @@ class PatientReadSerializer(serializers.ModelSerializer):
             "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
             "alerts", "address_chain", "active", "created_at", "updated_at"
+            "tattoo", "profession", "skin_type"
         ]
     
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
