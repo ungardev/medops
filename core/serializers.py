@@ -218,7 +218,10 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "height", 
             "blood_type", 
             "genetic_predispositions", 
-            "active"
+            "active",
+            "tattoo",
+            "profession",
+            "skin_type"
         ]
     
     def validate_birthdate(self, value):
