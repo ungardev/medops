@@ -83,24 +83,28 @@ export default function PaymentList({ payments, hideSummaryBadges = false }: Pro
               const StatusIcon = config.icon;
               return (
                 <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="px-4 py-2 font-mono text-[11px] font-bold text-white">
-                    {formatCurrency(p.amount, p.currency)}  {/* ✅ CORREGIDO: Ahora muestra el monto con formatCurrency */}
+                  {/* ✅ CAMBIO 1: Monto - text-[12px] (era 11px) */}
+                  <td className="px-4 py-3 font-mono text-[12px] font-bold text-white">
+                    {formatCurrency(p.amount, p.currency)}
                   </td>
-                  <td className="px-4 py-2 text-[10px] uppercase font-mono tracking-tighter text-[var(--palantir-muted)]">
+                  {/* ✅ CAMBIO 2: Método - text-[11px] (era 10px) */}
+                  <td className="px-4 py-3 text-[11px] uppercase font-mono tracking-tighter text-[var(--palantir-muted)]">
                     {p.method === PaymentMethod.CASH ? "Cash_Assets" : 
                      p.method === PaymentMethod.CARD ? "Card_Debit" : 
                      p.method === PaymentMethod.TRANSFER ? "Wire_Transfer" : "Other_Entry"}
                   </td>
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-3">
                     <div className={`flex items-center gap-2 `}>
                       <StatusIcon className="w-3 h-3" />
                       <span className="text-[9px] font-black tracking-widest uppercase">{config.label}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-2 font-mono text-[9px] text-[var(--palantir-active)]/70">
+                  {/* ✅ CAMBIO 3: Referencia - text-[10px] (era 9px) */}
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--palantir-active)]/70">
                     {p.reference_number || "SYS_GEN_NULL"}
                   </td>
-                  <td className="px-4 py-2 font-mono text-[9px] text-[var(--palantir-muted)]">
+                  {/* ✅ CAMBIO 4: Timestamp - text-[10px] (era 9px) */}
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--palantir-muted)]">
                     {date}
                   </td>
                 </tr>
