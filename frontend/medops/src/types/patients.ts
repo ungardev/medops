@@ -189,6 +189,10 @@ export interface Patient extends PatientRef {
   };
   gender: "M" | "F" | "Other" | "Unknown" | null;
   contact_info?: string | null;
+  // ✅ NUEVOS CAMPOS AGREGADOS
+  tattoo?: boolean | null;
+  profession?: string | null;
+  skin_type?: "I" | "II" | "III" | "IV" | "V" | "VI" | null;
   // Ubicación jerárquica
   neighborhood?: {
     id: number;
@@ -212,9 +216,9 @@ export interface Patient extends PatientRef {
   };
   // AddressChain (propiedad calculada)
   address_chain?: AddressChain;
-  address?: string | null;  // ✅ Agregado para acceso en DemographicsSection
+  address?: string | null;
   // Perfil clínico base
-  weight?: number | string | null;   // DRF puede serializar Decimal como string
+  weight?: number | string | null;
   height?: number | string | null;
   blood_type?: "A+" | "A-" | "B+" | "B-" | "AB+" | "AB-" | "O+" | "O-" | null;
   allergies?: string | null;
@@ -253,6 +257,10 @@ export type PatientInput = {
   contact_info?: string;
   email?: string | null;
   phone_number?: string;
+  // ✅ NUEVOS CAMPOS AGREGADOS
+  tattoo?: boolean | null;
+  profession?: string | null;
+  skin_type?: "I" | "II" | "III" | "IV" | "V" | "VI" | null;
   // Ubicación
   address?: string;
   neighborhood_id?: number;

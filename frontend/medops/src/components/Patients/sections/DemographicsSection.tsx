@@ -10,13 +10,21 @@ import {
   MapPinIcon,
   UserCircleIcon,
   ExclamationCircleIcon,
-  CpuChipIcon,
-  CalendarIcon
+  CpuChipIcon
 } from "@heroicons/react/24/outline";
 interface DemographicsSectionProps {
   patient: Patient;
   onRefresh: () => void;
 }
+// ✅ Constantes para los nuevos campos
+const FITZPATRICK_OPTIONS = [
+  { value: "I", label: "TIPO I - Muy clara, siempre se quema" },
+  { value: "II", label: "TIPO II - Clara, usualmente se quema" },
+  { value: "III", label: "TIPO III - Intermedia, a veces se quema" },
+  { value: "IV", label: "TIPO IV - Mate, rara vez se quema" },
+  { value: "V", label: "TIPO V - Morena, muy rara vez se quema" },
+  { value: "VI", label: "TIPO VI - Negra, nunca se quema" },
+];
 export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,6 +61,10 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     email: patient.email ?? "",
     contact_info: patient.contact_info ?? "",
     gender: patient.gender ?? "",
+    // ✅ NUEVOS CAMPOS
+    tattoo: patient.tattoo ?? null,
+    profession: patient.profession ?? "",
+    skin_type: patient.skin_type ?? "",
     country_id: null as number | null,
     state_id: null as number | null,
     municipality_id: null as number | null,
@@ -77,7 +89,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   }, [patientLocationIds]);
   
   const countriesResult = useCountries();
-  // ✅ FIX: Usar form en lugar de patientLocationIds para que responda a cambios del usuario
   const statesResult = useStates(form.country_id);
   const municipalitiesResult = useMunicipalities(form.state_id);
   const parishesResult = useParishes(form.municipality_id);
@@ -89,9 +100,10 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
   const parishes = parishesResult.data || [];
   const neighborhoods = neighborhoodsResult.data || [];
   
+  // ✅ CORREGIDO: La línea de isLoadingAny
   const isLoadingAny = countriesResult.isLoading || statesResult.isLoading || 
-                      municipalitiesResult.isLoading || parishesResult.isLoading || 
-                      neighborhoodsResult.isLoading;
+                       municipalitiesResult.isLoading || parishesResult.isLoading || 
+                       neighborhoodsResult.isLoading;
   
   const handleSave = async () => {
     try {
@@ -115,6 +127,10 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         contact_info: form.contact_info || undefined,
         address: form.address || undefined,
         gender: (form.gender || undefined) as "M" | "F" | "Other" | "Unknown" | null | undefined,
+        // ✅ NUEVOS CAMPOS
+        tattoo: form.tattoo ?? undefined,
+        profession: form.profession || undefined,
+        skin_type: (form.skin_type || undefined) as "I" | "II" | "III" | "IV" | "V" | "VI" | null | undefined,
         neighborhood_id: finalNeighborhoodId || undefined,
       };
       
@@ -281,6 +297,54 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <input type="text" value={form.contact_info} onChange={(e) => setForm({...form, contact_info: e.target.value})} disabled={!editing} className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30" />
         </div>
         
+        {/* ✅ NUEVOS CAMPOS AGREGADOS DESPUÉS DE CONTACT_LINE */}
+        
+        {/* TATTOO - Select */}
+        <div className="col-span-12 md:col-span-2">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Tattoo</label>
+          <select 
+            value={form.tattoo === null ? "" : form.tattoo.toString()} 
+            onChange={(e) => setForm({...form, tattoo: e.target.value === "" ? null : e.target.value === "true"})} 
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30"
+          >
+            <option value="">NO_DATA</option>
+            <option value="true">SÍ</option>
+            <option value="false">NO</option>
+          </select>
+        </div>
+        
+        {/* PROFESSION - Text Input */}
+        <div className="col-span-12 md:col-span-4">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Profession</label>
+          <input 
+            type="text" 
+            value={form.profession} 
+            onChange={(e) => setForm({...form, profession: e.target.value})} 
+            disabled={!editing} 
+            placeholder="Profesión u ocupación..."
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30" 
+          />
+        </div>
+        
+        {/* SKIN_TYPE - Select con escala Fitzpatrick */}
+        <div className="col-span-12 md:col-span-6">
+          <label className="block text-[9px] font-mono font-bold text-white/30 uppercase mb-1.5">Skin_Type (Fitzpatrick)</label>
+          <select 
+            value={form.skin_type} 
+            onChange={(e) => setForm({...form, skin_type: e.target.value as any})} 
+            disabled={!editing}
+            className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-[11px] font-mono text-white disabled:opacity-30"
+          >
+            <option value="">NO_DATA</option>
+            {FITZPATRICK_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+        
+        {/* FIN NUEVOS CAMPOS */}
+        
         <div className="col-span-12 flex items-center gap-3 pt-4 opacity-30">
           <MapPinIcon className="w-3.5 h-3.5" />
           <span className="text-[8px] font-mono uppercase tracking-[0.3em]">GEOGRAPHIC_LOCATION_DATA</span>
@@ -306,7 +370,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         <div className="col-span-12 md:col-span-4">
           <div className={`flex flex-col gap-1.5 ${(!form.parish_id || neighborhoodsResult.isLoading) ? 'opacity-30' : ''}`}>
             <label className="text-[8px] font-black font-mono text-white/30 uppercase tracking-[0.2em] flex justify-between px-1">
-              <span>Neighborhood / Sector</span>
+              <span>Neighborhood / sector</span>
               {neighborhoodsResult.isLoading && <CpuChipIcon className="w-2.5 h-2.5 animate-spin" />}
             </label>
             <div className="relative">
