@@ -3338,7 +3338,7 @@ def active_institution_with_metrics(request):
     from django.utils import timezone
     from datetime import timedelta
     from decimal import Decimal
-    from .services import get_institution_settings
+    from .services import get_institution_settings, get_bcv_rate
     
     # Obtener institución activa usando el servicio existente
     try:
@@ -3408,11 +3408,21 @@ def active_institution_with_metrics(request):
         # ✅ CORREGIDO: Métricas financieras - usar issued_at en lugar de created_at
         charge_orders = ChargeOrder.objects.filter(
             institution=active_inst,
-            issued_at__gte=start_date,   # ✅ CORREGIDO - era created_at
-            issued_at__lt=end_date       # ✅ CORREGIDO - era created_at
+            issued_at__gte=start_date,
+            issued_at__lt=end_date
         )
         
-        total_amount = sum(order.total for order in charge_orders if order.currency == currency)
+        # ✅ NUEVO: Sumar todos los totales (sin filtro de moneda) y convertir si es VES
+        total_usd = sum(order.total for order in charge_orders)
+        
+        # Obtener tasa BCV para conversión (convertir a float)
+        bcv_rate = float(get_bcv_rate())
+        
+        # Convertir a VES si se solicita
+        if currency == "VES":
+            total_amount = float(total_usd) * bcv_rate
+        else:
+            total_amount = float(total_usd)
         
         # ✅ CORREGIDO: Pagos confirmados - usar received_at en lugar de created_at
         payments_count = Payment.objects.filter(

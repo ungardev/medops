@@ -49,7 +49,7 @@ const metricsConfig = {
     href: "/appointments?status=completed",
   },
   total_amount: {
-    label: "Total ($)",
+    label: "Total ($)", // Esta etiqueta se reemplaza dinámicamente más abajo
     icon: CurrencyDollarIcon,
     color: "text-white",
     href: "/payments",
@@ -86,6 +86,14 @@ export const ActiveInstitutionCard: React.FC = () => {
   
   const handleMetricClick = (href?: string) => {
     if (href) navigate(href);
+  };
+  
+  // ✅ NUEVO: Función para obtener label dinámico según moneda
+  const getMetricLabel = (key: string): string => {
+    if (key === 'total_amount') {
+      return currency === 'VES' ? 'Total (VES)' : 'Total ($)';
+    }
+    return metricsConfig[key as keyof typeof metricsConfig].label;
   };
   
   const formatValue = (key: string, value: number): string => {
@@ -217,7 +225,7 @@ export const ActiveInstitutionCard: React.FC = () => {
             <ButtonGroup
               items={[
                 { label: "$", value: "USD" },
-                { label: "Bs", value: "VES" },
+                { label: "VES", value: "VES" }, // ✅ CAMBIADO de "Bs" a "VES"
               ]}
               selected={currency}
               onSelect={(val) => setCurrency(val as any)}
@@ -248,7 +256,7 @@ export const ActiveInstitutionCard: React.FC = () => {
                     <Icon className="h-3 w-3" />
                   </div>
                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 group-hover:text-white/60 truncate">
-                    {cfg.label}
+                    {getMetricLabel(key)} {/* ✅ CAMBIADO: Ahora usa función dinámica */}
                   </span>
                 </div>
                 
