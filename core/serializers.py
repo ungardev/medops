@@ -325,7 +325,8 @@ class PatientDetailSerializer(serializers.ModelSerializer):
             "id", "full_name", "national_id", "age", "gender", "birthdate",  # ✅ CORREGIDO: birth_date → birthdate
             "email", "contact_info", "blood_type", "weight", "height",
             "medical_history", "genetic_predispositions", "alerts",
-            "address", "address_chain", "active", "created_at", "updated_at"
+            "address", "address_chain", "active", "created_at", "updated_at",
+            "tattoo", "profession", "skin_type"
         ]
     
     def get_age(self, obj):

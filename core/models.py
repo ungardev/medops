@@ -184,6 +184,39 @@ class Patient(models.Model):
     )
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Unknown')
     
+    # --- Información Adicional ---
+    TATTOO_CHOICES = [
+        (True, 'Sí'),
+        (False, 'No'),
+    ]
+    FITZPATRICK_SCALE = [
+        ('I', 'Tipo I - Muy clara, siempre se quema'),
+        ('II', 'Tipo II - Clara, usualmente se quema'),
+        ('III', 'Tipo III - Intermedia, a veces se quema'),
+        ('IV', 'Tipo IV - Mate, rara vez se quema'),
+        ('V', 'Tipo V - Morena, muy rara vez se quema'),
+        ('VI', 'Tipo VI - Negra, nunca se quema'),
+    ]
+    tattoo = models.BooleanField(
+        choices=TATTOO_CHOICES, 
+        null=True, 
+        blank=True,
+        verbose_name="Tiene tatuajes"
+    )
+    profession = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        verbose_name="Profesión/Ocupación"
+    )
+    skin_type = models.CharField(
+        max_length=2,
+        choices=FITZPATRICK_SCALE,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de piel (Fitzpatrick)"
+    )
+    
     # --- Contacto ---
     email = models.EmailField(max_length=255, blank=True, null=True)
     phone_number = models.CharField(max_length=20, blank=True, null=True)
