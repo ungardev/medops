@@ -12,11 +12,11 @@ import {
   UserCheck,
   Activity,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";  // 🆕 AGREGAR ESTE IMPORT
 import { useState, useEffect, useRef } from "react";
 import { useAuthToken } from "@/hooks/useAuthToken";
-import { useNotifications } from "@/hooks/dashboard/useNotifications"; // Importamos el hook
-import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig"; // Importamos el hook del doctor
+import { useNotifications } from "@/hooks/dashboard/useNotifications";
+import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import moment from "moment";
 interface HeaderProps {
   setCollapsed: (value: boolean) => void;
@@ -44,7 +44,7 @@ const getPrimarySpecialty = (specialties?: any[]): string => {
   return specialties?.[0]?.name || 'Médico';
 };
 export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
-  const navigate = useNavigate();
+  const navigate = useNavigate();  // 🆕 AGREGAR ESTA LÍNEA
   const { clearToken } = useAuthToken();
   
   // 🔹 Conectamos con el Stream de Datos
@@ -60,7 +60,15 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   const notifRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  // ... (Efectos de tema, teclado y click outside se mantienen igual)
+  // 🆕 FUNCIÓN PARA MANEJAR CLICK EN NOTIFICACIONES
+  const handleNotificationClick = (n: any) => {
+    if (n.action_href) {
+      navigate(n.action_href);
+      setShowNotifications(false);
+    }
+  };
+  // ...resto del código existente (useEffects, handlers, etc.)...
+  
   useEffect(() => {
     const saved = localStorage.getItem("theme");
     if (saved === "light") {
@@ -161,8 +169,13 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
                 ) : notifications.length === 0 ? (
                   <li className="p-10 text-center text-[9px] font-mono text-white/10 uppercase">Empty_Log_Buffer</li>
                 ) : (
+                  // 🆕 AGREGAR onClick A CADA NOTIFICACIÓN
                   notifications.map((n: any) => (
-                    <li key={n.id} className="hover:bg-white/[0.02] p-4 transition-colors group/item cursor-pointer">
+                    <li 
+                      key={n.id} 
+                      onClick={() => handleNotificationClick(n)}
+                      className="hover:bg-white/[0.02] p-4 transition-colors group/item cursor-pointer"
+                    >
                       <div className="flex gap-3">
                         <div className="mt-0.5 p-1 bg-white/[0.03] rounded-sm text-[var(--palantir-active)] opacity-60 group-hover/item:opacity-100 transition-opacity">
                           {notificationIcon(n.category)}

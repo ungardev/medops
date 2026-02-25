@@ -1,5 +1,6 @@
 // src/components/Dashboard/NotificationsFeed.tsx
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";  // 🆕 AGREGAR ESTE IMPORT
 import { useNotifications } from "@/hooks/dashboard/useNotifications";
 import { NotificationEvent } from "@/types/notifications";
 import moment from "moment";
@@ -13,8 +14,6 @@ function toArray<T>(raw: unknown): T[] {
   return [];
 }
 function AppointmentDetailWrapper({ appointmentId, onClose }: { appointmentId: number; onClose: () => void; }) {
-  // ✅ FIX: Ya no necesitamos useAppointment aquí porque AppointmentDetail lo maneja internamente
-  // Solo verificamos si existe el ID
   if (!appointmentId) {
     return (
       <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[200]">
@@ -33,17 +32,26 @@ function AppointmentDetailWrapper({ appointmentId, onClose }: { appointmentId: n
   />;
 }
 export default function NotificationsFeed() {
+  const navigate = useNavigate();  // 🆕 AGREGAR ESTA LÍNEA
   const { data, isLoading, refetch } = useNotifications();
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  
   useEffect(() => {
     const timeout = setTimeout(() => refetch(), 500);
     return () => clearTimeout(timeout);
   }, [refetch]);
+  
   const notifications = toArray<NotificationEvent>(data).slice(0, 3);
+  
+  // 🆕 CAMBIAR window.location.href POR navigate
   const handleAction = (n: NotificationEvent) => {
-    if (n.category?.startsWith("appointment") && n.entity_id) setSelectedAppointmentId(n.entity_id);
-    else if (n.action_href) window.location.href = n.action_href;
+    if (n.category?.startsWith("appointment") && n.entity_id) {
+      setSelectedAppointmentId(n.entity_id);
+    } else if (n.action_href) {
+      navigate(n.action_href);
+    }
   };
+  
   return (
     <div className="bg-[#0c0e12] border border-white/[0.05] rounded-sm shadow-2xl overflow-hidden self-start group">
       {/* Header Estilo Consola */}
