@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import localdate
 from decimal import Decimal
 from core.models import BCVRateCache
-from core.api_views import get_bcv_rate
+from core.services import get_bcv_rate
 import logging
 
 audit = logging.getLogger("audit")
