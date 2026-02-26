@@ -161,7 +161,7 @@ export default function BillingCatalogPage() {
     : items;
   
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-8 space-y-8 bg-black min-h-screen">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       <PageHeader
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },

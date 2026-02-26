@@ -151,11 +151,11 @@ export default function WaitingRoom() {
   };
   
   return (
-    <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-6 relative min-h-[80vh]">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 relative min-h-[80vh]">
       
       <PageHeader 
         breadcrumbs={[
-          { label: "MEDOPS", path: "/" },
+          { label: "MEDOPZ", path: "/" },
           { label: "WAITING_ROOM", active: true }
         ]}
         stats={[

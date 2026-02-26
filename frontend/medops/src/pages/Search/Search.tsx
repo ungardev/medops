@@ -79,7 +79,7 @@ export default function SearchPage() {
   };
   const totalResults = results.patients.length + results.appointments.length + results.orders.length;
   return (
-    <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },

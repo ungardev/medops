@@ -33,9 +33,9 @@ export default function Dashboard() {
   if (isLoadingInstitutions) {
     return (
       <DashboardFiltersProvider>
-        <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6">
+        <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
           <PageHeader 
-            breadcrumbs={[{ label: "MEDOPS", active: true }]}
+            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
           />
           <div className="animate-pulse space-y-4">
             <div className="h-32 bg-white/5 rounded-lg"></div>
@@ -50,9 +50,9 @@ export default function Dashboard() {
   if (!activeInstitution && institutions.length === 0) {
     return (
       <DashboardFiltersProvider>
-        <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6">
+        <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
           <PageHeader 
-            breadcrumbs={[{ label: "MEDOPS", active: true }]}
+            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
           />
           <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
             <div className="mb-6">
@@ -80,9 +80,9 @@ export default function Dashboard() {
   if (!activeInstitution && institutions.length > 0) {
     return (
       <DashboardFiltersProvider>
-        <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6">
+        <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
           <PageHeader 
-            breadcrumbs={[{ label: "MEDOPS", active: true }]}
+            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
           />
           <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
             <div className="mb-6">
@@ -141,13 +141,11 @@ export default function Dashboard() {
   // ✅ ESTADO 4: Todo listo - Dashboard completo con institución activa
   return (
     <DashboardFiltersProvider>
-      <div className="max-w-[1600px] mx-auto px-4 py-2 space-y-6 animate-in fade-in duration-700">
+      <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
         
         {/* PageHeader LIMPIO - SIN actions (los botones están dentro del ActiveInstitutionCard) */}
         <PageHeader 
-          breadcrumbs={[
-            { label: "MEDOPS", active: true }
-          ]}
+          breadcrumbs={[{ label: "MEDOPZ", active: true }]}
         />
         
         {/* 🎯 ÚNICO COMPONENTE UNIFICADO CON TODO INTEGRADO */}

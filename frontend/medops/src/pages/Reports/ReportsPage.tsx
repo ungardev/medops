@@ -25,7 +25,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-8 space-y-8 bg-[var(--palantir-bg)] min-h-screen text-[var(--palantir-text)]">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen text-white">
       
       {/* 📡 CABECERA DE OPERACIONES ANALÍTICAS - CORREGIDA */}
       <PageHeader

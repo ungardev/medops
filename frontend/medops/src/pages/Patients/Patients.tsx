@@ -57,8 +57,7 @@ export default function Patients() {
     <PageHeader 
       breadcrumbs={[
         { label: "MEDOPZ", path: "/" },
-        { label: "PATIENTS", path: "/patients" },
-        { label: "PATIENTS", active: true }
+        { label: "PATIENTS", active: true }  // ✅ Sin duplicado
       ]}
       stats={[
         { 

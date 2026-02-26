@@ -30,8 +30,8 @@ export default function ConsultationDocumentsActions({
         className={`
           flex items-center gap-3 px-5 py-2.5 rounded-sm text-[10px] font-black uppercase tracking-[0.15em] transition-all
           ${generateReport.isPending 
-            ? "bg-white/5 text-[var(--palantir-muted)] cursor-not-allowed" 
-            : "bg-[var(--palantir-active)] text-white shadow-[0_0_15px_rgba(0,255,255,0.2)] hover:shadow-[0_0_25px_rgba(0,255,255,0.4)] hover:scale-[1.02] active:scale-95"}
+            ? "bg-white/5 text-white/20 cursor-not-allowed" 
+            : "bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-emerald-500/30 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/20"}
         `}
       >
         {generateReport.isPending ? (
@@ -40,7 +40,7 @@ export default function ConsultationDocumentsActions({
           <DocumentDuplicateIcon className="w-4 h-4" />
         )}
         <span className="border-l border-white/20 pl-3">
-          {generateReport.isPending ? "COMPILLING_REPORT..." : "GENERATE_MEDICAL_REPORT"}
+          {generateReport.isPending ? "COMPILING_REPORT..." : "GENERATE_MEDICAL_REPORT"}
         </span>
       </button>
       {/* BOTÓN: DOCUMENTOS DE CONSULTA (RECETAS, ÓRDENES, ETC) */}
