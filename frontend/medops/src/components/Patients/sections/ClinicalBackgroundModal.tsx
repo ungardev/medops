@@ -1,6 +1,5 @@
 // src/components/Patients/sections/ClinicalBackgroundModal.tsx
 import React, { useState, useEffect } from "react";
-import EliteModal from "../../Common/EliteModal";
 import { apiFetch } from "../../../api/client";
 import { 
   ClipboardList, 
@@ -9,7 +8,7 @@ import {
   AlertTriangle, 
   Activity, 
   X, 
-  Save, 
+  Save,
   Loader2 
 } from "lucide-react";
 type BackgroundType = "personal" | "family" | "genetic" | "allergy" | "habit";
@@ -165,187 +164,133 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
     onSave(payload);
     onClose();
   };
-  const inputStyles = "w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-white/30 transition-all";
-  const labelStyles = "text-[9px] font-mono text-white/60 uppercase tracking-[0.1em] mb-2 block";
-  const sectionStyles = "bg-[#0a0a0a] border border-white/10 rounded-sm p-4 space-y-4";
+  // ✅ ESTILOS MODERNOS MEDOPZ/PALANTIR - Más legibles
+  const inputStyles = "w-full bg-black/40 border border-white/20 rounded-sm px-4 py-3 text-[13px] text-white font-mono focus:outline-none focus:border-emerald-500/50 transition-all";
+  const labelStyles = "text-[11px] font-bold text-white/70 uppercase tracking-[0.1em] mb-2 block";
+  const sectionStyles = "bg-white/[0.02] border border-white/10 rounded-sm p-5 space-y-4";
+  if (!open) return null;
   return (
-    <EliteModal
-      open={open}
-      onClose={onClose}
-      title={activeConfig.technicalLabel}
-      subtitle={`${initial ? "EDIT_EXISTING_REGISTRY" : "INITIALIZE_NEW_ENTRY"} - ${activeConfig.label.toUpperCase()}`}
-      maxWidth="2xl"
-    >
-      <div className="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-        {type === "personal" && (
-          <div className={sectionStyles}>
-            <div className="space-y-2">
-              <label className={labelStyles}>MEDICAL_CLASSIFICATION_PROTOCOL</label>
-              <select
-                className={inputStyles}
-                value={form.personalType}
-                onChange={(e) => setField("personalType", e.target.value)}
-              >
-                {personalHistoryChoices.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div 
+        className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 sticky top-0">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 ${activeConfig.color.replace('text', 'bg').replace('-400', '-500/20')} border ${activeConfig.color.replace('text', 'border').replace('-400', '-400/30')}`}>
+              <activeConfig.icon className={`h-4 w-4 ${activeConfig.color}`} />
             </div>
-            <div className="space-y-2">
-              <label className={labelStyles}>MEDICAL_CONDITION_IDENTIFIER</label>
-              <input
-                className={inputStyles}
-                value={form.condition}
-                onChange={(e) => setField("condition", e.target.value)}
-                placeholder="Ej: HIPERTENSION_ARTERIAL"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className={labelStyles}>INCIDENT_TIMESTAMP</label>
-              <input
-                type="date"
-                className={inputStyles}
-                value={form.date}
-                onChange={(e) => setField("date", e.target.value)}
-              />
+            <div>
+              <h3 className="text-[12px] font-bold uppercase tracking-widest text-white">
+                {initial ? "EDIT_REGISTRY" : "NEW_ENTRY"}
+              </h3>
+              <p className="text-[10px] font-mono text-white/50 uppercase">{activeConfig.label}</p>
             </div>
           </div>
-        )}
-        {type === "family" && (
-          <div className={sectionStyles}>
-            <div className="space-y-2">
-              <label className={labelStyles}>FAMILY_RELATIONSHIP_CODE</label>
-              <input
-                className={inputStyles}
-                value={form.relation}
-                onChange={(e) => setField("relation", e.target.value)}
-                placeholder="Ej: PADRE, ABUELA_MATERNA"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className={labelStyles}>DIAGNOSTIC_CONDITION_CODE</label>
-              <input
-                className={inputStyles}
-                value={form.condition}
-                onChange={(e) => setField("condition", e.target.value)}
-                placeholder="Ej: DIABETES_TIPO_II"
-              />
-            </div>
-          </div>
-        )}
-        {type === "genetic" && (
-          <div className={sectionStyles}>
-            <div className="space-y-2">
-              <label className={labelStyles}>
-                GENETIC_CATALOG_SELECTOR {loadingOptions && <Loader2 size={12} className="inline animate-spin ml-2" />}
-              </label>
-              <select
-                className={inputStyles}
-                value={form.name}
-                onChange={(e) => setField("name", e.target.value)}
-                disabled={loadingOptions}
-              >
-                <option value="">SELECT_GENETIC_PREDISPOSITION...</option>
-                {options.map((opt) => (
-                  <option key={opt.id} value={opt.name}>{opt.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        )}
-        {type === "allergy" && (
-          <div className={sectionStyles}>
-            <div className="space-y-2">
-              <label className={labelStyles}>ALLERGEN_AGENT_IDENTIFIER</label>
-              <input
-                className={inputStyles}
-                value={form.name}
-                onChange={(e) => setField("name", e.target.value)}
-                placeholder="MEDICAMENTO, ALIMENTO, SUSTANCIA"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className={labelStyles}>REACTION_SEVERITY_LEVEL</label>
-                <select
-                  className={`${inputStyles} px-2 py-2`}
-                  value={form.severity}
-                  onChange={(e) => setField("severity", e.target.value)}
-                >
-                  <option value="">SEVERITY_LEVEL...</option>
-                  {allergySeverityChoices.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
+          <button onClick={onClose} className="text-white/40 hover:text-white p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        {/* Content */}
+        <div className="p-6 space-y-5">
+          {type === "personal" && (
+            <div className={sectionStyles}>
+              <div>
+                <label className={labelStyles}>Type</label>
+                <select className={inputStyles} value={form.personalType} onChange={(e) => setField("personalType", e.target.value)}>
+                  {personalHistoryChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                 </select>
               </div>
-              <div className="space-y-2">
-                <label className={labelStyles}>SOURCE_VERIFICATION_METHOD</label>
-                <select
-                  className={`${inputStyles} px-2 py-2`}
-                  value={form.source}
-                  onChange={(e) => setField("source", e.target.value)}
-                >
-                  <option value="">VERIFICATION_SOURCE...</option>
-                  {allergySourceChoices.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
+              <div>
+                <label className={labelStyles}>Condition</label>
+                <input className={inputStyles} value={form.condition} onChange={(e) => setField("condition", e.target.value)} placeholder="Ej: HIPERTENSION" />
+              </div>
+              <div>
+                <label className={labelStyles}>Date</label>
+                <input type="date" style={{colorScheme: 'dark'}} className={inputStyles} value={form.date} onChange={(e) => setField("date", e.target.value)} />
+              </div>
+            </div>
+          )}
+          {type === "family" && (
+            <div className={sectionStyles}>
+              <div>
+                <label className={labelStyles}>Relationship</label>
+                <input className={inputStyles} value={form.relation} onChange={(e) => setField("relation", e.target.value)} placeholder="Ej: PADRE, MADRE" />
+              </div>
+              <div>
+                <label className={labelStyles}>Condition</label>
+                <input className={inputStyles} value={form.condition} onChange={(e) => setField("condition", e.target.value)} placeholder="Ej: DIABETES" />
+              </div>
+            </div>
+          )}
+          {type === "genetic" && (
+            <div className={sectionStyles}>
+              <div>
+                <label className={labelStyles}>
+                  Genetic_Predisposition {loadingOptions && <Loader2 size={14} className="inline animate-spin ml-2" />}
+                </label>
+                <select className={inputStyles} value={form.name} onChange={(e) => setField("name", e.target.value)} disabled={loadingOptions}>
+                  <option value="">SELECT...</option>
+                  {options.map((opt) => (<option key={opt.id} value={opt.name}>{opt.name}</option>))}
                 </select>
               </div>
             </div>
-          </div>
-        )}
-        {type === "habit" && (
-          <div className={sectionStyles}>
-            <div className="space-y-2">
-              <label className={labelStyles}>BEHAVIOR_PATTERN_TYPE</label>
-              <select
-                className={inputStyles}
-                value={form.condition}
-                onChange={(e) => setField("condition", e.target.value)}
-              >
-                {habitTypes.map((h) => (
-                  <option key={h.value} value={h.value}>{h.label}</option>
-                ))}
-              </select>
+          )}
+          {type === "allergy" && (
+            <div className={sectionStyles}>
+              <div>
+                <label className={labelStyles}>Allergen</label>
+                <input className={inputStyles} value={form.name} onChange={(e) => setField("name", e.target.value)} placeholder="MEDICAMENTO, ALIMENTO" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelStyles}>Severity</label>
+                  <select className={inputStyles} value={form.severity} onChange={(e) => setField("severity", e.target.value)}>
+                    <option value="">SELECT...</option>
+                    {allergySeverityChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelStyles}>Source</label>
+                  <select className={inputStyles} value={form.source} onChange={(e) => setField("source", e.target.value)}>
+                    <option value="">SELECT...</option>
+                    {allergySourceChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className={labelStyles}>CONSUMPTION_BEHAVIOR_DATA</label>
-              <textarea
-                className={`${inputStyles} min-h-[80px] resize-none`}
-                value={form.description}
-                onChange={(e) => setField("description", e.target.value)}
-                placeholder="FREQUENCY, QUANTITY, DURATION_PATTERNS..."
-              />
+          )}
+          {type === "habit" && (
+            <div className={sectionStyles}>
+              <div>
+                <label className={labelStyles}>Habit_Type</label>
+                <select className={inputStyles} value={form.condition} onChange={(e) => setField("condition", e.target.value)}>
+                  {habitTypes.map((h) => (<option key={h.value} value={h.value}>{h.label}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className={labelStyles}>Description</label>
+                <textarea className={`${inputStyles} min-h-[80px] resize-none`} value={form.description} onChange={(e) => setField("description", e.target.value)} placeholder="FREQUENCY, QUANTITY..." />
+              </div>
             </div>
-          </div>
-        )}
-        <div className={`${sectionStyles} border-t border-white/20 pt-6`}>
-          <div className="space-y-2">
-            <label className={labelStyles}>CLINICAL_NOTES_REGISTRY</label>
-            <textarea
-              className={`${inputStyles} min-h-[100px] resize-none bg-black/60`}
-              value={form.notes}
-              onChange={(e) => setField("notes", e.target.value)}
-              placeholder="CLINICAL_RELEVANT_NOTES, OBSERVATIONS, METADATA..."
-            />
+          )}
+          <div className={`${sectionStyles} border-t border-white/20 pt-5`}>
+            <label className={labelStyles}>Clinical_Notes</label>
+            <textarea className={`${inputStyles} min-h-[100px] resize-none bg-black/60`} value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="OBSERVATIONS..." />
           </div>
         </div>
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-black/40">
+          <button onClick={onClose} className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">
+            Cancel
+          </button>
+          <button onClick={handleSave} className={`flex items-center gap-2 px-6 py-2.5 rounded-sm text-[11px] font-bold uppercase tracking-widest text-white transition-all ${activeConfig.color.replace('text', 'bg').replace('-400', '-500/20')} border border-white/20 hover:brightness-110`}>
+            <Save size={16} />
+            {initial ? "UPDATE" : "CREATE"}
+          </button>
+        </div>
       </div>
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors font-mono"
-        >
-          ABORT_OPERATION
-        </button>
-        <button
-          onClick={handleSave}
-          className={`flex items-center gap-2 px-6 py-3 rounded-sm text-xs font-bold uppercase tracking-widest text-white transition-all font-mono ${activeConfig.color.replace('text', 'bg').replace('-400', '-500/20')} border border-white/20 hover:brightness-110`}
-        >
-          <Save size={16} />
-          {initial ? "UPDATE_REGISTRY_ENTRY" : "CREATE_REGISTRY_ENTRY"}
-        </button>
-      </div>
-    </EliteModal>
+    </div>
   );
 }

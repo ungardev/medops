@@ -66,10 +66,7 @@ export default function ClinicalProfileSection({
   onRefresh,
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>("personal");
-  // 🔍 DIAGNOSTIC LOG: Verificar estado del modal en esta sección
   const [modalOpen, setModalOpen] = useState(false);
-  console.log('ClinicalProfileSection modalOpen:', modalOpen);
-  
   const [modalType, setModalType] = useState<ModalType>("personal");
   const [modalInitial, setModalInitial] = useState<any>(undefined);
   const grouped: Record<BackgroundType, ClinicalBackground[]> = {
@@ -105,11 +102,7 @@ export default function ClinicalProfileSection({
     if (type === "habit") endpoint = `patients/${patientId}/habits/`;
     if (type === "allergy") endpoint = `patients/${patientId}/allergies/`;
     const method = isEdit ? "PATCH" : "POST";
-    const url = isEdit
-      ? (type === "habit" || type === "allergy") 
-        ? `${endpoint}${modalInitial.id}/` 
-        : `${endpoint}${modalInitial.id}/`
-      : endpoint;
+    const url = isEdit ? `${endpoint}${modalInitial.id}/` : endpoint;
     try {
       await apiFetch(url, {
         method,
@@ -125,81 +118,79 @@ export default function ClinicalProfileSection({
   const renderSection = (type: ModalType, title: string, items: any[], Icon: any) => {
     const isExpanded = expanded === type;
     return (
-      <div className={`border-b border-[var(--palantir-border)] last:border-0 transition-all ${isExpanded ? 'bg-white/[0.02]' : ''}`}>
+      <div className={`border-b border-white/10 last:border-0 transition-all ${isExpanded ? 'bg-white/[0.02]' : ''}`}>
         <button
           onClick={() => setExpanded(isExpanded ? null : type)}
           className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/[0.03] transition-colors group"
         >
           <div className="flex items-center gap-4">
-            <Icon className={`w-4 h-4 ${isExpanded ? 'text-[var(--palantir-active)]' : 'text-[var(--palantir-muted)]'}`} />
-            <span className={`text-[10px] font-mono tracking-[0.2em] uppercase ${isExpanded ? 'text-[var(--palantir-text)]' : 'text-[var(--palantir-muted)]'}`}>
+            <Icon className={`w-4 h-4 ${isExpanded ? 'text-emerald-400' : 'text-white/40'}`} />
+            <span className={`text-[11px] font-bold tracking-[0.15em] uppercase ${isExpanded ? 'text-white' : 'text-white/50'}`}>
               {title}
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-[9px] font-mono text-[var(--palantir-muted)] opacity-50">
-              COUNT: {items.length.toString().padStart(2, '0')}
+            <span className="text-[10px] font-mono text-white/40">
+              {items.length.toString().padStart(2, '0')}
             </span>
-            <ChevronDownIcon className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-[var(--palantir-active)]' : 'text-[var(--palantir-muted)]'}`} />
+            <ChevronDownIcon className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-emerald-400' : 'text-white/40'}`} />
           </div>
         </button>
         {isExpanded && (
           <div className="px-6 pb-6 pt-2 animate-in fade-in slide-in-from-top-2">
             <div className="space-y-3">
               {items.length === 0 ? (
-                <div className="text-[10px] font-mono text-[var(--palantir-muted)] py-4 border border-dashed border-[var(--palantir-border)] rounded-sm text-center">
+                <div className="text-[11px] font-mono text-white/30 py-4 border border-dashed border-white/10 rounded-sm text-center">
                   NO_RECORDS_FOUND_FOR_{type.toUpperCase()}
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={item.id} className="group flex items-center justify-between p-3 border border-[var(--palantir-border)] bg-[var(--palantir-bg)]/40 hover:border-[var(--palantir-active)]/50 transition-all rounded-sm">
+                  <div key={item.id} className="group flex items-center justify-between p-4 border border-white/10 bg-white/[0.02] hover:border-emerald-500/30 transition-all rounded-sm">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
+                        <span className="text-[13px] font-bold text-white uppercase tracking-tight">
                           {item.condition || item.name || item.type}
                         </span>
                         {item.severity && (
-                          <span className="text-[8px] px-2 py-0.5 border border-red-500/30 text-red-500 font-black rounded-full uppercase">
+                          <span className="text-[9px] px-2 py-0.5 border border-red-500/30 text-red-400 font-bold rounded-full uppercase">
                             {item.severity}
                           </span>
                         )}
                         {item.status && (
-                          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase italic">
+                          <span className="text-[9px] font-mono text-white/40 uppercase italic">
                             [{item.status}]
                           </span>
                         )}
                       </div>
                       {(item.notes || item.description) && (
-                        <p className="text-[10px] text-[var(--palantir-muted)] font-mono leading-relaxed max-w-xl">
+                        <p className="text-[11px] text-white/50 font-mono leading-relaxed max-w-xl">
                           {">"} {item.notes || item.description}
                         </p>
                       )}
                     </div>
-                     
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button 
-                        onClick={() => { setModalType(type); setModalInitial(item); setModalOpen(true); }}
-                        className="p-1.5 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors"
-                      >
-                        <PencilIcon className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(item, type)}
-                        className="p-1.5 text-[var(--palantir-muted)] hover:text-red-500 transition-colors"
-                      >
-                        <TrashIcon className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => { setModalType(type); setModalInitial(item); setModalOpen(true); }}
+                          className="p-2 text-white/40 hover:text-emerald-400 transition-colors"
+                        >
+                          <PencilIcon className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(item, type)}
+                          className="p-2 text-white/40 hover:text-red-400 transition-colors"
+                        >
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
+                      </div>
                   </div>
                 ))
               )}
-               
               <button
                 onClick={() => { setModalType(type); setModalInitial(undefined); setModalOpen(true); }}
-                className="w-full py-2 border border-dashed border-[var(--palantir-border)] hover:border-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/5 transition-all group flex justify-center items-center gap-2"
+                className="w-full py-3 border border-dashed border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group flex justify-center items-center gap-2 rounded-sm"
               >
-                <PlusIcon className="w-3 h-3 text-[var(--palantir-muted)] group-hover:text-[var(--palantir-active)]" />
-                <span className="text-[9px] font-mono text-[var(--palantir-muted)] group-hover:text-[var(--palantir-active)] uppercase">Add_Entry</span>
+                <PlusIcon className="w-4 h-4 text-white/40 group-hover:text-emerald-400" />
+                <span className="text-[10px] font-bold text-white/40 group-hover:text-emerald-400 uppercase">Add_Entry</span>
               </button>
             </div>
           </div>
@@ -208,10 +199,10 @@ export default function ClinicalProfileSection({
     );
   };
   return (
-    <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden">
-      <div className="bg-[var(--palantir-border)]/20 px-6 py-3 border-b border-[var(--palantir-border)]">
-        <span className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest flex items-center gap-2">
-          <div className="w-1 h-1 bg-[var(--palantir-active)] animate-pulse" />
+    <div className="bg-white/[0.02] border border-white/10 rounded-sm overflow-hidden">
+      <div className="bg-white/5 px-6 py-3 border-b border-white/10">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-white flex items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
           Clinical_Bio_Profile
         </span>
       </div>
