@@ -71,7 +71,7 @@ export default function SurgeriesTab({ patientId, onRefresh }: Props) {
         <button
           onClick={handleCreate}
           disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm disabled:opacity-50 hover:shadow-lg transition-all"
+          className="flex items-center gap-2 px-4 py-2 bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-black text-[10px] font-bold uppercase tracking-widest rounded-sm disabled:opacity-50 hover:shadow-lg transition-all"
         >
           <PlusIcon className="w-4 h-4" />
           New Record
