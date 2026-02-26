@@ -665,21 +665,103 @@ def get_audit_logic(
     """
     SERVICIO MAESTRO DE AUDITORÍA: Centraliza 7 métodos en uno solo.
     Devuelve datos puros (dicts/lists), sin Response ni Request.
+    
+    ✅ FIX: Ahora busca eventos relacionados con el paciente a través de:
+    - Patient (entity_id == patient_id)
+    - Appointment (appointment.patient_id == patient_id)
+    - ChargeOrder (charge_order.patient_id == patient_id)
+    - Payment (payment.appointment.patient_id == patient_id)
+    - WaitingRoomEntry (waiting_room_entry.patient_id == patient_id)
     """
     from .serializers import EventSerializer
+    from .models import Appointment, ChargeOrder, Payment, WaitingRoomEntry
     
     # 1. Base Query optimizada
     qs = Event.objects.all().order_by("-timestamp")
-
-    # 2. Filtros de Identidad (ID de paciente en metadata es clave para rendimiento)
+    # 2. Filtros de Identidad (Búsqueda mejorada por patient_id)
     if patient_id:
-        qs = qs.filter(metadata__contains={"patient_id": int(patient_id)})
+        patient_id_int = int(patient_id)
+        
+        # Obtener IDs de entidades relacionadas con este paciente
+        related_entity_ids = []
+        
+        # A) El paciente mismo (entity=Patient, entity_id=patient_id)
+        patient_event_ids = list(Event.objects.filter(
+            entity='Patient', 
+            entity_id=patient_id_int
+        ).values_list('id', flat=True))
+        related_entity_ids.extend(patient_event_ids)
+        
+        # B) Citas del paciente
+        appointment_ids = list(Appointment.objects.filter(
+            patient_id=patient_id_int
+        ).values_list('id', flat=True))
+        
+        if appointment_ids:
+            # Citas directas
+            appointment_event_ids = list(Event.objects.filter(
+                entity='Appointment',
+                entity_id__in=appointment_ids
+            ).values_list('id', flat=True))
+            related_entity_ids.extend(appointment_event_ids)
+            
+            # C) Órdenes de cargo del paciente
+            charge_order_ids = list(ChargeOrder.objects.filter(
+                patient_id=patient_id_int
+            ).values_list('id', flat=True))
+            
+            if charge_order_ids:
+                charge_order_event_ids = list(Event.objects.filter(
+                    entity='ChargeOrder',
+                    entity_id__in=charge_order_ids
+                ).values_list('id', flat=True))
+                related_entity_ids.extend(charge_order_event_ids)
+                
+                # D) Pagos relacionados con esas órdenes de cargo
+                payment_ids = list(Payment.objects.filter(
+                    charge_order_id__in=charge_order_ids
+                ).values_list('id', flat=True))
+                
+                if payment_ids:
+                    payment_event_ids = list(Event.objects.filter(
+                        entity='Payment',
+                        entity_id__in=payment_ids
+                    ).values_list('id', flat=True))
+                    related_entity_ids.extend(payment_event_ids)
+            
+            # E) Entradas en sala de espera del paciente
+            waiting_room_ids = list(WaitingRoomEntry.objects.filter(
+                patient_id=patient_id_int
+            ).values_list('id', flat=True))
+            
+            if waiting_room_ids:
+                waiting_event_ids = list(Event.objects.filter(
+                    entity='WaitingRoomEntry',
+                    entity_id__in=waiting_room_ids
+                ).values_list('id', flat=True))
+                related_entity_ids.extend(waiting_event_ids)
+        
+        # F) Búsqueda legacy en metadata (por si hay eventos con patient_id en metadata)
+        metadata_events = Event.objects.filter(
+            metadata__contains={"patient_id": patient_id_int}
+        ).values_list('id', flat=True)
+        related_entity_ids.extend(list(metadata_events))
+        
+        # Aplicar filtro: cualquier evento relacionado con el paciente
+        if related_entity_ids:
+            # Eliminar duplicados
+            unique_ids = list(set(related_entity_ids))
+            qs = qs.filter(id__in=unique_ids)
+        else:
+            # Si no hay eventos relacionados, devolver vacío
+            qs = qs.none()
+    
+    # 3. Filtros originales
     if entity:
         qs = qs.filter(entity=entity)
     if entity_id:
         qs = qs.filter(entity_id=entity_id)
-
-    # 3. Filtros Dinámicos (vienen de request.GET)
+    # 4. Filtros Dinámicos (vienen de request.GET)
     if filters:
         if filters.get("start_date"):
             qs = qs.filter(timestamp__date__gte=filters["start_date"])
@@ -689,8 +771,7 @@ def get_audit_logic(
             qs = qs.filter(severity=filters["severity"])
         if filters.get("actor"):
             qs = qs.filter(actor__icontains=filters["actor"])
-
-    # 4. Lógica de Categorización (Para Dashboards o Resúmenes)
+    # 5. Lógica de Categorización (Para Dashboards o Resúmenes)
     if split_by_category:
         lim = limit or 10
         clinical = qs.filter(entity__in=["Prescription", "Treatment"])[:lim]
@@ -703,16 +784,14 @@ def get_audit_logic(
             "general_events": EventSerializer(general, many=True).data,
             "all_events": EventSerializer(qs[:30], many=True).data
         }
-
-    # 5. Dashboard Estadístico (Totalizaciones)
+    # 6. Dashboard Estadístico (Totalizaciones)
     if filters and filters.get("dashboard_stats"):
         return {
             "total_events": Event.objects.count(),
             "by_entity": list(Event.objects.values("entity").annotate(total=Count("id"))),
             "by_action": list(Event.objects.values("action").annotate(total=Count("id"))),
         }
-
-    # 6. Retorno Simple (con o sin límite)
+    # 7. Retorno Simple (con o sin límite)
     if limit:
         qs = qs[:limit]
         
