@@ -2620,24 +2620,55 @@ class PersonalHistory(models.Model):
 
 
 class FamilyHistory(models.Model):
+    # Opciones de parentesco estandarizadas
+    RELATIONSHIP_CHOICES = [
+        # Primera línea (directos)
+        ("mother", "Madre"),
+        ("father", "Padre"),
+        ("sibling", "Hermano/a"),
+        ("child", "Hijo/a"),
+        # Segunda línea (abuelos)
+        ("maternal_grandmother", "Abuela materna"),
+        ("maternal_grandfather", "Abuelo materno"),
+        ("paternal_grandmother", "Abuela paterna"),
+        ("paternal_grandfather", "Abuelo paterno"),
+        # Tercera línea
+        ("uncle", "Tío/a"),
+        ("aunt", "Tía"),
+        ("cousin", "Primo/a"),
+        ("nephew", "Sobrino/a"),
+        ("niece", "Sobrina/a"),
+    ]
+    
     patient = models.ForeignKey(
         Patient,
         on_delete=models.CASCADE,
         related_name="family_history"
     )
     condition = models.CharField(max_length=255)
-    relative = models.CharField(max_length=100)
+    relative = models.CharField(max_length=100, choices=RELATIONSHIP_CHOICES)
+    
+    # ✅ NUEVO: Edad al momento del diagnóstico (importante para ICD-10)
+    age_at_diagnosis = models.PositiveIntegerField(
+        blank=True, 
+        null=True,
+        help_text="Edad del familiar al momento del diagnóstico"
+    )
+    
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     class Meta:
         verbose_name = "Family History"
         verbose_name_plural = "Family Histories"
+    
     def save(self, *args, **kwargs):
         self.condition = normalize_title_case(self.condition)
-        self.relative = normalize_title_case(self.relative)
         super().save(*args, **kwargs)
+    
     def __str__(self):
-        return f"{self.patient} — {self.condition} ({self.relative})"
+        return f"{self.patient} — {self.get_relative_display()} — {self.condition}"
 
 
 class Surgery(models.Model):
@@ -2670,22 +2701,130 @@ class Habit(models.Model):
         ("actividad_fisica", "Actividad física"),
         ("dieta", "Dieta"),
         ("sueno", "Sueño"),
+        ("drogas", "Drogas"),
     ]
-
+    
+    # === CAMPOS COMUNES ===
     patient = models.ForeignKey(
         Patient,
         on_delete=models.CASCADE,
         related_name="habits"
     )
     type = models.CharField(max_length=50, choices=HABIT_TYPES)
-    description = models.TextField()
-
+    notes = models.TextField(blank=True, null=True)
+    
+    # === TABACO ===
+    SMOKING_STATUS = [
+        ("yes", "Sí, fuma actualmente"),
+        ("no", "No fuma"),
+        ("former", "Ex fumador"),
+    ]
+    TOBACCO_TYPES = [
+        ("cigarettes", "Cigarrillos"),
+        ("pipe", "Pipa"),
+        ("electronic", "Cigarrillo electrónico"),
+        ("other", "Otros"),
+    ]
+    FREQUENCY_LEVELS = [
+        ("daily", "Diario"),
+        ("weekly", "Semanal"),
+        ("occasional", "Ocasional"),
+    ]
+    
+    smokes_currently = models.CharField(max_length=10, choices=SMOKING_STATUS, blank=True, null=True)
+    tobacco_type = models.CharField(max_length=50, choices=TOBACCO_TYPES, blank=True, null=True)
+    smoking_frequency = models.CharField(max_length=50, choices=FREQUENCY_LEVELS, blank=True, null=True)
+    cigarettes_per_day = models.PositiveIntegerField(blank=True, null=True)
+    smoking_start_age = models.PositiveIntegerField(blank=True, null=True)
+    
+    # === ALCOHOL ===
+    ALCOHOL_STATUS = [
+        ("yes", "Sí consume"),
+        ("no", "No consume"),
+    ]
+    ALCOHOL_FREQUENCY = [
+        ("never", "Nunca"),
+        ("monthly_or_less", "Mensual o menos"),
+        ("2_4_month", "2-4 veces al mes"),
+        ("2_3_week", "2-3 veces por semana"),
+        ("4_plus_week", "4+ veces por semana"),
+    ]
+    ALCOHOL_QUANTITY = [
+        ("1_2", "1-2"),
+        ("3_4", "3-4"),
+        ("5_6", "5-6"),
+        ("7_9", "7-9"),
+        ("10_plus", "10+"),
+    ]
+    BINGE_FREQUENCY = [
+        ("never", "Nunca"),
+        ("less_monthly", "Menos que mensual"),
+        ("monthly", "Mensual"),
+        ("weekly", "Semanal"),
+        ("daily", "Diario o casi diario"),
+    ]
+    
+    drinks_alcohol = models.CharField(max_length=10, choices=ALCOHOL_STATUS, blank=True, null=True)
+    alcohol_frequency = models.CharField(max_length=50, choices=ALCOHOL_FREQUENCY, blank=True, null=True)
+    alcohol_quantity = models.CharField(max_length=50, choices=ALCOHOL_QUANTITY, blank=True, null=True)
+    binge_frequency = models.CharField(max_length=50, choices=BINGE_FREQUENCY, blank=True, null=True)
+    
+    # === ACTIVIDAD FÍSICA ===
+    EXERCISE_FREQUENCY = [
+        ("sedentary", "Sedentario"),
+        ("1_2_week", "1-2 veces por semana"),
+        ("3_4_week", "3-4 veces por semana"),
+        ("5_plus_week", "5+ veces por semana"),
+    ]
+    EXERCISE_INTENSITY = [
+        ("light", "Leve"),
+        ("moderate", "Moderada"),
+        ("intense", "Intensa"),
+    ]
+    
+    exercise_frequency = models.CharField(max_length=50, choices=EXERCISE_FREQUENCY, blank=True, null=True)
+    exercise_intensity = models.CharField(max_length=50, choices=EXERCISE_INTENSITY, blank=True, null=True)
+    activity_description = models.TextField(blank=True, null=True, help_text="Tipo de actividad: caminar, gimnasio, deportes, etc.")
+    
+    # === DIETA ===
+    DIET_TYPES = [
+        ("omnivore", "Omnívora"),
+        ("vegetarian", "Vegetariana"),
+        ("vegan", "Vegana"),
+        ("mediterranean", "Mediterránea"),
+        ("other", "Otra"),
+    ]
+    
+    diet_type = models.CharField(max_length=50, choices=DIET_TYPES, blank=True, null=True)
+    diet_restrictions = models.TextField(blank=True, null=True, help_text="Restricciones especiales: renal, diabética, etc.")
+    
+    # === SUEÑO ===
+    SLEEP_QUALITY = [
+        ("good", "Buena"),
+        ("fair", "Regular"),
+        ("poor", "Mala"),
+    ]
+    
+    sleep_hours = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True, help_text="Horas de sueño por noche")
+    sleep_quality = models.CharField(max_length=20, choices=SLEEP_QUALITY, blank=True, null=True)
+    
+    # === DROGAS ===
+    DRUGS_STATUS = [
+        ("yes", "Sí"),
+        ("no", "No"),
+    ]
+    
+    uses_drugs = models.CharField(max_length=10, choices=DRUGS_STATUS, blank=True, null=True)
+    drug_description = models.TextField(blank=True, null=True, help_text="Tipo de drogas consumidas")
+    drug_frequency = models.CharField(max_length=50, blank=True, null=True)
+    
     created_at = models.DateTimeField(auto_now_add=True)
-
+    updated_at = models.DateTimeField(auto_now=True)
+    
     class Meta:
         verbose_name = "Habit"
         verbose_name_plural = "Habits"
-
+    
     def __str__(self):
         return f"{self.patient} — {self.get_type_display()}"
 
