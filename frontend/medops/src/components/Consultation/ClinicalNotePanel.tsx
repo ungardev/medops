@@ -92,20 +92,25 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
     }
   };
   
+  // Estilos reutilizables
+  const labelStyles = "text-[9px] font-bold text-white/50 uppercase tracking-wider mb-2 block";
+  const inputStyles = "w-full h-24 p-3 bg-black/40 border border-white/10 text-white text-[11px] font-mono placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 rounded-sm transition-all resize-none";
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <div className="w-6 h-6 border-2 border-[var(--palantir-active)] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
   
   return (
-    <div className="space-y-4 bg-[var(--palantir-panel)] border border-white/10 rounded-sm p-4">
+    <div className="space-y-4 bg-black/20 border border-white/10 rounded-sm p-4">
+      {/* HEADER */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <DocumentTextIcon className="w-5 h-5 text-[var(--palantir-active)]" />
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--palantir-text)]">
+          <DocumentTextIcon className="w-5 h-5 text-emerald-400" />
+          <h3 className="text-[10px] font-bold uppercase tracking-[0.3em] text-white">
             CLINICAL_NOTES
           </h3>
           {clinicalNote?.is_locked && (
@@ -163,7 +168,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
                   ) : (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="p-1.5 text-white/40 hover:text-[var(--palantir-active)] disabled:opacity-30 transition-all"
+                      className="p-1.5 text-white/40 hover:text-emerald-400 disabled:opacity-30 transition-all"
                       title="Edit note"
                     >
                       <PencilSquareIcon className="w-4 h-4" />
@@ -177,7 +182,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
           {readOnly && clinicalNote?.is_locked && (
             <div className="flex items-center gap-1 px-2 py-1 bg-red-500/10 border border-red-500/20 rounded-sm">
               <EyeIcon className="w-3 h-3 text-red-400" />
-              <span className="text-[7px] font-mono text-red-400 uppercase tracking-wider">
+              <span className="text-[7px] font-bold text-red-400 uppercase tracking-wider">
                 READ_ONLY
               </span>
             </div>
@@ -185,96 +190,96 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
         </div>
       </div>
       
+      {/* CONTENIDO - ✅ Simplificado a 2 secciones */}
       <div className="border border-white/10 bg-black/20 rounded-sm p-4">
         {isEditing && !clinicalNote?.is_locked && !readOnly ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[8px] font-mono text-white/60 uppercase tracking-wider mb-2">
-                  SUBJECTIVE_DATA
-                </label>
+          <div className="space-y-6">
+            {/* SECCIÓN 1: EXPLORATION (SUBJECTIVE + OBJECTIVE) */}
+            <div>
+              <label className={labelStyles}>EXPLORATION (Subjective + Objective)</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <textarea
                   value={subjective}
                   onChange={(e) => setSubjective(e.target.value)}
-                  className="w-full h-24 p-3 bg-transparent border border-white/10 text-[var(--palantir-text)] text-[10px] font-mono placeholder:text-white/20 focus:outline-none focus:border-[var(--palantir-active)] rounded-sm transition-all resize-none"
+                  className={inputStyles}
                   placeholder="Patient's symptoms and complaints..."
                 />
-              </div>
-              <div>
-                <label className="block text-[8px] font-mono text-white/60 uppercase tracking-wider mb-2">
-                  OBJECTIVE_DATA
-                </label>
                 <textarea
                   value={objective}
                   onChange={(e) => setObjective(e.target.value)}
-                  className="w-full h-24 p-3 bg-transparent border border-white/10 text-[var(--palantir-text)] text-[10px] font-mono placeholder:text-white/20 focus:outline-none focus:border-[var(--palantir-active)] rounded-sm transition-all resize-none"
+                  className={inputStyles}
                   placeholder="Clinical findings and measurements..."
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[8px] font-mono text-white/60 uppercase tracking-wider mb-2">
-                  CLINICAL_ANALYSIS
-                </label>
+            
+            {/* SECCIÓN 2: EVALUATION (ANALYSIS + PLAN) */}
+            <div>
+              <label className={labelStyles}>EVALUATION (Analysis + Plan)</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <textarea
                   value={analysis}
                   onChange={(e) => setAnalysis(e.target.value)}
-                  className="w-full h-24 p-3 bg-transparent border border-white/10 text-[var(--palantir-text)] text-[10px] font-mono placeholder:text-white/20 focus:outline-none focus:border-[var(--palantir-active)] rounded-sm transition-all resize-none"
+                  className={inputStyles}
                   placeholder="Clinical interpretation..."
                 />
-              </div>
-              <div>
-                <label className="block text-[8px] font-mono text-white/60 uppercase tracking-wider mb-2">
-                  TREATMENT_PLAN
-                </label>
                 <textarea
                   value={plan}
                   onChange={(e) => setPlan(e.target.value)}
-                  className="w-full h-24 p-3 bg-transparent border border-white/10 text-[var(--palantir-text)] text-[10px] font-mono placeholder:text-white/20 focus:outline-none focus:border-[var(--palantir-active)] rounded-sm transition-all resize-none"
+                  className={inputStyles}
                   placeholder="Treatment and follow-up plan..."
                 />
               </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="border-l-2 border-white/10 pl-3">
-              <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">
-                SUBJECTIVE
+          <div className="space-y-4">
+            {/* SECCIÓN 1: EXPLORATION */}
+            <div className="border-l-2 border-emerald-500/30 pl-4">
+              <span className="text-[9px] font-bold text-emerald-400 uppercase tracking-wider">
+                EXPLORATION
               </span>
-              <p className="text-[10px] font-mono text-[var(--palantir-text)] mt-1 whitespace-pre-wrap leading-relaxed">
-                {subjective || <span className="text-white/20 italic">No subjective data recorded</span>}
-              </p>
+              <div className="mt-2 space-y-2">
+                <div>
+                  <span className="text-[8px] font-bold text-white/30 uppercase">SUBJECTIVE</span>
+                  <p className="text-[11px] font-mono text-white mt-1 whitespace-pre-wrap">
+                    {subjective || <span className="text-white/20">No subjective data recorded</span>}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[8px] font-bold text-white/30 uppercase">OBJECTIVE</span>
+                  <p className="text-[11px] font-mono text-white mt-1 whitespace-pre-wrap">
+                    {objective || <span className="text-white/20">No objective findings recorded</span>}
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="border-l-2 border-white/10 pl-3">
-              <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">
-                OBJECTIVE
+            
+            {/* SECCIÓN 2: EVALUATION */}
+            <div className="border-l-2 border-blue-500/30 pl-4">
+              <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider">
+                EVALUATION
               </span>
-              <p className="text-[10px] font-mono text-[var(--palantir-text)] mt-1 whitespace-pre-wrap leading-relaxed">
-                {objective || <span className="text-white/20 italic">No objective findings recorded</span>}
-              </p>
-            </div>
-            <div className="border-l-2 border-white/10 pl-3">
-              <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--palantir-muted)]">
-                ANALYSIS
-              </span>
-              <p className="text-[10px] font-mono text-[var(--palantir-text)] mt-1 whitespace-pre-wrap leading-relaxed">
-                {analysis || <span className="text-white/20 italic">No clinical analysis recorded</span>}
-              </p>
-            </div>
-            <div className="border-l-2 border-[var(--palantir-active)]/30 pl-3">
-              <span className="text-[7px] font-black uppercase tracking-[0.3em] text-[var(--palantir-active)]">
-                PLAN
-              </span>
-              <p className="text-[10px] font-mono text-[var(--palantir-text)] mt-1 whitespace-pre-wrap leading-relaxed">
-                {plan || <span className="text-white/20 italic">No treatment plan recorded</span>}
-              </p>
+              <div className="mt-2 space-y-2">
+                <div>
+                  <span className="text-[8px] font-bold text-white/30 uppercase">ANALYSIS</span>
+                  <p className="text-[11px] font-mono text-white mt-1 whitespace-pre-wrap">
+                    {analysis || <span className="text-white/20">No clinical analysis recorded</span>}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-[8px] font-bold text-white/30 uppercase">PLAN</span>
+                  <p className="text-[11px] font-mono text-white mt-1 whitespace-pre-wrap">
+                    {plan || <span className="text-white/20">No treatment plan recorded</span>}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}
       </div>
       
+      {/* FOOTER */}
       {clinicalNote && (
         <div className="flex items-center justify-between text-[8px] font-mono text-white/30 border-t border-white/5 pt-3">
           <div className="flex items-center gap-2">
@@ -295,7 +300,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
           {clinicalNote.is_locked && (
             <div className="flex items-center gap-1 px-2 py-0.5 bg-red-500/10 border border-red-500/20 rounded-sm">
               <LockClosedIcon className="w-3 h-3 text-red-400" />
-              <span className="text-[7px] font-black uppercase tracking-wider text-red-400">
+              <span className="text-[7px] font-bold uppercase tracking-wider text-red-400">
                 SECURED
               </span>
             </div>
