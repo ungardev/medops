@@ -209,7 +209,7 @@ export default function BillingCatalogPage() {
         ))}
         <button
           onClick={() => handleOpenCategoryModal()}
-          className="px-3 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap bg-white/5 text-white/30 border border-dashed border-white/20 hover:bg-white/10 hover:text-white/50 transition-all"
+          className="px-3 py-2 text-[10px] font-black uppercase tracking-widest whitespace-nowrap bg-white/5 text-white/30 border border-dashed border-white/20 hover:bg-white/10 hover:text-white transition-all"
         >
           + Cat
         </button>

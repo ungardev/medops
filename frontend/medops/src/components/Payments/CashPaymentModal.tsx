@@ -212,7 +212,7 @@ export default function CashPaymentModal({
             <button
               type="button"
               onClick={onClose}
-              className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all"
+              className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white/80 transition-all"
             >
               Cancelar
             </button>

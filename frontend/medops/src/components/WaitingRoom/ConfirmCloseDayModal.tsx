@@ -56,7 +56,7 @@ const ConfirmCloseDayModal: React.FC<ConfirmCloseDayModalProps> = ({
           CONFIRMAR_CIERRE
         </button>
         <button
-          className="px-6 py-2.5 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-[0.1em] rounded-sm hover:bg-white/5 hover:text-white transition-all"
+          className="px-6 py-2.5 border border-white/10 text-white/60 text-[10px] font-black uppercase tracking-[0.1em] rounded-sm hover:bg-white/5 hover:text-white/80 transition-all"
           onClick={onCancel}
         >
           ABORTAR

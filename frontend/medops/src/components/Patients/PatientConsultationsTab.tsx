@@ -16,7 +16,6 @@ interface PatientConsultationsTabProps {
 export default function PatientConsultationsTab({ patient }: PatientConsultationsTabProps) {
   const navigate = useNavigate();
   const { data, isLoading, error } = useConsultationsByPatient(patient.id);
-  // Estados de carga y error con estética de dossier
   if (isLoading) {
     return (
       <div className="p-8 flex flex-col items-center justify-center border border-dashed border-[var(--palantir-border)] rounded-sm">
@@ -27,7 +26,6 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
       </div>
     );
   }
-  // 🔒 MEJORA: Validación robusta de datos
   if (error || !data || !Array.isArray(data.list) || typeof data.totalCount !== 'number') {
     return (
       <div className="p-8 border border-red-500/20 bg-red-500/5 rounded-sm flex items-center gap-4">
@@ -65,14 +63,12 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
             Consultation_Archives
           </h3>
           <p className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase mt-1">
-            {/* 🔒 FIX: Validación segura de totalCount */}
             Historical_Log_Entries: {(data?.totalCount ?? 0).toString().padStart(3, '0')}
           </p>
         </div>
       </div>
       {/* Timeline List */}
       <div className="relative">
-        {/* Linea vertical estética */}
         <div className="absolute left-[15px] top-0 bottom-0 w-[1px] bg-gradient-to-b from-[var(--palantir-active)]/50 via-[var(--palantir-border)] to-transparent hidden sm:block" />
         <div className="space-y-4">
           {data.list.map((c: Appointment) => (
@@ -80,12 +76,9 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
               key={c.id}
               className="group relative flex flex-col sm:flex-row items-start sm:items-center gap-4 pl-0 sm:pl-10"
             >
-              {/* Nodo de la línea de tiempo */}
               <div className="absolute left-[11px] top-[14px] w-2 h-2 rounded-full bg-[var(--palantir-bg)] border-2 border-[var(--palantir-active)] hidden sm:block z-10 group-hover:scale-150 transition-transform" />
               <div className="flex-1 w-full bg-[var(--palantir-surface)]/30 border border-[var(--palantir-border)] rounded-sm p-4 hover:border-[var(--palantir-active)]/40 transition-all hover:shadow-[0_0_15px_rgba(0,0,0,0.2)]">
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                   
-                  {/* Info Principal */}
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
                       <span className="text-[11px] font-black text-[var(--palantir-text)] font-mono uppercase tracking-tighter">
@@ -105,14 +98,15 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
                       </span>
                     </div>
                   </div>
-                  {/* 🔒 FIX: Validación segura de navegación */}
+                  
+                  {/* ✅ FIX: Cambiado hover:text-white → hover:text-black para legibilidad */}
                   <button 
                     onClick={() => {
                       if (patient?.id) {
                         navigate(`/patients/${patient.id}/consultations/${c.id}`);
                       }
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-[var(--palantir-border)] text-[10px] font-mono text-[var(--palantir-text)] hover:bg-[var(--palantir-active)] hover:text-white hover:border-[var(--palantir-active)] transition-all group/btn"
+                    className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-[var(--palantir-border)] text-[10px] font-mono text-[var(--palantir-text)] hover:bg-[var(--palantir-active)] hover:text-black hover:border-[var(--palantir-active)] transition-all group/btn"
                   >
                     ACCESS_FULL_REPORT
                     <ArrowRightIcon className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
