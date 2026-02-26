@@ -2434,6 +2434,9 @@ class PersonalHistorySerializer(serializers.ModelSerializer):
 
 
 class FamilyHistorySerializer(serializers.ModelSerializer):
+    # ✅ Display para mostrar etiquetas legibles
+    relative_display = serializers.CharField(source='get_relative_display', read_only=True)
+    
     class Meta:
         model = FamilyHistory
         fields = [
@@ -2441,10 +2444,13 @@ class FamilyHistorySerializer(serializers.ModelSerializer):
             "patient",
             "condition",
             "relative",
+            "relative_display",  # ✅ Nueva: Label legible
+            "age_at_diagnosis",  # ✅ Nueva: Edad al diagnóstico
             "notes",
             "created_at",
+            "updated_at",  # ✅ Nueva
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "updated_at"]
 
 
 class SurgerySerializer(serializers.ModelSerializer):
@@ -2463,28 +2469,78 @@ class SurgerySerializer(serializers.ModelSerializer):
 
 
 class HabitSerializer(serializers.ModelSerializer):
-    # Definimos las opciones permitidas para el campo "type"
-    HABIT_CHOICES = [
-        ("tabaco", "Tabaco"),
-        ("alcohol", "Alcohol"),
-        ("actividad_fisica", "Actividad física"),
-        ("dieta", "Dieta"),
-        ("sueno", "Sueño"),
-        ("drogas", "Drogas"),
-    ]
-
-    type = serializers.ChoiceField(choices=HABIT_CHOICES)
-
+    # ✅ Display para mostrar etiquetas legibles
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
+    smokes_currently_display = serializers.CharField(source='get_smokes_currently_display', read_only=True)
+    tobacco_type_display = serializers.CharField(source='get_tobacco_type_display', read_only=True)
+    smoking_frequency_display = serializers.CharField(source='get_smoking_frequency_display', read_only=True)
+    drinks_alcohol_display = serializers.CharField(source='get_drinks_alcohol_display', read_only=True)
+    alcohol_frequency_display = serializers.CharField(source='get_alcohol_frequency_display', read_only=True)
+    alcohol_quantity_display = serializers.CharField(source='get_alcohol_quantity_display', read_only=True)
+    binge_frequency_display = serializers.CharField(source='get_binge_frequency_display', read_only=True)
+    exercise_frequency_display = serializers.CharField(source='get_exercise_frequency_display', read_only=True)
+    exercise_intensity_display = serializers.CharField(source='get_exercise_intensity_display', read_only=True)
+    diet_type_display = serializers.CharField(source='get_diet_type_display', read_only=True)
+    sleep_quality_display = serializers.CharField(source='get_sleep_quality_display', read_only=True)
+    uses_drugs_display = serializers.CharField(source='get_uses_drugs_display', read_only=True)
+    
     class Meta:
         model = Habit
         fields = [
             "id",
             "patient",
             "type",
-            "description",
+            "type_display",  # ✅ Label legible
+            
+            # === TABACO ===
+            "smokes_currently",
+            "smokes_currently_display",
+            "tobacco_type",
+            "tobacco_type_display",
+            "smoking_frequency",
+            "smoking_frequency_display",
+            "cigarettes_per_day",
+            "smoking_start_age",
+            
+            # === ALCOHOL ===
+            "drinks_alcohol",
+            "drinks_alcohol_display",
+            "alcohol_frequency",
+            "alcohol_frequency_display",
+            "alcohol_quantity",
+            "alcohol_quantity_display",
+            "binge_frequency",
+            "binge_frequency_display",
+            
+            # === ACTIVIDAD FÍSICA ===
+            "exercise_frequency",
+            "exercise_frequency_display",
+            "exercise_intensity",
+            "exercise_intensity_display",
+            "activity_description",
+            
+            # === DIETA ===
+            "diet_type",
+            "diet_type_display",
+            "diet_restrictions",
+            
+            # === SUEÑO ===
+            "sleep_hours",
+            "sleep_quality",
+            "sleep_quality_display",
+            
+            # === DROGAS ===
+            "uses_drugs",
+            "uses_drugs_display",
+            "drug_description",
+            "drug_frequency",
+            
+            # === COMUNES ===
+            "notes",
             "created_at",
+            "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "patient"]
+        read_only_fields = ["id", "created_at", "updated_at", "patient"]
 
 
 class VaccineSerializer(serializers.ModelSerializer):
