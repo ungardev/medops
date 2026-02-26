@@ -1,5 +1,5 @@
 // src/pages/Patients/PatientConsultationsDetail.tsx
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useConsultationById } from "../../hooks/consultations/useConsultationById";
 import {
@@ -7,7 +7,6 @@ import {
   DocumentsPanel,
   ChargeOrderPanel,
 } from "../../components/Consultation";
-import PageHeader from "../../components/Common/PageHeader";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
 import ConsultationDocumentsActions from "../../components/Consultation/ConsultationDocumentsActions";
 import ExportSuccessToast from "../../components/Common/ExportSuccessToast";
@@ -15,73 +14,29 @@ import ExportErrorToast from "../../components/Common/ExportErrorToast";
 import { apiFetch } from "../../api/client";
 import { 
   LockClosedIcon, 
-  PencilSquareIcon, 
+  LockOpenIcon,
   CommandLineIcon,
   ShieldCheckIcon,
-  ClockIcon,
-  CalendarIcon,
-  BeakerIcon,
+  ChevronLeftIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline";
-// 🆕 IMPORTACIONES CRÍTICAS PARA EL FUNCIONAMIENTO PERFECTO
 import { getPatient } from "../../api/patients";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
-// 🆕 OPCIONES DE TIPOS DE SANGRE DEL MODELO PATIENT
-const BLOOD_TYPE_OPTIONS = [
-  { value: "A+", label: "A+" },
-  { value: "A-", label: "A-" },
-  { value: "B+", label: "B+" },
-  { value: "B-", label: "B-" },
-  { value: "AB+", label: "AB+" },
-  { value: "AB-", label: "AB-" },
-  { value: "O+", label: "O+" },
-  { value: "O-", label: "O-" },
-];
 export default function PatientConsultationsDetail() {
   const { patientId, appointmentId } = useParams<{ patientId: string; appointmentId: string }>();
   const appointmentIdNum = Number(appointmentId);
   
-  // 🔧 MEJORADO: Eliminado "as any" para mejor manejo de TypeScript
   const { data: appointment, isLoading, error } = useConsultationById(appointmentIdNum);
   
-  // 🆕 ESTADO PARA PERFIL COMPLETO DEL PACIENTE
+  // Estado para perfil completo del paciente
   const [patientProfile, setPatientProfile] = useState<any | null>(null);
   const [successData, setSuccessData] = useState<{ docs: any[], skipped: string[] } | null>(null);
   const [errorData, setErrorData] = useState<{ category: string, error: string }[] | null>(null);
-  const [readOnly, setReadOnly] = useState<boolean>(() => {
-    const saved = localStorage.getItem("consultationReadOnly");
-    return saved ? JSON.parse(saved) : true;
-  });
   
-  // 🆕 ESTADO PARA BLOOD_TYPE EDITABLE
-  const [editableBloodType, setEditableBloodType] = useState<string>("");
-  const [isUpdatingBloodType, setIsUpdatingBloodType] = useState(false);
-  // 🆕 ACTUALIZAR blood_type CUANDO CAMBIA EL PACIENTE
-  useEffect(() => {
-    if (patientProfile?.blood_type) {
-      setEditableBloodType(patientProfile.blood_type);
-    }
-  }, [patientProfile?.blood_type]);
-  // 🆕 FUNCIÓN PARA GUARDAR BLOOD_TYPE
-  const handleBloodTypeSave = async (newBloodType: string) => {
-    const patientIdNum = Number(patientProfile?.id || patientId);
-    if (!patientIdNum) return;
-    setIsUpdatingBloodType(true);
-    try {
-      await apiFetch(`patients/${patientIdNum}/`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ blood_type: newBloodType }),
-      });
-      setPatientProfile((prev: any) => ({ ...prev, blood_type: newBloodType }));
-    } catch (error) {
-      console.error("Error updating blood_type:", error);
-    } finally {
-      setIsUpdatingBloodType(false);
-    }
-  };
-  
-  // 🆕 EFECTO PARA CARGAR PERFIL COMPLETO DEL PACIENTE
+  // Estado de solo lectura - automático según estado de la cita
+  const isCompleted = appointment?.status === 'completed';
+  const readOnly = isCompleted;
+  // Cargar perfil completo del paciente
   useEffect(() => {
     if (appointment?.patient?.id) {
       getPatient(appointment.patient.id)
@@ -89,25 +44,7 @@ export default function PatientConsultationsDetail() {
         .catch((e) => console.error("CRITICAL_PROFILE_LOAD_ERROR:", e));
     }
   }, [appointment?.patient?.id]);
-  
-  // 🆕 DEBUGGING TEMPORAL
-  useEffect(() => {
-    if (appointment) {
-      console.log("🔍 Appointment Debug Data:", {
-        id: appointment.id,
-        hasId: !!appointment.id,
-        patientId: appointmentId,
-        patientKeys: Object.keys(appointment),
-        patientData: appointment.patient
-      });
-    }
-  }, [appointment, appointmentId]);
-  
-  useEffect(() => {
-    localStorage.setItem("consultationReadOnly", JSON.stringify(readOnly));
-  }, [readOnly]);
-  
-  // 🔧 MEJORADO: Validación de IDs
+  // Validación de IDs
   if (!appointmentId || isNaN(appointmentIdNum)) {
     return (
       <div className="min-h-screen bg-black p-8">
@@ -122,7 +59,6 @@ export default function PatientConsultationsDetail() {
     );
   }
   
-  // 🔧 CORREGIDO: Solo usar isLoading del hook (como Consultation.tsx)
   if (isLoading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center space-y-4">
@@ -134,7 +70,6 @@ export default function PatientConsultationsDetail() {
     </div>
   );
   
-  // 🔧 CORREGIDO: Solo validar appointment, no patientProfile
   if (error || !appointment) return (
     <div className="min-h-screen bg-black p-8">
       <div className="border border-red-500/30 bg-red-500/5 p-4 text-red-500 text-[10px] font-mono uppercase flex items-center gap-3">
@@ -149,246 +84,106 @@ export default function PatientConsultationsDetail() {
       </div>
     </div>
   );
-  
-  // 🔧 VALIDACIÓN DE CONSISTENCIA
-  if (appointment?.patient?.id !== patientProfile?.id) {
-    console.warn("Patient ID mismatch between appointment and profile");
-  }
-  
-  // 🆕 IDS SEGUROS CONVERTIDOS EXPLÍCITAMENTE
+  // Datos seguros
   const safePatientId = Number(appointment?.patient?.id) || Number(patientId);
   const safeAppointmentId = Number(appointment?.id) || Number(appointmentId);
   
-  // 🆕 MANEJO ROBUSTO DEL PACIENTE (como Consultation.tsx)
   const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
   const patientFullName = patient?.full_name || 
     appointment?.patient?.full_name || 
     `PATIENTE_${appointment?.patient?.id || 'UNKNOWN'}`;
   const sessionDate = appointment.appointment_date || "";
   const statusLabel = appointment.status_display || appointment.status || "N/A";
-  // 🆕 DATOS BIOMÉTRICOS DEL PACIENTE
-  const biometricAge = patient?.age ?? "--";
-  const massIndex = patient?.weight ? `${patient.weight} kg` : "--";
-  const heightIndex = patient?.height ? `${patient.height} cm` : "--";
-  const bloodGroup = patient?.blood_type || "--";
-  
+  // Función para navegar atrás
+  const handleGoBack = () => {
+    if (patientId) {
+      window.location.href = `/patients/${patientId}`;
+    } else {
+      window.location.href = "/patients";
+    }
+  };
   return (
     <div className="min-h-screen bg-black text-white p-4 lg:p-6 space-y-6">
        
-      {/* 🚀 HEADER: Navegación de Carpeta Clínica */}
-      <PageHeader 
-        breadcrumbs={[
-          { label: "MEDOPZ", path: "/" },
-          { label: "PATIENTS", path: "/patients" },
-          { label: patientFullName, path: `/patients/${patientId || safePatientId}` },
-          { 
-            label: appointment?.id 
-              ? `CONSULTATION_SESS_${appointment.id}` 
-              : `CONSULTATION_SESS_${appointmentId}`,
-            active: true 
-          }
-        ]}
-        stats={[
-          { 
-            label: "SESSION_NODE", 
-            value: appointment?.id 
-              ? `#${appointment.id.toString().padStart(6, '0')}` 
-              : appointmentId 
-                ? `#${appointmentId.padStart(6, '0')}` 
-                : '#UNKNOWN',
-            color: "text-blue-500"
-          },
-          { 
-            label: "TIMESTAMP", 
-            value: sessionDate ? new Date(sessionDate).toLocaleDateString() : 'N/A',
-            color: "text-white/60"
-          },
-          { 
-            label: "CORE_STATUS", 
-            value: statusLabel.toUpperCase(),
-            color: "text-emerald-500"
-          },
-          // 🆕 NUEVOS CAMPOS BIOMÉTRICOS
-          { 
-            label: "BIOMETRIC_AGE", 
-            value: `${biometricAge} Years`,
-            color: "text-purple-400"
-          },
-          { 
-            label: "MASS_INDEX", 
-            value: massIndex,
-            color: massIndex !== "--" ? "text-orange-400" : "text-white/30"
-          },
-          { 
-            label: "HEIGHT_INDEX", 
-            value: heightIndex,
-            color: heightIndex !== "--" ? "text-cyan-400" : "text-white/30"
-          },
-          { 
-            label: "BLOOD_GROUP", 
-            value: bloodGroup,
-            color: bloodGroup !== "--" ? "text-red-400" : "text-white/30"
-          },
-        ]}
-        actions={
-          <div className="flex items-center gap-3 px-3">
-            {/* 🆕 SELECTOR DE BLOOD_GROUP EDITABLE */}
-            {!readOnly && (
-              <div className="flex items-center gap-2">
-                <BeakerIcon className="w-4 h-4 text-red-400" />
-                <select
-                  value={editableBloodType}
-                  onChange={(e) => {
-                    setEditableBloodType(e.target.value);
-                    handleBloodTypeSave(e.target.value);
-                  }}
-                  disabled={isUpdatingBloodType}
-                  className="bg-black/40 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase px-3 py-2 rounded-sm focus:outline-none focus:border-red-500/50"
-                >
-                  <option value="">SELECT_BLOOD_TYPE</option>
-                  {BLOOD_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                {isUpdatingBloodType && (
-                  <ArrowPathIcon className="w-4 h-4 text-red-400 animate-spin" />
-                )}
-              </div>
-            )}
-            <div className="h-10 w-10 flex items-center justify-center bg-blue-500/10 border border-blue-500/20 rounded-sm">
-               <CommandLineIcon className="w-5 h-5 text-blue-500" />
+      {/* ✅ BREADCRUMBS SIMPLIFICADOS */}
+      <div className="flex items-center gap-2 text-[10px] font-mono">
+        <Link to="/" className="text-white/40 hover:text-white transition-colors">MEDOPZ</Link>
+        <ChevronLeftIcon className="w-3 h-3 text-white/20" />
+        <Link to="/patients" className="text-white/40 hover:text-white transition-colors">PATIENTS</Link>
+        <ChevronLeftIcon className="w-3 h-3 text-white/20" />
+        {patientId && (
+          <>
+            <Link to={`/patients/${patientId}`} className="text-white/40 hover:text-white transition-colors">
+              {patientFullName.length > 20 ? patientFullName.substring(0, 20) + '...' : patientFullName}
+            </Link>
+            <ChevronLeftIcon className="w-3 h-3 text-white/20" />
+          </>
+        )}
+        <span className="text-blue-400 font-bold">CONSULT_{appointment?.id || appointmentId}</span>
+      </div>
+      {/* ✅ HEADER SIMPLIFICADO - Solo stats funcionales */}
+      <div className="flex items-center justify-between px-4 py-3 border border-white/10 bg-white/[0.02] rounded-sm">
+        <div className="flex items-center gap-6">
+          <div>
+            <span className="text-[8px] font-mono text-white/30 uppercase tracking-widest">SESSION_NODE</span>
+            <div className="text-[12px] font-bold text-blue-400">
+              #{String(appointment?.id || appointmentId).padStart(6, '0')}
             </div>
           </div>
-        }
-      />
-      
-      {/* 🛡️ OVERRIDE CONTROLLER (Sticky-like feel) */}
-      <div className={`
-        flex items-center justify-between px-6 py-4 border rounded-sm transition-all duration-700 backdrop-blur-md
-        ${readOnly 
-          ? "border-white/5 bg-white/[0.02]" 
-          : "border-amber-500/30 bg-amber-500/[0.03] shadow-[0_0_30px_rgba(245,158,11,0.05)]"}
-      `}>
-        <div className="flex items-center gap-4">
-          <div className={`p-2 rounded-full transition-colors duration-500 ${readOnly ? "bg-white/5" : "bg-amber-500/20"}`}>
-            {readOnly ? (
-              <LockClosedIcon className="w-5 h-5 text-white/20" />
-            ) : (
-              <PencilSquareIcon className="w-5 h-5 text-amber-500 animate-pulse" />
-            )}
+          <div>
+            <span className="text-[8px] font-mono text-white/30 uppercase tracking-widest">TIMESTAMP</span>
+            <div className="text-[11px] text-white/60">
+              {sessionDate ? new Date(sessionDate).toLocaleDateString("es-VE", { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase() : 'N/A'}
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className={`text-[10px] font-black uppercase tracking-[0.25em] ${readOnly ? "text-white/40" : "text-amber-500"}`}>
-              {readOnly ? "INTEGRITY_PROTECTION_ENABLED" : "SYSTEM_OVERRIDE_ACTIVE"}
-            </span>
-            <span className="text-[8px] font-mono opacity-30 uppercase tracking-widest">
-              {readOnly ? "Read-only access: data persistence guaranteed" : "Warning: Manual history modification in progress"}
-            </span>
+          <div>
+            <span className="text-[8px] font-mono text-white/30 uppercase tracking-widest">CORE_STATUS</span>
+            <div className="text-[11px] font-bold text-emerald-400 uppercase">
+              {statusLabel}
+            </div>
           </div>
         </div>
         
-        <button
-          onClick={() => setReadOnly(!readOnly)}
-          className={`text-[9px] font-black px-6 py-2.5 border transition-all rounded-sm uppercase tracking-[0.2em] ${
-            readOnly 
-            ? "border-white/10 text-white/60 hover:border-blue-500/50 hover:text-blue-400" 
-            : "border-amber-500/50 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 shadow-lg shadow-amber-500/10"
-          }`}
-        >
-          {readOnly ? "Unlock_Data_Core" : "Commit_Modifications"}
-        </button>
-      </div>
-      
-      {/* 🆕 PANEL DE INFORMACIÓN DEL APPOINTMENT - SOLO SI HAY DATOS */}
-      {appointment && (
-        <div className="border border-blue-500/30 bg-blue-500/5 p-4 rounded-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <CommandLineIcon className="w-5 h-5 text-blue-500" />
-            <div>
-              <h3 className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em]">
-                Consultation_Data_Status
-              </h3>
-              <p className="text-[8px] font-mono text-blue-400/70">
-                Available information from consultation record
-              </p>
+        {/* ✅ INDICADOR DE MODO */}
+        <div className="flex items-center gap-3">
+          {readOnly ? (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm">
+              <LockClosedIcon className="w-4 h-4 text-white/40" />
+              <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Read_Only</span>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-sm">
+              <LockOpenIcon className="w-4 h-4 text-amber-400" />
+              <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">Edit_Mode</span>
+            </div>
+          )}
           
-          {/* GRID DE DATOS DEL APPOINTMENT */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Appointment_ID</span>
-              <div className="text-[9px] font-mono text-blue-300">
-                {appointment.id || 'MISSING'}
-              </div>
-            </div>
-            <div>
-              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Status</span>
-              <div className="text-[9px] font-mono text-blue-300">
-                {appointment.status || 'MISSING'}
-              </div>
-            </div>
-            <div>
-              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Date</span>
-              <div className="text-[9px] font-mono text-blue-300">
-                {appointment.appointment_date ? new Date(appointment.appointment_date).toLocaleDateString("es-VE", { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase() : 'MISSING'}
-              </div>
-            </div>
-            <div>
-              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Type</span>
-              <div className="text-[9px] font-mono text-blue-300">
-                {appointment.appointment_type || 'MISSING'}
-              </div>
-            </div>
-            <div>
-              <span className="text-[7px] font-mono text-blue-400/50 uppercase tracking-widest">Created_At</span>
-              <div className="text-[9px] font-mono text-blue-300">
-                {appointment.created_at ? new Date(appointment.created_at).toLocaleDateString("es-VE", { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase() : 'MISSING'}
-              </div>
-            </div>
-            {/* Más campos del appointment... */}
-          </div>
+          <button 
+            onClick={handleGoBack}
+            className="flex items-center gap-2 px-4 py-2 text-[9px] font-bold uppercase tracking-wider text-white/40 hover:text-white border border-white/10 hover:border-white/30 transition-all rounded-sm"
+          >
+            <ChevronLeftIcon className="w-4 h-4" />
+            Back
+          </button>
         </div>
-      )}
-      
-      {/* 🔧 CORREGIDO: PatientHeader con manejo inteligente de datos parciales */}
+      </div>
+      {/* ✅ PatientHeader - Solo muestra cuando hay datos */}
       <div className="relative overflow-hidden border border-white/10 bg-black/20 backdrop-blur-md p-1 shadow-2xl group">
         <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-500" />
-        {appointment?.patient ? (
-          patient ? (
-            <PatientHeader patient={patient} />
-          ) : (
-            <div className="p-6">
-              <div className="text-center space-y-3">
-                <ShieldCheckIcon className="w-8 h-8 text-amber-500 mx-auto" />
-                <h3 className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
-                  Patient_Data_Status
-                </h3>
-                <p className="text-[8px] font-mono text-amber-400/70">
-                  Limited patient information available in this consultation
-                </p>
-              </div>
-            </div>
-          )
+        {patient ? (
+          <PatientHeader patient={patient} />
         ) : (
-          <div className="p-6">
-            <div className="text-center space-y-3">
-              <ShieldCheckIcon className="w-8 h-8 text-amber-500 mx-auto" />
-              <h3 className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
-                Patient_Data_Status
-              </h3>
-              <p className="text-[8px] font-mono text-amber-400/70">
-                Limited patient information available in this consultation
-              </p>
-            </div>
+          <div className="p-6 text-center">
+            <ShieldCheckIcon className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+            <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-amber-500">
+              Loading_Patient_Data...
+            </p>
           </div>
         )}
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Sidebar Táctico */}
+        {/* Sidebar */}
         <div className="lg:col-span-3 space-y-6">
           <section className="space-y-4">
             <div className="flex items-center gap-2 border-b border-white/5 pb-2">
@@ -422,13 +217,15 @@ export default function PatientConsultationsDetail() {
               readOnly={readOnly}
             />
           </div>
+          
+          {/* ✅ BOTÓN EXPORT ARREGLADO - Colores legibles */}
           <div className="p-6 bg-gradient-to-br from-white/[0.03] to-transparent border border-white/5 rounded-sm">
             <div className="flex items-center justify-between mb-6">
               <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em]">
-                        Data_Protocol_Export
-                  </span>
-                  <span className="text-[8px] font-mono text-white/20 uppercase tracking-widest mt-1">Output Interface // Medical Reporting Engine</span>
+                <span className="text-[10px] font-bold text-white/70 uppercase tracking-[0.2em]">
+                  Medical_Report_Export
+                </span>
+                <span className="text-[8px] font-mono text-white/30 uppercase tracking-widest mt-1">Output Interface</span>
               </div>
               <div className="h-px flex-1 mx-8 bg-gradient-to-r from-white/10 to-transparent"></div>
             </div>
