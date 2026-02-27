@@ -10,7 +10,7 @@ import {
 interface InstitutionCardProps {
   name: string;
   taxId: string;
-  logoUrl: string | null;
+  institution?: any; // ✅ NUEVO: recibe el objeto institution completo
   address: string;
   neighborhoodName?: string; 
   isActive: boolean;
@@ -21,7 +21,7 @@ interface InstitutionCardProps {
 export const InstitutionCard = ({ 
   name, 
   taxId, 
-  logoUrl, 
+  institution,
   address, 
   neighborhoodName = "N/A",
   isActive, 
@@ -29,6 +29,9 @@ export const InstitutionCard = ({
   onSelect,
   onDelete
 }: InstitutionCardProps) => {
+  // ✅ FIX: Usar la misma lógica que ActiveInstitutionCard - acceder directamente a institution?.logo
+  const hasLogo = institution?.logo && typeof institution.logo === 'string';
+  
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
@@ -60,9 +63,9 @@ export const InstitutionCard = ({
       <div className="flex gap-6">
         {/* Logo Slot - fondo blanco para visibilidad del logo */}
         <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
-          {logoUrl && typeof logoUrl === 'string' ? (
+          {hasLogo ? (
             <img 
-              src={logoUrl}
+              src={institution.logo}
               className="max-h-full max-w-full object-contain transition-all" 
               alt="logo"
               onError={(e) => {

@@ -312,7 +312,7 @@ export default function ConfigPage() {
                         key={activeInstitution.id}
                         name={activeInstitution.name || "UNNAMED_ENTITY"}
                         taxId={activeInstitution.tax_id || ""}
-                        logoUrl={getLogoUrl(activeInstitution)}
+                        institution={activeInstitution}
                         address={activeInstitution.address || "STREET_DATA_MISSING"}
                         neighborhoodName={getNeighborhoodName(activeInstitution)}
                         isActive={true}
@@ -333,7 +333,7 @@ export default function ConfigPage() {
                       key={inst.id}
                       name={inst.name || "UNNAMED_ENTITY"}
                       taxId={inst.tax_id || ""}
-                      logoUrl={getLogoUrl(inst)}
+                      institution={inst}
                       address={inst.address || "STREET_DATA_MISSING"}
                       neighborhoodName={getNeighborhoodName(inst)}
                       isActive={false}
