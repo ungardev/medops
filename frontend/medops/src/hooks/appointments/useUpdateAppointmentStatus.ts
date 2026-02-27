@@ -8,6 +8,7 @@ interface UpdateStatusInput {
 }
 export function useUpdateAppointmentStatus() {
   const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: async ({ id, status }: UpdateStatusInput) => {
       return apiFetch(`appointments/${id}/status/`, {
@@ -17,6 +18,7 @@ export function useUpdateAppointmentStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] }); // ✅ NUEVO
     },
   });
 }

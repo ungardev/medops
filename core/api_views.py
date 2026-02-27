@@ -2383,6 +2383,9 @@ def update_appointment_status(request, pk):
     """
     Actualiza el status de un appointment.
     Acepta POST y PATCH para mayor flexibilidad del frontend.
+    
+    Cuando el status es 'completed', automáticamente sincroniza
+    el WaitingRoomEntry relacionado para mantener consistencia.
     """
     try:
         appointment = get_object_or_404(Appointment, pk=pk)
@@ -2396,6 +2399,17 @@ def update_appointment_status(request, pk):
             )
         
         appointment.update_status(new_status)
+        
+        # ✅ NUEVO: Sincronizar WaitingRoomEntry cuando el appointment se completa
+        if new_status == 'completed':
+            from .models import WaitingRoomEntry
+            entry = WaitingRoomEntry.objects.filter(
+                appointment=appointment,
+                status__in=['waiting', 'in_consultation']
+            ).first()
+            if entry:
+                entry.update_status('completed')
+        
         serializer = AppointmentSerializer(appointment)
         return Response(serializer.data)
     except Exception as e:
