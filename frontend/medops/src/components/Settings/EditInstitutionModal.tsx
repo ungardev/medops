@@ -14,10 +14,14 @@ import FieldSelect from "./FieldSelect";
 interface Props {
   open: boolean;
   onClose: () => void;
+  institution?: any; // ✅ NUEVA PROP: institución a editar
 }
-export default function EditInstitutionModal({ open, onClose }: Props) {
+export default function EditInstitutionModal({ open, onClose, institution }: Props) {
   const { data: settings, updateInstitution, isUpdating } = useInstitutionSettings();
   const { createNeighborhood, useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
+  
+  // ✅ FIX: Usar institution prop si está disponible, si no usar settings (active institution)
+  const dataSource = institution || settings;
   
   const [formData, setFormData] = useState({
     name: "",
@@ -61,14 +65,15 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
     parishesResult.isLoading || 
     neighborhoodsResult.isLoading
   );
+  // ✅ FIX: Ahora usa dataSource que puede ser institution o settings
   useEffect(() => {
-    if (open && settings) {
-      const neighborhood = settings.neighborhood;
+    if (open && dataSource) {
+      const neighborhood = dataSource.neighborhood;
       setFormData({
-        name: settings.name || "",
-        phone: settings.phone || "",
-        tax_id: settings.tax_id || "",
-        address: settings.address || "",
+        name: dataSource.name || "",
+        phone: dataSource.phone || "",
+        tax_id: dataSource.tax_id || "",
+        address: dataSource.address || "",
         countryId: (neighborhood as any)?.parish?.municipality?.state?.country?.id || null,
         stateId: (neighborhood as any)?.parish?.municipality?.state?.id || null,
         municipalityId: (neighborhood as any)?.parish?.municipality?.id || null,
@@ -78,17 +83,17 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
         logo: null
       });
       
-      if (settings.logo && typeof settings.logo === 'string') {
+      if (dataSource.logo && typeof dataSource.logo === 'string') {
         const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        const fullUrl = settings.logo.startsWith('http') 
-          ? settings.logo 
-          : `${API_BASE}${settings.logo.startsWith('/') ? '' : '/'}${settings.logo}`;
+        const fullUrl = dataSource.logo.startsWith('http') 
+          ? dataSource.logo 
+          : `${API_BASE}${dataSource.logo.startsWith('/') ? '' : '/'}${dataSource.logo}`;
         setPreview(fullUrl);
       } else {
         setPreview(null);
       }
     }
-  }, [open, settings]);
+  }, [open, dataSource]);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -215,7 +220,7 @@ export default function EditInstitutionModal({ open, onClose }: Props) {
                 </label>
               </div>
               <div className="text-center">
-                <p className="text-[8px] font-mono text-white/50 uppercase">CURRENT_ID: {settings?.id || 'UNKNOWN'}</p>
+                <p className="text-[8px] font-mono text-white/50 uppercase">CURRENT_ID: {dataSource?.id || 'UNKNOWN'}</p>
               </div>
             </div>
           </div>

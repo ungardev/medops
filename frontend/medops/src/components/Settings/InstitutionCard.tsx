@@ -32,7 +32,7 @@ export const InstitutionCard = ({
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
-      {/* ✅ Iconos de acción en esquina superior derecha */}
+      {/* Iconos de acción en esquina superior derecha */}
       <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
         {onEdit && (
           <button 
@@ -58,15 +58,15 @@ export const InstitutionCard = ({
       <div className={`absolute top-0 right-0 w-1 h-full`} />
       
       <div className="flex gap-6">
-        {/* ✅ Logo Slot - fondo blanco para visibilidad del logo */}
+        {/* Logo Slot - fondo blanco para visibilidad del logo */}
         <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
           {logoUrl ? (
             <img 
               src={logoUrl} 
-              className="max-h-full object-contain filter grayscale group-hover:grayscale-0 transition-all" 
+              // ✅ FIX: Quitado grayscale para que el logo sea visible
+              className="max-h-full object-contain transition-all" 
               alt="logo" 
               onError={(e) => {
-                // ✅ FIX: Si la imagen falla, mostrar ícono
                 e.currentTarget.style.display = 'none';
               }}
             />
@@ -110,7 +110,7 @@ export const InstitutionCard = ({
           <span className="text-[9px] font-mono truncate max-w-[200px]">{address}</span>
         </div>
         
-        {/* ✅ Botón Set_Active simplificado */}
+        {/* Botón Set_Active simplificado */}
         {onSelect && !isActive && (
           <button 
             onClick={onSelect}
