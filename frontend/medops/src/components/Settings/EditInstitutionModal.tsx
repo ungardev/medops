@@ -6,7 +6,7 @@ import {
   PhotoIcon, 
   ShieldCheckIcon,
   GlobeAltIcon,
-  CpuChipIcon
+  BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
 import { useInstitutionSettings } from "../../hooks/settings/useInstitutionSettings";
 import { useLocationData } from "../../hooks/settings/useLocationData";
@@ -82,6 +82,7 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
         logo: null
       });
       
+      // ✅ FIX: Verificar si existe logo y es string, igual que ActiveInstitutionCard
       if (dataSource.logo && typeof dataSource.logo === 'string') {
         const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
         const fullUrl = dataSource.logo.startsWith('http') 
@@ -195,7 +196,7 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
             </div>
           )}
           
-          {/* Logo Section */}
+          {/* Logo Section - ✅ FIX: Fondo blanco como los otros componentes */}
           <div className={sectionStyles}>
             <div className="flex items-center gap-2 mb-4">
               <GlobeAltIcon className="w-5 h-5 text-emerald-400" />
@@ -205,12 +206,20 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
             </div>
             
             <div className="flex flex-col items-center gap-4">
-              <div className="relative group w-32 h-32 border border-white/10 bg-black/40 p-1 overflow-hidden">
+              {/* ✅ FIX: Contenedor con fondo blanco igual que InstitutionCard */}
+              <div className="relative group w-32 h-32 border border-gray-200 bg-white p-1 overflow-hidden">
                 {preview ? (
-                  <img src={preview} alt="Preview" className="w-full h-full object-contain" />
+                  <img 
+                    src={preview} 
+                    alt="Preview" 
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center opacity-20 border border-dashed border-white/20">
-                    <PhotoIcon className="w-8 h-8" />
+                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                    <BuildingOfficeIcon className="w-12 h-12 text-gray-300" />
                   </div>
                 )}
                 <label className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-emerald-400/50">

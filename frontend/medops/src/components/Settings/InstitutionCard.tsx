@@ -5,8 +5,7 @@ import {
   MapPinIcon, 
   CheckBadgeIcon,
   PencilIcon,
-  TrashIcon,
-  PhotoIcon
+  TrashIcon
 } from "@heroicons/react/24/outline";
 interface InstitutionCardProps {
   name: string;
@@ -56,33 +55,23 @@ export const InstitutionCard = ({
       </div>
       
       {/* Indicador de Estado */}
-      <div className={`absolute top-0 right-0 w-1 h-full`} />
+      <div className="absolute top-0 right-0 w-1 h-full" />
       
       <div className="flex gap-6">
         {/* Logo Slot - fondo blanco para visibilidad del logo */}
-        <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden relative">
-          {logoUrl ? (
+        <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+          {logoUrl && typeof logoUrl === 'string' ? (
             <img 
-              src={logoUrl} 
+              src={logoUrl}
               className="max-h-full max-w-full object-contain transition-all" 
               alt="logo"
               onError={(e) => {
-                // ✅ FIX: Si la imagen falla al cargar, ocultar img y mostrar icono
-                const img = e.currentTarget;
-                img.style.display = 'none';
-                // Buscar el icono de fallback y mostrarlo
-                const fallback = img.nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = 'flex';
+                (e.target as HTMLImageElement).style.display = 'none';
               }}
             />
-          ) : null}
-          {/* ✅ FIX: Icono de fallback - siempre presente, se muestra si no hay logo o si falla la carga */}
-          <div 
-            className={`absolute inset-0 flex items-center justify-center ${logoUrl ? 'hidden' : 'flex'}`}
-            style={{ display: logoUrl ? 'none' : 'flex' }}
-          >
-            <PhotoIcon className="w-8 h-8 text-gray-300" />
-          </div>
+          ) : (
+            <BuildingOfficeIcon className="w-8 h-8 text-gray-300" />
+          )}
         </div>
         
         {/* Info */}
@@ -104,7 +93,7 @@ export const InstitutionCard = ({
               </div>
               <div>
                 <span className="text-[8px] font-mono text-white/20 uppercase">Identity_Status:</span>
-                <p className={`text-[9px] font-black `}>
+                <p className="text-[9px] font-black">
                   {isActive ? 'OPERATIONAL' : 'DEACTIVATED'}
                 </p>
               </div>
