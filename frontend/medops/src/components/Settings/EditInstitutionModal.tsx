@@ -14,13 +14,13 @@ import FieldSelect from "./FieldSelect";
 interface Props {
   open: boolean;
   onClose: () => void;
-  institution?: any; // ✅ NUEVA PROP: institución a editar
+  institution?: any;
 }
 export default function EditInstitutionModal({ open, onClose, institution }: Props) {
   const { data: settings, updateInstitution, isUpdating } = useInstitutionSettings();
   const { createNeighborhood, useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
   
-  // ✅ FIX: Usar institution prop si está disponible, si no usar settings (active institution)
+  // ✅ FIX: Usar institution prop si está disponible, si no usar settings
   const dataSource = institution || settings;
   
   const [formData, setFormData] = useState({
@@ -39,7 +39,6 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
   
   const [preview, setPreview] = useState<string | null>(null);
   
-  // Hooks para obtener datos geográficos
   const countriesResult = useCountries();
   const statesResult = useStates(formData.countryId);
   const municipalitiesResult = useMunicipalities(formData.stateId);
@@ -65,7 +64,7 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
     parishesResult.isLoading || 
     neighborhoodsResult.isLoading
   );
-  // ✅ FIX: Ahora usa dataSource que puede ser institution o settings
+  // ✅ FIX: Usar dataSource en lugar de settings
   useEffect(() => {
     if (open && dataSource) {
       const neighborhood = dataSource.neighborhood;

@@ -5,7 +5,8 @@ import {
   MapPinIcon, 
   CheckBadgeIcon,
   PencilIcon,
-  TrashIcon
+  TrashIcon,
+  PhotoIcon
 } from "@heroicons/react/24/outline";
 interface InstitutionCardProps {
   name: string;
@@ -59,20 +60,29 @@ export const InstitutionCard = ({
       
       <div className="flex gap-6">
         {/* Logo Slot - fondo blanco para visibilidad del logo */}
-        <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+        <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden relative">
           {logoUrl ? (
             <img 
               src={logoUrl} 
-              // ✅ FIX: Quitado grayscale para que el logo sea visible
-              className="max-h-full object-contain transition-all" 
-              alt="logo" 
+              className="max-h-full max-w-full object-contain transition-all" 
+              alt="logo"
               onError={(e) => {
-                e.currentTarget.style.display = 'none';
+                // ✅ FIX: Si la imagen falla al cargar, ocultar img y mostrar icono
+                const img = e.currentTarget;
+                img.style.display = 'none';
+                // Buscar el icono de fallback y mostrarlo
+                const fallback = img.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'flex';
               }}
             />
-          ) : (
-            <BuildingOfficeIcon className="w-8 h-8 text-gray-300" />
-          )}
+          ) : null}
+          {/* ✅ FIX: Icono de fallback - siempre presente, se muestra si no hay logo o si falla la carga */}
+          <div 
+            className={`absolute inset-0 flex items-center justify-center ${logoUrl ? 'hidden' : 'flex'}`}
+            style={{ display: logoUrl ? 'none' : 'flex' }}
+          >
+            <PhotoIcon className="w-8 h-8 text-gray-300" />
+          </div>
         </div>
         
         {/* Info */}

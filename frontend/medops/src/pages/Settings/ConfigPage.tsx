@@ -369,7 +369,8 @@ export default function ConfigPage() {
       </footer>
       <EditInstitutionModal 
         open={isInstModalOpen} 
-        onClose={() => setIsInstModalOpen(false)} 
+        onClose={() => setIsInstModalOpen(false)}
+        institution={editingInstitution}
       />
     </div>
   );
