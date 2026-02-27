@@ -8,33 +8,33 @@ import {
   lockClinicalNote, 
   unlockClinicalNote 
 } from "../../api/clinicalNotes";
-// 🔹 Obtener nota clínica de una cita
+// Obtener nota clínica de una cita
 export function useClinicalNote(appointmentId: number) {
   return useQuery<ClinicalNote, Error>({
     queryKey: ["clinical-note", appointmentId],
     queryFn: async () => getClinicalNote(appointmentId),
-    staleTime: 1000 * 60 * 5, // 5 minutos
+    staleTime: 1000 * 60 * 5,
     enabled: !!appointmentId,
   });
 }
-// 🔹 Crear nota clínica
-export function useCreateClinicalNote(appointmentId: number) {
+// Crear nota clínica (CORREGIDO: pasa appointmentId en los datos)
+export function useCreateClinicalNote() {
   const queryClient = useQueryClient();
   
   return useMutation<ClinicalNote, Error, CreateClinicalNoteInput>({
-    mutationFn: (data) => createClinicalNote(appointmentId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["clinical-note", appointmentId] });
+    mutationFn: (data) => createClinicalNote(data.appointment, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["clinical-note", variables.appointment] });
       queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     },
   });
 }
-// 🔹 Actualizar nota clínica
-export function useUpdateClinicalNote(clinicalNoteId?: number, appointmentId?: number) {
+// Actualizar nota clínica (CORREGIDO: solo necesita appointmentId)
+export function useUpdateClinicalNote(appointmentId?: number) {
   const queryClient = useQueryClient();
   
   return useMutation<ClinicalNote, Error, UpdateClinicalNoteInput>({
-    mutationFn: (data) => updateClinicalNote(clinicalNoteId!, data),
+    mutationFn: (data) => updateClinicalNote(appointmentId!, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clinical-note"] });
       if (appointmentId) {
@@ -43,23 +43,23 @@ export function useUpdateClinicalNote(clinicalNoteId?: number, appointmentId?: n
     },
   });
 }
-// 🔹 Bloquear nota clínica
-export function useLockClinicalNote(clinicalNoteId?: number) {
+// Bloquear nota clínica (CORREGIDO: usa appointmentId)
+export function useLockClinicalNote(appointmentId?: number) {
   const queryClient = useQueryClient();
   
   return useMutation<ClinicalNote, Error, void>({
-    mutationFn: () => lockClinicalNote(clinicalNoteId!),
+    mutationFn: () => lockClinicalNote(appointmentId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clinical-note"] });
     },
   });
 }
-// 🔹 Desbloquear nota clínica
-export function useUnlockClinicalNote(clinicalNoteId?: number) {
+// Desbloquear nota clínica (CORREGIDO: usa appointmentId)
+export function useUnlockClinicalNote(appointmentId?: number) {
   const queryClient = useQueryClient();
   
   return useMutation<ClinicalNote, Error, void>({
-    mutationFn: () => unlockClinicalNote(clinicalNoteId!),
+    mutationFn: () => unlockClinicalNote(appointmentId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["clinical-note"] });
     },

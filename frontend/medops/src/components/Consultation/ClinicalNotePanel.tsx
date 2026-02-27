@@ -11,7 +11,6 @@ import {
   LockClosedIcon, 
   LockOpenIcon, 
   CheckCircleIcon, 
-  ExclamationTriangleIcon,
   DocumentTextIcon,
   PencilSquareIcon,
   EyeIcon,
@@ -24,11 +23,11 @@ export interface Props {
   readOnly?: boolean;
 }
 export default function ClinicalNotePanel({ appointmentId, readOnly = false }: Props) {
-  const { data: clinicalNote, isLoading, error: queryError } = useClinicalNote(appointmentId);
-  const updateNote = useUpdateClinicalNote(clinicalNote?.id, appointmentId);
-  const lockNote = useLockClinicalNote(clinicalNote?.id);
-  const unlockNote = useUnlockClinicalNote(clinicalNote?.id);
-  const createNote = useCreateClinicalNote(appointmentId);
+  const { data: clinicalNote, isLoading } = useClinicalNote(appointmentId);
+  const updateNote = useUpdateClinicalNote(appointmentId);
+  const lockNote = useLockClinicalNote(appointmentId);
+  const unlockNote = useUnlockClinicalNote(appointmentId);
+  const createNote = useCreateClinicalNote();
   
   const [isEditing, setIsEditing] = useState(false);
   const [subjective, setSubjective] = useState("");
@@ -48,6 +47,10 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   }, [clinicalNote]);
   
   const handleSave = async () => {
+    if (!appointmentId) {
+      setSaveError("Error: Appointment ID is missing");
+      return;
+    }
     try {
       setSaveError(null);
       setSaveSuccess(false);
@@ -59,6 +62,9 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
         analysis: analysis.trim(),
         plan: plan.trim()
       };
+      
+      console.log("[ClinicalNotePanel] Saving note:", noteData);
+      console.log("[ClinicalNotePanel] clinicalNote exists:", !!clinicalNote);
       
       if (clinicalNote) {
         await updateNote.mutateAsync(noteData);
@@ -85,20 +91,25 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   };
   
   const handleLock = async () => {
+    if (!appointmentId) return;
     try {
-      if (clinicalNote) await lockNote.mutateAsync();
-    } catch (error) { console.error("Failed to lock note:", error); }
+      await lockNote.mutateAsync();
+    } catch (error) { 
+      console.error("Failed to lock note:", error); 
+    }
   };
   
   const handleUnlock = async () => {
+    if (!appointmentId) return;
     try {
-      if (clinicalNote) await unlockNote.mutateAsync();
-    } catch (error) { console.error("Failed to unlock note:", error); }
+      await unlockNote.mutateAsync();
+    } catch (error) { 
+      console.error("Failed to unlock note:", error); 
+    }
   };
   
   const isSaving = updateNote.isPending || createNote.isPending;
   
-  // ESTILOS UNIFICADOS
   const labelStyles = "text-[9px] font-bold text-white/50 uppercase tracking-wider mb-2 block";
   const inputStyles = "w-full h-24 p-3 bg-black/40 border border-white/10 text-white text-[11px] font-mono placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 rounded-sm transition-all resize-none";
   
@@ -110,7 +121,6 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
     );
   }
   
-  //.CONTENEDOR UNIFICADO
   return (
     <div className="border border-white/10 rounded-sm">
       {/* HEADER */}
@@ -129,7 +139,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
         </div>
         
         <div className="flex items-center gap-2">
-          {/* LOCK/UNLOCK BUTTONS - Only when clinicalNote exists */}
+          {/* LOCK/UNLOCK BUTTONS */}
           {!readOnly && clinicalNote && (
             clinicalNote.is_locked ? (
               <button 
