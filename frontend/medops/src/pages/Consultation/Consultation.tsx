@@ -204,8 +204,7 @@ export default function Consultation() {
           </div>
         </div>
       )}
-      <div className="relative overflow-hidden border border-white/10 bg-black/20 backdrop-blur-md p-1 shadow-2xl group">
-        <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] transition-all duration-500" />
+      <div className="border border-white/10 bg-black/20 p-1">
         {patient ? <PatientHeader patient={patient} /> : (
           <div className="p-10 text-center animate-pulse bg-black/10">
             <span className="text-[10px] font-mono uppercase tracking-[0.5em] text-white/20">Awaiting_Subject_BioData...</span>
