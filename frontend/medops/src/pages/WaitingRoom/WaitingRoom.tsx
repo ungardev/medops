@@ -53,7 +53,7 @@ const renderWaitTime = (entry: WaitingRoomEntry) => {
       </div>
     );
   }
-  const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime()) / 60000);
+  const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime() / 60000));
   return (
     <div className="flex items-center gap-1 font-mono text-[10px] text-[var(--palantir-muted)]">
       <ClockIcon className="w-3 h-3 text-amber-500/70" />
@@ -61,11 +61,10 @@ const renderWaitTime = (entry: WaitingRoomEntry) => {
     </div>
   );
 };
-// ✅ HELPER: Convertir WaitingRoomStatus a AppointmentStatus
 const waitingRoomToAppointmentStatus = (status: WaitingRoomStatus): AppointmentStatus => {
   switch (status) {
     case "waiting":
-      return "arrived"; // ✅ "waiting" en WaitingRoom → "arrived" en Appointment
+      return "arrived";
     case "in_consultation":
       return "in_consultation";
     case "completed":
@@ -132,7 +131,6 @@ export default function WaitingRoom() {
   
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (entry.appointment) {
-      // ✅ Convertir status antes de enviar a appointment
       const appointmentStatus = waitingRoomToAppointmentStatus(newStatus);
       updateAppointmentStatus.mutate({ id: entry.appointment, status: appointmentStatus });
     } else {
@@ -179,7 +177,7 @@ export default function WaitingRoom() {
               className="px-3 py-1.5 text-[10px] font-black uppercase bg-white text-black border border-white rounded-sm hover:bg-white/90 flex items-center gap-2 transition-all duration-300"
             >
               <PlusIcon className="w-3.5 h-3.5 stroke-[3px]" />
-              Registrar Llegada
+              registrar Llegada
             </button>
           </div>
         }
@@ -222,23 +220,23 @@ export default function WaitingRoom() {
                 {filteredEntries.map((entry, index) => (
                   <div 
                     key={entry.id} 
-                    className="group flex justify-between items-center px-4 py-3 transition-colors border-l-2"
+                    className="group flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 py-3 transition-colors border-l-2 gap-2 sm:gap-0"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
                       <span className="mt-1 font-mono text-xs font-bold text-[var(--palantir-muted)] opacity-50">
                         {String(index + 1).padStart(2, '0')}.
                       </span>
-                      <div className="flex flex-col gap-0.5">
-                        <p className="text-[13px] font-black uppercase tracking-tight">
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <p className="text-[13px] font-black uppercase tracking-tight truncate">
                           {entry.patient.full_name}
                         </p>
                         
                         {entry.institution_data && (
                           <div className="flex items-center gap-1.5 text-[9px] font-mono text-[var(--palantir-muted)] mt-1">
-                            <BuildingOfficeIcon className="w-3 h-3 text-[var(--palantir-active)]/50" />
-                            <span>{entry.institution_data.name}</span>
+                            <BuildingOfficeIcon className="w-3 h-3 text-[var(--palantir-active)]/50 shrink-0" />
+                            <span className="truncate">{entry.institution_data.name}</span>
                             {entry.institution_data.is_active && (
-                              <span className="text-[7px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-500 rounded-full ml-2">
+                              <span className="text-[7px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-500 rounded-full shrink-0">
                                 ACTIVE
                               </span>
                             )}
@@ -248,9 +246,11 @@ export default function WaitingRoom() {
                         {renderWaitTime(entry)}
                       </div>
                     </div>
-                    <div className="flex items-center gap-6">
+                    
+                    {/* ✅ FIX: Botones siempre visibles en mobile, con hover en desktop */}
+                    <div className="flex items-center gap-2 lg:gap-6 ml-auto sm:ml-0">
                       {renderStatusBadge(entry.status)}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         {entry.status === 'waiting' && (
                           <button 
                             onClick={() => handleStartConsultation(entry)}
@@ -276,7 +276,7 @@ export default function WaitingRoom() {
           </div>
           
           <div className="px-4 py-2.5 border-t border-[var(--palantir-border)] bg-white/[0.02]">
-            <div className="text-[9px] font-mono text-[var(--palantir-muted)] opacity-70 uppercase tracking-widest">
+            <div className="text-[9px] font-mono text-[var(--palantir-muted)] opacity70 uppercase tracking-widest">
               Displaying {filteredEntries.length} of {orderedGroup.length} entries
               {selectedInstitutionId && orderedGroup.length > filteredEntries.length && (
                 <span className="ml-2 text-emerald-500/60">
@@ -301,7 +301,7 @@ export default function WaitingRoom() {
               <div className="divide-y divide-[var(--palantir-border)]/30">
                 {pendingAppointmentsToday.map((appt) => (
                   <div key={appt.id} className="px-4 py-3 flex justify-between items-center group hover:bg-white/[0.01]">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col min-w-0">
                       <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
                       <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
                     </div>

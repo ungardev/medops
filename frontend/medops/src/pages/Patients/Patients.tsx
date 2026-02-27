@@ -9,19 +9,15 @@ import {
   CpuChipIcon,
   ServerIcon
 } from "@heroicons/react/24/outline";
-// Hooks
 import { usePatients } from "../../hooks/patients/usePatients";
 import { usePatientsSearch } from "../../hooks/patients/usePatientsSearch";
 import { useDeletePatient } from "../../hooks/patients/useDeletePatient";
-// Componentes de Common
 import PageHeader from "../../components/Common/PageHeader";
 import Pagination from "../../components/Common/Pagination";
 import EmptyState from "../../components/Common/EmptyState";
 import { EmptyStateRegistry } from "../../components/Common/EmptyStateRegistry";
-// Components
 import NewPatientModal from "../../components/Patients/NewPatientModal";
 import PatientsTable from "../../components/Patients/PatientsTable";
-// Types
 import { Patient } from "../../types/patients";
 export default function Patients() {
   const [query, setQuery] = useState("");
@@ -31,10 +27,8 @@ export default function Patients() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { mutate: deletePatient, isPending: isDeleting } = useDeletePatient();
-  // Data Fetching
   const { data: paged, isLoading: isLoadingPaged, refetch } = usePatients(currentPage, pageSize);
   const { data: searchResults = [], isLoading: isSearching } = usePatientsSearch(query);
-  // Selector de lista (Búsqueda vs Paginación)
   const list = useMemo(() => {
     return query.trim().length > 0 
       ? searchResults 
@@ -51,13 +45,11 @@ export default function Patients() {
       });
     }
   };
-  // SECCIÓN 1: HOOKS
-  // SECCIÓN 2: PAGE HEADER
   const pageHeader = (
     <PageHeader 
       breadcrumbs={[
         { label: "MEDOPZ", path: "/" },
-        { label: "PATIENTS", active: true }  // ✅ Sin duplicado
+        { label: "PATIENTS", active: true }
       ]}
       stats={[
         { 
@@ -88,7 +80,6 @@ export default function Patients() {
       }
     />
   );
-  // SECCIÓN 3: SEARCH INPUT
   const searchSection = (
     <div className="relative group">
       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
@@ -111,7 +102,6 @@ export default function Patients() {
       )}
     </div>
   );
-  // SECCIÓN 4: TABLE RENDER
   const tableSection = (
     <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md rounded-sm overflow-hidden shadow-2xl">
       <div className="overflow-x-auto">
@@ -136,32 +126,41 @@ export default function Patients() {
                 className="border-b border-white/5 hover:bg-white/[0.02] transition-colors group cursor-pointer"
                 onClick={() => handleView(p.id)}
               >
-                <td className="px-4 py-4 text-[11px] font-mono text-white font-bold w-[120px]">
+                {/* UID - siempre visible pero más pequeño en mobile */}
+                <td className="px-3 py-3 lg:py-4 text-[10px] lg:text-[11px] font-mono text-white font-bold w-[100px] lg:w-[120px]">
                   #{String(p.id).padStart(5, '0')}
                 </td>
                 
-                <td className="px-4 py-4 min-w-[280px]">
-                  <div className="text-[12px] font-bold text-white uppercase group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer">
+                {/* Nombre - siempre visible, responsivo */}
+                <td className="px-3 py-3 lg:py-4 min-w-[200px] lg:min-w-[280px]">
+                  <div className="text-[11px] lg:text-[12px] font-bold text-white uppercase group-hover:text-emerald-400 transition-colors line-clamp-1 cursor-pointer">
                     {p.full_name}
                   </div>
                 </td>
                 
-                <td className="px-4 py-4 text-[11px] font-mono text-white/40 w-[160px]">
+                {/* National ID - oculto en mobile */}
+                <td className="hidden md:table-cell px-3 py-3 lg:py-4 text-[10px] lg:text-[11px] font-mono text-white/40 w-[140px] lg:w-[160px]">
                   {p.national_id || "NOT_ASSIGNED"}
                 </td>
-                <td className="px-4 py-4 w-[130px]">
-                  <span className="text-[9px] px-2 py-0.5 border border-white/10 text-white/40 font-mono uppercase bg-black/40 block text-center truncate">
+                
+                {/* Gender - oculto en mobile, visible en lg */}
+                <td className="hidden md:table-cell px-3 py-3 lg:py-4 w-[100px] lg:w-[130px]">
+                  <span className="text-[8px] lg:text-[9px] px-2 py-0.5 border border-white/10 text-white/40 font-mono uppercase bg-black/40 block text-center truncate">
                     {p.gender || "UDF"}
                   </span>
                 </td>
-                <td className="px-4 py-4 text-[10px] font-mono text-white/40 max-w-[220px]">
+                
+                {/* Comm Link - oculto en mobile */}
+                <td className="hidden lg:table-cell px-3 py-3 lg:py-4 text-[9px] lg:text-[10px] font-mono text-white/40 max-w-[180px] lg:max-w-[220px]">
                   <div className="truncate" title={p.contact_info || ""}>
                     {p.contact_info || "---"}
                   </div>
                 </td>
-                <td className="px-4 py-4 w-[110px]">
+                
+                {/* Actions - siempre visible */}
+                <td className="px-3 py-3 lg:py-4 w-[80px] lg:w-[110px]">
                   <div 
-                    className="flex items-center justify-end"
+                    className="flex items-center justify-end lg:justify-between"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button 
@@ -178,7 +177,8 @@ export default function Patients() {
           )}
         </PatientsTable>
       </div>
-      {/* 📟 PANEL DE PAGINACIÓN */}
+      
+      {/* Panel de paginación */}
       <div className="flex items-center justify-between p-4 border-t border-white/5 bg-black/40">
         <div className="flex items-center gap-3">
           <ServerIcon className="w-4 h-4 text-white/20" />

@@ -1,13 +1,11 @@
 // src/components/Patients/PatientsTable.tsx
 import React, { ReactNode } from "react";
-
 interface PatientsTableProps {
   headers: string[];
   children: ReactNode;
   isLoading?: boolean;
   isError?: boolean;
 }
-
 export default function PatientsTable({
   headers,
   children,
@@ -15,18 +13,17 @@ export default function PatientsTable({
   isError = false,
 }: PatientsTableProps) {
   
-  // Mapeo de anchos para que coincidan EXACTAMENTE con Patients.tsx
   const getHeaderWidth = (header: string) => {
     const h = header.toUpperCase();
-    if (h.includes("UID")) return "w-[120px]";
-    if (h.includes("IDENTITY")) return "min-w-[280px]";
-    if (h.includes("NATIONAL")) return "w-[160px]";
-    if (h.includes("STATUS")) return "w-[130px]";
-    if (h.includes("COMM")) return "max-w-[220px]";
-    if (h.includes("ACTIONS")) return "w-[110px] text-right";
+    if (h.includes("UID")) return "w-[100px] lg:w-[120px]";
+    if (h.includes("IDENTITY")) return "min-w-[200px] lg:min-w-[280px]";
+    if (h.includes("NATIONAL")) return "hidden md:table-cell w-[140px] lg:w-[160px]";
+    if (h.includes("STATUS")) return "hidden lg:table-cell w-[130px]";
+    if (h.includes("GENDER")) return "hidden md:table-cell w-[100px] lg:w-[130px]";
+    if (h.includes("COMM")) return "hidden lg:table-cell max-w-[180px] lg:max-w-[220px]";
+    if (h.includes("ACTIONS")) return "w-[80px] lg:w-[110px] text-right";
     return "";
   };
-
   return (
     <div className="w-full overflow-hidden border border-[var(--palantir-border)] bg-[var(--palantir-surface)] shadow-2xl">
       <div className="overflow-x-auto">
@@ -36,7 +33,7 @@ export default function PatientsTable({
               {headers.map((h, idx) => (
                 <th
                   key={idx}
-                  className={`px-4 py-3 text-[10px] font-black text-[var(--palantir-muted)] uppercase tracking-[0.2em] ${getHeaderWidth(h)}`}
+                  className={`px-3 py-3 lg:px-4 lg:py-3 text-[9px] lg:text-[10px] font-black text-[var(--palantir-muted)] uppercase tracking-[0.2em] ${getHeaderWidth(h)}`}
                 >
                   {h.replace(/ /g, "_")}
                 </th>
@@ -59,10 +56,6 @@ export default function PatientsTable({
                 </td>
               </tr>
             ) : (
-              /* CORRECCIÓN CRÍTICA: 
-                 No envolvemos el 'child' en un <tr> porque 'child' ya es un <tr> 
-                 que viene desde Patients.tsx. Lo renderizamos directamente.
-              */
               children
             )}
           </tbody>
