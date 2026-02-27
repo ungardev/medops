@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { 
   XMarkIcon, 
   ArrowPathIcon, 
-  PhotoIcon, 
   ShieldCheckIcon,
   GlobeAltIcon,
   BuildingOfficeIcon
@@ -37,7 +36,10 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
     logo: null as File | null
   });
   
-  const [preview, setPreview] = useState<string | null>(null);
+  // ✅ FIX: Usar logo directamente como InstitutionCard - sin procesamiento de URL
+  const logoPreview = dataSource?.logo && typeof dataSource.logo === 'string' 
+    ? dataSource.logo 
+    : null;
   
   const countriesResult = useCountries();
   const statesResult = useStates(formData.countryId);
@@ -64,7 +66,6 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
     parishesResult.isLoading || 
     neighborhoodsResult.isLoading
   );
-  // ✅ FIX: Usar dataSource en lugar de settings
   useEffect(() => {
     if (open && dataSource) {
       const neighborhood = dataSource.neighborhood;
@@ -81,24 +82,12 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
         neighborhoodName: (neighborhood as any)?.name || "",
         logo: null
       });
-      
-      // ✅ FIX: Verificar si existe logo y es string, igual que ActiveInstitutionCard
-      if (dataSource.logo && typeof dataSource.logo === 'string') {
-        const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        const fullUrl = dataSource.logo.startsWith('http') 
-          ? dataSource.logo 
-          : `${API_BASE}${dataSource.logo.startsWith('/') ? '' : '/'}${dataSource.logo}`;
-        setPreview(fullUrl);
-      } else {
-        setPreview(null);
-      }
     }
   }, [open, dataSource]);
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData(prev => ({ ...prev, logo: file }));
-      setPreview(URL.createObjectURL(file));
     }
   };
   const handleCountryChange = (val: string) => {
@@ -196,7 +185,7 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
             </div>
           )}
           
-          {/* Logo Section - ✅ FIX: Fondo blanco como los otros componentes */}
+          {/* Logo Section - ✅ FIX: Usar logo directamente como InstitutionCard */}
           <div className={sectionStyles}>
             <div className="flex items-center gap-2 mb-4">
               <GlobeAltIcon className="w-5 h-5 text-emerald-400" />
@@ -206,11 +195,11 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
             </div>
             
             <div className="flex flex-col items-center gap-4">
-              {/* ✅ FIX: Contenedor con fondo blanco igual que InstitutionCard */}
+              {/* Contenedor con fondo blanco - USAR logoPreview DIRECTAMENTE */}
               <div className="relative group w-32 h-32 border border-gray-200 bg-white p-1 overflow-hidden">
-                {preview ? (
+                {logoPreview ? (
                   <img 
-                    src={preview} 
+                    src={logoPreview}
                     alt="Preview" 
                     className="w-full h-full object-contain"
                     onError={(e) => {
