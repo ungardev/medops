@@ -119,7 +119,7 @@ export default function PatientConsultationsDetail() {
             <ChevronLeftIcon className="w-3 h-3 text-white/20" />
           </>
         )}
-        <span className="text-blue-400 font-bold">CONSULT_{appointment?.id || appointmentId}</span>
+        <span className="text-blue-400 font-bold">SUBJECT_ID_{String(appointment?.patient?.id || patientId || '').padStart(2, '0')}</span>
       </div>
       {/* ✅ HEADER SIMPLIFICADO - Solo stats funcionales */}
       <div className="flex items-center justify-between px-4 py-3 border border-white/10 bg-white/[0.02] rounded-sm">

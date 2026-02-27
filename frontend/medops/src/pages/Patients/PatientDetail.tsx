@@ -202,7 +202,7 @@ export default function PatientDetail() {
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
           { label: "PATIENTS", path: "/patients" },
-          { label: `SUBJECT_ID_${patient.id.toString().padStart(6, '0')}`, active: true }
+          { label: `SUBJECT_ID_${patient.id.toString().padStart(2, '0')}`, active: true }
         ]}
         stats={[
           { 
