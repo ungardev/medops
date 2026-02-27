@@ -7,9 +7,7 @@ import {
   ClockIcon,
   CheckCircleIcon,
   CurrencyDollarIcon,
-  CogIcon,
-  UserGroupIcon,
-  CalendarIcon
+  CogIcon
 } from "@heroicons/react/24/outline";
 import { useDashboardFilters } from "@/context/DashboardFiltersContext";
 import { useActiveInstitution } from "@/hooks/dashboard/useActiveInstitution";
@@ -106,8 +104,8 @@ export const ActiveInstitutionCard: React.FC = () => {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
         <div className="flex gap-6 mb-6">
-          <div className="w-20 h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0">
-            <div className="w-8 h-8 bg-white/10 animate-pulse rounded" />
+          <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0">
+            <div className="w-8 h-8 bg-gray-200 animate-pulse rounded" />
           </div>
           <div className="flex-1">
             <div className="h-4 bg-white/10 rounded w-48 mb-2 animate-pulse" />
@@ -150,11 +148,11 @@ export const ActiveInstitutionCard: React.FC = () => {
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
-      {/* ✅ FIX: Header responsive - flex-col en mobile, flex-row en md+ */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+      {/* Header responsive - flex-col en mobile, flex-row en md+, centrado en mobile */}
+      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-6">
         
-        {/* Logo - más pequeño en mobile */}
-        <div className="w-16 md:w-20 h-16 md:h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+        {/* Logo - fondo blanco para visibilidad, centrado en mobile */}
+        <div className="w-16 md:w-20 h-16 md:h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
           {typeof institution.logo === 'string' ? (
             <img 
               src={institution.logo} 
@@ -162,7 +160,7 @@ export const ActiveInstitutionCard: React.FC = () => {
               alt={`${institution.name} logo`} 
             />
           ) : (
-            <BuildingOfficeIcon className="w-8 h-8 text-white/10" />
+            <BuildingOfficeIcon className="w-8 h-8 text-gray-300" />
           )}
         </div>
         
@@ -194,7 +192,7 @@ export const ActiveInstitutionCard: React.FC = () => {
           </div>
         </div>
         
-        {/* ✅ FIX: Controles responsive - ocupa todo el ancho en mobile */}
+        {/* Controles responsive - ocupa todo el ancho en mobile */}
         <div className="flex flex-col md:flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto">
           
           {/* BCV Rate - siempre visible */}
@@ -203,7 +201,7 @@ export const ActiveInstitutionCard: React.FC = () => {
             <span className="text-[10px] font-mono font-bold text-amber-500">{bcvDisplay}</span>
           </div>
           
-          {/* ✅ FIX: Botones en fila vertical en mobile, horizontal en desktop */}
+          {/* Botones en fila vertical en mobile, horizontal en desktop */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
             <ButtonGroup
               items={[

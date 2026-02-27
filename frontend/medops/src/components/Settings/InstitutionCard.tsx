@@ -53,12 +53,13 @@ export const InstitutionCard = ({
           </button>
         )}
       </div>
+      
       {/* Indicador de Estado */}
       <div className={`absolute top-0 right-0 w-1 h-full`} />
       
       <div className="flex gap-6">
-        {/* Logo Slot */}
-        <div className="w-20 h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+        {/* ✅ Logo Slot - fondo blanco para visibilidad del logo */}
+        <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
           {logoUrl ? (
             <img 
               src={logoUrl} 
@@ -70,7 +71,7 @@ export const InstitutionCard = ({
               }}
             />
           ) : (
-            <BuildingOfficeIcon className="w-8 h-8 text-white/10" />
+            <BuildingOfficeIcon className="w-8 h-8 text-gray-300" />
           )}
         </div>
         
