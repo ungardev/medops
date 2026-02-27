@@ -15,7 +15,8 @@ import {
   DocumentTextIcon,
   PencilSquareIcon,
   EyeIcon,
-  ClockIcon
+  ClockIcon,
+  XCircleIcon
 } from "@heroicons/react/24/outline";
 import type { ClinicalNote } from "../../types/clinical";
 export interface Props {
@@ -23,17 +24,19 @@ export interface Props {
   readOnly?: boolean;
 }
 export default function ClinicalNotePanel({ appointmentId, readOnly = false }: Props) {
-  const { data: clinicalNote, isLoading } = useClinicalNote(appointmentId);
+  const { data: clinicalNote, isLoading, error: queryError } = useClinicalNote(appointmentId);
   const updateNote = useUpdateClinicalNote(clinicalNote?.id, appointmentId);
   const lockNote = useLockClinicalNote(clinicalNote?.id);
   const unlockNote = useUnlockClinicalNote(clinicalNote?.id);
   const createNote = useCreateClinicalNote(appointmentId);
   
   const [isEditing, setIsEditing] = useState(false);
-  const [subjective, setSubjective] = useState(clinicalNote?.subjective || "");
-  const [objective, setObjective] = useState(clinicalNote?.objective || "");
-  const [analysis, setAnalysis] = useState(clinicalNote?.analysis || "");
-  const [plan, setPlan] = useState(clinicalNote?.plan || "");
+  const [subjective, setSubjective] = useState("");
+  const [objective, setObjective] = useState("");
+  const [analysis, setAnalysis] = useState("");
+  const [plan, setPlan] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   
   useEffect(() => {
     if (clinicalNote) {
@@ -46,6 +49,9 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   
   const handleSave = async () => {
     try {
+      setSaveError(null);
+      setSaveSuccess(false);
+      
       const noteData = {
         appointment: appointmentId,
         subjective: subjective.trim(),
@@ -53,19 +59,25 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
         analysis: analysis.trim(),
         plan: plan.trim()
       };
+      
       if (clinicalNote) {
         await updateNote.mutateAsync(noteData);
       } else {
         await createNote.mutateAsync(noteData);
       }
+      
       setIsEditing(false);
-    } catch (error) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error: any) {
       console.error("Failed to save note:", error);
+      setSaveError(error?.response?.data?.error || error?.message || "Failed to save note");
     }
   };
   
   const handleCancel = () => {
     setIsEditing(false);
+    setSaveError(null);
     setSubjective(clinicalNote?.subjective || "");
     setObjective(clinicalNote?.objective || "");
     setAnalysis(clinicalNote?.analysis || "");
@@ -84,7 +96,9 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
     } catch (error) { console.error("Failed to unlock note:", error); }
   };
   
-  // ✅ ESTILOS UNIFICADOS AL MISMO NIVEL QUE OTROS PANELES
+  const isSaving = updateNote.isPending || createNote.isPending;
+  
+  // ESTILOS UNIFICADOS
   const labelStyles = "text-[9px] font-bold text-white/50 uppercase tracking-wider mb-2 block";
   const inputStyles = "w-full h-24 p-3 bg-black/40 border border-white/10 text-white text-[11px] font-mono placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 rounded-sm transition-all resize-none";
   
@@ -96,7 +110,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
     );
   }
   
-  // ✅ CONTENEDOR UNIFICADO - Mismo nivel que VitalSignsPanel
+  //.CONTENEDOR UNIFICADO
   return (
     <div className="border border-white/10 rounded-sm">
       {/* HEADER */}
@@ -109,41 +123,88 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
           {clinicalNote?.is_locked && (
             <LockClosedIcon className="w-3 h-3 text-red-500 animate-pulse" />
           )}
+          {saveSuccess && (
+            <span className="text-[10px] text-green-400 font-bold">✓ SAVED</span>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
+          {/* LOCK/UNLOCK BUTTONS - Only when clinicalNote exists */}
           {!readOnly && clinicalNote && (
             clinicalNote.is_locked ? (
-              <button onClick={handleUnlock} disabled={unlockNote.isPending} className="p-1 text-white/40 hover:text-green-400">
+              <button 
+                onClick={handleUnlock} 
+                disabled={unlockNote.isPending}
+                className="p-1.5 text-white/40 hover:text-green-400 disabled:opacity-50"
+                title="Unlock note"
+              >
                 <LockOpenIcon className="w-4 h-4" />
               </button>
             ) : (
-              <button onClick={handleLock} disabled={lockNote.isPending} className="p-1 text-white/40 hover:text-red-400">
+              <button 
+                onClick={handleLock} 
+                disabled={lockNote.isPending}
+                className="p-1.5 text-white/40 hover:text-red-400 disabled:opacity-50"
+                title="Lock note"
+              >
                 <LockClosedIcon className="w-4 h-4" />
               </button>
             )
           )}
           
+          {/* EDIT/SAVE/CANCEL BUTTONS */}
           {!readOnly && !clinicalNote?.is_locked && (
             isEditing ? (
               <div className="flex items-center gap-1">
-                <button onClick={handleSave} disabled={updateNote.isPending || createNote.isPending} className="p-1 text-white/40 hover:text-emerald-400">
-                  <CheckCircleIcon className="w-4 h-4" />
+                <button 
+                  onClick={handleSave} 
+                  disabled={isSaving}
+                  className={`p-1.5 rounded transition-colors ${
+                    isSaving 
+                      ? 'text-white/20 cursor-not-allowed' 
+                      : 'text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10'
+                  }`}
+                  title="Save"
+                >
+                  <CheckCircleIcon className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />
                 </button>
-                <button onClick={handleCancel} className="p-1 text-white/40 hover:text-red-400">
-                  <ExclamationTriangleIcon className="w-4 h-4" />
+                <button 
+                  onClick={handleCancel} 
+                  disabled={isSaving}
+                  className="p-1.5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                  title="Cancel"
+                >
+                  <XCircleIcon className="w-4 h-4" />
                 </button>
               </div>
             ) : (
-              <button onClick={() => setIsEditing(true)} className="p-1 text-white/40 hover:text-emerald-400">
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className="p-1.5 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
+                title="Edit"
+              >
                 <PencilSquareIcon className="w-4 h-4" />
               </button>
             )
           )}
+          
+          {/* VIEW MODE BUTTON */}
+          {readOnly && clinicalNote && (
+            <button className="p-1.5 text-white/40 hover:text-blue-400" title="View">
+              <EyeIcon className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
       
-      {/* CONTENIDO - ✅ Simplificado, mismo nivel */}
+      {/* ERROR MESSAGE */}
+      {saveError && (
+        <div className="px-4 py-2 bg-red-500/20 border-b border-red-500/30">
+          <span className="text-[10px] text-red-400">{saveError}</span>
+        </div>
+      )}
+      
+      {/* CONTENT */}
       <div className="p-4">
         {isEditing && !clinicalNote?.is_locked && !readOnly ? (
           <div className="space-y-4">
@@ -151,16 +212,36 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
             <div>
               <label className={labelStyles}>EXPLORATION</label>
               <div className="grid grid-cols-2 gap-3">
-                <textarea value={subjective} onChange={(e) => setSubjective(e.target.value)} className={inputStyles} placeholder="Symptoms..." />
-                <textarea value={objective} onChange={(e) => setObjective(e.target.value)} className={inputStyles} placeholder="Findings..." />
+                <textarea 
+                  value={subjective} 
+                  onChange={(e) => setSubjective(e.target.value)} 
+                  className={inputStyles} 
+                  placeholder="Symptoms..." 
+                />
+                <textarea 
+                  value={objective} 
+                  onChange={(e) => setObjective(e.target.value)} 
+                  className={inputStyles} 
+                  placeholder="Findings..." 
+                />
               </div>
             </div>
             {/* EVALUATION */}
             <div>
               <label className={labelStyles}>EVALUATION</label>
               <div className="grid grid-cols-2 gap-3">
-                <textarea value={analysis} onChange={(e) => setAnalysis(e.target.value)} className={inputStyles} placeholder="Analysis..." />
-                <textarea value={plan} onChange={(e) => setPlan(e.target.value)} className={inputStyles} placeholder="Plan..." />
+                <textarea 
+                  value={analysis} 
+                  onChange={(e) => setAnalysis(e.target.value)} 
+                  className={inputStyles} 
+                  placeholder="Analysis..." 
+                />
+                <textarea 
+                  value={plan} 
+                  onChange={(e) => setPlan(e.target.value)} 
+                  className={inputStyles} 
+                  placeholder="Plan..." 
+                />
               </div>
             </div>
           </div>
@@ -169,15 +250,27 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
             <div>
               <span className="text-[9px] font-bold text-emerald-400 uppercase">EXPLORATION</span>
               <div className="mt-1 grid grid-cols-2 gap-3 text-[11px]">
-                <div><span className="text-white/30 text-[8px] block">SUBJECTIVE</span><span className="text-white">{subjective || '—'}</span></div>
-                <div><span className="text-white/30 text-[8px] block">OBJECTIVE</span><span className="text-white">{objective || '—'}</span></div>
+                <div>
+                  <span className="text-white/30 text-[8px] block">SUBJECTIVE</span>
+                  <span className="text-white">{subjective || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-white/30 text-[8px] block">OBJECTIVE</span>
+                  <span className="text-white">{objective || '—'}</span>
+                </div>
               </div>
             </div>
             <div>
               <span className="text-[9px] font-bold text-blue-400 uppercase">EVALUATION</span>
               <div className="mt-1 grid grid-cols-2 gap-3 text-[11px]">
-                <div><span className="text-white/30 text-[8px] block">ANALYSIS</span><span className="text-white">{analysis || '—'}</span></div>
-                <div><span className="text-white/30 text-[8px] block">PLAN</span><span className="text-white">{plan || '—'}</span></div>
+                <div>
+                  <span className="text-white/30 text-[8px] block">ANALYSIS</span>
+                  <span className="text-white">{analysis || '—'}</span>
+                </div>
+                <div>
+                  <span className="text-white/30 text-[8px] block">PLAN</span>
+                  <span className="text-white">{plan || '—'}</span>
+                </div>
               </div>
             </div>
           </div>
