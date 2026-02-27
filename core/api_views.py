@@ -1569,12 +1569,13 @@ def notifications_api(request):
     """
     Devuelve las 3 notificaciones más recientes de los últimos 7 días.
     Filtra por notify=True (solo eventos que deben mostrarse).
+    Si no hay eventos con notify=True, hace fallback a los últimos 3 eventos.
     """
     try:
         
         # get_audit_logic devuelve directamente una LISTA de eventos
         try:
-            all_events = services.get_audit_logic(limit=3)
+            all_events = services.get_audit_logic(limit=10)  # ✅ AUMENTADO: Traer más para filtrar
         except Exception as e:
             logger.error(f"Error en get_audit_logic: {str(e)}")
             all_events = []
@@ -1608,13 +1609,18 @@ def notifications_api(request):
                     datetime.fromisoformat(n['timestamp']) > cutoff
                 ]
             except Exception:
-                recent = top_3  # Si falla el filtro, devolver todos
+                recent = top_3
             
             # Si hay notificaciones recientes, devolverlas
             if recent:
                 return Response(recent)
         
-        # Si no hay notificaciones, devolver evento de "sin actividad"
+        # ✅ NUEVO FALLBACK: Si no hay notify=True, mostrar últimos 3 eventos
+        fallback_events = all_events[:3]
+        if fallback_events:
+            return Response(fallback_events)
+        
+        # Si no hay notificaciones ni eventos, devolver evento de "sin actividad"
         no_activity = [{
             "id": 0,
             "timestamp": datetime.now().isoformat(),
@@ -1638,7 +1644,6 @@ def notifications_api(request):
     except Exception as e:
         import traceback
         logger.error(f"Error en notifications_api: {str(e)}\n{traceback.format_exc()}")
-        # Devolver error seguro en lugar de 500
         return Response([{
             "id": 0,
             "timestamp": datetime.now().isoformat(),
@@ -1646,14 +1651,14 @@ def notifications_api(request):
             "entity": "Dashboard",
             "entity_id": 0,
             "action": "error",
-            "metadata": {"message": f"Error al cargar notificaciones: {str(e)}"},
-            "severity": "warning",
+            "metadata": {"error": str(e)},
+            "severity": "critical",
             "notify": False,
-            "title": "Error de sistema",
+            "title": "Error cargando notificaciones",
             "description": "Contacte al administrador",
             "category": "system.error",
-            "action_label": "Reintentar",
-            "action_href": None,
+            "action_label": "Ver dashboard",
+            "action_href": "/dashboard",
             "badge_action": "error",
         }])
 
