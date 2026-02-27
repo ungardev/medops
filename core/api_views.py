@@ -3353,25 +3353,32 @@ def verify_mobile_payment(request):
 def active_institution_with_metrics(request):
     """
     Retorna institución activa + métricas filtradas por institución activa.
-    Reemplaza a endpoints separados para mayor eficiencia.
+    ✅ OPTIMIZADO: Mejor manejo de errores y fallback seguro para BCV
     """
     from django.utils import timezone
     from datetime import timedelta
     from decimal import Decimal
-    from .services import get_institution_settings, get_bcv_rate
+    from .services import get_institution_settings
     
     # Obtener institución activa usando el servicio existente
     try:
         institution_data = get_institution_settings(request, active_only=True)
         
-        if not institution_data or not institution_data.get('id'):
+        # ✅ MEJORADO: Verificación más robusta
+        if not institution_data or not isinstance(institution_data, dict):
             return Response({"error": "No active institution found"}, status=404)
         
-        active_inst = InstitutionSettings.objects.get(id=institution_data['id'])
+        institution_id = institution_data.get('id')
+        if not institution_id:
+            return Response({"error": "No active institution ID"}, status=404)
         
+        active_inst = InstitutionSettings.objects.get(id=institution_id)
+        
+    except InstitutionSettings.DoesNotExist:
+        return Response({"error": "Institution not found"}, status=404)
     except Exception as e:
         logger.error(f"Error obteniendo institución activa: {str(e)}")
-        return Response({"error": "No active institution found"}, status=404)
+        return Response({"error": f"Error: {str(e)}"}, status=500)
     
     # Filtros de tiempo y moneda
     range_param = request.GET.get('range', 'day')
@@ -3391,33 +3398,33 @@ def active_institution_with_metrics(request):
     
     # Métricas específicas para esta institución
     try:
-        # ✅ CORREGIDO: Citas agendadas (con filtro de fecha)
+        # ✅ Citas agendadas
         scheduled_count = Appointment.objects.filter(
             institution=active_inst,
-            status='scheduled',  # ✅ CORREGIDO - era 'pending'
+            status='scheduled',
             appointment_date__gte=start_date,
             appointment_date__lt=end_date
         ).count()
         
-        # ✅ CORREGIDO: Citas pendientes totales (sin filtro de fecha)
+        # ✅ Citas pendientes totales
         pending_count = Appointment.objects.filter(
             institution=active_inst,
-            status='pending'   # ✅ CORREGIDO - solo pendientes generales
+            status='pending'
         ).count()
         
-        # ✅ CORREGIDO: Citas en sala de espera
+        # ✅ Citas en sala de espera
         waiting_count = Appointment.objects.filter(
             institution=active_inst,
-            status='arrived'   # ✅ CORRECTO
+            status='arrived'
         ).count()
         
-        # ✅ CORRECTO: Citas en consulta
+        # ✅ Citas en consulta
         in_consultation_count = Appointment.objects.filter(
             institution=active_inst,
-            status='in_consultation'  # ✅ CORRECTO
+            status='in_consultation'
         ).count()
         
-        # ✅ CORRECTO: Citas completadas (con filtro de fecha)
+        # ✅ Citas completadas
         completed_count = Appointment.objects.filter(
             institution=active_inst,
             status='completed',
@@ -3425,18 +3432,23 @@ def active_institution_with_metrics(request):
             appointment_date__lt=end_date
         ).count()
         
-        # ✅ CORREGIDO: Métricas financieras - usar issued_at en lugar de created_at
+        # ✅ Métricas financieras - OPTIMIZADO
         charge_orders = ChargeOrder.objects.filter(
             institution=active_inst,
             issued_at__gte=start_date,
             issued_at__lt=end_date
         )
         
-        # ✅ NUEVO: Sumar todos los totales (sin filtro de moneda) y convertir si es VES
         total_usd = sum(order.total for order in charge_orders)
         
-        # Obtener tasa BCV para conversión (convertir a float)
-        bcv_rate = float(get_bcv_rate())
+        # ✅ FIX: Obtener tasa BCV con manejo de errores mejorado
+        # Esta función ahora solo usa cache, nunca hace scraping
+        try:
+            from .services import get_bcv_rate
+            bcv_rate = float(get_bcv_rate())
+        except Exception as bcv_error:
+            logger.warning(f"Error obteniendo tasa BCV: {bcv_error}")
+            bcv_rate = 1.0  # Fallback seguro
         
         # Convertir a VES si se solicita
         if currency == "VES":
@@ -3444,20 +3456,20 @@ def active_institution_with_metrics(request):
         else:
             total_amount = float(total_usd)
         
-        # ✅ CORREGIDO: Pagos confirmados - usar received_at en lugar de created_at
+        # ✅ Pagos confirmados
         payments_count = Payment.objects.filter(
             charge_order__institution=active_inst,
-            received_at__gte=start_date,  # ✅ CORREGIDO - era created_at
-            received_at__lt=end_date,     # ✅ CORREGIDO - era created_at
+            received_at__gte=start_date,
+            received_at__lt=end_date,
             status='confirmed'
         ).count()
         
-        # ✅ CORREGIDO: Órdenes exoneradas - usar issued_at en lugar de created_at
+        # ✅ Órdenes exoneradas
         exempted_count = ChargeOrder.objects.filter(
             institution=active_inst,
             status='waived',
-            issued_at__gte=start_date,   # ✅ CORREGIDO - era created_at
-            issued_at__lt=end_date       # ✅ CORREGIDO - era created_at
+            issued_at__gte=start_date,
+            issued_at__lt=end_date
         ).count()
         
         metrics = {
@@ -3469,6 +3481,7 @@ def active_institution_with_metrics(request):
             'total_amount': float(total_amount),
             'payments_count': payments_count,
             'exempted_count': exempted_count,
+            'bcv_rate': bcv_rate,  # ✅ NUEVO: Incluir rate en respuesta
         }
         
         # Serializar institución
@@ -3481,6 +3494,8 @@ def active_institution_with_metrics(request):
         
     except Exception as e:
         logger.error(f"Error en active_institution_with_metrics: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
         return Response({"error": str(e)}, status=500)
 
 
