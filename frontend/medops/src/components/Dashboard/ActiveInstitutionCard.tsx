@@ -16,7 +16,6 @@ import { useActiveInstitution } from "@/hooks/dashboard/useActiveInstitution";
 import { useBCVRate } from "@/hooks/dashboard/useBCVRate";
 import ButtonGroup from "@/components/Common/ButtonGroup";
 import type { InstitutionSettings } from "@/types/config";
-// 🎨 Configuración de métricas integrada
 const metricsConfig = {
   scheduled_count: {
     label: "Citas Agendadas",
@@ -49,7 +48,7 @@ const metricsConfig = {
     href: "/appointments?status=completed",
   },
   total_amount: {
-    label: "Total ($)", // Esta etiqueta se reemplaza dinámicamente más abajo
+    label: "Total ($)",
     icon: CurrencyDollarIcon,
     color: "text-white",
     href: "/payments",
@@ -71,10 +70,7 @@ export const ActiveInstitutionCard: React.FC = () => {
   const navigate = useNavigate();
   const { range, setRange, currency, setCurrency } = useDashboardFilters();
   
-  // 🔥 Hook unificado con filtros
   const { data: activeData, isLoading } = useActiveInstitution({ range, currency });
-  
-  // 🆕 Hook de tasa BCV
   const { data: bcvRate } = useBCVRate();
   
   const institution = activeData?.institution;
@@ -88,7 +84,6 @@ export const ActiveInstitutionCard: React.FC = () => {
     if (href) navigate(href);
   };
   
-  // ✅ NUEVO: Función para obtener label dinámico según moneda
   const getMetricLabel = (key: string): string => {
     if (key === 'total_amount') {
       return currency === 'VES' ? 'Total (VES)' : 'Total ($)';
@@ -107,11 +102,9 @@ export const ActiveInstitutionCard: React.FC = () => {
     }
     return value.toLocaleString();
   };
-  // Loading State
   if (isLoading) {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
-        {/* Loading Skeleton */}
         <div className="flex gap-6 mb-6">
           <div className="w-20 h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0">
             <div className="w-8 h-8 bg-white/10 animate-pulse rounded" />
@@ -121,7 +114,6 @@ export const ActiveInstitutionCard: React.FC = () => {
             <div className="h-3 bg-white/5 rounded w-32 animate-pulse" />
           </div>
         </div>
-        {/* Metrics Grid Skeleton */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <div key={i} className="bg-black/20 border border-white/5 rounded-sm p-3 animate-pulse">
@@ -134,7 +126,6 @@ export const ActiveInstitutionCard: React.FC = () => {
     );
   }
   
-  // No Institution State
   if (!institution) {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
@@ -153,17 +144,17 @@ export const ActiveInstitutionCard: React.FC = () => {
       </div>
     );
   }
-  // 🆕 FORMATEAR TASA BCV
   const bcvDisplay = bcvRate 
     ? `${Number(bcvRate.value).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
     : "--";
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
-      {/* Header: Logo + Nombre + Status + Controles BCV en ESQUINA SUPERIOR DERECHA */}
-      <div className="flex gap-6 mb-6">
-        {/* Logo */}
-        <div className="w-20 h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+      {/* ✅ FIX: Header responsive - flex-col en mobile, flex-row en md+ */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        
+        {/* Logo - más pequeño en mobile */}
+        <div className="w-16 md:w-20 h-16 md:h-20 bg-black border border-white/10 flex items-center justify-center p-2 shrink-0 overflow-hidden">
           {typeof institution.logo === 'string' ? (
             <img 
               src={institution.logo} 
@@ -181,7 +172,7 @@ export const ActiveInstitutionCard: React.FC = () => {
             <h4 className="text-sm font-black text-white uppercase truncate tracking-widest">
               {institution.name}
             </h4>
-             
+            
             {/* Status Indicator */}
             <div className="flex items-center gap-2">
               <div className="relative flex h-2 w-2">
@@ -194,7 +185,6 @@ export const ActiveInstitutionCard: React.FC = () => {
           
           <div className="flex items-center gap-4 mt-2">
             <div className="flex items-center gap-2">
-              {/* 🆕 ICONO DE CONFIGURACIÓN JUNTO A FISCAL_UID */}
               <button onClick={handleConfigure} className="p-1 hover:bg-white/5 rounded transition-colors">
                 <CogIcon className="w-3 h-3 text-white/30 hover:text-white/60" />
               </button>
@@ -203,9 +193,11 @@ export const ActiveInstitutionCard: React.FC = () => {
             </div>
           </div>
         </div>
-        {/* 🆕 CONTROLES EN ESQUINA SUPERIOR DERECHA */}
-        <div className="flex flex-col items-end gap-2 shrink-0">
-          {/* 🆕 TASA BCV */}
+        
+        {/* ✅ FIX: Controles responsive - flex-row en mobile, flex-col en md+ */}
+        <div className="flex flex-row md:flex-col items-start md:items-end gap-2 shrink-0">
+          
+          {/* BCV Rate */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-sm">
             <span className="text-[8px] font-black text-amber-500/70 uppercase tracking-wider">BCV:</span>
             <span className="text-[10px] font-mono font-bold text-amber-500">{bcvDisplay}</span>
@@ -225,7 +217,7 @@ export const ActiveInstitutionCard: React.FC = () => {
             <ButtonGroup
               items={[
                 { label: "$", value: "USD" },
-                { label: "VES", value: "VES" }, // ✅ CAMBIADO de "Bs" a "VES"
+                { label: "VES", value: "VES" },
               ]}
               selected={currency}
               onSelect={(val) => setCurrency(val as any)}
@@ -234,7 +226,7 @@ export const ActiveInstitutionCard: React.FC = () => {
         </div>
       </div>
       
-      {/* 📊 GRID DE 8 MÉTRICAS - 4x2 en desktop */}
+      {/* Metrics Grid - sin cambios, ya es responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {metrics &&
           Object.entries(metricsConfig).map(([key, cfg]) => {
@@ -256,7 +248,7 @@ export const ActiveInstitutionCard: React.FC = () => {
                     <Icon className="h-3 w-3" />
                   </div>
                   <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 group-hover:text-white/60 truncate">
-                    {getMetricLabel(key)} {/* ✅ CAMBIADO: Ahora usa función dinámica */}
+                    {getMetricLabel(key)}
                   </span>
                 </div>
                 
@@ -282,8 +274,6 @@ export const ActiveInstitutionCard: React.FC = () => {
             );
           })}
       </div>
-      
-      {/* 🗑️ ELIMINADA: Línea inferior de "Configurar // Ver Detalles" */}
     </div>
   );
 };
