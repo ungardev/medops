@@ -3488,57 +3488,23 @@ def active_institution_with_metrics(request):
 @permission_classes([conditional_permission()])
 def start_consultation_from_entry(request, entry_id):
     """
-    Inicia una consulta convirtiendo un WaitingRoomEntry en Appointment.
-    Maneja tanto walk-ins como citas programadas.
+    Iniciar consulta desde WaitingRoomEntry.
+    
+    Si es walk-in: crea Appointment + ChargeOrder (solo si no existe)
+    Si ya existe Appointment: usa el existente
     """
-    
-    # =====================================================
-    # AUTENTICACIÓN MANUAL EN DEBUG MODE
-    # =====================================================
-    has_auth_classes = bool(settings.REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES', []))
-    
-    user = request.user
-    
-    # En DEBUG mode sin auth classes, intentar extraer usuario del token manualmente
-    if not has_auth_classes:
-        auth_header = request.headers.get('Authorization', '')
-        if auth_header.startswith('Token '):
-            token_key = auth_header[6:]  # Extraer después de "Token "
-            try:
-                token = Token.objects.get(key=token_key)
-                user = token.user
-            except Token.DoesNotExist:
-                return Response(
-                    {"error": "Token de autenticación inválido"}, 
-                    status=401
-                )
-    
-    # Verificar autenticación si hay auth classes configuradas
-    if has_auth_classes and not user.is_authenticated:
-        return Response(
-            {"error": "Usuario no autenticado. Inicie sesión primero."}, 
-            status=401
-        )
-    
-    # =====================================================
-    # OBTENER DOCTOR PROFILE
-    # =====================================================
-    doctor = getattr(user, 'doctor_profile', None)
-    if not doctor:
-        return Response(
-            {"error": "Doctor profile not found. El usuario no tiene un perfil de médico asociado."}, 
-            status=404
-        )
-    
     try:
         entry = get_object_or_404(WaitingRoomEntry, pk=entry_id)
         
-        # Validar que no haya otra consulta activa
-        if Appointment.objects.filter(status="in_consultation").exists():
-            return Response(
-                {"error": "Ya hay una consulta activa. Complete primero."},
-                status=400
-            )
+        # Obtener doctor del header
+        doctor_id = request.headers.get('X-Doctor-ID')
+        if not doctor_id:
+            return Response({"error": "Doctor ID required"}, status=400)
+        
+        try:
+            doctor = DoctorOperator.objects.get(pk=int(doctor_id))
+        except (DoctorOperator.DoesNotExist, ValueError):
+            return Response({"error": "Doctor no encontrado"}, status=400)
         
         # Obtener institution_id del header
         institution_id = request.headers.get('X-Institution-ID')
@@ -3560,7 +3526,6 @@ def start_consultation_from_entry(request, entry_id):
             appointment.save(update_fields=['status', 'started_at'])
         else:
             # WALK-IN: Crear Appointment desde cero
-            # NOTA: Appointment NO tiene campo 'priority'
             appointment = Appointment.objects.create(
                 patient=entry.patient,
                 doctor=doctor,
@@ -3570,9 +3535,15 @@ def start_consultation_from_entry(request, entry_id):
                 started_at=timezone.now(),
                 notes=f"Walk-in desde Waiting Room (Entry #{entry.id})"
             )
-            
-            # Crear ChargeOrder vacío para el walk-in
-            from .models import ChargeOrder
+        
+        # ✅ FIX: Verificar si YA existe ChargeOrder antes de crear (para walk-ins nuevos)
+        # Esto evita duplicados si el Appointment ya tiene uno o si se llama múltiples veces
+        existing_charge_order = ChargeOrder.objects.filter(
+            appointment=appointment
+        ).exclude(status__in=['void', 'waived']).first()
+        
+        if not existing_charge_order:
+            # Solo crear si no existe - esto permite que add-items también cree si es necesario
             ChargeOrder.objects.create(
                 appointment=appointment,
                 patient=entry.patient,

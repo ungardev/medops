@@ -467,21 +467,24 @@ class Appointment(models.Model):
             )
 
 
-# --- Señal para crear automáticamente la orden de cobro ---
-@receiver(post_save, sender=Appointment)
-def create_charge_order(sender, instance, created, **kwargs):
-    if created and not instance.charge_orders.exists():
-        from .models import ChargeOrder
-        ChargeOrder.objects.create(
-            appointment=instance,
-            patient=instance.patient,
-            doctor=instance.doctor,  # NUEVO
-            institution=instance.institution,  # NUEVO
-            currency="USD",
-            status="open",
-            total=Decimal('0.00'),
-            balance_due=Decimal('0.00'),
-        )
+# =====================================================
+# ❌ ELIMINAR ESTE SIGNAL - Ya no queremos creación automática
+# El ChargeOrder se creará solo cuando se agreguen items
+# =====================================================
+# @receiver(post_save, sender=Appointment)
+# def create_charge_order(sender, instance, created, **kwargs):
+#     if created and not instance.charge_orders.exists():
+#         from .models import ChargeOrder
+#         ChargeOrder.objects.create(
+#             appointment=instance,
+#             patient=instance.patient,
+#             doctor=instance.doctor,
+#             institution=instance.institution,
+#             currency="USD",
+#             status="open",
+#             total=Decimal('0.00'),
+#             balance_due=Decimal('0.00'),
+#         )
 
 
 class WaitingRoomEntry(models.Model):

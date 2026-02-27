@@ -2368,9 +2368,9 @@ class AppointmentDetailSerializer(AppointmentSerializer):
         """
         Devuelve la orden de cobro principal de la cita con lógica de prioridad.
         Prioriza: Pagada > Parcial > Abierta.
-        ✅ ACTUALIZADO: Ahora incluye items (detalle de servicios)
+        ✅ ACTUALIZADO: Excluye tanto 'void' como 'waived' para evitar duplicados
         """
-        order = obj.charge_orders.exclude(status="void").order_by(
+        order = obj.charge_orders.exclude(status__in=["void", "waived"]).order_by(
             models.Case(
                 models.When(status="paid", then=0),
                 models.When(status="partially_paid", then=1),
@@ -2382,7 +2382,7 @@ class AppointmentDetailSerializer(AppointmentSerializer):
         ).first()
         
         if order:
-            # ✅ Obtener payments de la orden
+            # Obtener payments de la orden
             payments_data = []
             for p in order.payments.filter(status='confirmed'):
                 payments_data.append({
@@ -2394,25 +2394,16 @@ class AppointmentDetailSerializer(AppointmentSerializer):
                     "received_at": p.received_at.isoformat() if p.received_at else None,
                 })
             
-            # ✅ NUEVO: Obtener items (detalle de servicios)
-            items_data = []
-            for item in order.items.all():
-                items_data.append({
-                    "id": item.id,
-                    "code": item.code,
-                    "description": item.description,
-                    "qty": float(item.qty),
-                    "unit_price": float(item.unit_price),
-                    "subtotal": float(item.subtotal),
-                })
-            
             return {
                 "id": order.id,
                 "status": order.status,
-                "total_amount": float(order.total),
+                "total": float(order.total),
                 "balance_due": float(order.balance_due),
-                "order_number": getattr(order, 'order_number', f"ORD-{order.id}"),
-                "items": items_data,  # ✅ NUEVO
+                "currency": order.currency,
+                "issued_at": order.issued_at.isoformat() if order.issued_at else None,
+                "items": list(order.items.values(
+                    'id', 'code', 'description', 'qty', 'unit_price', 'subtotal'
+                )),
                 "payments": payments_data,
             }
         return None
