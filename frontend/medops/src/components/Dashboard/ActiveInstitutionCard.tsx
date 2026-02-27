@@ -194,17 +194,17 @@ export const ActiveInstitutionCard: React.FC = () => {
           </div>
         </div>
         
-        {/* ✅ FIX: Controles responsive - flex-row en mobile, flex-col en md+ */}
-        <div className="flex flex-row md:flex-col items-start md:items-end gap-2 shrink-0">
+        {/* ✅ FIX: Controles responsive - ocupa todo el ancho en mobile */}
+        <div className="flex flex-col md:flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto">
           
-          {/* BCV Rate */}
+          {/* BCV Rate - siempre visible */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-sm">
             <span className="text-[8px] font-black text-amber-500/70 uppercase tracking-wider">BCV:</span>
             <span className="text-[10px] font-mono font-bold text-amber-500">{bcvDisplay}</span>
           </div>
           
-          {/* Time Range + Currency Buttons */}
-          <div className="flex items-center gap-2">
+          {/* ✅ FIX: Botones en fila vertical en mobile, horizontal en desktop */}
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
             <ButtonGroup
               items={[
                 { label: "D", value: "day" },
@@ -226,7 +226,7 @@ export const ActiveInstitutionCard: React.FC = () => {
         </div>
       </div>
       
-      {/* Metrics Grid - sin cambios, ya es responsive */}
+      {/* Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {metrics &&
           Object.entries(metricsConfig).map(([key, cfg]) => {
