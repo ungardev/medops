@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { NotificationEvent } from "@/types/notifications";
 import { useAuthToken } from "@/hooks/useAuthToken";
-import { DashboardAPI } from "@/api/dashboard"; // ✅ AGREGADO: Importar API client
+import { DashboardAPI } from "@/api/dashboard";
 const DAYS_WINDOW = 7;
 const MAX_NOTIFICATIONS = 3;
 function isWithinDays(ts: string, days: number) {
@@ -21,6 +21,7 @@ export function useNotifications() {
     retry: 1,
     staleTime: 60_000,
     refetchOnWindowFocus: false,
-    queryFn: () => DashboardAPI.notifications(), // ✅ CAMBIADO: Usar API client en lugar de fetch directo
+    refetchInterval: 30000,
+    queryFn: () => DashboardAPI.notifications(),
   });
 }

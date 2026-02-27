@@ -1,5 +1,6 @@
 // src/components/WaitingRoom/RegisterWalkinModal.tsx
 import React, { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { searchPatients } from "../../api/patients";
 import { PatientRef } from "../../types/patients";
 import type { WaitingRoomEntry } from "../../types/waitingRoom";
@@ -17,6 +18,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
   existingEntries,
   institutionId 
 }) => {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PatientRef[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientRef | null>(null);
@@ -54,6 +56,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
   };
   const handleNewPatientCreated = (patientId: number) => {
     setShowNewPatientModal(false);
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
     onSuccess(patientId, institutionId || null);
     onClose();
   };
@@ -119,7 +122,6 @@ const RegisterWalkinModal: React.FC<Props> = ({
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">SUBJECT IDENTIFIED</p>
-                      {/* ✅ FIX: Removed italic from patient name */}
                       <h3 className="text-lg font-bold text-white uppercase tracking-tight">{selectedPatient.full_name}</h3>
                       <p className="text-xs font-mono text-white/50 mt-1">{selectedPatient.national_id}</p>
                     </div>
