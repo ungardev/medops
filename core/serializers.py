@@ -1286,31 +1286,41 @@ class ChargeItemSerializer(serializers.ModelSerializer):
         return data
 
 
+class InstitutionMiniSerializer(serializers.ModelSerializer):
+    """Serializer minimal para institution selector"""
+    class Meta:
+        model = InstitutionSettings
+        fields = ['id', 'name', 'logo', 'is_active']
+
+
 class ChargeOrderSerializer(serializers.ModelSerializer):
     """
     Serializer de órdenes de cobro.
     
-    ✅ ACTUALIZADO: Ahora incluye campo CACHED (doctor) para analítica
-                  usando SerializerMethodField para evitar errores de definición
+    ✅ ACTUALIZADO: Ahora incluye campo institution para显示 en frontend
     """
     total = serializers.FloatField(read_only=True)
     balance_due = serializers.FloatField(read_only=True)
     items = ChargeItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
     
-    # ✅ NUEVO: Campo CACHED usando SerializerMethodField (solución definitiva)
+    # ✅ NUEVO: Campo institution con mini serializer
+    institution = InstitutionMiniSerializer(read_only=True)
+    
+    # Campo CACHED usando SerializerMethodField
     doctor = serializers.SerializerMethodField()
     
     # Campo plano para Search.tsx y otros endpoints
     patient_name = serializers.SerializerMethodField()
+    
     class Meta:
         model = ChargeOrder
         fields = (
             "id",
             "appointment",
             "patient",
+            "institution",  # ✅ NUEVO: Agregado
             "currency",
-            # ✅ Campo CACHED agregado
             "doctor",
             "total",
             "balance_due",
@@ -2699,15 +2709,6 @@ class NeighborhoodDetailSerializer(serializers.Serializer):
             "country": getattr(c, 'name', 'N/A') if c else 'N/A',
             "country_id": getattr(c, 'id', None) if c else None,
         }
-
-
-# --- SUB-SERIALIZERS PARA LECTURA (Elegancia en el Frontend) ---
-
-class InstitutionMiniSerializer(serializers.ModelSerializer):
-    """Serializer minimal para institution selector"""
-    class Meta:
-        model = InstitutionSettings
-        fields = ['id', 'name', 'logo', 'is_active']
 
 
 class DoctorMiniSerializer(serializers.ModelSerializer):
