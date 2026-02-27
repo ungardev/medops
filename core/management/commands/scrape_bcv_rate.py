@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.utils.timezone import localdate
 from decimal import Decimal
 from core.models import BCVRateCache
-from core.services import get_bcv_rate
+from core.services import get_bcv_rate, get_bcv_rate_logic
 import logging
 
 audit = logging.getLogger("audit")
@@ -13,7 +13,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         today = localdate()
         try:
-            rate = get_bcv_rate()
+            rate_data = get_bcv_rate_logic()
+            rate = Decimal(str(rate_data["value"]))
+            
             if not isinstance(rate, Decimal) or rate <= 0:
                 raise ValueError("Tasa inválida")
 

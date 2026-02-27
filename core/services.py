@@ -673,20 +673,31 @@ def get_audit_logic(
     """
     SERVICIO MAESTRO DE AUDITORÍA: Centraliza 7 métodos en uno solo.
     Devuelve datos puros (dicts/lists), sin Response ni Request.
+    
+    ✅ OPTIMIZADO: Mejor manejo de patient_id y límite por defecto
     """
     from .serializers import EventSerializer
     
     # 1. Base Query optimizada
     qs = Event.objects.all().order_by("-timestamp")
-
-    # 2. Filtros de Identidad (ID de paciente en metadata es clave para rendimiento)
+    # 2. Filtros de Identidad
+    # ✅ MEJORADO: Búsqueda más robusta para patient_id en JSONField
     if patient_id:
-        qs = qs.filter(metadata__contains={"patient_id": int(patient_id)})
+        try:
+            patient_id_int = int(patient_id)
+            # Usar Q para búsqueda más flexible en JSONField
+            from django.db.models import Q
+            qs = qs.filter(
+                Q(metadata__contains=f'{{"patient_id": {patient_id_int}}}') |
+                Q(metadata__contains=f'"patient_id": {patient_id_int}')
+            )
+        except (ValueError, TypeError):
+            pass  # Si no es válido, ignorar el filtro
+    
     if entity:
         qs = qs.filter(entity=entity)
     if entity_id:
         qs = qs.filter(entity_id=entity_id)
-
     # 3. Filtros Dinámicos (vienen de request.GET)
     if filters:
         if filters.get("start_date"):
@@ -696,8 +707,7 @@ def get_audit_logic(
         if filters.get("severity"):
             qs = qs.filter(severity=filters["severity"])
         if filters.get("actor"):
-            qs = qs.filter(actor__icontains=filters["actor"])
-
+            qs = qs.filter(actor_name__icontains=filters["actor"])
     # 4. Lógica de Categorización (Para Dashboards o Resúmenes)
     if split_by_category:
         lim = limit or 10
@@ -711,7 +721,6 @@ def get_audit_logic(
             "general_events": EventSerializer(general, many=True).data,
             "all_events": EventSerializer(qs[:30], many=True).data
         }
-
     # 5. Dashboard Estadístico (Totalizaciones)
     if filters and filters.get("dashboard_stats"):
         return {
@@ -719,10 +728,11 @@ def get_audit_logic(
             "by_entity": list(Event.objects.values("entity").annotate(total=Count("id"))),
             "by_action": list(Event.objects.values("action").annotate(total=Count("id"))),
         }
-
     # 6. Retorno Simple (con o sin límite)
-    if limit:
-        qs = qs[:limit]
+    # ✅ NUEVO: Límite por defecto de 50 si no se especifica
+    if not limit:
+        limit = 50
+    qs = qs[:limit]
         
     return cast(List[Dict[str, Any]], EventSerializer(qs, many=True).data)
 
