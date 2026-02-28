@@ -141,7 +141,7 @@ export default function SearchPage() {
                   {results.appointments.map((c) => (
                     <ResultCard 
                       key={c.id} 
-                      to={c.patient?.id || c.patient_id ? `/patients/${c.patient?.id || c.patient_id}/consultations/${c.id}` : "/appointments"}
+                      to={`/appointments?view=${c.id}`}
                       title={`Date: ${c.appointment_date}`}
                       subtitle={`Status: ${c.status} // Patient: ${c.patient_name || '---'}`}
                       type="APPOINTMENT"

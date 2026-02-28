@@ -40,6 +40,21 @@ export default function Appointments() {
   const pageSize = 10;
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
+  
+  // ✅ NUEVO: Leer parámetro ?view= de la URL para abrir modal directamente
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const viewParam = params.get("view");
+    if (viewParam) {
+      const appointmentId = parseInt(viewParam, 10);
+      if (!isNaN(appointmentId)) {
+        setViewingAppointmentId(appointmentId);
+        // Limpiar la URL sin recargar
+        window.history.replaceState({}, "", "/appointments");
+      }
+    }
+  }, [location.search]);
+  
   // 1. DATA LOADING
   const { data: allData, isLoading, isFetching, error } = useAllAppointments();
   const allAppointments = allData?.list ?? [];
