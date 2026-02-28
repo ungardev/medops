@@ -12,7 +12,7 @@ import {
   UserCheck,
   Activity,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";  // 🆕 AGREGAR ESTE IMPORT
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { useNotifications } from "@/hooks/dashboard/useNotifications";
@@ -22,14 +22,12 @@ interface HeaderProps {
   setCollapsed: (value: boolean) => void;
   setMobileOpen: (value: boolean) => void;
 }
-// Helper para iconos basado en el sistema de auditoría
 function notificationIcon(category: string) {
   if (category?.includes("appointment")) return <UserCheck className="w-3 h-3" />;
   if (category?.includes("payment")) return <DollarSign className="w-3 h-3" />;
   if (category?.includes("report")) return <FileText className="w-3 h-3" />;
   return <Activity className="w-3 h-3" />;
 }
-// Helper functions para el procesamiento de datos del médico
 const getInitials = (fullName: string): string => {
   if (!fullName) return '??';
   const parts = fullName.trim().split(' ');
@@ -44,14 +42,12 @@ const getPrimarySpecialty = (specialties?: any[]): string => {
   return specialties?.[0]?.name || 'Médico';
 };
 export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
-  const navigate = useNavigate();  // 🆕 AGREGAR ESTA LÍNEA
+  const navigate = useNavigate();
   const { clearToken } = useAuthToken();
   
-  // 🔹 Conectamos con el Stream de Datos
   const { data: rawData, isLoading } = useNotifications();
   const notifications = Array.isArray(rawData) ? rawData : (rawData as any)?.results || [];
   
-  // ✅ NUEVO: Hook del doctor para obtener datos reales
   const { data: doctor, isLoading: doctorLoading } = useDoctorConfig();
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -60,14 +56,13 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   const notifRef = useRef<HTMLDivElement | null>(null);
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  // 🆕 FUNCIÓN PARA MANEJAR CLICK EN NOTIFICACIONES
+  
   const handleNotificationClick = (n: any) => {
     if (n.action_href) {
       navigate(n.action_href);
       setShowNotifications(false);
     }
   };
-  // ...resto del código existente (useEffects, handlers, etc.)...
   
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -80,6 +75,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
         setDarkMode(true);
     }
   }, []);
+  
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
@@ -90,6 +86,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+  
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
@@ -99,6 +96,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+  
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
@@ -107,43 +105,58 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
       searchInputRef.current?.blur();
     }
   };
+  
   const toggleTheme = () => {
     const next = !darkMode;
     document.documentElement.classList.toggle("dark", next);
     localStorage.setItem("theme", next ? "dark" : "light");
     setDarkMode(next);
   };
+  
   const handleLogout = () => {
     clearToken();
     navigate("/login");
   };
+  
   return (
-    <div className="w-full flex items-center justify-between h-full bg-[#0c0e12] px-6 border-b border-white/[0.05] shadow-2xl relative z-[110]">
-      <div className="flex items-center gap-6 flex-1">
-        <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 text-white/40 hover:text-white transition-colors">
+    <div className="w-full flex items-center justify-between h-full bg-[#0c0e12] px-4 lg:px-6 border-b border-white/[0.05] shadow-2xl relative z-[110]">
+      <div className="flex items-center gap-2 lg:gap-6 flex-1 min-w-0">
+        <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 text-white/40 hover:text-white transition-colors shrink-0">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-lg group">
+        
+        {/* ✅ FIX: Formulario de búsqueda responsivo */}
+        <form onSubmit={handleSearchSubmit} className="relative w-full max-w-lg group flex items-center min-w-0">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="w-3.5 h-3.5 text-white/20 group-focus-within:text-[var(--palantir-active)] transition-colors" />
+            <Search className="w-3.5 h-3.5 text-white/20 group-focus-within:text-[var(--palantir-active)] transition-colors hidden sm:flex" />
           </div>
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="EJECUTAR COMANDO O BUSCAR_PACIENTE... (CTRL+K)"
+            placeholder="BUSCAR_PACIENTE... (CTRL+K)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-1.5 bg-white/[0.02] border border-white/10 rounded-sm text-[10px] text-white font-mono tracking-wider focus:outline-none focus:border-[var(--palantir-active)]/40 focus:bg-white/[0.04] transition-all placeholder:text-white/10"
+            className="w-full pl-9 sm:pl-10 pr-10 lg:pr-20 py-1.5 bg-white/[0.02] border border-white/10 rounded-sm text-[10px] text-white font-mono tracking-wider focus:outline-none focus:border-[var(--palantir-active)]/40 focus:bg-white/[0.04] transition-all placeholder:text-white/10 min-w-0"
           />
-          <button type="submit" className="hidden" />
-          <div className="absolute inset-y-0 right-3 flex items-center">
+          
+          {/* ✅ FIX: Botón buscar visible en mobile */}
+          <button 
+            type="submit"
+            className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2 p-1 text-white/40 hover:text-white"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+          
+          {/* ✅ FIX: Badge Secure_Node oculto en mobile */}
+          <div className="absolute inset-y-0 right-3 hidden lg:flex items-center">
             <span className="text-[8px] font-black text-white/20 border border-white/5 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Secure_Node</span>
           </div>
         </form>
       </div>
-      <div className="flex items-center gap-3">
+      
+      <div className="flex items-center gap-2 lg:gap-3 shrink-0">
         {/* Notificaciones */}
         <div className="relative" ref={notifRef}>
           <button 
@@ -169,7 +182,6 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
                 ) : notifications.length === 0 ? (
                   <li className="p-10 text-center text-[9px] font-mono text-white/10 uppercase">Empty_Log_Buffer</li>
                 ) : (
-                  // 🆕 AGREGAR onClick A CADA NOTIFICACIÓN
                   notifications.map((n: any) => (
                     <li 
                       key={n.id} 
@@ -183,7 +195,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
                             <span className="text-[10px] font-black text-white/80 uppercase tracking-tight group-hover/item:text-[var(--palantir-active)] transition-colors">{n.title}</span>
-                            <span className="text-[8px] font-mono text-white/10">[{moment(n.timestamp).fromNow(true)}]</span>
+                            <span className="text-[8px] font-mono text-white/10 ml-2 shrink-0">[{moment(n.timestamp).fromNow(true)}]</span>
                           </div>
                           <p className="text-[10px] text-white/30 leading-tight mt-1 line-clamp-2 italic">{n.description}</p>
                         </div>
@@ -198,10 +210,12 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
             </div>
           )}
         </div>
-        <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
-        {/* User Menu - ACTUALIZADO CON DATOS REALES DEL MÉDICO */}
+        
+        <div className="h-4 w-[1px] bg-white/10 mx-1 hidden sm:block"></div>
+        
+        {/* User Menu */}
         <div className="relative" ref={userMenuRef}>
-          <button onClick={() => setMenuOpen(!menuOpen)} className={`flex items-center gap-3 p-1 pl-2 pr-3 rounded-sm transition-all border ${menuOpen ? 'bg-white/5 border-white/20' : 'border-transparent hover:bg-white/5'}`}>
+          <button onClick={() => setMenuOpen(!menuOpen)} className={`flex items-center gap-2 lg:gap-3 p-1 pl-2 pr-2 lg:pr-3 rounded-sm transition-all border ${menuOpen ? 'bg-white/5 border-white/20' : 'border-transparent hover:bg-white/5'}`}>
             <div className="relative">
               <div className="w-7 h-7 bg-white/5 rounded-sm flex items-center justify-center border border-white/10">
                 {doctorLoading ? (
