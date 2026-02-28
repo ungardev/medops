@@ -1030,7 +1030,7 @@ class EventSerializer(serializers.ModelSerializer):
         if obj.entity == "ChargeOrder":
             return f"/payments/{obj.entity_id}"
         if obj.entity == "Appointment":
-            return f"/appointments/{obj.entity_id}"
+            return f"/appointments?view={obj.entity_id}"  # ✅ CORREGIDO
         if obj.entity == "Patient":
             return f"/patients/{obj.entity_id}"
         if obj.entity == "WaitingRoom":
