@@ -158,7 +158,7 @@ export default function SearchPage() {
                   {results.orders.map((o) => (
                     <ResultCard 
                       key={o.id}
-                      to={o.patient?.id && o.appointment ? `/patients/${o.patient?.id}/consultations/${o.appointment}` : `/charge-orders/${o.id}`}
+                      to={o.patient?.id && o.appointment ? `/patients/${o.patient?.id}/consultations/${o.appointment}` : `/payments/${o.id}`}
                       title={`Order_ID: #${o.id.toString().padStart(4, '0')}`}
                       subtitle={`Total: $${o.total} // Status: ${o.status}`}
                       type="FINANCE"
