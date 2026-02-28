@@ -1,5 +1,5 @@
 // src/components/Dashboard/ActiveInstitutionCard.tsx
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BuildingOfficeIcon,
@@ -7,12 +7,16 @@ import {
   ClockIcon,
   CheckCircleIcon,
   CurrencyDollarIcon,
-  CogIcon
+  CogIcon,
+  MapPinIcon,
+  CalendarIcon
 } from "@heroicons/react/24/outline";
 import { useDashboardFilters } from "@/context/DashboardFiltersContext";
 import { useActiveInstitution } from "@/hooks/dashboard/useActiveInstitution";
 import { useBCVRate } from "@/hooks/dashboard/useBCVRate";
+import { usePublicInstitutionLocation } from "@/hooks/settings/usePublicInstitutionLocation";
 import ButtonGroup from "@/components/Common/ButtonGroup";
+import moment from "moment";
 import type { InstitutionSettings } from "@/types/config";
 const metricsConfig = {
   scheduled_count: {
@@ -70,6 +74,32 @@ export const ActiveInstitutionCard: React.FC = () => {
   
   const { data: activeData, isLoading } = useActiveInstitution({ range, currency });
   const { data: bcvRate } = useBCVRate();
+  const { data: locationData } = usePublicInstitutionLocation();
+  
+  // Clock state
+  const [now, setNow] = useState(moment());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(moment()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  // Location info
+  const locationInfo = useMemo(() => {
+    if (!locationData || locationData.status !== 'operational') {
+      return { full: "Sin ubicación", tz: "UTC-4" };
+    }
+    const loc = locationData.location;
+    const full = [
+      loc.neighborhood,
+      loc.municipality,
+      loc.state,
+      loc.country
+    ].filter(Boolean).join(', ');
+    return {
+      full: full || locationData.name,
+      tz: locationData.timezone || "UTC-4"
+    };
+  }, [locationData]);
   
   const institution = activeData?.institution;
   const metrics = activeData?.metrics;
@@ -100,6 +130,7 @@ export const ActiveInstitutionCard: React.FC = () => {
     }
     return value.toLocaleString();
   };
+  
   if (isLoading) {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
@@ -142,14 +173,16 @@ export const ActiveInstitutionCard: React.FC = () => {
       </div>
     );
   }
+  
   const bcvDisplay = bcvRate 
     ? `${Number(bcvRate.value).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
     : "--";
+  
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
       {/* Header responsive - flex-col en mobile, flex-row en md+, centrado en mobile */}
-      <div className="flex flex-col md:flex-row items-center md:items-start gap-4 mb-6">
+      <div className="flex flex-col md:flex-row items-start gap-4 mb-4">
         
         {/* Logo - fondo blanco para visibilidad, centrado en mobile */}
         <div className="w-16 md:w-20 h-16 md:h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
@@ -164,9 +197,9 @@ export const ActiveInstitutionCard: React.FC = () => {
           )}
         </div>
         
-        {/* Institution Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
+        {/* Institution Info + Live Clock - LadoIzq en desktop */}
+        <div className="flex-1 min-w-0 w-full">
+          <div className="flex items-center gap-3 flex-wrap">
             <h4 className="text-sm font-black text-white uppercase truncate tracking-widest">
               {institution.name}
             </h4>
@@ -181,7 +214,7 @@ export const ActiveInstitutionCard: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-center gap-4 mt-2 flex-wrap">
             <div className="flex items-center gap-2">
               <button onClick={handleConfigure} className="p-1 hover:bg-white/5 rounded transition-colors">
                 <CogIcon className="w-3 h-3 text-white/30 hover:text-white/60" />
@@ -190,10 +223,25 @@ export const ActiveInstitutionCard: React.FC = () => {
               <p className="text-[10px] font-mono text-white/60">{institution.tax_id || "PENDING_REGISTRATION"}</p>
             </div>
           </div>
+          
+          {/* ✅ LIVE CLOCK - Desktop: inline con info | Mobile: below */}
+          <div className="flex items-center gap-4 mt-3 md:mt-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl md:text-2xl font-black font-mono text-white leading-none tracking-tighter">
+                {now.format("HH:mm:ss")}
+              </span>
+            </div>
+            <div className="hidden md:block h-4 w-[1px] bg-white/10"></div>
+            <div className="hidden md:flex items-center gap-2 text-white/40">
+              <span className="text-[10px] font-mono uppercase">
+                {now.format("dddd, DD MMMM YYYY")}
+              </span>
+            </div>
+          </div>
         </div>
         
-        {/* Controles responsive - ocupa todo el ancho en mobile */}
-        <div className="flex flex-col md:flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto">
+        {/* Controles + BCV - LadoDer en desktop */}
+        <div className="flex flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto">
           
           {/* BCV Rate - siempre visible */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-sm">
@@ -201,7 +249,7 @@ export const ActiveInstitutionCard: React.FC = () => {
             <span className="text-[10px] font-mono font-bold text-amber-500">{bcvDisplay}</span>
           </div>
           
-          {/* Botones en fila vertical en mobile, horizontal en desktop */}
+          {/* Botones filtros */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full">
             <ButtonGroup
               items={[
@@ -221,6 +269,26 @@ export const ActiveInstitutionCard: React.FC = () => {
               onSelect={(val) => setCurrency(val as any)}
             />
           </div>
+        </div>
+      </div>
+      
+      {/* ✅ LIVE CLOCK - Mobile: solo visible en mobile, debajo de controles */}
+      <div className="md:hidden flex items-center justify-between border-t border-white/5 pt-3 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xl font-black font-mono text-white leading-none">
+            {now.format("HH:mm:ss")}
+          </span>
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] font-mono text-white/60 uppercase">
+            {now.format("dddd, DD MMMM YYYY")}
+          </div>
+          {locationInfo.full && (
+            <div className="flex items-center justify-end gap-1 mt-1">
+              <MapPinIcon className="w-3 h-3 text-white/30" />
+              <span className="text-[8px] font-mono text-white/40">{locationInfo.full}</span>
+            </div>
+          )}
         </div>
       </div>
       

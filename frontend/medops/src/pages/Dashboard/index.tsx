@@ -1,9 +1,6 @@
 // src/pages/Dashboard/index.tsx
 import React, { useEffect } from "react";
-import TrendsChart from "@/components/Dashboard/TrendsChart";
-import NotificationsFeed from "@/components/Dashboard/NotificationsFeed";
 import AuditLog from "@/components/Dashboard/AuditLog";
-import OperationalHub from "@/components/Dashboard/OperationalHub";
 import PageHeader from "@/components/Common/PageHeader"; 
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { queryClient } from "@/lib/reactQuery";
@@ -14,7 +11,6 @@ import type { InstitutionSettings } from "@/types/config";
 export default function Dashboard() {
   const { token } = useAuthToken();
   
-  // ✅ Obtener TODAS las instituciones del usuario
   const { 
     institutions, 
     activeInstitution, 
@@ -138,37 +134,22 @@ export default function Dashboard() {
     );
   }
   
-  // ✅ ESTADO 4: Todo listo - Dashboard completo con institución activa
+  // ✅ ESTADO 4: Todo listo - Dashboard simplificado
   return (
     <DashboardFiltersProvider>
       <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
         
-        {/* PageHeader LIMPIO - SIN actions (los botones están dentro del ActiveInstitutionCard) */}
+        {/* PageHeader LIMPIO */}
         <PageHeader 
           breadcrumbs={[{ label: "MEDOPZ", active: true }]}
         />
         
-        {/* 🎯 ÚNICO COMPONENTE UNIFICADO CON TODO INTEGRADO */}
+        {/* 🎯 COMPONENTE UNIFICADO - ActiveInstitutionCard con Live Clock integrado */}
         <section className="animate-in slide-in-from-bottom-1 duration-700 delay-50">
           <ActiveInstitutionCard />
         </section>
         
-        {/* TRIADA OPERACIONAL - Sin cambios */}
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div className="lg:col-span-3">
-            <OperationalHub />
-          </div>
-          <div className="lg:col-span-6">
-            <div className="h-full bg-white/[0.01] border border-white/5 rounded-sm p-1">
-               <TrendsChart />
-            </div>
-          </div>
-          <div className="lg:col-span-3">
-            <NotificationsFeed />
-          </div>
-        </section>
-        
-        {/* LOG DE AUDITORÍA - Sin cambios */}
+        {/* LOG DE AUDITORÍA */}
         <section className="pt-4 border-t border-white/10">
           <div className="flex items-center gap-2 mb-4">
              <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
