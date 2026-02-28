@@ -187,9 +187,9 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 CORS_ALLOW_HEADERS = [
     "accept", "authorization", "content-type", "user-agent",
-    "x-csrftoken", "x-requested-with", "origin", "x-institution-id",
+    "x-csrfToken", "x-requested-with", "origin", "x-institution-id",
+    "x-doctor-id",
 ]
-
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost:8080",
