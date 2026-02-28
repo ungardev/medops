@@ -121,6 +121,9 @@ export default function Consultation() {
     }
   };
   const handleCommitSession = async () => {
+    // ✅ LIMPIEZA INMEDIATA: Forzar null en cache antes de navegar
+    queryClient.setQueryData(["appointment", "current"], null);
+    
     await updateStatus.mutateAsync({ id: appointment.id, status: "completed" });
     setShowCommitModal(false);
     setToast({ message: "Sesión completada exitosamente", type: "success" });
@@ -237,6 +240,8 @@ export default function Consultation() {
                 <button
                   onClick={async () => {
                     if(confirm("Confirm: Abort and Discard Session?")) {
+                      // ✅ LIMPIEZA INMEDIATA para cancel también
+                      queryClient.setQueryData(["appointment", "current"], null);
                       await updateStatus.mutateAsync({ id: appointment.id, status: "canceled" });
                       navigate("/waitingroom");
                     }
