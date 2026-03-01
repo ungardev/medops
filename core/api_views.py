@@ -1434,6 +1434,166 @@ def reports_api(request):
         return Response({"error": str(e)}, status=500)
 
 
+# ==========================================
+# ENDPOINTS PACIENTES PEDIÁTRICOS
+# ==========================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def patient_dependents(request, patient_id):
+    """
+    GET /api/patients/{id}/dependents/
+    Lista todos los dependientes (menores) de un representante.
+    """
+    try:
+        representative = Patient.objects.get(pk=patient_id)
+        
+        # Verificar que tiene dependientes
+        dependents = Patient.objects.filter(
+            representative=representative,
+            is_minor=True,
+            active=True
+        )
+        
+        serializer = PatientListSerializer(dependents, many=True)
+        return Response({
+            'representative': {
+                'id': representative.id,
+                'full_name': representative.full_name,
+                'national_id': representative.national_id,
+            },
+            'dependents': serializer.data,
+            'count': dependents.count()
+        })
+    except Patient.DoesNotExist:
+        return Response({'error': 'Paciente representante no encontrado'}, status=404)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def register_minor(request):
+    """
+    POST /api/patients/register-minor/
+    Registra un paciente menor con su representante.
+    """
+    try:
+        data = request.data
+        
+        # Validar que viene el representante
+        representative_id = data.get('representative_id')
+        if not representative_id:
+            return Response({
+                'error': 'El ID del representante es obligatorio.'
+            }, status=400)
+        
+        try:
+            representative = Patient.objects.get(pk=representative_id)
+        except Patient.DoesNotExist:
+            return Response({
+                'error': 'Representante no encontrado.'
+            }, status=404)
+        
+        # Validar consentimiento parental
+        if not data.get('parental_consent'):
+            return Response({
+                'error': 'El consentimiento parental es obligatorio para registrar menores.'
+            }, status=400)
+        
+        # Crear el menor
+        minor_data = {
+            'first_name': data.get('first_name'),
+            'middle_name': data.get('middle_name'),
+            'last_name': data.get('last_name'),
+            'second_last_name': data.get('second_last_name'),
+            'national_id': data.get('national_id'),
+            'birthdate': data.get('birthdate'),
+            'gender': data.get('gender'),
+            'phone_number': data.get('phone_number'),
+            'email': data.get('email'),
+            'representative': representative.id,
+            'relationship_type': data.get('relationship_type'),
+            'parental_consent': data.get('parental_consent'),
+            'consent_date': data.get('consent_date'),
+            'representative_doc': data.get('representative_doc'),
+            'representative_phone': data.get('representative_phone'),
+            'representative_email': data.get('representative_email'),
+            'is_minor': True,
+            'active': True,
+        }
+        
+        serializer = PatientWriteSerializer(data=minor_data)
+        if serializer.is_valid():
+            patient = serializer.save()
+            return Response(
+                PatientDetailSerializer(patient).data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+    except Exception as e:
+        logger.error(f"Error en register_minor: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def minor_verification(request):
+    """
+    GET /api/patients/minor-verification/
+    Lista pacientes menores que requieren verificación de consentimiento.
+    """
+    try:
+        # Pacientes menores sin consentimiento o con consentimiento pendiente
+        pending_minors = Patient.objects.filter(
+            is_minor=True,
+            active=True
+        ).filter(
+            models.Q(parental_consent=False) | 
+            models.Q(consent_date__isnull=True) |
+            models.Q(representative__isnull=True)
+        )
+        
+        serializer = PatientListSerializer(pending_minors, many=True)
+        return Response({
+            'pending_verification': serializer.data,
+            'count': pending_minors.count()
+        })
+    except Exception as e:
+        logger.error(f"Error en minor_verification: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def approve_minor_consent(request, patient_id):
+    """
+    POST /api/patients/{id}/approve-consent/
+    Aprueba el consentimiento parental de un menor.
+    """
+    try:
+        patient = Patient.objects.get(pk=patient_id)
+        
+        if not patient.is_minor:
+            return Response({
+                'error': 'Este paciente no es menor de edad.'
+            }, status=400)
+        
+        # Aprobar consentimiento
+        patient.parental_consent = True
+        patient.consent_date = timezone.now()
+        patient.save()
+        
+        return Response({
+            'success': True,
+            'message': f'Consentimiento parental aprobado para {patient.full_name}',
+            'patient': PatientDetailSerializer(patient).data
+        })
+        
+    except Patient.DoesNotExist:
+        return Response({'error': 'Paciente no encontrado'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+
 
 @api_view(['GET'])
 def reports_export_api(request):

@@ -184,15 +184,24 @@ class PatientWriteSerializer(serializers.ModelSerializer):
         required=False
     )
     
-    # ✅ Para lectura - objeto completo
+    # Para lectura - objeto completo
     neighborhood = NeighborhoodSerializer(read_only=True, required=False)
     
-    # ✅ Para escritura - solo ID
+    # Para escritura - solo ID
     neighborhood_id = serializers.PrimaryKeyRelatedField(
         queryset=Neighborhood.objects.all(),
         required=False,
         allow_null=True,
         source="neighborhood"
+    )
+    
+    # Representante (para pacientes pediátricos)
+    representative_id = serializers.PrimaryKeyRelatedField(
+        queryset=Patient.objects.all(),
+        required=False,
+        allow_null=True,
+        source="representative",
+        help_text="ID del representante (padre/madre/tutor)"
     )
     
     class Meta:
@@ -210,7 +219,7 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "gender", 
             "phone_number", 
             "email",
-            "contact_info",  # ✅ AGREGADO: Campo que faltaba
+            "contact_info",
             "address",
             "neighborhood",
             "neighborhood_id",
@@ -221,7 +230,17 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             "active",
             "tattoo",
             "profession",
-            "skin_type"
+            "skin_type",
+            # --- Campos Paciente Pediátrico ---
+            "is_minor",
+            "representative",
+            "representative_id",
+            "relationship_type",
+            "parental_consent",
+            "consent_date",
+            "representative_doc",
+            "representative_phone",
+            "representative_email",
         ]
     
     def validate_birthdate(self, value):
@@ -229,37 +248,95 @@ class PatientWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("La fecha de nacimiento no puede ser futura.")
         return value
     
+    def validate(self, attrs):
+        """Validación específica para pacientes pediátricos"""
+        is_minor = attrs.get('is_minor', False)
+        representative = attrs.get('representative')
+        
+        # Si es menor, debe tener representante
+        if is_minor and not representative:
+            raise serializers.ValidationError({
+                'representative': 'Los pacientes menores de edad deben tener un representante.'
+            })
+        
+        # Si tiene representante, debe especificar tipo de relación
+        if representative and not attrs.get('relationship_type'):
+            raise serializers.ValidationError({
+                'relationship_type': 'Debe especificar el tipo de relación con el representante.'
+            })
+        
+        # Si parental_consent es true, debe tener consent_date
+        if attrs.get('parental_consent') and not attrs.get('consent_date'):
+            raise serializers.ValidationError({
+                'consent_date': 'Debe especificar la fecha del consentimiento parental.'
+            })
+        
+        return attrs
+    
     def save(self, **kwargs):
         v_data = cast(Dict[str, Any], self.validated_data)
         if v_data.get('address') is None:
             v_data['address'] = ""
-        if v_data.get('contact_info') is None:  # ✅ AGREGADO: Default vacío
+        if v_data.get('contact_info') is None:
             v_data['contact_info'] = ""
         return super().save(**kwargs)
 
 
 class PatientReadSerializer(serializers.ModelSerializer):
     full_name = serializers.ReadOnlyField() 
-    age = serializers.ReadOnlyField()       
+    age = serializers.ReadOnlyField()
+    age_category = serializers.ReadOnlyField()
+    is_pediatric = serializers.ReadOnlyField()
+    guardian_info = serializers.SerializerMethodField()
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
     address_chain = serializers.SerializerMethodField()
-    neighborhood = NeighborhoodSerializer(read_only=True)  # ✅ AGREGADO: Objeto completo con jerarquía
+    neighborhood = NeighborhoodSerializer(read_only=True)
+    
+    # Representante
+    representative = serializers.SerializerMethodField()
     
     class Meta:
         model = Patient
         fields = [
-            "id", "full_name", "national_id", "email", "age", "gender",
+            "id", "full_name", "national_id", "email", "age", "age_category",
+            "is_pediatric", "gender",
             "birthdate",
             "phone_number", "address",
-            "contact_info",  # ✅ AGREGADO: Campo que faltaba
-            "neighborhood",  # ✅ AGREGADO: Para que los selectores se poblen automáticamente
+            "contact_info",
+            "neighborhood",
             "blood_type",
             "weight", "height", "medical_history", "genetic_predispositions", 
             "alerts", "address_chain", "active", "created_at", "updated_at",
-            "tattoo", "profession", "skin_type"
+            "tattoo", "profession", "skin_type",
+            # --- Campos Paciente Pediátrico ---
+            "is_minor",
+            "representative",
+            "relationship_type",
+            "parental_consent",
+            "consent_date",
+            "representative_doc",
+            "representative_phone",
+            "representative_email",
+            "guardian_info",
         ]
+    
+    @extend_schema_field(serializers.DictField())
+    def get_guardian_info(self, obj):
+        return obj.guardian_info
+    
+    @extend_schema_field(serializers.DictField())
+    def get_representative(self, obj):
+        if not obj.representative:
+            return None
+        return {
+            "id": obj.representative.id,
+            "full_name": obj.representative.full_name,
+            "national_id": obj.representative.national_id,
+            "phone": obj.representative_phone,
+            "relationship": obj.get_relationship_type_display(),
+        }
     
     @extend_schema_field(serializers.ListField(child=serializers.DictField()))
     def get_alerts(self, obj) -> List[Dict[str, Any]]:
@@ -296,19 +373,31 @@ class PatientListSerializer(serializers.ModelSerializer):
     """
     full_name = serializers.ReadOnlyField()
     age = serializers.ReadOnlyField()
+    is_pediatric = serializers.ReadOnlyField()
     short_address = serializers.SerializerMethodField()
+    representative_name = serializers.SerializerMethodField()
+    
     class Meta:
         model = Patient
         fields = [
-            "id", "full_name", "national_id", "age", "gender", 
-            "phone_number", "contact_info", "short_address", "active"
+            "id", "full_name", "national_id", "age", "is_pediatric", "gender", 
+            "phone_number", "contact_info", "short_address", "active",
+            "representative_name", "relationship_type",
         ]
+    
     @extend_schema_field(serializers.CharField())
     def get_short_address(self, obj) -> str:
         """Dirección compacta para columnas de tablas."""
         if obj.neighborhood:
             return f"{obj.neighborhood.name}, {obj.neighborhood.parish.name}"
         return obj.address[:30] if obj.address else "Sin dirección"
+    
+    @extend_schema_field(serializers.CharField())
+    def get_representative_name(self, obj) -> Optional[str]:
+        """Nombre del representante para menores."""
+        if obj.representative:
+            return obj.representative.full_name
+        return None
 
 
 class PatientDetailSerializer(serializers.ModelSerializer):
@@ -318,24 +407,53 @@ class PatientDetailSerializer(serializers.ModelSerializer):
     """
     full_name = serializers.ReadOnlyField()
     age = serializers.SerializerMethodField()
+    age_category = serializers.ReadOnlyField()
+    is_pediatric = serializers.ReadOnlyField()
+    guardian_info = serializers.SerializerMethodField()
     medical_history = MedicalHistorySerializer(many=True, read_only=True)
     genetic_predispositions = GeneticPredispositionSerializer(many=True, read_only=True)
     alerts = serializers.SerializerMethodField()
     address_chain = serializers.SerializerMethodField()
+    representative = serializers.SerializerMethodField()
     
     class Meta:
         model = Patient
         fields = [
-            "id", "full_name", "national_id", "age", "gender", "birthdate",  # ✅ CORREGIDO: birth_date → birthdate
+            "id", "full_name", "national_id", "age", "age_category", "is_pediatric", "gender", "birthdate",
             "email", "contact_info", "blood_type", "weight", "height",
             "medical_history", "genetic_predispositions", "alerts",
             "address", "address_chain", "active", "created_at", "updated_at",
-            "tattoo", "profession", "skin_type"
+            "tattoo", "profession", "skin_type",
+            # --- Campos Paciente Pediátrico ---
+            "is_minor",
+            "representative",
+            "relationship_type",
+            "parental_consent",
+            "consent_date",
+            "representative_doc",
+            "representative_phone",
+            "representative_email",
+            "guardian_info",
         ]
     
     def get_age(self, obj):
-        if not obj.birthdate: return None
-        return (date.today() - obj.birthdate).days // 365
+        return obj.age
+    
+    @extend_schema_field(serializers.DictField())
+    def get_guardian_info(self, obj):
+        return obj.guardian_info
+    
+    @extend_schema_field(serializers.DictField())
+    def get_representative(self, obj):
+        if not obj.representative:
+            return None
+        return {
+            "id": obj.representative.id,
+            "full_name": obj.representative.full_name,
+            "national_id": obj.representative.national_id,
+            "phone": obj.representative_phone,
+            "relationship": obj.get_relationship_type_display(),
+        }
     
     def get_alerts(self, obj):
         """Extrae alertas de seguridad: Alergias severas o riesgos clínicos."""

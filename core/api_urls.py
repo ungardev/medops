@@ -1,4 +1,5 @@
 # core/api_urls.py
+from django import views
 from django.urls import path, include
 from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
@@ -283,6 +284,11 @@ urlpatterns = [
     path("config/institutions/add/", add_institution_api, name="add-institution-api"),
     path("config/institutions/<int:institution_id>/delete/", delete_institution_api, name="delete-institution-api"),
     path("config/institutions/<int:institution_id>/set-active/", set_active_institution_api, name="set-active-institution-api"),
+    # Pacientes Pediátricos
+    path('patients/<int:patient_id>/dependents/', views.patient_dependents, name='patient-dependents'),
+    path('patients/register-minor/', views.register_minor, name='register-minor'),
+    path('patients/minor-verification/', views.minor_verification, name='minor-verification'),
+    path('patients/<int:patient_id>/approve-consent/', views.approve_minor_consent, name='approve-minor-consent'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [
