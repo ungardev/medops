@@ -173,6 +173,65 @@ class Patient(models.Model):
     second_last_name = models.CharField(max_length=100, blank=True, null=True)
     # --- Datos Demográficos ---
     birthdate = models.DateField(blank=True, null=True)
+    # --- Paciente Pediátrico ---
+    is_minor = models.BooleanField(
+        default=False,
+        verbose_name="¿Es menor de edad?",
+        help_text="Determina si el paciente es menor de 18 años"
+    )
+    representative = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='dependent_patients',
+        verbose_name="Representante (padre/madre/tutor)"
+    )
+    RELATIONSHIP_CHOICES = [
+        ('father', 'Padre'),
+        ('mother', 'Madre'),
+        ('legal_guardian', 'Tutor Legal'),
+        ('grandfather', 'Abuelo'),
+        ('grandmother', 'Abuela'),
+        ('sibling', 'Hermano/Hermana'),
+        ('other', 'Otro'),
+    ]
+    relationship_type = models.CharField(
+        max_length=20,
+        choices=RELATIONSHIP_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de relación con el representante"
+    )
+    parental_consent = models.BooleanField(
+        default=False,
+        verbose_name="Consentimiento parental firmado",
+        help_text="Confirmación de consentimiento para tratamiento de menor"
+    )
+    consent_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de consentimiento parental"
+    )
+    representative_doc = models.CharField(
+        max_length=12,
+        null=True,
+        blank=True,
+        verbose_name="Cédula del representante"
+    )
+    representative_phone = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        verbose_name="Teléfono del representante"
+    )
+    representative_email = models.EmailField(
+        max_length=255,
+        null=True,
+        blank=True,
+        verbose_name="Email del representante"
+    )
+    
     birth_place = models.CharField(max_length=255, blank=True, null=True)
     
     birth_country = models.ForeignKey(
@@ -254,6 +313,55 @@ class Patient(models.Model):
         parts = [self.first_name, self.middle_name, self.last_name, self.second_last_name]
         return " ".join([p for p in parts if p]).strip()
     
+    @property
+    def age(self):
+        """Retorna la edad del paciente."""
+        if not self.birthdate:
+            return None
+        from datetime import date
+        today = date.today()
+        age = today.year - self.birthdate.year - (
+            (today.month, today.day) < (self.birthdate.month, self.birthdate.day)
+        )
+        return age
+    
+    @property
+    def age_category(self):
+        """Retorna la categoría de edad."""
+        if not self.age:
+            return "unknown"
+        if self.age < 1:
+            return "neonate"
+        elif self.age < 3:
+            return "toddler"
+        elif self.age < 6:
+            return "preschool"
+        elif self.age < 12:
+            return "school_age"
+        elif self.age < 18:
+            return "adolescent"
+        else:
+            return "adult"
+    
+    @property
+    def is_pediatric(self):
+        """Retorna True si es paciente pediátrico."""
+        return self.is_minor or (self.age and self.age < 18)
+    
+    @property
+    def guardian_info(self):
+        """Retorna información del representante para menores."""
+        if not self.is_minor or not self.representative:
+            return None
+        return {
+            'name': self.representative.full_name,
+            'relationship': self.get_relationship_type_display(),
+            'phone': self.representative_phone,
+            'email': self.representative_email,
+            'consent_date': self.consent_date,
+            'consent_given': self.parental_consent
+        }
+    
     def __str__(self):
         return f"{self.national_id or 'S/I'} - {self.full_name}"
     
@@ -265,12 +373,44 @@ class Patient(models.Model):
         if self.second_last_name:
             self.second_last_name = normalize_title_case(self.second_last_name)
         
+        # Auto-detectar si es menor de edad basado en fecha de nacimiento
+        if self.birthdate:
+            from datetime import date
+            today = date.today()
+            age = today.year - self.birthdate.year - (
+                (today.month, today.day) < (self.birthdate.month, self.birthdate.day)
+            )
+            self.is_minor = age < 18
+        
         super().save(*args, **kwargs)
         
     def delete(self, *args, **kwargs):
         """Soft delete."""
         self.active = False
         self.save(update_fields=["active"])
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        super().clean()
+        
+        # Validar que menores tengan representante
+        if self.is_minor and not self.representative:
+            raise ValidationError({
+                'representative': 'Los pacientes menores de edad deben tener un representante.'
+            })
+        
+        # Validar consentimiento parental
+        if self.is_minor and self.parental_consent and not self.consent_date:
+            raise ValidationError({
+                'consent_date': 'Debe especificar la fecha del consentimiento parental.'
+            })
+        
+        # Validar datos del representante para menores
+        if self.is_minor and self.representative:
+            if not self.representative_phone:
+                raise ValidationError({
+                    'representative_phone': 'El teléfono del representante es obligatorio para menores.'
+                })
 
 
 class Appointment(models.Model):
