@@ -181,11 +181,11 @@ export const ActiveInstitutionCard: React.FC = () => {
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
-      {/* Header responsive - flex-col en mobile, flex-row en md+, centrado en mobile */}
+      {/* Header responsive - todo en misma línea en desktop */}
       <div className="flex flex-col md:flex-row items-start gap-4 mb-4">
         
-        {/* Logo - fondo blanco para visibilidad, centrado en mobile */}
-        <div className="w-16 md:w-20 h-16 md:h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+        {/* Logo - centrado en mobile, a la izquierda en desktop */}
+        <div className="w-16 md:w-20 h-16 md:h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden mx-auto md:mx-0">
           {typeof institution.logo === 'string' ? (
             <img 
               src={institution.logo} 
@@ -197,7 +197,7 @@ export const ActiveInstitutionCard: React.FC = () => {
           )}
         </div>
         
-        {/* Institution Info + Live Clock - LadoIzq en desktop */}
+        {/* Institution Info + Live Clock + Location - LadoIzq en desktop */}
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-center gap-3 flex-wrap">
             <h4 className="text-sm font-black text-white uppercase truncate tracking-widest">
@@ -224,19 +224,28 @@ export const ActiveInstitutionCard: React.FC = () => {
             </div>
           </div>
           
-          {/* ✅ LIVE CLOCK - Desktop: inline con info | Mobile: below */}
-          <div className="flex items-center gap-4 mt-3 md:mt-2">
+          {/* ✅ LIVE CLOCK + FECHA + GEOLOCALIZACION - Desktop inline */}
+          <div className="hidden md:flex items-center gap-4 mt-3">
             <div className="flex items-center gap-2">
-              <span className="text-xl md:text-2xl font-black font-mono text-white leading-none tracking-tighter">
+              <span className="text-2xl font-black font-mono text-white leading-none tracking-tighter">
                 {now.format("HH:mm:ss")}
               </span>
             </div>
-            <div className="hidden md:block h-4 w-[1px] bg-white/10"></div>
-            <div className="hidden md:flex items-center gap-2 text-white/40">
+            <div className="h-4 w-[1px] bg-white/10"></div>
+            <div className="flex items-center gap-2 text-white/40">
               <span className="text-[10px] font-mono uppercase">
                 {now.format("dddd, DD MMMM YYYY")}
               </span>
             </div>
+            {locationInfo.full && locationInfo.full !== "Sin ubicación" && (
+              <>
+                <div className="h-4 w-[1px] bg-white/10"></div>
+                <div className="flex items-center gap-1 text-white/40">
+                  <MapPinIcon className="w-3 h-3" />
+                  <span className="text-[10px] font-mono">{locationInfo.full}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
         
@@ -272,7 +281,7 @@ export const ActiveInstitutionCard: React.FC = () => {
         </div>
       </div>
       
-      {/* ✅ LIVE CLOCK - Mobile: solo visible en mobile, debajo de controles */}
+      {/* ✅ LIVE CLOCK + FECHA + GEOLOCALIZACION - Mobile: debajo de todo */}
       <div className="md:hidden flex items-center justify-between border-t border-white/5 pt-3 mb-4">
         <div className="flex items-center gap-2">
           <span className="text-xl font-black font-mono text-white leading-none">
@@ -283,7 +292,7 @@ export const ActiveInstitutionCard: React.FC = () => {
           <div className="text-[10px] font-mono text-white/60 uppercase">
             {now.format("dddd, DD MMMM YYYY")}
           </div>
-          {locationInfo.full && (
+          {locationInfo.full && locationInfo.full !== "Sin ubicación" && (
             <div className="flex items-center justify-end gap-1 mt-1">
               <MapPinIcon className="w-3 h-3 text-white/30" />
               <span className="text-[8px] font-mono text-white/40">{locationInfo.full}</span>
