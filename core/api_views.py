@@ -1316,10 +1316,10 @@ def reports_api(request):
             payments = Payment.objects.filter(status='confirmed')
             
             if start:
-                start_dt = datetime.combine(start, datetime.min.time())
+                start_dt = timezone.make_aware(datetime.combine(start, datetime.min.time()))
                 payments = payments.filter(received_at__gte=start_dt)
             if end:
-                end_dt = datetime.combine(end, datetime.max.time())
+                end_dt = timezone.make_aware(datetime.combine(end, datetime.max.time()))
                 payments = payments.filter(received_at__lte=end_dt)
             
             # Agrupar por fecha
@@ -1371,10 +1371,10 @@ def reports_api(request):
             # Pagos
             payments = Payment.objects.filter(status='confirmed')
             if start:
-                start_dt = datetime.combine(start, datetime.min.time())
+                start_dt = timezone.make_aware(datetime.combine(start, datetime.min.time()))
                 payments = payments.filter(received_at__gte=start_dt)
             if end:
-                end_dt = datetime.combine(end, datetime.max.time())
+                end_dt = timezone.make_aware(datetime.combine(end, datetime.max.time()))
                 payments = payments.filter(received_at__lte=end_dt)
             
             payments_by_date = payments.values('received_at').annotate(
