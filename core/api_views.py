@@ -1331,7 +1331,7 @@ def reports_api(request):
             for item in payments_by_date:
                 rows.append({
                     'id': f"FIN-{item['received_at']}",
-                    'date': item['received_at'],
+                    'date': str(item['received_at'].date()) if item['received_at'] else '',
                     'type': 'FINANCIAL',
                     'entity': 'Payment',
                     'status': 'CONFIRMED',
@@ -1358,7 +1358,7 @@ def reports_api(request):
             for item in appointments_by_status:
                 rows.append({
                     'id': f"CLI-{item['appointment_date']}.{item['status']}",
-                    'date': item['appointment_date'],
+                    'date': str(item['appointment_date']) if item['appointment_date'] else '',
                     'type': 'CLINICAL',
                     'entity': 'Appointment',
                     'status': item['status'].upper(),
@@ -1400,7 +1400,7 @@ def reports_api(request):
             for item in payments_by_date:
                 rows.append({
                     'id': f"FIN-{item['received_at']}",
-                    'date': item['received_at'],
+                    'date': str(item['received_at'].date()) if item['received_at'] else '',
                     'type': 'FINANCIAL',
                     'entity': 'Payment',
                     'status': 'CONFIRMED',
@@ -1413,7 +1413,7 @@ def reports_api(request):
             for item in appointments_by_status:
                 rows.append({
                     'id': f"CLI-{item['appointment_date']}.{item['status']}",
-                    'date': item['appointment_date'],
+                    'date': str(item['appointment_date']) if item['appointment_date'] else '',
                     'type': 'CLINICAL',
                     'entity': 'Appointment',
                     'status': item['status'].upper(),
@@ -1425,17 +1425,8 @@ def reports_api(request):
             # Tipo de reporte no soportado
             return Response({"error": f"Tipo de reporte no soportado: {report_type}"}, status=400)
         
-        # Ordenar por fecha descendente
-        def normalize_date(d):
-            if d is None:
-                return ''
-            if isinstance(d, datetime):
-                return d
-            if hasattr(d, 'date'):  # es date
-                return datetime.combine(d, datetime.min.time())
-            return d
-        
-        rows.sort(key=lambda x: normalize_date(x.get('date')), reverse=True)
+        # Ordenar por fecha descendente (usar string para evitar comparaciones de tipos)
+        rows.sort(key=lambda x: x.get('date', ''), reverse=True)
         
         return Response(rows)
     except Exception as e:
