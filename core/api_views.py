@@ -1306,8 +1306,8 @@ def reports_api(request):
     
     try:
         # Parsear fechas como date (no datetime) para comparar correctamente con DateField
-        start = python_date.strptime(start_date, '%Y-%m-%d') if start_date else None
-        end = python_date.strptime(end_date, '%Y-%m-%d') if end_date else None
+        start = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
+        end = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
         
         rows = []
         
@@ -1344,9 +1344,9 @@ def reports_api(request):
             )
             
             if start:
-                appointments = appointments.filter(appointment_date__gte=start.date() if hasattr(start, 'date') else start)
+                appointments = appointments.filter(appointment_date__gte=start)
             if end:
-                appointments = appointments.filter(appointment_date__lte=end.date() if hasattr(end, 'date') else end)
+                appointments = appointments.filter(appointment_date__lte=end)
             
             # Agrupar por fecha y estado
             appointments_by_status = appointments.values('appointment_date', 'status').annotate(
