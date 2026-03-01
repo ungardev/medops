@@ -1426,7 +1426,16 @@ def reports_api(request):
             return Response({"error": f"Tipo de reporte no soportado: {report_type}"}, status=400)
         
         # Ordenar por fecha descendente
-        rows.sort(key=lambda x: x.get('date', ''), reverse=True)
+        def normalize_date(d):
+            if d is None:
+                return ''
+            if isinstance(d, datetime):
+                return d
+            if hasattr(d, 'date'):  # es date
+                return datetime.combine(d, datetime.min.time())
+            return d
+        
+        rows.sort(key=lambda x: normalize_date(x.get('date')), reverse=True)
         
         return Response(rows)
     except Exception as e:
