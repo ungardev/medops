@@ -1,17 +1,24 @@
 // src/components/Reports/ReportTable.tsx
-import React from "react";
+import React, { useMemo } from "react";
 import { ReportRow, ReportStatus, ReportType } from "@/types/reports";
 import { 
   NoSymbolIcon, 
   CircleStackIcon, 
-  ArrowUpRightIcon 
+  ArrowUpRightIcon,
+  CurrencyDollarIcon
 } from "@heroicons/react/24/outline";
-
 interface Props {
   data: ReportRow[];
 }
-
 export default function ReportTable({ data }: Props) {
+  // ✅ CALCULAR TOTALES
+  const totals = useMemo(() => {
+    const confirmed = data.filter(r => r.status === ReportStatus.CONFIRMED).reduce((sum, r) => sum + (r.amount || 0), 0);
+    const pending = data.filter(r => r.status === ReportStatus.PENDING).reduce((sum, r) => sum + (r.amount || 0), 0);
+    const cancelled = data.filter(r => r.status === ReportStatus.CANCELLED).reduce((sum, r) => sum + (r.amount || 0), 0);
+    const total = data.reduce((sum, r) => sum + (r.amount || 0), 0);
+    return { confirmed, pending, cancelled, total };
+  }, [data]);
   if (data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center px-4 py-16 space-y-4">
@@ -22,7 +29,6 @@ export default function ReportTable({ data }: Props) {
       </div>
     );
   }
-
   // Helper para centralizar la lógica de estilos de estado estilo terminal
   const getStatusConfig = (status: ReportStatus) => {
     switch (status) {
@@ -36,7 +42,6 @@ export default function ReportTable({ data }: Props) {
         return { label: "COMPLETED", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" };
     }
   };
-
   return (
     <div className="relative border border-white/5 bg-black/20 rounded-sm">
       
@@ -87,7 +92,6 @@ export default function ReportTable({ data }: Props) {
           </tbody>
         </table>
       </div>
-
       {/* 🔹 MOBILE DATA CARDS */}
       <div className="md:hidden divide-y divide-white/5">
         {data.map((row) => {
@@ -117,7 +121,51 @@ export default function ReportTable({ data }: Props) {
           );
         })}
       </div>
-
+      {/* ✅ FOOTER CON TOTALES */}
+      <div className="bg-gradient-to-r from-emerald-500/5 via-blue-500/5 to-red-500/5 border-t border-white/10 px-6 py-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* TOTAL GENERAL */}
+          <div className="flex items-center gap-2">
+            <CurrencyDollarIcon className="w-4 h-4 text-white/40" />
+            <div>
+              <span className="text-[8px] font-mono text-white/40 uppercase block">Total_General</span>
+              <span className="text-[12px] font-black text-white">
+                ${totals.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+          {/* CONFIRMADO */}
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full" />
+            <div>
+              <span className="text-[8px] font-mono text-emerald-400/60 uppercase block">Confirmed</span>
+              <span className="text-[12px] font-black text-emerald-400">
+                ${totals.confirmed.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+          {/* PENDING */}
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-yellow-500 rounded-full" />
+            <div>
+              <span className="text-[8px] font-mono text-yellow-400/60 uppercase block">Pending</span>
+              <span className="text-[12px] font-black text-yellow-400">
+                ${totals.pending.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+          {/* CANCELLED */}
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-red-500 rounded-full" />
+            <div>
+              <span className="text-[8px] font-mono text-red-400/60 uppercase block">Cancelled</span>
+              <span className="text-[12px] font-black text-red-400">
+                ${totals.cancelled.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* 🔹 TABLE FOOTER DE AUDITORÍA */}
       <div className="bg-white/[0.02] border-t border-white/5 px-6 py-3 flex justify-between items-center">
         <div className="flex items-center gap-4 text-[8px] font-mono text-[var(--palantir-muted)] uppercase">

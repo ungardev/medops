@@ -3,18 +3,15 @@ import React, { useState } from "react";
 import { ReportFiltersInput, ReportType } from "@/types/reports";
 import { 
   MagnifyingGlassIcon, 
-  CalendarIcon // Corregido: Mayúscula y ahora sí se usará
+  CalendarIcon
 } from "@heroicons/react/24/outline";
-
 interface Props {
   onFilter: (filters: ReportFiltersInput) => void;
 }
-
 export default function ReportFilters({ onFilter }: Props) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [type, setType] = useState<ReportType>(ReportType.FINANCIAL);
-
   const handleApply = () => {
     const filters: ReportFiltersInput = {
       start_date: startDate.trim() !== "" ? startDate : undefined,
@@ -23,18 +20,15 @@ export default function ReportFilters({ onFilter }: Props) {
     };
     onFilter(filters);
   };
-
   const inputStyles = `
     w-full bg-black/40 border border-white/10 rounded-sm pl-9 pr-3 py-2 
     text-[11px] font-mono text-white placeholder:text-white/20
     focus:outline-none focus:border-[var(--palantir-active)]/50 focus:ring-1 focus:ring-[var(--palantir-active)]/20
     transition-all hover:bg-black/60 appearance-none
   `;
-
   const labelStyles = `
     text-[9px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)] mb-1.5 ml-0.5
   `;
-
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
@@ -49,10 +43,10 @@ export default function ReportFilters({ onFilter }: Props) {
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className={inputStyles}
+              style={{ colorScheme: 'dark' }}
             />
           </div>
         </div>
-
         {/* RANGE_END_DATE */}
         <div className="flex flex-col">
           <label className={labelStyles}>TERMINUS_PERIOD</label>
@@ -63,10 +57,10 @@ export default function ReportFilters({ onFilter }: Props) {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className={inputStyles}
+              style={{ colorScheme: 'dark' }}
             />
           </div>
         </div>
-
         {/* REPORT_CLASSIFICATION */}
         <div className="flex flex-col">
           <label className={labelStyles}>CLASS_IDENTIFIER</label>
@@ -85,7 +79,6 @@ export default function ReportFilters({ onFilter }: Props) {
             </select>
           </div>
         </div>
-
         {/* EXECUTE_QUERY_BUTTON */}
         <button
           onClick={handleApply}
@@ -97,7 +90,6 @@ export default function ReportFilters({ onFilter }: Props) {
           </span>
         </button>
       </div>
-
       {/* FOOTER DE ESTADO */}
       <div className="flex items-center gap-4 pt-2 border-t border-white/5">
         <div className="flex items-center gap-1.5">
