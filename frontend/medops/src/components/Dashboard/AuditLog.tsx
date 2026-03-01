@@ -8,7 +8,6 @@ import { useInstitutionSettings } from "@/hooks/settings/useInstitutionSettings"
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
 const severityBadge = (severity?: string | null) => {
   const base = "inline-flex items-center justify-center px-2 py-1 text-[9px] rounded-sm font-black border whitespace-nowrap uppercase tracking-widest transition-all duration-300";
   switch ((severity || "").toLowerCase()) {
@@ -25,7 +24,6 @@ const severityBadge = (severity?: string | null) => {
       return <span className={`${base} bg-white/5 text-white/40 border-white/10`}>INFO</span>;
   }
 };
-
 const actionBadge = (action: string) => {
   const base = "inline-flex items-center justify-center px-2 py-0.5 text-[9px] rounded-sm font-mono font-bold border whitespace-nowrap uppercase tracking-tighter transition-all";
   const act = (action || "").toLowerCase();
@@ -37,18 +35,100 @@ const actionBadge = (action: string) => {
     return <span className={`${base} border-red-500/40 text-red-400 bg-red-500/10`}>OP_DELETE</span>;
   return <span className={`${base} border-white/20 text-white/60 bg-white/5`}>OP_EXEC</span>;
 };
-
 const AuditLog: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const { data: events, isLoading } = useAuditLogDirect(50);
   const { data: inst } = useInstitutionSettings();
-  const { data: doc } = useDoctorConfig();
-
-  // Handlers de exportación se mantienen igual (lógica funcional intacta)
-  const handleExportPDF = () => { /* ... lógica previa ... */ };
-  const handleExportCSV = () => { /* ... lógica previa ... */ };
-
+  const { data: doctor } = useDoctorConfig();
+  // ✅ IMPLEMENTACIÓN: Exportar PDF
+  const handleExportPDF = () => {
+    if (!events || events.length === 0) {
+      alert("No hay datos para exportar");
+      return;
+    }
+    const pdfDoc = new jsPDF();
+    const institutionName = inst?.name || "MEDOPZ";
+    const doctorName = doctor?.full_name || "Doctor";
+    const currentDate = moment().format("DD/MM/YYYY HH:mm");
+    // Header
+    pdfDoc.setFontSize(18);
+    pdfDoc.text("REGISTRO DE AUDITORÍA", 14, 22);
+    
+    pdfDoc.setFontSize(10);
+    pdfDoc.setTextColor(100);
+    pdfDoc.text(`Institución: ${institutionName}`, 14, 32);
+    pdfDoc.text(`Doctor: ${doctorName}`, 14, 38);
+    pdfDoc.text(`Fecha de Exportación: ${currentDate}`, 14, 44);
+    // Tabla
+    const tableData = events.slice(0, 50).map((entry: EventLogEntry) => [
+      moment(entry.timestamp).format("DD/MM/YYYY HH:mm:ss"),
+      entry.actor || "System",
+      entry.entity || "N/A",
+      entry.action || "N/A",
+      entry.severity || "INFO",
+      entry.metadata?.description || entry.metadata?.notes || ""
+    ]);
+    autoTable(pdfDoc, {
+      startY: 50,
+      head: [["Fecha/Hora", "Actor", "Entidad", "Acción", "Severidad", "Descripción"]],
+      body: tableData,
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+      headStyles: {
+        fillColor: [40, 40, 40],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+    });
+    // Footer
+    pdfDoc.setFontSize(8);
+    pdfDoc.setTextColor(150);
+    const pageSize = pdfDoc.internal.pageSize;
+    const pageCount = (pdfDoc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      pdfDoc.setPage(i);
+      pdfDoc.text(
+        `Página ${i} de ${pageCount} - Documento generado por MEDOPZ`,
+        pageSize.getWidth() / 2,
+        pageSize.getHeight() - 10,
+        { align: "center" }
+      );
+    }
+    pdfDoc.save(`audit_log_${moment().format("YYYYMMDD_HHmmss")}.pdf`);
+    setExportOpen(false);
+  };
+  // ✅ IMPLEMENTACIÓN: Exportar CSV
+  const handleExportCSV = () => {
+    if (!events || events.length === 0) {
+      alert("No hay datos para exportar");
+      return;
+    }
+    const headers = ["Fecha/Hora", "Actor", "Entidad", "Acción", "Severidad", "Descripción"];
+    const rows = events.slice(0, 50).map((entry: EventLogEntry) => [
+      moment(entry.timestamp).format("YYYY-MM-DD HH:mm:ss"),
+      entry.actor || "",
+      entry.entity || "",
+      entry.action || "",
+      entry.severity || "",
+      entry.metadata?.description || entry.metadata?.notes || ""
+    ]);
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `audit_log_${moment().format("YYYYMMDD_HHmmss")}.csv`;
+    link.click();
+    setExportOpen(false);
+  };
   return (
     <div className="bg-black/40 border border-white/10 rounded-sm relative z-20 backdrop-blur-md overflow-hidden transition-all duration-500">
       {/* Header Táctico */}
@@ -65,7 +145,6 @@ const AuditLog: React.FC = () => {
             </div>
           </div>
         </div>
-
         <div className="flex items-center gap-3">
           <button
             onClick={() => setExpanded(!expanded)}
@@ -74,7 +153,7 @@ const AuditLog: React.FC = () => {
             {expanded ? "Ocultar Monitor" : "Desplegar Monitor"}
             {expanded ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
           </button>
-
+          {/* ✅ FIX: Dropdown con z-index alto y fixed */}
           <div className="relative">
             <button
               onClick={() => setExportOpen(!exportOpen)}
@@ -85,11 +164,17 @@ const AuditLog: React.FC = () => {
             </button>
             
             {exportOpen && (
-              <div className="absolute right-0 w-48 bg-[#0f1115] border border-white/10 rounded-sm shadow-2xl z-[100] mt-2 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                <button onClick={() => { handleExportPDF(); setExportOpen(false); }} className="w-full text-left px-4 py-3 text-[9px] font-black uppercase text-white/60 hover:bg-[var(--palantir-active)] hover:text-black transition-all">
+              <div className="fixed bg-[#0f1115] border border-white/10 rounded-sm shadow-2xl z-[9999] mt-2 overflow-hidden animate-in fade-in slide-in-from-top-2" style={{ minWidth: "180px" }}>
+                <button 
+                  onClick={handleExportPDF} 
+                  className="w-full text-left px-4 py-3 text-[9px] font-black uppercase text-white/60 hover:bg-[var(--palantir-active)] hover:text-black transition-all block"
+                >
                   Generar PDF Operativo
                 </button>
-                <button onClick={() => { handleExportCSV(); setExportOpen(false); }} className="w-full text-left px-4 py-3 text-[9px] font-black uppercase text-white/60 hover:bg-[var(--palantir-active)] hover:text-black border-t border-white/5 transition-all">
+                <button 
+                  onClick={handleExportCSV} 
+                  className="w-full text-left px-4 py-3 text-[9px] font-black uppercase text-white/60 hover:bg-[var(--palantir-active)] hover:text-black border-t border-white/5 transition-all block"
+                >
                   Raw Data CSV
                 </button>
               </div>
@@ -97,8 +182,7 @@ const AuditLog: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Tabla con Visualización de Datos Mejorada */}
+      {/* Tabla con Visualización de Datos */}
       {expanded && (
         <div className="animate-in slide-in-from-top-2 duration-500 overflow-hidden">
           {isLoading ? (
@@ -144,5 +228,4 @@ const AuditLog: React.FC = () => {
     </div>
   );
 };
-
 export default AuditLog;
