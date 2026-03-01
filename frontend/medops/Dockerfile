@@ -1,5 +1,5 @@
 # Etapa 1: build con Node
-FROM node:18-alpine AS build
+FROM node:22-alpine AS build
 WORKDIR /app
 
 # Instalar dependencias
