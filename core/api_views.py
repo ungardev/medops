@@ -1299,7 +1299,7 @@ def reports_api(request):
     Genera reportes financieros y clínicos por período.
     Soporta filtros de tipo, fecha inicio, fecha fin, moneda.
     """
-    report_type = request.query_params.get('type', 'FINANCIAL')
+    report_type = request.query_params.get('type', 'FINANCIAL').upper()
     start_date = request.query_params.get('start_date')
     end_date = request.query_params.get('end_date')
     currency = request.query_params.get('currency', 'USD')
