@@ -4613,7 +4613,7 @@ class PaymentTransaction(models.Model):
         default=Decimal('0.00'),
         verbose_name="Monto comisión doctor"
     )
-    commission_patient_amount = decimal_field = models.DecimalField(
+    commission_patient_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,
         default=Decimal('0.00'),
