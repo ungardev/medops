@@ -4,7 +4,7 @@
 // =====================================================
 export interface Country { id: number; name: string; }
 export interface State { id: number; name: string; country: number; }
-export interface municipality { id: number; name: string; state: number; }
+export interface Municipality { id: number; name: string; state: number; }
 export interface Parish { id: number; name: string; municipality: number; }
 export interface Neighborhood {
   id: number;
