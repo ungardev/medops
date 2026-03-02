@@ -33,7 +33,7 @@ from .services import generate_audit_code
 import traceback
 import secrets
 import string
-from medops.core.permissions import IsDoctorOperatorOrReadOnly
+from core.permissions import IsDoctorOperatorOrReadOnly
 #from datetime import date, timedelta
 
 
