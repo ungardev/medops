@@ -132,6 +132,9 @@ from .api_views import (
     patient_dashboard,
     patient_profile,
     patient_appointments,
+    whatsapp_config_api,
+    whatsapp_send_message,
+    whatsapp_webhook,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -309,6 +312,10 @@ urlpatterns = [
     path('patient-dashboard/', api_views.patient_dashboard, name='patient-dashboard'),
     path('patient-profile/', api_views.patient_profile, name='patient-profile'),
     path('patient-appointments/', api_views.patient_appointments, name='patient-appointments'),
+    # WhatsApp API
+    path('whatsapp/config/', api_views.whatsapp_config_api, name='whatsapp-config'),
+    path('whatsapp/send/', api_views.whatsapp_send_message, name='whatsapp-send'),
+    path('whatsapp/webhook/', api_views.whatsapp_webhook, name='whatsapp-webhook'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [

@@ -8,7 +8,7 @@ from .models import (
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
-    BillingItem
+    BillingItem, WhatsAppMessage
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -2944,3 +2944,32 @@ class BillingItemSearchSerializer(serializers.ModelSerializer):
     class Meta:
         model = BillingItem
         fields = ['id', 'code', 'name', 'unit_price', 'currency', 'category_name']
+
+
+# ==========================================
+# SERIALIZERS WHATSAPP
+# ==========================================
+class WhatsAppMessageSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True)
+    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
+    
+    class Meta:
+        model = WhatsAppMessage
+        fields = [
+            'id', 'appointment', 'patient', 'patient_name',
+            'doctor', 'doctor_name', 'message_type', 'content',
+            'phone_to', 'status', 'sent_at', 'delivered_at',
+            'read_at', 'whatsapp_message_id', 'error_message',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'sent_at', 'whatsapp_message_id']
+class WhatsAppConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DoctorOperator
+        fields = [
+            'whatsapp_enabled',
+            'whatsapp_business_number',
+            'whatsapp_business_id',
+            'whatsapp_access_token',
+            'reminder_hours_before',
+        ]

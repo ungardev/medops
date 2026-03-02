@@ -4,7 +4,7 @@
 // =====================================================
 export interface Country { id: number; name: string; }
 export interface State { id: number; name: string; country: number; }
-export interface Municipality { id: number; name: string; state: number; }
+export interface municipality { id: number; name: string; state: number; }
 export interface Parish { id: number; name: string; municipality: number; }
 export interface Neighborhood {
   id: number;
@@ -85,4 +85,13 @@ export interface DoctorConfig {
   
   // 🆕 AGREGADO: specialty (especialidad principal)
   specialty?: string | null;
+  
+  // =====================================================
+  // 🔹 WhatsApp Business Integration
+  // =====================================================
+  whatsapp_enabled?: boolean;
+  whatsapp_business_number?: string;
+  whatsapp_business_id?: string;
+  whatsapp_access_token?: string;
+  reminder_hours_before?: number;
 }

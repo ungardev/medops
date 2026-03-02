@@ -27,7 +27,11 @@ import ConfigPage from "./pages/Settings/ConfigPage";
 import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
 import BillingCatalogPage from "./pages/Billing/BillingCatalogPage";
-// 🔹 Configuración global de axios
+// Importaciones PatientPortal
+import { PatientLogin } from "./pages/PatientPortal/PatientLogin";
+import { PatientRegister } from "./pages/PatientPortal/PatientRegister";
+import { PatientDashboard } from "./pages/PatientPortal/PatientDashboard";
+// Configuración global de axios
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
 if (token) {
@@ -39,12 +43,26 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <NotifyProvider>
         <BrowserRouter>
           <Routes>
-            {/* 🔹 Rutas públicas */}
+            {/* Rutas públicas - Doctor */}
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
             
-            {/* 🔹 Rutas protegidas */}
-            <Route element={<ProtectedRoute />}>
+            {/* Portal Paciente - Rutas públicas */}
+            <Route path="/patient/login" element={<PatientLogin />} />
+            <Route path="/patient/register" element={<PatientRegister />} />
+            
+            {/* Portal Paciente - Rutas protegidas */}
+            <Route 
+              path="/patient/dashboard" 
+              element={
+                <ProtectedRoute allowedRoles={['patient']}>
+                  <PatientDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Rutas protegidas - Doctor/Admin */}
+            <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
               <Route element={<App />}>
                 <Route index element={<DashboardPage />} />
                 <Route path="patients" element={<Patients />} />
@@ -56,13 +74,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
-                
-                {/* ✅ FIX CRÍTICO: Corregir ruta para detalle de pagos */}
                 <Route path="payments/:id" element={<ChargeOrderDetail />} />
-                
-                {/* ✅ NUEVO: Catálogo de Servicios / Tarifario */}
                 <Route path="billing/catalog" element={<BillingCatalogPage />} />
-                
                 <Route path="events" element={<Events />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
                 <Route path="consultation" element={<Consultation />} />

@@ -4660,3 +4660,143 @@ def get_patient_user_from_request(request):
         return None
     
     return session.patient_user
+
+
+# ==========================================
+# WHATSAPP API ENDPOINTS
+# ==========================================
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def whatsapp_config_api(request):
+    """Get or update WhatsApp configuration for the doctor"""
+    try:
+        doctor = request.user.doctor_profile
+        
+        if request.method == 'GET':
+            serializer = WhatsAppConfigSerializer(doctor)
+            return Response(serializer.data)
+        
+        # PUT
+        serializer = WhatsAppConfigSerializer(doctor, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+        
+    except Exception as e:
+        logger.error(f"Error en whatsapp_config_api: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def whatsapp_send_message(request):
+    """Send a WhatsApp message to a patient"""
+    try:
+        doctor = request.user.doctor_profile
+        patient_id = request.data.get('patient_id')
+        message_type = request.data.get('message_type', 'notification')
+        content = request.data.get('content')
+        
+        if not patient_id or not content:
+            return Response({
+                'error': 'patient_id y content son obligatorios'
+            }, status=400)
+        
+        patient = Patient.objects.get(pk=patient_id)
+        
+        # Validar configuración WhatsApp
+        if not doctor.whatsapp_enabled:
+            return Response({
+                'error': 'WhatsApp no está habilitado para este doctor'
+            }, status=400)
+        
+        if not doctor.whatsapp_business_number:
+            return Response({
+                'error': 'Número WhatsApp Business no configurado'
+            }, status=400)
+        
+        # Obtener teléfono del paciente
+        phone_to = patient.phone_number
+        if not phone_to:
+            return Response({
+                'error': 'El paciente no tiene número de teléfono registrado'
+            }, status=400)
+        
+        # Enviar mensaje via WhatsApp API
+        import requests
+        
+        url = f"https://graph.facebook.com/v18.0/{doctor.whatsapp_business_id}/messages"
+        headers = {
+            'Authorization': f"Bearer {doctor.whatsapp_access_token}",
+            'Content-Type': 'application/json'
+        }
+        
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": phone_to,
+            "type": "text",
+            "text": {"body": content}
+        }
+        
+        response = requests.post(url, json=payload, headers=headers)
+        
+        # Guardar mensaje en BD
+        message = WhatsAppMessage.objects.create(
+            patient=patient,
+            doctor=doctor,
+            message_type=message_type,
+            content=content,
+            phone_to=phone_to,
+            status='sent' if response.status_code == 200 else 'failed',
+            whatsapp_message_id=response.json().get('messages', [{}])[0].get('id') if response.status_code == 200 else None,
+            sent_at=timezone.now() if response.status_code == 200 else None,
+            error_message=response.text if response.status_code != 200 else None
+        )
+        
+        if response.status_code != 200:
+            return Response({
+                'error': 'Error al enviar mensaje WhatsApp',
+                'details': response.text
+            }, status=500)
+        
+        return Response({
+            'success': True,
+            'message_id': message.id,
+            'whatsapp_message_id': message.whatsapp_message_id
+        })
+        
+    except Patient.DoesNotExist:
+        return Response({'error': 'Paciente no encontrado'}, status=404)
+    except Exception as e:
+        logger.error(f"Error en whatsapp_send_message: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def whatsapp_webhook(request):
+    """Webhook para recibir eventos de WhatsApp"""
+    if request.method == 'GET':
+        # Verificación del webhook
+        mode = request.query_params.get('hub.mode')
+        token = request.query_params.get('hub.verify_token')
+        challenge = request.query_params.get('hub.challenge')
+        
+        # Verificar token
+        # TODO: Comparar con configured verify token
+        if mode == 'subscribe':
+            return Response(int(challenge), status=200)
+    
+    # POST - Receiving messages
+    try:
+        data = request.data
+        entry = data.get('entry', [{}])[0]
+        changes = entry.get('changes', [{}])[0]
+        value = changes.get('value', {})
+        messages = value.get('messages', [])
+        
+        for msg in messages:
+            # Procesar mensaje recibido
+            pass
+        
+        return Response({'success': True})
+    except Exception as e:
+        logger.error(f"Error en webhook: {str(e)}")
+        return Response({'error': str(e)}, status=500)

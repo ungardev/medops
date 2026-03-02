@@ -1708,6 +1708,40 @@ class DoctorOperator(models.Model):
         related_name="doctor_updates"
     )
     
+    # --- WHATSAPP BUSINESS ---
+    whatsapp_business_number = models.CharField(
+        max_length=20, 
+        null=True, 
+        blank=True,
+        verbose_name="Número WhatsApp Business"
+    )
+    whatsapp_access_token = models.CharField(
+        max_length=255, 
+        null=True, 
+        blank=True,
+        verbose_name="WhatsApp Access Token"
+    )
+    whatsapp_business_id = models.CharField(
+        max_length=50, 
+        null=True, 
+        blank=True,
+        verbose_name="WhatsApp Business ID"
+    )
+    whatsapp_webhook_verify_token = models.CharField(
+        max_length=100, 
+        null=True, 
+        blank=True,
+        verbose_name="Webhook Verify Token"
+    )
+    whatsapp_enabled = models.BooleanField(
+        default=False,
+        verbose_name="WhatsApp habilitado"
+    )
+    reminder_hours_before = models.IntegerField(
+        default=24,
+        verbose_name="Horas antes para recordatorio"
+    )
+    
     history = HistoricalRecords()
     
     class Meta:
@@ -4054,3 +4088,89 @@ class PatientAccessLog(models.Model):
     
     def __str__(self):
         return f"{self.action} - {self.patient_user.email if self.patient_user else 'N/A'}"
+
+
+# ==========================================
+# 24. MENSAJES WHATSAPP
+# ==========================================
+class WhatsAppMessage(models.Model):
+    """
+    Registro de mensajes enviados por WhatsApp Business API.
+    """
+    MESSAGE_TYPES = [
+        ('reminder', 'Recordatorio'),
+        ('confirmation', 'Confirmación'),
+        ('cancellation', 'Cancelación'),
+        ('notification', 'Notificación'),
+        ('chat', 'Chat'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('sent', 'Enviado'),
+        ('delivered', 'Entregado'),
+        ('read', 'Leído'),
+        ('failed', 'Fallido'),
+    ]
+    
+    appointment = models.ForeignKey(
+        'Appointment', 
+        on_delete=models.CASCADE, 
+        null=True, 
+        blank=True,
+        related_name='whatsapp_messages'
+    )
+    patient = models.ForeignKey(
+        'Patient', 
+        on_delete=models.CASCADE,
+        related_name='whatsapp_messages'
+    )
+    doctor = models.ForeignKey(
+        'DoctorOperator', 
+        on_delete=models.CASCADE,
+        related_name='whatsapp_messages'
+    )
+    
+    message_type = models.CharField(
+        max_length=20, 
+        choices=MESSAGE_TYPES,
+        default='notification',
+        verbose_name="Tipo de mensaje"
+    )
+    content = models.TextField(verbose_name="Contenido del mensaje")
+    phone_to = models.CharField(max_length=20, verbose_name="Teléfono destinatario")
+    
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Estado"
+    )
+    
+    sent_at = models.DateTimeField(null=True, blank=True, verbose_name="Enviado a las")
+    delivered_at = models.DateTimeField(null=True, blank=True, verbose_name="Entregado a las")
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name="Leído a las")
+    
+    whatsapp_message_id = models.CharField(
+        max_length=100, 
+        null=True, 
+        blank=True,
+        verbose_name="ID de mensaje WhatsApp"
+    )
+    error_message = models.TextField(null=True, blank=True, verbose_name="Mensaje de error")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = "whatsapp_messages"
+        verbose_name = "Mensaje WhatsApp"
+        verbose_name_plural = "Mensajes WhatsApp"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['patient', '-created_at']),
+            models.Index(fields=['doctor', '-created_at']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"WhatsApp to {self.phone_to} - {self.get_message_type_display()}"
