@@ -12,7 +12,7 @@ from .models import *
 from .serializers import *
 from datetime import date
 from . import services
-from datetime import datetime, timedelta, date as python_date
+from datetime import datetime, timedelta, date #as python_date
 from django.utils import timezone
 from django.utils.timezone import localdate
 import logging
@@ -31,6 +31,9 @@ import base64
 from io import BytesIO
 from .services import generate_audit_code
 import traceback
+import secrets
+import string
+#from datetime import date, timedelta
 
 
 logger = logging.getLogger(__name__)
@@ -4170,3 +4173,490 @@ class BillingItemViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()[:20]
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+# ==========================================
+# AUTENTICACIÓN - PORTAL PACIENTE
+# ==========================================
+def generate_token(length=32):
+    """Genera un token aleatorio seguro"""
+    return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(length))
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def patient_register(request):
+    """
+    POST /api/patient-auth/register/
+    Registro de nuevo paciente en el portal.
+    """
+    try:
+        data = request.data
+        email = data.get('email', '').lower().strip()
+        password = data.get('password')
+        patient_id = data.get('patient_id')
+        
+        # Validaciones básicas
+        if not email or not password or not patient_id:
+            return Response({
+                'error': 'Email, contraseña e ID de paciente son obligatorios.'
+            }, status=400)
+        
+        # Verificar que el paciente existe
+        try:
+            patient = Patient.objects.get(pk=patient_id, active=True)
+        except Patient.DoesNotExist:
+            return Response({
+                'error': 'Paciente no encontrado o inactivo.'
+            }, status=404)
+        
+        # Verificar que no existe usuario con ese email
+        if PatientUser.objects.filter(email=email).exists():
+            return Response({
+                'error': 'Ya existe una cuenta con este email.'
+            }, status=400)
+        
+        # Verificar que el paciente no tiene usuario
+        if hasattr(patient, 'patient_user'):
+            return Response({
+                'error': 'Este paciente ya tiene una cuenta en el portal.'
+            }, status=400)
+        
+        # Crear usuario
+        patient_user = PatientUser.objects.create(
+            patient=patient,
+            email=email,
+            is_active=True,
+            is_verified=False,
+            verification_token=generate_token(),
+            verification_token_expires=timezone.now() + timedelta(days=7)
+        )
+        patient_user.set_password(password)
+        patient_user.save()
+        
+        # Log de auditoría
+        PatientAccessLog.objects.create(
+            patient_user=patient_user,
+            patient=patient,
+            action='login',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            description=f'Nuevo registro de paciente: {email}'
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Cuenta creada exitosamente. Verifica tu email para activar.',
+            'patient_user_id': patient_user.id,
+            'email': email
+        }, status=201)
+        
+    except Exception as e:
+        logger.error(f"Error en patient_register: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def patient_login(request):
+    """
+    POST /api/patient-auth/login/
+    Login de paciente en el portal.
+    """
+    try:
+        data = request.data
+        email = data.get('email', '').lower().strip()
+        password = data.get('password')
+        
+        if not email or not password:
+            return Response({
+                'error': 'Email y contraseña son obligatorios.'
+            }, status=400)
+        
+        # Buscar usuario
+        try:
+            patient_user = PatientUser.objects.get(email=email)
+        except PatientUser.DoesNotExist:
+            # Log de intento fallido
+            PatientAccessLog.objects.create(
+                patient_user=None,
+                action='failed_login',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                description=f'Intento de login con email no registrado: {email}'
+            )
+            return Response({
+                'error': 'Email o contraseña incorrectos.'
+            }, status=401)
+        
+        # Verificar si está bloqueado
+        if patient_user.is_locked():
+            PatientAccessLog.objects.create(
+                patient_user=patient_user,
+                action='failed_login',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                description='Cuenta bloqueada por múltiples intentos fallidos'
+            )
+            return Response({
+                'error': 'Cuenta bloqueada. Intenta más tarde.'
+            }, status=401)
+        
+        # Verificar contraseña
+        if not patient_user.check_password(password):
+            patient_user.failed_login_attempts += 1
+            
+            # Bloquear después de 5 intentos
+            if patient_user.failed_login_attempts >= 5:
+                patient_user.locked_until = timezone.now() + timedelta(minutes=30)
+                patient_user.save()
+                
+                PatientAccessLog.objects.create(
+                    patient_user=patient_user,
+                    action='failed_login',
+                    ip_address=get_client_ip(request),
+                    user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                    description='Cuenta bloqueada por múltiples intentos fallidos'
+                )
+                return Response({
+                    'error': 'Cuenta bloqueada por intentos fallidos. Intenta en 30 minutos.'
+                }, status=401)
+            
+            patient_user.save()
+            
+            PatientAccessLog.objects.create(
+                patient_user=patient_user,
+                action='failed_login',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                description=f'Contraseña incorrecta. Intentos: {patient_user.failed_login_attempts}'
+            )
+            return Response({
+                'error': 'Email o contraseña incorrectos.'
+            }, status=401)
+        
+        # Login exitoso - resetear intentos fallidos
+        patient_user.failed_login_attempts = 0
+        patient_user.locked_until = None
+        patient_user.last_login_at = timezone.now()
+        patient_user.save()
+        
+        # Crear sesión
+        access_token = generate_token(64)
+        refresh_token = generate_token(64)
+        
+        session = PatientSession.objects.create(
+            patient_user=patient_user,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            expires_at=timezone.now() + timedelta(days=7)
+        )
+        
+        # Log
+        PatientAccessLog.objects.create(
+            patient_user=patient_user,
+            patient=patient_user.patient,
+            action='login',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            description=f'Login exitoso: {email}'
+        )
+        
+        return Response({
+            'success': True,
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'patient': {
+                'id': patient_user.patient.id,
+                'full_name': patient_user.patient.full_name,
+                'email': patient_user.email,
+                'is_verified': patient_user.is_verified,
+                'two_factor_enabled': patient_user.two_factor_enabled,
+            },
+            'expires_at': session.expires_at
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_login: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['POST'])
+def patient_logout(request):
+    """
+    POST /api/patient-auth/logout/
+    Logout del paciente.
+    """
+    try:
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return Response({'error': 'Token no proporcionado'}, status=401)
+        
+        token = auth_header.replace('Bearer ', '')
+        
+        # Invalidar sesión
+        session = PatientSession.objects.filter(
+            access_token=token,
+            is_active=True
+        ).first()
+        
+        if session:
+            session.is_active = False
+            session.save()
+            
+            PatientAccessLog.objects.create(
+                patient_user=session.patient_user,
+                patient=session.patient_user.patient,
+                action='logout',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                description=f'Logout: {session.patient_user.email}'
+            )
+        
+        return Response({
+            'success': True,
+            'message': 'Sesión cerrada exitosamente.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_logout: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET'])
+def patient_dashboard(request):
+    """
+    GET /api/patient-dashboard/
+    Dashboard del paciente con resumen de su información.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        # Próximas citas
+        from datetime import datetime
+        upcoming_appointments = Appointment.objects.filter(
+            patient=patient,
+            appointment_date__gte=datetime.now().date(),
+            status__in=['pending', 'arrived']
+        ).order_by('appointment_date', 'appointment_time')[:5]
+        
+        # Citas pasadas
+        past_appointments = Appointment.objects.filter(
+            patient=patient,
+            appointment_date__lt=datetime.now().date(),
+            status='completed'
+        ).order_by('-appointment_date')[:5]
+        
+        # Suscripción activa
+        active_subscription = PatientSubscription.objects.filter(
+            patient=patient,
+            status='active'
+        ).first()
+        
+        return Response({
+            'patient': {
+                'id': patient.id,
+                'full_name': patient.full_name,
+                'email': patient_user.email,
+                'phone': patient.phone_number,
+                'is_pediatric': patient.is_pediatric,
+                'age': patient.age,
+                'is_verified': patient_user.is_verified,
+            },
+            'subscription': {
+                'plan': active_subscription.plan if active_subscription else 'free',
+                'status': active_subscription.status if active_subscription else 'inactive',
+                'days_remaining': active_subscription.days_remaining if active_subscription else None,
+            } if active_subscription else None,
+            'upcoming_appointments': [
+                {
+                    'id': apt.id,
+                    'date': apt.appointment_date,
+                    'time': apt.appointment_time,
+                    'doctor': apt.doctor.user.get_full_name() if apt.doctor else None,
+                    'specialty': apt.doctor.specialty.name if apt.doctor and hasattr(apt.doctor, 'specialty') else None,
+                    'status': apt.status,
+                }
+                for apt in upcoming_appointments
+            ],
+            'past_appointments_count': Appointment.objects.filter(
+                patient=patient,
+                status='completed'
+            ).count(),
+            'notifications': {
+                'unread_count': 0,  # Implementar cuando haya sistema de notificaciones
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_dashboard: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET', 'PUT'])
+def patient_profile(request):
+    """
+    GET /api/patient-profile/
+    PUT /api/patient-profile/
+    Ver o actualizar perfil del paciente.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        if request.method == 'GET':
+            return Response({
+                'patient': {
+                    'id': patient.id,
+                    'full_name': patient.full_name,
+                    'national_id': patient.national_id,
+                    'email': patient_user.email,
+                    'phone': patient.phone_number,
+                    'birthdate': patient.birthdate,
+                    'age': patient.age,
+                    'gender': patient.gender,
+                    'address': patient.address,
+                    'is_pediatric': patient.is_pediatric,
+                    'guardian_info': patient.guardian_info,
+                },
+                'user': {
+                    'email': patient_user.email,
+                    'phone': patient_user.phone,
+                    'is_verified': patient_user.is_verified,
+                    'two_factor_enabled': patient_user.two_factor_enabled,
+                    'notifications_email': patient_user.notifications_email,
+                    'notifications_sms': patient_user.notifications_sms,
+                    'notifications_whatsapp': patient_user.notifications_whatsapp,
+                }
+            })
+        
+        # PUT - Actualizar perfil
+        data = request.data
+        
+        # Actualizar PatientUser
+        if 'email' in data and data['email'] != patient_user.email:
+            patient_user.email = data['email']
+        
+        if 'phone' in data:
+            patient_user.phone = data['phone']
+        
+        if 'notifications_email' in data:
+            patient_user.notifications_email = data['notifications_email']
+        
+        if 'notifications_sms' in data:
+            patient_user.notifications_sms = data['notifications_sms']
+        
+        if 'notifications_whatsapp' in data:
+            patient_user.notifications_whatsapp = data['notifications_whatsapp']
+        
+        patient_user.save()
+        
+        # Actualizar Patient
+        if 'phone' in data:
+            patient.phone_number = data['phone']
+        
+        if 'address' in data:
+            patient.address = data['address']
+        
+        patient.save()
+        
+        # Log
+        PatientAccessLog.objects.create(
+            patient_user=patient_user,
+            patient=patient,
+            action='profile_update',
+            ip_address=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', ''),
+            description='Perfil actualizado'
+        )
+        
+        return Response({
+            'success': True,
+            'message': 'Perfil actualizado exitosamente.'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_profile: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET'])
+def patient_appointments(request):
+    """
+    GET /api/patient-appointments/
+    Lista las citas del paciente.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        # Filtros
+        status_filter = request.query_params.get('status')
+        from datetime import datetime
+        
+        appointments = Appointment.objects.filter(patient=patient)
+        
+        if status_filter:
+            appointments = appointments.filter(status=status_filter)
+        else:
+            # Por defecto mostrar próximas y últimas 10
+            appointments = appointments.filter(
+                appointment_date__gte=datetime.now().date()
+            ) | appointments.filter(
+                appointment_date__lt=datetime.now().date()
+            ).order_by('-appointment_date')[:10]
+        
+        appointments = appointments.order_by('-appointment_date', '-appointment_time')[:20]
+        
+        return Response({
+            'appointments': [
+                {
+                    'id': apt.id,
+                    'date': apt.appointment_date,
+                    'time': apt.appointment_time,
+                    'status': apt.status,
+                    'doctor': {
+                        'id': apt.doctor.id,
+                        'name': apt.doctor.user.get_full_name() if apt.doctor else None,
+                    } if apt.doctor else None,
+                    'institution': {
+                        'name': apt.institution.name,
+                    } if apt.institution else None,
+                    'reason': apt.reason or '',
+                    'notes': apt.notes or '',
+                }
+                for apt in appointments
+            ]
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_appointments: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+# ==========================================
+# HELPERS
+# ==========================================
+def get_client_ip(request):
+    """Obtiene la IP del cliente"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+def get_patient_user_from_request(request):
+    """Obtiene el PatientUser desde el token"""
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return None
+    
+    token = auth_header.replace('Bearer ', '')
+    
+    session = PatientSession.objects.filter(
+        access_token=token,
+        is_active=True
+    ).first()
+    
+    if not session or session.is_expired():
+        return None
+    
+    return session.patient_user

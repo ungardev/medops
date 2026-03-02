@@ -125,6 +125,13 @@ from .api_views import (
     register_minor,
     minor_verification,
     approve_minor_consent,
+    # Portal Paciente
+    patient_register,
+    patient_login,
+    patient_logout,
+    patient_dashboard,
+    patient_profile,
+    patient_appointments,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -294,6 +301,14 @@ urlpatterns = [
     path('patients/register-minor/', api_views.register_minor, name='register-minor'),
     path('patients/minor-verification/', api_views.minor_verification, name='minor-verification'),
     path('patients/<int:patient_id>/approve-consent/', api_views.approve_minor_consent, name='approve-minor-consent'),
+    # --- Portal Paciente - Autenticación ---
+    path('patient-auth/register/', api_views.patient_register, name='patient-register'),
+    path('patient-auth/login/', api_views.patient_login, name='patient-login'),
+    path('patient-auth/logout/', api_views.patient_logout, name='patient-logout'),
+    # --- Portal Paciente - Datos ---
+    path('patient-dashboard/', api_views.patient_dashboard, name='patient-dashboard'),
+    path('patient-profile/', api_views.patient_profile, name='patient-profile'),
+    path('patient-appointments/', api_views.patient_appointments, name='patient-appointments'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [
