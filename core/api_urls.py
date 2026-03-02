@@ -120,6 +120,11 @@ from .api_views import (
     # ✅ NUEVO: Endpoint público de ubicación ---
     public_institution_location_api,
     add_charge_order_items,
+    # Pacientes Pediátricos
+    patient_dependents,
+    register_minor,
+    minor_verification,
+    approve_minor_consent,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -285,10 +290,10 @@ urlpatterns = [
     path("config/institutions/<int:institution_id>/delete/", delete_institution_api, name="delete-institution-api"),
     path("config/institutions/<int:institution_id>/set-active/", set_active_institution_api, name="set-active-institution-api"),
     # Pacientes Pediátricos
-    path('patients/<int:patient_id>/dependents/', views.patient_dependents, name='patient-dependents'),
-    path('patients/register-minor/', views.register_minor, name='register-minor'),
-    path('patients/minor-verification/', views.minor_verification, name='minor-verification'),
-    path('patients/<int:patient_id>/approve-consent/', views.approve_minor_consent, name='approve-minor-consent'),
+    path('patients/<int:patient_id>/dependents/', api_views.patient_dependents, name='patient-dependents'),
+    path('patients/register-minor/', api_views.register_minor, name='register-minor'),
+    path('patients/minor-verification/', api_views.minor_verification, name='minor-verification'),
+    path('patients/<int:patient_id>/approve-consent/', api_views.approve_minor_consent, name='approve-minor-consent'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [
