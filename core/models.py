@@ -3699,3 +3699,358 @@ class BillingItem(models.Model):
     def clean(self):
         if self.unit_price < Decimal('0.00'):
             raise ValidationError({"unit_price": "El precio no puede ser negativo"})
+
+
+# ==========================================
+# ARIO PACIENTE20. USU - Portal de Autenticación
+# ==========================================
+class PatientUser(models.Model):
+    """
+    Usuario autenticable para el Portal del Paciente.
+    Relacionado 1:1 con Patient.
+    """
+    patient = models.OneToOneField(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='patient_user',
+        verbose_name="Paciente"
+    )
+    
+    # Autenticación
+    email = models.EmailField(
+        unique=True,
+        verbose_name="Email de acceso"
+    )
+    password_hash = models.CharField(
+        max_length=255,
+        verbose_name="Hash de contraseña"
+    )
+    
+    # Estado
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
+    is_verified = models.BooleanField(default=False, verbose_name="Email verificado")
+    verification_token = models.CharField(max_length=255, null=True, blank=True)
+    verification_token_expires = models.DateTimeField(null=True, blank=True)
+    
+    # 2FA
+    two_factor_enabled = models.BooleanField(default=False, verbose_name="2FA habilitado")
+    two_factor_secret = models.CharField(max_length=32, null=True, blank=True)
+    two_factor_backup_codes = models.JSONField(default=list, verbose_name="Códigos de respaldo")
+    
+    # Teléfono
+    phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Teléfono")
+    phone_verified = models.BooleanField(default=False, verbose_name="Teléfono verificado")
+    
+    # Documentos de identificación
+    id_document_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('cedula', 'Cédula'),
+            ('pasaporte', 'Pasaporte'),
+            ('extranjero', 'Cédula Extranjería'),
+        ],
+        null=True,
+        blank=True,
+        verbose_name="Tipo de documento"
+    )
+    id_document_front = models.ImageField(
+        upload_to='patient_id/',
+        null=True,
+        blank=True,
+        verbose_name="Documento frontal"
+    )
+    id_document_back = models.ImageField(
+        upload_to='patient_id/',
+        null=True,
+        blank=True,
+        verbose_name="Documento reverso"
+    )
+    id_verified = models.BooleanField(default=False, verbose_name="Identidad verificada")
+    id_verified_at = models.DateTimeField(null=True, blank=True)
+    
+    # Preferencias
+    notifications_email = models.BooleanField(default=True, verbose_name="Notificaciones por email")
+    notifications_sms = models.BooleanField(default=True, verbose_name="Notificaciones por SMS")
+    notifications_whatsapp = models.BooleanField(default=True, verbose_name="Notificaciones por WhatsApp")
+    
+    # Auditoría
+    last_login_at = models.DateTimeField(null=True, blank=True, verbose_name="Último login")
+    failed_login_attempts = models.IntegerField(default=0, verbose_name="Intentos fallidos")
+    locked_until = models.DateTimeField(null=True, blank=True, verbose_name="Bloqueado hasta")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creado")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Actualizado")
+    
+    class Meta:
+        db_table = "patient_users"
+        verbose_name = "Usuario Paciente"
+        verbose_name_plural = "Usuarios Pacientes"
+        indexes = [
+            models.Index(fields=['email']),
+            models.Index(fields=['patient']),
+            models.Index(fields=['is_active']),
+        ]
+    
+    def __str__(self):
+        return f"PatientUser: {self.email} ({self.patient.full_name})"
+    
+    def set_password(self, raw_password):
+        """Hashea la contraseña"""
+        import hashlib
+        import secrets
+        salt = secrets.token_hex(16)
+        password_hash = hashlib.pbkdf2_hmac('sha256', raw_password.encode(), salt.encode(), 100000)
+        self.password_hash = f"{salt}${password_hash.hex()}"
+    
+    def check_password(self, raw_password):
+        """Verifica la contraseña"""
+        import hashlib
+        if '$' not in self.password_hash:
+            return False
+        salt, hash_hex = self.password_hash.split('$')
+        password_hash = hashlib.pbkdf2_hmac('sha256', raw_password.encode(), salt.encode(), 100000)
+        return password_hash.hex() == hash_hex
+    
+    def is_locked(self):
+        """Verifica si el usuario está bloqueado"""
+        if self.locked_until and timezone.now() < self.locked_until:
+            return True
+        return False
+# ==========================================
+# 21. SUSCRIPCIÓN DEL PACIENTE
+# ==========================================
+class PatientSubscription(models.Model):
+    """
+    Suscripciones de pacientes a planes de servicio.
+    """
+    PLAN_CHOICES = [
+        ('free', 'Free - Básico'),
+        ('basic', 'Básico'),
+        ('premium', 'Premium'),
+        ('enterprise', 'Empresarial'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('active', 'Activa'),
+        ('pending', 'Pendiente'),
+        ('suspended', 'Suspendida'),
+        ('cancelled', 'Cancelada'),
+        ('expired', 'Expirada'),
+    ]
+    
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        verbose_name="Paciente"
+    )
+    patient_user = models.ForeignKey(
+        PatientUser,
+        on_delete=models.CASCADE,
+        related_name='subscriptions',
+        null=True,
+        blank=True,
+        verbose_name="Usuario paciente"
+    )
+    
+    # Plan
+    plan = models.CharField(
+        max_length=20,
+        choices=PLAN_CHOICES,
+        default='free',
+        verbose_name="Plan"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Estado"
+    )
+    
+    # Precios
+    monthly_price_usd = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0'),
+        verbose_name="Precio mensual USD"
+    )
+    monthly_price_ves = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal('0'),
+        verbose_name="Precio mensual VES"
+    )
+    
+    # Período
+    start_date = models.DateField(verbose_name="Fecha de inicio")
+    end_date = models.DateField(null=True, blank=True, verbose_name="Fecha de fin")
+    billing_cycle_day = models.IntegerField(
+        default=1,
+        verbose_name="Día de facturación (1-28)"
+    )
+    auto_renew = models.BooleanField(default=True, verbose_name="Renovación automática")
+    cancel_at_period_end = models.BooleanField(default=False, verbose_name="Cancelar al fin de período")
+    
+    # Payment
+    payment_method = models.CharField(
+        max_length=30,
+        null=True,
+        blank=True,
+        verbose_name="Método de pago"
+    )
+    payment_reference = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Referencia de pago"
+    )
+    
+    # Características del plan
+    features = models.JSONField(
+        default=dict,
+        verbose_name="Características incluidas"
+    )
+    
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = "patient_subscriptions"
+        verbose_name = "Suscripción Paciente"
+        verbose_name_plural = "Suscripciones Pacientes"
+        ordering = ['-start_date']
+        indexes = [
+            models.Index(fields=['patient', 'status']),
+            models.Index(fields=['status', 'end_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.patient.full_name} - {self.get_plan_display()} ({self.get_status_display()})"
+    
+    @property
+    def is_active(self):
+        """Verifica si la suscripción está activa"""
+        from datetime import date
+        return self.status == 'active' and (not self.end_date or self.end_date >= date.today())
+    
+    @property
+    def days_remaining(self):
+        """Días restantes del período"""
+        from datetime import date
+        if not self.end_date:
+            return None
+        delta = self.end_date - date.today()
+        return max(0, delta.days)
+# ==========================================
+# 22. SESIÓN DEL PACIENTE
+# ==========================================
+class PatientSession(models.Model):
+    """
+    Sesiones de login del paciente.
+    """
+    patient_user = models.ForeignKey(
+        PatientUser,
+        on_delete=models.CASCADE,
+        related_name='sessions',
+        verbose_name="Usuario paciente"
+    )
+    
+    # Token
+    access_token = models.CharField(max_length=255, unique=True, verbose_name="Token de acceso")
+    refresh_token = models.CharField(max_length=255, null=True, blank=True, verbose_name="Token de refresh")
+    
+    # Dispositivo
+    ip_address = models.GenericIPAddressField(null=True, verbose_name="IP")
+    user_agent = models.TextField(null=True, verbose_name="User Agent")
+    device_info = models.JSONField(default=dict, verbose_name="Información del dispositivo")
+    
+    # Estado
+    is_active = models.BooleanField(default=True, verbose_name="Activa")
+    
+    # Fechas
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creada")
+    expires_at = models.DateTimeField(verbose_name="Expira")
+    last_activity_at = models.DateTimeField(null=True, blank=True, verbose_name="Última actividad")
+    
+    class Meta:
+        db_table = "patient_sessions"
+        verbose_name = "Sesión Paciente"
+        verbose_name_plural = "Sesiones Pacientes"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['patient_user', 'is_active']),
+            models.Index(fields=['access_token']),
+        ]
+    
+    def __str__(self):
+        return f"Session {self.id} - {self.patient_user.email}"
+    
+    def is_expired(self):
+        """Verifica si la sesión ha expirado"""
+        return timezone.now() > self.expires_at
+    
+    def is_valid(self):
+        """Verifica si la sesión es válida"""
+        return self.is_active and not self.is_expired()
+# ==========================================
+# 23. LOG DE ACCESO PACIENTE
+# ==========================================
+class PatientAccessLog(models.Model):
+    """
+    Logs de auditoría de acceso del paciente.
+    """
+    ACTION_CHOICES = [
+        ('login', 'Login'),
+        ('logout', 'Logout'),
+        ('failed_login', 'Login fallido'),
+        ('password_change', 'Cambio de contraseña'),
+        ('profile_update', 'Actualización de perfil'),
+        ('view_history', 'Ver historia clínica'),
+        ('book_appointment', 'Reservar cita'),
+        ('cancel_appointment', 'Cancelar cita'),
+        ('view_payment', 'Ver pago'),
+        ('make_payment', 'Realizar pago'),
+        ('2fa_enable', 'Habilitar 2FA'),
+        ('2fa_disable', 'Deshabilitar 2FA'),
+    ]
+    
+    patient_user = models.ForeignKey(
+        PatientUser,
+        on_delete=models.CASCADE,
+        related_name='access_logs',
+        null=True,
+        blank=True,
+        verbose_name="Usuario paciente"
+    )
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='access_logs',
+        verbose_name="Paciente"
+    )
+    
+    action = models.CharField(max_length=30, choices=ACTION_CHOICES, verbose_name="Acción")
+    ip_address = models.GenericIPAddressField(null=True, verbose_name="IP")
+    user_agent = models.TextField(null=True, verbose_name="User Agent")
+    device_info = models.JSONField(default=dict, verbose_name="Información del dispositivo")
+    metadata = models.JSONField(default=dict, verbose_name="Metadatos adicionales")
+    description = models.TextField(null=True, blank=True, verbose_name="Descripción")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha")
+    
+    class Meta:
+        db_table = "patient_access_logs"
+        verbose_name = "Log de Acceso Paciente"
+        verbose_name_plural = "Logs de Acceso Pacientes"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['patient_user', '-created_at']),
+            models.Index(fields=['action', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.action} - {self.patient_user.email if self.patient_user else 'N/A'}"
