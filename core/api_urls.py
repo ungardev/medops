@@ -135,6 +135,22 @@ from .api_views import (
     whatsapp_config_api,
     whatsapp_send_message,
     whatsapp_webhook,
+    payment_gateways_api,
+    payment_config_api,
+    payment_config_public_api,
+    payment_create_api,
+    payment_transactions_api,
+    payment_stats_api,
+    webhook_mercantil,
+    webhook_banesco,
+    webhook_binance,
+    subscriptions_api,
+    subscription_cancel_api,
+    # ViewSets
+    PaymentGatewayViewSet,
+    DoctorPaymentConfigViewSet,
+    PaymentTransactionViewSet,
+    PaymentWebhookViewSet,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -185,6 +201,10 @@ router.register(r"neighborhoods", NeighborhoodViewSet, basename="neighborhood")
 patients_router = nested_routers.NestedDefaultRouter(router, r"patients", lookup="patient")
 patients_router.register(r"allergies", AllergyViewSet, basename="patient-allergies")
 patients_router.register(r"habits", HabitViewSet, basename="patient-habits")
+router.register(r'payment-gateways', PaymentGatewayViewSet, basename='payment-gateways')
+router.register(r'payment-config', DoctorPaymentConfigViewSet, basename='payment-config')
+router.register(r'payment-transactions', PaymentTransactionViewSet, basename='payment-transactions')
+router.register(r'payment-webhooks', PaymentWebhookViewSet, basename='payment-webhooks')
 # --- Funciones personalizadas ---
 urlpatterns = [
     path("metrics/", api_views.metrics_api, name="metrics-api"),
@@ -316,6 +336,20 @@ urlpatterns = [
     path('whatsapp/config/', api_views.whatsapp_config_api, name='whatsapp-config'),
     path('whatsapp/send/', api_views.whatsapp_send_message, name='whatsapp-send'),
     path('whatsapp/webhook/', api_views.whatsapp_webhook, name='whatsapp-webhook'),
+    # === Payment System URLs ===
+    path('payments/gateways/', payment_gateways_api, name='payment-gateways-api'),
+    path('payments/config/', payment_config_api, name='payment-config-api'),
+    path('payments/config/public/', payment_config_public_api, name='payment-config-public-api'),
+    path('payments/create/', payment_create_api, name='payment-create-api'),
+    path('payments/transactions/', payment_transactions_api, name='payment-transactions-api'),
+    path('payments/stats/', payment_stats_api, name='payment-stats-api'),
+    # Webhooks
+    path('payments/webhook/mercantil/', webhook_mercantil, name='webhook-mercantil'),
+    path('payments/webhook/banesco/', webhook_banesco, name='webhook-banesco'),
+    path('payments/webhook/binance/', webhook_binance, name='webhook-binance'),
+    # Subscriptions
+    path('subscriptions/', subscriptions_api, name='subscriptions-api'),
+    path('subscriptions/<int:pk>/cancel/', subscription_cancel_api, name='subscription-cancel-api'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [

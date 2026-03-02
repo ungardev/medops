@@ -33,6 +33,7 @@ from .services import generate_audit_code
 import traceback
 import secrets
 import string
+from medops.core.permissions import IsDoctorOperatorOrReadOnly
 #from datetime import date, timedelta
 
 
@@ -2500,14 +2501,6 @@ def dashboard_summary_api(request):
         return Response({"error": str(e)}, status=500)
 
 
-@api_view(['GET'])
-def bcv_rate_api(request):
-    try:
-        rate = services.get_bcv_rate()
-        return Response({"rate": float(rate)})
-    except Exception as e:
-        return Response({"error": str(e)}, status=500)
-
 
 @api_view(['GET'])
 def patient_search_api(request):
@@ -4181,6 +4174,8 @@ class BillingItemViewSet(viewsets.ModelViewSet):
 def generate_token(length=32):
     """Genera un token aleatorio seguro"""
     return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(length))
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def patient_register(request):
@@ -4252,6 +4247,8 @@ def patient_register(request):
     except Exception as e:
         logger.error(f"Error en patient_register: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def patient_login(request):
@@ -4377,6 +4374,8 @@ def patient_login(request):
     except Exception as e:
         logger.error(f"Error en patient_login: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['POST'])
 def patient_logout(request):
     """
@@ -4417,6 +4416,8 @@ def patient_logout(request):
     except Exception as e:
         logger.error(f"Error en patient_logout: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['GET'])
 def patient_dashboard(request):
     """
@@ -4489,6 +4490,8 @@ def patient_dashboard(request):
     except Exception as e:
         logger.error(f"Error en patient_dashboard: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['GET', 'PUT'])
 def patient_profile(request):
     """
@@ -4577,6 +4580,8 @@ def patient_profile(request):
     except Exception as e:
         logger.error(f"Error en patient_profile: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['GET'])
 def patient_appointments(request):
     """
@@ -4686,6 +4691,8 @@ def whatsapp_config_api(request):
     except Exception as e:
         logger.error(f"Error en whatsapp_config_api: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def whatsapp_send_message(request):
@@ -4769,6 +4776,8 @@ def whatsapp_send_message(request):
     except Exception as e:
         logger.error(f"Error en whatsapp_send_message: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def whatsapp_webhook(request):
@@ -4800,3 +4809,587 @@ def whatsapp_webhook(request):
     except Exception as e:
         logger.error(f"Error en webhook: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
+class PaymentGatewayViewSet(viewsets.ModelViewSet):
+    """ViewSet para catálogo de métodos de pago"""
+    queryset = PaymentGateway.objects.all()
+    serializer_class = PaymentGatewaySerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return PaymentGatewayListSerializer
+        return PaymentGatewaySerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtrar por activos si se requiere
+        if self.request.query_params.get('active') == 'true':
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
+
+class DoctorPaymentConfigViewSet(viewsets.ModelViewSet):
+    """ViewSet para configuración de pago del doctor"""
+    serializer_class = DoctorPaymentConfigSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        # Doctors solo ven su propia config
+        user = self.request.user
+        if hasattr(user, 'doctor_operator'):
+            return DoctorPaymentConfig.objects.filter(doctor=user.doctor_operator)
+        return DoctorPaymentConfig.objects.none()
+    
+    def get_object(self):
+        # Crear config si no existe
+        user = self.request.user
+        if hasattr(user, 'doctor_operator'):
+            obj, created = DoctorPaymentConfig.objects.get_or_create(
+                doctor=user.doctor_operator
+            )
+            return obj
+        return None
+    
+    # GET sin ID retorna la config del doctor actual
+    def list(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj:
+            serializer = self.get_serializer(obj)
+            return Response(serializer.data)
+        return Response({
+            'detail': 'No payment configuration found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(detail=False, methods=['get'])
+    def public(self, request):
+        """Endpoint público para que pacientes vean datos de pago del doctor"""
+        doctor_id = request.query_params.get('doctor_id')
+        if not doctor_id:
+            return Response({
+                'error': 'doctor_id es requerido'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            config = DoctorPaymentConfig.objects.get(
+                doctor_id=doctor_id,
+                is_verified=True
+            )
+            serializer = DoctorPaymentConfigPublicSerializer(config)
+            return Response(serializer.data)
+        except DoctorPaymentConfig.DoesNotExist:
+            return Response({
+                'error': 'Configuración no encontrada o no verificada'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+
+class PaymentTransactionViewSet(viewsets.ModelViewSet):
+    """ViewSet para transacciones de pago"""
+    serializer_class = PaymentTransactionSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'uuid'
+    
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'doctor_operator'):
+            return PaymentTransaction.objects.filter(doctor=user.doctor_operator)
+        elif hasattr(user, 'patient'):
+            return PaymentTransaction.objects.filter(patient=user.patient)
+        return PaymentTransaction.objects.none()
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return PaymentTransactionCreateSerializer
+        return PaymentTransactionSerializer
+    
+    def create(self, request, *args, **kwargs):
+        """Crear nueva intención de pago"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        transaction = serializer.save()
+        transaction.calculate_commissions()
+        transaction.save()
+        
+        return Response(
+            PaymentTransactionSerializer(transaction).data,
+            status=status.HTTP_201_CREATED
+        )
+    
+    @action(detail=True, methods=['post'])
+    def confirm_manual(self, request, uuid=None):
+        """Confirmar pago manualmente (el paciente reporta que pagó)"""
+        transaction = self.get_object()
+        
+        serializer = PaymentTransactionConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        transaction.reference_number = serializer.validated_data['reference_number']
+        transaction.paid_at = timezone.now()
+        transaction.status = 'pending'
+        
+        if serializer.validated_data.get('notes'):
+            transaction.notes = serializer.validated_data['notes']
+        
+        transaction.save()
+        
+        return Response(PaymentTransactionSerializer(transaction).data)
+    
+    @action(detail=True, methods=['post'])
+    def verify(self, request, uuid=None):
+        """Verificar pago con API del banco"""
+        transaction = self.get_object()
+        
+        serializer = PaymentTransactionVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # Lógica de verificación según el método de pago
+        method_code = transaction.payment_method.code
+        
+        if method_code == 'mercantil':
+            result = self._verify_mercantil(transaction, serializer.validated_data)
+        elif method_code == 'banesco':
+            result = self._verify_banesco(transaction, serializer.validated_data)
+        elif method_code == 'binance':
+            result = self._verify_binance(transaction, serializer.validated_data)
+        elif method_code == 'manual':
+            # Verificación manual por el doctor
+            return self._verify_manual(transaction, request)
+        else:
+            return Response({
+                'error': f'Método de verificación no soportado: {method_code}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        if result.get('success'):
+            transaction.gateway_response = result
+            transaction.bank_reference = result.get('bank_reference')
+            transaction.gateway_transaction_id = result.get('gateway_transaction_id')
+            transaction.confirm(verified_by='api')
+            
+            # Notificar al doctor
+            self._notify_doctor(transaction)
+            
+            return Response(PaymentTransactionSerializer(transaction).data)
+        else:
+            transaction.gateway_response = result
+            transaction.status = 'failed'
+            transaction.notes = result.get('error', 'Verificación fallida')
+            transaction.save()
+            
+            return Response({
+                'error': result.get('error', 'Verificación fallida'),
+                'details': result
+            }, status=status.HTTP_400_BAD_REQUEST)
+    
+    def _verify_mercantil(self, transaction, data):
+        """Verifica con API de Mercantil"""
+        try:
+            config = transaction.doctor.payment_config
+            if not config.mercantil_enabled:
+                return {'success': False, 'error': 'Mercantil no habilitado'}
+            
+            # TODO: Implementar llamada real a API Mercantil
+            # Por ahora retorna éxito simulado
+            return {
+                'success': True,
+                'bank_reference': f"MERC-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                'gateway_transaction_id': f"MERC-TX-{transaction.uuid}",
+                'verified_at': timezone.now().isoformat()
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def _verify_banesco(self, transaction, data):
+        """Verifica con API de Banesco"""
+        try:
+            config = transaction.doctor.payment_config
+            if not config.banesco_enabled:
+                return {'success': False, 'error': 'Banesco no habilitado'}
+            
+            # TODO: Implementar llamada real a API Banesco
+            return {
+                'success': True,
+                'bank_reference': f"BAN-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                'gateway_transaction_id': f"BAN-TX-{transaction.uuid}",
+                'verified_at': timezone.now().isoformat()
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def _verify_binance(self, transaction, data):
+        """Verifica con API de Binance"""
+        try:
+            config = transaction.doctor.payment_config
+            if not config.binance_enabled:
+                return {'success': False, 'error': 'Binance no habilitado'}
+            
+            # TODO: Implementar verificación con Binance
+            return {
+                'success': True,
+                'bank_reference': f"BIN-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                'gateway_transaction_id': f"BIN-TX-{transaction.uuid}",
+                'verified_at': timezone.now().isoformat()
+            }
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+    
+    def _verify_manual(self, transaction, request):
+        """Verificación manual por el doctor"""
+        # Solo el doctor puede aprobar
+        if not hasattr(request.user, 'doctor_operator'):
+            return Response({
+                'error': 'Solo el doctor puede verificar pagos manualmente'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        action = request.data.get('action', 'approve')
+        
+        if action == 'approve':
+            transaction.confirm(verified_by='manual')
+            if request.data.get('notes'):
+                transaction.internal_notes = request.data['notes']
+                transaction.save()
+            
+            # Notificar al paciente
+            self._notify_patient(transaction)
+            
+        elif action == 'reject':
+            transaction.status = 'failed'
+            transaction.notes = request.data.get('reason', 'Rechazado por el doctor')
+            transaction.save()
+        
+        return Response(PaymentTransactionSerializer(transaction).data)
+    
+    def _notify_doctor(self, transaction):
+        """Notifica al doctor por WhatsApp de nuevo pago"""
+        # TODO: Implementar notificación WhatsApp
+        pass
+    
+    def _notify_patient(self, transaction):
+        """Notifica al paciente de confirmación"""
+        # TODO: Implementar notificación
+        pass
+
+
+class PaymentWebhookViewSet(viewsets.ModelViewSet):
+    """ViewSet para auditoría de webhooks"""
+    serializer_class = PaymentWebhookSerializer
+    permission_classes = [AllowAny]  # Webhooks son públicos
+    queryset = PaymentWebhook.objects.all()
+    http_method_names = ['get', 'post', 'head']  # Solo lectura y POST
+    
+    def get_queryset(self):
+        user = self.request.user
+        if hasattr(user, 'doctor_operator'):
+            return PaymentWebhook.objects.filter(doctor=user.doctor_operator)
+        return PaymentWebhook.objects.none()
+# ============================================================================
+# FUNCTION-BASED API VIEWS
+# ============================================================================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def payment_gateways_api(request):
+    """Lista de métodos de pago disponibles"""
+    gateways = PaymentGateway.objects.filter(is_active=True)
+    serializer = PaymentGatewayListSerializer(gateways, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def payment_config_api(request):
+    """Get/Update configuración de pago del doctor"""
+    user = request.user
+    
+    if not hasattr(user, 'doctor_operator'):
+        return Response({
+            'error': 'Solo doctores pueden configurar pagos'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        config = DoctorPaymentConfig.objects.get(doctor=user.doctor_operator)
+    except DoctorPaymentConfig.DoesNotExist:
+        config = DoctorPaymentConfig.objects.create(doctor=user.doctor_operator)
+    
+    if request.method == 'GET':
+        serializer = DoctorPaymentConfigSerializer(config)
+        return Response(serializer.data)
+    
+    # POST - Update
+    serializer = DoctorPaymentConfigSerializer(
+        config,
+        data=request.data,
+        partial=True
+    )
+    serializer.is_valid(raise_exception=True)
+    serializer.save()
+    
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def payment_config_public_api(request):
+    """Endpoint público para ver config de pago de un doctor"""
+    doctor_id = request.query_params.get('doctor_id')
+    
+    if not doctor_id:
+        return Response({
+            'error': 'doctor_id es requerido'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        config = DoctorPaymentConfig.objects.get(
+            doctor_id=doctor_id,
+            is_verified=True
+        )
+        serializer = DoctorPaymentConfigPublicSerializer(config)
+        return Response(serializer.data)
+    except DoctorPaymentConfig.DoesNotExist:
+        return Response({
+            'error': 'Configuración no encontrada o no verificada'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def payment_create_api(request):
+    """Crear nueva transacción de pago"""
+    serializer = PaymentTransactionCreateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    transaction = serializer.save()
+    transaction.calculate_commissions()
+    transaction.save()
+    
+    return Response(
+        PaymentTransactionSerializer(transaction).data,
+        status=status.HTTP_201_CREATED
+    )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def payment_transactions_api(request):
+    """Lista de transacciones del doctor/paciente"""
+    user = request.user
+    
+    if hasattr(user, 'doctor_operator'):
+        queryset = PaymentTransaction.objects.filter(
+            doctor=user.doctor_operator
+        )
+    elif hasattr(user, 'patient'):
+        queryset = PaymentTransaction.objects.filter(
+            patient=user.patient
+        )
+    else:
+        return Response({
+            'error': 'Usuario no autorizado'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    # Filtros
+    status_filter = request.query_params.get('status')
+    if status_filter:
+        queryset = queryset.filter(status=status_filter)
+    
+    method_filter = request.query_params.get('method')
+    if method_filter:
+        queryset = queryset.filter(payment_method__code=method_filter)
+    
+    serializer = PaymentTransactionSerializer(queryset, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def payment_stats_api(request):
+    """Dashboard de estadísticas de pagos"""
+    user = request.user
+    
+    if not hasattr(user, 'doctor_operator'):
+        return Response({
+            'error': 'Solo doctores pueden ver estadísticas'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    doctor = user.doctor_operator
+    now = timezone.now()
+    today = now.date()
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+    
+    # Transacciones confirmadas
+    confirmed_tx = PaymentTransaction.objects.filter(
+        doctor=doctor,
+        status='confirmed'
+    )
+    
+    # Stats básicas
+    total_earnings = confirmed_tx.aggregate(
+        total=Sum('net_amount')
+    )['total'] or Decimal('0')
+    
+    today_earnings = confirmed_tx.filter(
+        confirmed_at__date=today
+    ).aggregate(
+        total=Sum('net_amount')
+    )['total'] or Decimal('0')
+    
+    week_earnings = confirmed_tx.filter(
+        confirmed_at__date__gte=week_start
+    ).aggregate(
+        total=Sum('net_amount')
+    )['total'] or Decimal('0')
+    
+    month_earnings = confirmed_tx.filter(
+        confirmed_at__date__gte=month_start
+    ).aggregate(
+        total=Sum('net_amount')
+    )['total'] or Decimal('0')
+    
+    # Conteo de transacciones
+    total_transactions = PaymentTransaction.objects.filter(
+        doctor=doctor
+    ).count()
+    
+    pending_transactions = PaymentTransaction.objects.filter(
+        doctor=doctor,
+        status='pending'
+    ).count()
+    
+    # Por método
+    by_method = PaymentTransaction.objects.filter(
+        doctor=doctor,
+        status='confirmed'
+    ).values(
+        'payment_method__code',
+        'payment_method__name'
+    ).annotate(
+        count=Count('id'),
+        total=Sum('amount')
+    )
+    
+    return Response({
+        'total_earnings': float(total_earnings),
+        'today_earnings': float(today_earnings),
+        'week_earnings': float(week_earnings),
+        'month_earnings': float(month_earnings),
+        'total_transactions': total_transactions,
+        'pending_transactions': pending_transactions,
+        'by_method': list(by_method)
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def bcv_rate_api(request):
+    """Obtener tasa BCV actual"""
+    try:
+        from .models import BCVRate
+        latest = BCVRate.objects.first()
+        
+        if latest:
+            return Response({
+                'rate': float(latest.rate),
+                'date': latest.date.isoformat() if latest.date else None,
+                'source': latest.source
+            })
+        
+        return Response({
+            'error': 'Tasa no disponible'
+        }, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Webhooks para cada gateway
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def webhook_mercantil(request):
+    """Webhook para Mercantil P2C"""
+    # TODO: Implementar verificación de firma
+    # TODO: Procesar payload
+    
+    return Response({'status': 'received'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def webhook_banesco(request):
+    """Webhook para Banesco"""
+    # TODO: Implementar
+    
+    return Response({'status': 'received'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def webhook_binance(request):
+    """Webhook para Binance Pay"""
+    # TODO: Implementar verificación de firma RSA
+    # TODO: Procesar evento bizStatus
+    
+    return Response({'status': 'received'})
+
+
+# ============================================================================
+# SUBSCRIPTIONS API VIEWS
+# ============================================================================
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def subscriptions_api(request):
+    """Lista/Crea suscripciones del paciente"""
+    user = request.user
+    
+    if not hasattr(user, 'patient'):
+        return Response({
+            'error': 'Solo pacientes pueden gestionar suscripciones'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    patient = user.patient
+    
+    if request.method == 'GET':
+        subscriptions = PatientSubscription.objects.filter(patient=patient)
+        serializer = PatientSubscriptionSerializer(subscriptions, many=True)
+        return Response(serializer.data)
+    
+    # POST - Crear suscripción
+    serializer = PatientSubscriptionCreateSerializer(
+        data=request.data,
+        context={'patient': patient}
+    )
+    serializer.is_valid(raise_exception=True)
+    subscription = serializer.save()
+    
+    return Response(
+        PatientSubscriptionSerializer(subscription).data,
+        status=status.HTTP_201_CREATED
+    )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def subscription_cancel_api(request, pk):
+    """Cancelar suscripción"""
+    user = request.user
+    
+    if not hasattr(user, 'patient'):
+        return Response({
+            'error': 'Solo pacientes pueden cancelar suscripciones'
+        }, status=status.HTTP_403_FORBIDDEN)
+    
+    try:
+        subscription = PatientSubscription.objects.get(
+            pk=pk,
+            patient=user.patient
+        )
+    except PatientSubscription.DoesNotExist:
+        return Response({
+            'error': 'Suscripción no encontrada'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    reason = request.data.get('reason', '')
+    subscription.cancel(reason=reason)
+    
+    return Response(PatientSubscriptionSerializer(subscription).data)

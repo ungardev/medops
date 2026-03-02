@@ -8,7 +8,8 @@ from .models import (
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
-    BillingItem, WhatsAppMessage
+    BillingItem, WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
+    PatientSubscription,
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -2963,6 +2964,8 @@ class WhatsAppMessageSerializer(serializers.ModelSerializer):
             'created_at'
         ]
         read_only_fields = ['id', 'sent_at', 'whatsapp_message_id']
+
+
 class WhatsAppConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = DoctorOperator
@@ -2973,3 +2976,405 @@ class WhatsAppConfigSerializer(serializers.ModelSerializer):
             'whatsapp_access_token',
             'reminder_hours_before',
         ]
+
+
+class PaymentGatewaySerializer(serializers.ModelSerializer):
+    """Serializer para el catálogo de métodos de pago"""
+    
+    class Meta:
+        model = PaymentGateway
+        fields = [
+            'id',
+            'code',
+            'name',
+            'name_en',
+            'description',
+            'is_active',
+            'requires_legal_account',
+            'logo_url',
+            'api_docs_url',
+            'config_schema',
+            'supports_webhook',
+            'supports_api_verify',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class PaymentGatewayListSerializer(serializers.ModelSerializer):
+    """Serializer resumido para listas de métodos de pago"""
+    
+    class Meta:
+        model = PaymentGateway
+        fields = [
+            'id',
+            'code',
+            'name',
+            'name_en',
+            'logo_url',
+            'is_active',
+            'requires_legal_account',
+        ]
+
+
+class DoctorPaymentConfigSerializer(serializers.ModelSerializer):
+    """Serializer para configuración de pago del doctor"""
+    
+    doctor_name = serializers.SerializerMethodField()
+    enabled_methods_details = PaymentGatewayListSerializer(
+        source='enabled_methods',
+        many=True,
+        read_only=True
+    )
+    
+    class Meta:
+        model = DoctorPaymentConfig
+        fields = [
+            'id',
+            'doctor',
+            'doctor_name',
+            # Datos bancarios básicos
+            'bank_name',
+            'bank_account',
+            'bank_rif',
+            'bank_phone',
+            'bank_account_holder',
+            # Mercantil
+            'mercantil_client_id',
+            'mercantil_enabled',
+            'mercantil_is_test_mode',
+            # Banesco
+            'banesco_client_id',
+            'banesco_enabled',
+            'banesco_is_test_mode',
+            # Binance
+            'binance_merchant_id',
+            'binance_enabled',
+            # Configuración general
+            'account_type',
+            'manual_verification_enabled',
+            'notifications_enabled',
+            # Comisiones
+            'commission_doctor_percent',
+            'commission_patient_percent',
+            # Verificación
+            'is_verified',
+            'verified_at',
+            'verification_notes',
+            # Métodos habilitados
+            'enabled_methods',
+            'enabled_methods_details',
+            # Timestamps
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'id',
+            'is_verified',
+            'verified_at',
+            'created_at',
+            'updated_at',
+        ]
+        extra_kwargs = {
+            'mercantil_secret_key': {'write_only': True},
+            'mercantil_webhook_secret': {'write_only': True},
+            'banesco_secret_key': {'write_only': True},
+            'binance_api_secret': {'write_only': True},
+            'binance_webhook_secret': {'write_only': True},
+        }
+    
+    def get_doctor_name(self, obj):
+        return obj.doctor.user.get_full_name() or obj.doctor.user.username
+
+
+class DoctorPaymentConfigPublicSerializer(serializers.ModelSerializer):
+    """
+    Serializer público (para pacientes) - solo datos necesarios para pagos.
+    NO incluye credenciales sensitifas.
+    """
+    
+    enabled_methods_details = PaymentGatewayListSerializer(
+        source='enabled_methods',
+        many=True,
+        read_only=True
+    )
+    
+    class Meta:
+        model = DoctorPaymentConfig
+        fields = [
+            'bank_name',
+            'bank_account',
+            'bank_rif',
+            'bank_phone',
+            'bank_account_holder',
+            'mercantil_enabled',
+            'banesco_enabled',
+            'binance_enabled',
+            'manual_verification_enabled',
+            'enabled_methods_details',
+        ]
+
+
+class PaymentTransactionSerializer(serializers.ModelSerializer):
+    """Serializer completo para transacciones de pago"""
+    
+    doctor_name = serializers.SerializerMethodField()
+    patient_name = serializers.SerializerMethodField()
+    payment_method_name = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    verification_type_display = serializers.CharField(source='get_verification_type_display', read_only=True)
+    currency_display = serializers.CharField(source='get_currency_display', read_only=True)
+    
+    class Meta:
+        model = PaymentTransaction
+        fields = [
+            'id',
+            'uuid',
+            'doctor',
+            'doctor_name',
+            'patient',
+            'patient_name',
+            'payment_method',
+            'payment_method_name',
+            # Montos
+            'amount',
+            'currency',
+            'currency_display',
+            'amount_ves',
+            'exchange_rate_bcv',
+            'description',
+            # Estado
+            'status',
+            'status_display',
+            'verification_type',
+            'verification_type_display',
+            # Datos del pagador
+            'payer_name',
+            'payer_phone',
+            'payer_email',
+            # Referencias
+            'reference_number',
+            'gateway_transaction_id',
+            'bank_reference',
+            # Comisiones
+            'commission_doctor_amount',
+            'commission_patient_amount',
+            'net_amount',
+            # Auditoría
+            'notes',
+            'internal_notes',
+            # Timing
+            'created_at',
+            'updated_at',
+            'paid_at',
+            'confirmed_at',
+            'expires_at',
+        ]
+        read_only_fields = [
+            'id',
+            'uuid',
+            'commission_doctor_amount',
+            'commission_patient_amount',
+            'net_amount',
+            'created_at',
+            'updated_at',
+            'confirmed_at',
+        ]
+    
+    def get_doctor_name(self, obj):
+        if obj.doctor:
+            return obj.doctor.user.get_full_name() or obj.doctor.user.username
+        return None
+    
+    def get_patient_name(self, obj):
+        if obj.patient:
+            return obj.patient.user.get_full_name() or obj.patient.user.username
+        return None
+    
+    def get_payment_method_name(self, obj):
+        if obj.payment_method:
+            return obj.payment_method.name
+        return None
+
+
+class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear nuevas transacciones"""
+    
+    class Meta:
+        model = PaymentTransaction
+        fields = [
+            'doctor',
+            'patient',
+            'payment_method',
+            'amount',
+            'currency',
+            'description',
+            'payer_name',
+            'payer_phone',
+            'payer_email',
+        ]
+    
+    def create(self, validated_data):
+        from django.utils import timezone
+        from decimal import Decimal
+        
+        # Obtener BCV rate si es VES
+        if validated_data.get('currency') == 'VES':
+            bcv_rate = self._get_bcv_rate()
+            if bcv_rate:
+                validated_data['exchange_rate_bcv'] = bcv_rate
+        
+        # Calcular expiración (24 horas por defecto)
+        validated_data['expires_at'] = timezone.now() + timezone.timedelta(hours=24)
+        
+        return super().create(validated_data)
+    
+    def _get_bcv_rate(self):
+        """Obtiene tasa BCV"""
+        try:
+            from .models import BCVRate
+            latest = BCVRate.objects.first()
+            if latest:
+                return latest.rate
+        except Exception:
+            pass
+        return None
+
+
+class PaymentTransactionConfirmSerializer(serializers.Serializer):
+    """Serializer para confirmar manually un pago"""
+    reference_number = serializers.CharField(required=True)
+    notes = serializers.CharField(required=False, allow_blank=True)
+
+
+class PaymentTransactionVerifySerializer(serializers.Serializer):
+    """Serializer para verificar con APIs bancarias"""
+    reference_number = serializers.CharField(required=False)
+    phone = serializers.CharField(required=False)
+    bank_code = serializers.CharField(required=False)
+
+
+class PaymentWebhookSerializer(serializers.ModelSerializer):
+    """Serializer para webhooks de pago"""
+    
+    gateway_name = serializers.SerializerMethodField()
+    transaction_uuid = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
+    class Meta:
+        model = PaymentWebhook
+        fields = [
+            'id',
+            'doctor',
+            'gateway',
+            'gateway_name',
+            'transaction',
+            'transaction_uuid',
+            'event_type',
+            'payload',
+            'headers',
+            'signature_valid',
+            'signature_error',
+            'status',
+            'status_display',
+            'processing_error',
+            'response_sent',
+            'created_at',
+            'processed_at',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+            'processed_at',
+        ]
+    
+    def get_gateway_name(self, obj):
+        return obj.gateway.name if obj.gateway else None
+    
+    def get_transaction_uuid(self, obj):
+        return str(obj.transaction.uuid) if obj.transaction else None
+
+
+# Serializer para PatientSubscription existente
+class PatientSubscriptionSerializer(serializers.ModelSerializer):
+    """Serializer para suscripciones de pacientes"""
+    
+    patient_name = serializers.SerializerMethodField()
+    doctor_name = serializers.SerializerMethodField()
+    plan_type_display = serializers.CharField(source='get_plan_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    currency_display = serializers.CharField(source='get_currency_display', read_only=True)
+    is_active = serializers.BooleanField(read_only=True)
+    days_remaining = serializers.IntegerField(read_only=True)
+    
+    class Meta:
+        model = PatientSubscription
+        fields = [
+            'id',
+            'patient',
+            'patient_name',
+            'doctor',
+            'doctor_name',
+            'plan_type',
+            'plan_type_display',
+            'currency',
+            'currency_display',
+            'amount',
+            'status',
+            'status_display',
+            'start_date',
+            'end_date',
+            'auto_renew',
+            'payment_method_preferred',
+            'external_subscription_id',
+            'external_customer_id',
+            'cancellation_reason',
+            'notes',
+            'is_active',
+            'days_remaining',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+            'updated_at',
+        ]
+    
+    def get_patient_name(self, obj):
+        if obj.patient:
+            return obj.patient.user.get_full_name() or obj.patient.user.username
+        return None
+    
+    def get_doctor_name(self, obj):
+        if obj.doctor:
+            return obj.doctor.user.get_full_name() or obj.doctor.user.username
+        return None
+
+
+class PatientSubscriptionCreateSerializer(serializers.ModelSerializer):
+    """Serializer para crear suscripciones"""
+    
+    class Meta:
+        model = PatientSubscription
+        fields = [
+            'doctor',
+            'plan_type',
+            'currency',
+            'amount',
+            'start_date',
+            'end_date',
+            'auto_renew',
+            'payment_method_preferred',
+        ]
+    
+    def create(self, validated_data):
+        from django.utils import timezone
+        
+        # Obtener el paciente del contexto
+        patient = self.context.get('patient')
+        validated_data['patient'] = patient
+        validated_data['status'] = 'pending'
+        
+        return super().create(validated_data)
