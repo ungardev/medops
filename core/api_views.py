@@ -4637,6 +4637,8 @@ def patient_appointments(request):
     except Exception as e:
         logger.error(f"Error en patient_appointments: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 # ==========================================
 # HELPERS
 # ==========================================

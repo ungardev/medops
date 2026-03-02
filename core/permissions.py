@@ -1,8 +1,9 @@
-# core/permissions.py (completo corregido)
+# core/permissions.py
 import logging
 from django.utils import timezone
 from datetime import timedelta
 from django.http import HttpRequest
+from rest_framework import permissions
 from .models import InstitutionPermission, InstitutionSettings, DoctorOperator
 from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
@@ -17,6 +18,21 @@ def get_client_ip(request):
 def get_user_agent(request):
     """Extraer User Agent del request"""
     return request.META.get('HTTP_USER_AGENT', '')
+class IsDoctorOperatorOrReadOnly(permissions.BasePermission):
+    """
+    Permission personalizada para permitir:
+    - Lectura (GET, HEAD, OPTIONS): Cualquier usuario autenticado
+    - Escritura (POST, PUT, DELETE): Solo DoctorOperator
+    """
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return hasattr(request.user, 'doctor_operator')
+    
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return hasattr(request.user, 'doctor_operator')
 class SmartInstitutionValidator:
     """Validador híbrido mono-médico multi-institución"""
     
@@ -25,7 +41,6 @@ class SmartInstitutionValidator:
         """
         Determina nivel de acceso usando lógica híbrida
         """
-        # Caso 1: Institución propia = Full Access automático
         if hasattr(doctor, 'institutions'):
             institutions_list = doctor.institutions.all()
         else:
@@ -55,7 +70,6 @@ class SmartInstitutionValidator:
                 'permission': permission
             }
         
-        # Caso 2: Institución ajena = Emergency Access auto-aprobado
         permission, created = InstitutionPermission.objects.get_or_create(
             user=doctor.user,
             institution=institution,
@@ -67,7 +81,6 @@ class SmartInstitutionValidator:
             }
         )
         
-        # Refresh emergency access si expiró
         if permission.expires_at and permission.expires_at < timezone.now():
             permission.expires_at = timezone.now() + timedelta(hours=24)
             permission.save()
@@ -78,8 +91,8 @@ class SmartInstitutionValidator:
             'is_own': False,
             'is_cross': True,
             'can_edit': False,
-            'can_generate_pdf': True,  # Para cobertura médica
-            'can_view_patients': True,  # Para emergencias
+            'can_generate_pdf': True,
+            'can_view_patients': True,
             'expires_at': permission.expires_at,
             'requires_approval': False,
             'permission': permission
@@ -90,14 +103,12 @@ class SmartInstitutionValidator:
         """Auditoría inteligente con contexto médico"""
         permission_info = SmartInstitutionValidator.get_permission_level(doctor, institution)
         
-        # 🔧 CORRECCIÓN: Usar permission_obj en lugar de permission
         permission_obj = permission_info.get('permission')
         if permission_obj:
             permission_obj.last_accessed = timezone.now()
             permission_obj.access_count += 1
             permission_obj.save(update_fields=['last_accessed', 'access_count'])
         
-        # Log contextual
         from .models import AuditLog
         try:
             AuditLog.objects.create(
@@ -112,9 +123,7 @@ class SmartInstitutionValidator:
                 timestamp=timezone.now()
             )
         except Exception:
-            # Si AuditLog no existe, log con logger
             logger.info(f"Audit: {doctor.full_name} - {action} - {institution.name}")
         
-        # Log especial para cross-institution
         if permission_info.get('is_cross'):
             logger.info(f"EMERGENCY ACCESS: Dr {doctor.full_name} accessing {institution.name}")
