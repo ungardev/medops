@@ -14,6 +14,8 @@ from django.apps import apps
 from django.conf import settings
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES
 import hashlib
+import uuid
+from datetime import date
 
 
 def normalize_title_case(value):
@@ -4174,3 +4176,645 @@ class WhatsAppMessage(models.Model):
     
     def __str__(self):
         return f"WhatsApp to {self.phone_to} - {self.get_message_type_display()}"
+
+
+# ============================================================================
+# SECTION 6: PAYMENT SYSTEM MODELS
+# ============================================================================
+class PaymentGateway(models.Model):
+    """
+    Catálogo de pasarelas y métodos de pago disponibles en la plataforma.
+    """
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Código",
+        help_text="Código único: mercantil, banesco, binance, manual"
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name="Nombre"
+    )
+    name_en = models.CharField(
+        max_length=100,
+        verbose_name="Nombre (English)"
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Descripción"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo"
+    )
+    requires_legal_account = models.BooleanField(
+        default=False,
+        verbose_name="Requiere cuenta jurídica",
+        help_text="Si True, el doctor debe tener cuenta jurídica para usar este método"
+    )
+    logo_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name="URL del Logo"
+    )
+    api_docs_url = models.URLField(
+        max_length=500,
+        blank=True,
+        verbose_name="URL de Documentación API"
+    )
+    config_schema = models.JSONField(
+        default=dict,
+        verbose_name="Esquema de configuración",
+        help_text="JSON que define los campos de configuración requeridos"
+    )
+    supports_webhook = models.BooleanField(
+        default=False,
+        verbose_name="Soporta Webhook"
+    )
+    supports_api_verify = models.BooleanField(
+        default=False,
+        verbose_name="Soporta verificación por API"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = "payment_gateways"
+        verbose_name = "Pasarela de Pago"
+        verbose_name_plural = "Pasarelas de Pago"
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class DoctorPaymentConfig(models.Model):
+    """
+    Configuración de pago por DOCTOR.
+    Almacena credenciales bancarias y de API para cada método de pago.
+    """
+    ACCOUNT_TYPE_CHOICES = [
+        ('natural', 'Persona Natural'),
+        ('juridica', 'Persona Jurídica'),
+    ]
+    
+    doctor = models.OneToOneField(
+        'DoctorOperator',
+        on_delete=models.CASCADE,
+        related_name='payment_config',
+        verbose_name="Doctor"
+    )
+    
+    # Cuenta bancaria básica
+    bank_name = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Nombre del Banco"
+    )
+    bank_account = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Número de Cuenta"
+    )
+    bank_rif = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="RIF / Cédula"
+    )
+    bank_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="Teléfono asociado al Pago Móvil"
+    )
+    bank_account_holder = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Titular de la Cuenta"
+    )
+    
+    # === CREDENCIALES MERCANTIL ===
+    mercantil_client_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Mercantil - Client ID"
+    )
+    mercantil_secret_key = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Mercantil - Secret Key"
+    )
+    mercantil_webhook_secret = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Mercantil - Webhook Secret"
+    )
+    mercantil_enabled = models.BooleanField(
+        default=False,
+        verbose_name="Mercantil habilitado"
+    )
+    mercantil_is_test_mode = models.BooleanField(
+        default=True,
+        verbose_name="Mercantil modo prueba"
+    )
+    
+    # === CREDENCIALES BANESCO ===
+    banesco_client_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Banesco - Client ID"
+    )
+    banesco_secret_key = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Banesco - Secret Key"
+    )
+    banesco_enabled = models.BooleanField(
+        default=False,
+        verbose_name="Banesco habilitado"
+    )
+    banesco_is_test_mode = models.BooleanField(
+        default=True,
+        verbose_name="Banesco modo prueba"
+    )
+    
+    # === CREDENCIALES BINANCE ===
+    binance_merchant_id = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Binance - Merchant ID"
+    )
+    binance_api_key = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Binance - API Key"
+    )
+    binance_api_secret = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Binance - API Secret"
+    )
+    binance_webhook_secret = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Binance - Webhook Secret"
+    )
+    binance_enabled = models.BooleanField(
+        default=False,
+        verbose_name="Binance habilitado"
+    )
+    
+    # === CONFIGURACIÓN GENERAL ===
+    account_type = models.CharField(
+        max_length=20,
+        choices=ACCOUNT_TYPE_CHOICES,
+        default='natural',
+        verbose_name="Tipo de Cuenta"
+    )
+    manual_verification_enabled = models.BooleanField(
+        default=True,
+        verbose_name="Verificación manual habilitada",
+        help_text="Permitir que pacientes confirmen pagos manualmente como fallback"
+    )
+    notifications_enabled = models.BooleanField(
+        default=True,
+        verbose_name="Notificaciones habilitadas"
+    )
+    
+    # === COMISIONES ===
+    commission_doctor_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('3.0'),
+        verbose_name="% Comisión Doctor",
+        help_text="Porcentaje que paga el doctor por transacción"
+    )
+    commission_patient_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('2.0'),
+        verbose_name="% Comisión Paciente",
+        help_text="Porcentaje que paga el paciente por transacción"
+    )
+    
+    # === VERIFICACIÓN ===
+    is_verified = models.BooleanField(
+        default=False,
+        verbose_name="Configuración verificada"
+    )
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de verificación"
+    )
+    verification_notes = models.TextField(
+        blank=True,
+        verbose_name="Notas de verificación"
+    )
+    
+    # === MÉTODOS HABILITADOS ===
+    enabled_methods = models.ManyToManyField(
+        PaymentGateway,
+        blank=True,
+        related_name='doctor_configs',
+        verbose_name="Métodos de pago habilitados"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = "doctor_payment_config"
+        verbose_name = "Configuración de Pago Doctor"
+        verbose_name_plural = "Configuraciones de Pago Doctor"
+    
+    def __str__(self):
+        return f"Pago Config - Dr. {self.doctor.user.get_full_name()}"
+    
+    def get_enabled_methods_list(self):
+        """Retorna lista de códigos de métodos habilitados"""
+        return list(self.enabled_methods.values_list('code', flat=True))
+    
+    def has_method(self, code: str) -> bool:
+        """Verifica si un método está habilitado"""
+        return self.enabled_methods.filter(code=code).exists()
+    
+    def is_fully_configured(self) -> bool:
+        """Verifica si la configuración está completa"""
+        if not self.bank_account or not self.bank_phone:
+            return False
+        
+        enabled = self.get_enabled_methods_list()
+        if not enabled:
+            return False
+        
+        for method in enabled:
+            if method == 'mercantil' and self.mercantil_enabled:
+                if not self.mercantil_client_id or not self.mercantil_secret_key:
+                    return False
+            elif method == 'banesco' and self.banesco_enabled:
+                if not self.banesco_client_id or not self.banesco_secret_key:
+                    return False
+            elif method == 'binance' and self.binance_enabled:
+                if not self.binance_api_key or not self.binance_api_secret:
+                    return False
+        
+        return True
+
+
+class PaymentTransaction(models.Model):
+    """
+    Transacción de pago unificada para todos los métodos de pago.
+    Almacena el ciclo completo de un pago desde su creación hasta confirmación.
+    """
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('processing', 'Procesando'),
+        ('confirmed', 'Confirmado'),
+        ('failed', 'Fallido'),
+        ('cancelled', 'Cancelado'),
+    ]
+    
+    VERIFICATION_CHOICES = [
+        ('api', 'Automática (API)'),
+        ('manual', 'Manual (Doctor)'),
+        ('webhook', 'Webhook'),
+    ]
+    
+    CURRENCY_CHOICES = [
+        ('VES', 'Bolívar - VES'),
+        ('USD', 'Dólar - USD'),
+    ]
+    
+    # === RELACIONES ===
+    doctor = models.ForeignKey(
+        'DoctorOperator',
+        on_delete=models.CASCADE,
+        related_name='payment_transactions',
+        verbose_name="Doctor"
+    )
+    patient = models.ForeignKey(
+        'Patient',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='payment_transactions',
+        verbose_name="Paciente"
+    )
+    payment_method = models.ForeignKey(
+        PaymentGateway,
+        on_delete=models.PROTECT,
+        related_name='transactions',
+        verbose_name="Método de Pago"
+    )
+    linked_payment = models.ForeignKey(
+        'Payment',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gateway_transactions',
+        verbose_name="Pago vinculado (cita)"
+    )
+    
+    # === DATOS DE TRANSACCIÓN ===
+    uuid = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        verbose_name="UUID único",
+        help_text="Referencia única para tracking"
+    )
+    amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Monto"
+    )
+    currency = models.CharField(
+        max_length=3,
+        choices=CURRENCY_CHOICES,
+        default='VES',
+        verbose_name="Moneda"
+    )
+    amount_ves = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Monto en VES",
+        help_text="Monto convertido a VES (si pagó en USD)"
+    )
+    exchange_rate_bcv = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Tasa BCV usada"
+    )
+    description = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Descripción del pago"
+    )
+    
+    # === ESTADO Y VERIFICACIÓN ===
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Estado"
+    )
+    verification_type = models.CharField(
+        max_length=20,
+        choices=VERIFICATION_CHOICES,
+        default='manual',
+        verbose_name="Tipo de verificación"
+    )
+    
+    # === DATOS DEL PAGADOR (para pagos externos/sin cuenta) ===
+    payer_name = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Nombre del pagador"
+    )
+    payer_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="Teléfono del pagador"
+    )
+    payer_email = models.EmailField(
+        blank=True,
+        verbose_name="Email del pagador"
+    )
+    
+    # === REFERENCIAS ===
+    reference_number = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Número de referencia (del paciente)",
+        help_text="Referencia que el paciente reporta haber realizado"
+    )
+    gateway_transaction_id = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="ID de transacción del gateway",
+        help_text="ID retornado por el banco/pasarela"
+    )
+    bank_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Referencia bancaria",
+        help_text="Referencia oficial del banco"
+    )
+    
+    # === COMISIONES ===
+    commission_doctor_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Monto comisión doctor"
+    )
+    commission_patient_amount = decimal_field = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Monto comisión paciente"
+    )
+    net_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Monto neto al doctor"
+    )
+    
+    # === AUDITORÍA ===
+    gateway_response = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name="Respuesta del Gateway",
+        help_text="Respuesta completa de API del banco/pasarela"
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name="Notas internas"
+    )
+    internal_notes = models.TextField(
+        blank=True,
+        verbose_name="Notas privadas del doctor"
+    )
+    
+    # === TIMING ===
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    paid_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha en que paciente reporta haber pagado"
+    )
+    confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de confirmación real"
+    )
+    expires_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de expiración"
+    )
+    
+    class Meta:
+        db_table = "payment_transactions"
+        verbose_name = "Transacción de Pago"
+        verbose_name_plural = "Transacciones de Pago"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['doctor', 'status']),
+            models.Index(fields=['doctor', '-created_at']),
+            models.Index(fields=['patient', 'status']),
+            models.Index(fields=['uuid']),
+            models.Index(fields=['gateway_transaction_id']),
+            models.Index(fields=['reference_number']),
+            models.Index(fields=['status', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Tx {self.uuid} - {self.amount} {self.currency} [{self.get_status_display()}]"
+    
+    def calculate_commissions(self):
+        """Calcula las comisiones basadas en los porcentajes configurados"""
+        if not self.doctor:
+            return
+        
+        try:
+            config = self.doctor.payment_config
+            self.commission_doctor_amount = (self.amount * config.commission_doctor_percent) / 100
+            self.commission_patient_amount = (self.amount * config.commission_patient_percent) / 100
+            self.net_amount = self.amount - self.commission_doctor_amount - self.commission_patient_amount
+        except DoctorPaymentConfig.DoesNotExist:
+            self.commission_doctor_amount = Decimal('0.00')
+            self.commission_patient_amount = Decimal('0.00')
+            self.net_amount = self.amount
+    
+    def confirm(self, verified_by: str = 'manual'):
+        """Confirma la transacción"""
+        from django.utils import timezone
+        
+        self.status = 'confirmed'
+        self.verification_type = verified_by
+        self.confirmed_at = timezone.now()
+        self.calculate_commissions()
+        self.save()
+        
+        # TODO: Notificar al doctor por WhatsApp
+        return self
+    
+    def cancel(self, reason: str = ''):
+        """Cancela la transacción"""
+        self.status = 'cancelled'
+        self.notes = reason
+        self.save()
+        return self
+
+
+class PaymentWebhook(models.Model):
+    """
+    Registro de webhooks recibidos para auditoría y debugging.
+    Almacena todas las notificaciones de pago de los gateways.
+    """
+    
+    STATUS_CHOICES = [
+        ('received', 'Recibido'),
+        ('processing', 'Procesando'),
+        ('processed', 'Procesado'),
+        ('failed', 'Fallido'),
+        ('duplicate', 'Duplicado'),
+    ]
+    
+    # === RELACIONES ===
+    doctor = models.ForeignKey(
+        'DoctorOperator',
+        on_delete=models.CASCADE,
+        related_name='payment_webhooks',
+        verbose_name="Doctor"
+    )
+    gateway = models.ForeignKey(
+        PaymentGateway,
+        on_delete=models.PROTECT,
+        related_name='webhooks',
+        verbose_name="Gateway"
+    )
+    transaction = models.ForeignKey(
+        PaymentTransaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='webhooks',
+        verbose_name="Transacción vinculada"
+    )
+    
+    # === DATOS DEL WEBHOOK ===
+    event_type = models.CharField(
+        max_length=100,
+        verbose_name="Tipo de evento",
+        help_text="Tipo de evento recibido (ej: PAY_CLOSED, PAYMENT_CONFIRMED)"
+    )
+    payload = models.JSONField(
+        verbose_name="Payload recibido",
+        help_text="Cuerpo completo del webhook"
+    )
+    headers = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name="Headers recibidos"
+    )
+    
+    # === VERIFICACIÓN ===
+    signature_valid = models.BooleanField(
+        default=False,
+        verbose_name="Firma válida"
+    )
+    signature_error = models.TextField(
+        blank=True,
+        verbose_name="Error de firma"
+    )
+    
+    # === PROCESAMIENTO ===
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='received',
+        verbose_name="Estado"
+    )
+    processing_error = models.TextField(
+        blank=True,
+        verbose_name="Error de procesamiento"
+    )
+    response_sent = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name="Respuesta enviada"
+    )
+    
+    # === TIMING ===
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de procesamiento"
+    )
+    
+    class Meta:
+        db_table = "payment_webhooks"
+        verbose_name = "Webhook de Pago"
+        verbose_name_plural = "Webhooks de Pago"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['doctor', '-created_at']),
+            models.Index(fields=['gateway', 'status']),
+            models.Index(fields=['transaction']),
+        ]
+    
+    def __str__(self):
+        return f"Webhook {self.gateway.code} - {self.event_type} [{self.get_status_display()}]"
+# ============================================================================
+# END SECTION 6: PAYMENT SYSTEM MODELS
+# ============================================================================
