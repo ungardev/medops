@@ -96,7 +96,9 @@ if not DEBUG:
 else:
     # ✅ EN DESARROLLO (DEBUG=True): Autenticación DESHABILITADA para pruebas
     REST_FRAMEWORK.update({
-        "DEFAULT_AUTHENTICATION_CLASSES": [],
+        "DEFAULT_AUTHENTICATION_CLASSES": [
+            "rest_framework.authentication.TokenAuthentication",
+        ],
         "DEFAULT_PERMISSION_CLASSES": [
             "rest_framework.permissions.AllowAny",
         ],
