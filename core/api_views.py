@@ -5437,7 +5437,7 @@ def subscription_cancel_api(request, pk):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def invite_patient_to_portal(request, patient_id):
     """
     POST /api/patients/{id}/invite/
@@ -5448,41 +5448,10 @@ def invite_patient_to_portal(request, patient_id):
     except Patient.DoesNotExist:
         return Response({'error': 'Paciente no encontrado'}, status=404)
     
-    # Obtener el doctor actual
-    try:
-        doctor = request.user.doctor_operator
-    except:
-        return Response({'error': 'Solo doctores pueden invitar'}, status=403)
-    
-    # Verificar si ya existe invitación activa
-    existing = PatientInvitation.objects.filter(
-        patient=patient,
-        status__in=['pending', 'sent']
-    ).first()
-    
-    if existing and existing.is_active:
-        return Response({
-            'error': 'El paciente ya tiene acceso al portal',
-            'invitation': PatientInvitationSerializer(existing).data
-        }, status=400)
-    
-    # Crear invitación
-    invitation = PatientInvitation.objects.create(
-        patient=patient,
-        doctor=doctor,
-        status='sent',
-        sent_at=timezone.now()
-    )
-    
-    # Generar link
-    invite_link = f"/patient/activate?token={invitation.token}"
-    
-    return Response({
-        'success': True,
-        'invitation': PatientInvitationSerializer(invitation).data,
-        'invite_link': invite_link,
-        'message': 'Invitación creada. Comparta el enlace con el paciente.'
-    })
+    # Obtener el doctor actual - usar hasattr como otros endpoints
+    if not hasattr(request.user, 'doctor_operator'):
+        return Response({'error': 'Solo doctores pueden invitar al portal'}, status=403)
+    doctor = request.user.doctor_operator
 
 
 @api_view(['POST'])
@@ -5575,7 +5544,7 @@ def activate_patient_portal(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([conditional_permission()])
 def get_patient_invitation_status(request, patient_id):
     """
     GET /api/patients/{id}/invitation-status/
