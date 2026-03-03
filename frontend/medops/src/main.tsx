@@ -2,7 +2,7 @@
 import "./index.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App";
 import DashboardPage from "./pages/Dashboard";
 import Patients from "./pages/Patients/Patients";
@@ -27,11 +27,16 @@ import ConfigPage from "./pages/Settings/ConfigPage";
 import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
 import BillingCatalogPage from "./pages/Billing/BillingCatalogPage";
-// Importaciones PatientPortal
+// PatientPortal Imports
 import { PatientLogin } from "./pages/PatientPortal/PatientLogin";
 import { PatientRegister } from "./pages/PatientPortal/PatientRegister";
+import PatientLayout from "./components/Layout/PatientLayout";
 import { PatientDashboard } from "./pages/PatientPortal/PatientDashboard";
-// Configuración global de axios
+import PatientRecord from "./pages/PatientPortal/PatientRecord";
+import PatientQueue from "./pages/PatientPortal/PatientQueue";
+import PatientSearch from "./pages/PatientPortal/PatientSearch";
+import PatientSettings from "./pages/PatientPortal/PatientSettings";
+// Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
 if (token) {
@@ -43,25 +48,32 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <NotifyProvider>
         <BrowserRouter>
           <Routes>
-            {/* Rutas públicas - Doctor */}
+            {/* === PUBLIC ROUTES === */}
             <Route path="/login" element={<Login />} />
             <Route path="/logout" element={<Logout />} />
             
-            {/* Portal Paciente - Rutas públicas */}
+            {/* === PATIENT PORTAL - PUBLIC === */}
             <Route path="/patient/login" element={<PatientLogin />} />
             <Route path="/patient/register" element={<PatientRegister />} />
             
-            {/* Portal Paciente - Rutas protegidas */}
+            {/* === PATIENT PORTAL - PROTECTED === */}
             <Route 
-              path="/patient/dashboard" 
+              path="/patient" 
               element={
                 <ProtectedRoute allowedRoles={['patient']}>
-                  <PatientDashboard />
+                  <PatientLayout />
                 </ProtectedRoute>
-              } 
-            />
+              }
+            >
+              <Route index element={<PatientDashboard />} />
+              <Route path="record" element={<PatientRecord />} />
+              <Route path="appointments" element={<Appointments />} />
+              <Route path="queue" element={<PatientQueue />} />
+              <Route path="search" element={<PatientSearch />} />
+              <Route path="settings" element={<PatientSettings />} />
+            </Route>
             
-            {/* Rutas protegidas - Doctor/Admin */}
+            {/* === DOCTOR PORTAL - PROTECTED === */}
             <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
               <Route element={<App />}>
                 <Route index element={<DashboardPage />} />
