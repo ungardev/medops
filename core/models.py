@@ -3743,8 +3743,19 @@ class BillingItem(models.Model):
 class PatientUser(models.Model):
     """
     Usuario autenticable para el Portal del Paciente.
-    Relacionado 1:1 con Patient.
+    Relacionado 1:1 con Patient Y con Django User.
     """
+    # === RELACIÓN CON DJANGO USER (autenticación unificada) ===
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='patient_profile',
+        null=True,
+        blank=True,
+        verbose_name="Usuario Django"
+    )
+    
+    # === RELACIÓN CON PACIENTE CLÍNICO ===
     patient = models.OneToOneField(
         Patient,
         on_delete=models.CASCADE,
@@ -3752,32 +3763,36 @@ class PatientUser(models.Model):
         verbose_name="Paciente"
     )
     
-    # Autenticación
+    # === EMAIL (duplicado para compatibilidad, sincronizado con user.email) ===
     email = models.EmailField(
         unique=True,
         verbose_name="Email de acceso"
     )
+    
+    # === MIGRACIÓN: Mantener password_hash antiguo hasta migración completa ===
+    # TODO: Eliminar después de migrar todas las contraseñas
     password_hash = models.CharField(
         max_length=255,
-        verbose_name="Hash de contraseña"
+        blank=True,
+        verbose_name="Hash de contraseña (legacy)"
     )
     
-    # Estado
+    # === ESTADO ===
     is_active = models.BooleanField(default=True, verbose_name="Activo")
     is_verified = models.BooleanField(default=False, verbose_name="Email verificado")
     verification_token = models.CharField(max_length=255, null=True, blank=True)
     verification_token_expires = models.DateTimeField(null=True, blank=True)
     
-    # 2FA
+    # === 2FA ===
     two_factor_enabled = models.BooleanField(default=False, verbose_name="2FA habilitado")
     two_factor_secret = models.CharField(max_length=32, null=True, blank=True)
     two_factor_backup_codes = models.JSONField(default=list, verbose_name="Códigos de respaldo")
     
-    # Teléfono
+    # === TELÉFONO ===
     phone = models.CharField(max_length=20, null=True, blank=True, verbose_name="Teléfono")
     phone_verified = models.BooleanField(default=False, verbose_name="Teléfono verificado")
     
-    # Documentos de identificación
+    # === DOCUMENTOS DE IDENTIFICACIÓN ===
     id_document_type = models.CharField(
         max_length=20,
         choices=[
@@ -3804,12 +3819,12 @@ class PatientUser(models.Model):
     id_verified = models.BooleanField(default=False, verbose_name="Identidad verificada")
     id_verified_at = models.DateTimeField(null=True, blank=True)
     
-    # Preferencias
+    # === PREFERENCIAS ===
     notifications_email = models.BooleanField(default=True, verbose_name="Notificaciones por email")
     notifications_sms = models.BooleanField(default=True, verbose_name="Notificaciones por SMS")
     notifications_whatsapp = models.BooleanField(default=True, verbose_name="Notificaciones por WhatsApp")
     
-    # Auditoría
+    # === AUDITORÍA ===
     last_login_at = models.DateTimeField(null=True, blank=True, verbose_name="Último login")
     failed_login_attempts = models.IntegerField(default=0, verbose_name="Intentos fallidos")
     locked_until = models.DateTimeField(null=True, blank=True, verbose_name="Bloqueado hasta")
@@ -3825,33 +3840,46 @@ class PatientUser(models.Model):
             models.Index(fields=['email']),
             models.Index(fields=['patient']),
             models.Index(fields=['is_active']),
+            models.Index(fields=['user']),
         ]
     
     def __str__(self):
         return f"PatientUser: {self.email} ({self.patient.full_name})"
     
     def set_password(self, raw_password):
-        """Hashea la contraseña"""
-        import hashlib
-        import secrets
-        salt = secrets.token_hex(16)
-        password_hash = hashlib.pbkdf2_hmac('sha256', raw_password.encode(), salt.encode(), 100000)
-        self.password_hash = f"{salt}${password_hash.hex()}"
+        """Guarda la contraseña en Django User."""
+        if self.user:
+            self.user.set_password(raw_password)
+            self.user.save(update_fields=['password'])
     
     def check_password(self, raw_password):
-        """Verifica la contraseña"""
-        import hashlib
-        if '$' not in self.password_hash:
-            return False
-        salt, hash_hex = self.password_hash.split('$')
-        password_hash = hashlib.pbkdf2_hmac('sha256', raw_password.encode(), salt.encode(), 100000)
-        return password_hash.hex() == hash_hex
+        """Verifica la contraseña usando Django User."""
+        if self.user:
+            return self.user.check_password(raw_password)
+        return False
+    
+    def get_token(self):
+        """Obtiene o crea el token DRF para este usuario."""
+        from rest_framework.authtoken.models import Token
+        if self.user:
+            token, _ = Token.objects.get_or_create(user=self.user)
+            return token.key
+        return None
     
     def is_locked(self):
-        """Verifica si el usuario está bloqueado"""
+        """Verifica si el usuario está bloqueado."""
         if self.locked_until and timezone.now() < self.locked_until:
             return True
         return False
+    
+    def save(self, *args, **kwargs):
+        """Sincroniza email con user.email si existe."""
+        super().save(*args, **kwargs)
+        if self.user and self.user.email != self.email:
+            self.user.email = self.email
+            self.user.save(update_fields=['email'])
+
+
 # ==========================================
 # 21. SUSCRIPCIÓN DEL PACIENTE
 # ==========================================

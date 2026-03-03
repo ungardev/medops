@@ -33,14 +33,26 @@ class IsDoctorOperatorOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         return hasattr(request.user, 'doctor_operator')
+class IsPatientUser(permissions.BasePermission):
+    """
+    Permite acceso solo a usuarios con perfil de paciente.
+    """
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'patient_profile')
+class IsPatientUserOrReadOnly(permissions.BasePermission):
+    """
+    Permite lectura a cualquier usuario autenticado.
+    Solo pacientes pueden escribir.
+    """
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return hasattr(request.user, 'patient_profile')
 class SmartInstitutionValidator:
     """Validador híbrido mono-médico multi-institución"""
     
     @staticmethod
     def get_permission_level(doctor: DoctorOperator, institution: InstitutionSettings) -> Dict[str, Any]:
-        """
-        Determina nivel de acceso usando lógica híbrida
-        """
         if hasattr(doctor, 'institutions'):
             institutions_list = doctor.institutions.all()
         else:
@@ -100,7 +112,6 @@ class SmartInstitutionValidator:
     
     @staticmethod
     def log_access(doctor: DoctorOperator, institution: InstitutionSettings, action: str, request=None):
-        """Auditoría inteligente con contexto médico"""
         permission_info = SmartInstitutionValidator.get_permission_level(doctor, institution)
         
         permission_obj = permission_info.get('permission')

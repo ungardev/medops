@@ -4183,19 +4183,25 @@ def patient_register(request):
     POST /api/patient-auth/register/
     Registro de nuevo paciente en el portal.
     """
+    from django.contrib.auth.models import User
+    from rest_framework.authtoken.models import Token
+    
     try:
         data = request.data
         email = data.get('email', '').lower().strip()
         password = data.get('password')
         patient_id = data.get('patient_id')
         
-        # Validaciones básicas
         if not email or not password or not patient_id:
             return Response({
                 'error': 'Email, contraseña e ID de paciente son obligatorios.'
             }, status=400)
         
-        # Verificar que el paciente existe
+        if len(password) < 8:
+            return Response({
+                'error': 'La contraseña debe tener al menos 8 caracteres.'
+            }, status=400)
+        
         try:
             patient = Patient.objects.get(pk=patient_id, active=True)
         except Patient.DoesNotExist:
@@ -4203,35 +4209,48 @@ def patient_register(request):
                 'error': 'Paciente no encontrado o inactivo.'
             }, status=404)
         
-        # Verificar que no existe usuario con ese email
         if PatientUser.objects.filter(email=email).exists():
             return Response({
                 'error': 'Ya existe una cuenta con este email.'
             }, status=400)
         
-        # Verificar que el paciente no tiene usuario
         if hasattr(patient, 'patient_user'):
             return Response({
                 'error': 'Este paciente ya tiene una cuenta en el portal.'
             }, status=400)
         
-        # Crear usuario
+        # Crear Django User
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=password,
+            is_active=True
+        )
+        
+        # Asignar al grupo Patients
+        from django.contrib.auth.models import Group
+        patients_group, _ = Group.objects.get_or_create(name='Patients')
+        user.groups.add(patients_group)
+        
+        # Crear PatientUser con referencia al User
         patient_user = PatientUser.objects.create(
             patient=patient,
             email=email,
+            user=user,
             is_active=True,
             is_verified=False,
             verification_token=generate_token(),
             verification_token_expires=timezone.now() + timedelta(days=7)
         )
-        patient_user.set_password(password)
-        patient_user.save()
+        
+        # Generar Token DRF
+        token = Token.objects.create(user=user)
         
         # Log de auditoría
         PatientAccessLog.objects.create(
             patient_user=patient_user,
             patient=patient,
-            action='login',
+            action='register',
             ip_address=get_client_ip(request),
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             description=f'Nuevo registro de paciente: {email}'
@@ -4239,9 +4258,14 @@ def patient_register(request):
         
         return Response({
             'success': True,
-            'message': 'Cuenta creada exitosamente. Verifica tu email para activar.',
+            'token': token.key,
+            'message': 'Cuenta creada exitosamente.',
             'patient_user_id': patient_user.id,
-            'email': email
+            'email': email,
+            'patient': {
+                'id': patient.id,
+                'full_name': patient.full_name
+            }
         }, status=201)
         
     except Exception as e:
@@ -4256,6 +4280,8 @@ def patient_login(request):
     POST /api/patient-auth/login/
     Login de paciente en el portal.
     """
+    from rest_framework.authtoken.models import Token
+    
     try:
         data = request.data
         email = data.get('email', '').lower().strip()
@@ -4266,11 +4292,9 @@ def patient_login(request):
                 'error': 'Email y contraseña son obligatorios.'
             }, status=400)
         
-        # Buscar usuario
         try:
-            patient_user = PatientUser.objects.get(email=email)
+            patient_user = PatientUser.objects.select_related('user').get(email=email)
         except PatientUser.DoesNotExist:
-            # Log de intento fallido
             PatientAccessLog.objects.create(
                 patient_user=None,
                 action='failed_login',
@@ -4282,7 +4306,6 @@ def patient_login(request):
                 'error': 'Email o contraseña incorrectos.'
             }, status=401)
         
-        # Verificar si está bloqueado
         if patient_user.is_locked():
             PatientAccessLog.objects.create(
                 patient_user=patient_user,
@@ -4295,11 +4318,23 @@ def patient_login(request):
                 'error': 'Cuenta bloqueada. Intenta más tarde.'
             }, status=401)
         
+        # Verificar que existe usuario Django (cuenta migrada)
+        if not patient_user.user:
+            PatientAccessLog.objects.create(
+                patient_user=patient_user,
+                action='failed_login',
+                ip_address=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                description='Usuario Django no encontrado - cuenta no migrada'
+            )
+            return Response({
+                'error': 'Email o contraseña incorrectos.'
+            }, status=401)
+        
         # Verificar contraseña
-        if not patient_user.check_password(password):
+        if not patient_user.user.check_password(password):
             patient_user.failed_login_attempts += 1
             
-            # Bloquear después de 5 intentos
             if patient_user.failed_login_attempts >= 5:
                 patient_user.locked_until = timezone.now() + timedelta(minutes=30)
                 patient_user.save()
@@ -4328,13 +4363,13 @@ def patient_login(request):
                 'error': 'Email o contraseña incorrectos.'
             }, status=401)
         
-        # Login exitoso - resetear intentos fallidos
+        # Login exitoso
         patient_user.failed_login_attempts = 0
         patient_user.locked_until = None
         patient_user.last_login_at = timezone.now()
         patient_user.save()
         
-        # Crear sesión
+        # Crear/actualizar sesión en PatientSession para auditoría
         access_token = generate_token(64)
         refresh_token = generate_token(64)
         
@@ -4346,6 +4381,9 @@ def patient_login(request):
             user_agent=request.META.get('HTTP_USER_AGENT', ''),
             expires_at=timezone.now() + timedelta(days=7)
         )
+        
+        # Obtener Token DRF
+        token, _ = Token.objects.get_or_create(user=patient_user.user)
         
         # Log
         PatientAccessLog.objects.create(
@@ -4359,6 +4397,7 @@ def patient_login(request):
         
         return Response({
             'success': True,
+            'token': token.key,
             'access_token': access_token,
             'refresh_token': refresh_token,
             'patient': {
@@ -4377,35 +4416,35 @@ def patient_login(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def patient_logout(request):
     """
     POST /api/patient-auth/logout/
     Logout del paciente.
     """
     try:
+        # Invalidar Token DRF
+        Token.objects.filter(user=request.user).delete()
+        
+        # Invalidar sesiones de PatientSession
         auth_header = request.headers.get('Authorization', '')
-        if not auth_header.startswith('Bearer '):
-            return Response({'error': 'Token no proporcionado'}, status=401)
+        if auth_header.startswith('Bearer '):
+            token = auth_header.replace('Bearer ', '')
+            PatientSession.objects.filter(
+                access_token=token,
+                is_active=True
+            ).update(is_active=False)
         
-        token = auth_header.replace('Bearer ', '')
-        
-        # Invalidar sesión
-        session = PatientSession.objects.filter(
-            access_token=token,
-            is_active=True
-        ).first()
-        
-        if session:
-            session.is_active = False
-            session.save()
-            
+        # Log
+        if hasattr(request.user, 'patient_profile'):
+            patient_user = request.user.patient_profile
             PatientAccessLog.objects.create(
-                patient_user=session.patient_user,
-                patient=session.patient_user.patient,
+                patient_user=patient_user,
+                patient=patient_user.patient,
                 action='logout',
                 ip_address=get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', ''),
-                description=f'Logout: {session.patient_user.email}'
+                description=f'Logout: {patient_user.email}'
             )
         
         return Response({
