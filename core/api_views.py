@@ -5448,10 +5448,42 @@ def invite_patient_to_portal(request, patient_id):
     except Patient.DoesNotExist:
         return Response({'error': 'Paciente no encontrado'}, status=404)
     
-    # Obtener el doctor actual - usar hasattr como otros endpoints
+    # Obtener el doctor actual
     if not hasattr(request.user, 'doctor_profile'):
         return Response({'error': 'Solo doctores pueden invitar al portal'}, status=403)
     doctor = request.user.doctor_profile
+    # Verificar si ya existe invitación activa
+    existing = PatientInvitation.objects.filter(
+        patient=patient,
+        status__in=['pending', 'sent']
+    ).first()
+    
+    if existing and existing.is_active:
+        return Response({
+            'error': 'El paciente ya tiene acceso al portal',
+            'invitation': PatientInvitationSerializer(existing).data
+        }, status=400)
+    
+    # Crear token único
+    import secrets
+    token = secrets.token_urlsafe(32)
+    
+    # Crear invitación
+    invitation = PatientInvitation.objects.create(
+        patient=patient,
+        doctor=doctor,
+        token=token,
+        status='sent',
+        sent_at=timezone.now()
+    )
+    
+    # Generar link
+    invite_link = f"/patient/activate?token={token}"
+    
+    return Response({
+        'invite_link': invite_link,
+        'invitation': PatientInvitationSerializer(invitation).data
+    })
 
 
 @api_view(['POST'])
