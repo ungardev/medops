@@ -5449,9 +5449,9 @@ def invite_patient_to_portal(request, patient_id):
         return Response({'error': 'Paciente no encontrado'}, status=404)
     
     # Obtener el doctor actual - usar hasattr como otros endpoints
-    if not hasattr(request.user, 'doctor_operator'):
+    if not hasattr(request.user, 'doctor_profile'):
         return Response({'error': 'Solo doctores pueden invitar al portal'}, status=403)
-    doctor = request.user.doctor_operator
+    doctor = request.user.doctor_profile
 
 
 @api_view(['POST'])

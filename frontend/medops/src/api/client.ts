@@ -31,12 +31,13 @@ async function doFetch<T>(
   const response = await fetch(url, { ...options, headers });
   const end = performance.now();
   console.log(`⏱️ Tiempo fetch (solo red): ${(end - start).toFixed(2)} ms`);
-  // ✅ Manejo institucional de errores de autenticación
-  if (response.status === 401 || response.status === 403) {
+  // ✅ Manejo de errores de autenticación - 401 sí desvloguea, 403 NO (es permisos)
+  if (response.status === 401) {
     localStorage.removeItem("authToken");
     window.location.href = "/login";
-    throw new Error("Sesión expirada o sin permisos. Redirigiendo al login...");
+    throw new Error("Sesión expirada. Redirigiendo al login...");
   }
+  // 403 es error de PERMISOS, no de autenticación - no desloguear
   return response;
 }
 // 🔹 Endpoints estrictos (PATCH/POST/PUT/GET/DELETE)
