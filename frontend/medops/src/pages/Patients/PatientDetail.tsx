@@ -79,6 +79,10 @@ interface PortalStatus {
   has_invitation: boolean;
   has_portal_access: boolean;
 }
+interface InvitationStatusResponse {
+  has_invitation: boolean;
+  has_portal_access: boolean;
+}
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
@@ -99,30 +103,31 @@ export default function PatientDetail() {
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
   const appointmentsList: AppointmentWithVitals[] = completedConsultations?.list ?? [];
   
-  // Cargar estado del portal
+  // Cargar estado del portal - CORREGIDO: usar apiFetch en lugar de fetch manual
   useEffect(() => {
     const checkPortalStatus = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/patients/${patientId}/invitation-status/`, {
-          headers: { 'Authorization': `Token ${token}` }
+        const data = await apiFetch<InvitationStatusResponse>(
+          `patients/${patientId}/invitation-status/`
+        );
+        setPortalStatus({ 
+          has_invitation: data.has_invitation, 
+          has_portal_access: data.has_portal_access 
         });
-        if (res.ok) {
-          const data = await res.json();
-          setPortalStatus({ has_invitation: data.has_invitation, has_portal_access: data.has_portal_access });
-        }
       } catch (err) {
         console.error('Error checking portal status:', err);
       }
     };
     checkPortalStatus();
   }, [patientId]);
+  
   // Sync blood_type
   useEffect(() => {
     if (patient?.blood_type) {
       setEditableBloodType(patient.blood_type);
     }
   }, [patient?.blood_type]);
+  
   // Obtener biometrics
   const latestBiometrics = useMemo(() => {
     if (!appointmentsList || appointmentsList.length === 0) {
@@ -152,6 +157,7 @@ export default function PatientDetail() {
     
     return { weight: null, height: null };
   }, [appointmentsList]);
+  
   // Guardar blood_type
   const handleBloodTypeSave = async (newBloodType: string) => {
     if (!patientId) return;

@@ -1,12 +1,17 @@
 // src/components/Patients/InvitePatientModal.tsx
 import { useState } from 'react';
 import { X, Copy, Check, UserPlus, Send } from 'lucide-react';
+import { apiFetch } from '../../api/client';
 interface InvitePatientModalProps {
   isOpen: boolean;
   onClose: () => void;
   patientId: number;
   patientName: string;
   onSuccess?: () => void;
+}
+interface InviteResponse {
+  invite_link?: string;
+  error?: string;
 }
 export default function InvitePatientModal({
   isOpen,
@@ -22,26 +27,20 @@ export default function InvitePatientModal({
   const handleInvite = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`/api/patients/${patientId}/invite/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Token ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const data = await apiFetch<InviteResponse>(
+        `patients/${patientId}/invite/`,
+        { method: 'POST' }
+      );
       
-      const data = await res.json();
-      
-      if (res.ok) {
+      if (data.invite_link) {
         setInviteLink(data.invite_link);
         onSuccess?.();
-      } else {
+      } else if (data.error) {
         alert(data.error || 'Error al crear invitación');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error:', err);
-      alert('Error de conexión');
+      alert(err.message || 'Error de conexión');
     } finally {
       setIsLoading(false);
     }
