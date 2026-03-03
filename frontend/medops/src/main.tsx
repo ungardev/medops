@@ -28,7 +28,7 @@ import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
 import BillingCatalogPage from "./pages/Billing/BillingCatalogPage";
 // PatientPortal Imports
-import { PatientLogin } from "./pages/PatientPortal/PatientLogin";
+import PatientLogin from "./pages/PatientPortal/PatientLogin";
 import { PatientRegister } from "./pages/PatientPortal/PatientRegister";
 import PatientLayout from "./components/Layout/PatientLayout";
 import { PatientDashboard } from "./pages/PatientPortal/PatientDashboard";
