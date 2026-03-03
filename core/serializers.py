@@ -9,7 +9,7 @@ from .models import (
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
     BillingItem, WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
-    PatientSubscription,
+    PatientSubscription, PatientInvitation
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
 from datetime import date
@@ -3378,3 +3378,29 @@ class PatientSubscriptionCreateSerializer(serializers.ModelSerializer):
         validated_data['status'] = 'pending'
         
         return super().create(validated_data)
+
+
+class PatientInvitationSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True)
+    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
+    
+    class Meta:
+        model = PatientInvitation
+        fields = [
+            'id', 'patient', 'patient_name', 'doctor', 'doctor_name',
+            'token', 'status', 'sent_at', 'activated_at', 'expires_at',
+            'payment_reference', 'payment_amount', 'payment_date',
+            'notes', 'created_at', 'updated_at', 'is_active', 'is_expired'
+        ]
+        read_only_fields = ['token', 'created_at', 'updated_at']
+
+
+class PatientInvitationCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PatientInvitation
+        fields = ['patient', 'doctor']
+
+
+class PatientInvitationActivateSerializer(serializers.Serializer):
+    token = serializers.CharField(max_length=64)
+    password = serializers.CharField(min_length=8)

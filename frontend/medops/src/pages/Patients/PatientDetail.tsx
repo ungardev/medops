@@ -14,7 +14,8 @@ import VaccinationTab from "../../components/Patients/VaccinationTab";
 import SurgeriesTab from "../../components/Patients/SurgeriesTab";
 // Componentes de Common
 import PageHeader from "../../components/Common/PageHeader";
-// Iconos para el Header
+import InvitePatientModal from "../../components/Patients/InvitePatientModal";
+// Iconos
 import { 
   IdentificationIcon, 
   HeartIcon, 
@@ -23,9 +24,10 @@ import {
   BeakerIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline";
+import { Plus } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { apiFetch } from "../../api/client";
-// 🆕 OPCIONES DE TIPOS DE SANGRE DEL MODELO PATIENT
+// Opciones de tipos de sangre
 const BLOOD_TYPE_OPTIONS = [
   { value: "A+", label: "A+" },
   { value: "A-", label: "A-" },
@@ -52,7 +54,7 @@ function normalizeTab(id?: string): string {
   if (!id) return "info";
   return map[id.toLowerCase()] ?? id;
 }
-// 🆕 INTERFACE PARA VITAL SIGNS
+// Interfaces
 interface VitalSignsData {
   id: number;
   weight?: string | null;
@@ -65,7 +67,6 @@ interface VitalSignsData {
   oxygen_saturation?: number | null;
   bmi?: number | null;
 }
-// 🆕 INTERFACE PARA APPOINTMENT CON VITAL SIGNS
 interface AppointmentWithVitals {
   id: number;
   appointment_date: string;
@@ -74,50 +75,73 @@ interface AppointmentWithVitals {
   weight?: string | number | null;
   height?: string | number | null;
 }
+interface PortalStatus {
+  has_invitation: boolean;
+  has_portal_access: boolean;
+}
 export default function PatientDetail() {
   const { id } = useParams<{ id: string }>();
   const patientId = Number(id);
-  const { data: patient, isLoading, error } = usePatient(patientId);
+  const { data: patient, isLoading, error, refetch } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
   
-  // 🆕 ESTADO PARA BLOOD_TYPE EDITABLE
+  // Estado para blood type
   const [editableBloodType, setEditableBloodType] = useState<string>("");
   const [isUpdatingBloodType, setIsUpdatingBloodType] = useState(false);
-  // 🆕 OBTENER APPOINTMENTS COMPLETADOS DEL PACIENTE
+  
+  // Estado para portal
+  const [portalStatus, setPortalStatus] = useState<PortalStatus>({ has_invitation: false, has_portal_access: false });
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  
+  // Obtener appointments completados
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
-  // 🆕 CORRECCIÓN: El hook devuelve { list: Appointment[], totalCount: number }
   const appointmentsList: AppointmentWithVitals[] = completedConsultations?.list ?? [];
-  // 🆕 SYNCHRONIZE blood_type CUANDO CAMBIA EL PACIENTE
+  
+  // Cargar estado del portal
+  useEffect(() => {
+    const checkPortalStatus = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/patients/${patientId}/invitation-status/`, {
+          headers: { 'Authorization': `Token ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPortalStatus({ has_invitation: data.has_invitation, has_portal_access: data.has_portal_access });
+        }
+      } catch (err) {
+        console.error('Error checking portal status:', err);
+      }
+    };
+    checkPortalStatus();
+  }, [patientId]);
+  // Sync blood_type
   useEffect(() => {
     if (patient?.blood_type) {
       setEditableBloodType(patient.blood_type);
     }
   }, [patient?.blood_type]);
-  // 🆕 OBTENER WEIGHT Y HEIGHT DEL ÚLTIMO APPOINTMENT COMPLETADO (DESDE VITAL_SIGNS)
+  // Obtener biometrics
   const latestBiometrics = useMemo(() => {
     if (!appointmentsList || appointmentsList.length === 0) {
       return { weight: null, height: null };
     }
     
-    // Ordenar por fecha descendente (más reciente primero)
     const sorted = [...appointmentsList].sort((a, b) => {
       const dateA = new Date(a.appointment_date || 0).getTime();
       const dateB = new Date(b.appointment_date || 0).getTime();
       return dateB - dateA;
     });
     
-    // Buscar el primer appointment con vital_signs
     for (const appt of sorted) {
-      // 🆕 FIX: Leer desde vital_signs primero (viene del backend con datos)
       if (appt.vital_signs?.weight || appt.vital_signs?.height) {
         return { 
           weight: appt.vital_signs?.weight ? Number(appt.vital_signs.weight) : null, 
           height: appt.vital_signs?.height ? Number(appt.vital_signs.height) : null 
         };
       }
-      // Fallback: leer desde campos directos del appointment
       if (appt.weight || appt.height) {
         return { 
           weight: appt.weight ? Number(appt.weight) : null, 
@@ -128,7 +152,7 @@ export default function PatientDetail() {
     
     return { weight: null, height: null };
   }, [appointmentsList]);
-  // 🆕 FUNCIÓN PARA GUARDAR BLOOD_TYPE
+  // Guardar blood_type
   const handleBloodTypeSave = async (newBloodType: string) => {
     if (!patientId) return;
     
@@ -147,6 +171,11 @@ export default function PatientDetail() {
     }
   };
   
+  // Refrescar estado del portal
+  const handleInviteSuccess = () => {
+    setPortalStatus({ has_invitation: true, has_portal_access: false });
+    refetch();
+  };
   useEffect(() => {
     const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
     if (tabFromUrl !== currentTab) {
@@ -168,14 +197,14 @@ export default function PatientDetail() {
       </div>
     </div>
   );
+  
   if (error || !patient) return (
     <div className="p-8">
       <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-sm">
-        <p className="text-[10px] font-mono text-red-500 uppercase">Error_Data_Link_Broken: Subject not found or connection failed.</p>
+        <p className="text-[10px] font-mono text-red-500 uppercase">Error_Data_Link_Broken</p>
       </div>
     </div>
   );
-  // 🆕 CALCULAR EDAD DESDE birthdate SI NO VIENE DEL BACKEND
   const calculateAge = (birthdate: string | null | undefined): number | null => {
     if (!birthdate) return null;
     const birth = new Date(birthdate);
@@ -189,15 +218,13 @@ export default function PatientDetail() {
   };
   
   const patientAge = patient.age ?? calculateAge(patient.birthdate);
-  // 🆕 FORMATEAR VALORES BIOMÉTRICOS
   const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} KG` : "--";
   const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
   const bloodTypeDisplay = editableBloodType || "--";
   const ageDisplay = patientAge ? `${patientAge} YRS` : "--";
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-       
-      {/* 🚀 ELITE_PAGE_HEADER: IDENTITY & TELEMETRY */}
+      {/* Page Header */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -228,7 +255,26 @@ export default function PatientDetail() {
         ]}
         actions={
           <div className="flex items-center gap-3">
-            {/* 🆕 SELECTOR DE BLOOD_GROUP EDITABLE */}
+            {/* 🆕 BADGE MEDOPZ PATIENT */}
+            {portalStatus.has_portal_access ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-sm">
+                <span className="text-[9px] font-bold text-emerald-400 uppercase">MEDOPZ Patient</span>
+              </div>
+            ) : portalStatus.has_invitation ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-sm">
+                <span className="text-[9px] font-bold text-amber-400 uppercase">Invitación Pendiente</span>
+              </div>
+            ) : (
+              <button 
+                onClick={() => setShowInviteModal(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 border border-blue-500/40 rounded-sm transition-colors"
+              >
+                <Plus size={14} className="text-white" />
+                <span className="text-[9px] font-bold text-white uppercase">Invitar al Portal</span>
+              </button>
+            )}
+            
+            {/* Blood Type Selector */}
             <div className="flex items-center gap-2">
               <BeakerIcon className="w-4 h-4 text-red-400" />
               <select
@@ -242,19 +288,19 @@ export default function PatientDetail() {
               >
                 <option value="">SELECT</option>
                 {BLOOD_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
               {isUpdatingBloodType && (
                 <ArrowPathIcon className="w-4 h-4 text-red-400 animate-spin" />
               )}
             </div>
+            
             <div className="flex flex-col items-end px-3 border-r border-white/10">
                 <span className="text-[8px] font-mono text-white/30 uppercase tracking-tighter">Blood_Group</span>
                 <span className="text-xs font-black text-red-500">{bloodTypeDisplay}</span>
             </div>
+            
             <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
                <UserIcon className="w-5 h-5 text-blue-500" />
             </div>
@@ -262,31 +308,30 @@ export default function PatientDetail() {
         }
       />
       
-      {/* 📊 SUB-METADATA BAR (DNI, DOB, COUNTRY) */}
+      {/* Metadata Bar */}
       <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest">
         <span className="flex items-center gap-2.5">
           <IdentificationIcon className="w-4 h-4 text-blue-500/40" />
-          <span className="text-white/10">DNI:</span> <span className="text-white/80 font-bold">{patient.national_id || "NOT_ASSIGNED"}</span>
+          <span className="text-white/10">DNI:</span> 
+          <span className="text-white/80 font-bold">{patient.national_id || "NOT_ASSIGNED"}</span>
         </span>
         <span className="flex items-center gap-2.5">
           <HeartIcon className="w-4 h-4 text-red-500/30" />
-          <span className="text-white/10">DOB:</span> <span className="text-white/80 font-bold">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}</span>
+          <span className="text-white/10">DOB:</span> 
+          <span className="text-white/80 font-bold">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}</span>
         </span>
         {patient.birth_country && (
           <span className="flex items-center gap-2.5">
             <GlobeAltIcon className="w-4 h-4 text-emerald-500/30" />
-            <span className="text-white/10">ORIGIN:</span> <span className="text-white/80 font-bold">{patient.birth_country}</span>
+            <span className="text-white/10">ORIGIN:</span> 
+            <span className="text-white/80 font-bold">{patient.birth_country}</span>
           </span>
         )}
       </div>
       
-      {/* 🛠️ MODULAR DATA ENGINE (TABS) - CORREGIDO PARA CONTEXTO HORIZONTAL */}
+      {/* Tabs */}
       <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
-        <Tabs
-          value={currentTab}
-          onChange={setTab}
-          layout="horizontal"
-        >
+        <Tabs value={currentTab} onChange={setTab} layout="horizontal">
           <Tab id="info" label="Identity_Core">
             <PatientInfoTab patientId={patientId} />
           </Tab>
@@ -313,6 +358,14 @@ export default function PatientDetail() {
           </Tab>
         </Tabs>
       </div>
+      {/* Modal de Invitación */}
+      <InvitePatientModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        patientId={patientId}
+        patientName={patient.full_name}
+        onSuccess={handleInviteSuccess}
+      />
     </div>
   );
 }

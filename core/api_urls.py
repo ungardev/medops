@@ -350,6 +350,9 @@ urlpatterns = [
     # Subscriptions
     path('subscriptions/', subscriptions_api, name='subscriptions-api'),
     path('subscriptions/<int:pk>/cancel/', subscription_cancel_api, name='subscription-cancel-api'),
+    path('patients/<int:patient_id>/invite/', api_views.invite_patient_to_portal, name='invite-patient'),
+    path('patients/<int:patient_id>/invitation-status/', api_views.get_patient_invitation_status, name='patient-invitation-status'),
+    path('patient-activate/', api_views.activate_patient_portal, name='activate-patient'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [

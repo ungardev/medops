@@ -5434,3 +5434,171 @@ def subscription_cancel_api(request, pk):
     subscription.cancel(reason=reason)
     
     return Response(PatientSubscriptionSerializer(subscription).data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def invite_patient_to_portal(request, patient_id):
+    """
+    POST /api/patients/{id}/invite/
+    Doctor invita a un paciente al portal MEDOPZ.
+    """
+    try:
+        patient = Patient.objects.get(pk=patient_id)
+    except Patient.DoesNotExist:
+        return Response({'error': 'Paciente no encontrado'}, status=404)
+    
+    # Obtener el doctor actual
+    try:
+        doctor = request.user.doctor_operator
+    except:
+        return Response({'error': 'Solo doctores pueden invitar'}, status=403)
+    
+    # Verificar si ya existe invitación activa
+    existing = PatientInvitation.objects.filter(
+        patient=patient,
+        status__in=['pending', 'sent']
+    ).first()
+    
+    if existing and existing.is_active:
+        return Response({
+            'error': 'El paciente ya tiene acceso al portal',
+            'invitation': PatientInvitationSerializer(existing).data
+        }, status=400)
+    
+    # Crear invitación
+    invitation = PatientInvitation.objects.create(
+        patient=patient,
+        doctor=doctor,
+        status='sent',
+        sent_at=timezone.now()
+    )
+    
+    # Generar link
+    invite_link = f"/patient/activate?token={invitation.token}"
+    
+    return Response({
+        'success': True,
+        'invitation': PatientInvitationSerializer(invitation).data,
+        'invite_link': invite_link,
+        'message': 'Invitación creada. Comparta el enlace con el paciente.'
+    })
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def activate_patient_portal(request):
+    """
+    POST /api/patient-activate/
+    Paciente activa su cuenta con el token de invitación.
+    """
+    token = request.data.get('token')
+    password = request.data.get('password')
+    
+    if not token or not password:
+        return Response({
+            'error': 'Token y contraseña son requeridos'
+        }, status=400)
+    
+    try:
+        invitation = PatientInvitation.objects.get(token=token)
+    except PatientInvitation.DoesNotExist:
+        return Response({'error': 'Token inválido'}, status=404)
+    
+    if invitation.is_expired:
+        invitation.status = 'expired'
+        invitation.save()
+        return Response({'error': 'La invitación ha expirado'}, status=400)
+    
+    if invitation.status == 'activated':
+        return Response({'error': 'Esta invitación ya fue activada'}, status=400)
+    
+    # Crear o obtener usuario Django
+    from django.contrib.auth.models import User
+    patient = invitation.patient
+    
+    # Usar email del paciente o generar uno
+    email = f"patient_{patient.id}@medops.local"
+    if patient.email:
+        email = patient.email
+    
+    user, created = User.objects.get_or_create(
+        username=email,
+        defaults={
+            'email': email,
+            'is_active': True
+        }
+    )
+    user.set_password(password)
+    user.save()
+    
+    # Asignar grupo Patients
+    from django.contrib.auth.models import Group
+    patients_group, _ = Group.objects.get_or_create(name='Patients')
+    user.groups.add(patients_group)
+    
+    # Crear PatientUser
+    patient_user, pu_created = PatientUser.objects.get_or_create(
+        patient=patient,
+        defaults={
+            'email': email,
+            'user': user,
+            'is_active': True,
+            'is_verified': True
+        }
+    )
+    
+    if not pu_created:
+        patient_user.user = user
+        patient_user.is_active = True
+        patient_user.is_verified = True
+        patient_user.save()
+    
+    # Actualizar invitación
+    invitation.status = 'activated'
+    invitation.activated_at = timezone.now()
+    invitation.save()
+    
+    # Generar token DRF
+    from rest_framework.authtoken.models import Token
+    token_obj, _ = Token.objects.get_or_create(user=user)
+    
+    return Response({
+        'success': True,
+        'message': 'Cuenta activada exitosamente',
+        'token': token_obj.key,
+        'patient': {
+            'id': patient.id,
+            'full_name': patient.full_name
+        }
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_patient_invitation_status(request, patient_id):
+    """
+    GET /api/patients/{id}/invitation-status/
+    Verificar estado de invitación de un paciente.
+    """
+    try:
+        patient = Patient.objects.get(pk=patient_id)
+    except Patient.DoesNotExist:
+        return Response({'error': 'Paciente no encontrado'}, status=404)
+    
+    invitation = PatientInvitation.objects.filter(
+        patient=patient,
+        status__in=['pending', 'sent', 'activated']
+    ).first()
+    
+    if invitation:
+        return Response({
+            'has_invitation': True,
+            'invitation': PatientInvitationSerializer(invitation).data,
+            'has_portal_access': invitation.status == 'activated'
+        })
+    
+    return Response({
+        'has_invitation': False,
+        'has_portal_access': False
+    })

@@ -29,13 +29,13 @@ import SearchPage from "./pages/Search/Search";
 import BillingCatalogPage from "./pages/Billing/BillingCatalogPage";
 // PatientPortal Imports
 import PatientLogin from "./pages/PatientPortal/PatientLogin";
-import { PatientRegister } from "./pages/PatientPortal/PatientRegister";
 import PatientLayout from "./components/Layout/PatientLayout";
 import { PatientDashboard } from "./pages/PatientPortal/PatientDashboard";
 import PatientRecord from "./pages/PatientPortal/PatientRecord";
 import PatientQueue from "./pages/PatientPortal/PatientQueue";
 import PatientSearch from "./pages/PatientPortal/PatientSearch";
 import PatientSettings from "./pages/PatientPortal/PatientSettings";
+import PatientActivate from "./pages/PatientPortal/PatientActivate";
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
@@ -54,7 +54,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             
             {/* === PATIENT PORTAL - PUBLIC === */}
             <Route path="/patient/login" element={<PatientLogin />} />
-            <Route path="/patient/register" element={<PatientRegister />} />
+            <Route path="/patient/activate" element={<PatientActivate />} />
             
             {/* === PATIENT PORTAL - PROTECTED === */}
             <Route 

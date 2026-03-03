@@ -15,7 +15,7 @@ from django.conf import settings
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES
 import hashlib
 import uuid
-from datetime import date
+from datetime import date, timedelta
 
 
 def normalize_title_case(value):
@@ -4846,3 +4846,119 @@ class PaymentWebhook(models.Model):
 # ============================================================================
 # END SECTION 6: PAYMENT SYSTEM MODELS
 # ============================================================================
+# ==========================================
+# 22. INVITACIONES AL PORTAL DEL PACIENTE
+# ==========================================
+class PatientInvitation(models.Model):
+    """
+    Sistema de invitación de pacientes al Portal MEDOPZ.
+    El doctor invita al paciente, este se suscribe directamente a MEDOPZ.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('sent', 'Enviada'),
+        ('activated', 'Activada'),
+        ('expired', 'Expirada'),
+        ('cancelled', 'Cancelada'),
+    ]
+    
+    patient = models.ForeignKey(
+        'Patient',
+        on_delete=models.CASCADE,
+        related_name='portal_invitations',
+        verbose_name="Paciente"
+    )
+    
+    doctor = models.ForeignKey(
+        'DoctorOperator',
+        on_delete=models.CASCADE,
+        related_name='sent_invitations',
+        verbose_name="Doctor que invita"
+    )
+    
+    token = models.CharField(
+        max_length=64,
+        unique=True,
+        verbose_name="Token de invitación"
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Estado"
+    )
+    
+    sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de envío"
+    )
+    
+    activated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de activación"
+    )
+    
+    expires_at = models.DateTimeField(
+        verbose_name="Fecha de expiración"
+    )
+    
+    # Datos del pago (automático tras activación)
+    payment_reference = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Referencia del pago"
+    )
+    
+    payment_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Monto pagado"
+    )
+    
+    payment_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha del pago"
+    )
+    
+    notes = models.TextField(
+        blank=True,
+        verbose_name="Notas"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = "patient_invitations"
+        verbose_name = "Invitación al Portal"
+        verbose_name_plural = "Invitaciones al Portal"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Invitación: {self.patient.full_name} - {self.get_status_display()}"
+    
+    @property
+    def is_active(self):
+        return self.status == 'activated' and self.activated_at is not None
+    
+    @property
+    def is_expired(self):
+        return self.expires_at < timezone.now()
+    
+    def generate_token(self):
+        import secrets
+        return secrets.token_urlsafe(32)
+    
+    def save(self, *args, **kwargs):
+        if not self.token:
+            self.token = self.generate_token()
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(days=7)
+        super().save(*args, **kwargs)
