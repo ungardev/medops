@@ -34,6 +34,8 @@ import traceback
 import secrets
 import string
 from core.permissions import IsDoctorOperatorOrReadOnly
+from django.core.mail import send_mail
+from django.conf import settings
 #from datetime import date, timedelta
 
 
@@ -5486,6 +5488,29 @@ def invite_patient_to_portal(request, patient_id):
     })
 
 
+def send_welcome_email(email: str, patient_name: str):
+    """Envía email de bienvenida al paciente"""
+    subject = '✅ Tu cuenta MEDOPZ ha sido activada'
+    message = f"""
+    Hola {patient_name},
+    Bienvenido al Portal del Paciente MEDOPZ.
+    Tu cuenta ha sido activada exitosamente.
+    IMPORTANTE: Tu suscripción está en proceso de activación.
+    Un miembro de nuestro equipo verificará tu pago pronto.
+    ¿Necesitas ayuda? Contáctanos en info.medopz@gmail.com
+    Saludos,
+    Equipo MEDOPZ
+    """
+    
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[email],
+        fail_silently=False,
+    )
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def activate_patient_portal(request):
@@ -5518,10 +5543,29 @@ def activate_patient_portal(request):
     from django.contrib.auth.models import User
     patient = invitation.patient
     
-    # Usar email del paciente o generar uno
-    email = f"patient_{patient.id}@medops.local"
-    if patient.email:
+    # Email genérico (fallback) - se usa cuando el email del paciente es inválido/genérico
+    fallback_email = f"patient_{patient.id}@medops.local"
+    
+    # Lista de emails genéricos que NO deben usarse
+    generic_emails = {
+        'example@example.com',
+        'test@test.com', 
+        'test@test',
+        'email@email.com',
+        'correo@correo.com',
+        'user@user.com',
+        'admin@admin.com',
+        'info@info.com',
+        'null',
+        'none',
+        '',
+    }
+    
+    # Si el paciente tiene un email "real", usarlo; si no, usar fallback
+    if patient.email and patient.email.lower() not in generic_emails:
         email = patient.email
+    else:
+        email = fallback_email
     
     user, created = User.objects.get_or_create(
         username=email,
@@ -5559,6 +5603,11 @@ def activate_patient_portal(request):
     invitation.status = 'activated'
     invitation.activated_at = timezone.now()
     invitation.save()
+    
+    # ============================================================
+    # OPCIÓN C: Enviar email de bienvenida
+    # ============================================================
+    send_welcome_email(email, patient.full_name)
     
     # Generar token DRF
     from rest_framework.authtoken.models import Token
