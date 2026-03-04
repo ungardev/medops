@@ -50,7 +50,7 @@ export function useAuth(): UseAuthReturn {
       setPatient(response.data.patient);
       setIsAuthenticated(true);
       
-      navigate('/patient/dashboard');
+      navigate('/patient');
       return true;
     } catch (err: any) {
       const message = err.response?.data?.error || 'Error al iniciar sesión';
