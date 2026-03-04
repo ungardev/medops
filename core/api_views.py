@@ -4478,7 +4478,7 @@ def patient_dashboard(request):
             patient=patient,
             appointment_date__gte=datetime.now().date(),
             status__in=['pending', 'arrived']
-        ).order_by('appointment_date', 'appointment_time')[:5]
+        ).order_by('appointment_date', 'arrival_time')[:5]
         
         # Citas pasadas
         past_appointments = Appointment.objects.filter(
@@ -4512,7 +4512,7 @@ def patient_dashboard(request):
                 {
                     'id': apt.id,
                     'date': apt.appointment_date,
-                    'time': apt.appointment_time,
+                    'time': apt.arrival_time,  # ✅ CORREGIDO: arrival_time
                     'doctor': apt.doctor.user.get_full_name() if apt.doctor else None,
                     'specialty': apt.doctor.specialty.name if apt.doctor and hasattr(apt.doctor, 'specialty') else None,
                     'status': apt.status,
@@ -4524,7 +4524,7 @@ def patient_dashboard(request):
                 status='completed'
             ).count(),
             'notifications': {
-                'unread_count': 0,  # Implementar cuando haya sistema de notificaciones
+                'unread_count': 0,
             }
         })
         
