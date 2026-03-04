@@ -103,7 +103,7 @@ export default function PatientDetail() {
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
   const appointmentsList: AppointmentWithVitals[] = completedConsultations?.list ?? [];
   
-  // Cargar estado del portal - CORREGIDO: usar apiFetch en lugar de fetch manual
+  // Cargar estado del portal
   useEffect(() => {
     const checkPortalStatus = async () => {
       try {
@@ -177,11 +177,24 @@ export default function PatientDetail() {
     }
   };
   
-  // Refrescar estado del portal
-  const handleInviteSuccess = () => {
-    setPortalStatus({ has_invitation: true, has_portal_access: false });
-    refetch();
+  // ============================================================
+  // FIX: Recargar estado del portal desde endpoint después de invitar
+  // ============================================================
+  const handleInviteSuccess = async () => {
+    try {
+      const data = await apiFetch<InvitationStatusResponse>(
+        `patients/${patientId}/invitation-status/`
+      );
+      setPortalStatus({ 
+        has_invitation: data.has_invitation, 
+        has_portal_access: data.has_portal_access 
+      });
+    } catch (err) {
+      console.error('Error refreshing portal status:', err);
+      setPortalStatus({ has_invitation: true, has_portal_access: false });
+    }
   };
+  
   useEffect(() => {
     const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
     if (tabFromUrl !== currentTab) {
