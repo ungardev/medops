@@ -5454,21 +5454,41 @@ def invite_patient_to_portal(request, patient_id):
     if not hasattr(request.user, 'doctor_profile'):
         return Response({'error': 'Solo doctores pueden invitar al portal'}, status=403)
     doctor = request.user.doctor_profile
-    # Verificar si ya existe invitación activa
-    existing = PatientInvitation.objects.filter(
+    
+    # ============================================================
+    # LÓGICA RE-INVITACIÓN: Solo bloquear si YA está activado
+    # ============================================================
+    
+    # 1. Verificar si el paciente YA tiene acceso (activado)
+    existing_active = PatientInvitation.objects.filter(
+        patient=patient,
+        status='activated'
+    ).first()
+    
+    if existing_active:
+        return Response({
+            'error': 'El paciente ya tiene acceso al portal',
+            'invitation': PatientInvitationSerializer(existing_active).data
+        }, status=400)
+    
+    # 2. Si existe invitación previa pendiente/enviada, cancelarla
+    existing_pending = PatientInvitation.objects.filter(
         patient=patient,
         status__in=['pending', 'sent']
     ).first()
     
-    if existing and existing.is_active:
-        return Response({
-            'error': 'El paciente ya tiene acceso al portal',
-            'invitation': PatientInvitationSerializer(existing).data
-        }, status=400)
+    if existing_pending:
+        existing_pending.status = 'cancelled'
+        existing_pending.save()
     
-    # Crear token único
+    # 3. Crear nueva invitación
     import secrets
     token = secrets.token_urlsafe(32)
+    
+    # Calcular fecha de expiración (7 días)
+    from django.utils import timezone
+    from datetime import timedelta
+    expires_at = timezone.now() + timedelta(days=7)
     
     # Crear invitación
     invitation = PatientInvitation.objects.create(
@@ -5476,7 +5496,8 @@ def invite_patient_to_portal(request, patient_id):
         doctor=doctor,
         token=token,
         status='sent',
-        sent_at=timezone.now()
+        sent_at=timezone.now(),
+        expires_at=expires_at
     )
     
     # Generar link
