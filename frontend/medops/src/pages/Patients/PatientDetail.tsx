@@ -177,9 +177,7 @@ export default function PatientDetail() {
     }
   };
   
-  // ============================================================
-  // FIX: Recargar estado del portal desde endpoint después de invitar
-  // ============================================================
+  // Recargar estado del portal desde endpoint después de invitar
   const handleInviteSuccess = async () => {
     try {
       const data = await apiFetch<InvitationStatusResponse>(
@@ -274,23 +272,33 @@ export default function PatientDetail() {
         ]}
         actions={
           <div className="flex items-center gap-3">
-            {/* 🆕 BADGE MEDOPZ PATIENT */}
+            {/* ============================================================ */}
+            {/* FIX: Mostrar badge SÍ tiene acceso, SIEMPRE mostrar botón para invitar */}
+            {/* ============================================================ */}
             {portalStatus.has_portal_access ? (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-sm">
                 <span className="text-[9px] font-bold text-emerald-400 uppercase">MEDOPZ Patient</span>
               </div>
-            ) : portalStatus.has_invitation ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-sm">
-                <span className="text-[9px] font-bold text-amber-400 uppercase">Invitación Pendiente</span>
-              </div>
             ) : (
-              <button 
-                onClick={() => setShowInviteModal(true)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 border border-blue-500/40 rounded-sm transition-colors"
-              >
-                <Plus size={14} className="text-white" />
-                <span className="text-[9px] font-bold text-white uppercase">Invitar al Portal</span>
-              </button>
+              <>
+                {/* Badge de invitación pendiente (informativo) */}
+                {portalStatus.has_invitation && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-sm">
+                    <span className="text-[9px] font-bold text-amber-400 uppercase">Invitación Pendiente</span>
+                  </div>
+                )}
+                
+                {/* BOTÓN: Siempre visible si NO tiene acceso al portal */}
+                <button 
+                  onClick={() => setShowInviteModal(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 border border-blue-500/40 rounded-sm transition-colors"
+                >
+                  <Plus size={14} className="text-white" />
+                  <span className="text-[9px] font-bold text-white uppercase">
+                    {portalStatus.has_invitation ? 'Re-enviar Invitación' : 'Invitar al Portal'}
+                  </span>
+                </button>
+              </>
             )}
             
             {/* Blood Type Selector */}
