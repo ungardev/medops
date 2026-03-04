@@ -1,14 +1,12 @@
 // src/components/Layout/PatientHeader.tsx
 import { useNavigate } from "react-router-dom";
 import { Menu, LogOut, Bell, User } from "lucide-react";
-import { useAuthToken } from "@/hooks/useAuthToken";
 interface PatientHeaderProps {
   setCollapsed: (value: boolean) => void;
   setMobileOpen: (value: boolean) => void;
 }
 export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHeaderProps) {
   const navigate = useNavigate();
-  const { clearToken } = useAuthToken();
   const handleLogout = async () => {
     try {
       await fetch("/api/patient-auth/logout/", {
@@ -20,8 +18,10 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
     } catch (e) {
       console.error("Logout error:", e);
     }
+    // ✅ LIMPIAR TODOS LOS TOKENS DEL PACIENTE
     localStorage.removeItem("patient_access_token");
     localStorage.removeItem("patient_refresh_token");
+    localStorage.removeItem("patient_drf_token");
     localStorage.removeItem("userRole");
     navigate("/patient/login");
   };

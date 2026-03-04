@@ -8,11 +8,11 @@ async function doFetch<T>(
   const url = endpoint.startsWith("http")
     ? endpoint
     : `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
-  // ✅ Token institucional unificado: siempre usa el mismo .env
-  const token =
-    localStorage.getItem("authToken") ||
-    import.meta.env.VITE_DEV_TOKEN || // 👈 unificado con curl
-    "";
+  
+  // ✅ Token del DoctorOperator: SOLO usar authToken (sin fallback VITE_DEV_TOKEN)
+  // Si no hay token, el backend retornará 401 y el frontend redirigirá al login
+  const token = localStorage.getItem("authToken") || "";
+  
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...(token ? { Authorization: `Token ${token}` } : {}),

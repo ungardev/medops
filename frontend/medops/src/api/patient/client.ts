@@ -16,10 +16,18 @@ const patientApi = axios.create({
     'Content-Type': 'application/json',
   },
 });
-// Interceptor para agregar token
+// Interceptor para agregar token del paciente
 patientApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('patient_access_token');
+  // ✅ PRIMERO: Buscar DRF Token (para compatibilidad con activación)
+  let token = localStorage.getItem('patient_drf_token');
+  
+  // ✅ SEGUNDO: Si no hay DRF Token, usar PatientSession Token
+  if (!token) {
+    token = localStorage.getItem('patient_access_token');
+  }
+  
   if (token && config.headers) {
+    // ✅ Usar Bearer token para PatientSession
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -45,7 +53,6 @@ export const patientClient = {
   
   updateProfile: (data: Partial<PatientUser>) =>
     patientApi.put('/patient-profile/', data),
-  
   getAppointments: (status?: string) => {
     const params = status ? `?status=${status}` : '';
     return patientApi.get<{ appointments: PatientAppointment[] }>(

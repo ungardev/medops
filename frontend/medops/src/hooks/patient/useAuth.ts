@@ -28,8 +28,10 @@ export function useAuth(): UseAuthReturn {
       setPatient(response.data.patient);
       setIsAuthenticated(true);
     } catch (err) {
+      // Token inválido - limpiar
       localStorage.removeItem('patient_access_token');
       localStorage.removeItem('patient_refresh_token');
+      localStorage.removeItem('patient_drf_token');
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -44,12 +46,19 @@ export function useAuth(): UseAuthReturn {
     try {
       const response = await patientAuth.login({ email, password });
       
+      // ✅ GUARDAR AMBOS TOKENS: PatientSession + DRF Token
       localStorage.setItem('patient_access_token', response.data.access_token);
       localStorage.setItem('patient_refresh_token', response.data.refresh_token);
+      
+      // ✅ NUEVO: Guardar DRF Token para compatibilidad con get_patient_user_from_request
+      if (response.data.token) {
+        localStorage.setItem('patient_drf_token', response.data.token);
+      }
       
       setPatient(response.data.patient);
       setIsAuthenticated(true);
       
+      // ✅ Navegar al dashboard del paciente
       navigate('/patient');
       return true;
     } catch (err: any) {
@@ -66,8 +75,11 @@ export function useAuth(): UseAuthReturn {
     } catch (err) {
       // Ignore logout errors
     } finally {
+      // ✅ LIMPIAR TODOS LOS TOKENS DEL PACIENTE
       localStorage.removeItem('patient_access_token');
       localStorage.removeItem('patient_refresh_token');
+      localStorage.removeItem('patient_drf_token');
+      localStorage.removeItem('userRole');
       setIsAuthenticated(false);
       setPatient(null);
       navigate('/patient/login');

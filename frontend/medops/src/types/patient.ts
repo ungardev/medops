@@ -99,6 +99,7 @@ export interface LoginResponse {
   success: boolean;
   access_token: string;
   refresh_token: string;
+  token: string;        // ✅ AGREGAR
   patient: {
     id: number;
     full_name: string;
