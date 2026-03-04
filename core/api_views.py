@@ -4691,23 +4691,40 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+
 def get_patient_user_from_request(request):
-    """Obtiene el PatientUser desde el token"""
+    """
+    Obtiene el PatientUser desde el token.
+    Soporta tanto PatientSession como DRF Token.
+    """
     auth_header = request.headers.get('Authorization', '')
     if not auth_header.startswith('Bearer '):
         return None
     
     token = auth_header.replace('Bearer ', '')
     
+    # ============================================================
+    # 1. Buscar en PatientSession (login tradicional)
+    # ============================================================
     session = PatientSession.objects.filter(
         access_token=token,
         is_active=True
     ).first()
     
-    if not session or session.is_expired():
-        return None
+    if session and not session.is_expired():
+        return session.patient_user
     
-    return session.patient_user
+    # ============================================================
+    # 2. Buscar en DRF Token (pacientes activados)
+    # ============================================================
+    from rest_framework.authtoken.models import Token
+    drf_token = Token.objects.filter(key=token).first()
+    
+    if drf_token and hasattr(drf_token.user, 'patient_profile'):
+        return drf_token.user.patient_profile
+    
+    return None
 
 
 # ==========================================
