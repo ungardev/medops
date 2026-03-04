@@ -5651,15 +5651,21 @@ def get_patient_invitation_status(request, patient_id):
     """
     GET /api/patients/{id}/invitation-status/
     Verificar estado de invitación de un paciente.
+    Retorna la invitación más reciente no cancelada.
     """
     try:
         patient = Patient.objects.get(pk=patient_id)
     except Patient.DoesNotExist:
         return Response({'error': 'Paciente no encontrado'}, status=404)
     
+    # Obtener la invitación más reciente NO cancelada
     invitation = PatientInvitation.objects.filter(
         patient=patient,
         status__in=['pending', 'sent', 'activated']
+    ).exclude(
+        status='cancelled'
+    ).order_by(
+        '-created_at'
     ).first()
     
     if invitation:
