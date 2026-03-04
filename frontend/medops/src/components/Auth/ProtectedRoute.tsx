@@ -26,7 +26,7 @@ export function ProtectedRoute({ allowedRoles = ['doctor', 'admin'], children }:
   // Si hay restricciones de rol, verificar
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole as any)) {
     if (userRole === 'patient') {
-      return <Navigate to="/patient/dashboard" replace />;
+      return <Navigate to="/patient" replace />;
     }
     return <Navigate to="/login" replace />;
   }
