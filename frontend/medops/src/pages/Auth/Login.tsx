@@ -23,7 +23,7 @@ export default function Login() {
       // Normaliza raíz del API: debe terminar en /api
       const rawRoot = import.meta.env.VITE_API_URL || "/api";
       const apiRoot = rawRoot.replace(/\/+$/, ""); // quita trailing slash
-      const url = `${apiRoot}/auth/login/`; // ✅ endpoint correcto
+      const url = `${apiRoot}/auth/doctor-login/`; // ✅ endpoint correcto
 
       const res = await fetch(url, {
         method: "POST",

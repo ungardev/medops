@@ -4704,9 +4704,7 @@ def get_patient_user_from_request(request):
     
     token = auth_header.replace('Bearer ', '')
     
-    # ============================================================
-    # 1. Buscar en PatientSession (login tradicional)
-    # ============================================================
+    # 1. Buscar en PatientSession
     session = PatientSession.objects.filter(
         access_token=token,
         is_active=True
@@ -4715,9 +4713,7 @@ def get_patient_user_from_request(request):
     if session and not session.is_expired():
         return session.patient_user
     
-    # ============================================================
-    # 2. Buscar en DRF Token (pacientes activados)
-    # ============================================================
+    # 2. Buscar en DRF Token
     from rest_framework.authtoken.models import Token
     drf_token = Token.objects.filter(key=token).first()
     
@@ -5695,4 +5691,43 @@ def get_patient_invitation_status(request, patient_id):
     return Response({
         'has_invitation': False,
         'has_portal_access': False
+    })
+
+
+@api_view(['POST'])
+def doctor_login(request):
+    """
+    POST /api/auth/doctor-login/
+    Login exclusivo para doctores - rechaza pacientes.
+    """
+    from django.contrib.auth import authenticate
+    
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response({'error': 'Usuario y contraseña requeridos'}, status=400)
+    
+    user = authenticate(username=username, password=password)
+    
+    if not user:
+        return Response({'error': 'Credenciales inválidas'}, status=401)
+    
+    # Verificar que ES doctor
+    if not hasattr(user, 'doctor_profile'):
+        return Response({
+            'error': 'Esta cuenta no tiene acceso al portal de doctores'
+        }, status=403)
+    
+    # Generar token
+    from rest_framework.authtoken.models import Token
+    token, _ = Token.objects.get_or_create(user=user)
+    
+    return Response({
+        'token': token.key,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'full_name': user.doctor_profile.full_name
+        }
     })

@@ -132,6 +132,8 @@ from .api_views import (
     patient_dashboard,
     patient_profile,
     patient_appointments,
+    # ✅ NUEVO: Login de doctores
+    doctor_login,
     whatsapp_config_api,
     whatsapp_send_message,
     whatsapp_webhook,
@@ -324,6 +326,10 @@ urlpatterns = [
     path('patients/register-minor/', api_views.register_minor, name='register-minor'),
     path('patients/minor-verification/', api_views.minor_verification, name='minor-verification'),
     path('patients/<int:patient_id>/approve-consent/', api_views.approve_minor_consent, name='approve-minor-consent'),
+    
+    # --- Login de doctores (PROTEGIDO) ---
+    path('auth/doctor-login/', api_views.doctor_login, name='doctor-login'),
+    
     # --- Portal Paciente - Autenticación ---
     path('patient-auth/register/', api_views.patient_register, name='patient-register'),
     path('patient-auth/login/', api_views.patient_login, name='patient-login'),
