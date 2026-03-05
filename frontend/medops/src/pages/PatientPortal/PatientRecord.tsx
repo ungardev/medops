@@ -14,7 +14,7 @@ import VaccinationTab from "@/components/Patients/VaccinationTab";
 import SurgeriesTab from "@/components/Patients/SurgeriesTab";
 import PageHeader from "@/components/Common/PageHeader";
 import { IdentificationIcon, HeartIcon, UserIcon } from "@heroicons/react/24/outline";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -48,8 +48,36 @@ export default function PatientRecord() {
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
-  
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
+  const appointmentsList = completedConsultations?.list ?? [];
+  const latestBiometrics = useMemo(() => {
+    if (!appointmentsList || appointmentsList.length === 0) {
+      return { weight: null, height: null };
+    }
+    
+    const sorted = [...appointmentsList].sort((a, b) => {
+      const dateA = new Date(a.appointment_date || 0).getTime();
+      const dateB = new Date(b.appointment_date || 0).getTime();
+      return dateB - dateA;
+    });
+    
+    for (const appt of sorted) {
+      if (appt.vital_signs?.weight || appt.vital_signs?.height) {
+        return { 
+          weight: appt.vital_signs?.weight ? Number(appt.vital_signs.weight) : null, 
+          height: appt.vital_signs?.height ? Number(appt.vital_signs.height) : null 
+        };
+      }
+      if (appt.weight || appt.height) {
+        return { 
+          weight: appt.weight ? Number(appt.weight) : null, 
+          height: appt.height ? Number(appt.height) : null 
+        };
+      }
+    }
+    
+    return { weight: null, height: null };
+  }, [appointmentsList]);
   
   useEffect(() => {
     const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
@@ -91,6 +119,8 @@ export default function PatientRecord() {
     </div>
   );
   const patientAge = patient.age ?? calculateAge(patient.birthdate);
+  const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} KG` : "--";
+  const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       <PageHeader 
@@ -108,6 +138,16 @@ export default function PatientRecord() {
             label: "BIOMETRIC_AGE", 
             value: patientAge ? `${patientAge} YRS` : "--",
             color: "text-purple-400"
+          },
+          { 
+            label: "MASS_INDEX", 
+            value: weightDisplay,
+            color: weightDisplay !== "--" ? "text-orange-400" : "text-white/30"
+          },
+          { 
+            label: "HEIGHT_INDEX", 
+            value: heightDisplay,
+            color: heightDisplay !== "--" ? "text-cyan-400" : "text-white/30"
           }
         ]}
         actions={

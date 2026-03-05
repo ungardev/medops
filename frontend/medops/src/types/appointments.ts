@@ -43,6 +43,21 @@ export interface ChargeOrderSummary {
   payments?: ChargeOrderPayment[];
 }
 // =====================================================
+// 🆕 VITAL SIGNS (signos vitales de la cita)
+// =====================================================
+export interface VitalSignsData {
+  id: number;
+  weight?: string | null;
+  height?: string | null;
+  temperature?: string | null;
+  bp_systolic?: number | null;
+  bp_diastolic?: number | null;
+  heart_rate?: number | null;
+  respiratory_rate?: number | null;
+  oxygen_saturation?: number | null;
+  bmi?: number | null;
+}
+// =====================================================
 // MODELO DE CITA (lo que devuelve el backend)
 // =====================================================
 export interface Appointment {
@@ -93,6 +108,9 @@ export interface Appointment {
   // 🆕 MÉTRICAS ANTROPOMÉTRICAS
   weight?: number | string | null;
   height?: number | string | null;
+  
+  // 🆕 VITAL SIGNS (nested)
+  vital_signs?: VitalSignsData | null;
 }
 // =====================================================
 // APPOINTMENT UI (para componentes)
