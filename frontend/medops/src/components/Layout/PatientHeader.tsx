@@ -1,4 +1,3 @@
-// src/components/Layout/PatientHeader.tsx
 import { useNavigate } from "react-router-dom";
 import { Menu, LogOut, Bell, User } from "lucide-react";
 interface PatientHeaderProps {
@@ -7,6 +6,10 @@ interface PatientHeaderProps {
 }
 export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHeaderProps) {
   const navigate = useNavigate();
+  
+  // Obtener nombre del paciente desde localStorage
+  const patientName = localStorage.getItem("patient_name") || "Paciente";
+  
   const handleLogout = async () => {
     try {
       await fetch("/api/patient-auth/logout/", {
@@ -23,6 +26,7 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
     localStorage.removeItem("patient_refresh_token");
     localStorage.removeItem("patient_drf_token");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("patient_name");
     navigate("/patient/login");
   };
   return (
@@ -56,10 +60,11 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
           <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full"></span>
         </button>
         
+        {/* Nombre del paciente */}
         <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-sm border border-white/5">
           <User size={14} className="text-white/40" />
           <span className="text-[10px] font-medium text-white/80 uppercase">
-            Paciente
+            {patientName}
           </span>
         </div>
         

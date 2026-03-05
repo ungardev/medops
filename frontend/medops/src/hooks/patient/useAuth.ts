@@ -1,4 +1,4 @@
-// Hook de autenticación para el Portal del Paciente
+// src/hooks/patient/useAuth.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { patientAuth, patientClient } from '@/api/patient/client';
@@ -26,12 +26,19 @@ export function useAuth(): UseAuthReturn {
     try {
       const response = await patientClient.getDashboard();
       setPatient(response.data.patient);
+      
+      // ✅ Guardar nombre del paciente si no existe
+      if (response.data.patient?.full_name) {
+        localStorage.setItem('patient_name', response.data.patient.full_name);
+      }
+      
       setIsAuthenticated(true);
     } catch (err) {
       // Token inválido - limpiar
       localStorage.removeItem('patient_access_token');
       localStorage.removeItem('patient_refresh_token');
       localStorage.removeItem('patient_drf_token');
+      localStorage.removeItem('patient_name');
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -50,9 +57,14 @@ export function useAuth(): UseAuthReturn {
       localStorage.setItem('patient_access_token', response.data.access_token);
       localStorage.setItem('patient_refresh_token', response.data.refresh_token);
       
-      // ✅ NUEVO: Guardar DRF Token para compatibilidad con get_patient_user_from_request
+      // ✅ Guardar DRF Token para compatibilidad
       if (response.data.token) {
         localStorage.setItem('patient_drf_token', response.data.token);
+      }
+      
+      // ✅ Guardar nombre del paciente
+      if (response.data.patient?.full_name) {
+        localStorage.setItem('patient_name', response.data.patient.full_name);
       }
       
       setPatient(response.data.patient);
@@ -80,6 +92,7 @@ export function useAuth(): UseAuthReturn {
       localStorage.removeItem('patient_refresh_token');
       localStorage.removeItem('patient_drf_token');
       localStorage.removeItem('userRole');
+      localStorage.removeItem('patient_name');
       setIsAuthenticated(false);
       setPatient(null);
       navigate('/patient/login');
