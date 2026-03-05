@@ -140,7 +140,7 @@ export default function PatientRecord() {
             <PatientInfoTab patientId={patientId} readOnly={true} />
           </Tab>
           <Tab id="consultas" label="Clinical_Ledger">
-            <PatientConsultationsTab patient={patient} />
+            <PatientConsultationsTab patient={patient} readOnly={true} />
           </Tab>
           <Tab id="documentos" label="Archive_Vault">
             <PatientDocumentsTab patient={patient} />

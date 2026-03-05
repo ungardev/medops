@@ -12,8 +12,9 @@ import {
 } from "@heroicons/react/24/outline";
 interface PatientConsultationsTabProps {
   patient: Patient;
+  readOnly?: boolean;
 }
-export default function PatientConsultationsTab({ patient }: PatientConsultationsTabProps) {
+export default function PatientConsultationsTab({ patient, readOnly = false }: PatientConsultationsTabProps) {
   const navigate = useNavigate();
   const { data, isLoading, error } = useConsultationsByPatient(patient.id);
   if (isLoading) {
@@ -31,7 +32,7 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
       <div className="p-8 border border-red-500/20 bg-red-500/5 rounded-sm flex items-center gap-4">
         <ExclamationCircleIcon className="w-6 h-6 text-red-500" />
         <div className="flex flex-col">
-          <span className="text-[11px] font-black text-red-500 uppercase">Data_Access_Denied</span>
+          <span className="text-[11px] font-black text-red-500 uppercase"> Data_Access_Denied</span>
           <span className="text-[10px] font-mono text-red-400/80 uppercase">Error in remote procedure call. Please verify system connection.</span>
         </div>
       </div>
@@ -99,18 +100,20 @@ export default function PatientConsultationsTab({ patient }: PatientConsultation
                     </div>
                   </div>
                   
-                  {/* ✅ FIX: Cambiado hover:text-white → hover:text-black para legibilidad */}
-                  <button 
-                    onClick={() => {
-                      if (patient?.id) {
-                        navigate(`/patients/${patient.id}/consultations/${c.id}`);
-                      }
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-[var(--palantir-border)] text-[10px] font-mono text-[var(--palantir-text)] hover:bg-[var(--palantir-active)] hover:text-black hover:border-[var(--palantir-active)] transition-all group/btn"
-                  >
-                    ACCESS_FULL_REPORT
-                    <ArrowRightIcon className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
-                  </button>
+                  {/* ✅ BOTÓN OCULTO EN MODO SOLO LECTURA */}
+                  {!readOnly && (
+                    <button 
+                      onClick={() => {
+                        if (patient?.id) {
+                          navigate(`/patients/${patient.id}/consultations/${c.id}`);
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-[var(--palantir-border)] text-[10px] font-mono text-[var(--palantir-text)] hover:bg-[var(--palantir-active)] hover:text-black hover:border-[var(--palantir-active)] transition-all group/btn"
+                    >
+                      ACCESS_FULL_REPORT
+                      <ArrowRightIcon className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
