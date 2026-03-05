@@ -11,7 +11,11 @@ import DemographicsSection from "./sections/DemographicsSection";
 import AlertsSection from "./sections/AlertsSection";
 import ClinicalProfileSection from "./sections/ClinicalProfileSection";
 import { useVaccinations } from "../../hooks/patients/useVaccinations";
-export default function PatientInfoTab({ patientId }: { patientId: number }) {
+interface PatientInfoTabProps {
+  patientId: number;
+  readOnly?: boolean;
+}
+export default function PatientInfoTab({ patientId, readOnly = false }: PatientInfoTabProps) {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { vaccinations: vaccQuery, schedule } = useVaccinations(patientId);
@@ -62,7 +66,6 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
       
       {/* SECCIÓN 1: DEMOGRÁFICOS */}
       <section className="relative">
-        {/* Línea decorativa lateral integrada al flujo */}
         <div className="absolute -left-4 top-0 h-full w-0.5 bg-[var(--palantir-active)]/30 hidden lg:block" />
         
         <div className="flex items-center gap-3 mb-6">
@@ -75,7 +78,11 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           <div className="flex-1 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] to-transparent" />
         </div>
         
-        <DemographicsSection patient={profile} onRefresh={refreshProfile} />
+        <DemographicsSection 
+          patient={profile} 
+          onRefresh={refreshProfile} 
+          readOnly={readOnly}
+        />
       </section>
       
       {/* SECCIÓN 2: ALERTAS Y BIOMETRÍA */}
@@ -98,6 +105,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           surgeries={profile.surgeries ?? []}
           vaccinations={Array.isArray(vaccQuery.data) ? vaccQuery.data : []}
           vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
+          readOnly={readOnly}
         />
       </section>
       
@@ -119,6 +127,7 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
           habits={profile.habits ?? []}
           patientId={patientId}
           onRefresh={refreshProfile}
+          readOnly={readOnly}
         />
       </section>
       
@@ -129,13 +138,17 @@ export default function PatientInfoTab({ patientId }: { patientId: number }) {
             <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
             Sync_Active
           </span>
-          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
-            ID: {patientId.toString().padStart(6, '0')}
+          <span className="text-[8px] font-mono text-[var(--palantir-muted)]">
+            LAST_UPDATE: {new Date().toLocaleString("es-VE")}
           </span>
         </div>
-        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
-          Last_Audit: {new Date().toLocaleTimeString()}
-        </span>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
+            READ_ONLY_MODE
+          </span>
+          <div className={`w-2 h-2 rounded-full ${readOnly ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+        </div>
       </div>
     </div>
   );

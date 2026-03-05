@@ -35,10 +35,8 @@ function normalizeTab(id?: string): string {
 export default function PatientRecord() {
   const navigate = useNavigate();
   
-  // ✅ OBTENER patient_id DESDE localStorage (del paciente logueado)
   const storedPatientId = localStorage.getItem("patient_id");
   
-  // Si no hay patient_id, redirigir al login
   if (!storedPatientId) {
     useEffect(() => {
       navigate("/patient/login");
@@ -139,7 +137,7 @@ export default function PatientRecord() {
       <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
         <Tabs value={currentTab} onChange={setTab} layout="horizontal">
           <Tab id="info" label="Identity_Core">
-            <PatientInfoTab patientId={patientId} />
+            <PatientInfoTab patientId={patientId} readOnly={true} />
           </Tab>
           <Tab id="consultas" label="Clinical_Ledger">
             <PatientConsultationsTab patient={patient} />
