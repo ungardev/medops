@@ -6,8 +6,10 @@ interface ProtectedRouteProps {
   children?: ReactNode;
 }
 export function ProtectedRoute({ allowedRoles = ['doctor', 'admin'], children }: ProtectedRouteProps) {
-  // ✅ VERIFICAR DIRECTAMENTE - Sin useAuthGuard para evitar conflicto
-  const isPatientRoute = window.location.pathname.startsWith('/patient');
+  // ✅ CORREGIDO: Detectar rutas de paciente EXACTAS
+  // IMPORTANTE: /patients (doctor) NO debe coincidir con /patient (paciente)
+  const path = window.location.pathname;
+  const isPatientRoute = path === '/patient' || path.startsWith('/patient/');
   
   // ✅ SEPARACIÓN DE TOKENS:
   // - Doctor Portal: usa 'authToken'
