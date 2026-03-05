@@ -17,10 +17,11 @@ interface Props {
   patient: any;
   backgrounds: any[];
   allergies?: any[];
-  habits?: any[]; // ✅ FIX: Ya está definido como opcional
+  habits?: any[];
   surgeries: any[];
   vaccinations: any[];
   vaccinationSchedule: any[];
+  readOnly?: boolean;
 }
 function isRecent(date?: string) {
   if (!date) return false;
@@ -31,18 +32,15 @@ export default function AlertsSection({
   patient,
   backgrounds,
   allergies = [],
-  habits = [], // ✅ FIX: Agregar valor por defecto []
+  habits = [],
   surgeries,
   vaccinations,
   vaccinationSchedule,
+  readOnly = false,
 }: Props) {
-  // 🔍 DIAGNOSTIC LOG: Verificar estado del modal en esta sección
   const [modalOpen, setModalOpen] = useState(false);
-  console.log('AlertsSection modalOpen:', modalOpen);
-  
   const [editing, setEditing] = useState<ManualAlert | null>(null);
   const { list, create, update, remove } = useClinicalAlerts(patient.id);
-  // --- LÓGICA DE ALERTAS AUTOMÁTICAS (CORE INTELLIGENCE) ---
   const autoAlerts: AutoAlert[] = useMemo(() => {
     const alerts: AutoAlert[] = [];
     if (allergies.length > 0) {
@@ -68,7 +66,7 @@ export default function AlertsSection({
         ),
       });
     }
-    const riskyHabits = habits.filter((h) => ["smoking", "alcohol", "drugs"].includes(h.type)); // ✅ FIX: habits ya no puede ser undefined
+    const riskyHabits = habits.filter((h) => ["smoking", "alcohol", "drugs"].includes(h.type));
     if (riskyHabits.length > 0) {
       alerts.push({
         type: "warning",
@@ -110,7 +108,6 @@ export default function AlertsSection({
   }, [backgrounds, allergies, habits, surgeries, vaccinations, vaccinationSchedule]);
   const manualAlerts: ManualAlert[] = (list.data as ManualAlert[]) ?? [];
   const allAlerts = [...autoAlerts, ...manualAlerts];
-  // Configuración visual táctica
   const alertStyles: Record<AlertType, { bg: string; text: string; border: string; icon: any }> = {
     danger: { 
       bg: "bg-red-500/5", border: "border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]", 
@@ -127,7 +124,6 @@ export default function AlertsSection({
   };
   return (
     <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden">
-      {/* Header Táctico */}
       <div className="bg-[var(--palantir-border)]/20 px-4 py-3 flex justify-between items-center border-b border-[var(--palantir-border)]">
         <div className="flex items-center gap-2">
           <ExclamationTriangleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
@@ -135,13 +131,17 @@ export default function AlertsSection({
             Clinical_Risk_Signals
           </span>
         </div>
-        <button
-          onClick={() => { setEditing(null); setModalOpen(true); }}
-          className="p-1 hover:bg-white/5 rounded-sm transition-colors text-[var(--palantir-active)]"
-        >
-          <PlusIcon className="w-5 h-5" />
-        </button>
+        
+        {!readOnly && (
+          <button
+            onClick={() => { setEditing(null); setModalOpen(true); }}
+            className="p-1 hover:bg-white/5 rounded-sm transition-colors text-[var(--palantir-active)]"
+          >
+            <PlusIcon className="w-5 h-5" />
+          </button>
+        )}
       </div>
+      
       <div className="p-5">
         {allAlerts.length === 0 ? (
           <div className="py-8 text-center border border-dashed border-[var(--palantir-border)] rounded-sm">
@@ -155,6 +155,7 @@ export default function AlertsSection({
               const Icon = style.icon;
               const isManual = "id" in alert;
               const key = isManual ? `manual-${alert.id}` : `auto-${index}`;
+              
               return (
                 <div 
                   key={key}
@@ -171,7 +172,7 @@ export default function AlertsSection({
                         Origin: {isManual ? `STAFF_ID_${(alert as any).created_by || 'USR'}` : 'SYSTEM_AUTO_GEN'}
                       </span>
                         
-                      {isManual && (
+                      {!readOnly && isManual && (
                         <div className="flex gap-3">
                           <button 
                             onClick={() => { setEditing(alert as ManualAlert); setModalOpen(true); }}
@@ -195,16 +196,19 @@ export default function AlertsSection({
           </div>
         )}
       </div>
-      <AlertModal
-        open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditing(null); }}
-        onSave={(data) => {
-          editing ? update.mutate({ id: editing.id, data }) : create.mutate(data);
-          setModalOpen(false);
-          setEditing(null);
-        }}
-        initial={editing || undefined}
-      />
+      
+      {!readOnly && (
+        <AlertModal
+          open={modalOpen}
+          onClose={() => { setModalOpen(false); setEditing(null); }}
+          onSave={(data) => {
+            editing ? update.mutate({ id: editing.id, data }) : create.mutate(data);
+            setModalOpen(false);
+            setEditing(null);
+          }}
+          initial={editing || undefined}
+        />
+      )}
     </div>
   );
 }

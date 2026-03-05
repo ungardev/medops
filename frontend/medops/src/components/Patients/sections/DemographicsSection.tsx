@@ -15,8 +15,8 @@ import {
 interface DemographicsSectionProps {
   patient: Patient;
   onRefresh: () => void;
+  readOnly?: boolean;
 }
-// ✅ Constantes para los nuevos campos
 const FITZPATRICK_OPTIONS = [
   { value: "I", label: "TIPO I - Muy clara" },
   { value: "II", label: "TIPO II - Clara" },
@@ -25,7 +25,7 @@ const FITZPATRICK_OPTIONS = [
   { value: "V", label: "TIPO V - Morena" },
   { value: "VI", label: "TIPO VI - Negra" },
 ];
-export default function DemographicsSection({ patient, onRefresh }: DemographicsSectionProps) {
+export default function DemographicsSection({ patient, onRefresh, readOnly = false }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const updatePatient = useUpdatePatient(patient.id);
@@ -61,7 +61,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     email: patient.email ?? "",
     contact_info: patient.contact_info ?? "",
     gender: patient.gender ?? "",
-    // ✅ NUEVOS CAMPOS
     tattoo: patient.tattoo ?? null,
     profession: patient.profession ?? "",
     skin_type: patient.skin_type ?? "",
@@ -126,7 +125,6 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         contact_info: form.contact_info || undefined,
         address: form.address || undefined,
         gender: (form.gender || undefined) as "F" | "Other" | "M" | "Unknown" | null | undefined,
-        // ✅ NUEVOS CAMPOS
         tattoo: form.tattoo ?? undefined,
         profession: form.profession || undefined,
         skin_type: (form.skin_type || undefined) as "I" | "II" | "III" | "IV" | "V" | "VI" | null | undefined,
@@ -201,6 +199,8 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
     }
   };
   
+  const isDisabled = !editing || readOnly;
+  
   return (
     <div className="bg-white/[0.05] border border-white/20 rounded-sm overflow-hidden">
       <div className="bg-white/10 px-4 py-2.5 flex justify-between items-center border-b border-white/20">
@@ -209,7 +209,9 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-widest">Subject_Identity_Core</span>
         </div>
         
-        {editing ? (
+        {readOnly ? (
+          <div className="text-[10px] font-mono text-white/40 uppercase">[ SOLO LECTURA ]</div>
+        ) : editing ? (
           <div className="flex gap-3">
             <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-[10px] font-mono text-white/50 hover:text-white uppercase">[ CANCELAR ]</button>
             <button onClick={handleSave} disabled={isLoadingAny} className="flex items-center gap-1.5 px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold rounded-sm border border-white/30 disabled:opacity-50">
@@ -240,36 +242,34 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
       )}
       
       <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 grid grid-cols-12 gap-x-4 gap-y-5">
-        {/* ✅ FILA 1: Identity + Nombres */}
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Identity_ID</label>
-          <input type="text" value={form.national_id} onChange={(e) => setForm({...form, national_id: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <input type="text" value={form.national_id} onChange={(e) => setForm({...form, national_id: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
         
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">First_Name</label>
-          <input type="text" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <input type="text" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
         
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Middle_Name</label>
-          <input type="text" value={form.middle_name} onChange={(e) => setForm({...form, middle_name: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <input type="text" value={form.middle_name} onChange={(e) => setForm({...form, middle_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
         
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Last_Name</label>
-          <input type="text" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <input type="text" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
         
-        {/* ✅ FILA 2: Apellido + Birth */}
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Second_Last_Name</label>
-          <input type="text" value={form.second_last_name} onChange={(e) => setForm({...form, second_last_name: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <input type="text" value={form.second_last_name} onChange={(e) => setForm({...form, second_last_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
         
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Birth_Date</label>
-          <input type="date" value={form.birthdate} onChange={(e) => setForm({...form, birthdate: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" style={{colorScheme: 'dark'}} />
+          <input type="date" value={form.birthdate} onChange={(e) => setForm({...form, birthdate: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" style={{colorScheme: 'dark'}} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
@@ -277,7 +277,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           <select 
             value={form.gender} 
             onChange={(e) => setForm({...form, gender: e.target.value as any})}
-            disabled={!editing}
+            disabled={isDisabled}
             className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40"
           >
             <option value="">NO_DATA</option>
@@ -290,22 +290,20 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
         
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Email_Address</label>
-          <input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
         
-        {/* ✅ FILA 3: Contact_Line + Tattoo + Profession + Skin_Type (4 en misma fila) */}
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Contact_Line</label>
-          <input type="text" value={form.contact_info} onChange={(e) => setForm({...form, contact_info: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <input type="text" value={form.contact_info} onChange={(e) => setForm({...form, contact_info: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
         
-        {/* TATTOO - Select */}
         <div className="col-span-12 md:col-span-2">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Tattoo</label>
           <select 
             value={form.tattoo === null ? "" : form.tattoo.toString()} 
             onChange={(e) => setForm({...form, tattoo: e.target.value === "" ? null : e.target.value === "true"})} 
-            disabled={!editing}
+            disabled={isDisabled}
             className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40"
           >
             <option value="">NO_DATA</option>
@@ -314,26 +312,24 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           </select>
         </div>
         
-        {/* PROFESSION - Text Input */}
         <div className="col-span-12 md:col-span-4">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Profession</label>
           <input 
             type="text" 
             value={form.profession} 
             onChange={(e) => setForm({...form, profession: e.target.value})} 
-            disabled={!editing} 
+            disabled={isDisabled} 
             placeholder="Profesión u ocupación..."
             className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" 
           />
         </div>
         
-        {/* SKIN_TYPE - Select con escala Fitzpatrick */}
         <div className="col-span-12 md:col-span-3">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Skin (Fitzpatrick)</label>
           <select 
             value={form.skin_type} 
             onChange={(e) => setForm({...form, skin_type: e.target.value as any})} 
-            disabled={!editing}
+            disabled={isDisabled}
             className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40"
           >
             <option value="">NO_DATA</option>
@@ -343,28 +339,26 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           </select>
         </div>
         
-        {/* ✅ SECCIÓN: GEOGRAPHIC LOCATION */}
         <div className="col-span-12 flex items-center gap-3 pt-4 opacity-60">
           <MapPinIcon className="w-4 h-4" />
           <span className="text-[9px] font-mono uppercase tracking-[0.3em]">GEOGRAPHIC_LOCATION_DATA</span>
           <div className="flex-1 h-[1px] bg-white/30" />
         </div>
         
-        {/* Location Fields - 5 campos por fila */}
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="Country" value={form.country_id} options={countries} onChange={handleCountryChange} disabled={!editing} loading={countriesResult.isLoading} />
+          <FieldSelect label="Country" value={form.country_id} options={countries} onChange={handleCountryChange} disabled={isDisabled} loading={countriesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="State" value={form.state_id} options={states} onChange={handleStateChange} disabled={!editing || !form.country_id} loading={statesResult.isLoading} />
+          <FieldSelect label="State" value={form.state_id} options={states} onChange={handleStateChange} disabled={isDisabled || !form.country_id} loading={statesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="Municipality" value={form.municipality_id} options={municipalities} onChange={handleMunicipalityChange} disabled={!editing || !form.state_id} loading={municipalitiesResult.isLoading} />
+          <FieldSelect label="Municipality" value={form.municipality_id} options={municipalities} onChange={handleMunicipalityChange} disabled={isDisabled || !form.state_id} loading={municipalitiesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="Parish" value={form.parish_id} options={parishes} onChange={handleParishChange} disabled={!editing || !form.municipality_id} loading={parishesResult.isLoading} />
+          <FieldSelect label="Parish" value={form.parish_id} options={parishes} onChange={handleParishChange} disabled={isDisabled || !form.municipality_id} loading={parishesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-4">
@@ -374,7 +368,7 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
               {neighborhoodsResult.isLoading && <CpuChipIcon className="w-3 h-3 animate-spin" />}
             </label>
             <div className="relative">
-              <input list="neighborhood-options" value={form.neighborhood_name} disabled={!form.parish_id || !editing} onChange={(e) => handleNeighborhoodChange(e.target.value)} placeholder={!form.parish_id ? "-- LOCKED --" : "-- TYPE_OR_SELECT --"} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+              <input list="neighborhood-options" value={form.neighborhood_name} disabled={!form.parish_id || isDisabled} onChange={(e) => handleNeighborhoodChange(e.target.value)} placeholder={!form.parish_id ? "-- LOCKED --" : "-- TYPE_OR_SELECT --"} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
               <datalist id="neighborhood-options">
                 {neighborhoods.map((n) => <option key={n.id} value={n.name} />)}
               </datalist>
@@ -387,10 +381,9 @@ export default function DemographicsSection({ patient, onRefresh }: Demographics
           </div>
         </div>
         
-        {/* ✅ DIRECCIÓN */}
         <div className="col-span-12">
           <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Full_Address_Details</label>
-          <textarea rows={3} value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} disabled={!editing} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <textarea rows={3} value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
         </div>
       </form>
     </div>

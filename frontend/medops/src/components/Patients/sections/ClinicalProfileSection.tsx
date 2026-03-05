@@ -44,6 +44,7 @@ interface Props {
   habits?: Habit[];
   patientId: number;
   onRefresh?: () => void;
+  readOnly?: boolean;
 }
 const backgroundLabels: Record<BackgroundType, string> = {
   personal: "SUBJECT_PERSONAL_HISTORY",
@@ -64,6 +65,7 @@ export default function ClinicalProfileSection({
   habits = [],
   patientId,
   onRefresh,
+  readOnly = false,
 }: Props) {
   const [expanded, setExpanded] = useState<string | null>("personal");
   const [modalOpen, setModalOpen] = useState(false);
@@ -168,6 +170,8 @@ export default function ClinicalProfileSection({
                         </p>
                       )}
                     </div>
+                    
+                    {!readOnly && (
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => { setModalType(type); setModalInitial(item); setModalOpen(true); }}
@@ -182,16 +186,20 @@ export default function ClinicalProfileSection({
                           <TrashIcon className="w-4 h-4" />
                         </button>
                       </div>
+                    )}
                   </div>
                 ))
               )}
-              <button
-                onClick={() => { setModalType(type); setModalInitial(undefined); setModalOpen(true); }}
-                className="w-full py-3 border border-dashed border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group flex justify-center items-center gap-2 rounded-sm"
-              >
-                <PlusIcon className="w-4 h-4 text-white/40 group-hover:text-emerald-400" />
-                <span className="text-[10px] font-bold text-white/40 group-hover:text-emerald-400 uppercase">Add_Entry</span>
-              </button>
+              
+              {!readOnly && (
+                <button
+                  onClick={() => { setModalType(type); setModalInitial(undefined); setModalOpen(true); }}
+                  className="w-full py-3 border border-dashed border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group flex justify-center items-center gap-2 rounded-sm"
+                >
+                  <PlusIcon className="w-4 h-4 text-white/40 group-hover:text-emerald-400" />
+                  <span className="text-[10px] font-bold text-white/40 group-hover:text-emerald-400 uppercase">Add_Entry</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -213,13 +221,16 @@ export default function ClinicalProfileSection({
         {renderSection("allergy", "IMMUNOLOGICAL_SENSITIVITY", allergies, backgroundIcons.allergy)}
         {renderSection("habit", backgroundLabels.habit, habits, backgroundIcons.habit)}
       </div>
-      <ClinicalBackgroundModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={(payload) => handleSave(modalType, payload)}
-        initial={modalInitial}
-        type={modalType}
-      />
+      
+      {!readOnly && (
+        <ClinicalBackgroundModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSave={(payload) => handleSave(modalType, payload)}
+          initial={modalInitial}
+          type={modalType}
+        />
+      )}
     </div>
   );
 }
