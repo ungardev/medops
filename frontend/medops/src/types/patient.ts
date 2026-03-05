@@ -76,6 +76,7 @@ export interface PatientDashboard {
     is_pediatric: boolean;
     age?: number;
     is_verified: boolean;
+    address?: string;  // ✅ AGREGADO
   };
   subscription?: {
     plan: string;

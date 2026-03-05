@@ -2,7 +2,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
-  FileText, 
+  Users,
   CalendarDays, 
   Clock, 
   Search, 
@@ -10,7 +10,10 @@ import {
   LogOut,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CreditCard,
+  BarChart2,
+  Briefcase
 } from "lucide-react";
 interface PatientSidebarProps {
   collapsed: boolean;
@@ -18,12 +21,15 @@ interface PatientSidebarProps {
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
 }
+// ✅ Mismas secciones que Doctor Portal, el con nombres adaptados
 const navItems = [
   { path: "/patient", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/patient/record", label: "Mi Expediente", icon: FileText },
+  { path: "/patient/record", label: "Paciente", icon: Users },
   { path: "/patient/appointments", label: "Citas", icon: CalendarDays },
-  { path: "/patient/queue", label: "Mi Turno", icon: Clock },
+  { path: "/patient/queue", label: "Sala de Espera", icon: Clock },
   { path: "/patient/search", label: "Buscar", icon: Search },
+  { path: "/patient/payments", label: "Pagos", icon: CreditCard },
+  { path: "/patient/services", label: "Servicios", icon: Briefcase },
 ];
 export default function PatientSidebar({ 
   collapsed, 
@@ -37,6 +43,7 @@ export default function PatientSidebar({
   const itemBase = "group relative flex items-center px-4 py-3 transition-all duration-300 ease-out mb-1.5 overflow-hidden";
   const itemActive = "bg-white/[0.08] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.02)]";
   const itemIdle = "text-white/40 hover:text-white hover:bg-white/[0.04]";
+  
   return (
     <div className="flex flex-col h-full pt-4 pb-6 px-3">
       {/* LOGO AREA */}
@@ -104,6 +111,7 @@ export default function PatientSidebar({
           </button>
         )}
       </div>
+      
       {/* MENU LABEL */}
       {!effectiveCollapsed && (
         <div className="flex items-center gap-2 mb-4 px-4">
@@ -113,6 +121,7 @@ export default function PatientSidebar({
           </div>
         </div>
       )}
+      
       {/* NAVIGATION */}
       <nav className="flex-1">
         <ul className="flex flex-col space-y-1">
@@ -143,7 +152,8 @@ export default function PatientSidebar({
           })}
         </ul>
       </nav>
-      {/* CONFIG */}
+      
+      {/* CONFIG & LOGOUT */}
       <div className="mt-auto pt-6 border-t border-white/5">
         <Link 
           to="/patient/settings" 
@@ -163,6 +173,7 @@ export default function PatientSidebar({
           {!effectiveCollapsed && <span className="ml-4 text-[13px] tracking-wide font-bold uppercase">Cerrar Sesión</span>}
         </Link>
       </div>
+      
       {/* FOOTER */}
       <div className="mt-4 pt-4 border-t border-white/5">
         {!effectiveCollapsed ? (

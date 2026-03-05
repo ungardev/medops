@@ -21,7 +21,7 @@ export default function PatientLayout() {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
   return (
-    <div className="min-h-screen bg-[#0a0c10] text-slate-200 antialiased flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-[#0a0a0b] text-white antialiased flex flex-col transition-colors duration-300">
       {/* Overlay móvil */}
       <div
         className={`lg:hidden fixed inset-0 bg-black/60 z-40 transition-opacity duration-300 backdrop-blur-md ${
