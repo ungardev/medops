@@ -1,7 +1,7 @@
 // src/components/Patients/SurgeriesTab.tsx
 import { useState } from "react";
-import { useSurgeries } from "../../hooks/patients/useSurgeries"; // ✅ FIX: Remover Surgery del import ya que ahora viene de types/patients
-import { Surgery } from "../../types/patients"; // ✅ FIX: Importar Surgery desde types/patients
+import { useSurgeries } from "../../hooks/patients/useSurgeries";
+import { Surgery } from "../../types/patients";
 import SurgeriesModal from "./SurgeriesModal";
 import { 
   ScissorsIcon, 
@@ -15,15 +15,17 @@ import {
 interface Props {
   patientId: number;
   onRefresh?: () => void;
+  readOnly?: boolean;
 }
-export default function SurgeriesTab({ patientId, onRefresh }: Props) {
+export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }: Props) {
   const { query, create, update, remove } = useSurgeries(patientId);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Surgery | undefined>(undefined); // ✅ FIX: Cambiar null por undefined
+  const [editingItem, setEditingItem] = useState<Surgery | undefined>(undefined);
   const [localError, setLocalError] = useState<string | null>(null);
+  
   const isSaving = create.isPending || update.isPending || remove.isPending;
   const handleCreate = () => {
-    setEditingItem(undefined); // ✅ FIX: Cambiar null por undefined
+    setEditingItem(undefined);
     setModalOpen(true);
   };
   const handleEdit = (item: Surgery) => {
@@ -68,14 +70,18 @@ export default function SurgeriesTab({ patientId, onRefresh }: Props) {
         <h2 className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest">
           Surgical Operations Log
         </h2>
-        <button
-          onClick={handleCreate}
-          disabled={isSaving}
-          className="flex items-center gap-2 px-4 py-2 bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-black text-[10px] font-bold uppercase tracking-widest rounded-sm disabled:opacity-50 hover:shadow-lg transition-all"
-        >
-          <PlusIcon className="w-4 h-4" />
-          New Record
-        </button>
+        
+        {/* ✅ Botón oculto en modo solo lectura */}
+        {!readOnly && (
+          <button
+            onClick={handleCreate}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-2 bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-black text-[10px] font-bold uppercase tracking-widest rounded-sm disabled:opacity-50 hover:shadow-lg transition-all"
+          >
+            <PlusIcon className="w-4 h-4" />
+            New Record
+          </button>
+        )}
       </div>
       {localError && (
         <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-sm">
@@ -124,36 +130,43 @@ export default function SurgeriesTab({ patientId, onRefresh }: Props) {
                     </p>
                   )}
                 </div>
-                <div className="flex gap-2 ml-4">
-                  <button
-                    onClick={() => handleEdit(surgery)}
-                    disabled={isSaving}
-                    className="p-1 text-[var(--palantir-active)] hover:bg-white/5 rounded-sm transition-colors disabled:opacity-50"
-                    title="Edit"
-                  >
-                    <PencilSquareIcon className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(surgery.id)}
-                    disabled={isSaving}
-                    className="p-1 text-red-500 hover:bg-red-500/10 rounded-sm transition-colors disabled:opacity-50"
-                    title="Delete"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                  </button>
-                </div>
+                
+                {/* ✅ Botones de acción ocultos en modo solo lectura */}
+                {!readOnly && (
+                  <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => handleEdit(surgery)}
+                      disabled={isSaving}
+                      className="p-1 text-[var(--palantir-active)] hover:bg-white/5 rounded-sm transition-colors disabled:opacity-50"
+                      title="Edit"
+                    >
+                      <PencilSquareIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(surgery.id)}
+                      disabled={isSaving}
+                      className="p-1 text-red-500 hover:bg-red-500/10 rounded-sm transition-colors disabled:opacity-50"
+                      title="Delete"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
-      <SurgeriesModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSave}
-        initial={editingItem} // ✅ Ahora es Surgery | undefined
-        patientId={patientId}
-      />
+      {/* ✅ Modal oculto en modo solo lectura */}
+      {!readOnly && (
+        <SurgeriesModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSave={handleSave}
+          initial={editingItem}
+          patientId={patientId}
+        />
+      )}
     </div>
   );
 }

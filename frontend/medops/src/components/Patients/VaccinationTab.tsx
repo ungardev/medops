@@ -10,26 +10,20 @@ import {
 import VaccinationModal from "./VaccinationModal";
 import VaccinationMatrixUniversal from "./VaccinationMatrixUniversal";
 import { BeakerIcon, ShieldCheckIcon, InformationCircleIcon } from "@heroicons/react/24/outline";
-
 interface Props {
   patientId: number;
   onRefresh?: () => void;
+  readOnly?: boolean;
 }
-
-export default function VaccinationTab({ patientId, onRefresh }: Props) {
+export default function VaccinationTab({ patientId, onRefresh, readOnly = false }: Props) {
   const { vaccinations: vaccQuery, schedule, create, update, remove } = useVaccinations(patientId);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PatientVaccination | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
-
   const isSaving = create.isPending || update.isPending || remove.isPending;
-
-  // ✅ Lógica de guardado corregida para resolver el error de TS(2345)
   const handleSave = (payload: PatientVaccinationPayload) => {
     setLocalError(null);
-
     if (editingItem && editingItem.id > 0) {
-      // Flujo de ACTUALIZACIÓN: Se requiere ID explícito
       update.mutate(
         { 
           ...payload, 
@@ -46,7 +40,6 @@ export default function VaccinationTab({ patientId, onRefresh }: Props) {
         }
       );
     } else {
-      // Flujo de CREACIÓN
       create.mutate(payload, {
         onSuccess: () => {
           vaccQuery.refetch();
@@ -58,14 +51,31 @@ export default function VaccinationTab({ patientId, onRefresh }: Props) {
       });
     }
   };
-
-  // Normalización de datos del esquema
   const schema: VaccinationSchedule[] = Array.isArray(schedule.data)
     ? schedule.data
     : (schedule.data as Paginated<VaccinationSchedule> | undefined)?.results ?? [];
-
   const applied: PatientVaccination[] = Array.isArray(vaccQuery.data) ? vaccQuery.data : [];
-
+  const handleRegisterDose = (dose: any) => {
+    const existing = applied.find(
+      a => a.vaccine_detail.code === dose.vaccine_detail.code && 
+      a.dose_number === dose.dose_number
+    );
+    if (existing) {
+      setEditingItem(existing);
+    } else {
+      setEditingItem({
+        id: -1,
+        patient: patientId,
+        vaccine: dose.vaccine,
+        vaccine_detail: dose.vaccine_detail,
+        dose_number: dose.dose_number,
+        date_administered: "",
+        center: "",
+        lot: "",
+      });
+    }
+    setModalOpen(true);
+  };
   return (
     <div className="space-y-6">
       {/* Header Estilizado */}
@@ -91,13 +101,11 @@ export default function VaccinationTab({ patientId, onRefresh }: Props) {
           </div>
         </div>
       </div>
-
       {localError && (
         <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-[10px] font-mono uppercase">
           {localError}
         </div>
       )}
-
       {/* Matrix Container */}
       <div className="relative bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm overflow-hidden">
         {isSaving && (
@@ -109,32 +117,9 @@ export default function VaccinationTab({ patientId, onRefresh }: Props) {
         <VaccinationMatrixUniversal
           schedule={schema}
           vaccinations={applied}
-          onRegisterDose={(dose) => {
-            // Buscamos si ya existe una dosis aplicada para este esquema para permitir edición
-            const existing = applied.find(
-              a => a.vaccine_detail.code === dose.vaccine_detail.code && 
-              a.dose_number === dose.dose_number
-            );
-
-            if (existing) {
-              setEditingItem(existing);
-            } else {
-              setEditingItem({
-                id: -1,
-                patient: patientId,
-                vaccine: dose.vaccine,
-                vaccine_detail: dose.vaccine_detail,
-                dose_number: dose.dose_number,
-                date_administered: "",
-                center: "",
-                lot: "",
-              });
-            }
-            setModalOpen(true);
-          }}
+          onRegisterDose={readOnly ? undefined : handleRegisterDose}
         />
       </div>
-
       {/* Legend & Footer */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
         <div className="flex flex-wrap gap-6">
@@ -148,22 +133,23 @@ export default function VaccinationTab({ patientId, onRefresh }: Props) {
           Data based on Venezuelan Society of Childcare and Pediatrics (SVPP)
         </div>
       </div>
-
-      <VaccinationModal
-        open={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditingItem(null);
-        }}
-        onSave={handleSave}
-        initial={editingItem}
-        vaccines={schema.map(s => ({ ...s.vaccine_detail }))}
-        patientId={patientId}
-      />
+      {/* ✅ Modal oculto en modo solo lectura */}
+      {!readOnly && (
+        <VaccinationModal
+          open={modalOpen}
+          onClose={() => {
+            setModalOpen(false);
+            setEditingItem(null);
+          }}
+          onSave={handleSave}
+          initial={editingItem}
+          vaccines={schema.map(s => ({ ...s.vaccine_detail }))}
+          patientId={patientId}
+        />
+      )}
     </div>
   );
 }
-
 function LegendItem({ color, label }: { color: string, label: string }) {
   return (
     <div className="flex items-center gap-2">

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { usePatient } from "@/hooks/patients/usePatient";
 import { useConsultationsByPatient } from "@/hooks/patients/useConsultationsByPatient";
 import { Tabs, Tab } from "@/components/ui/Tabs";
-// Componentes de Pestañas (reutilizados)
 import PatientInfoTab from "@/components/Patients/PatientInfoTab";
 import PatientConsultationsTab from "@/components/Patients/PatientConsultationsTab";
 import PatientDocumentsTab from "@/components/Patients/PatientDocumentsTab";
@@ -94,7 +93,6 @@ export default function PatientRecord() {
   const patientAge = patient.age ?? calculateAge(patient.birthdate);
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* Page Header */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
@@ -119,7 +117,6 @@ export default function PatientRecord() {
         }
       />
       
-      {/* Metadata Bar */}
       <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest">
         <span className="flex items-center gap-2.5">
           <IdentificationIcon className="w-4 h-4 text-blue-500/40" />
@@ -133,7 +130,6 @@ export default function PatientRecord() {
         </span>
       </div>
       
-      {/* Tabs - SOLO LECTURA */}
       <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
         <Tabs value={currentTab} onChange={setTab} layout="horizontal">
           <Tab id="info" label="Identity_Core">
@@ -146,10 +142,10 @@ export default function PatientRecord() {
             <PatientDocumentsTab patient={patient} />
           </Tab>
           <Tab id="vacunacion" label="Immunology">
-            <VaccinationTab patientId={patientId} onRefresh={() => {}} />
+            <VaccinationTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
           </Tab>
           <Tab id="cirugias" label="Surgical_Ops">
-            <SurgeriesTab patientId={patientId} onRefresh={() => {}} />
+            <SurgeriesTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
           </Tab>
           <Tab id="citas" label="Logistics_Schedule">
             <PatientPendingAppointmentsTab patient={patient} />
