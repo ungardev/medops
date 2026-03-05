@@ -1,21 +1,18 @@
 // src/components/Common/PageHeader.tsx
 import React, { useEffect, useState, ReactNode } from "react";
 import moment from "moment";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ChevronRightIcon, HomeIcon } from "@heroicons/react/20/solid";
-
 interface PageStat {
   label: string;
   value: React.ReactNode;
   color?: string;
 }
-
 interface BreadcrumbItem {
   label: string;
   path?: string;
   active?: boolean;
 }
-
 interface PageHeaderProps {
   breadcrumb?: string;
   breadcrumbs?: BreadcrumbItem[];
@@ -23,7 +20,6 @@ interface PageHeaderProps {
   actions?: ReactNode;
   children?: ReactNode;
 }
-
 const PageHeader: React.FC<PageHeaderProps> = ({
   breadcrumb,
   breadcrumbs,
@@ -32,12 +28,13 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   children,
 }) => {
   const [now, setNow] = useState(moment());
-
+  const location = useLocation();
+  const isPatientRoute = location.pathname.startsWith("/patient");
+  const homePath = isPatientRoute ? "/patient" : "/";
   useEffect(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
     return () => clearInterval(timer);
   }, []);
-
   return (
     <section className="relative flex flex-col gap-6 mb-8 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
       
@@ -48,12 +45,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-40"></span>
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
           </div>
-
           <nav className="flex" aria-label="Breadcrumb">
             <ol role="list" className="flex items-center space-x-2">
               <li>
                 <div>
-                  <Link to="/" className="text-white/30 hover:text-white transition-colors">
+                  <Link to={homePath} className="text-white/30 hover:text-white transition-colors">
                     <HomeIcon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
                     <span className="sr-only">Home</span>
                   </Link>
@@ -65,7 +61,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                   <li key={idx}>
                     <div className="flex items-center">
                       <ChevronRightIcon
-                        className="h-4 w-4 flex-shrink-0 text-white/40" // Chevron ahora es claramente visible
+                        className="h-4 w-4 flex-shrink-0 text-white/40"
                         aria-hidden="true"
                       />
                       {item.path ? (
@@ -103,7 +99,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             </ol>
           </nav>
         </div>
-
         {/* System Clock - Refined */}
         <div className="hidden sm:flex items-center gap-4 font-mono text-[9px] tracking-[0.15em]">
           <span className="text-white/20 uppercase tracking-[0.3em]">System_Clock</span>
@@ -112,7 +107,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </span>
         </div>
       </div>
-
       {/* 2. OPERATIONAL CORE: Stats & Actions (Layout simplificado) */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         
@@ -134,9 +128,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             ))}
           </div>
         ) : (
-          <div className="flex-1" /> // Spacer si no hay stats
+          <div className="flex-1" />
         )}
-
         {/* Control Interface: Actions & Children (Buttons suben aquí) */}
         {(actions || children) && (
           <div className="flex items-center gap-4 self-start lg:self-center p-1.5 bg-black/40 border border-white/5 rounded-sm backdrop-blur-xl shadow-2xl">
@@ -157,7 +150,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         )}
       </div>
-
       {/* Decorative Tactical Baseline */}
       <div className="absolute -bottom-6 left-0 w-full flex items-center gap-3 opacity-20 pointer-events-none">
         <div className="h-[1px] flex-1 bg-gradient-to-r from-white/40 to-transparent" />
@@ -166,5 +158,4 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     </section>
   );
 };
-
 export default PageHeader;
