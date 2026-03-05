@@ -1,25 +1,24 @@
-// src/hooks/useAuthGuard.ts
+// useAuthGuard.ts - FIX COMPLETO
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 export function useAuthGuard() {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
-
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-
+    // ✅ DETECTAR tipo de ruta
+    const isPatientRoute = window.location.pathname.startsWith('/patient');
+    
+    // ✅ Seleccionar token correcto
+    const token = isPatientRoute 
+      ? localStorage.getItem('patient_access_token')
+      : localStorage.getItem('authToken');
     if (!token) {
-      // 🚨 No hay token → redirigir al login institucional del frontend
-      navigate("/login", { replace: true });
-
-      // ❌ Eliminado: window.location.href = `${apiRoot}login`
-      // ✅ Nunca redirigir al backend, el login es una page React
+      // ✅ Redirigir al login correcto
+      const loginPath = isPatientRoute ? '/patient/login' : '/login';
+      navigate(loginPath, { replace: true });
     } else {
-      // ✅ Token presente → continuar
       setChecking(false);
     }
   }, [navigate]);
-
   return { checking };
 }
