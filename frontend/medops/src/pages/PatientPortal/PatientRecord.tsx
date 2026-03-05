@@ -1,9 +1,10 @@
 // src/pages/PatientPortal/PatientRecord.tsx
 import { useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { usePatient } from "@/hooks/patients/usePatient";
 import { useConsultationsByPatient } from "@/hooks/patients/useConsultationsByPatient";
 import { Tabs, Tab } from "@/components/ui/Tabs";
-// Componentes de Pestañas (reutilizados en modo lectura)
+// Componentes de Pestañas (reutilizados)
 import PatientInfoTab from "@/components/Patients/PatientInfoTab";
 import PatientConsultationsTab from "@/components/Patients/PatientConsultationsTab";
 import PatientDocumentsTab from "@/components/Patients/PatientDocumentsTab";
@@ -13,8 +14,8 @@ import PatientEventsTab from "@/components/Patients/PatientEventsTab";
 import VaccinationTab from "@/components/Patients/VaccinationTab";
 import SurgeriesTab from "@/components/Patients/SurgeriesTab";
 import PageHeader from "@/components/Common/PageHeader";
-import { IdentificationIcon, HeartIcon, GlobeAltIcon, UserIcon } from "@heroicons/react/24/outline";
-import { useState, useEffect, useMemo } from "react";
+import { IdentificationIcon, HeartIcon, UserIcon } from "@heroicons/react/24/outline";
+import { useState, useEffect } from "react";
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -32,8 +33,20 @@ function normalizeTab(id?: string): string {
   return map[id.toLowerCase()] ?? id;
 }
 export default function PatientRecord() {
-  // Obtener patient_id desde el contexto del paciente logueado
-  const patientId = Number(localStorage.getItem("patient_id")) || 9; // Fallback temporal
+  const navigate = useNavigate();
+  
+  // ✅ OBTENER patient_id DESDE localStorage (del paciente logueado)
+  const storedPatientId = localStorage.getItem("patient_id");
+  
+  // Si no hay patient_id, redirigir al login
+  if (!storedPatientId) {
+    useEffect(() => {
+      navigate("/patient/login");
+    }, [navigate]);
+    return null;
+  }
+  
+  const patientId = Number(storedPatientId);
   
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -41,18 +54,19 @@ export default function PatientRecord() {
   
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
   
-  const appointmentsList = completedConsultations?.list ?? [];
   useEffect(() => {
     const tabFromUrl = normalizeTab(searchParams.get("tab") ?? "info");
     if (tabFromUrl !== currentTab) {
       setCurrentTab(tabFromUrl);
     }
   }, [searchParams, currentTab]);
+  
   const setTab = (next: string) => {
     const normalized = normalizeTab(next);
     setCurrentTab(normalized);
     setSearchParams({ tab: normalized });
   };
+  
   const calculateAge = (birthdate: string | null | undefined): number | null => {
     if (!birthdate) return null;
     const birth = new Date(birthdate);
@@ -121,7 +135,7 @@ export default function PatientRecord() {
         </span>
       </div>
       
-      {/* Tabs */}
+      {/* Tabs - SOLO LECTURA */}
       <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
         <Tabs value={currentTab} onChange={setTab} layout="horizontal">
           <Tab id="info" label="Identity_Core">

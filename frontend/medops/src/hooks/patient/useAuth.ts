@@ -27,9 +27,14 @@ export function useAuth(): UseAuthReturn {
       const response = await patientClient.getDashboard();
       setPatient(response.data.patient);
       
-      // ✅ Guardar nombre del paciente si no existe
+      // ✅ Guardar nombre del paciente
       if (response.data.patient?.full_name) {
         localStorage.setItem('patient_name', response.data.patient.full_name);
+      }
+      
+      // ✅ Guardar patient_id del paciente logueado
+      if (response.data.patient?.id) {
+        localStorage.setItem('patient_id', String(response.data.patient.id));
       }
       
       setIsAuthenticated(true);
@@ -39,6 +44,7 @@ export function useAuth(): UseAuthReturn {
       localStorage.removeItem('patient_refresh_token');
       localStorage.removeItem('patient_drf_token');
       localStorage.removeItem('patient_name');
+      localStorage.removeItem('patient_id');
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -67,6 +73,11 @@ export function useAuth(): UseAuthReturn {
         localStorage.setItem('patient_name', response.data.patient.full_name);
       }
       
+      // ✅ GUARDAR patient_id DEL PACIENTE LOGUEADO
+      if (response.data.patient?.id) {
+        localStorage.setItem('patient_id', String(response.data.patient.id));
+      }
+      
       setPatient(response.data.patient);
       setIsAuthenticated(true);
       
@@ -93,6 +104,7 @@ export function useAuth(): UseAuthReturn {
       localStorage.removeItem('patient_drf_token');
       localStorage.removeItem('userRole');
       localStorage.removeItem('patient_name');
+      localStorage.removeItem('patient_id');
       setIsAuthenticated(false);
       setPatient(null);
       navigate('/patient/login');
