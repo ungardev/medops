@@ -170,52 +170,69 @@ export function PatientDashboard() {
         </div>
       </div>
       
-      {/* IDENTITY CARD - Patient Info Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      {/* IDENTITY CARD - Patient Info Grid - NUEVO ESTILO */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        
         {/* Cédula/DNI */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <IdentificationIcon className="w-3 h-3 text-blue-400/60" />
-            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Cédula</span>
+        <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] transition-all hover:border-blue-400/40">
+          <div className="flex items-center gap-2 w-full mb-3">
+            <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-blue-400/60">
+              <IdentificationIcon className="h-4 w-4" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+              Cédula
+            </span>
           </div>
-          <span className="text-xs font-mono font-bold text-white uppercase">
+          <div className="text-xl font-mono font-bold text-white uppercase">
             {dashboard.patient.national_id || "--"}
-          </span>
+          </div>
         </div>
         
         {/* Fecha de Nacimiento */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <CakeIcon className="w-3 h-3 text-purple-400/60" />
-            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Nacimiento</span>
+        <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] transition-all hover:border-purple-400/40">
+          <div className="flex items-center gap-2 w-full mb-3">
+            <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-purple-400/60">
+              <CakeIcon className="h-4 w-4" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+              Nacimiento
+            </span>
           </div>
-          <span className="text-xs font-mono font-bold text-white uppercase">
+          <div className="text-xl font-mono font-bold text-white uppercase">
             {dashboard.patient.birthdate 
               ? moment(dashboard.patient.birthdate).format('DD/MM/YYYY')
               : "--"}
-          </span>
+          </div>
         </div>
         
         {/* Edad */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <UserIcon className="w-3 h-3 text-emerald-400/60" />
-            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Edad</span>
+        <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] transition-all hover:border-emerald-400/40">
+          <div className="flex items-center gap-2 w-full mb-3">
+            <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-emerald-400/60">
+              <UserIcon className="h-4 w-4" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+              Edad
+            </span>
           </div>
-          <span className="text-xs font-mono font-bold text-white uppercase">
+          <div className="text-xl font-mono font-bold text-white uppercase">
             {patientAge}
-          </span>
+          </div>
         </div>
         
         {/* Teléfono */}
-        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <PhoneIcon className="w-3 h-3 text-cyan-400/60" />
-            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Teléfono</span>
+        <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] transition-all hover:border-cyan-400/40">
+          <div className="flex items-center gap-2 w-full mb-3">
+            <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-cyan-400/60">
+              <PhoneIcon className="h-4 w-4" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+              Teléfono
+            </span>
           </div>
-          <span className="text-xs font-mono font-bold text-white uppercase">
+          <div className="text-xl font-mono font-bold text-white uppercase">
             {dashboard.patient.phone || "--"}
-          </span>
+          </div>
         </div>
       </div>
       
