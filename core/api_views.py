@@ -4480,7 +4480,7 @@ def patient_dashboard(request):
             status__in=['pending', 'arrived']
         ).order_by('appointment_date', 'arrival_time')[:5]
         
-        # Citas pasadas
+        # Citas pasados
         past_appointments = Appointment.objects.filter(
             patient=patient,
             appointment_date__lt=datetime.now().date(),
@@ -4499,6 +4499,8 @@ def patient_dashboard(request):
                 'full_name': patient.full_name,
                 'email': patient_user.email,
                 'phone': patient.phone_number,
+                'national_id': patient.national_id,  # ✅ AGREGADO
+                'birthdate': patient.birthdate.strftime('%Y-%m-%d') if patient.birthdate else None,  # ✅ AGREGADO
                 'is_pediatric': patient.is_pediatric,
                 'age': patient.age,
                 'is_verified': patient_user.is_verified,

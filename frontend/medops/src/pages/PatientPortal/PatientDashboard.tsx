@@ -11,7 +11,8 @@ import {
   IdentificationIcon,
   CakeIcon,
   PhoneIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  BellIcon
 } from '@heroicons/react/24/outline';
 import { patientClient } from '@/api/patient/client';
 import { useBCVRate } from '@/hooks/dashboard/useBCVRate';
@@ -34,6 +35,12 @@ const metricsConfig = {
     icon: CreditCardIcon,
     color: "text-purple-400",
     href: "/patient/payments",
+  },
+  notifications: {
+    label: "Notificaciones",
+    icon: BellIcon,
+    color: "text-amber-400",
+    href: "/patient/notifications",
   },
 };
 export function PatientDashboard() {
@@ -98,6 +105,8 @@ export function PatientDashboard() {
   const patientAge = dashboard.patient.age 
     ? `${dashboard.patient.age} AÑOS` 
     : "--";
+  
+  const unreadNotifications = dashboard.notifications?.unread_count ?? 0;
   
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-4 md:p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
@@ -210,8 +219,8 @@ export function PatientDashboard() {
         </div>
       </div>
       
-      {/* METRICS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* METRICS GRID - 4 Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Próxima Cita */}
         <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] cursor-pointer transition-all hover:border-blue-400/40">
@@ -279,12 +288,31 @@ export function PatientDashboard() {
             </div>
           )}
         </div>
+        
+        {/* Notificaciones */}
+        <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] cursor-pointer transition-all hover:border-amber-400/40">
+          <Link to={metricsConfig.notifications.href} className="absolute inset-0 z-10" />
+          <div className="flex items-center gap-2 w-full mb-3">
+            <div className={`p-1.5 rounded-sm bg-white/[0.03] border border-white/5 ${metricsConfig.notifications.color}`}>
+              <BellIcon className="h-4 w-4" />
+            </div>
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+              {metricsConfig.notifications.label}
+            </span>
+          </div>
+          <div className="text-xl font-mono font-bold text-white">
+            {unreadNotifications}
+          </div>
+          <div className="text-[10px] font-mono text-white/40 mt-1">
+            mensajes sin leer
+          </div>
+        </div>
       </div>
       
       {/* Footer */}
       <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/[0.03]">
         <span className="text-[7px] font-mono text-white/20 uppercase tracking-wider">
-          patient_dashboard_v2
+          patient_dashboard_v3
         </span>
         <div className="flex items-center gap-1">
           <div className="w-1 h-1 rounded-full bg-emerald-500/50 animate-pulse"></div>
