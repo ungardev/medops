@@ -1598,6 +1598,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
                    y optional initial_payment para pago inmediato
     """
     patient_name = serializers.SerializerMethodField()
+    doctor_name = serializers.SerializerMethodField()  # ✅ NUEVO: Nombre del doctor
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     appointment_type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
     
@@ -1620,7 +1621,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = [
-            "id", "institution", "doctor", "patient", "patient_name",
+            "id", "institution", "doctor", "doctor_name", "patient", "patient_name",
             "appointment_date", "appointment_type",
             "appointment_type_display", "status", "status_display",
             "expected_amount", "arrival_time",
@@ -1640,6 +1641,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
         if obj.patient:
             return obj.patient.full_name
         return "UNKNOWN_SUBJECT"
+    
+    def get_doctor_name(self, obj):
+        """✅ NUEVO: Obtiene el nombre completo del doctor de forma explícita."""
+        if obj.doctor and hasattr(obj.doctor, 'user'):
+            return obj.doctor.user.get_full_name()
+        return None
     
     def create(self, validated_data):
         """
