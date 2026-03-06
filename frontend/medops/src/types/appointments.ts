@@ -108,6 +108,8 @@ export interface Appointment {
   // 🆕 MÉTRICAS ANTROPOMÉTRICAS
   weight?: number | string | null;
   height?: number | string | null;
+
+  doctor_name?: string | null;
   
   // 🆕 VITAL SIGNS (nested)
   vital_signs?: VitalSignsData | null;

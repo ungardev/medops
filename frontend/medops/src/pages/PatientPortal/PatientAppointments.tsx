@@ -30,27 +30,41 @@ function normalizeStatus(status?: string | null): string {
   if (s === "canceled" || s === "cancelada") return "canceled";
   return "pending";
 }
+function getDoctorDisplay(doctorName: string | null | undefined): string {
+  if (doctorName) {
+    return doctorName.startsWith("Dr.") || doctorName.startsWith("Dra.") 
+      ? doctorName 
+      : `Dr. ${doctorName}`;
+  }
+  return "Por asignar";
+}
 export default function PatientAppointments() {
   const navigate = useNavigate();
   const storedPatientId = localStorage.getItem("patient_id");
+  
   useEffect(() => {
     if (!storedPatientId) {
       navigate("/patient/login");
     }
   }, [navigate, storedPatientId]);
+  
   if (!storedPatientId) return null;
+  
   const patientId = Number(storedPatientId);
   const { data, isLoading } = usePatientAppointments(patientId);
   const appointments = data?.list ?? [];
   const pendingAppointments = data?.pending ?? [];
   const completedAppointments = data?.completed ?? [];
+  
   const todayStr = moment().format("YYYY-MM-DD");
   const appointmentsToday = appointments.filter(a => 
     a.appointment_date.startsWith(todayStr)
   ).length;
+  
   const nextAppointment = pendingAppointments
     .filter(a => new Date(a.appointment_date) >= new Date())
     .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime())[0];
+  
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
@@ -109,7 +123,7 @@ export default function PatientAppointments() {
                   {moment(nextAppointment.appointment_date).format("DD MMMM YYYY")}
                 </p>
                 <p className="text-[10px] text-white/60">
-                  {nextAppointment.appointment_type === "specialized" ? "Especializada" : "General"} • Dr. {nextAppointment.doctor?.full_name || "Por asignar"}
+                  {nextAppointment.appointment_type === "specialized" ? "Especializada" : "General"} • {getDoctorDisplay(nextAppointment.doctor_name)}
                 </p>
               </div>
             </div>
@@ -191,7 +205,7 @@ export default function PatientAppointments() {
                             <div className="flex items-center gap-2">
                               <UserIcon className="w-3.5 h-3.5 text-white/40" />
                               <span className="text-[11px] font-bold text-white/80">
-                                Dr. {a.doctor?.full_name || "Por asignar"}
+                                {getDoctorDisplay(a.doctor_name)}
                               </span>
                             </div>
                           </td>
