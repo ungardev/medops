@@ -4578,6 +4578,20 @@ def patient_profile(request):
         # PUT - Actualizar perfil
         data = request.data
         
+        # ✅ NUEVO: Validar contraseña si se va a cambiar email o phone
+        if 'email' in data or 'phone' in data:
+            current_password = data.get('current_password')
+            if not current_password:
+                return Response({
+                    'error': 'Se requiere la contraseña actual para cambiar email o teléfono'
+                }, status=400)
+            
+            # Validar contraseña usando Django
+            if not request.user.check_password(current_password):
+                return Response({
+                    'error': 'La contraseña actual es incorrecta'
+                }, status=400)
+        
         # Actualizar PatientUser
         if 'email' in data and data['email'] != patient_user.email:
             patient_user.email = data['email']

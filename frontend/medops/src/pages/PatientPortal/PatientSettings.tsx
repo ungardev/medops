@@ -10,9 +10,9 @@ import {
   CreditCard,
   Mail,
   PhoneIcon,
-  MapPinIcon,
   SaveIcon,
-  Loader2
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 interface PatientProfile {
   patient: {
@@ -45,8 +45,11 @@ export default function PatientSettings() {
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
-    address: "",
   });
+  
+  // Password confirmation
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   
   const [notifications, setNotifications] = useState({
     email: true,
@@ -55,6 +58,7 @@ export default function PatientSettings() {
   });
   
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
   
   const updateProfileMutation = useUpdatePatientProfile();
   const sections = [
@@ -77,7 +81,6 @@ export default function PatientSettings() {
       setFormData({
         email: data.user.email || "",
         phone: data.user.phone || data.patient.phone || "",
-        address: data.patient.address || "",
       });
       
       setNotifications({
@@ -92,16 +95,33 @@ export default function PatientSettings() {
     }
   };
   const handleSaveProfile = async () => {
+    setPasswordError("");
+    setSaveError("");
+    
+    // Validar contraseña
+    if (!currentPassword) {
+      setPasswordError("La contraseña es obligatoria para guardar cambios");
+      return;
+    }
+    
     try {
       await updateProfileMutation.mutateAsync({
         email: formData.email,
         phone: formData.phone,
-        address: formData.address,
+        current_password: currentPassword,
       });
       setSaveSuccess(true);
+      setCurrentPassword("");
       setTimeout(() => setSaveSuccess(false), 3000);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error saving profile:", err);
+      if (err.response?.data?.error) {
+        setSaveError(err.response.data.error);
+      } else if (err.response?.data?.current_password) {
+        setPasswordError(err.response.data.current_password[0]);
+      } else {
+        setSaveError("Error al guardar. Verifica tu contraseña.");
+      }
     }
   };
   const handleNotificationChange = async (key: string, value: boolean) => {
@@ -207,6 +227,7 @@ export default function PatientSettings() {
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
                     />
+                    <p className="text-[9px] text-white/30 mt-1">Este email se usa para iniciar sesión</p>
                   </div>
                   
                   {/* Teléfono */}
@@ -223,22 +244,39 @@ export default function PatientSettings() {
                       placeholder="04121234567"
                     />
                   </div>
-                  
-                  {/* Dirección */}
-                  <div className="md:col-span-2">
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
-                      <MapPinIcon className="w-3 h-3" />
-                      Dirección
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
-                      placeholder="Dirección de residencia"
-                    />
-                  </div>
                 </div>
+                
+                {/* Campo contraseña (obligatorio para guardar) */}
+                <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-sm">
+                  <label className="flex items-center gap-2 text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">
+                    <Lock className="w-3 h-3" />
+                    Confirmar cambios con tu contraseña
+                  </label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => {
+                      setCurrentPassword(e.target.value);
+                      setPasswordError("");
+                    }}
+                    className="w-full px-4 py-2.5 bg-black/40 border border-amber-500/30 rounded-sm text-white focus:outline-none focus:border-amber-500/50"
+                    placeholder="••••••••"
+                  />
+                  {passwordError && (
+                    <p className="flex items-center gap-1 text-[10px] text-red-400 mt-2">
+                      <AlertCircle className="w-3 h-3" />
+                      {passwordError}
+                    </p>
+                  )}
+                </div>
+                
+                {/* Error al guardar */}
+                {saveError && (
+                  <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-sm">
+                    <AlertCircle className="w-4 h-4 text-red-400" />
+                    <p className="text-[10px] text-red-400">{saveError}</p>
+                  </div>
+                )}
                 
                 {/* Botón guardar */}
                 <button 

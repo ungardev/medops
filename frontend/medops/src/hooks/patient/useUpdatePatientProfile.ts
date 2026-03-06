@@ -1,14 +1,17 @@
 // src/hooks/patient/useUpdatePatientProfile.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { patientClient } from "@/api/patient/client";
+
 interface UpdateProfileData {
   email?: string;
   phone?: string;
   address?: string;
+  current_password?: string;
   notifications_email?: boolean;
   notifications_sms?: boolean;
   notifications_whatsapp?: boolean;
 }
+
 interface UpdateProfileResponse {
   success: boolean;
   message: string;
