@@ -6,7 +6,12 @@ import {
   CalendarIcon, 
   CreditCardIcon, 
   CheckCircleIcon,
-  MapPinIcon
+  MapPinIcon,
+  UserIcon,
+  IdentificationIcon,
+  CakeIcon,
+  PhoneIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 import { patientClient } from '@/api/patient/client';
 import { useBCVRate } from '@/hooks/dashboard/useBCVRate';
@@ -37,13 +42,16 @@ export function PatientDashboard() {
   const { data: bcvRate } = useBCVRate();
   
   const [now, setNow] = useState(moment());
+  
   useEffect(() => {
     loadDashboard();
   }, []);
+  
   useEffect(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
     return () => clearInterval(timer);
   }, []);
+  
   const loadDashboard = async () => {
     try {
       const response = await patientClient.getDashboard();
@@ -54,9 +62,11 @@ export function PatientDashboard() {
       setIsLoading(false);
     }
   };
+  
   const bcvDisplay = bcvRate 
     ? `${Number(bcvRate.value).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
     : "--";
+  
   if (isLoading) {
     return (
       <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
@@ -77,44 +87,68 @@ export function PatientDashboard() {
       </div>
     );
   }
+  
   if (!dashboard) return null;
+  
   const nextAppointment = dashboard.upcoming_appointments?.[0];
   const nextAppointmentDate = nextAppointment 
     ? moment(nextAppointment.date).format('DD MMM YYYY')
     : null;
+  
+  const patientAge = dashboard.patient.age 
+    ? `${dashboard.patient.age} AÑOS` 
+    : "--";
+  
   return (
-    <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
+    <div className="group relative bg-[#0A0A0A] border border-white/5 p-4 md:p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
-      {/* HEADER */}
-      <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
+      {/* HEADER - Patient Info */}
+      <div className="flex flex-col md:flex-row items-start justify-between gap-2 md:gap-4 mb-4 md:mb-6 w-full">
         
-        {/* Izquierda */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h4 className="text-2xl font-black text-white uppercase truncate tracking-widest">
-              {dashboard.patient.full_name}
-            </h4>
-          </div>
-          
-          {/* ✅ Address con optional chaining */}
-          {dashboard.patient.address && (
-            <div className="flex items-center gap-2 mt-2 text-white/40">
-              <MapPinIcon className="w-3 h-3" />
-              <span className="text-[10px] font-mono uppercase">
-                {dashboard.patient.address}
-              </span>
+        {/* Izquierda - Avatar + Nombre + Contacto */}
+        <div className="flex-1 min-w-0 w-full">
+          <div className="flex items-start gap-3">
+            {/* Avatar Circle */}
+            <div className="hidden sm:flex shrink-0 w-12 h-12 rounded-sm bg-gradient-to-br from-blue-500/30 to-purple-500/30 border border-white/10 items-center justify-center">
+              <UserIcon className="w-6 h-6 text-white/60" />
             </div>
-          )}
+            
+            {/* Nombre + Contacto */}
+            <div className="flex-1 min-w-0 w-full">
+              <h4 className="text-lg md:text-xl lg:text-2xl font-black text-white uppercase whitespace-normal break-words w-full">
+                {dashboard.patient.full_name}
+              </h4>
+              
+              {/* Email + Teléfono */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 md:mt-2">
+                {dashboard.patient.email && (
+                  <div className="flex items-center gap-1.5 text-white/40">
+                    <EnvelopeIcon className="w-3 h-3 shrink-0" />
+                    <span className="text-[10px] font-mono uppercase whitespace-normal break-words">
+                      {dashboard.patient.email}
+                    </span>
+                  </div>
+                )}
+                {dashboard.patient.phone && (
+                  <div className="flex items-center gap-1.5 text-white/40">
+                    <PhoneIcon className="w-3 h-3 shrink-0" />
+                    <span className="text-[10px] font-mono uppercase">
+                      {dashboard.patient.phone}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
         
-        {/* Derecha */}
-        <div className="flex flex-col items-start md:items-end gap-2 shrink-0">
-          
-          <div className="flex items-center gap-4">
-            <span className="text-2xl font-black font-mono text-white leading-none tracking-tighter">
+        {/* Derecha - Reloj + BCV */}
+        <div className="flex flex-col items-start md:items-end gap-2 shrink-0 w-full md:w-auto">
+          <div className="flex items-center gap-2 md:gap-4 flex-wrap md:flex-nowrap">
+            <span className="text-xl md:text-2xl font-black font-mono text-white leading-none tracking-tighter">
               {now.format("HH:mm:ss")}
             </span>
-            <div className="h-6 w-[1px] bg-white/10"></div>
+            <div className="hidden md:block h-6 w-[1px] bg-white/10"></div>
             <span className="text-[10px] font-mono text-white/60 uppercase">
               {now.format("ddd, DD MMM YYYY")}
             </span>
@@ -126,6 +160,56 @@ export function PatientDashboard() {
           </div>
         </div>
       </div>
+      
+      {/* IDENTITY CARD - Patient Info Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {/* Cédula/DNI */}
+        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <IdentificationIcon className="w-3 h-3 text-blue-400/60" />
+            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Cédula</span>
+          </div>
+          <span className="text-xs font-mono font-bold text-white uppercase">
+            {dashboard.patient.national_id || "--"}
+          </span>
+        </div>
+        
+        {/* Fecha de Nacimiento */}
+        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <CakeIcon className="w-3 h-3 text-purple-400/60" />
+            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Nacimiento</span>
+          </div>
+          <span className="text-xs font-mono font-bold text-white uppercase">
+            {dashboard.patient.birthdate 
+              ? moment(dashboard.patient.birthdate).format('DD/MM/YYYY')
+              : "--"}
+          </span>
+        </div>
+        
+        {/* Edad */}
+        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <UserIcon className="w-3 h-3 text-emerald-400/60" />
+            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Edad</span>
+          </div>
+          <span className="text-xs font-mono font-bold text-white uppercase">
+            {patientAge}
+          </span>
+        </div>
+        
+        {/* Teléfono */}
+        <div className="bg-black/20 border border-white/5 rounded-sm p-3">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <PhoneIcon className="w-3 h-3 text-cyan-400/60" />
+            <span className="text-[8px] font-black uppercase tracking-[0.1em] text-white/40">Teléfono</span>
+          </div>
+          <span className="text-xs font-mono font-bold text-white uppercase">
+            {dashboard.patient.phone || "--"}
+          </span>
+        </div>
+      </div>
+      
       {/* METRICS GRID */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         
@@ -149,6 +233,7 @@ export function PatientDashboard() {
             </div>
           )}
         </div>
+        
         {/* Citas Realizadas */}
         <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] cursor-pointer transition-all hover:border-emerald-400/40">
           <Link to={metricsConfig.past_appointments.href} className="absolute inset-0 z-10" />
@@ -167,6 +252,7 @@ export function PatientDashboard() {
             consultas completadas
           </div>
         </div>
+        
         {/* Suscripción */}
         <div className="group/card relative bg-black/20 border border-white/5 rounded-sm p-4 hover:bg-white/[0.03] cursor-pointer transition-all hover:border-purple-400/40">
           <Link to={metricsConfig.subscription.href} className="absolute inset-0 z-10" />
@@ -194,10 +280,11 @@ export function PatientDashboard() {
           )}
         </div>
       </div>
+      
       {/* Footer */}
       <div className="flex justify-between items-center pt-4 mt-4 border-t border-white/[0.03]">
         <span className="text-[7px] font-mono text-white/20 uppercase tracking-wider">
-          patient_dashboard_v1
+          patient_dashboard_v2
         </span>
         <div className="flex items-center gap-1">
           <div className="w-1 h-1 rounded-full bg-emerald-500/50 animate-pulse"></div>

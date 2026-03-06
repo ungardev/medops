@@ -14,7 +14,6 @@ export interface PatientUser {
   notifications_whatsapp: boolean;
   last_login_at?: string;
 }
-
 export interface Patient {
   id: number;
   full_name: string;
@@ -30,7 +29,6 @@ export interface Patient {
   address?: string;
   guardian_info?: GuardianInfo;
 }
-
 export interface GuardianInfo {
   name: string;
   relationship: string;
@@ -39,7 +37,6 @@ export interface GuardianInfo {
   consent_date?: string;
   consent_given: boolean;
 }
-
 export interface PatientSubscription {
   plan: 'free' | 'basic' | 'premium' | 'enterprise';
   status: 'active' | 'pending' | 'suspended' | 'cancelled' | 'expired';
@@ -50,7 +47,6 @@ export interface PatientSubscription {
   days_remaining?: number;
   auto_renew: boolean;
 }
-
 export interface PatientAppointment {
   id: number;
   date: string;
@@ -66,17 +62,18 @@ export interface PatientAppointment {
   reason?: string;
   notes?: string;
 }
-
 export interface PatientDashboard {
   patient: {
     id: number;
     full_name: string;
     email: string;
     phone?: string;
+    national_id?: string;    // ✅ AGREGADO
+    birthdate?: string;      // ✅ AGREGADO
     is_pediatric: boolean;
     age?: number;
     is_verified: boolean;
-    address?: string;  // ✅ AGREGADO
+    address?: string;
   };
   subscription?: {
     plan: string;
@@ -89,18 +86,16 @@ export interface PatientDashboard {
     unread_count: number;
   };
 }
-
 // Auth types
 export interface LoginRequest {
   email: string;
   password: string;
 }
-
 export interface LoginResponse {
   success: boolean;
   access_token: string;
   refresh_token: string;
-  token: string;        // ✅ AGREGAR
+  token: string;
   patient: {
     id: number;
     full_name: string;
@@ -110,13 +105,11 @@ export interface LoginResponse {
   };
   expires_at: string;
 }
-
 export interface RegisterRequest {
   email: string;
   password: string;
   patient_id: number;
 }
-
 export interface RegisterResponse {
   success: boolean;
   message: string;
