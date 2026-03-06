@@ -37,6 +37,7 @@ import PatientQueue from "./pages/PatientPortal/PatientQueue";
 import PatientSearch from "./pages/PatientPortal/PatientSearch";
 import PatientSettings from "./pages/PatientPortal/PatientSettings";
 import PatientActivate from "./pages/PatientPortal/PatientActivate";
+import PatientAppointments from "./pages/PatientPortal/PatientAppointments";
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
@@ -69,7 +70,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             >
               <Route index element={<PatientDashboard />} />
               <Route path="record" element={<PatientRecord />} />
-              <Route path="appointments" element={<Appointments />} />
+              <Route path="appointments" element={<PatientAppointments />} />
               <Route path="queue" element={<PatientQueue />} />
               <Route path="search" element={<PatientSearch />} />
               <Route path="settings" element={<PatientSettings />} />
