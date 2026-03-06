@@ -1643,9 +1643,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return "UNKNOWN_SUBJECT"
     
     def get_doctor_name(self, obj):
-        """✅ NUEVO: Obtiene el nombre completo del doctor de forma explícita."""
-        if obj.doctor and hasattr(obj.doctor, 'user'):
-            return obj.doctor.user.get_full_name()
+        """✅ CORREGIDO: Obtiene el nombre completo del doctor directamente del modelo."""
+        if obj.doctor:
+            return obj.doctor.full_name
         return None
     
     def create(self, validated_data):
