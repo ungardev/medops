@@ -5,6 +5,7 @@ import moment from "moment";
 import { Appointment, AppointmentStatus } from "@/types/appointments";
 import { usePatientAppointments } from "@/hooks/patients/usePatientAppointments";
 import CalendarGrid from "@/components/Appointments/CalendarGrid";
+import AppointmentDetail from "@/components/Appointments/AppointmentDetail";
 import PageHeader from "@/components/Common/PageHeader";
 import { 
   CalendarDaysIcon, 
@@ -41,6 +42,9 @@ function getDoctorDisplay(doctorName: string | null | undefined): string {
 export default function PatientAppointments() {
   const navigate = useNavigate();
   const storedPatientId = localStorage.getItem("patient_id");
+  
+  // Estado para el modal de detalle de cita
+  const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
   
   useEffect(() => {
     if (!storedPatientId) {
@@ -149,7 +153,7 @@ export default function PatientAppointments() {
             <CalendarGrid
               appointments={appointments}
               onSelectDate={() => {}}
-              onSelectAppointment={() => {}}
+              onSelectAppointment={(a) => setViewingAppointmentId(a.id)}
             />
           </section>
         </div>
@@ -190,7 +194,8 @@ export default function PatientAppointments() {
                       return (
                         <tr 
                           key={a.id} 
-                          className="group hover:bg-white/5 transition-colors duration-150"
+                          className="group hover:bg-white/5 transition-colors duration-150 cursor-pointer"
+                          onClick={() => setViewingAppointmentId(a.id)}
                         >
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2 text-[11px] font-mono text-white/80">
@@ -227,6 +232,15 @@ export default function PatientAppointments() {
           </div>
         </div>
       </div>
+      {/* MODAL DE DETALLE DE CITA */}
+      {viewingAppointmentId && (
+        <AppointmentDetail
+          appointmentId={viewingAppointmentId}
+          onClose={() => setViewingAppointmentId(null)}
+          onEdit={() => {}}
+          readOnly={true}
+        />
+      )}
     </div>
   );
 }

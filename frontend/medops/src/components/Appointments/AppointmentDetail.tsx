@@ -11,9 +11,10 @@ import {
   BeakerIcon
 } from "@heroicons/react/24/outline";
 interface Props {
-  appointmentId: number;  // ✅ CAMBIO: Recibir ID en lugar de objeto
+  appointmentId: number;
   onClose: () => void;
   onEdit: (id: number) => void;
+  readOnly?: boolean;  // ✅ NUEVA PROP
 }
 const METHOD_LABELS: Record<string, string> = {
   cash: "Efectivo",
@@ -23,23 +24,15 @@ const METHOD_LABELS: Record<string, string> = {
   crypto: "Criptomonedas",
   other: "Otro",
 };
-export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Props) {
+export default function AppointmentDetail({ appointmentId, onClose, onEdit, readOnly = false }: Props) {
   const [activeTab, setActiveTab] = useState<"info" | "services" | "payments">("info");
   
-  // ✅ FIX: Fetch usando el ID directamente
   const { data: appt, isLoading, isError } = useAppointment(appointmentId);
   
-  // DEBUG
-  console.log('[AppointmentDetail] appointmentId:', appointmentId);
-  console.log('[AppointmentDetail] appt:', appt);
-  console.log('[AppointmentDetail] isLoading:', isLoading);
-  
-  // ✅ Obtener charge_order, items y payments
   const chargeOrder = appt?.charge_order;
   const items = Array.isArray(chargeOrder?.items) ? chargeOrder.items : [];
   const payments = Array.isArray(chargeOrder?.payments) ? chargeOrder.payments : [];
   
-  // ✅ FIX: Usar expected_amount como fallback cuando charge_order está vacío
   const chargeOrderTotal = chargeOrder?.total_amount ?? 0;
   const expectedTotal = Number(appt?.expected_amount ?? 0);
   const totalAmount = chargeOrderTotal > 0 ? chargeOrderTotal : expectedTotal;
@@ -49,7 +42,6 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
     0
   );
   
-  // ✅ FIX: Calcular balance due correctamente
   const balanceDue = totalAmount - totalPagado;
   
   const formatDate = (dateStr: string | undefined) => {
@@ -81,7 +73,7 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
       return "---";
     }
   };
-  // ✅ Mostrar loading
+  
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
@@ -92,7 +84,7 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
       </div>
     );
   }
-  // ✅ Mostrar error si no hay datos
+  
   if (!appt) {
     return (
       <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
@@ -103,6 +95,7 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
       </div>
     );
   }
+  
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
       <div className="max-w-lg w-full bg-[#0a0a0b] border border-white/10 shadow-2xl overflow-hidden">
@@ -124,14 +117,17 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
           </div>
           
           <div className="flex gap-2">
-            <button
-              type="button"
-              className="p-2 border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all"
-              onClick={() => onEdit(appt.id)}
-              title="MODIFY_RECORD"
-            >
-              <PencilIcon className="h-5 w-5" />
-            </button>
+            {/* ✅ BOTÓN EDITAR - Solo visible si no es readOnly */}
+            {!readOnly && (
+              <button
+                type="button"
+                className="p-2 border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all"
+                onClick={() => onEdit(appt.id)}
+                title="MODIFY_RECORD"
+              >
+                <PencilIcon className="h-5 w-5" />
+              </button>
+            )}
             <button
               type="button"
               className="p-2 border border-white/10 text-white/40 hover:text-red-500 hover:border-red-500/50 transition-all"
@@ -141,6 +137,7 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
             </button>
           </div>
         </div>
+        
         {/* Tabs */}
         <div className="flex border-b border-white/10 bg-black/20">
           {[
@@ -203,6 +200,7 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
               </div>
             </div>
           )}
+          
           {activeTab === "services" && (
             <div className="space-y-3">
               <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4">Service_Order_Manifest</h3>
@@ -303,7 +301,7 @@ export default function AppointmentDetail({ appointmentId, onClose, onEdit }: Pr
         {/* Footer */}
         <div className="px-6 py-3 bg-black/40 border-t border-white/5 flex justify-between items-center text-[8px] font-mono text-white/30 uppercase tracking-widest">
           <span>Record_ID: {appt.id || 'N/A'}</span>
-          <span>Security_Level: STANDARD</span>
+          <span>Security_Level: {readOnly ? 'READ_ONLY' : 'STANDARD'}</span>
         </div>
       </div>
     </div>
