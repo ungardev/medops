@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { usePatientChargeOrders } from "@/hooks/patient/usePatientChargeOrders";
-import { useBCVRate } from "@/hooks/dashboard/useBCVRate";
 import { Loader2 } from "lucide-react";
 import { 
   BanknotesIcon,
@@ -30,14 +29,9 @@ export default function PatientPayments() {
   if (!storedPatientId) return null;
   
   const { data, isLoading, error } = usePatientChargeOrders();
-  const { data: bcvRate } = useBCVRate();
   
   const orders = data?.orders ?? [];
   const summary = data?.summary;
-  
-  const bcvDisplay = bcvRate 
-    ? `${Number(bcvRate.value).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
-    : "--";
   
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
@@ -47,6 +41,7 @@ export default function PatientPayments() {
       </div>
     </div>
   );
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       {/* HEADER */}
@@ -59,20 +54,20 @@ export default function PatientPayments() {
           { 
             label: "TOTAL_PENDING", 
             value: summary?.total_pending 
-              ? `Bs ${Number(summary.total_pending * (bcvRate ? Number(bcvRate.value) : 1)).toLocaleString('es-VE', { minimumFractionDigits: 0 })}`
-              : "Bs 0",
+              ? `$ ${Number(summary.total_pending).toLocaleString('es-VE', { minimumFractionDigits: 2 })}`
+              : "$ 0.00",
             color: "text-amber-500"
           },
           { 
             label: "TOTAL_PAID", 
             value: summary?.total_paid 
-              ? `Bs ${Number(summary.total_paid * (bcvRate ? Number(bcvRate.value) : 1)).toLocaleString('es-VE', { minimumFractionDigits: 0 })}`
-              : "Bs 0",
+              ? `$ ${Number(summary.total_paid).toLocaleString('es-VE', { minimumFractionDigits: 2 })}`
+              : "$ 0.00",
             color: "text-emerald-500"
           },
           { 
-            label: "BCV_RATE", 
-            value: bcvDisplay,
+            label: "CURRENCY", 
+            value: "USD",
             color: "text-purple-400"
           }
         ]}
@@ -94,9 +89,9 @@ export default function PatientPayments() {
               <span className="text-[10px] font-black uppercase tracking-wider text-white/40">PENDIENTE</span>
             </div>
             <div className="text-2xl font-bold text-amber-500">
-              Bs {summary?.total_pending 
-                ? (summary.total_pending * (bcvRate ? Number(bcvRate.value) : 1)).toLocaleString('es-VE', { minimumFractionDigits: 0 })
-                : "0"}
+              $ {summary?.total_pending 
+                ? Number(summary.total_pending).toLocaleString('es-VE', { minimumFractionDigits: 2 })
+                : "0.00"}
             </div>
             <p className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">
               {summary?.pending_orders || 0} órdenes activas
@@ -109,9 +104,9 @@ export default function PatientPayments() {
               <span className="text-[10px] font-black uppercase tracking-wider text-white/40">PAGADO</span>
             </div>
             <div className="text-2xl font-bold text-emerald-500">
-              Bs {summary?.total_paid 
-                ? (summary.total_paid * (bcvRate ? Number(bcvRate.value) : 1)).toLocaleString('es-VE', { minimumFractionDigits: 0 })
-                : "0"}
+              $ {summary?.total_paid 
+                ? Number(summary.total_paid).toLocaleString('es-VE', { minimumFractionDigits: 2 })
+                : "0.00"}
             </div>
             <p className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">
               {summary?.paid_orders || 0} órdenes completadas
@@ -195,10 +190,10 @@ export default function PatientPayments() {
                   <div className="flex items-center gap-4">
                     <div className="text-right">
                       <span className="text-[14px] font-bold text-white">
-                        Bs {Number(order.balance_due * (bcvRate ? Number(bcvRate.value) : 1)).toLocaleString('es-VE', { minimumFractionDigits: 0 })}
+                        $ {Number(order.balance_due).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                       </span>
                       <p className="text-[9px] font-mono text-white/40 uppercase">
-                        Total: Bs {Number(order.total * (bcvRate ? Number(bcvRate.value) : 1)).toLocaleString('es-VE', { minimumFractionDigits: 0 })}
+                        Total: $ {Number(order.total).toLocaleString('es-VE', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
                     <ChevronRightIcon className="w-4 h-4 text-white/40 group-hover:text-white transition-colors" />
