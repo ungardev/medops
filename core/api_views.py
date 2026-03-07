@@ -5985,6 +5985,7 @@ def patient_register_payment(request, order_id):
     Registra un pago manual del paciente (Pago Móvil).
     Determina automáticamente si la verificación es automática o manual.
     """
+    from django.db.models import Q
     
     try:
         from decimal import Decimal
@@ -6034,11 +6035,12 @@ def patient_register_payment(request, order_id):
         
         # ✅ VERIFICAR TIPO DE VERIFICACIÓN
         from .models import DoctorPaymentConfig
-        #from django.db.models import Q
         
+        # ✅ FIX: Separar Q objects en filter() separado (corregido SyntaxError)
         bank_api_enabled = DoctorPaymentConfig.objects.filter(
             doctor=order.doctor,
-            Q(mercantil_enabled=True) | Q(banesco_enabled=True) # type: ignore[call-overload]
+        ).filter(
+            Q(mercantil_enabled=True) | Q(banesco_enabled=True)
         ).exists()
         
         # Determinar tipo de verificación y status inicial
