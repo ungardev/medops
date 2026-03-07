@@ -2582,6 +2582,7 @@ def update_appointment_status(request, pk):
     el WaitingRoomEntry relacionado para mantener consistencia.
     """
     try:
+        from django.utils import timezone
         appointment = get_object_or_404(Appointment, pk=pk)
         new_status = request.data.get('status')
         
@@ -2594,7 +2595,7 @@ def update_appointment_status(request, pk):
         
         appointment.update_status(new_status)
         
-        # ✅ NUEVO: Sincronizar WaitingRoomEntry cuando el appointment se completa
+        # ✅ SINCRONIZACIÓN ROBUSTA: WaitingRoomEntry cuando el appointment se completa
         if new_status == 'completed':
             from .models import WaitingRoomEntry
             entry = WaitingRoomEntry.objects.filter(
@@ -2602,7 +2603,13 @@ def update_appointment_status(request, pk):
                 status__in=['waiting', 'in_consultation']
             ).first()
             if entry:
-                entry.update_status('completed')
+                try:
+                    entry.status = 'completed'
+                    entry.completed_at = timezone.now()
+                    entry.save(update_fields=['status', 'completed_at'])
+                    logger.info(f"SYNC: WaitingRoomEntry {entry.id} -> completed (Appointment {appointment.id})")
+                except Exception as e:
+                    logger.error(f"ERROR sincronizando WaitingRoomEntry {entry.id}: {e}")
         
         serializer = AppointmentSerializer(appointment)
         return Response(serializer.data)
