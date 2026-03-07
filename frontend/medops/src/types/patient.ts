@@ -116,3 +116,119 @@ export interface RegisterResponse {
   patient_user_id: number;
   email: string;
 }
+
+
+// ============================================
+// TIPOS DE PAGOS - PORTAL PACIENTE
+// ============================================
+export interface PatientPaymentMethod {
+  id: number;
+  mobile_phone: string;
+  mobile_national_id: string;
+  preferred_bank: string;
+  bank_name: string | null;
+  last_payment_amount: number | null;
+  crypto_wallet: string;
+  crypto_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+
+export interface PatientChargeOrderSummary {
+  id: number;
+  institution: string;
+  institution_tax_id: string;
+  total: number;
+  balance_due: number;
+  status: 'open' | 'partially_paid' | 'paid' | 'void' | 'waived';
+  status_display: string;
+  issued_at: string;
+  items_count: number;
+  payments_count: number;
+}
+
+
+export interface ChargeOrderItem {
+  id: number;
+  code: string;
+  description: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+}
+
+
+export interface PatientPayment {
+  id: number;
+  amount: number;
+  method: string;
+  status: string;
+  reference_number: string | null;
+  received_at: string | null;
+}
+
+
+export interface PatientChargeOrder {
+  id: number;
+  institution: {
+    id: number;
+    name: string;
+    tax_id: string;
+    address?: string;
+  };
+  doctor: {
+    id: number;
+    name: string;
+  } | null;
+  appointment: {
+    id: number;
+    date: string;
+    time: string;
+  } | null;
+  currency: string;
+  total: number;
+  balance_due: number;
+  min_amount_bs: number;
+  bcv_rate: number;
+  status: 'open' | 'partially_paid' | 'paid' | 'void' | 'waived';
+  status_display: string;
+  issued_at: string;
+  items: ChargeOrderItem[];
+  payments: PatientPayment[];
+}
+
+
+export interface PatientChargeOrdersResponse {
+  orders: PatientChargeOrderSummary[];
+  summary: {
+    total_orders: number;
+    total_pending: number;
+    total_paid: number;
+    paid_orders: number;
+    pending_orders: number;
+  };
+}
+
+
+export interface RegisterPaymentRequest {
+  bank_code: string;
+  phone: string;
+  national_id: string;
+  reference: string;
+  amount_bs: number;
+}
+
+
+export interface RegisterPaymentResponse {
+  success: boolean;
+  payment: {
+    id: number;
+    amount: number;
+    amount_bs: number;
+    reference: string;
+    status: string;
+    verification_type: 'automatic' | 'manual';
+    message: string;
+  };
+}

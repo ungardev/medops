@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useUpdatePatientProfile } from "@/hooks/patient/useUpdatePatientProfile";
 import { patientClient } from "@/api/patient/client";
+import { usePatientPaymentMethod, useUpdatePatientPaymentMethod } from "@/hooks/patient/usePatientPaymentMethod";
+import { VENEZUELAN_BANKS } from "@/constants/banks";
 import { 
   User, 
   Bell, 
@@ -36,6 +38,130 @@ interface PatientProfile {
     notifications_whatsapp: boolean;
   };
 }
+function PaymentMethodsSection() {
+  const { data: paymentMethod, isLoading } = usePatientPaymentMethod();
+  const updateMutation = useUpdatePatientPaymentMethod();
+  
+  const [formData, setFormData] = useState({
+    mobile_phone: "",
+    mobile_national_id: "",
+    preferred_bank: "",
+    crypto_wallet: "",
+    crypto_type: "",
+  });
+  const [saved, setSaved] = useState(false);
+  
+  useEffect(() => {
+    if (paymentMethod) {
+      setFormData({
+        mobile_phone: paymentMethod.mobile_phone || "",
+        mobile_national_id: paymentMethod.mobile_national_id || "",
+        preferred_bank: paymentMethod.preferred_bank || "",
+        crypto_wallet: paymentMethod.crypto_wallet || "",
+        crypto_type: paymentMethod.crypto_type || "",
+      });
+    }
+  }, [paymentMethod]);
+  
+  const handleSave = async () => {
+    try {
+      await updateMutation.mutateAsync(formData);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error("Error saving:", err);
+    }
+  };
+  
+  if (isLoading) return <Loader2 className="w-6 h-6 animate-spin text-white/40" />;
+  
+  return (
+    <div className="space-y-6">
+      <h2 className="text-lg font-bold uppercase tracking-wide">Métodos de Pago</h2>
+      
+      {/* Pago Móvil Venezuela */}
+      <div className="p-4 bg-black/20 border border-white/5 rounded-sm">
+        <h3 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-4">Pago Móvil Venezuela</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Teléfono</label>
+            <input
+              type="tel"
+              value={formData.mobile_phone}
+              onChange={(e) => setFormData({ ...formData, mobile_phone: e.target.value })}
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+              placeholder="04121234567"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Cédula</label>
+            <input
+              type="text"
+              value={formData.mobile_national_id}
+              onChange={(e) => setFormData({ ...formData, mobile_national_id: e.target.value })}
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+              placeholder="V-12345678"
+            />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Banco Preferido</label>
+            <select
+              value={formData.preferred_bank}
+              onChange={(e) => setFormData({ ...formData, preferred_bank: e.target.value })}
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+            >
+              <option value="">Seleccionar banco</option>
+              {VENEZUELAN_BANKS.map(bank => (
+                <option key={bank.code} value={bank.code}>{bank.name}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      {/* Crypto (Futuro) */}
+      <div className="p-4 bg-black/20 border border-white/5 rounded-sm opacity-60">
+        <h3 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-4">Criptomonedas (Próximamente)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Wallet</label>
+            <input
+              type="text"
+              value={formData.crypto_wallet}
+              disabled
+              className="w-full px-4 py-2.5 bg-black/20 border border-white/5 rounded-sm text-white/40"
+              placeholder="Próximamente"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Tipo</label>
+            <select
+              value={formData.crypto_type}
+              disabled
+              className="w-full px-4 py-2.5 bg-black/20 border border-white/5 rounded-sm text-white/40"
+            >
+              <option value="">Próximamente</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      <button 
+        onClick={handleSave}
+        disabled={updateMutation.isPending}
+        className={`flex items-center gap-2 px-6 py-2.5 bg-white text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/90 ${
+          updateMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+        }`}
+      >
+        {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SaveIcon className="w-4 h-4" />}
+        {saved ? "Guardado!" : "Guardar Métodos de Pago"}
+      </button>
+    </div>
+  );
+}
 export default function PatientSettings() {
   const [activeSection, setActiveSection] = useState("profile");
   const [profileData, setProfileData] = useState<PatientProfile | null>(null);
@@ -66,11 +192,14 @@ export default function PatientSettings() {
     { id: "notifications", label: "Notificaciones", icon: Bell },
     { id: "security", label: "Seguridad", icon: Lock },
     { id: "subscription", label: "Suscripción", icon: CreditCard },
+    { id: "payment-methods", label: "Métodos de Pago", icon: CreditCard },
   ];
+  
   // Cargar datos del perfil
   useEffect(() => {
     loadProfile();
   }, []);
+  
   const loadProfile = async () => {
     try {
       setIsLoadingProfile(true);
@@ -94,11 +223,11 @@ export default function PatientSettings() {
       setIsLoadingProfile(false);
     }
   };
+  
   const handleSaveProfile = async () => {
     setPasswordError("");
     setSaveError("");
     
-    // Validar contraseña
     if (!currentPassword) {
       setPasswordError("La contraseña es obligatoria para guardar cambios");
       return;
@@ -124,6 +253,7 @@ export default function PatientSettings() {
       }
     }
   };
+  
   const handleNotificationChange = async (key: string, value: boolean) => {
     const updated = { ...notifications, [key]: value };
     setNotifications(updated);
@@ -137,6 +267,7 @@ export default function PatientSettings() {
       setNotifications(notifications);
     }
   };
+  
   if (isLoadingProfile) {
     return (
       <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
@@ -152,6 +283,7 @@ export default function PatientSettings() {
       </div>
     );
   }
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       <PageHeader 
@@ -215,7 +347,6 @@ export default function PatientSettings() {
                 
                 {/* Campos del formulario */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Email */}
                   <div>
                     <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
                       <Mail className="w-3 h-3" />
@@ -230,7 +361,6 @@ export default function PatientSettings() {
                     <p className="text-[9px] text-white/30 mt-1">Este email se usa para iniciar sesión</p>
                   </div>
                   
-                  {/* Teléfono */}
                   <div>
                     <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
                       <PhoneIcon className="w-3 h-3" />
@@ -246,7 +376,7 @@ export default function PatientSettings() {
                   </div>
                 </div>
                 
-                {/* Campo contraseña (obligatorio para guardar) */}
+                {/* Campo contraseña */}
                 <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-sm">
                   <label className="flex items-center gap-2 text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">
                     <Lock className="w-3 h-3" />
@@ -270,7 +400,6 @@ export default function PatientSettings() {
                   )}
                 </div>
                 
-                {/* Error al guardar */}
                 {saveError && (
                   <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-sm">
                     <AlertCircle className="w-4 h-4 text-red-400" />
@@ -278,7 +407,6 @@ export default function PatientSettings() {
                   </div>
                 )}
                 
-                {/* Botón guardar */}
                 <button 
                   onClick={handleSaveProfile}
                   disabled={updateProfileMutation.isPending}
@@ -392,6 +520,9 @@ export default function PatientSettings() {
                 </button>
               </div>
             )}
+            
+            {/* MÉTODOS DE PAGO - NUEVO TAB */}
+            {activeSection === "payment-methods" && <PaymentMethodsSection />}
           </div>
         </div>
       </div>

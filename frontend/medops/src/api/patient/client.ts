@@ -8,6 +8,11 @@ import {
   PatientDashboard,
   PatientAppointment,
   PatientUser,
+  PatientPaymentMethod,
+  PatientChargeOrder,
+  PatientChargeOrdersResponse,
+  RegisterPaymentRequest,
+  RegisterPaymentResponse,
 } from '@/types/patient';
 const API_BASE_URL = '/api';
 const patientApi = axios.create({
@@ -45,6 +50,7 @@ export const patientAuth = {
 };
 // Patient endpoints
 export const patientClient = {
+  // Dashboard y Perfil
   getDashboard: () =>
     patientApi.get<PatientDashboard>('/patient-dashboard/'),
   
@@ -53,11 +59,29 @@ export const patientClient = {
   
   updateProfile: (data: Partial<PatientUser>) =>
     patientApi.put('/patient-profile/', data),
+  
+  // Citas
   getAppointments: (status?: string) => {
     const params = status ? `?status=${status}` : '';
     return patientApi.get<{ appointments: PatientAppointment[] }>(
       `/patient-appointments/${params}`
     );
   },
+  
+  // === MÉTODOS DE PAGO ===
+  getPaymentMethod: () =>
+    patientApi.get<PatientPaymentMethod>('/patient-payment-method/'),
+  updatePaymentMethod: (data: Partial<PatientPaymentMethod>) =>
+    patientApi.put<PatientPaymentMethod>('/patient-payment-method/', data),
+  // Órdenes de Cobro
+  getChargeOrders: () =>
+    patientApi.get<PatientChargeOrdersResponse>('/patient-charge-orders/'),
+  getChargeOrderDetail: (orderId: number) =>
+    patientApi.get<PatientChargeOrder>(`/patient-charge-orders/${orderId}/`),
+  registerPayment: (orderId: number, data: RegisterPaymentRequest) =>
+    patientApi.post<RegisterPaymentResponse>(
+      `/patient-charge-orders/${orderId}/register-payment/`,
+      data
+    ),
 };
 export default patientApi;
