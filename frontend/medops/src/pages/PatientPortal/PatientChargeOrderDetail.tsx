@@ -1,16 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { usePatientChargeOrderDetail } from "@/hooks/patient/usePatientChargeOrders";
 import { useRegisterPayment } from "@/hooks/patient/useRegisterPayment";
-import { useBCVRate } from "@/hooks/dashboard/useBCVRate";
-import { VENEZUELAN_BANKS, getBankName } from "@/constants/banks";
+import { VENEZUELAN_BANKS } from "@/constants/banks";
 import { Loader2 } from "lucide-react";
 import { 
   ArrowLeftIcon,
   PlusIcon,
   ClockIcon,
-  BanknotesIcon,
   CheckCircleIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
@@ -20,7 +18,6 @@ export default function PatientChargeOrderDetail() {
   const orderId = Number(id);
   
   const { data: order, isLoading, error } = usePatientChargeOrderDetail(orderId);
-  const { data: bcvRate } = useBCVRate();
   const registerPayment = useRegisterPayment();
   
   const [showModal, setShowModal] = useState(false);
@@ -33,8 +30,6 @@ export default function PatientChargeOrderDetail() {
   });
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  
-  const bcvValue = bcvRate ? Number(bcvRate.value) : 1;
   
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +84,9 @@ export default function PatientChargeOrderDetail() {
     </div>
   );
   
-  const total = order.total;
-  const paid = order.payments.reduce((acc, p) => acc + p.amount, 0);
-  const balance = order.balance_due;
+  const total = order.total_ves || order.total * order.bcv_rate;
+  const paid = order.payments.reduce((acc, p) => acc + (p.amount_ves || p.amount * (p.exchange_rate_bcv || order.bcv_rate)), 0);
+  const balance = order.balance_due_ves || order.balance_due * order.bcv_rate;
   
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
@@ -110,12 +105,12 @@ export default function PatientChargeOrderDetail() {
           },
           { 
             label: "BALANCE", 
-            value: `Bs ${(balance * bcvValue).toLocaleString('es-VE', { minimumFractionDigits: 0 })}`, 
+            value: `Bs ${balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}`, 
             color: balance > 0 ? "text-red-400" : "text-emerald-400"
           },
           { 
-            label: "BCV", 
-            value: bcvValue.toLocaleString('es-VE', { minimumFractionDigits: 2 }), 
+            label: "BCV_HOY", 
+            value: order.bcv_rate.toLocaleString('es-VE', { minimumFractionDigits: 2 }), 
             color: "text-purple-400"
           }
         ]}
@@ -131,9 +126,9 @@ export default function PatientChargeOrderDetail() {
       {/* RESUMEN */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 border border-white/10">
         {[
-          { label: "TOTAL", val: total * bcvValue, color: "text-white" },
-          { label: "PAGADO", val: paid * bcvValue, color: "text-emerald-400" },
-          { label: "PENDIENTE", val: balance * bcvValue, color: balance > 0 ? "text-red-400" : "text-emerald-400" }
+          { label: "TOTAL", val: total, color: "text-white" },
+          { label: "PAGADO", val: paid, color: "text-emerald-400" },
+          { label: "PENDIENTE", val: balance, color: balance > 0 ? "text-red-400" : "text-emerald-400" }
         ].map((s, i) => (
           <div key={i} className="bg-[#111] p-6">
             <p className="text-[8px] font-black tracking-[0.3em] text-white/40 uppercase mb-2">{s.label}</p>
@@ -169,8 +164,8 @@ export default function PatientChargeOrderDetail() {
                       <td className="p-4 text-blue-400 font-bold">{item.code}</td>
                       <td className="p-4 text-white/60 uppercase">{item.description}</td>
                       <td className="p-4 text-right text-white/40">{item.qty}</td>
-                      <td className="p-4 text-right text-white/40">Bs {(item.unit_price * bcvValue).toLocaleString('es-VE', { minimumFractionDigits: 0 })}</td>
-                      <td className="p-4 text-right font-bold text-white">Bs {(item.subtotal * bcvValue).toLocaleString('es-VE', { minimumFractionDigits: 0 })}</td>
+                      <td className="p-4 text-right text-white/40">Bs {(item.unit_price_ves || item.unit_price * order.bcv_rate).toLocaleString('es-VE', { minimumFractionDigits: 0 })}</td>
+                      <td className="p-4 text-right font-bold text-white">Bs {(item.subtotal_ves || item.subtotal * order.bcv_rate).toLocaleString('es-VE', { minimumFractionDigits: 0 })}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -190,18 +185,32 @@ export default function PatientChargeOrderDetail() {
               </div>
             ) : (
               <div className="divide-y divide-white/5">
-                {order.payments.map((payment) => (
-                  <div key={payment.id} className="p-4 flex justify-between items-center">
-                    <div>
-                      <p className="text-white text-[10px] font-bold">Pago #{payment.id}</p>
-                      <p className="text-white/40 text-[9px] font-mono">{payment.received_at || "—"}</p>
+                {order.payments.map((payment) => {
+                  const amountBs = payment.amount_ves || (payment.amount * (payment.exchange_rate_bcv || order.bcv_rate));
+                  const bcvUsed = payment.exchange_rate_bcv || order.bcv_rate;
+                  
+                  return (
+                    <div key={payment.id} className="p-4 flex justify-between items-center">
+                      <div>
+                        <p className="text-white text-[10px] font-bold">Pago #{payment.id}</p>
+                        <p className="text-white/40 text-[9px] font-mono">
+                          {payment.received_at || "—"}
+                          {payment.exchange_rate_bcv && (
+                            <span className="text-purple-400 ml-2">
+                              (BCV: {payment.exchange_rate_bcv.toLocaleString('es-VE')})
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-emerald-400 font-bold">Bs {amountBs.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</p>
+                        <p className="text-white/40 text-[8px] uppercase">
+                          {payment.method_display || payment.method} - {payment.status_display || payment.status}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-emerald-400 font-bold">Bs {(payment.amount * bcvValue).toLocaleString('es-VE', { minimumFractionDigits: 0 })}</p>
-                      <p className="text-white/40 text-[8px] uppercase">{payment.method} - {payment.status}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>

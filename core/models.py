@@ -1094,6 +1094,22 @@ class Payment(models.Model):
     # --- TRANSACCIÓN ---
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='USD')
+    
+    amount_ves = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        verbose_name="Monto en Bs (BCV del día)"
+    )
+    exchange_rate_bcv = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        verbose_name="Tasa BCV usada"
+    )
+    
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     # --- TRAZABILIDAD EXTERNA (ELITE) ---

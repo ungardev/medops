@@ -155,15 +155,21 @@ export interface ChargeOrderItem {
   description: string;
   qty: number;
   unit_price: number;
+  unit_price_ves: number;   // 🆕
   subtotal: number;
+  subtotal_ves: number;     // 🆕
 }
 
 
 export interface PatientPayment {
   id: number;
-  amount: number;
+  amount: number;                    // USD original
+  amount_ves?: number;               // 🆕 Bs del día del pago
+  exchange_rate_bcv?: number;        // 🆕 BCV del día del pago
   method: string;
+  method_display?: string;
   status: string;
+  status_display?: string;
   reference_number: string | null;
   received_at: string | null;
 }
@@ -188,7 +194,9 @@ export interface PatientChargeOrder {
   } | null;
   currency: string;
   total: number;
+  total_ves: number;           // 🆕
   balance_due: number;
+  balance_due_ves: number;      // 🆕
   min_amount_bs: number;
   bcv_rate: number;
   status: 'open' | 'partially_paid' | 'paid' | 'void' | 'waived';

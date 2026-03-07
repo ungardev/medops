@@ -5863,7 +5863,8 @@ def patient_charge_order_detail(request, order_id):
         if not order:
             return Response({'error': 'Orden no encontrada'}, status=404)
         
-        # Calcular el monto mínimo a pagar (USD * BCV)
+        # Calcular el monto mínimo a pagar (USD * BCV actual)
+        from .services import get_bcv_rate
         bcv_rate = float(get_bcv_rate())
         usd_total = float(order.balance_due)
         min_amount_bs = usd_total * bcv_rate if bcv_rate else usd_total
@@ -5887,7 +5888,9 @@ def patient_charge_order_detail(request, order_id):
             } if order.appointment else None,
             'currency': order.currency,
             'total': float(order.total),
+            'total_ves': float(order.total) * bcv_rate if bcv_rate else float(order.total),
             'balance_due': float(order.balance_due),
+            'balance_due_ves': float(order.balance_due) * bcv_rate if bcv_rate else float(order.balance_due),
             'min_amount_bs': round(min_amount_bs, 2),
             'bcv_rate': bcv_rate,
             'status': order.status,
@@ -5900,7 +5903,9 @@ def patient_charge_order_detail(request, order_id):
                     'description': item.description,
                     'qty': item.qty,
                     'unit_price': float(item.unit_price),
+                    'unit_price_ves': float(item.unit_price) * bcv_rate if bcv_rate else float(item.unit_price),
                     'subtotal': float(item.subtotal),
+                    'subtotal_ves': float(item.subtotal) * bcv_rate if bcv_rate else float(item.subtotal),
                 }
                 for item in order.items.all()
             ],
@@ -5908,8 +5913,12 @@ def patient_charge_order_detail(request, order_id):
                 {
                     'id': payment.id,
                     'amount': float(payment.amount),
+                    'amount_ves': float(payment.amount_ves) if payment.amount_ves else None,
+                    'exchange_rate_bcv': float(payment.exchange_rate_bcv) if payment.exchange_rate_bcv else None,
                     'method': payment.method,
+                    'method_display': payment.get_method_display(),
                     'status': payment.status,
+                    'status_display': payment.get_status_display(),
                     'reference_number': payment.reference_number,
                     'received_at': payment.received_at.strftime('%Y-%m-%d %H:%M') if payment.received_at else None,
                 }
@@ -5961,9 +5970,11 @@ def patient_register_payment(request, order_id):
             return Response({'error': 'Faltan datos requeridos'}, status=400)
         
         # Calcular monto mínimo con BCV
-        bcv_rate = float(get_bcv_rate())
+        from .services import get_bcv_rate
+        bcv_rate = get_bcv_rate()
+        bcv_rate_float = float(bcv_rate) if bcv_rate else 1.0
         usd_total = float(order.balance_due)
-        min_amount_bs = usd_total * bcv_rate if bcv_rate else usd_total
+        min_amount_bs = usd_total * bcv_rate_float
         
         # Validar que el monto sea igual o mayor al mínimo
         if float(amount_bs) < min_amount_bs:
@@ -5978,6 +5989,9 @@ def patient_register_payment(request, order_id):
             bank_api_enabled=True
         ).exists()
         
+        # Calcular monto en USD
+        amount_usd = amount_bs / Decimal(str(bcv_rate_float)) if bcv_rate else amount_bs
+        
         # Crear el pago
         with transaction.atomic():
             payment = Payment.objects.create(
@@ -5985,7 +5999,9 @@ def patient_register_payment(request, order_id):
                 appointment=order.appointment,
                 charge_order=order,
                 doctor=order.doctor,
-                amount=amount_bs / Decimal(str(bcv_rate)) if bcv_rate else amount_bs,
+                amount=amount_usd,
+                amount_ves=amount_bs,  # type: ignore[arg-type]
+                exchange_rate_bcv=bcv_rate,  # type: ignore[arg-type]
                 currency='VES',
                 method='transfer',
                 status='pending',
@@ -6014,7 +6030,8 @@ def patient_register_payment(request, order_id):
             'payment': {
                 'id': payment.id,
                 'amount': float(payment.amount),
-                'amount_bs': float(amount_bs),
+                'amount_bs': float(payment.amount_ves) if payment.amount_ves else 0.0,
+                'exchange_rate_bcv': float(payment.exchange_rate_bcv) if payment.exchange_rate_bcv else None,
                 'reference': reference,
                 'status': payment.status,
                 'verification_type': verification_status,
