@@ -2598,10 +2598,18 @@ def update_appointment_status(request, pk):
         # ✅ SINCRONIZACIÓN ROBUSTA: WaitingRoomEntry cuando el appointment se completa
         if new_status == 'completed':
             from .models import WaitingRoomEntry
+            from django.utils import timezone
+            
+            # ✅ BÚSQUEDA ROBUSTA: Por paciente + institución + fecha
+            # Esto funciona para walk-ins donde appointment puede ser NULL en el entry
+            today = timezone.now().date()
             entry = WaitingRoomEntry.objects.filter(
-                appointment=appointment,
+                patient=appointment.patient,
+                institution=appointment.institution,
+                arrival_time__date=today,
                 status__in=['waiting', 'in_consultation']
             ).first()
+            
             if entry:
                 try:
                     entry.status = 'completed'
@@ -3751,6 +3759,11 @@ def start_consultation_from_entry(request, entry_id):
                 started_at=timezone.now(),
                 notes=f"Walk-in desde Waiting Room (Entry #{entry.id})"
             )
+            
+            # ✅ FIX CRÍTICO: Vincular appointment al WaitingRoomEntry (para walk-ins)
+            # Sin esto, update_appointment_status no puede encontrar el entry correcto
+            entry.appointment = appointment
+            entry.save(update_fields=['appointment'])
         
         # ✅ FIX: Verificar si YA existe ChargeOrder antes de crear (para walk-ins nuevos)
         # Esto evita duplicados si el Appointment ya tiene uno o si se llama múltiples veces
