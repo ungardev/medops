@@ -381,6 +381,10 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
     - GET /api/documents/?patient=123               # Documentos de un paciente
     - GET /api/documents/?appointment=456           # Documentos de una cita
     - GET /api/documents/?patient=123&appointment=456  # Combinado
+    
+    Seguridad:
+    - Doctores solo ven SUS documentos generados
+    - Excepciones: estudios externos y documentos subidos por usuarios son visibles para todos
     """
     queryset = MedicalDocument.objects.all()
     
@@ -391,12 +395,34 @@ class MedicalDocumentViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """
-        Filtra documentos por patient y/o appointment según query params.
+        Filtra documentos por paciente, cita y aplica seguridad de acceso.
+        Los doctores solo ven sus propios documentos generados, excepto
+        estudios externos y documentos subidos por usuarios.
         """
+        from django.db.models import Q
+        
         queryset = MedicalDocument.objects.select_related(
             'patient', 'appointment', 'doctor', 'institution', 'diagnosis'
         )
         
+        # Obtener el doctor desde la request
+        doctor = getattr(self.request.user, 'doctor_profile', None)
+        
+        # Si es doctor, aplicar filtro de seguridad
+        if doctor:
+            # Excepciones: siempre mostrar documentos externos/subidos por usuario
+            # (exámenes de laboratorios, estudios externos, etc.)
+            exceptions = Q(source='user_uploaded') | Q(category='external_study')
+            
+            # Filtrar: documentos del doctor O excepciones
+            # doctor__isnull=True cubre documentos sin médico asignado
+            queryset = queryset.filter(
+                Q(doctor=doctor) | 
+                Q(doctor__isnull=True) |
+                exceptions
+            )
+        
+        # Filtros existentes
         patient_id = self.request.query_params.get('patient')
         appointment_id = self.request.query_params.get('appointment')
         
