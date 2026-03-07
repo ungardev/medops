@@ -12,7 +12,7 @@ from decimal import Decimal
 from django.utils import timezone
 from django.apps import apps
 from django.conf import settings
-from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES, BANK_CHOICES
 import hashlib
 import uuid
 from datetime import date, timedelta
@@ -4962,3 +4962,69 @@ class PatientInvitation(models.Model):
         if not self.expires_at:
             self.expires_at = timezone.now() + timedelta(days=7)
         super().save(*args, **kwargs)
+
+
+# ==========================================
+# MODELO: MÉTODOS DE PAGO DEL PACIENTE
+# ==========================================
+class PatientPaymentMethod(models.Model):
+    """
+    Métodos de pago registrados por el paciente (Pago Móvil, Crypto futuro)
+    """
+    patient = models.OneToOneField(
+        'Patient', 
+        on_delete=models.CASCADE, 
+        related_name='payment_method'
+    )
+    
+    # === PAGO MÓVIL VENEZUELA ===
+    mobile_phone = models.CharField(
+        max_length=20, 
+        blank=True, 
+        verbose_name="Teléfono para Pago Móvil"
+    )
+    mobile_national_id = models.CharField(
+        max_length=20, 
+        blank=True, 
+        verbose_name="Cédula para Pago Móvil"
+    )
+    preferred_bank = models.CharField(
+        max_length=4, 
+        blank=True, 
+        choices=BANK_CHOICES,
+        verbose_name="Banco Preferido"
+    )
+    last_payment_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        verbose_name="Último monto pagado (BS)"
+    )
+    
+    # === CRIPTO (FUTURO - preparado) ===
+    crypto_wallet = models.CharField(
+        max_length=100, 
+        blank=True, 
+        verbose_name="Wallet Crypto"
+    )
+    crypto_type = models.CharField(
+        max_length=10, 
+        blank=True, 
+        choices=[
+            ('BTC', 'Bitcoin'),
+            ('USDT', 'USDT (Tether)'),
+            ('ETH', 'Ethereum'),
+        ],
+        verbose_name="Tipo de Criptomoneda"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Método de Pago del Paciente"
+        verbose_name_plural = "Métodos de Pago de Pacientes"
+    
+    def __str__(self):
+        return f"Métodos de Pago - {self.patient.full_name}"

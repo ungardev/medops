@@ -29,7 +29,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 import qrcode
 import base64
 from io import BytesIO
-from .services import generate_audit_code
+from .services import generate_audit_code, get_bcv_rate
 import traceback
 import secrets
 import string
@@ -5747,3 +5747,283 @@ def doctor_login(request):
             'full_name': user.doctor_profile.full_name
         }
     })
+
+
+# ==========================================
+# ENDPOINTS DE PAGOS - PORTAL PACIENTE
+# ==========================================
+@api_view(['GET', 'PUT'])
+def patient_payment_method(request):
+    """
+    GET /api/patient-payment-method/
+    PUT /api/patient-payment-method/
+    
+    Obtiene o actualiza los métodos de pago del paciente.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        if request.method == 'GET':
+            payment_method, created = PatientPaymentMethod.objects.get_or_create(patient=patient)
+            serializer = PatientPaymentMethodSerializer(payment_method)
+            return Response(serializer.data)
+        
+        # PUT - Actualizar
+        payment_method, created = PatientPaymentMethod.objects.get_or_create(patient=patient)
+        serializer = PatientPaymentMethodSerializer(payment_method, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+        
+    except Exception as e:
+        logger.error(f"Error en patient_payment_method: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET'])
+def patient_charge_orders(request):
+    """
+    GET /api/patient-charge-orders/
+    
+    Lista todas las órdenes de cobro del paciente autenticado.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        # Obtener todas las charge orders del paciente
+        charge_orders = ChargeOrder.objects.filter(
+            patient=patient
+        ).select_related(
+            'institution', 'doctor', 'doctor__user'
+        ).prefetch_related('items', 'payments').order_by('-issued_at')
+        
+        # Calcular métricas
+        total_pending = sum(order.balance_due for order in charge_orders if order.status in ['open', 'partially_paid'])
+        total_paid = sum(order.total - order.balance_due for order in charge_orders if order.status == 'paid')
+        
+        return Response({
+            'orders': [
+                {
+                    'id': order.id,
+                    'institution': order.institution.name,
+                    'institution_tax_id': order.institution.tax_id,
+                    'total': float(order.total),
+                    'balance_due': float(order.balance_due),
+                    'status': order.status,
+                    'status_display': order.get_status_display(),
+                    'issued_at': order.issued_at.strftime('%Y-%m-%d %H:%M'),
+                    'items_count': order.items.count(),
+                    'payments_count': order.payments.count(),
+                }
+                for order in charge_orders
+            ],
+            'summary': {
+                'total_orders': charge_orders.count(),
+                'total_pending': float(total_pending),
+                'total_paid': float(total_paid),
+                'paid_orders': charge_orders.filter(status='paid').count(),
+                'pending_orders': charge_orders.filter(status__in=['open', 'partially_paid']).count(),
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_charge_orders: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+def patient_charge_order_detail(request, order_id):
+    """
+    GET /api/patient-charge-orders/{order_id}/
+    
+    Detalle de una orden de cobro específica.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        order = ChargeOrder.objects.filter(
+            id=order_id,
+            patient=patient
+        ).select_related(
+            'institution', 'doctor', 'doctor__user', 'appointment'
+        ).prefetch_related('items', 'payments').first()
+        
+        if not order:
+            return Response({'error': 'Orden no encontrada'}, status=404)
+        
+        # Calcular el monto mínimo a pagar (USD * BCV)
+        bcv_rate = float(get_bcv_rate())
+        usd_total = float(order.balance_due)
+        min_amount_bs = usd_total * bcv_rate if bcv_rate else usd_total
+        
+        return Response({
+            'id': order.id,
+            'institution': {
+                'id': order.institution.id,
+                'name': order.institution.name,
+                'tax_id': order.institution.tax_id,
+                'address': order.institution.address,
+            },
+            'doctor': {
+                'id': order.doctor.id if order.doctor else None,
+                'name': order.doctor.full_name if order.doctor else None,
+            } if order.doctor else None,
+            'appointment': {
+                'id': order.appointment.id,
+                'date': order.appointment.appointment_date,
+                'time': order.appointment.arrival_time,
+            } if order.appointment else None,
+            'currency': order.currency,
+            'total': float(order.total),
+            'balance_due': float(order.balance_due),
+            'min_amount_bs': round(min_amount_bs, 2),
+            'bcv_rate': bcv_rate,
+            'status': order.status,
+            'status_display': order.get_status_display(),
+            'issued_at': order.issued_at.strftime('%Y-%m-%d %H:%M'),
+            'items': [
+                {
+                    'id': item.id,
+                    'code': item.code,
+                    'description': item.description,
+                    'qty': item.qty,
+                    'unit_price': float(item.unit_price),
+                    'subtotal': float(item.subtotal),
+                }
+                for item in order.items.all()
+            ],
+            'payments': [
+                {
+                    'id': payment.id,
+                    'amount': float(payment.amount),
+                    'method': payment.method,
+                    'status': payment.status,
+                    'reference_number': payment.reference_number,
+                    'received_at': payment.received_at.strftime('%Y-%m-%d %H:%M') if payment.received_at else None,
+                }
+                for payment in order.payments.all()
+            ],
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_charge_order_detail: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+def patient_register_payment(request, order_id):
+    """
+    POST /api/patient-charge-orders/{order_id}/register-payment/
+    
+    Registra un pago manual del paciente (Pago Móvil).
+    """
+    try:
+        from decimal import Decimal
+        from django.db import transaction
+        
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        order = ChargeOrder.objects.filter(
+            id=order_id,
+            patient=patient
+        ).first()
+        
+        if not order:
+            return Response({'error': 'Orden no encontrada'}, status=404)
+        
+        if order.status in ['paid', 'void', 'waived']:
+            return Response({'error': 'Orden no apta para pagos'}, status=400)
+        
+        # Validar datos del pago
+        bank_code = request.data.get('bank_code')
+        phone = request.data.get('phone')
+        national_id = request.data.get('national_id')
+        reference = request.data.get('reference')
+        amount_bs = Decimal(str(request.data.get('amount_bs', 0)))
+        
+        if not all([bank_code, phone, national_id, reference, amount_bs]):
+            return Response({'error': 'Faltan datos requeridos'}, status=400)
+        
+        # Calcular monto mínimo con BCV
+        bcv_rate = float(get_bcv_rate())
+        usd_total = float(order.balance_due)
+        min_amount_bs = usd_total * bcv_rate if bcv_rate else usd_total
+        
+        # Validar que el monto sea igual o mayor al mínimo
+        if float(amount_bs) < min_amount_bs:
+            return Response({
+                'error': f'El monto debe ser igual o mayor a Bs {min_amount_bs:,.2f}',
+                'min_amount_required': round(min_amount_bs, 2),
+            }, status=400)
+        
+        # Verificar si el doctor tiene API bancaria configurada
+        has_bank_api = DoctorPaymentConfig.objects.filter(
+            doctor=order.doctor,
+            bank_api_enabled=True
+        ).exists()
+        
+        # Crear el pago
+        with transaction.atomic():
+            payment = Payment.objects.create(
+                institution=order.institution,
+                appointment=order.appointment,
+                charge_order=order,
+                doctor=order.doctor,
+                amount=amount_bs / Decimal(str(bcv_rate)) if bcv_rate else amount_bs,
+                currency='VES',
+                method='transfer',
+                status='pending',
+                reference_number=reference,
+                bank_name=bank_code,
+                detail=f"Pago Móvil: Tel {phone}, Cédula {national_id}",
+            )
+            
+            # Actualizar método de pago del paciente
+            payment_method, _ = PatientPaymentMethod.objects.get_or_create(patient=patient)
+            payment_method.mobile_phone = phone
+            payment_method.mobile_national_id = national_id
+            payment_method.preferred_bank = bank_code
+            payment_method.last_payment_amount = amount_bs
+            payment_method.save()
+            
+            # Recalcular totales de la orden
+            order.recalc_totals()
+            order.save()
+        
+        # Determinar tipo de verificación
+        verification_status = 'automatic' if has_bank_api else 'manual'
+        
+        return Response({
+            'success': True,
+            'payment': {
+                'id': payment.id,
+                'amount': float(payment.amount),
+                'amount_bs': float(amount_bs),
+                'reference': reference,
+                'status': payment.status,
+                'verification_type': verification_status,
+                'message': 'Pago registrado exitosamente. ' + 
+                           ('Verificación automática en proceso.' if verification_status == 'automatic' 
+                            else 'Pendiente de verificación por el médico.')
+            }
+        }, status=201)
+        
+    except Exception as e:
+        logger.error(f"Error en patient_register_payment: {str(e)}")
+        return Response({'error': str(e)}, status=500)

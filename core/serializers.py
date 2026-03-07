@@ -9,9 +9,9 @@ from .models import (
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
     BillingItem, WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
-    PatientSubscription, PatientInvitation
+    PatientSubscription, PatientInvitation, PatientPaymentMethod
 )
-from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, BANK_CHOICES, get_bank_name
 from datetime import date
 from typing import Optional, Any, cast
 from decimal import Decimal, InvalidOperation
@@ -3411,3 +3411,31 @@ class PatientInvitationCreateSerializer(serializers.ModelSerializer):
 class PatientInvitationActivateSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=64)
     password = serializers.CharField(min_length=8)
+
+
+# ==========================================
+# SERIALIZER: MÉTODOS DE PAGO DEL PACIENTE
+# ==========================================
+class PatientPaymentMethodSerializer(serializers.ModelSerializer):
+    bank_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = PatientPaymentMethod
+        fields = [
+            'id', 
+            'mobile_phone', 
+            'mobile_national_id', 
+            'preferred_bank',
+            'bank_name',
+            'last_payment_amount',
+            'crypto_wallet',
+            'crypto_type',
+            'created_at',
+            'updated_at',
+        ]
+    
+    def get_bank_name(self, obj):
+        if obj.preferred_bank:
+            from .choices import get_bank_name
+            return get_bank_name(obj.preferred_bank)
+        return None

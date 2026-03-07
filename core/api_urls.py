@@ -338,6 +338,11 @@ urlpatterns = [
     path('patient-dashboard/', api_views.patient_dashboard, name='patient-dashboard'),
     path('patient-profile/', api_views.patient_profile, name='patient-profile'),
     path('patient-appointments/', api_views.patient_appointments, name='patient-appointments'),
+    # ✅ NUEVO: Portal Paciente - Métodos de Pago ---
+    path('patient-payment-method/', api_views.patient_payment_method, name='patient-payment-method'),
+    path('patient-charge-orders/', api_views.patient_charge_orders, name='patient-charge-orders'),
+    path('patient-charge-orders/<int:order_id>/', api_views.patient_charge_order_detail, name='patient-charge-order-detail'),
+    path('patient-charge-orders/<int:order_id>/register-payment/', api_views.patient_register_payment, name='patient-register-payment'),
     # WhatsApp API
     path('whatsapp/config/', api_views.whatsapp_config_api, name='whatsapp-config'),
     path('whatsapp/send/', api_views.whatsapp_send_message, name='whatsapp-send'),
