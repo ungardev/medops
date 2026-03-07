@@ -1073,6 +1073,12 @@ class Payment(models.Model):
         ('crypto', 'Criptomonedas'),
         ('other', 'Otro'),
     ]
+    
+    VERIFICATION_CHOICES = [
+        ('automatic', 'Automático'),
+        ('manual', 'Manual')
+    ]
+    
     # --- RELACIONES ---
     institution = models.ForeignKey(
         'InstitutionSettings',
@@ -1091,6 +1097,7 @@ class Payment(models.Model):
         related_name='payments',
         verbose_name="Médico asociado al pago"
     )
+    
     # --- TRANSACCIÓN ---
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='USD')
@@ -1112,8 +1119,8 @@ class Payment(models.Model):
     
     method = models.CharField(max_length=20, choices=METHOD_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
     # --- TRAZABILIDAD EXTERNA (ELITE) ---
-    # ID universal para cualquier pasarela (Mercantil, Stripe, Binance, etc.)
     gateway_transaction_id = models.CharField(
         max_length=255, 
         blank=True, null=True, 
@@ -1125,40 +1132,61 @@ class Payment(models.Model):
         max_length=100, blank=True, null=True,
         verbose_name="Nro. Referencia Manual / Comprobante"
     )
-    # Dump de la respuesta de la API para auditoría técnica
-    gateway_response_raw = models.JSONField(blank=True, null=True)
-    # --- AUDITORÍA ---
-    received_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name="payments_received"
-    )
-    received_at = models.DateTimeField(auto_now_add=True)
-    cleared_at = models.DateTimeField(
-        null=True, blank=True, 
-        help_text="Fecha de confirmación real del banco/pasarela"
+    
+    # === VERIFICACIÓN DE PAGO (NUEVO) ===
+    verification_type = models.CharField(
+        max_length=20,
+        choices=VERIFICATION_CHOICES,
+        null=True,
+        blank=True,
+        verbose_name="Tipo de verificación"
     )
     
-    idempotency_key = models.CharField(max_length=200, blank=True, null=True, unique=True)
-    history = HistoricalRecords()
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # ✅ CORREGIDO: usar settings.AUTH_USER_MODEL
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='verified_payments',
+        verbose_name="Verificado por"
+    )
+    
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de verificación"
+    )
+    
+    verification_notes = models.TextField(
+        blank=True,
+        verbose_name="Notas de verificación"
+    )
+    
+    bank_reference = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Referencia bancaria"
+    )
+    
+    # --- AUDITORÍA ---
+    received_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     class Meta:
-        verbose_name = "Registro de Pago"
-        verbose_name_plural = "Registros de Pagos"
+        ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=['institution', 'status']),
-            models.Index(fields=['gateway_transaction_id']),
-            models.Index(fields=['doctor', 'status']), # NUEVO: Optimización para reportes por médico
+            models.Index(fields=["status", "created_at"]),
+            models.Index(fields=["doctor", "status"]),
+            models.Index(fields=["charge_order", "status"]),
         ]
+    
     def __str__(self):
-        return f"Payment #{self.pk} - {self.amount} {self.currency} ({self.status})"
+        return f"Pago #{self.id} - {self.amount} {self.currency}"
+    
     def save(self, *args, **kwargs):
-        # NUEVO: Auto-completar doctor desde appointment o charge_order
-        if not self.doctor:
-            if self.appointment:
-                self.doctor = self.appointment.doctor
-            elif self.charge_order and self.charge_order.appointment:
-                self.doctor = self.charge_order.appointment.doctor
+        if self.status == 'confirmed' and not self.received_at:
+            self.received_at = timezone.now()
         super().save(*args, **kwargs)
     # --- LÓGICA DE NEGOCIO ---
     def clean(self):

@@ -5983,10 +5983,13 @@ def patient_register_payment(request, order_id):
     POST /api/patient-charge-orders/{order_id}/register-payment/
     
     Registra un pago manual del paciente (Pago Móvil).
+    Determina automáticamente si la verificación es automática o manual.
     """
+    
     try:
         from decimal import Decimal
         from django.db import transaction
+        from django.utils import timezone
         
         patient_user = get_patient_user_from_request(request)
         if not patient_user:
@@ -6029,11 +6032,22 @@ def patient_register_payment(request, order_id):
                 'min_amount_required': round(min_amount_bs, 2),
             }, status=400)
         
-        # Verificar si el doctor tiene API bancaria configurada
-        has_bank_api = DoctorPaymentConfig.objects.filter(
+        # ✅ VERIFICAR TIPO DE VERIFICACIÓN
+        from .models import DoctorPaymentConfig
+        #from django.db.models import Q
+        
+        bank_api_enabled = DoctorPaymentConfig.objects.filter(
             doctor=order.doctor,
-            bank_api_enabled=True
+            Q(mercantil_enabled=True) | Q(banesco_enabled=True) # type: ignore[call-overload]
         ).exists()
+        
+        # Determinar tipo de verificación y status inicial
+        if bank_api_enabled:
+            verification_type = 'automatic'
+            payment_status = 'pending'
+        else:
+            verification_type = 'manual'
+            payment_status = 'pending'
         
         # Calcular monto en USD
         amount_usd = amount_bs / Decimal(str(bcv_rate_float)) if bcv_rate else amount_bs
@@ -6046,14 +6060,15 @@ def patient_register_payment(request, order_id):
                 charge_order=order,
                 doctor=order.doctor,
                 amount=amount_usd,
-                amount_ves=amount_bs,  # type: ignore[arg-type]
-                exchange_rate_bcv=bcv_rate,  # type: ignore[arg-type]
+                amount_ves=amount_bs,
+                exchange_rate_bcv=bcv_rate,
                 currency='VES',
                 method='transfer',
-                status='pending',
+                status=payment_status,
                 reference_number=reference,
                 bank_name=bank_code,
                 detail=f"Pago Móvil: Tel {phone}, Cédula {national_id}",
+                verification_type=verification_type,
             )
             
             # Actualizar método de pago del paciente
@@ -6068,8 +6083,11 @@ def patient_register_payment(request, order_id):
             order.recalc_totals()
             order.save()
         
-        # Determinar tipo de verificación
-        verification_status = 'automatic' if has_bank_api else 'manual'
+        # Mensaje según tipo de verificación
+        if verification_type == 'automatic':
+            message = 'Pago registrado. Verificación automática en proceso.'
+        else:
+            message = 'Pago registrado exitosamente. Pendiente de verificación por el médico.'
         
         return Response({
             'success': True,
@@ -6080,13 +6098,98 @@ def patient_register_payment(request, order_id):
                 'exchange_rate_bcv': float(payment.exchange_rate_bcv) if payment.exchange_rate_bcv else None,
                 'reference': reference,
                 'status': payment.status,
-                'verification_type': verification_status,
-                'message': 'Pago registrado exitosamente. ' + 
-                           ('Verificación automática en proceso.' if verification_status == 'automatic' 
-                            else 'Pendiente de verificación por el médico.')
+                'verification_type': verification_type,
+                'message': message
             }
         }, status=201)
         
     except Exception as e:
         logger.error(f"Error en patient_register_payment: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_payment(request, payment_id):
+    """
+    POST /api/payments/{payment_id}/verify/
+    
+    Verifica (confirma o rechaza) un pago pendiente.
+    Solo accesible para doctores.
+    """
+    try:
+        from django.utils import timezone
+        from django.db import transaction
+        
+        # Verificar que es un doctor
+        doctor = getattr(request.user, 'doctor_profile', None)
+        if not doctor:
+            return Response({'error': 'Solo doctores pueden verificar pagos'}, status=403)
+        
+        payment = get_object_or_404(Payment, pk=payment_id)
+        
+        # Verificar que el pago pertenece al doctor
+        if payment.doctor != doctor:
+            return Response({'error': 'No tienes permiso para verificar este pago'}, status=403)
+        
+        # Solo pagos pending pueden ser verificados
+        if payment.status != 'pending':
+            return Response({'error': f'El pago ya está {payment.status}'}, status=400)
+        
+        action = request.data.get('action')
+        notes = request.data.get('notes', '')
+        
+        if action not in ['confirm', 'reject']:
+            return Response({'error': 'Acción inválida. Usar: confirm o reject'}, status=400)
+        
+        # Procesar verificación
+        with transaction.atomic():
+            if action == 'confirm':
+                payment.status = 'confirmed'
+                payment.verified_by = request.user
+                payment.verified_at = timezone.now()
+                payment.verification_notes = notes
+                payment.save(update_fields=[
+                    'status', 'verified_by', 'verified_at', 'verification_notes'
+                ])
+                
+                # Recalcular totales de la orden
+                payment.charge_order.recalc_totals()
+                payment.charge_order.save()
+                
+                message = 'Pago confirmado exitosamente'
+            else:
+                payment.status = 'rejected'
+                payment.verified_by = request.user
+                payment.verified_at = timezone.now()
+                payment.verification_notes = notes
+                payment.save(update_fields=[
+                    'status', 'verified_by', 'verified_at', 'verification_notes'
+                ])
+                
+                message = 'Pago rechazado'
+        
+        # ✅ CORREGIDO: Verificar que verified_by no sea None
+        verified_by_username = None
+        if payment.verified_by:
+            verified_by_username = getattr(payment.verified_by, 'username', None) or getattr(payment.verified_by, 'email', None)
+        
+        verified_at_str = None
+        if payment.verified_at:
+            verified_at_str = payment.verified_at.strftime('%Y-%m-%d %H:%M')  # type: ignore[union-attr]
+        
+        return Response({
+            'success': True,
+            'payment': {
+                'id': payment.id,
+                'status': payment.status,
+                'verified_by': verified_by_username,
+                'verified_at': verified_at_str,
+                'verification_notes': payment.verification_notes,
+                'message': message
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en verify_payment: {str(e)}")
         return Response({'error': str(e)}, status=500)
