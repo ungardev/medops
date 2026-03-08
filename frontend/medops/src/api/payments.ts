@@ -170,7 +170,8 @@ export const getP2CWebhookLog = (institutionId: number, filters?: {
 // =====================================================
 // 🔹 Obtener pagos pendientes del doctor (verificación manual)
 export const getPendingPayments = () => 
-  apiFetch<PendingPayment[]>("payments/pending/");
+  apiFetch<{ count: number; payments: PendingPayment[] }>("payments/pending/")
+    .then(response => response.payments);
 // 🔹 Verificar un pago (confirmar o rechazar)
 export const verifyPayment = (paymentId: number, data: VerifyPaymentInput) =>
   apiFetch<VerifyPaymentResponse>(`payments/${paymentId}/verify/`, {
