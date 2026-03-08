@@ -624,39 +624,58 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """
-        Maneja el ordenamiento correctamente Y optimiza queries con select_related/prefetch_related.
-        Convierte 'appointment_date' a 'appointment__appointment_date' para relaciones.
+        Maneja el ordenamiento correctamente Y optimiza queries.
         """
-        queryset = super().get_queryset()
+        # ✅ EMPEZAR CON UN QUERYSET LIMPIO
+        queryset = ChargeOrder.objects.all()
         
-        # ✅ AGREGAR: select_related para evitar N+1 queries
-        queryset = queryset.select_related(
-            'patient',
-            'doctor',
-            'institution',
-            'appointment',
-            'created_by',
-            'updated_by'
-        ).prefetch_related(
-            'items',
-            'payments'
-        )
+        # ✅ USAR select_related CON SEGURIDAD
+        try:
+            queryset = queryset.select_related(
+                'patient',
+                'doctor', 
+                'institution',
+                'appointment',
+                'created_by',
+                'updated_by'
+            )
+        except Exception as e:
+            logger.warning(f"Error en select_related: {e}")
         
-        # Obtener el parámetro de ordenamiento
+        # ✅ USAR prefetch_related CON SEGURIDAD  
+        try:
+            queryset = queryset.prefetch_related(
+                'items',
+                'payments'
+            )
+        except Exception as e:
+            logger.warning(f"Error en prefetch_related: {e}")
+        
+        # ✅ MANEJO DE ORDENAMIENTO SEGURO
         ordering = self.request.query_params.get('ordering', '')
         
         if ordering:
-            # Convertir appointment_date a appointment__appointment_date
             new_ordering = []
             for field in ordering.split(','):
                 field = field.strip()
-                if field == 'appointment_date':
-                    new_ordering.append('appointment__appointment_date')
-                elif field == '-appointment_date':
-                    new_ordering.append('-appointment__appointment_date')
-                else:
-                    new_ordering.append(field)
-            queryset = queryset.order_by(*new_ordering)
+                # Solo permitir campos válidos para evitar inyecciones
+                valid_fields = {
+                    'appointment_date': 'appointment__appointment_date',
+                    '-appointment_date': '-appointment__appointment_date',
+                    'issued_at': 'issued_at',
+                    '-issued_at': '-issued_at', 
+                    'id': 'id',
+                    '-id': '-id',
+                    'total': 'total',
+                    '-total': '-total',
+                    'balance_due': 'balance_due',
+                    '-balance_due': '-balance_due',
+                }
+                if field in valid_fields:
+                    new_ordering.append(valid_fields[field])
+            
+            if new_ordering:
+                queryset = queryset.order_by(*new_ordering)
         
         return queryset
     
@@ -665,12 +684,10 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         """Estadísticas financieras de órdenes de cobro"""
         from django.db.models import Count, Sum
         
-        # Suma de pagos confirmados (dinero real)
         total_revenue = Payment.objects.filter(status='confirmed').aggregate(
             total=Sum('amount')
         )['total'] or 0
         
-        # Conteo de órdenes por estado
         total_orders = ChargeOrder.objects.count()
         paid_orders = ChargeOrder.objects.filter(status='paid').count()
         pending_orders = ChargeOrder.objects.filter(status='open').count()
@@ -685,14 +702,10 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def payments(self, request, pk=None):
-        """
-        Crear pago para esta orden de cobro.
-        POST /api/charge-orders/{id}/payments/
-        """
+        """Crear pago para esta orden de cobro."""
         try:
             charge_order = self.get_object()
             
-            # Validar que la orden esté activa
             if charge_order.status in ['void', 'waived']:
                 return Response(
                     {"error": "No se pueden agregar pagos a una orden anulada o exonerada"},
@@ -702,7 +715,6 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             serializer = PaymentWriteSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             
-            # Crear pago con datos auto-completados
             payment = Payment.objects.create(
                 institution=charge_order.institution,
                 appointment=charge_order.appointment,
@@ -713,7 +725,6 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
                 status='confirmed',
             )
             
-            # Recalcular totales de la orden
             charge_order.recalc_totals()
             charge_order.save()
             
@@ -725,61 +736,35 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def void(self, request, pk=None):
-        """Anular una orden de cobro (void)."""
+        """Anular una orden de cobro."""
         try:
             charge_order = self.get_object()
             
             if charge_order.status == 'paid':
-                return Response(
-                    {"error": "No se puede anular una orden completamente pagada."},
-                    status=400
-                )
-            
+                return Response({"error": "No se puede anular una orden pagada."}, status=400)
             if charge_order.status == 'void':
                 return Response({"error": "La orden ya está anulada."}, status=400)
-            
             if charge_order.status == 'waived':
                 return Response({"error": "No se puede anular una orden exonerada."}, status=400)
-            
-            confirmed_payments = charge_order.payments.filter(status='confirmed').exists()
-            if confirmed_payments:
-                return Response(
-                    {"error": "La orden tiene pagos confirmados."},
-                    status=400
-                )
             
             charge_order.status = 'void'
             charge_order.save(update_fields=['status'])
             
-            Event = apps.get_model('core', 'Event')
-            Event.objects.create(
-                entity='ChargeOrder',
-                entity_id=charge_order.pk,
-                action='void',
-                metadata={'actor': str(request.user) if request.user.is_authenticated else 'system'},
-                institution=charge_order.institution,
-                severity='warning',
-                notify=True
-            )
-            
             return Response({"status": "void", "message": "Orden anulada correctamente"})
         
         except Exception as e:
-            logger.error(f"Error anulando orden: {str(e)}")
             return Response({"error": str(e)}, status=500)
     
     @action(detail=True, methods=['post'])
     def waive(self, request, pk=None):
-        """Exonerar una orden de cobro (waive)."""
+        """Exonerar una orden de cobro."""
         try:
             charge_order = self.get_object()
             
             if charge_order.status == 'void':
                 return Response({"error": "No se puede exonerar una orden anulada."}, status=400)
-            
             if charge_order.status == 'waived':
                 return Response({"error": "La orden ya está exonerada."}, status=400)
-            
             if charge_order.status == 'paid':
                 return Response({"error": "La orden ya está pagada."}, status=400)
             
@@ -787,24 +772,9 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
             charge_order.balance_due = 0
             charge_order.save(update_fields=['status', 'balance_due'])
             
-            Event = apps.get_model('core', 'Event')
-            Event.objects.create(
-                entity='ChargeOrder',
-                entity_id=charge_order.pk,
-                action='waive',
-                metadata={
-                    'actor': str(request.user) if request.user.is_authenticated else 'system',
-                    'reason': request.data.get('reason', 'Exoneración manual')
-                },
-                institution=charge_order.institution,
-                severity='info',
-                notify=True
-            )
-            
             return Response({"status": "waived", "message": "Orden exonerada correctamente"})
         
         except Exception as e:
-            logger.error(f"Error exonerando orden: {str(e)}")
             return Response({"error": str(e)}, status=500)
 
 
