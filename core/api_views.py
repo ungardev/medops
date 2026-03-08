@@ -1,5 +1,5 @@
 from rest_framework import viewsets, status, views
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, permission_classes, authentication_classes, action
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from rest_framework.authtoken.models import Token
@@ -36,6 +36,7 @@ import string
 from core.permissions import IsDoctorOperatorOrReadOnly
 from django.core.mail import send_mail
 from django.conf import settings
+from rest_framework.authentication import TokenAuthentication
 #from datetime import date, timedelta
 
 
@@ -5958,6 +5959,7 @@ def patient_charge_order_detail(request, order_id):
 
 
 @api_view(['POST'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def patient_register_payment(request, order_id):
     """
