@@ -866,6 +866,8 @@ class PaymentSerializer(serializers.ModelSerializer):
             "patient_name",
             # Transacción
             "amount",
+            "amount_ves",
+            "exchange_rate_bcv",
             "currency",
             "method",
             "method_display",
@@ -874,12 +876,17 @@ class PaymentSerializer(serializers.ModelSerializer):
             # Trazabilidad Fintech
             "gateway_transaction_id",
             "reference_number",
+            "bank_reference",
             "gateway_response_raw",
+            # Verificación
+            "verification_type",
+            "verified_by",
+            "verified_at",
+            "verification_notes",
             # Auditoría
-            "received_by",
             "received_at",
-            "cleared_at",
-            "idempotency_key",
+            "created_at",
+            "updated_at",
         ]
     
     def get_doctor(self, obj):
