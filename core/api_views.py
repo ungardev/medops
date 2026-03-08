@@ -4740,12 +4740,17 @@ def get_patient_user_from_request(request):
     """
     Obtiene el PatientUser desde el token.
     Soporta tanto PatientSession como DRF Token.
+    Acepta formatos 'Bearer' y 'Token' para compatibilidad.
     """
     auth_header = request.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return None
     
-    token = auth_header.replace('Bearer ', '')
+    # ✅ ACEPTAR AMBOS FORMATOS: Bearer y Token
+    if auth_header.startswith('Bearer '):
+        token = auth_header.replace('Bearer ', '')
+    elif auth_header.startswith('Token '):
+        token = auth_header.replace('Token ', '')
+    else:
+        return None
     
     # 1. Buscar en PatientSession
     session = PatientSession.objects.filter(
