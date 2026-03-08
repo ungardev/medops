@@ -38,7 +38,7 @@ services:
       - .env.production
     environment:
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DEBUG=False
+      - DEBUG=True
       - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
