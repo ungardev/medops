@@ -3489,7 +3489,7 @@ def verify_mobile_payment(request):
                 "existing_payment": {
                     "id": existing_payment.id,
                     "amount": str(existing_payment.amount),
-                    "created_at": existing_payment.created_at.isoformat(),
+                    "created_at": existing_payment.created_at.isoformat() if existing_payment.created_at else None,  # type: ignore[union-attr]
                     "charge_order_id": existing_payment.charge_order.id
                 }
             }, status=409)  # Conflict
