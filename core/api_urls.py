@@ -364,6 +364,8 @@ urlpatterns = [
     path('patients/<int:patient_id>/invite/', api_views.invite_patient_to_portal, name='invite-patient'),
     path('patients/<int:patient_id>/invitation-status/', api_views.get_patient_invitation_status, name='patient-invitation-status'),
     path('patient-activate/', api_views.activate_patient_portal, name='activate-patient'),
+    path("payments/pending/", api_views.get_pending_payments, name="get-pending-payments"),
+    path("payments/<int:payment_id>/verify/", api_views.verify_payment, name="verify-payment"),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [

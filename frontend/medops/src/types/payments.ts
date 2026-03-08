@@ -315,3 +315,52 @@ export const DEFAULT_P2C_CONFIG: Partial<MercantilP2CConfig> = {
   min_amount: P2C_CONSTANTS.MIN_AMOUNT,
   max_amount: P2C_CONSTANTS.MAX_AMOUNT,
 };
+
+
+// =====================================================
+// 🔹 TIPOS PARA VERIFICACIÓN DE PAGOS
+// =====================================================
+export interface PendingPayment {
+  id: number;
+  amount: number;
+  amount_ves: number | null;
+  exchange_rate_bcv: number | null;
+  method: string;
+  method_display: string;
+  status: string;
+  reference_number: string;
+  bank_name: string;
+  detail: string;
+  verification_type: 'automatic' | 'manual' | null;
+  created_at: string;
+  charge_order: {
+    id: number;
+    patient: {
+      id: number;
+      full_name: string;
+      national_id: string;
+    };
+    total: number;
+    balance_due: number;
+  };
+  patient: {
+    id: number;
+    full_name: string;
+    national_id: string;
+  };
+}
+export interface VerifyPaymentInput {
+  action: 'confirm' | 'reject';
+  notes?: string;
+}
+export interface VerifyPaymentResponse {
+  success: boolean;
+  payment: {
+    id: number;
+    status: string;
+    verified_by: string | null;
+    verified_at: string | null;
+    verification_notes: string;
+    message: string;
+  };
+}

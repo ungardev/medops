@@ -11,6 +11,7 @@ import PatientConsultationDetail from "./pages/Patients/PatientConsultationsDeta
 import Appointments from "./pages/Appointments/Appointments";
 import Payments from "./pages/Payments/Payments";
 import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail";
+import PendingPayments from "./pages/Payments/PendingPayments";  // 🆕 Import
 import Events from "./pages/Events/Events";
 import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
 import Consultation from "./pages/Consultation/Consultation";
@@ -93,6 +94,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
+                <Route path="payments/pending" element={<PendingPayments />} />  // 🆕 Nueva ruta
                 <Route path="payments/:id" element={<ChargeOrderDetail />} />
                 <Route path="billing/catalog" element={<BillingCatalogPage />} />
                 <Route path="events" element={<Events />} />

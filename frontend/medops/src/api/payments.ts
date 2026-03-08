@@ -7,7 +7,11 @@ import {
   P2CPaymentRequest, 
   P2CPaymentResponse,
   MercantilP2CTransaction,
-  MercantilP2CPaymentProps
+  MercantilP2CPaymentProps,
+  // 🆕 Tipos de verificación
+  PendingPayment,
+  VerifyPaymentInput,
+  VerifyPaymentResponse
 } from "../types/payments";
 // =====================================================
 // 🔹 ENDPOINTS EXISTENTES (SIN CAMBIOS)
@@ -47,24 +51,20 @@ export const registerPayment = (chargeOrderId: number, data: PaymentInput) =>
 // 🆕 ENDPOINTS P2C MERCANTIL - EXTENSIONES PARA QR PAYMENTS
 // =====================================================
 // 🔹 Generar QR P2C Mercantil
-// Crea una nueva transacción P2C con código QR para pago
 export const generateP2CQR = (data: P2CPaymentRequest): Promise<P2CPaymentResponse> =>
   apiFetch<P2CPaymentResponse>("payments/p2c/mercantil/generate-qr/", {
     method: "POST",
     body: JSON.stringify(data),
   });
 // 🔹 Verificar estado de transacción P2C
-// Consulta el estado actual de una transacción P2C por merchant_order_id
 export const checkP2CStatus = (merchantOrderId: string): Promise<P2CPaymentResponse> =>
   apiFetch<P2CPaymentResponse>(`payments/p2c/mercantil/status/${merchantOrderId}/`);
 // 🔹 Cancelar transacción P2C
-// Cancela una transacción P2C pendiente o expirada
 export const cancelP2CTransaction = (merchantOrderId: string): Promise<P2CPaymentResponse> =>
   apiFetch<P2CPaymentResponse>(`payments/p2c/mercantil/cancel/${merchantOrderId}/`, {
     method: "POST",
   });
 // 🔹 Obtener transacciones P2C por institución
-// Lista todas las transacciones P2C de una institución con filtros opcionales
 export const getP2CTransactions = (institutionId: number, filters?: {
   status?: string;
   date_from?: string;
@@ -84,11 +84,9 @@ export const getP2CTransactions = (institutionId: number, filters?: {
   return apiFetch<MercantilP2CTransaction[]>(endpoint);
 };
 // 🔹 Obtener transacción P2C por merchant_order_id
-// Obtiene detalles completos de una transacción P2C específica
 export const getP2CTransactionByOrderId = (merchantOrderId: string): Promise<MercantilP2CTransaction> =>
   apiFetch<MercantilP2CTransaction>(`payments/p2c/mercantil/transaction/${merchantOrderId}/`);
-// 🔹 Reintentar generar QR P2C (si el anterior expiró)
-// Vuelve a generar un QR para la misma ChargeOrder y monto
+// 🔹 Reintentar generar QR P2C
 export const retryP2CQR = (data: P2CPaymentRequest & {
   original_merchant_order_id: string;
 }): Promise<P2CPaymentResponse> =>
@@ -100,11 +98,9 @@ export const retryP2CQR = (data: P2CPaymentRequest & {
 // 🆕 ENDPOINTS DE CONFIGURACIÓN P2C
 // =====================================================
 // 🔹 Obtener configuración P2C por institución
-// Obtiene la configuración actual del servicio P2C para una institución
 export const getP2CConfig = (institutionId: number): Promise<any> =>
   apiFetch<any>(`institutions/${institutionId}/p2c/config/`);
 // 🔹 Actualizar configuración P2C por institución
-// Actualiza la configuración del servicio P2C para una institución
 export const updateP2CConfig = (institutionId: number, config: {
   is_test_mode?: boolean;
   qr_expiration_minutes?: number;
@@ -120,7 +116,6 @@ export const updateP2CConfig = (institutionId: number, config: {
 // 🆕 ENDPOINTS DE MONITOREO Y ESTADÍSTICAS P2C
 // =====================================================
 // 🔹 Obtener estadísticas P2C por institución
-// Obtiene métricas y estadísticas de transacciones P2C
 export const getP2CStatistics = (institutionId: number, period?: {
   date_from?: string;
   date_to?: string;
@@ -147,7 +142,6 @@ export const getP2CStatistics = (institutionId: number, period?: {
   return apiFetch<any>(endpoint);
 };
 // 🔹 Obtener log de webhooks P2C
-// Obtiene el historial de webhooks recibidos para debugging
 export const getP2CWebhookLog = (institutionId: number, filters?: {
   merchant_order_id?: string;
   status?: string;
@@ -172,6 +166,18 @@ export const getP2CWebhookLog = (institutionId: number, filters?: {
   return apiFetch<any[]>(endpoint);
 };
 // =====================================================
+// 🆕 ENDPOINTS DE VERIFICACIÓN DE PAGOS (PAGO MÓVIL)
+// =====================================================
+// 🔹 Obtener pagos pendientes del doctor (verificación manual)
+export const getPendingPayments = () => 
+  apiFetch<PendingPayment[]>("payments/pending/");
+// 🔹 Verificar un pago (confirmar o rechazar)
+export const verifyPayment = (paymentId: number, data: VerifyPaymentInput) =>
+  apiFetch<VerifyPaymentResponse>(`payments/${paymentId}/verify/`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+// =====================================================
 // 🔹 REEXPORTACIONES DE TIPOS
 // =====================================================
 // Reexportar tipos existentes
@@ -184,7 +190,11 @@ export type {
   MercantilP2CPaymentProps,
   P2CWebSocketUpdate,
   MercantilP2CConfig,
-  P2CPaymentInput
+  P2CPaymentInput,
+  // 🆕 Reexportar tipos de verificación
+  PendingPayment,
+  VerifyPaymentInput,
+  VerifyPaymentResponse
 } from "../types/payments";
 // 🆕 Reexportar enums extendidos
 export {
