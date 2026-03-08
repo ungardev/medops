@@ -902,6 +902,7 @@ class PaymentSerializer(serializers.ModelSerializer):
         return None
 
 
+
 class PaymentWriteSerializer(serializers.ModelSerializer):
     """
     Serializer de ESCRITURA: Para crear pagos desde el panel de consulta.
