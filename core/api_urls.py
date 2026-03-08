@@ -153,6 +153,8 @@ from .api_views import (
     DoctorPaymentConfigViewSet,
     PaymentTransactionViewSet,
     PaymentWebhookViewSet,
+    get_pending_payments,
+    verify_payment,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView

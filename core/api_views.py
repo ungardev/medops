@@ -6196,3 +6196,89 @@ def verify_payment(request, payment_id):
     except Exception as e:
         logger.error(f"Error en verify_payment: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_pending_payments(request):
+    """
+    GET /api/payments/pending/
+    
+    Obtiene todos los pagos pendientes de verificación para el doctor.
+    Solo retorna pagos que pertenezcan a la institución del doctor.
+    """
+    try:
+        # Verificar que es un doctor
+        doctor = getattr(request.user, 'doctor_profile', None)
+        if not doctor:
+            return Response({'error': 'Solo doctores pueden acceder a esta información'}, status=403)
+        
+        # Obtener la institución activa
+        institution_id = request.headers.get('X-Institution-ID')
+        if institution_id:
+            institution = InstitutionSettings.objects.filter(id=institution_id).first()
+        else:
+            institution = doctor.active_institution
+        
+        if not institution:
+            return Response({'error': 'No hay institución activa'}, status=400)
+        
+        # Obtener pagos pendientes de la institución
+        # Pagos pendientes = status='pending' (registrados por pacientes pero no verificados)
+        pending_payments = Payment.objects.filter(
+            institution=institution,
+            status='pending'
+        ).select_related(
+            'charge_order',
+            'charge_order__patient',
+            'charge_order__appointment',
+            'charge_order__appointment__patient'
+        ).order_by('-created_at')
+        
+        results = []
+        for payment in pending_payments:
+            charge_order = payment.charge_order
+            patient = charge_order.patient if charge_order else None
+            appointment = charge_order.appointment if charge_order else None
+            
+            # Calcular monto en Bs si tiene tasa BCV
+            amount_bs = None
+            if payment.amount_ves and payment.exchange_rate_bcv:
+                amount_bs = float(payment.amount_ves)
+            
+            results.append({
+                'id': payment.id,
+                'amount': float(payment.amount) if payment.amount else None,
+                'amount_ves': float(payment.amount_ves) if payment.amount_ves else None,
+                'exchange_rate_bcv': float(payment.exchange_rate_bcv) if payment.exchange_rate_bcv else None,
+                'amount_bs': amount_bs,
+                'method': payment.method,
+                'reference_number': payment.reference_number,
+                'bank_reference': payment.bank_reference,
+                'status': payment.status,
+                'created_at': payment.created_at.isoformat() if payment.created_at else None,
+                'patient': {
+                    'id': patient.id,
+                    'full_name': patient.full_name if patient else None,
+                    'national_id': patient.national_id if patient else None,
+                    'phone_number': patient.phone_number if patient else None,
+                } if patient else None,
+                'charge_order': {
+                    'id': charge_order.id,
+                    'total': float(charge_order.total) if charge_order.total else None,
+                    'balance_due': float(charge_order.balance_due) if charge_order.balance_due else None,
+                } if charge_order else None,
+                'appointment': {
+                    'id': appointment.id,
+                    'appointment_date': appointment.appointment_date.isoformat() if appointment else None,
+                } if appointment else None,
+            })
+        
+        return Response({
+            'count': len(results),
+            'payments': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en get_pending_payments: {str(e)}")
+        return Response({'error': str(e)}, status=500)
