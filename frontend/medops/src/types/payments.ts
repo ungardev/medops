@@ -329,7 +329,7 @@ export interface PendingPayment {
   method_display: string;
   status: string;
   reference_number: string;
-  bank_name: string;
+  bank_reference: string;
   detail: string;
   verification_type: 'automatic' | 'manual' | null;
   created_at: string;
@@ -349,10 +349,12 @@ export interface PendingPayment {
     national_id: string;
   };
 }
+
 export interface VerifyPaymentInput {
   action: 'confirm' | 'reject';
   notes?: string;
 }
+
 export interface VerifyPaymentResponse {
   success: boolean;
   payment: {

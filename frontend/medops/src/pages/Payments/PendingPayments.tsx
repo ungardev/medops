@@ -122,7 +122,7 @@ export default function PendingPayments() {
                     </p>
                   </td>
                   <td className="p-4 text-white/60">
-                    {payment.bank_name}
+                    {payment.bank_reference}
                   </td>
                   <td className="p-4 font-mono text-white/60">
                     {payment.reference_number}

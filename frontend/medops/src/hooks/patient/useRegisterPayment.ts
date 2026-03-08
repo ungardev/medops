@@ -10,7 +10,9 @@ export function useRegisterPayment() {
       return response.data;
     },
     onSuccess: () => {
+      // ✅ INVALIDAR QUERIES PARA ACTUALIZAR DATOS
       queryClient.invalidateQueries({ queryKey: ['patient', 'charge-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['patient', 'charge-order'] });
     },
   });
 }
