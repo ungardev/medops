@@ -5958,6 +5958,7 @@ def patient_charge_order_detail(request, order_id):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def patient_register_payment(request, order_id):
     """
     POST /api/patient-charge-orders/{order_id}/register-payment/
