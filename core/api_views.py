@@ -6024,7 +6024,7 @@ def patient_register_payment(request, order_id):
         # ✅ VERIFICAR TIPO DE VERIFICACIÓN
         from .models import DoctorPaymentConfig
         
-        # ✅ FIX: Separar Q objects en filter() separado (corregido SyntaxError)
+        # ✅ FIX: Separar Q objects en filter() separado
         bank_api_enabled = DoctorPaymentConfig.objects.filter(
             doctor=order.doctor,
         ).filter(
@@ -6042,6 +6042,7 @@ def patient_register_payment(request, order_id):
         # Calcular monto en USD
         amount_usd = amount_bs / Decimal(str(bcv_rate_float)) if bcv_rate else amount_bs
         
+        # ✅ CORRECCIÓN: Usar campos válidos del modelo Payment
         # Crear el pago
         with transaction.atomic():
             payment = Payment.objects.create(
@@ -6056,8 +6057,8 @@ def patient_register_payment(request, order_id):
                 method='transfer',
                 status=payment_status,
                 reference_number=reference,
-                bank_name=bank_code,
-                detail=f"Pago Móvil: Tel {phone}, Cédula {national_id}",
+                bank_reference=bank_code,
+                verification_notes=f"Pago Móvil: Tel {phone}, Cédula {national_id}",
                 verification_type=verification_type,
             )
             
