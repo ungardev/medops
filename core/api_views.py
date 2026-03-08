@@ -622,6 +622,31 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     queryset = ChargeOrder.objects.all()
     serializer_class = ChargeOrderSerializer
     
+    def get_queryset(self):
+        """
+        Maneja el ordenamiento correctamente.
+        Convierte 'appointment_date' a 'appointment__appointment_date' para relaciones.
+        """
+        queryset = super().get_queryset()
+        
+        # Obtener el parámetro de ordenamiento
+        ordering = self.request.query_params.get('ordering', '')
+        
+        if ordering:
+            # Convertir appointment_date a appointment__appointment_date
+            new_ordering = []
+            for field in ordering.split(','):
+                field = field.strip()
+                if field == 'appointment_date':
+                    new_ordering.append('appointment__appointment_date')
+                elif field == '-appointment_date':
+                    new_ordering.append('-appointment__appointment_date')
+                else:
+                    new_ordering.append(field)
+            queryset = queryset.order_by(*new_ordering)
+        
+        return queryset
+    
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """Estadísticas financieras de órdenes de cobro"""
