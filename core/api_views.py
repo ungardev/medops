@@ -6110,6 +6110,7 @@ def patient_register_payment(request, order_id):
         return Response({'error': str(e)}, status=500)
 
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def verify_payment(request, payment_id):
