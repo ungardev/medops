@@ -33,7 +33,7 @@ patientApi.interceptors.request.use((config) => {
   
   if (token && config.headers) {
     // ✅ Usar Bearer token para PatientSession
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Token ${token}`;
   }
   return config;
 });
