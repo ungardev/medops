@@ -1,11 +1,9 @@
 // src/pages/Payments/Payments.tsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; // 🆕 IMPORTAR NAVEGACIÓN
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
-// import ChargeOrderList from "@/components/Payments/ChargeOrderList"; // ❌ ELIMINADO - NO SE USA
-// import RegisterPaymentModal from "@/components/Payments/RegisterPaymentModal"; // ❌ ELIMINADO - MOVIDO A DETALLE
 import PaymentsSummary from "@/components/Payments/PaymentsSummary";
-import { useInstitutions } from "@/hooks/settings/useInstitutions"; // 🆕 IMPORTAR CONTEXTO
+import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import { useChargeOrdersPaginated } from "@/hooks/payments/useChargeOrdersPaginated";
 import { useChargeOrdersSearch } from "@/hooks/payments/useChargeOrdersSearch";
 import { useChargeOrdersSummary } from "@/hooks/payments/useChargeOrdersSummary";
@@ -15,30 +13,22 @@ import {
   BanknotesIcon,
   CircleStackIcon,
   ShieldCheckIcon,
-  BuildingOfficeIcon // 🆕 ICONO INSTITUCIONAL
+  BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
 import type { ChargeOrder, ChargeOrderStatus } from "@/types/payments";
 export default function Payments() {
-  // 🆕 HOOK DE NAVEGACIÓN
   const navigate = useNavigate();
   
   const [query, setQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   
-  // ❌ ELIMINAR ESTADOS DEL MODAL (MOVIDOS A ChargeOrderDetail.tsx)
-  // const [showModal, setShowModal] = useState(false);
-  // const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
-  // const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
-  
-  // 🆕 OBTENER CONTEXTO INSTITUCIONAL
   const { activeInstitution, institutions } = useInstitutions();
   const { data: searchResults, isLoading: searchLoading, error: searchError } = useChargeOrdersSearch(query);
   const { data: paginatedData, isLoading: paginatedLoading, error: paginatedError } = useChargeOrdersPaginated(currentPage, pageSize);
   const { data: summary } = useChargeOrdersSummary();
   const isSearching = query.trim().length > 0;
   
-  // ✅ FIX 1: Array Type Safety - Añadir fallbacks para undefined
   const orders: ChargeOrder[] = isSearching ? (searchResults ?? []) : (paginatedData?.results ?? []);
   const loading = isSearching ? searchLoading : paginatedLoading;
   const error = isSearching ? searchError : paginatedError;
@@ -46,22 +36,14 @@ export default function Payments() {
   const startIdx = (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(currentPage * pageSize, totalCount);
   
-  // 🆕 NUEVO MANEJADOR DE NAVEGACIÓN DIRECTA
   const handleViewOrderDetail = (orderId: number) => {
     navigate(`/payments/${orderId}`);
   };
   
-  // ❌ ELIMINAR MANEJADOR ANTERIOR DEL MODAL
-  // const handleRegisterPayment = (orderId: number, appointmentId: number) => {
-  //   setSelectedOrderId(orderId);
-  //   setSelectedAppointmentId(appointmentId);
-  //   setShowModal(true);
-  // };
-  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       
-      {/* 🚀 HEADER TÉCNICO: NAVEGACIÓN FINANCIERA MULTI-INSTITUCIONAL */}
+      {/* HEADER */}
       <PageHeader
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -103,9 +85,10 @@ export default function Payments() {
         }
       />
       
-      {/* 📊 PANEL DE MÉTRICAS GLOBALES CON ANIMACIONES */}
+      {/* PANEL DE MÉTRICAS */}
       <section className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Card TOTAL_REVENUE */}
           <div className="bg-[#111] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
             <div className="flex items-center gap-2 mb-2">
               <BanknotesIcon className="w-4 h-4 text-emerald-500" />
@@ -119,19 +102,24 @@ export default function Payments() {
             </p>
           </div>
           
-          <div className="bg-[#111] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
+          {/* Card PENDING_ORDERS - CLICKABLE */}
+          <div 
+            className="bg-[#111] border border-white/10 rounded-sm p-4 hover:border-amber-500/30 transition-all cursor-pointer group"
+            onClick={() => navigate("/payments/pending")}
+          >
             <div className="flex items-center gap-2 mb-2">
               <CircleStackIcon className="w-4 h-4 text-amber-500" />
               <span className="text-[10px] font-black uppercase tracking-wider text-white/40">PENDING_ORDERS</span>
             </div>
-            <div className="text-2xl font-bold text-amber-500 animate-pulse">
+            <div className="text-2xl font-bold text-amber-500">
               {summary?.pending?.toString().padStart(3, '0') || "000"}
             </div>
-            <p className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">
-              ACTIVE_ORDERS
+            <p className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em] group-hover:text-amber-400 transition-colors">
+              CLICK_TO_VERIFY
             </p>
           </div>
           
+          {/* Card CORE_STATUS */}
           <div className="bg-[#111] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[10px] font-black uppercase tracking-wider text-white/40">CORE_STATUS</span>
@@ -146,7 +134,7 @@ export default function Payments() {
         </div>
       </section>
       
-      {/* 🔍 PANEL DE BÚSQUEDA Y FILTROS AVANZADOS */}
+      {/* PANEL DE BÚSQUEDA */}
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-1">
@@ -167,7 +155,7 @@ export default function Payments() {
             </div>
           </div>
           
-          {/* 🏷️ SELECTOR INSTITUCIONAL MEJORADO */}
+          {/* SELECTOR INSTITUCIONAL */}
           {institutions.length > 1 && (
             <div className="relative">
               <select
@@ -184,7 +172,7 @@ export default function Payments() {
           )}
         </div>
         
-        {/* 📋 LISTA DINÁMICA DE ORDENES DE COBRO */}
+        {/* LISTA DE ÓRDENES */}
         <div className="border border-white/10 bg-[#111] rounded-sm overflow-hidden shadow-2xl">
           <div className="px-4 py-3 border-b border-white/5 bg-white/5 flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -194,7 +182,6 @@ export default function Payments() {
               </h3>
             </div>
             
-            {/* 📊 INDICADORES DE ESTADO */}
             <div className="flex items-center gap-4 text-[9px] font-mono text-white/30">
               <span>TOTAL_ENTRIES: <span className="text-white">{totalCount}</span></span>
               <span>RANGE: <span className="text-white">{startIdx}-{endIdx}</span></span>
@@ -202,7 +189,6 @@ export default function Payments() {
             </div>
           </div>
           
-          {/* 📄 LISTA DE ORDENES */}
           <div className="divide-y divide-white/5">
             {orders.length === 0 && !loading && !error && (
               <div className="flex flex-col items-center justify-center p-12 text-white/20">
@@ -234,13 +220,11 @@ export default function Payments() {
             {orders.map((order, index) => (
               <div 
                 key={order.id} 
-                // ✅ FIX 2: Status Comparisons - Usar valores correctos del enum
                 className={`group flex items-center justify-between p-4 hover:bg-white/5 transition-all cursor-pointer ${
                   order.status === 'paid' ? 'bg-emerald-500/10' : 
                   order.status === 'void' ? 'bg-red-500/10' : 
                   order.status === 'open' ? 'bg-amber-500/10' : ''
                 }`}
-                // 🆕 NAVEGACIÓN DIRECTA AL DETALLE DE LA ORDEN
                 onClick={() => handleViewOrderDetail(order.id)}
               >
                 <div className="flex-1">
@@ -250,18 +234,14 @@ export default function Payments() {
                     </span>
                     <div className="flex flex-col gap-0.5">
                       <p className="text-[10px] font-bold text-white">
-                        {/* ✅ FIX 4: Patient Access - Usar patient_detail o patient_name */}
                         Order #{order.id} - {order.patient_detail?.full_name || order.patient_name || 'SIN_PACIENTE'}
                       </p>
                       <p className="text-[9px] font-mono text-white/30">
-                        {/* ✅ FIX 5: created_at Safety - Añadir fallback a issued_at */}
                         {new Date(order.created_at || order.issued_at).toLocaleString()}
                       </p>
                       <p className="text-[9px] font-mono text-white/30">
-                        {/* ✅ FIX 6: Status Display - Añadir fallback */}
                         Status: {order.status?.toUpperCase() || 'UNKNOWN'}
                       </p>
-                      {/* ✅ FIX 7: Eliminar completamente el bloque de 'notes' - NO existe en backend */}
                     </div>
                   </div>
                 </div>
@@ -282,7 +262,7 @@ export default function Payments() {
             ))}
           </div>
           
-          {/* 📄 CONTROLES DE PAGINACIÓN */}
+          {/* PAGINACIÓN */}
           {!isSearching && totalCount > pageSize && (
             <div className="flex items-center justify-between px-4 py-3 border-t border-white/5 bg-white/[0.03]">
               <div className="text-[9px] font-mono text-white/30">
@@ -309,18 +289,6 @@ export default function Payments() {
           )}
         </div>
       </section>
-      
-      {/* ❌ ELIMINAR MODAL DE PAGO (MOVIDO A ChargeOrderDetail.tsx) */}
-      {/* 
-      {showModal && selectedOrderId && (
-        <RegisterPaymentModal
-          open={showModal} 
-          onClose={() => setShowModal(false)}
-          appointmentId={selectedAppointmentId!}
-          chargeOrderId={selectedOrderId}
-        />
-      )}
-      */}
     </div>
   );
 }
