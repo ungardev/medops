@@ -624,10 +624,23 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """
-        Maneja el ordenamiento correctamente.
+        Maneja el ordenamiento correctamente Y optimiza queries con select_related/prefetch_related.
         Convierte 'appointment_date' a 'appointment__appointment_date' para relaciones.
         """
         queryset = super().get_queryset()
+        
+        # ✅ AGREGAR: select_related para evitar N+1 queries
+        queryset = queryset.select_related(
+            'patient',
+            'doctor',
+            'institution',
+            'appointment',
+            'created_by',
+            'updated_by'
+        ).prefetch_related(
+            'items',
+            'payments'
+        )
         
         # Obtener el parámetro de ordenamiento
         ordering = self.request.query_params.get('ordering', '')
@@ -664,10 +677,10 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
         failed_orders = ChargeOrder.objects.filter(status='void').count()
         
         return Response({
-            'total': total_orders,              # Cantidad total de órdenes
-            'confirmed': float(total_revenue),  # Suma de pagos confirmados ($)
-            'pending': pending_orders,          # Cantidad de órdenes pendientes
-            'failed': failed_orders,            # Cantidad de órdenes fallidas
+            'total': total_orders,
+            'confirmed': float(total_revenue),
+            'pending': pending_orders,
+            'failed': failed_orders,
         })
     
     @action(detail=True, methods=['post'])
@@ -697,7 +710,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
                 amount=serializer.validated_data['amount'],
                 method=serializer.validated_data['method'],
                 reference_number=serializer.validated_data.get('reference_number'),
-                status='confirmed',  # Auto-confirmar pagos manuales
+                status='confirmed',
             )
             
             # Recalcular totales de la orden
@@ -712,45 +725,32 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def void(self, request, pk=None):
-        """
-        Anular una orden de cobro (void).
-        POST /api/charge-orders/{id}/void/
-        """
+        """Anular una orden de cobro (void)."""
         try:
             charge_order = self.get_object()
             
-            # Validaciones de negocio
             if charge_order.status == 'paid':
                 return Response(
-                    {"error": "No se puede anular una orden completamente pagada. Reversa los pagos primero."},
+                    {"error": "No se puede anular una orden completamente pagada."},
                     status=400
                 )
             
             if charge_order.status == 'void':
-                return Response(
-                    {"error": "La orden ya está anulada."},
-                    status=400
-                )
+                return Response({"error": "La orden ya está anulada."}, status=400)
             
             if charge_order.status == 'waived':
-                return Response(
-                    {"error": "No se puede anular una orden exonerada."},
-                    status=400
-                )
+                return Response({"error": "No se puede anular una orden exonerada."}, status=400)
             
-            # Verificar pagos confirmados
             confirmed_payments = charge_order.payments.filter(status='confirmed').exists()
             if confirmed_payments:
                 return Response(
-                    {"error": "La orden tiene pagos confirmados. Reversa los pagos primero."},
+                    {"error": "La orden tiene pagos confirmados."},
                     status=400
                 )
             
-            # Anular la orden
             charge_order.status = 'void'
             charge_order.save(update_fields=['status'])
             
-            # Registrar evento de auditoría
             Event = apps.get_model('core', 'Event')
             Event.objects.create(
                 entity='ChargeOrder',
@@ -770,38 +770,23 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def waive(self, request, pk=None):
-        """
-        Exonerar una orden de cobro (waive).
-        POST /api/charge-orders/{id}/waive/
-        """
+        """Exonerar una orden de cobro (waive)."""
         try:
             charge_order = self.get_object()
             
-            # Validaciones de negocio
             if charge_order.status == 'void':
-                return Response(
-                    {"error": "No se puede exonerar una orden anulada."},
-                    status=400
-                )
+                return Response({"error": "No se puede exonerar una orden anulada."}, status=400)
             
             if charge_order.status == 'waived':
-                return Response(
-                    {"error": "La orden ya está exonerada."},
-                    status=400
-                )
+                return Response({"error": "La orden ya está exonerada."}, status=400)
             
             if charge_order.status == 'paid':
-                return Response(
-                    {"error": "La orden ya está pagada. No necesita exoneración."},
-                    status=400
-                )
+                return Response({"error": "La orden ya está pagada."}, status=400)
             
-            # Exonerar la orden
             charge_order.status = 'waived'
             charge_order.balance_due = 0
             charge_order.save(update_fields=['status', 'balance_due'])
             
-            # Registrar evento de auditoría
             Event = apps.get_model('core', 'Event')
             Event.objects.create(
                 entity='ChargeOrder',
