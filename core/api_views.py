@@ -6271,3 +6271,44 @@ def get_pending_payments(request):
     except Exception as e:
         logger.error(f"Error en get_pending_payments: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def payment_ocr_api(request):
+    """
+    POST /api/payments/ocr/
+    
+    Procesa imagen de captura de pago y extrae datos automáticamente
+    """
+    from .services.payment_ocr import PaymentOCRService
+    
+    try:
+        # Obtener imagen del request
+        image = request.FILES.get('image')
+        
+        if not image:
+            return Response({
+                'success': False,
+                'error': 'No se recibió imagen'
+            }, status=400)
+        
+        # Validar tipo de archivo
+        allowed_types = ['image/jpeg', 'image/png', 'image/jpg']
+        if image.content_type not in allowed_types:
+            return Response({
+                'success': False,
+                'error': 'Tipo de archivo no permitido. Use JPEG o PNG'
+            }, status=400)
+        
+        # Procesar imagen
+        result = PaymentOCRService.extract_data(image)
+        
+        return Response(result)
+        
+    except Exception as e:
+        logger.error(f"Error en payment_ocr_api: {str(e)}")
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)

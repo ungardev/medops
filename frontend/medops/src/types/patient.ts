@@ -241,3 +241,18 @@ export interface RegisterPaymentResponse {
     message: string;
   };
 }
+
+
+export interface OcrPaymentResponse {
+  success: boolean;
+  data?: {
+    banco: string | null;
+    monto: string | null;
+    referencia: string | null;
+    telefono: string | null;
+    fecha: string | null;
+  };
+  raw_text?: string;
+  confianza?: number;
+  error?: string;
+}
