@@ -88,7 +88,7 @@ export default function PatientChargeOrderDetail() {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('image', screenshot);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/ocr/`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/payments/ocr/`, {
         method: 'POST',
         headers: {
           'Authorization': `Token ${localStorage.getItem('patient_drf_token') || localStorage.getItem('patient_access_token')}`
