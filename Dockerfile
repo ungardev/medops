@@ -27,6 +27,9 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     libgbm1 \
     libasound2t64 \
+    # OCR
+    tesseract-ocr \
+    tesseract-ocr-spa \
     && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
