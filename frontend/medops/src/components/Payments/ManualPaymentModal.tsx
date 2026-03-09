@@ -9,6 +9,7 @@ import {
   PhotoIcon
 } from '@heroicons/react/24/outline';
 import { apiFetch } from '@/api/client';
+import { VENEZUELAN_BANKS } from '@/constants/banks';
 interface ManualPaymentModalProps {
   open: boolean;
   chargeOrderId: number;
@@ -19,14 +20,11 @@ interface ManualPaymentModalProps {
 interface ManualPaymentData {
   reference_number: string;
   bank_name: string;
+  phone: string;
+  national_id: string;
   amount: string;
   payment_date: string;
   notes: string;
-}
-interface VenezuelanBank {
-  code: string;
-  name: string;
-  shortName: string;
 }
 const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   open,
@@ -38,6 +36,8 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   const [formData, setFormData] = useState<ManualPaymentData>({
     reference_number: '',
     bank_name: '',
+    phone: '',
+    national_id: '',
     amount: expectedAmount.toFixed(2),
     payment_date: new Date().toISOString().split('T')[0],
     notes: ''
@@ -45,17 +45,6 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   // Estados para screenshot
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
-  const venezuelanBanks: VenezuelanBank[] = [
-    { code: 'mercantil', name: 'Banco Mercantil', shortName: 'Mercantil' },
-    { code: 'banesco', name: 'Banesco', shortName: 'Banesco' },
-    { code: 'provincial', name: 'Banco Provincial', shortName: 'Provincial' },
-    { code: 'venezuela', name: 'Banco de Venezuela', shortName: 'Banco de Venezuela' },
-    { code: 'bicentenario', name: 'Banco Bicentenario', shortName: 'Bicentenario' },
-    { code: 'caroni', name: 'Banco Caroní', shortName: 'Caroní' },
-    { code: 'exterior', name: 'Banco Exterior', shortName: 'Exterior' },
-    { code: 'tesoro', name: 'Banco del Tesoro', shortName: 'Tesoro' },
-    { code: 'occidente', name: 'Banco Occidental', shortName: 'Soberano' }
-  ];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   // Manejar cambio de screenshot
@@ -97,6 +86,16 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       return;
     }
     
+    if (!formData.phone.trim()) {
+      setSubmitError('Teléfono requerido');
+      return;
+    }
+    
+    if (!formData.national_id.trim()) {
+      setSubmitError('Cédula requerida');
+      return;
+    }
+    
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       setSubmitError('Monto inválido');
       return;
@@ -116,6 +115,8 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         method: 'transfer',
         reference_number: formData.reference_number,
         bank_name: formData.bank_name,
+        phone: formData.phone,
+        national_id: formData.national_id,
         payment_date: formData.payment_date,
         notes: formData.notes,
         manual_verification: true,
@@ -176,7 +177,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 border border-amber-400 border-t-transparent animate-spin" />
             <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
-              Manual_Payment_Mode
+              Registrar Pago
             </h2>
           </div>
           <button 
@@ -199,7 +200,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         <div className="p-4 border-b border-white/5 bg-white/[0.02]">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-black uppercase tracking-widest text-white/40">
-              Expected_Amount
+              Monto a Pagar
             </span>
             <span className="text-xl font-black text-blue-400">
               ${expectedAmount.toFixed(2)}
@@ -210,7 +211,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* CAPTURA DE PAGO */}
           <div>
-            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
               📷 Captura de pago (opcional)
             </label>
             <div className="border-2 border-dashed border-white/20 rounded-sm p-4 text-center hover:border-white/40 transition-colors">
@@ -248,78 +249,106 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               </div>
             )}
           </div>
-          {/* Bank */}
+          {/* Banco */}
           <div>
-            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
-              Banco_Origen
+            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+              Banco emisor
             </label>
             <select
               value={formData.bank_name}
               onChange={(e) => handleInputChange('bank_name', e.target.value)}
-              className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all"
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
               required
             >
-              <option value="">Seleccionar banco...</option>
-              {venezuelanBanks.map((bank) => (
+              <option value="">Seleccionar banco</option>
+              {VENEZUELAN_BANKS.map((bank) => (
                 <option key={bank.code} value={bank.code}>
-                  {bank.shortName}
+                  {bank.name}
                 </option>
               ))}
             </select>
           </div>
-          {/* Reference */}
+          {/* Teléfono */}
           <div>
-            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
-              Numero_Referencia
+            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+              Teléfono del pagador
+            </label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="04121234567"
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              required
+            />
+          </div>
+          {/* Cédula */}
+          <div>
+            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+              Cédula del pagador
+            </label>
+            <input
+              type="text"
+              value={formData.national_id}
+              onChange={(e) => handleInputChange('national_id', e.target.value)}
+              placeholder="V-12345678"
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              required
+            />
+          </div>
+          {/* Referencia */}
+          <div>
+            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+              Número de referencia
             </label>
             <input
               type="text"
               value={formData.reference_number}
               onChange={(e) => handleInputChange('reference_number', e.target.value)}
               placeholder="12345678901234567890"
-              className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all placeholder:text-white/20"
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
               required
             />
           </div>
-          {/* Amount & Date */}
+          {/* Monto y Fecha */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
-                Monto
+              <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+                Monto (USD)
               </label>
               <input
                 type="number"
                 step="0.01"
                 value={formData.amount}
                 onChange={(e) => handleInputChange('amount', e.target.value)}
-                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all"
+                className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
                 required
               />
             </div>
             <div>
-              <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
-                Fecha_Pago
+              <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+                Fecha de pago
               </label>
               <input
                 type="date"
                 value={formData.payment_date}
                 onChange={(e) => handleInputChange('payment_date', e.target.value)}
-                className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all"
+                className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
                 style={{colorScheme: 'dark'}}
                 required
               />
             </div>
           </div>
-          {/* Notes */}
+          {/* Notas */}
           <div>
-            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
-              Notas
+            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+              Notas adicionales
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
               rows={2}
-              className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white outline-none focus:border-blue-500/50 transition-all resize-none placeholder:text-white/20"
+              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50 resize-none"
               placeholder="Notas adicionales..."
             />
           </div>
@@ -335,7 +364,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-3 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -345,14 +374,14 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               ) : (
                 <>
                   <CheckCircleIcon className="w-4 h-4" />
-                  Registrar_Pago
+                  Registrar Pago
                 </>
               )}
             </button>
             <button
               type="button"
               onClick={handleClose}
-              className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white/80 transition-all"
+              className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white/80 transition-all"
             >
               Cancelar
             </button>
