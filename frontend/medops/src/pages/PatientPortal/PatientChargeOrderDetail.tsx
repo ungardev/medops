@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { usePatientChargeOrderDetail } from "@/hooks/patient/usePatientChargeOrders";
@@ -11,8 +11,23 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XMarkIcon,
-  PhotoIcon
+  PhotoIcon,
+  SparklesIcon,
+  ArrowPathIcon
 } from "@heroicons/react/24/outline";
+interface OCRResult {
+  success: boolean;
+  data?: {
+    banco?: string;
+    monto?: string;
+    referencia?: string;
+    telefono?: string;
+    fecha?: string;
+  };
+  raw_text?: string;
+  confianza?: number;
+  error?: string;
+}
 export default function PatientChargeOrderDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -34,6 +49,11 @@ export default function PatientChargeOrderDetail() {
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   
+  // Estados para OCR
+  const [isOCRLoading, setIsOCRLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   
@@ -41,12 +61,10 @@ export default function PatientChargeOrderDetail() {
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validar tamaño (2MB máximo)
       if (file.size > 2 * 1024 * 1024) {
         setFormError("La imagen no puede superar 2MB");
         return;
       }
-      // Validar tipo
       if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
         setFormError("Solo se permiten imágenes PNG o JPEG");
         return;
@@ -54,6 +72,58 @@ export default function PatientChargeOrderDetail() {
       setScreenshot(file);
       setScreenshotPreview(URL.createObjectURL(file));
       setFormError("");
+      setOcrResult(null);
+    }
+  };
+  
+  // Función para ejecutar OCR
+  const handleOCR = async () => {
+    if (!screenshot) {
+      setFormError("Primero sube una captura de pago");
+      return;
+    }
+    setIsOCRLoading(true);
+    setFormError("");
+    setOcrResult(null);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('image', screenshot);
+      const response = await fetch(`/api/payments/ocr/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${localStorage.getItem('patient_drf_token') || localStorage.getItem('patient_access_token')}`
+        },
+        body: formDataToSend
+      });
+      const result = await response.json();
+      setOcrResult(result);
+      if (result.success && result.data) {
+        const data = result.data;
+        
+        if (data.banco) {
+          const bank = VENEZUELAN_BANKS.find(b => 
+            b.name.toLowerCase().includes(data.banco!.toLowerCase()) ||
+            data.banco!.toLowerCase().includes(b.code.toLowerCase())
+          );
+          if (bank) {
+            setFormData(prev => ({ ...prev, bank_code: bank.code }));
+          }
+        }
+        if (data.monto) {
+          const cleanMonto = data.monto.replace(/[.,]/g, '');
+          setFormData(prev => ({ ...prev, amount_bs: cleanMonto }));
+        }
+        if (data.referencia) {
+          setFormData(prev => ({ ...prev, reference: data.referencia! }));
+        }
+        if (data.telefono) {
+          setFormData(prev => ({ ...prev, phone: data.telefono! }));
+        }
+      }
+    } catch (err: any) {
+      setFormError(err.message || "Error al procesar OCR");
+    } finally {
+      setIsOCRLoading(false);
     }
   };
   
@@ -62,6 +132,7 @@ export default function PatientChargeOrderDetail() {
     setShowModal(false);
     setScreenshot(null);
     setScreenshotPreview(null);
+    setOcrResult(null);
     setFormError("");
     setSuccessMessage("");
   };
@@ -159,6 +230,7 @@ export default function PatientChargeOrderDetail() {
           </button>
         }
       />
+      
       {/* RESUMEN */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-white/10 border border-white/10">
         {[
@@ -174,6 +246,7 @@ export default function PatientChargeOrderDetail() {
           </div>
         ))}
       </div>
+      
       {/* INFO */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-8">
@@ -274,6 +347,7 @@ export default function PatientChargeOrderDetail() {
           )}
         </div>
       </div>
+      
       {/* MODAL REGISTRAR PAGO */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
@@ -301,7 +375,7 @@ export default function PatientChargeOrderDetail() {
               {/* CAPTURA DE PAGO */}
               <div>
                 <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-                  📷 Captura de pago (opcional)
+                  📷 Captura de pago
                 </label>
                 <div className="border-2 border-dashed border-white/20 rounded-sm p-4 text-center hover:border-white/40 transition-colors">
                   <input
@@ -310,6 +384,7 @@ export default function PatientChargeOrderDetail() {
                     onChange={handleScreenshotChange}
                     className="hidden"
                     id="screenshot-upload"
+                    ref={fileInputRef}
                   />
                   <label htmlFor="screenshot-upload" className="cursor-pointer">
                     <PhotoIcon className="w-8 h-8 mx-auto text-white/30 mb-2" />
@@ -321,6 +396,8 @@ export default function PatientChargeOrderDetail() {
                     </p>
                   </label>
                 </div>
+                
+                {/* Preview y Botón OCR */}
                 {screenshotPreview && (
                   <div className="mt-3 relative">
                     <img 
@@ -333,11 +410,53 @@ export default function PatientChargeOrderDetail() {
                       onClick={() => {
                         setScreenshot(null);
                         setScreenshotPreview(null);
+                        setOcrResult(null);
                       }}
                       className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full p-1 hover:bg-red-500"
                     >
                       <XMarkIcon className="w-3 h-3" />
                     </button>
+                    
+                    {/* BOTÓN OCR */}
+                    <button
+                      type="button"
+                      onClick={handleOCR}
+                      disabled={isOCRLoading}
+                      className="absolute bottom-1 right-1 flex items-center gap-1 px-2 py-1 bg-purple-500/80 text-white text-[8px] font-bold uppercase rounded-sm hover:bg-purple-500 disabled:opacity-50"
+                    >
+                      {isOCRLoading ? (
+                        <ArrowPathIcon className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <SparklesIcon className="w-3 h-3" />
+                      )}
+                      {isOCRLoading ? "Procesando..." : "🤖 OCR"}
+                    </button>
+                  </div>
+                )}
+                
+                {/* Resultado OCR */}
+                {ocrResult && (
+                  <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[9px] font-bold text-purple-300 uppercase">
+                        🤖 OCR Resultado
+                      </span>
+                      {ocrResult.confianza && (
+                        <span className="text-[8px] text-purple-400">
+                          Confianza: {Math.round(ocrResult.confianza * 100)}%
+                        </span>
+                      )}
+                    </div>
+                    {ocrResult.success ? (
+                      <div className="space-y-1">
+                        {ocrResult.data?.banco && <p className="text-[8px] text-white/60">Banco: {ocrResult.data.banco}</p>}
+                        {ocrResult.data?.monto && <p className="text-[8px] text-white/60">Monto: Bs {ocrResult.data.monto}</p>}
+                        {ocrResult.data?.referencia && <p className="text-[8px] text-white/60">Referencia: {ocrResult.data.referencia}</p>}
+                        {ocrResult.data?.telefono && <p className="text-[8px] text-white/60">Teléfono: {ocrResult.data.telefono}</p>}
+                      </div>
+                    ) : (
+                      <p className="text-[8px] text-red-400">{ocrResult.error}</p>
+                    )}
                   </div>
                 )}
               </div>

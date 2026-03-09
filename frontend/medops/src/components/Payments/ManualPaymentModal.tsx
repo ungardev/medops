@@ -1,12 +1,13 @@
 // src/components/Payments/ManualPaymentModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   XMarkIcon, 
   ExclamationTriangleIcon, 
   CheckCircleIcon, 
   CreditCardIcon,
   ArrowPathIcon,
-  PhotoIcon
+  PhotoIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { apiFetch } from '@/api/client';
 import { VENEZUELAN_BANKS } from '@/constants/banks';
@@ -25,6 +26,19 @@ interface ManualPaymentData {
   amount_bs: string;
   payment_date: string;
   notes: string;
+}
+interface OCRResult {
+  success: boolean;
+  data?: {
+    banco?: string;
+    monto?: string;
+    referencia?: string;
+    telefono?: string;
+    fecha?: string;
+  };
+  raw_text?: string;
+  confianza?: number;
+  error?: string;
 }
 const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   open,
@@ -45,6 +59,11 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   // Estados para screenshot
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  
+  // Estados para OCR
+  const [isOCRLoading, setIsOCRLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   // Manejar cambio de screenshot
@@ -62,12 +81,70 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       setScreenshot(file);
       setScreenshotPreview(URL.createObjectURL(file));
       setSubmitError("");
+      setOcrResult(null);
+    }
+  };
+  // Función para ejecutar OCR
+  const handleOCR = async () => {
+    if (!screenshot) {
+      setSubmitError("Primero sube una captura de pago");
+      return;
+    }
+    setIsOCRLoading(true);
+    setSubmitError(null);
+    setOcrResult(null);
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('image', screenshot);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/ocr/`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Token ${localStorage.getItem('authToken')}`
+        },
+        body: formDataToSend
+      });
+      const result = await response.json();
+      setOcrResult(result);
+      if (result.success && result.data) {
+        // Auto-rellenar campos con datos extraídos
+        const data = result.data;
+        
+        if (data.banco) {
+          // Buscar código de banco que coincida
+          const bank = VENEZUELAN_BANKS.find(b => 
+            b.name.toLowerCase().includes(data.banco!.toLowerCase()) ||
+            data.banco!.toLowerCase().includes(b.code.toLowerCase())
+          );
+          if (bank) {
+            setFormData(prev => ({ ...prev, bank_name: bank.code }));
+          }
+        }
+        if (data.monto) {
+          // Limpiar monto (quitar puntos, comas)
+          const cleanMonto = data.monto.replace(/[.,]/g, '');
+          setFormData(prev => ({ ...prev, amount_bs: cleanMonto }));
+        }
+        if (data.referencia) {
+          setFormData(prev => ({ ...prev, reference_number: data.referencia! }));
+        }
+        if (data.telefono) {
+          setFormData(prev => ({ ...prev, phone: data.telefono! }));
+        }
+        if (data.fecha) {
+          setFormData(prev => ({ ...prev, payment_date: data.fecha! }));
+        }
+      }
+    } catch (error: any) {
+      setSubmitError(error.message || "Error al procesar OCR");
+    } finally {
+      setIsOCRLoading(false);
     }
   };
   // Limpiar screenshot
   const handleClearScreenshot = () => {
     setScreenshot(null);
     setScreenshotPreview(null);
+    setOcrResult(null);
   };
   const handleInputChange = (field: keyof ManualPaymentData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -108,14 +185,11 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      // Preparar datos - converting Bs to USD for API compatibility
       const amountBs = parseFloat(formData.amount_bs);
-      // Get current BCV rate (in real app, fetch from API)
-      // For now, we send amount_bs directly
       const payload: any = {
         charge_order: chargeOrderId,
-        amount_bs: amountBs,  // ✅ ENVÍO BS (VES)
-        amount_usd: amountBs, // Temporary - backend will calculate
+        amount_bs: amountBs,
+        amount_usd: amountBs,
         method: 'transfer',
         reference_number: formData.reference_number,
         bank_name: formData.bank_name,
@@ -126,7 +200,6 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         manual_verification: true,
         reason: 'API_CONNECTION_DOWN'
       };
-      // Si hay screenshot, usar FormData
       if (screenshot) {
         const formDataToSend = new FormData();
         Object.entries(payload).forEach(([key, value]) => {
@@ -148,7 +221,6 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         onVerificationSuccess(data);
         onClose();
       } else {
-        // JSON normal
         const response = await apiFetch('/api/payments/', {
           method: 'POST',
           body: JSON.stringify(payload)
@@ -165,10 +237,10 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       setIsSubmitting(false);
     }
   };
-  // Limpiar al cerrar
   const handleClose = () => {
     setScreenshot(null);
     setScreenshotPreview(null);
+    setOcrResult(null);
     setSubmitError(null);
     onClose();
   };
@@ -216,7 +288,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
           {/* CAPTURA DE PAGO */}
           <div>
             <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
-              📷 Captura de pago (opcional)
+              📷 Captura de pago
             </label>
             <div className="border-2 border-dashed border-white/20 rounded-sm p-4 text-center hover:border-white/40 transition-colors">
               <input
@@ -225,6 +297,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
                 onChange={handleScreenshotChange}
                 className="hidden"
                 id="doctor-screenshot-upload"
+                ref={fileInputRef}
               />
               <label htmlFor="doctor-screenshot-upload" className="cursor-pointer">
                 <PhotoIcon className="w-8 h-8 mx-auto text-white/30 mb-2" />
@@ -236,6 +309,8 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
                 </p>
               </label>
             </div>
+            
+            {/* Preview y Botón OCR */}
             {screenshotPreview && (
               <div className="mt-3 relative">
                 <img 
@@ -250,6 +325,47 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
                 >
                   <XMarkIcon className="w-3 h-3" />
                 </button>
+                
+                {/* BOTÓN OCR */}
+                <button
+                  type="button"
+                  onClick={handleOCR}
+                  disabled={isOCRLoading}
+                  className="absolute bottom-1 right-1 flex items-center gap-1 px-2 py-1 bg-purple-500/80 text-white text-[8px] font-bold uppercase rounded-sm hover:bg-purple-500 disabled:opacity-50"
+                >
+                  {isOCRLoading ? (
+                    <ArrowPathIcon className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <SparklesIcon className="w-3 h-3" />
+                  )}
+                  {isOCRLoading ? "Procesando..." : "🤖 OCR"}
+                </button>
+              </div>
+            )}
+            
+            {/* Resultado OCR */}
+            {ocrResult && (
+              <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] font-bold text-purple-300 uppercase">
+                    🤖 OCR Resultado
+                  </span>
+                  {ocrResult.confianza && (
+                    <span className="text-[8px] text-purple-400">
+                      Confianza: {Math.round(ocrResult.confianza * 100)}%
+                    </span>
+                  )}
+                </div>
+                {ocrResult.success ? (
+                  <div className="space-y-1">
+                    {ocrResult.data?.banco && <p className="text-[8px] text-white/60">Banco: {ocrResult.data.banco}</p>}
+                    {ocrResult.data?.monto && <p className="text-[8px] text-white/60">Monto: Bs {ocrResult.data.monto}</p>}
+                    {ocrResult.data?.referencia && <p className="text-[8px] text-white/60">Referencia: {ocrResult.data.referencia}</p>}
+                    {ocrResult.data?.telefono && <p className="text-[8px] text-white/60">Teléfono: {ocrResult.data.telefono}</p>}
+                  </div>
+                ) : (
+                  <p className="text-[8px] text-red-400">{ocrResult.error}</p>
+                )}
               </div>
             )}
           </div>
