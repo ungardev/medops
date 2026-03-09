@@ -2510,7 +2510,6 @@ def dashboard_summary_api(request):
         return Response({"error": str(e)}, status=500)
 
 
-
 @api_view(['GET'])
 def patient_search_api(request):
     q = request.query_params.get('q', '').strip()
@@ -2520,11 +2519,20 @@ def patient_search_api(request):
         return Response([])
     
     try:
-        patients = Patient.objects.filter(
-            Q(first_name__icontains=q) |
-            Q(last_name__icontains=q) |
-            Q(national_id__icontains=q)
-        ).filter(active=True)[:limit]
+        # Dividir query en palabras individuales para búsqueda más flexible
+        # Ejemplo: "ungar v" busca pacientes que contengan "ungar" Y "v"
+        words = q.split()
+        
+        # Construir filtros para cada palabra - todas deben coincidir
+        query = Q(active=True)
+        for word in words:
+            query &= (
+                Q(first_name__icontains=word) |
+                Q(last_name__icontains=word) |
+                Q(national_id__icontains=word)
+            )
+        
+        patients = Patient.objects.filter(query)[:limit]
         
         serializer = PatientListSerializer(patients, many=True)
         return Response(serializer.data)
