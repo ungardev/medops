@@ -5,7 +5,8 @@ import {
   ExclamationTriangleIcon, 
   CheckCircleIcon, 
   CreditCardIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
 import { apiFetch } from '@/api/client';
 interface ManualPaymentModalProps {
@@ -41,6 +42,9 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
     payment_date: new Date().toISOString().split('T')[0],
     notes: ''
   });
+  // Estados para screenshot
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const venezuelanBanks: VenezuelanBank[] = [
     { code: 'mercantil', name: 'Banco Mercantil', shortName: 'Mercantil' },
     { code: 'banesco', name: 'Banesco', shortName: 'Banesco' },
@@ -54,6 +58,28 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   ];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Manejar cambio de screenshot
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setSubmitError("La imagen no puede superar 2MB");
+        return;
+      }
+      if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+        setSubmitError("Solo se permiten imágenes PNG o JPEG");
+        return;
+      }
+      setScreenshot(file);
+      setScreenshotPreview(URL.createObjectURL(file));
+      setSubmitError("");
+    }
+  };
+  // Limpiar screenshot
+  const handleClearScreenshot = () => {
+    setScreenshot(null);
+    setScreenshotPreview(null);
+  };
   const handleInputChange = (field: keyof ManualPaymentData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setSubmitError(null);
@@ -83,24 +109,50 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const response = await apiFetch('/api/payments/', {
-        method: 'POST',
-        body: JSON.stringify({
-          charge_order: chargeOrderId,
-          amount: parseFloat(formData.amount),
-          method: 'transfer',
-          reference_number: formData.reference_number,
-          bank_name: formData.bank_name,
-          payment_date: formData.payment_date,
-          notes: formData.notes,
-          manual_verification: true,
-          reason: 'API_CONNECTION_DOWN'
-        })
-      });
-      
-      if (response) {
-        onVerificationSuccess(response);
+      // Preparar datos
+      const payload: any = {
+        charge_order: chargeOrderId,
+        amount: parseFloat(formData.amount),
+        method: 'transfer',
+        reference_number: formData.reference_number,
+        bank_name: formData.bank_name,
+        payment_date: formData.payment_date,
+        notes: formData.notes,
+        manual_verification: true,
+        reason: 'API_CONNECTION_DOWN'
+      };
+      // Si hay screenshot, usar FormData
+      if (screenshot) {
+        const formDataToSend = new FormData();
+        Object.entries(payload).forEach(([key, value]) => {
+          formDataToSend.append(key, String(value));
+        });
+        formDataToSend.append('screenshot', screenshot);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payments/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Token ${localStorage.getItem('authToken')}`
+          },
+          body: formDataToSend
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || 'Error al registrar pago');
+        }
+        const data = await response.json();
+        onVerificationSuccess(data);
         onClose();
+      } else {
+        // JSON normal
+        const response = await apiFetch('/api/payments/', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        
+        if (response) {
+          onVerificationSuccess(response);
+          onClose();
+        }
       }
     } catch (error: any) {
       setSubmitError(error.message || 'Error al registrar pago');
@@ -108,10 +160,17 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       setIsSubmitting(false);
     }
   };
+  // Limpiar al cerrar
+  const handleClose = () => {
+    setScreenshot(null);
+    setScreenshotPreview(null);
+    setSubmitError(null);
+    onClose();
+  };
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md">
+      <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <div className="flex items-center gap-3">
@@ -121,7 +180,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
             </h2>
           </div>
           <button 
-            onClick={onClose}
+            onClick={handleClose}
             className="text-white/40 hover:text-white transition-colors"
           >
             <XMarkIcon className="w-4 h-4" />
@@ -132,7 +191,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
           <div className="flex items-center gap-2">
             <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
             <span className="text-[9px] font-mono text-amber-300 uppercase tracking-widest">
-              Api_Connection_Down // Manual Registration Required
+              Pendiente de verificación
             </span>
           </div>
         </div>
@@ -149,6 +208,46 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         </div>
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          {/* CAPTURA DE PAGO */}
+          <div>
+            <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
+              📷 Captura de pago (opcional)
+            </label>
+            <div className="border-2 border-dashed border-white/20 rounded-sm p-4 text-center hover:border-white/40 transition-colors">
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/jpg"
+                onChange={handleScreenshotChange}
+                className="hidden"
+                id="doctor-screenshot-upload"
+              />
+              <label htmlFor="doctor-screenshot-upload" className="cursor-pointer">
+                <PhotoIcon className="w-8 h-8 mx-auto text-white/30 mb-2" />
+                <p className="text-[10px] text-white/50">
+                  {screenshot ? screenshot.name : "Subir captura de pantalla"}
+                </p>
+                <p className="text-[8px] text-white/30 mt-1">
+                  PNG o JPG hasta 2MB
+                </p>
+              </label>
+            </div>
+            {screenshotPreview && (
+              <div className="mt-3 relative">
+                <img 
+                  src={screenshotPreview} 
+                  alt="Preview" 
+                  className="h-32 w-full object-contain rounded-sm border border-white/10"
+                />
+                <button
+                  type="button"
+                  onClick={handleClearScreenshot}
+                  className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full p-1 hover:bg-red-500"
+                >
+                  <XMarkIcon className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
           {/* Bank */}
           <div>
             <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">
@@ -252,7 +351,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
             </button>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-black uppercase tracking-widest hover:bg-white/10 hover:text-white/80 transition-all"
             >
               Cancelar
@@ -263,7 +362,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
         <div className="px-4 py-3 border-t border-white/5 flex items-center justify-center gap-2">
           <CreditCardIcon className="w-3 h-3 text-blue-400/40" />
           <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">
-            Manual_Verification_Mode // Fallback_Active
+            Pendiente de verificación
           </span>
         </div>
       </div>

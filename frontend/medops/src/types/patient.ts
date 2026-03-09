@@ -225,6 +225,7 @@ export interface RegisterPaymentRequest {
   national_id: string;
   reference: string;
   amount_bs: number;
+  screenshot?: File;  
 }
 
 

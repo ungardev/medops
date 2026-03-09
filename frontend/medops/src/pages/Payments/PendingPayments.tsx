@@ -7,7 +7,8 @@ import { Loader2 } from "lucide-react";
 import { 
   BanknotesIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  PhotoIcon
 } from "@heroicons/react/24/outline";
 import EliteModal from "@/components/Common/EliteModal";
 import Toast from "@/components/Common/Toast";
@@ -21,6 +22,9 @@ export default function PendingPayments() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [verificationNotes, setVerificationNotes] = useState("");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
   const pendingPayments = payments ?? [];
   const handleConfirm = async () => {
     if (!selectedPayment) return;
@@ -66,6 +70,10 @@ export default function PendingPayments() {
     setSelectedPayment(null);
     setVerificationNotes("");
   };
+  const openImageModal = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setShowImageModal(true);
+  };
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -101,6 +109,7 @@ export default function PendingPayments() {
                 <th className="p-4 text-left font-black">MONTO</th>
                 <th className="p-4 text-left font-black">BANCO</th>
                 <th className="p-4 text-left font-black">REFERENCIA</th>
+                <th className="p-4 text-left font-black">CAPTURA</th>
                 <th className="p-4 text-left font-black">TIPO</th>
                 <th className="p-4 text-left font-black">FECHA</th>
                 <th className="p-4 text-right font-black">ACCIONES</th>
@@ -126,6 +135,19 @@ export default function PendingPayments() {
                   </td>
                   <td className="p-4 font-mono text-white/60">
                     {payment.reference_number}
+                  </td>
+                  <td className="p-4">
+                    {(payment as any).screenshot ? (
+                      <button 
+                        onClick={() => openImageModal((payment as any).screenshot)}
+                        className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-[10px]"
+                      >
+                        <PhotoIcon className="w-4 h-4" />
+                        Ver captura
+                      </button>
+                    ) : (
+                      <span className="text-white/20">—</span>
+                    )}
                   </td>
                   <td className="p-4">
                     <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded ${
@@ -181,6 +203,19 @@ export default function PendingPayments() {
             </span> del paciente <span className="text-white font-bold">{selectedPayment?.patient.full_name}</span>?
           </p>
           
+          {/* Mostrar captura si existe */}
+          {(selectedPayment as any).screenshot && (
+            <div className="mb-4">
+              <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
+              <img 
+                src={(selectedPayment as any).screenshot} 
+                alt="Captura de pago" 
+                className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
+                onClick={() => openImageModal((selectedPayment as any).screenshot)}
+              />
+            </div>
+          )}
+          
           <div>
             <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
               Notas (opcional)
@@ -225,6 +260,19 @@ export default function PendingPayments() {
             </span> del paciente <span className="text-white font-bold">{selectedPayment?.patient.full_name}</span>?
           </p>
           
+          {/* Mostrar captura si existe */}
+          {(selectedPayment as any).screenshot && (
+            <div className="mb-4">
+              <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
+              <img 
+                src={(selectedPayment as any).screenshot} 
+                alt="Captura de pago" 
+                className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
+                onClick={() => openImageModal((selectedPayment as any).screenshot)}
+              />
+            </div>
+          )}
+          
           <div>
             <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
               Razón del rechazo
@@ -254,6 +302,23 @@ export default function PendingPayments() {
               {verifyMutation.isPending ? "Rechazando..." : "Rechazar"}
             </button>
           </div>
+        </div>
+      </EliteModal>
+      {/* Modal de Imagen */}
+      <EliteModal
+        open={showImageModal}
+        onClose={() => setShowImageModal(false)}
+        title="CAPTURA_DE_PAGO"
+        maxWidth="max-w-3xl"
+      >
+        <div className="flex justify-center">
+          {selectedImage && (
+            <img 
+              src={selectedImage} 
+              alt="Captura de pago" 
+              className="max-w-full max-h-[70vh] object-contain rounded-sm"
+            />
+          )}
         </div>
       </EliteModal>
       {toast && (

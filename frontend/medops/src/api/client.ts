@@ -1,5 +1,5 @@
 // src/api/client.ts
-const API_BASE = import.meta.env.VITE_API_URL; // ✅ siempre configurable vía .env
+const API_BASE = import.meta.env.VITE_API_URL;
 async function doFetch<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -9,8 +9,7 @@ async function doFetch<T>(
     ? endpoint
     : `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
   
-  // ✅ Token del DoctorOperator: SOLO usar authToken (sin fallback VITE_DEV_TOKEN)
-  // Si no hay token, el backend retornará 401 y el frontend redirigirá al login
+  // ✅ Token del DoctorOperator: SOLO usar authToken
   const token = localStorage.getItem("authToken") || "";
   
   const headers: Record<string, string> = {
@@ -18,26 +17,33 @@ async function doFetch<T>(
     ...(token ? { Authorization: `Token ${token}` } : {}),
     ...(options.headers as Record<string, string>),
   };
-  // ✅ AGREGAR: Institution ID header para todos los requests
+  
+  // ✅ AGREGAR: Institution ID header
   const activeInstitutionId = localStorage.getItem("active_institution_id");
   if (activeInstitutionId) {
     headers["X-Institution-ID"] = activeInstitutionId;
   }
-  if (options.body && !(options.body instanceof FormData)) {
+  
+  // ✅ NO establecer Content-Type si hay FormData - el navegador lo hace automáticamente
+  if (options.body && options.body instanceof FormData) {
+    delete headers["Content-Type"];
+  } else if (options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
-  console.log("[CLIENT] Fetch →", url, options.method || "GET"); // ⚔️ trazador
+  
+  console.log("[CLIENT] Fetch →", url, options.method || "GET");
   const start = performance.now();
   const response = await fetch(url, { ...options, headers });
   const end = performance.now();
   console.log(`⏱️ Tiempo fetch (solo red): ${(end - start).toFixed(2)} ms`);
-  // ✅ Manejo de errores de autenticación - 401 sí desvloguea, 403 NO (es permisos)
+  
+  // ✅ Manejo de errores de autenticación
   if (response.status === 401) {
     localStorage.removeItem("authToken");
     window.location.href = "/login";
     throw new Error("Sesión expirada. Redirigiendo al login...");
   }
-  // 403 es error de PERMISOS, no de autenticación - no desloguear
+  
   return response;
 }
 // 🔹 Endpoints estrictos (PATCH/POST/PUT/GET/DELETE)
@@ -47,6 +53,7 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const method = (options.method || "GET").toUpperCase();
   const response = await doFetch<T>(endpoint, options);
+  
   if (method === "DELETE") {
     if (!response.ok) {
       const text = await response.text();
@@ -57,21 +64,25 @@ export async function apiFetch<T>(
     console.log("[CLIENT] DELETE completado en", endpoint);
     return {} as T;
   }
+  
   if (response.status === 204) {
     const error: any = new Error("No Content en endpoint estricto");
     error.status = 204;
     throw error;
   }
+  
   if (!response.ok) {
     const text = await response.text();
     const error: any = new Error(`Error ${response.status}: ${text}`);
     error.status = response.status;
     throw error;
   }
+  
   const parseStart = performance.now();
   const data = await response.json() as T;
   const parseEnd = performance.now();
   console.log(`⏱️ Tiempo parse JSON: ${(parseEnd - parseStart).toFixed(2)} ms`);
+  
   return data;
 }
 // 🔹 Endpoints GET opcionales (mapear 404/204 → null)
@@ -80,18 +91,22 @@ export async function apiFetchOptional<T>(
   options: RequestInit = {}
 ): Promise<T | null> {
   const response = await doFetch<T>(endpoint, options);
+  
   if (response.status === 204 || response.status === 404) {
     return null;
   }
+  
   if (!response.ok) {
     const text = await response.text();
     const error: any = new Error(`Error ${response.status}: ${text}`);
     error.status = response.status;
     throw error;
   }
+  
   const parseStart = performance.now();
   const data = await response.json() as T;
   const parseEnd = performance.now();
   console.log(`⏱️ Tiempo parse JSON (optional): ${(parseEnd - parseStart).toFixed(2)} ms`);
+  
   return data;
 }

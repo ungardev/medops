@@ -78,10 +78,31 @@ export const patientClient = {
     patientApi.get<PatientChargeOrdersResponse>('/patient-charge-orders/'),
   getChargeOrderDetail: (orderId: number) =>
     patientApi.get<PatientChargeOrder>(`/patient-charge-orders/${orderId}/`),
-  registerPayment: (orderId: number, data: RegisterPaymentRequest) =>
-    patientApi.post<RegisterPaymentResponse>(
+  
+  // === REGISTRO DE PAGO CON SOPORTE PARA SCREENSHOT ===
+  registerPayment: async (orderId: number, data: RegisterPaymentRequest) => {
+    // Si hay screenshot, usar FormData
+    if (data.screenshot) {
+      const formData = new FormData();
+      formData.append('bank_code', data.bank_code);
+      formData.append('phone', data.phone);
+      formData.append('national_id', data.national_id);
+      formData.append('reference', data.reference);
+      formData.append('amount_bs', String(data.amount_bs));
+      formData.append('screenshot', data.screenshot);
+      
+      return patientApi.post<RegisterPaymentResponse>(
+        `/patient-charge-orders/${orderId}/register-payment/`,
+        formData,
+        { headers: { 'Content-Type': 'multipart/form-data' } }
+      );
+    }
+    
+    // Sinon, JSON normal
+    return patientApi.post<RegisterPaymentResponse>(
       `/patient-charge-orders/${orderId}/register-payment/`,
       data
-    ),
+    );
+  },
 };
 export default patientApi;

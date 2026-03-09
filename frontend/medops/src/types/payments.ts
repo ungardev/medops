@@ -333,6 +333,7 @@ export interface PendingPayment {
   detail: string;
   verification_type: 'automatic' | 'manual' | null;
   created_at: string;
+  screenshot?: string;
   charge_order: {
     id: number;
     patient: {

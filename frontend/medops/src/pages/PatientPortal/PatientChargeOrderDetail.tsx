@@ -10,7 +10,8 @@ import {
   PlusIcon,
   ClockIcon,
   CheckCircleIcon,
-  XMarkIcon
+  XMarkIcon,
+  PhotoIcon
 } from "@heroicons/react/24/outline";
 export default function PatientChargeOrderDetail() {
   const { id } = useParams();
@@ -28,8 +29,42 @@ export default function PatientChargeOrderDetail() {
     reference: "",
     amount_bs: "",
   });
+  
+  // Estados para screenshot
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  
   const [formError, setFormError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  
+  // Manejar cambio de screenshot
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar tamaño (2MB máximo)
+      if (file.size > 2 * 1024 * 1024) {
+        setFormError("La imagen no puede superar 2MB");
+        return;
+      }
+      // Validar tipo
+      if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+        setFormError("Solo se permiten imágenes PNG o JPEG");
+        return;
+      }
+      setScreenshot(file);
+      setScreenshotPreview(URL.createObjectURL(file));
+      setFormError("");
+    }
+  };
+  
+  // Limpiar screenshot al cerrar modal
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setScreenshot(null);
+    setScreenshotPreview(null);
+    setFormError("");
+    setSuccessMessage("");
+  };
   
   const handleSubmitPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,11 +93,12 @@ export default function PatientChargeOrderDetail() {
           national_id: formData.national_id,
           reference: formData.reference,
           amount_bs: amountBs,
+          screenshot: screenshot || undefined,
         }
       });
       
       setSuccessMessage(result.payment.message);
-      setShowModal(false);
+      handleCloseModal();
       setFormData({ bank_code: "", phone: "", national_id: "", reference: "", amount_bs: "" });
     } catch (err: any) {
       setFormError(err.response?.data?.error || "Error al registrar el pago");
@@ -225,7 +261,7 @@ export default function PatientChargeOrderDetail() {
                 onClick={() => setShowModal(true)}
                 className="w-full flex items-center justify-between p-4 bg-emerald-500/10 border-emerald-500/20 text-emerald-400 text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-500/20 transition-all"
               >
-                Registrar Mi Pago <PlusIcon className="w-4 h-4" />
+                registrar Mi Pago <PlusIcon className="w-4 h-4" />
               </button>
             </section>
           )}
@@ -241,10 +277,10 @@ export default function PatientChargeOrderDetail() {
       {/* MODAL REGISTRAR PAGO */}
       {showModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111] border border-white/10 rounded-sm w-full max-w-md">
+          <div className="bg-[#111] border border-white/10 rounded-sm w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b border-white/5">
               <h3 className="text-[12px] font-black uppercase tracking-wider">Registrar Pago - Orden #{order.id}</h3>
-              <button onClick={() => setShowModal(false)} className="text-white/40 hover:text-white">
+              <button onClick={handleCloseModal} className="text-white/40 hover:text-white">
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
@@ -261,6 +297,50 @@ export default function PatientChargeOrderDetail() {
                   {successMessage}
                 </div>
               )}
+              
+              {/* CAPTURA DE PAGO */}
+              <div>
+                <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
+                  📷 Captura de pago (opcional)
+                </label>
+                <div className="border-2 border-dashed border-white/20 rounded-sm p-4 text-center hover:border-white/40 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleScreenshotChange}
+                    className="hidden"
+                    id="screenshot-upload"
+                  />
+                  <label htmlFor="screenshot-upload" className="cursor-pointer">
+                    <PhotoIcon className="w-8 h-8 mx-auto text-white/30 mb-2" />
+                    <p className="text-[10px] text-white/50">
+                      {screenshot ? screenshot.name : "Subir captura de pantalla"}
+                    </p>
+                    <p className="text-[8px] text-white/30 mt-1">
+                      PNG o JPG hasta 2MB
+                    </p>
+                  </label>
+                </div>
+                {screenshotPreview && (
+                  <div className="mt-3 relative">
+                    <img 
+                      src={screenshotPreview} 
+                      alt="Preview" 
+                      className="h-32 w-full object-contain rounded-sm border border-white/10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScreenshot(null);
+                        setScreenshotPreview(null);
+                      }}
+                      className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full p-1 hover:bg-red-500"
+                    >
+                      <XMarkIcon className="w-3 h-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
               
               <div>
                 <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Banco</label>
@@ -331,7 +411,7 @@ export default function PatientChargeOrderDetail() {
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCloseModal}
                   className="flex-1 px-6 py-2.5 border border-white/20 text-white/60 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-white/5"
                 >
                   Cancelar
