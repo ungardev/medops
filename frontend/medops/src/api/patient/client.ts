@@ -73,6 +73,7 @@ export const patientClient = {
     patientApi.get<PatientPaymentMethod>('/patient-payment-method/'),
   updatePaymentMethod: (data: Partial<PatientPaymentMethod>) =>
     patientApi.put<PatientPaymentMethod>('/patient-payment-method/', data),
+    
   // Órdenes de Cobro
   getChargeOrders: () =>
     patientApi.get<PatientChargeOrdersResponse>('/patient-charge-orders/'),

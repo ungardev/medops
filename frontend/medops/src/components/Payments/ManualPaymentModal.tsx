@@ -22,7 +22,7 @@ interface ManualPaymentData {
   bank_name: string;
   phone: string;
   national_id: string;
-  amount: string;
+  amount_bs: string;
   payment_date: string;
   notes: string;
 }
@@ -38,7 +38,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
     bank_name: '',
     phone: '',
     national_id: '',
-    amount: expectedAmount.toFixed(2),
+    amount_bs: expectedAmount.toFixed(2),
     payment_date: new Date().toISOString().split('T')[0],
     notes: ''
   });
@@ -96,22 +96,26 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       return;
     }
     
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
+    if (!formData.amount_bs || parseFloat(formData.amount_bs) <= 0) {
       setSubmitError('Monto inválido');
       return;
     }
     
-    if (parseFloat(formData.amount) !== expectedAmount) {
-      setSubmitError(`El monto debe ser exactamente $${expectedAmount.toFixed(2)}`);
+    if (parseFloat(formData.amount_bs) < expectedAmount) {
+      setSubmitError(`El monto debe ser al menos Bs ${expectedAmount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`);
       return;
     }
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      // Preparar datos
+      // Preparar datos - converting Bs to USD for API compatibility
+      const amountBs = parseFloat(formData.amount_bs);
+      // Get current BCV rate (in real app, fetch from API)
+      // For now, we send amount_bs directly
       const payload: any = {
         charge_order: chargeOrderId,
-        amount: parseFloat(formData.amount),
+        amount_bs: amountBs,  // ✅ ENVÍO BS (VES)
+        amount_usd: amountBs, // Temporary - backend will calculate
         method: 'transfer',
         reference_number: formData.reference_number,
         bank_name: formData.bank_name,
@@ -203,7 +207,7 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               Monto a Pagar
             </span>
             <span className="text-xl font-black text-blue-400">
-              ${expectedAmount.toFixed(2)}
+              Bs {expectedAmount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -314,13 +318,13 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
-                Monto (USD)
+                Monto (Bs)
               </label>
               <input
                 type="number"
                 step="0.01"
-                value={formData.amount}
-                onChange={(e) => handleInputChange('amount', e.target.value)}
+                value={formData.amount_bs}
+                onChange={(e) => handleInputChange('amount_bs', e.target.value)}
                 className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
                 required
               />
