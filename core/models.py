@@ -1168,6 +1168,13 @@ class Payment(models.Model):
         verbose_name="Referencia bancaria"
     )
     
+    screenshot = models.ImageField(
+        upload_to='payments/screenshots/%Y/%m/',
+        null=True,
+        blank=True,
+        verbose_name="Captura de pago"
+    )
+    
     # --- AUDITORÍA ---
     received_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)

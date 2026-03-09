@@ -723,7 +723,7 @@ class ChargeOrderViewSet(viewsets.ModelViewSet):
                 amount=serializer.validated_data['amount'],
                 method=serializer.validated_data['method'],
                 reference_number=serializer.validated_data.get('reference_number'),
-                status='confirmed',
+                status='pending',
             )
             
             charge_order.recalc_totals()
