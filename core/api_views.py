@@ -2520,15 +2520,18 @@ def patient_search_api(request):
     
     try:
         # Dividir query en palabras individuales para búsqueda más flexible
-        # Ejemplo: "ungar v" busca pacientes que contengan "ungar" Y "v"
+        # Ejemplo: "ungar e" busca pacientes que contengan "ungar" Y "e"
         words = q.split()
         
         # Construir filtros para cada palabra - todas deben coincidir
+        # ✅ AGREGADO: middle_name y second_last_name
         query = Q(active=True)
         for word in words:
             query &= (
                 Q(first_name__icontains=word) |
+                Q(middle_name__icontains=word) |
                 Q(last_name__icontains=word) |
+                Q(second_last_name__icontains=word) |
                 Q(national_id__icontains=word)
             )
         
