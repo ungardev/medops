@@ -9,7 +9,6 @@ import {
   Briefcase,
   Search, 
   Settings,
-  LogOut,
   X,
   ChevronLeft,
   ChevronRight
@@ -20,7 +19,7 @@ interface PatientSidebarProps {
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
 }
-// ✅ Orden igual al Doctor Portal + extras al final
+// Orden igual al Doctor Portal
 const navItems = [
   { path: "/patient", label: "Dashboard", icon: LayoutDashboard },
   { path: "/patient/queue", label: "Sala de Espera", icon: Clock },
@@ -29,6 +28,7 @@ const navItems = [
   { path: "/patient/payments", label: "Pagos", icon: CreditCard },
   { path: "/patient/services", label: "Servicios", icon: Briefcase },
   { path: "/patient/search", label: "Buscar", icon: Search },
+  { path: "/patient/settings", label: "Configuración", icon: Settings },
 ];
 export default function PatientSidebar({ 
   collapsed, 
@@ -152,29 +152,8 @@ export default function PatientSidebar({
         </ul>
       </nav>
       
-      {/* CONFIG & LOGOUT */}
-      <div className="mt-auto pt-6 border-t border-white/5">
-        <Link 
-          to="/patient/settings" 
-          onClick={() => mobileOpen && setMobileOpen(false)}
-          className={`${itemBase} rounded-sm ${effectiveCollapsed ? "justify-center" : ""} ${itemIdle}`}
-        >
-          <Settings size={19} className="shrink-0" strokeWidth={1.5} />
-          {!effectiveCollapsed && <span className="ml-4 text-[13px] tracking-wide font-bold uppercase">Configuración</span>}
-        </Link>
-        
-        {/* LOGOUT */}
-        <Link 
-          to="/patient/logout" 
-          className={`${itemBase} rounded-sm ${effectiveCollapsed ? "justify-center" : ""} ${itemIdle} text-red-400/40 hover:text-red-400`}
-        >
-          <LogOut size={19} className="shrink-0" strokeWidth={1.5} />
-          {!effectiveCollapsed && <span className="ml-4 text-[13px] tracking-wide font-bold uppercase">Cerrar Sesión</span>}
-        </Link>
-      </div>
-      
       {/* FOOTER */}
-      <div className="mt-4 pt-4 border-t border-white/5">
+      <div className="mt-auto pt-6 border-t border-white/5">
         {!effectiveCollapsed ? (
           <div className="flex items-center gap-2 px-4">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
