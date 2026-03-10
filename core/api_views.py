@@ -6318,7 +6318,7 @@ def payment_ocr_api(request):
             }, status=400)
         
         # Importar y procesar
-        from core.services.payment_ocr import PaymentOCRService
+        from core.services.payment_ocr_service import PaymentOCRService
         logger.info("Calling PaymentOCRService.extract_data")
         
         result = PaymentOCRService.extract_data(image)
