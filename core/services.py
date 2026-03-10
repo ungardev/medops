@@ -2431,12 +2431,11 @@ def set_active_institution(institution_id: int, doctor: DoctorOperator) -> Insti
 class PaymentOCRService:
     """
     Procesa imágenes de pagos y extrae datos automáticamente
-    Versión mejorada con más bancos y mejores regex
+    Versión 3.0 con fixes críticos
     """
     
-    # ✅ PATRONES DE BANCOS VENEZOLANOS - VERSION MEJORADA
+    # PATRONES DE BANCOS VENEZOLANOS
     BANCO_PATTERNS = [
-        # Bancos principales
         (r'mercantil', 'mercantil'),
         (r'banesco', 'banesco'),
         (r'provincial', 'provincial'),
@@ -2447,7 +2446,6 @@ class PaymentOCRService:
         (r'tesoro', 'tesoro'),
         (r'occidente', 'occidente'),
         (r'soberano', 'soberano'),
-        # ✅ NUEVOS BANCOS AGREGADOS
         (r'plaza', 'plaza'),
         (r'bangente', 'bangente'),
         (r'agricola', 'agricola'),
@@ -2463,12 +2461,8 @@ class PaymentOCRService:
     
     @classmethod
     def extract_data(cls, image) -> Dict[str, Any]:
-        """
-        Extrae datos de pago de una imagen
-        Returns: dict con banco, monto, referencia, telefono, fecha, confianza
-        """
+        """Extrae datos de pago de una imagen"""
         try:
-            # Intentar importar pytesseract
             try:
                 import pytesseract
                 from PIL import Image
@@ -2478,15 +2472,13 @@ class PaymentOCRService:
                     'error': 'OCR no disponible. Instale pytesseract y pillow.'
                 }
             
-            # Abrir imagen
             image.seek(0)
             img = Image.open(image)
             
-            # Convertir a RGB si es necesario
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             
-            # ✅ PREPROCESAMIENTO DE IMAGEN para mejor OCR
+            # Preprocesamiento de imagen
             img = cls.preprocess_image(img)
             
             # OCR - extraer texto
@@ -2512,51 +2504,30 @@ class PaymentOCRService:
     
     @classmethod
     def preprocess_image(cls, img):
-        """
-        Preprocesa imagen para mejorar precisión del OCR
-        """
+        """Preprocesa imagen para mejor OCR"""
         try:
             from PIL import ImageEnhance, ImageFilter
-            
-            # Convertir a escala de grises
             img_gray = img.convert('L')
-            
-            # Aumentar contraste (factor 2.0)
             enhancer = ImageEnhance.Contrast(img_gray)
             img_gray = enhancer.enhance(2.0)
-            
-            # Aumentar nitidez
             img_gray = img_gray.filter(ImageFilter.SHARPEN)
-            
-            # Convertir de vuelta a RGB para Tesseract
             img = img_gray.convert('RGB')
-            
         except Exception as e:
-            logger.warning(f"Preprocesamiento de imagen falló: {e}")
-            # Si falla el preprocesamiento, usar imagen original
-            pass
-        
+            logger.warning(f"Preprocesamiento falló: {e}")
         return img
     
     @classmethod
     def _parse_payment_text(cls, text: str) -> Dict[str, Any]:
-        """Parsea el texto extraído y extrae datos de pago"""
+        """Parsea el texto extraído"""
         text_upper = text.upper()
-        text_clean = text.upper()
         
-        # Extraer banco
-        banco = cls._extract_banco(text_clean)
-        
-        # Extraer monto
-        monto = cls._extract_monto(text)
-        
-        # Extraer referencia
+        # ✅ ORDEN IMPORTANTE: Referencia primero (15-20 dígitos)
         referencia = cls._extract_referencia(text)
         
-        # Extraer teléfono
+        banco = cls._extract_banco(text_upper)
+        monto = cls._extract_monto(text, exclude_ref=referencia)
         telefono = cls._extract_telefono(text)
-        
-        # Extraer fecha
+        cedula = cls._extract_national_id(text)
         fecha = cls._extract_fecha(text)
         
         return {
@@ -2564,120 +2535,117 @@ class PaymentOCRService:
             'monto': monto,
             'referencia': referencia,
             'telefono': telefono,
+            'cedula': cedula,
             'fecha': fecha
         }
     
     @classmethod
     def _extract_banco(cls, text: str) -> Optional[str]:
-        """Extrae el nombre del banco del texto"""
+        """Extrae el nombre del banco"""
         for pattern, banco in cls.BANCO_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
                 return banco
         return None
     
     @classmethod
-    def _extract_monto(cls, text: str) -> Optional[str]:
-        """Extrae el monto del pago - versión mejorada"""
-        # Múltiples patrones para diferentes formatos
+    def _extract_referencia(cls, text: str) -> Optional[str]:
+        """Extrae referencia - 15-20 dígitos"""
         patterns = [
-            # Formatos con Bs/S prefix
+            r'[Rr][Ee][Ff][Ee]?[Rr][Ee][Nn][Cc][Ii][Aa][\s:]*(\d{15,20})',
+            r'[Rr][Ee][Ff][\s:]*(\d{15,20})',
+            r'[Rr]eferencia[:\s]*(\d{15,20})',
+            r'[Cc][Oo][Dd][Ii][Gg][Oo][\s:]*(\d{15,20})',
+            r'\b(\d{15,20})\b',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text)
+            if match:
+                ref = re.sub(r'[\s-]', '', match.group(1))
+                if len(ref) >= 15:
+                    return ref
+        return None
+    
+    @classmethod
+    def _extract_monto(cls, text: str, exclude_ref: Optional[str] = None) -> Optional[str]:
+        """Extrae monto - 3-10 dígitos (evitar confusión con referencia)"""
+        patterns = [
             r'[Bb][Ss]\.?\s*[Ss]?\s*([\d.,]+)',
             r'[Bb]ol[ií]?vares?\s*([\d.,]+)',
             r'[Mm]onto[:\s]*[Bb][Ss]?\s*([\d.,]+)',
             r'[Tt]otal[:\s]*[Bb][Ss]?\s*([\d.,]+)',
-            # Formatos con punto como separador de miles (ej: 2.500.000)
-            r'([\d]{1,3}(?:\.\d{3})+(?:,\d{2})?)',
-            # Formatos con coma decimal (ej: 2,500,000.00)
-            r'([\d]+(?:,\d{3})*\.\d{2})',
-            # Formatos simples (números grandes sin separadores)
-            r'^\s*([\d]{6,})\s*$',
-            # Patrón para números entre texto
-            r'[\s]([\d]{6,})[\s]',
+            r'([\d]{3,10})(?:\.\d{2})?(?!\d)',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, text, re.MULTILINE | re.IGNORECASE)
             if match:
                 monto_str = match.group(1)
-                # Limpiar: quitar puntos de miles, cambiar coma por punto
                 monto_str = monto_str.replace('.', '').replace(',', '.')
-                # Validar que sea un número válido
+                
+                # Excluir si es la referencia
+                if exclude_ref and monto_str == exclude_ref:
+                    continue
+                
                 try:
                     valor = float(monto_str)
-                    if valor > 0:
-                        # Retornar sin decimales para Bolívares
+                    if 100 <= valor <= 100000000000:  # Rango válido para Bs
                         return str(int(valor))
                 except:
                     pass
         return None
     
     @classmethod
-    def _extract_referencia(cls, text: str) -> Optional[str]:
-        """Extrae el número de referencia - versión mejorada"""
+    def _extract_telefono(cls, text: str) -> Optional[str]:
+        """Extrae teléfono - Formato Venezuela 4-7"""
         patterns = [
-            # Referencias con prefijo REF
-            r'[Rr][Ee][Ff][Ee]?[Rr][Ee][Nn][Cc][Ii][Aa][\s:]*(\d+)',
-            r'[Rr][Ee][Ff][\s:]*(\d+)',
-            r'[Rr]eferencia[:\s]*(\d+)',
-            # Códigos
-            r'[Cc][Oo][Dd][Ii][Gg][Oo][\s:]*(\d+)',
-            # Números largos (15-20 dígitos)
-            r'\b(\d{15,20})\b',
-            # Formato con guiones
-            r'(\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4})',
+            r'(04\d{2}[-\s]?\d{7})',
+            r'(0412\d{7})',
+            r'(04\d{9})',
+            r'(\+58\d{10})',
+            r'(\(\d{4}\)\s*\d{7})',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, text)
             if match:
-                ref = match.group(1)
-                # Limpiar guiones y espacios
-                ref = re.sub(r'[\s-]', '', ref)
-                # Validar longitud
-                if len(ref) >= 8:
-                    return ref
+                telefono = re.sub(r'[^\d]', '', match.group(1))
+                if len(telefono) == 11:
+                    # Formato 4-7: 0412-1234567
+                    return f"{telefono[:4]}-{telefono[4:]}"
         return None
     
     @classmethod
-    def _extract_telefono(cls, text: str) -> Optional[str]:
-        """Extrae el número de teléfono - versión mejorada"""
+    def _extract_national_id(cls, text: str) -> Optional[str]:
+        """Extrae cédula - Formato V-12345678"""
         patterns = [
-            # Formato: 0412-123-4567
-            r'(04\d{2}[-\s]?\d{3}[-\s]?\d{4})',
-            # Formato: 04121234567
-            r'(0412\d{7})',
-            # Formato: 04XXXXXXXXX (11 dígitos)
-            r'(04\d{9})',
-            # Formato internacional +58412...
-            r'(\+58\d{10})',
-            # Teléfonos con paréntesis: (0412) 123-4567
-            r'(\(\d{4}\)\s*\d{3}[-\s]?\d{4})',
+            r'[VEJPG]\s*[-]?\s*(\d{5,9})',
+            r'C[Éé]dula[:\s]*([VEJPG][-\s]?\d+)',
+            r'C[ÍI]d[:\s]*([VEJPG][-\s]?\d+)',
+            r'C[Éé]d\.?\s*[ÍI]d\.?\s*[:\s]*([VEJPG][-\s]?\d+)',
+            r'[Cc][Éé][Dd][ÚU][Ll][Aa]\s*[Ii][Dd][Eé][Nn][Tt][Ii][Dd][Aa][Dd]\s*[:\s]*([VEJPG][-\s]?\d+)',
+            r'\bV-(\d{5,9})\b',
+            r'\bE-(\d{5,9})\b',
+            r'\bJ-(\d{5,9})\b',
         ]
         
         for pattern in patterns:
-            match = re.search(pattern, text)
+            match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                telefono = match.group(1)
-                # Normalizar: quitar todo excepto dígitos
-                telefono = re.sub(r'[^\d]', '', telefono)
-                if len(telefono) == 11:
-                    # Formatear: 0412-123-4567
-                    return f"{telefono[:4]}-{telefono[4:7]}-{telefono[7:]}"
+                cedula = match.group(1)
+                cedula = re.sub(r'[^\d]', '', cedula)
+                if 5 <= len(cedula) <= 9:
+                    return f"V-{cedula}"
         return None
     
     @classmethod
     def _extract_fecha(cls, text: str) -> Optional[str]:
-        """Extrae la fecha del pago - versión mejorada"""
+        """Extrae fecha"""
         patterns = [
-            # Formato DD/MM/YYYY
             r'(\d{2}/\d{2}/\d{4})',
-            # Formato DD-MM-YYYY
             r'(\d{2}-\d{2}-\d{4})',
-            # Formato DD.MM.YYYY
             r'(\d{2}\.\d{2}\.\d{4})',
-            # Formato con texto: 15 de Enero de 2024
             r'(\d{1,2}\s+de\s+\w+\s+de\s+\d{4})',
-            # Formato YYYY-MM-DD (ISO)
             r'(\d{4}-\d{2}-\d{2})',
         ]
         
@@ -2685,28 +2653,23 @@ class PaymentOCRService:
             match = re.search(pattern, text)
             if match:
                 fecha_str = match.group(1)
-                # Convertir a formato YYYY-MM-DD
                 try:
                     from datetime import datetime
-                    # Intentar diferentes formatos
                     for fmt in ['%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y']:
                         try:
                             fecha = datetime.strptime(fecha_str, fmt)
                             return fecha.strftime('%Y-%m-%d')
                         except:
                             pass
-                    # Si es formato texto
-                    if 'de' in fecha_str.lower():
-                        # Devolver como está para revisión manual
-                        return fecha_str
                 except:
-                    return fecha_str
+                    pass
+                return fecha_str
         return None
     
     @classmethod
     def _calculate_confidence(cls, data: Dict[str, Any]) -> float:
-        """Calcula nivel de confianza basado en campos encontrados"""
+        """Calcula nivel de confianza"""
         fields_found = sum([
             1 for v in data.values() if v is not None and v != ''
         ])
-        return round(fields_found / 5, 2)  # 5 campos max
+        return round(fields_found / 6, 2)  # 6 campos ahora
