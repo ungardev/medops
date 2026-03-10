@@ -5,8 +5,6 @@ import {
   Search,
   LogOut,
   Settings,
-  Moon,
-  Sun,
   FileText,
   DollarSign,
   UserCheck,
@@ -119,7 +117,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   };
   
   return (
-    <div className="w-full flex items-center justify-between h-full bg-[#0c0e12] px-4 lg:px-6 border-b border-white/[0.05] shadow-2xl relative z-[110]">
+    <div className="w-full flex items-center justify-between h-full bg-black/40 px-4 lg:px-6 border-b border-white/[0.05] shadow-2xl relative z-[110]">
       <div className="flex items-center gap-2 lg:gap-6 flex-1 min-w-0">
         <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 text-white/40 hover:text-white transition-colors shrink-0">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +125,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
           </svg>
         </button>
         
-        {/* ✅ FIX: Formulario de búsqueda responsivo */}
+        {/* Formulario de búsqueda responsivo */}
         <form onSubmit={handleSearchSubmit} className="relative w-full max-w-lg group flex items-center min-w-0">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="w-3.5 h-3.5 text-white/20 group-focus-within:text-[var(--palantir-active)] transition-colors hidden sm:flex" />
@@ -141,7 +139,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
             className="w-full pl-9 sm:pl-10 pr-10 lg:pr-20 py-1.5 bg-white/[0.02] border border-white/10 rounded-sm text-[10px] text-white font-mono tracking-wider focus:outline-none focus:border-[var(--palantir-active)]/40 focus:bg-white/[0.04] transition-all placeholder:text-white/10 min-w-0"
           />
           
-          {/* ✅ FIX: Botón buscar visible en mobile */}
+          {/* Botón buscar visible en mobile */}
           <button 
             type="submit"
             className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2 p-1 text-white/40 hover:text-white"
@@ -149,7 +147,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
             <Search className="w-4 h-4" />
           </button>
           
-          {/* ✅ FIX: Badge Secure_Node oculto en mobile */}
+          {/* Badge Secure_Node oculto en mobile */}
           <div className="absolute inset-y-0 right-3 hidden lg:flex items-center">
             <span className="text-[8px] font-black text-white/20 border border-white/5 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Secure_Node</span>
           </div>
