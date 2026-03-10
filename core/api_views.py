@@ -6292,11 +6292,14 @@ def payment_ocr_api(request):
     
     Procesa imagen de captura de pago y extrae datos automáticamente
     """
-    from .services.payment_ocr import PaymentOCRService
+    import logging
+    logger = logging.getLogger(__name__)
     
     try:
         # Obtener imagen del request
         image = request.FILES.get('image')
+        
+        logger.info(f"OCR request received - image: {image}")
         
         if not image:
             return Response({
@@ -6306,19 +6309,27 @@ def payment_ocr_api(request):
         
         # Validar tipo de archivo
         allowed_types = ['image/jpeg', 'image/png', 'image/jpg']
+        logger.info(f"Image content_type: {image.content_type}")
+        
         if image.content_type not in allowed_types:
             return Response({
                 'success': False,
                 'error': 'Tipo de archivo no permitido. Use JPEG o PNG'
             }, status=400)
         
-        # Procesar imagen
+        # Importar y procesar
+        from core.services.payment_ocr import PaymentOCRService
+        logger.info("Calling PaymentOCRService.extract_data")
+        
         result = PaymentOCRService.extract_data(image)
+        logger.info(f"OCR result: {result}")
         
         return Response(result)
         
     except Exception as e:
+        import traceback
         logger.error(f"Error en payment_ocr_api: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
         return Response({
             'success': False,
             'error': str(e)
