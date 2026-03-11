@@ -95,7 +95,7 @@ from .api_views import (
     refresh_emergency_access,
     # 🔥 NUEVO: Verificación de WeasyPrint
     verify_weasyprint_output,
-    # 🆕 MERCANTIL P2C ENDPOINTS (ya existen en api_views.py) ---
+    # 🆕 MERCANTIL P2C ENDPOINTS ---
     mercantil_p2c_generate_qr,
     mercantil_p2c_check_status,
     mercantil_p2c_webhook,
@@ -132,6 +132,13 @@ from .api_views import (
     patient_dashboard,
     patient_profile,
     patient_appointments,
+    # ✅ NUEVO: Portal Paciente - Servicios
+    patient_services_history,
+    patient_services_catalog,
+    patient_services_recommended,
+    # ✅ NUEVO: Portal Paciente - Búsqueda
+    patient_search_doctors,
+    patient_search_services,
     # ✅ NUEVO: Login de doctores
     doctor_login,
     whatsapp_config_api,
@@ -323,6 +330,7 @@ urlpatterns = [
     path("config/institutions/add/", add_institution_api, name="add-institution-api"),
     path("config/institutions/<int:institution_id>/delete/", delete_institution_api, name="delete-institution-api"),
     path("config/institutions/<int:institution_id>/set-active/", set_active_institution_api, name="set-active-institution-api"),
+    
     # Pacientes Pediátricos
     path('patients/<int:patient_id>/dependents/', api_views.patient_dependents, name='patient-dependents'),
     path('patients/register-minor/', api_views.register_minor, name='register-minor'),
@@ -336,19 +344,32 @@ urlpatterns = [
     path('patient-auth/register/', api_views.patient_register, name='patient-register'),
     path('patient-auth/login/', api_views.patient_login, name='patient-login'),
     path('patient-auth/logout/', api_views.patient_logout, name='patient-logout'),
+    
     # --- Portal Paciente - Datos ---
     path('patient-dashboard/', api_views.patient_dashboard, name='patient-dashboard'),
     path('patient-profile/', api_views.patient_profile, name='patient-profile'),
     path('patient-appointments/', api_views.patient_appointments, name='patient-appointments'),
+    
     # ✅ NUEVO: Portal Paciente - Métodos de Pago ---
     path('patient-payment-method/', api_views.patient_payment_method, name='patient-payment-method'),
     path('patient-charge-orders/', api_views.patient_charge_orders, name='patient-charge-orders'),
     path('patient-charge-orders/<int:order_id>/', api_views.patient_charge_order_detail, name='patient-charge-order-detail'),
     path('patient-charge-orders/<int:order_id>/register-payment/', api_views.patient_register_payment, name='patient-register-payment'),
+    
+    # ✅ NUEVO: Portal Paciente - Servicios ---
+    path('patient/services/history/', api_views.patient_services_history, name='patient-services-history'),
+    path('patient/services/catalog/', api_views.patient_services_catalog, name='patient-services-catalog'),
+    path('patient/services/recommended/', api_views.patient_services_recommended, name='patient-services-recommended'),
+    
+    # ✅ NUEVO: Portal Paciente - Búsqueda ---
+    path('patient-search/doctors/', api_views.patient_search_doctors, name='patient-search-doctors'),
+    path('patient-search/services/', api_views.patient_search_services, name='patient-search-services'),
+    
     # WhatsApp API
     path('whatsapp/config/', api_views.whatsapp_config_api, name='whatsapp-config'),
     path('whatsapp/send/', api_views.whatsapp_send_message, name='whatsapp-send'),
     path('whatsapp/webhook/', api_views.whatsapp_webhook, name='whatsapp-webhook'),
+    
     # === Payment System URLs ===
     path('payments/gateways/', payment_gateways_api, name='payment-gateways-api'),
     path('payments/config/', payment_config_api, name='payment-config-api'),
@@ -356,10 +377,12 @@ urlpatterns = [
     path('payments/create/', payment_create_api, name='payment-create-api'),
     path('payments/transactions/', payment_transactions_api, name='payment-transactions-api'),
     path('payments/stats/', payment_stats_api, name='payment-stats-api'),
+    
     # Webhooks
     path('payments/webhook/mercantil/', webhook_mercantil, name='webhook-mercantil'),
     path('payments/webhook/banesco/', webhook_banesco, name='webhook-banesco'),
     path('payments/webhook/binance/', webhook_binance, name='webhook-binance'),
+    
     # Subscriptions
     path('subscriptions/', subscriptions_api, name='subscriptions-api'),
     path('subscriptions/<int:pk>/cancel/', subscription_cancel_api, name='subscription-cancel-api'),
@@ -368,6 +391,7 @@ urlpatterns = [
     path('patient-activate/', api_views.activate_patient_portal, name='activate-patient'),
     path("payments/pending/", api_views.get_pending_payments, name="get-pending-payments"),
     path("payments/<int:payment_id>/verify/", api_views.verify_payment, name="verify-payment"),
+    
     # OCR
     path('payments/ocr/', api_views.payment_ocr_api, name='payment-ocr'),
 ]

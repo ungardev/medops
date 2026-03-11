@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, Max
 from .models import *
 from .serializers import *
 from datetime import date
@@ -6282,6 +6282,271 @@ def get_pending_payments(request):
     except Exception as e:
         logger.error(f"Error en get_pending_payments: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
+# ============================================
+# PATIENT PORTAL - SERVICIOS
+# ============================================
+@api_view(['GET'])
+def patient_services_history(request):
+    """
+    GET /api/patient/services/history/
+    
+    Historial de servicios consumidos por el paciente.
+    Devuelve ChargeOrder con sus ChargeItems.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        # Obtener todas las charge orders pagadas del paciente
+        charge_orders = ChargeOrder.objects.filter(
+            patient=patient,
+            status='paid'
+        ).select_related(
+            'institution', 'doctor', 'doctor__user'
+        ).prefetch_related('items').order_by('-issued_at')
+        
+        # Calcular total invertido
+        total_invertido = sum(float(order.total) for order in charge_orders)
+        
+        # Obtener todos los servicios consumidos (ChargeItems)
+        all_items = []
+        for order in charge_orders:
+            for item in order.items.all():
+                all_items.append({
+                    'order_id': order.id,
+                    'order_date': order.issued_at.strftime('%Y-%m-%d') if order.issued_at else None,
+                    'institution': order.institution.name if order.institution else 'N/A',
+                    'code': item.code,
+                    'description': item.description,
+                    'qty': float(item.qty),
+                    'unit_price': float(item.unit_price),
+                    'subtotal': float(item.subtotal),
+                })
+        
+        return Response({
+            'orders': [
+                {
+                    'id': order.id,
+                    'date': order.issued_at.strftime('%Y-%m-%d') if order.issued_at else None,
+                    'institution': order.institution.name if order.institution else 'N/A',
+                    'total': float(order.total),
+                    'status': order.status,
+                    'items': [
+                        {
+                            'code': item.code,
+                            'description': item.description,
+                            'qty': float(item.qty),
+                            'unit_price': float(item.unit_price),
+                            'subtotal': float(item.subtotal),
+                        }
+                        for item in order.items.all()
+                    ],
+                }
+                for order in charge_orders
+            ],
+            'summary': {
+                'total_orders': charge_orders.count(),
+                'total_invertido': total_invertido,
+                'unique_services': len(set(item['code'] for item in all_items)),
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_services_history: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET'])
+def patient_services_catalog(request):
+    """
+    GET /api/patient/services/catalog/
+    
+    Catálogo general de servicios disponibles en MEDOPZ.
+    Agrupa por especialidad y muestra precios.
+    """
+    try:
+        # Obtener todos los ChargeItems únicos de todas las órdenes
+        # Esto representa los servicios que se han prestado
+        
+        all_services = ChargeItem.objects.values(
+            'code', 'description', 'unit_price'
+        ).annotate(
+            times_used=Count('id'),
+            last_used=Max('order__issued_at')
+        ).filter(
+            times_used__gte=1
+        ).order_by('-times_used', 'description')
+        
+        # Agrupar por código
+        services_by_code = {}
+        for item in all_services:
+            code = item['code']
+            if code not in services_by_code:
+                services_by_code[code] = {
+                    'code': code,
+                    'description': item['description'],
+                    'average_price': item['unit_price'],
+                    'times_used': item['times_used'],
+                    'last_used': item['last_used'].strftime('%Y-%m-%d') if item['last_used'] else None,
+                }
+        
+        # Obtener todas las especialidades únicas usadas
+        specialties_used = set()
+        for order in ChargeOrder.objects.filter(status='paid').select_related('doctor'):
+            if order.doctor and order.doctor.specialties:
+                for spec in order.doctor.specialties.all():
+                    specialties_used.add(spec.name)
+        
+        return Response({
+            'services': list(services_by_code.values()),
+            'specialties': sorted(list(specialties_used)),
+            'total_services': len(services_by_code),
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_services_catalog: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET'])
+def patient_services_recommended(request):
+    """
+    GET /api/patient/services/recommended/
+    
+    Servicios recomendados basados en el historial del paciente.
+    """
+    try:
+        patient_user = get_patient_user_from_request(request)
+        if not patient_user:
+            return Response({'error': 'No autenticado'}, status=401)
+        
+        patient = patient_user.patient
+        
+        # Obtener las especialidades de los doctores que han atendido al paciente
+        patient_doctor_specialties = set()
+        for order in ChargeOrder.objects.filter(patient=patient, status='paid').select_related('doctor'):
+            if order.doctor and order.doctor.specialties:
+                for spec in order.doctor.specialties.all():
+                    patient_doctor_specialties.add(spec.id)
+        
+        # Encontrar doctores con esas especialidades
+        recommended_doctors = DoctorOperator.objects.filter(
+            specialties__id__in=patient_doctor_specialties,
+            is_verified=True
+        ).distinct()[:5]
+        
+        return Response({
+            'recommended_doctors': [
+                {
+                    'id': doc.id,
+                    'full_name': doc.full_name,
+                    'gender': doc.gender,
+                    'specialties': [s.name for s in doc.specialties.all()],
+                    'is_verified': doc.is_verified,
+                }
+                for doc in recommended_doctors
+            ],
+            'based_on': 'Tu historial de servicios',
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_services_recommended: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+# ============================================
+# PATIENT PORTAL - BÚSQUEDA
+# ============================================
+@api_view(['GET'])
+def patient_search_doctors(request):
+    """
+    GET /api/patient-search/doctors/
+    
+    Busca doctores por nombre o especialidad.
+    """
+    q = request.query_params.get('q', '').strip()
+    
+    try:
+        doctors = DoctorOperator.objects.filter(is_verified=True)
+        
+        if q:
+            doctors = doctors.filter(
+                Q(full_name__icontains=q) |
+                Q(specialties__name__icontains=q)
+            ).distinct()
+        
+        doctors = doctors[:20]
+        
+        results = []
+        for doc in doctors:
+            # Obtener especialidades
+            specialties = [s.name for s in doc.specialties.all()]
+            
+            # Obtener instituciones
+            institutions = [i.name for i in doc.institutions.all()[:3]]
+            
+            results.append({
+                'id': doc.id,
+                'full_name': doc.full_name,
+                'gender': doc.gender,
+                'specialties': specialties,
+                'institutions': institutions,
+                'license': doc.license,
+                'is_verified': doc.is_verified,
+            })
+        
+        return Response({
+            'count': len(results),
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_search_doctors: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+@api_view(['GET'])
+def patient_search_services(request):
+    """
+    GET /api/patient-search/services/
+    
+    Busca servicios por nombre o código.
+    """
+    q = request.query_params.get('q', '').strip()
+    
+    try:
+        # Buscar en ChargeItems
+        items = ChargeItem.objects.values(
+            'code', 'description'
+        ).annotate(
+            times_used=Count('id')
+        ).filter(
+            times_used__gte=1
+        )
+        
+        if q:
+            items = items.filter(
+                Q(code__icontains=q) |
+                Q(description__icontains=q)
+            )
+        
+        items = items.distinct()[:30]
+        
+        results = [
+            {
+                'code': item['code'],
+                'description': item['description'],
+                'times_used': item['times_used'],
+            }
+            for item in items
+        ]
+        
+        return Response({
+            'count': len(results),
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error en patient_search_services: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
 
 
 @api_view(['POST'])
