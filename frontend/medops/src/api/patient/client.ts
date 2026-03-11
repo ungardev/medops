@@ -14,6 +14,80 @@ import {
   RegisterPaymentRequest,
   RegisterPaymentResponse,
 } from '@/types/patient';
+// ============================================
+// INTERFACES DE SERVICIOS
+// ============================================
+export interface ServiceHistoryItem {
+  code: string;
+  description: string;
+  qty: number;
+  unit_price: number;
+  subtotal: number;
+}
+export interface ServiceHistoryOrder {
+  id: number;
+  date: string;
+  institution: string;
+  total: number;
+  status: string;
+  items: ServiceHistoryItem[];
+}
+export interface ServiceHistoryResponse {
+  orders: ServiceHistoryOrder[];
+  summary: {
+    total_orders: number;
+    total_invertido: number;
+    unique_services: number;
+  };
+}
+export interface ServiceCatalogItem {
+  code: string;
+  description: string;
+  average_price: number;
+  times_used: number;
+  last_used?: string;
+}
+export interface ServiceCatalogResponse {
+  services: ServiceCatalogItem[];
+  specialties: string[];
+  total_services: number;
+}
+export interface RecommendedDoctor {
+  id: number;
+  full_name: string;
+  gender: string;
+  specialties: string[];
+  is_verified: boolean;
+}
+export interface ServicesRecommendedResponse {
+  recommended_doctors: RecommendedDoctor[];
+  based_on: string;
+}
+export interface DoctorSearchResult {
+  id: number;
+  full_name: string;
+  gender: string;
+  specialties: string[];
+  institutions: string[];
+  license: string;
+  is_verified: boolean;
+}
+export interface DoctorSearchResponse {
+  count: number;
+  results: DoctorSearchResult[];
+}
+export interface ServiceSearchResult {
+  code: string;
+  description: string;
+  times_used: number;
+}
+export interface ServiceSearchResponse {
+  count: number;
+  results: ServiceSearchResult[];
+}
+// ============================================
+// CONFIGURACIÓN DE AXIOS
+// ============================================
 const API_BASE_URL = '/api';
 const patientApi = axios.create({
   baseURL: API_BASE_URL,
@@ -37,7 +111,9 @@ patientApi.interceptors.request.use((config) => {
   }
   return config;
 });
-// Auth endpoints
+// ============================================
+// AUTH ENDPOINTS
+// ============================================
 export const patientAuth = {
   login: (data: LoginRequest) =>
     patientApi.post<LoginResponse>('/patient-auth/login/', data),
@@ -48,7 +124,9 @@ export const patientAuth = {
   logout: () =>
     patientApi.post('/patient-auth/logout/'),
 };
-// Patient endpoints
+// ============================================
+// PATIENT CLIENT ENDPOINTS
+// ============================================
 export const patientClient = {
   // Dashboard y Perfil
   getDashboard: () =>
@@ -71,12 +149,14 @@ export const patientClient = {
   // === MÉTODOS DE PAGO ===
   getPaymentMethod: () =>
     patientApi.get<PatientPaymentMethod>('/patient-payment-method/'),
+  
   updatePaymentMethod: (data: Partial<PatientPaymentMethod>) =>
     patientApi.put<PatientPaymentMethod>('/patient-payment-method/', data),
     
   // Órdenes de Cobro
   getChargeOrders: () =>
     patientApi.get<PatientChargeOrdersResponse>('/patient-charge-orders/'),
+  
   getChargeOrderDetail: (orderId: number) =>
     patientApi.get<PatientChargeOrder>(`/patient-charge-orders/${orderId}/`),
   
@@ -105,5 +185,25 @@ export const patientClient = {
       data
     );
   },
+  // === SERVICIOS (Historial y Catálogo) ===
+  getServicesHistory: () =>
+    patientApi.get<ServiceHistoryResponse>('/patient/services/history/'),
+  
+  getServicesCatalog: () =>
+    patientApi.get<ServiceCatalogResponse>('/patient/services/catalog/'),
+  
+  getServicesRecommended: () =>
+    patientApi.get<ServicesRecommendedResponse>('/patient/services/recommended/'),
+  
+  // === BÚSQUEDA ===
+  searchDoctors: (query: string) =>
+    patientApi.get<DoctorSearchResponse>(
+      `/patient-search/doctors/?q=${encodeURIComponent(query)}`
+    ),
+  
+  searchServices: (query: string) =>
+    patientApi.get<ServiceSearchResponse>(
+      `/patient-search/services/?q=${encodeURIComponent(query)}`
+    ),
 };
 export default patientApi;

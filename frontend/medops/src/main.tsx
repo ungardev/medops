@@ -36,6 +36,7 @@ import { PatientDashboard } from "./pages/PatientPortal/PatientDashboard";
 import PatientRecord from "./pages/PatientPortal/PatientRecord";
 import PatientQueue from "./pages/PatientPortal/PatientQueue";
 import PatientSearch from "./pages/PatientPortal/PatientSearch";
+import PatientServices from "./pages/PatientPortal/PatientServices"; // 🆕 Import Servicios
 import PatientSettings from "./pages/PatientPortal/PatientSettings";
 import PatientActivate from "./pages/PatientPortal/PatientActivate";
 import PatientAppointments from "./pages/PatientPortal/PatientAppointments";
@@ -76,6 +77,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="appointments" element={<PatientAppointments />} />
               <Route path="queue" element={<PatientQueue />} />
               <Route path="search" element={<PatientSearch />} />
+              <Route path="services" element={<PatientServices />} /> {/* 🆕 Ruta Servicios */}
               <Route path="settings" element={<PatientSettings />} />
               <Route path="payments" element={<PatientPayments />} />
               <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
