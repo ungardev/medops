@@ -177,18 +177,18 @@ export default function PatientServices() {
                     {service.category_name || 'SERVICIO'}
                   </span>
                   <span className="text-[8px] text-white/30">
-                    {service.duration_minutes} min
+                    {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
                   </span>
                 </div>
-                <p className="text-sm font-medium mb-1">{service.name}</p>
+                <p className="text-sm font-medium mb-1">{service.name || 'Servicio sin nombre'}</p>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
                   <span className="text-[9px] text-white/40">Precio</span>
                   <span className="text-emerald-400 font-bold text-sm">
-                    Bs {service.price_ves.toLocaleString('es-VE', { minimumFractionDigits: 0 })}
+                    Bs {service.price_ves ? service.price_ves.toLocaleString('es-VE', { minimumFractionDigits: 0 }) : 'N/A'}
                   </span>
                 </div>
                 <div className="mt-2 text-[9px] text-white/40">
-                  Dr. {service.doctor_name}
+                  Dr. {service.doctor_name || 'Médico no especificado'}
                 </div>
               </div>
             ))}
