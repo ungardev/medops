@@ -7,8 +7,8 @@ from .models import (
     ICD11Entry, MedicalTest, MedicalReferral, Specialty, MedicationCatalog, PrescriptionComponent,
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, PatientVaccination,
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
-    ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
-    BillingItem, WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
+    ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, 
+    WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
     PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, BANK_CHOICES, get_bank_name
@@ -1620,7 +1620,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         ),
         write_only=True,
         required=False,
-        help_text="Lista de servicios: [{'billing_item_id': 1, 'qty': 1}]"
+        help_text="Lista de servicios: [{'doctor_service_id': 1, 'qty': 1}]"
     )
     
     # ✅ NUEVO: Pago inicial opcional
@@ -1692,30 +1692,30 @@ class AppointmentSerializer(serializers.ModelSerializer):
         total_amount = Decimal('0.00')
         
         for service in services_data:
-            billing_item_id = service.get('billing_item_id')
+            doctor_service_id = service.get('doctor_service_id')  # Cambiado de billing_item_id
             qty = service.get('qty', 1)
             
-            if billing_item_id:
-                # ✅ FIX: Intentar buscar BillingItem, pero si no existe, usar datos directos
-                billing_item = None
+            if doctor_service_id:
+                # ✅ FIX: Intentar buscar DoctorService, pero si no existe, usar datos directos
+                doctor_service = None
                 try:
-                    billing_item = BillingItem.objects.filter(
-                        id=billing_item_id,
+                    doctor_service = DoctorService.objects.filter(
+                        id=doctor_service_id,
                         is_active=True
                     ).first()
                 except Exception:
                     pass
                 
-                # Si existe BillingItem, usar sus datos; si no, usar datos del servicio
-                if billing_item:
-                    code = billing_item.code
-                    description = billing_item.name
-                    unit_price = billing_item.unit_price
+                # Si existe DoctorService, usar sus datos; si no, usar datos del servicio
+                if doctor_service:
+                    code = doctor_service.code
+                    description = doctor_service.name
+                    unit_price = doctor_service.price_usd  # Usar price_usd en lugar de unit_price
                 else:
                     # Usar datos del servicio directamente
-                    code = service.get('code', f'ITEM-{billing_item_id}')
-                    description = service.get('description', f'Servicio {billing_item_id}')
-                    unit_price = Decimal(str(service.get('unit_price', service.get('price', 0))))
+                    code = service.get('code', f'SVC-{doctor_service_id}')
+                    description = service.get('description', f'Servicio {doctor_service_id}')
+                    unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
                 
                 # Crear ChargeItem
                 item = ChargeItem.objects.create(
@@ -1989,28 +1989,59 @@ class SpecialtySerializer(serializers.ModelSerializer):
 
 
 class DoctorServiceSerializer(serializers.ModelSerializer):
-    # Para lectura: mostrar nombres de doctor e institución
-    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
-    institution_name = serializers.CharField(source='institution.name', read_only=True)
+    """Serializer para servicios del doctor."""
     category_name = serializers.CharField(source='category.name', read_only=True)
-    
-    # Para escritura: aceptar IDs
-    category_id = serializers.PrimaryKeyRelatedField(
-        queryset=ServiceCategory.objects.all(), source='category', write_only=True, required=False
-    )
-    institution_id = serializers.PrimaryKeyRelatedField(
-        queryset=InstitutionSettings.objects.all(), source='institution', write_only=True, required=False
-    )
+    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
+    price_ves = serializers.SerializerMethodField()
     
     class Meta:
         model = DoctorService
         fields = [
-            'id', 'doctor', 'doctor_name', 'category', 'category_id', 'category_name',
-            'institution', 'institution_id', 'institution_name',
-            'name', 'description', 'price_ves', 'duration_minutes',
-            'is_active', 'is_visible_global', 'created_at', 'updated_at'
+            'id', 'doctor', 'doctor_name', 'category', 'category_name',
+            'institution', 'code', 'name', 'description',
+            'price_usd', 'price_ves', 'duration_minutes',
+            'is_active', 'is_visible_global',
+            'created_at', 'updated_at'
         ]
-        read_only_fields = ['doctor', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_price_ves(self, obj):
+        # Lógica para calcular precio en VES (se implementará en el frontend)
+        # Aquí podrías devolver el precio USD y dejar la conversión para el frontend
+        return obj.price_usd  # Por ahora, devolver USD (el frontend convertirá a VES)
+
+
+class DoctorServiceWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para servicios del doctor."""
+    
+    class Meta:
+        model = DoctorService
+        fields = [
+            'doctor', 'category', 'institution', 'code', 'name',
+            'description', 'price_usd', 'duration_minutes',
+            'is_active', 'is_visible_global'
+        ]
+    
+    def validate_code(self, value):
+        # Validar que el código sea único globalmente
+        if DoctorService.objects.filter(code=value.upper()).exists():
+            if not self.instance or self.instance.code.upper() != value.upper():
+                raise serializers.ValidationError("Ya existe un servicio con este código")
+        return value.upper()
+    
+    def validate_price_usd(self, value):
+        if value < Decimal('0.00'):
+            raise serializers.ValidationError("El precio no puede ser negativo")
+        return value
+
+
+class DoctorServiceSearchSerializer(serializers.ModelSerializer):
+    """Serializer liviano para búsqueda/autocomplete de servicios."""
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    
+    class Meta:
+        model = DoctorService
+        fields = ['id', 'code', 'name', 'price_usd', 'category_name']
 
 
 class DoctorOperatorSerializer(serializers.ModelSerializer):
@@ -2906,92 +2937,6 @@ class MercantilP2CCreateTransactionSerializer(serializers.Serializer):
         return value
 
 
-class BillingCategorySerializer(serializers.ModelSerializer):
-    """Serializer para categorías de facturación."""
-    items_count = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = BillingCategory
-        fields = [
-            'id', 'name', 'code_prefix', 'description',
-            'icon', 'sort_order', 'is_active',
-            'items_count', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-    
-    def get_items_count(self, obj):
-        return obj.items.filter(is_active=True).count()
-
-
-class BillingCategoryWriteSerializer(serializers.ModelSerializer):
-    """Serializer de escritura para categorías."""
-    
-    class Meta:
-        model = BillingCategory
-        fields = ['name', 'code_prefix', 'description', 'icon', 'sort_order', 'is_active']
-
-
-class BillingItemSerializer(serializers.ModelSerializer):
-    """Serializer para items de facturación."""
-    category_name = serializers.CharField(source='category.name', read_only=True)
-    category_prefix = serializers.CharField(source='category.code_prefix', read_only=True)
-    unit_price_display = serializers.SerializerMethodField()
-    
-    class Meta:
-        model = BillingItem
-        fields = [
-            'id', 'category', 'category_name', 'category_prefix',
-            'code', 'name', 'description',
-            'unit_price', 'unit_price_display', 'currency',
-            'estimated_duration', 'sort_order', 'is_active',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
-    
-    def get_unit_price_display(self, obj):
-        return f"{obj.currency} {obj.unit_price:.2f}"
-
-
-class BillingItemWriteSerializer(serializers.ModelSerializer):
-    """Serializer de escritura para items de facturación."""
-    class Meta:
-        model = BillingItem
-        fields = [
-            'category', 'code', 'name', 'description',
-            'unit_price', 'currency', 'estimated_duration',
-            'sort_order', 'is_active'
-        ]
-    def validate_unit_price(self, value):
-        if value < Decimal('0.00'):
-            raise serializers.ValidationError("El precio no puede ser negativo")
-        return value
-    def validate_code(self, value):
-        # Obtener institución del header o del perfil del doctor
-        request = self.context.get('request')
-        institution_id = request.headers.get('X-Institution-ID') if request else None
-        if institution_id:
-            institution = InstitutionSettings.objects.get(pk=institution_id)
-        else:
-            doctor = getattr(request.user, 'doctor_profile', None) if request else None
-            institution = doctor.active_institution or doctor.institutions.first() if doctor else None
-        if institution:
-            qs = BillingItem.objects.filter(institution=institution, code=value.upper())
-            if self.instance:
-                qs = qs.exclude(pk=self.instance.pk)
-            if qs.exists():
-                raise serializers.ValidationError("Ya existe un item con este código")
-        return value.upper()
-
-
-class BillingItemSearchSerializer(serializers.ModelSerializer):
-    """Serializer liviano para búsqueda/autocomplete."""
-    category_name = serializers.CharField(source='category.name', read_only=True)
-    
-    class Meta:
-        model = BillingItem
-        fields = ['id', 'code', 'name', 'unit_price', 'currency', 'category_name']
-
-
 # ==========================================
 # SERIALIZERS WHATSAPP
 # ==========================================
@@ -3480,7 +3425,26 @@ class PatientPaymentMethodSerializer(serializers.ModelSerializer):
 
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
+    """Serializer para categorías de servicios."""
+    services_count = serializers.SerializerMethodField()
+    
     class Meta:
         model = ServiceCategory
-        fields = ['id', 'name', 'description', 'icon', 'is_active']
+        fields = [
+            'id', 'name', 'description', 'icon', 'is_active',
+            'services_count', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_services_count(self, obj):
+        return obj.doctor_services.filter(is_active=True).count()
+
+
+class ServiceCategoryWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para categorías de servicios."""
+    
+    class Meta:
+        model = ServiceCategory
+        fields = ['name', 'description', 'icon', 'is_active']
+
 

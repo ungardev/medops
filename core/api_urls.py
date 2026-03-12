@@ -41,16 +41,14 @@ from .api_views import (
     NeighborhoodViewSet,
     # --- ✅ NUEVO: ViewSet de Medicamentos ---
     MedicationCatalogViewSet,
-    # --- ✅ NUEVO: ViewSets de Catálogo de Facturación ---
-    BillingCategoryViewSet,
-    BillingItemViewSet,
+    # --- ✅ NUEVO: ViewSets de Servicios Unificados ---
+    ServiceCategoryViewSet,
+    DoctorServiceViewSet,
     AddressChainView,
     NeighborhoodSearchView,
     # --- ✅ NUEVO: ViewSets de Servicios del Doctor ---
     DoctorDirectoryViewSet,
     DoctorProfileViewSet,
-    DoctorServiceViewSet,
-    ServiceCategoryViewSet,
     # --- Funciones ---
     update_appointment_status,
     update_waitingroom_status,
@@ -203,9 +201,9 @@ router.register(r"patients/(?P<patient_id>\d+)/alerts", ClinicalAlertViewSet, ba
 router.register(r"clinical-background", ClinicalBackgroundViewSet, basename="clinical-background")
 # --- ✅ NUEVO: Catálogo de Medicamentos ---
 router.register(r"medications", MedicationCatalogViewSet, basename="medication")
-# --- ✅ NUEVO: Catálogo de Facturación ---
-router.register(r"billing-categories", BillingCategoryViewSet, basename="billingcategory")
-router.register(r"billing-items", BillingItemViewSet, basename="billingitem")
+# --- ✅ NUEVO: Catálogo de Servicios Unificado (Reemplaza Billing) ---
+router.register(r"service-categories", ServiceCategoryViewSet, basename="service-category")
+router.register(r"doctor-services", DoctorServiceViewSet, basename="doctor-service")
 # --- ✅ NUEVO: Servicios del Doctor (Patient Portal) ---
 router.register(r"patient/doctors", DoctorDirectoryViewSet, basename="patient-doctors")
 router.register(r"patient/doctor-profile", DoctorProfileViewSet, basename="patient-doctor-profile")

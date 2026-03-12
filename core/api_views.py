@@ -4082,132 +4082,6 @@ def clinical_note_lock_api(request, appointment_id):
         return Response({"error": str(e)}, status=500)
 
 
-class BillingCategoryViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar categorías de facturación.
-    Filtra automáticamente por institución activa.
-    """
-    queryset = BillingCategory.objects.all()
-    serializer_class = BillingCategorySerializer
-    
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return BillingCategoryWriteSerializer
-        return BillingCategorySerializer
-    
-    def get_queryset(self):
-        # Obtener institución del header o del perfil del doctor
-        institution_id = self.request.headers.get('X-Institution-ID')
-        
-        if institution_id:
-            queryset = BillingCategory.objects.filter(institution_id=institution_id)
-        else:
-            # Fallback: usar institución activa del doctor
-            doctor = getattr(self.request.user, 'doctor_profile', None)
-            if doctor:
-                institution = doctor.active_institution or doctor.institutions.first()
-                if institution:
-                    queryset = BillingCategory.objects.filter(institution=institution)
-                else:
-                    return BillingCategory.objects.none()
-            else:
-                return BillingCategory.objects.none()
-        
-        return queryset.order_by('sort_order', 'name')
-    
-    def perform_create(self, serializer):
-        # Obtener institución del header o del perfil
-        institution_id = self.request.headers.get('X-Institution-ID')
-        
-        if institution_id:
-            institution = InstitutionSettings.objects.get(pk=institution_id)
-        else:
-            doctor = getattr(self.request.user, 'doctor_profile', None)
-            institution = doctor.active_institution or doctor.institutions.first() if doctor else None
-        
-        if not institution:
-            raise ValidationError("No se pudo determinar la institución")
-        
-        serializer.save(institution=institution)
-
-
-class BillingItemViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar items de facturación.
-    Incluye búsqueda y filtros por categoría.
-    """
-    queryset = BillingItem.objects.all()
-    serializer_class = BillingItemSerializer
-    
-    def get_serializer_class(self):
-        if self.action in ['create', 'update', 'partial_update']:
-            return BillingItemWriteSerializer
-        if self.action == 'search':
-            return BillingItemSearchSerializer
-        return BillingItemSerializer
-    
-    def get_queryset(self):
-        # Obtener institución del header o del perfil del doctor
-        institution_id = self.request.headers.get('X-Institution-ID')
-        
-        if institution_id:
-            queryset = BillingItem.objects.filter(institution_id=institution_id)
-        else:
-            # Fallback: usar institución activa del doctor
-            doctor = getattr(self.request.user, 'doctor_profile', None)
-            if doctor:
-                institution = doctor.active_institution or doctor.institutions.first()
-                if institution:
-                    queryset = BillingItem.objects.filter(institution=institution)
-                else:
-                    return BillingItem.objects.none()
-            else:
-                return BillingItem.objects.none()
-        
-        queryset = queryset.select_related('category').order_by('category__sort_order', 'sort_order', 'code')
-        
-        # Filtros
-        category_id = self.request.query_params.get('category')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
-        
-        is_active = self.request.query_params.get('is_active')
-        if is_active is not None:
-            queryset = queryset.filter(is_active=is_active.lower() == 'true')
-        
-        search = self.request.query_params.get('search')
-        if search:
-            queryset = queryset.filter(
-                models.Q(code__icontains=search) |
-                models.Q(name__icontains=search) |
-                models.Q(description__icontains=search)
-            )
-        
-        return queryset
-    
-    def perform_create(self, serializer):
-        # Obtener institución del header o del perfil
-        institution_id = self.request.headers.get('X-Institution-ID')
-        
-        if institution_id:
-            institution = InstitutionSettings.objects.get(pk=institution_id)
-        else:
-            doctor = getattr(self.request.user, 'doctor_profile', None)
-            institution = doctor.active_institution or doctor.institutions.first() if doctor else None
-        
-        if not institution:
-            raise ValidationError("No se pudo determinar la institución")
-        
-        serializer.save(institution=institution, created_by=self.request.user)
-    
-    @action(detail=False, methods=['get'])
-    def search(self, request):
-        """Endpoint de búsqueda rápido para autocomplete."""
-        queryset = self.get_queryset()[:20]
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
-
 # ==========================================
 # AUTENTICACIÓN - PORTAL PACIENTE
 # ==========================================
@@ -6640,32 +6514,101 @@ class DoctorProfileViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-class DoctorServiceViewSet(viewsets.ReadOnlyModelViewSet):
+class DoctorServiceViewSet(viewsets.ModelViewSet):
     """
-    Catálogo global de servicios (instanced by doctors).
+    ViewSet para gestionar servicios del doctor.
+    Incluye búsqueda y filtros.
     """
-    queryset = DoctorService.objects.filter(is_active=True, is_visible_global=True)
+    queryset = DoctorService.objects.all()
     serializer_class = DoctorServiceSerializer
-    permission_classes = [AllowAny]
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return DoctorServiceWriteSerializer
+        if self.action == 'search':
+            return DoctorServiceSearchSerializer
+        return DoctorServiceSerializer
     
     def get_queryset(self):
-        queryset = super().get_queryset()
-        # Filtros
-        category_id = self.request.query_params.get('category')
-        if category_id:
-            queryset = queryset.filter(category__id=category_id)
+        # Obtener institución del header o del perfil del doctor
+        institution_id = self.request.headers.get('X-Institution-ID')
         
+        if institution_id:
+            queryset = DoctorService.objects.filter(institution_id=institution_id)
+        else:
+            # Fallback: usar institución activa del doctor
+            doctor = getattr(self.request.user, 'doctor_profile', None)
+            if doctor:
+                institution = doctor.active_institution or doctor.institutions.first()
+                if institution:
+                    queryset = DoctorService.objects.filter(institution=institution)
+                else:
+                    return DoctorService.objects.none()
+            else:
+                return DoctorService.objects.none()
+        
+        # Filtrar por doctor si es necesario
         doctor_id = self.request.query_params.get('doctor')
         if doctor_id:
-            queryset = queryset.filter(doctor__id=doctor_id)
-            
-        return queryset
+            queryset = queryset.filter(doctor_id=doctor_id)
+        
+        # Filtros adicionales
+        category_id = self.request.query_params.get('category')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        
+        is_active = self.request.query_params.get('is_active')
+        if is_active is not None:
+            queryset = queryset.filter(is_active=is_active.lower() == 'true')
+        
+        search = self.request.query_params.get('search')
+        if search:
+            queryset = queryset.filter(
+                models.Q(code__icontains=search) |
+                models.Q(name__icontains=search) |
+                models.Q(description__icontains=search)
+            )
+        
+        return queryset.order_by('doctor', 'name')
+    
+    def perform_create(self, serializer):
+        # Obtener institución del header o del perfil
+        institution_id = self.request.headers.get('X-Institution-ID')
+        
+        if institution_id:
+            institution = InstitutionSettings.objects.get(pk=institution_id)
+        else:
+            doctor = getattr(self.request.user, 'doctor_profile', None)
+            institution = doctor.active_institution or doctor.institutions.first() if doctor else None
+        
+        if not institution:
+            raise ValidationError("No se pudo determinar la institución")
+        
+        serializer.save(institution=institution, created_by=self.request.user)
+    
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        """Endpoint de búsqueda rápido para autocomplete."""
+        queryset = self.get_queryset()[:20]
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
-class ServiceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+class ServiceCategoryViewSet(viewsets.ModelViewSet):
     """
-    Categorías de servicios.
+    ViewSet para gestionar categorías de servicios.
     """
-    queryset = ServiceCategory.objects.filter(is_active=True)
+    queryset = ServiceCategory.objects.all()
     serializer_class = ServiceCategorySerializer
-    permission_classes = [AllowAny]
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return ServiceCategoryWriteSerializer
+        return ServiceCategorySerializer
+    
+    def get_queryset(self):
+        queryset = ServiceCategory.objects.all()
+        return queryset.order_by('name')
+    
+    def perform_create(self, serializer):
+        serializer.save()
