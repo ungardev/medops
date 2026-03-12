@@ -15,7 +15,59 @@ import {
   RegisterPaymentResponse,
 } from '@/types/patient';
 // ============================================
-// INTERFACES DE SERVICIOS
+// INTERFACES DE SERVICIOS Y DOCTORES (NUEVAS)
+// ============================================
+export interface Doctor {
+  id: number;
+  full_name: string;
+  gender: string;
+  is_verified: boolean;
+  colegiado_id: string;
+  license: string;
+  specialties: { id: number; name: string }[];
+  institutions: { id: number; name: string }[];
+  email: string;
+  phone: string;
+  services?: DoctorService[];
+}
+export interface ServiceCategory {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+}
+export interface DoctorService {
+  id: number;
+  doctor: number;
+  doctor_name: string;
+  category: number;
+  category_name: string;
+  institution: number;
+  institution_name: string;
+  name: string;
+  description: string;
+  price_ves: number;
+  duration_minutes: number;
+  is_active: boolean;
+  is_visible_global: boolean;
+}
+// ============================================
+// INTERFACES DE RESPUESTA DE API
+// ============================================
+export interface DoctorSearchResponse {
+  count: number;
+  results: Doctor[];
+}
+export interface ServiceCatalogResponse {
+  count: number;
+  results: DoctorService[];
+  // Mantener compatibilidad con estructura antigua
+  services?: DoctorService[];
+  specialties?: string[];
+  total_services?: number;
+}
+// ============================================
+// INTERFACES ANTIGUAS (COMPATIBILIDAD)
 // ============================================
 export interface ServiceHistoryItem {
   code: string;
@@ -47,7 +99,7 @@ export interface ServiceCatalogItem {
   times_used: number;
   last_used?: string;
 }
-export interface ServiceCatalogResponse {
+export interface ServiceCatalogResponseLegacy {
   services: ServiceCatalogItem[];
   specialties: string[];
   total_services: number;
@@ -63,6 +115,7 @@ export interface ServicesRecommendedResponse {
   recommended_doctors: RecommendedDoctor[];
   based_on: string;
 }
+// Interfaces para búsqueda (compatibilidad)
 export interface DoctorSearchResult {
   id: number;
   full_name: string;
@@ -72,18 +125,10 @@ export interface DoctorSearchResult {
   license: string;
   is_verified: boolean;
 }
-export interface DoctorSearchResponse {
-  count: number;
-  results: DoctorSearchResult[];
-}
 export interface ServiceSearchResult {
   code: string;
   description: string;
   times_used: number;
-}
-export interface ServiceSearchResponse {
-  count: number;
-  results: ServiceSearchResult[];
 }
 // ============================================
 // CONFIGURACIÓN DE AXIOS
@@ -97,16 +142,13 @@ const patientApi = axios.create({
 });
 // Interceptor para agregar token del paciente
 patientApi.interceptors.request.use((config) => {
-  // ✅ PRIMERO: Buscar DRF Token (para compatibilidad con activación)
   let token = localStorage.getItem('patient_drf_token');
   
-  // ✅ SEGUNDO: Si no hay DRF Token, usar PatientSession Token
   if (!token) {
     token = localStorage.getItem('patient_access_token');
   }
   
   if (token && config.headers) {
-    // ✅ Usar Bearer token para PatientSession
     config.headers.Authorization = `Token ${token}`;
   }
   return config;
@@ -125,7 +167,7 @@ export const patientAuth = {
     patientApi.post('/patient-auth/logout/'),
 };
 // ============================================
-// PATIENT CLIENT ENDPOINTS
+// PATIENT CLIENT ENDPOINTS (EXISTENTES)
 // ============================================
 export const patientClient = {
   // Dashboard y Perfil
@@ -162,7 +204,6 @@ export const patientClient = {
   
   // === REGISTRO DE PAGO CON SOPORTE PARA SCREENSHOT ===
   registerPayment: async (orderId: number, data: RegisterPaymentRequest) => {
-    // Si hay screenshot, usar FormData
     if (data.screenshot) {
       const formData = new FormData();
       formData.append('bank_code', data.bank_code);
@@ -179,18 +220,18 @@ export const patientClient = {
       );
     }
     
-    // Sinon, JSON normal
     return patientApi.post<RegisterPaymentResponse>(
       `/patient-charge-orders/${orderId}/register-payment/`,
       data
     );
   },
+  
   // === SERVICIOS (Historial y Catálogo) ===
   getServicesHistory: () =>
     patientApi.get<ServiceHistoryResponse>('/patient/services/history/'),
   
   getServicesCatalog: () =>
-    patientApi.get<ServiceCatalogResponse>('/patient/services/catalog/'),
+    patientApi.get<ServiceCatalogResponseLegacy>('/patient/services/catalog/'),
   
   getServicesRecommended: () =>
     patientApi.get<ServicesRecommendedResponse>('/patient/services/recommended/'),
@@ -201,9 +242,45 @@ export const patientClient = {
       `/patient-search/doctors/?q=${encodeURIComponent(query)}`
     ),
   
+  // ✅ FIX: Ahora retorna DoctorService[] en lugar de ServiceSearchResult[]
   searchServices: (query: string) =>
-    patientApi.get<ServiceSearchResponse>(
+    patientApi.get<ServiceCatalogResponse>(
       `/patient-search/services/?q=${encodeURIComponent(query)}`
     ),
+};
+// ============================================
+// NUEVOS CLIENTES PARA FASE 2 (DOCTORES Y SERVICIOS)
+// ============================================
+export const doctorClient = {
+  // Obtener directorio de doctores (listado)
+  getDoctors: (params?: { specialty?: number; institution?: number }) => {
+    const queryString = params 
+      ? '?' + new URLSearchParams(params as any).toString()
+      : '';
+    return patientApi.get<DoctorSearchResponse>(`/patient/doctors/${queryString}`);
+  },
+  // Obtener perfil de un doctor específico
+  getDoctorProfile: (doctorId: number) => {
+    return patientApi.get<Doctor>(`/patient/doctor-profile/${doctorId}/`);
+  },
+  // Obtener servicios de un doctor específico
+  getDoctorServices: (doctorId: number) => {
+    return patientApi.get<DoctorService[]>(
+      `/patient/doctor-profile/${doctorId}/services/`
+    );
+  },
+};
+export const serviceClient = {
+  // Obtener catálogo global de servicios (con info del doctor)
+  getServices: (params?: { category?: number; doctor?: number }) => {
+    const queryString = params 
+      ? '?' + new URLSearchParams(params as any).toString()
+      : '';
+    return patientApi.get<ServiceCatalogResponse>(`/patient/services/${queryString}`);
+  },
+  // Obtener categorías de servicios
+  getCategories: () => {
+    return patientApi.get<ServiceCategory[]>('/patient/service-categories/');
+  },
 };
 export default patientApi;

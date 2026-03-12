@@ -17,12 +17,14 @@ import {
   UserIcon,
   Loader2 
 } from "lucide-react";
+import { ServiceCatalogResponse, DoctorService } from "@/api/patient/client";
 export default function PatientServices() {
   const [activeTab, setActiveTab] = useState<"history" | "catalog" | "recommended">("history");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const { data: historyData, isLoading: historyLoading } = usePatientServicesHistory();
   const { data: catalogData, isLoading: catalogLoading } = usePatientServicesCatalog();
   const { data: recommendedData, isLoading: recommendedLoading } = usePatientServicesRecommended();
+  
   const handleToggleOrder = (orderId: number) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
@@ -35,6 +37,18 @@ export default function PatientServices() {
         </div>
       </div>
     );
+  }
+  // Determinar qué estructura de datos tiene el catálogo
+  let services: DoctorService[] = [];
+  if (catalogData) {
+    // Intentar nuevo formato (results)
+    if ('results' in catalogData && Array.isArray(catalogData.results)) {
+      services = catalogData.results;
+    }
+    // Intentar formato antiguo (services)
+    else if ('services' in catalogData && Array.isArray((catalogData as any).services)) {
+      services = (catalogData as any).services;
+    }
   }
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
@@ -154,22 +168,25 @@ export default function PatientServices() {
         {/* CATÁLOGO */}
         {activeTab === "catalog" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {catalogData?.services?.map((service) => (
-              <div key={service.code} className="bg-[#0a0a0b] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
+            {services.map((service) => (
+              <div key={service.id} className="bg-[#0a0a0b] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-[8px] font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
-                    {service.code}
+                    {service.category_name || 'SERVICIO'}
                   </span>
                   <span className="text-[8px] text-white/30">
-                    {service.times_used} usos
+                    {service.duration_minutes} min
                   </span>
                 </div>
-                <p className="text-sm font-medium mb-1">{service.description}</p>
+                <p className="text-sm font-medium mb-1">{service.name}</p>
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-                  <span className="text-[9px] text-white/40">Precio promedio</span>
+                  <span className="text-[9px] text-white/40">Precio</span>
                   <span className="text-emerald-400 font-bold text-sm">
-                    Bs {service.average_price.toLocaleString('es-VE', { minimumFractionDigits: 0 })}
+                    Bs {service.price_ves.toLocaleString('es-VE', { minimumFractionDigits: 0 })}
                   </span>
+                </div>
+                <div className="mt-2 text-[9px] text-white/40">
+                  Dr. {service.doctor_name}
                 </div>
               </div>
             ))}
