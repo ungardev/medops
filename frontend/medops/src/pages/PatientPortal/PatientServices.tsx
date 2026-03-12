@@ -50,6 +50,8 @@ export default function PatientServices() {
       services = (catalogData as any).services;
     }
   }
+  // ✅ FIX: Manejar valores undefined para evitar errores en toLocaleString
+  const totalInvertido = historyData?.summary?.total_invertido ?? 0;
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       <PageHeader 
@@ -65,7 +67,7 @@ export default function PatientServices() {
           },
           { 
             label: "INVERTIDO", 
-            value: `Bs ${historyData?.summary?.total_invertido?.toLocaleString('es-VE', { minimumFractionDigits: 0 }) || "0"}`,
+            value: `Bs ${totalInvertido.toLocaleString('es-VE', { minimumFractionDigits: 0 })}`,
             color: "text-emerald-400"
           },
           { 
