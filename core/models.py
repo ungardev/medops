@@ -3711,105 +3711,6 @@ class MercantilP2CConfig(models.Model):
         return "sandbox" if self.is_test_mode else "production"
 
 
-class BillingCategory(models.Model):
-    """
-    Categorías de servicios médicos para facturación.
-    Ej: Consultas, Laboratorio, Imagenología, Procedimientos.
-    """
-    institution = models.ForeignKey(
-        'InstitutionSettings',
-        on_delete=models.CASCADE,
-        related_name='billing_categories'
-    )
-    name = models.CharField(max_length=100, verbose_name="Nombre")
-    code_prefix = models.CharField(max_length=10, verbose_name="Prefijo de código")
-    description = models.TextField(blank=True, null=True)
-    icon = models.CharField(max_length=50, blank=True, null=True)
-    sort_order = models.IntegerField(default=0, verbose_name="Orden")
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['sort_order', 'name']
-        unique_together = ['institution', 'code_prefix']
-        verbose_name = "Categoría de Facturación"
-        verbose_name_plural = "Categorías de Facturación"
-    
-    def __str__(self):
-        return f"{self.code_prefix} - {self.name}"
-
-
-class BillingItem(models.Model):
-    """
-    Items de facturación: servicios y productos médicos.
-    Ej: Consulta General, Hemograma, Radiografía de Tórax.
-    """
-    institution = models.ForeignKey(
-        'InstitutionSettings',
-        on_delete=models.CASCADE,
-        related_name='billing_items'
-    )
-    category = models.ForeignKey(
-        BillingCategory,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='items'
-    )
-    
-    # Identificación
-    code = models.CharField(max_length=20, verbose_name="Código")
-    name = models.CharField(max_length=150, verbose_name="Nombre")
-    description = models.TextField(blank=True, null=True, verbose_name="Descripción")
-    
-    # Pricing
-    unit_price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name="Precio Unitario"
-    )
-    currency = models.CharField(max_length=10, default='USD', verbose_name="Moneda")
-    
-    # Metadatos
-    estimated_duration = models.IntegerField(
-        null=True,
-        blank=True,
-        verbose_name="Duración estimada (min)"
-    )
-    sort_order = models.IntegerField(default=0, verbose_name="Orden")
-    is_active = models.BooleanField(default=True, verbose_name="Activo")
-    
-    # Auditoría
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='billing_items_created'
-    )
-    
-    history = HistoricalRecords()
-    
-    class Meta:
-        ordering = ['category__sort_order', 'sort_order', 'code']
-        unique_together = ['institution', 'code']
-        verbose_name = "Item de Facturación"
-        verbose_name_plural = "Items de Facturación"
-        indexes = [
-            models.Index(fields=['institution', 'is_active']),
-            models.Index(fields=['institution', 'category']),
-        ]
-    
-    def __str__(self):
-        return f"{self.code} - {self.name}"
-    
-    def clean(self):
-        if self.unit_price < Decimal('0.00'):
-            raise ValidationError({"unit_price": "El precio no puede ser negativo"})
-
 
 # ==========================================
 # ARIO PACIENTE20. USU - Portal de Autenticación
@@ -5110,7 +5011,7 @@ class PatientPaymentMethod(models.Model):
 class ServiceCategory(models.Model):
     """
     Categorías genéricas de servicios (Consulta, Procedimiento, etc.).
-    No depende de doctor ni institución.
+    Unificación de BillingCategory y ServiceCategory.
     """
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
@@ -5128,19 +5029,23 @@ class ServiceCategory(models.Model):
     
     def __str__(self):
         return self.name
+
+
 class DoctorService(models.Model):
     """
     Servicio instanciado por un doctor específico.
     Es el "producto" que el doctor ofrece al paciente.
+    Unificación de BillingItem y DoctorService.
     """
-    # Dueño del servicio
+    # Dueño del servicio (Filosofía MEDOPZ: siempre obligatorio)
     doctor = models.ForeignKey(
         'DoctorOperator',
         on_delete=models.CASCADE,
-        related_name='services'
+        related_name='services',
+        null=False  # Asegurar que sea obligatorio
     )
     
-    # Categoría genérica
+    # Categoría genérica (unificada)
     category = models.ForeignKey(
         'ServiceCategory',
         on_delete=models.SET_NULL,
@@ -5148,7 +5053,7 @@ class DoctorService(models.Model):
         blank=True
     )
     
-    # Institución donde se ofrece (opcional, si el doctor ofrece el servicio en varias sedes)
+    # Institución donde se ofrece (opcional)
     institution = models.ForeignKey(
         'InstitutionSettings',
         on_delete=models.SET_NULL,
@@ -5157,10 +5062,25 @@ class DoctorService(models.Model):
         related_name='doctor_services'
     )
     
+    # === NUEVO: Código único global ===
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        help_text="Código único del servicio (ej: CONS-001)"
+    )
+    
     # Datos del servicio
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    price_ves = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    
+    # === NUEVO: Precio en USD ===
+    price_usd = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        help_text="Precio base en dólares (USD)"
+    )
+    
     duration_minutes = models.PositiveIntegerField(default=30)
     
     # Control de visibilidad
@@ -5177,8 +5097,6 @@ class DoctorService(models.Model):
     class Meta:
         verbose_name = "Servicio del Doctor"
         verbose_name_plural = "Servicios de Doctores"
-        # Un doctor no puede tener dos servicios con el mismo nombre en la misma institución
-        unique_together = ['doctor', 'name', 'institution']
         ordering = ['doctor', 'name']
     
     def __str__(self):
