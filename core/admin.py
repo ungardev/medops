@@ -42,9 +42,6 @@ from .models import (
     # --- NUEVOS: Auditoría y Config ---
     Event,
     InstitutionSettings,
-    # --- NUEVOS: Catálogo de Facturación ---
-    BillingCategory,
-    BillingItem,
 )
 
 logger = logging.getLogger("core")
@@ -291,22 +288,28 @@ class ChargeOrderAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         response = super().changelist_view(request, extra_context=extra_context)
-        try:
-            qs = response.context_data["cl"].queryset
-            total_amount = qs.aggregate(total=Sum("total"))["total"] or 0
-            balance = qs.aggregate(total=Sum("balance_due"))["total"] or 0
-            response.context_data["summary"] = format_html(
-                """
-                <div class="financial-summary">
-                    <strong>Resumen de Órdenes:</strong>
-                    <span class="financial-badge expected">Total emitido: {}</span>
-                    <span class="financial-badge balance">Saldo pendiente: {}</span>
-                </div>
-                """,
-                f"{total_amount:.2f}", f"{balance:.2f}",
-            )
-        except Exception: 
-            pass
+        
+        # VERIFICAR QUE RESPONSE NO SEA NONE
+        if response is not None:
+            try:
+                # Verificar que context_data existe
+                if hasattr(response, 'context_data') and response.context_data:
+                    qs = response.context_data["cl"].queryset
+                    total_amount = qs.aggregate(total=Sum("total"))["total"] or 0
+                    balance = qs.aggregate(total=Sum("balance_due"))["total"] or 0
+                    response.context_data["summary"] = format_html(
+                        """
+                        <div class="financial-summary">
+                            <strong>Resumen de Órdenes:</strong>
+                            <span class="financial-badge expected">Total emitido: {}</span>
+                            <span class="financial-badge balance">Saldo pendiente: {}</span>
+                        </div>
+                        """,
+                        f"{total_amount:.2f}", f"{balance:.2f}",
+                    )
+            except Exception:
+                pass
+        
         return response
 
 
@@ -557,56 +560,6 @@ class InstitutionSettingsAdmin(admin.ModelAdmin):
         }),
         ("Estado", {
             "fields": ("is_active", "created_at", "updated_at", "created_by", "updated_by")
-        }),
-    )
-# =====================================================
-# CATÁLOGO DE FACTURACIÓN - BILLING CATALOG
-# =====================================================
-class BillingItemInline(admin.TabularInline):
-    model = BillingItem
-    extra = 0
-    fields = ("code", "name", "unit_price", "is_active")
-    readonly_fields = ("code", "name", "unit_price")
-    show_change_link = True
-
-
-@admin.register(BillingCategory)
-class BillingCategoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "code_prefix", "name", "institution", "is_active", "sort_order", "items_count")
-    list_filter = ("institution", "is_active")
-    search_fields = ("name", "code_prefix")
-    ordering = ("institution", "sort_order", "name")
-    list_per_page = 50
-    inlines = [BillingItemInline]
-    
-    @admin.display(description="Items")
-    def items_count(self, obj):
-        return obj.items.count()
-
-
-@admin.register(BillingItem)
-class BillingItemAdmin(admin.ModelAdmin):
-    list_display = ("id", "code", "name", "category", "unit_price", "currency", "is_active", "institution")
-    list_filter = ("institution", "category", "is_active", "currency")
-    search_fields = ("code", "name", "description")
-    ordering = ("institution", "category__sort_order", "sort_order", "code")
-    list_per_page = 50
-    list_editable = ("unit_price", "is_active")
-    readonly_fields = ("created_at", "updated_at", "created_by")
-    
-    fieldsets = (
-        ("Identificación", {
-            "fields": ("institution", "category", "code", "name", "description")
-        }),
-        ("Precio", {
-            "fields": ("unit_price", "currency")
-        }),
-        ("Metadatos", {
-            "fields": ("estimated_duration", "sort_order", "is_active")
-        }),
-        ("Auditoría", {
-            "classes": ("collapse",),
-            "fields": ("created_at", "updated_at", "created_by")
         }),
     )
 
