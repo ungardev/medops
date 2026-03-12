@@ -121,3 +121,21 @@ def get_bank_name(code: str) -> str:
         if bank_code == code:
             return name
     return "Banco Desconocido"
+
+
+# Categorías de Servicios del Doctor
+SERVICE_CATEGORY_CHOICES = [
+    ('consulta', 'Consulta Médica'),
+    ('procedimiento', 'Procedimiento Quirúrgico'),
+    ('control', 'Control / Seguimiento'),
+    ('diagnostico', 'Diagnóstico'),
+    ('terapia', 'Terapia / Rehabilitación'),
+    ('otro', 'Otro'),
+]
+# Estados de Cita de Servicio
+SERVICE_APPOINTMENT_STATUS_CHOICES = [
+    ('pending', 'Pendiente'),
+    ('confirmed', 'Confirmada'),
+    ('completed', 'Completada'),
+    ('cancelled', 'Cancelada'),
+]

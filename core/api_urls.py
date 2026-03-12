@@ -46,6 +46,11 @@ from .api_views import (
     BillingItemViewSet,
     AddressChainView,
     NeighborhoodSearchView,
+    # --- ✅ NUEVO: ViewSets de Servicios del Doctor ---
+    DoctorDirectoryViewSet,
+    DoctorProfileViewSet,
+    DoctorServiceViewSet,
+    ServiceCategoryViewSet,
     # --- Funciones ---
     update_appointment_status,
     update_waitingroom_status,
@@ -201,6 +206,11 @@ router.register(r"medications", MedicationCatalogViewSet, basename="medication")
 # --- ✅ NUEVO: Catálogo de Facturación ---
 router.register(r"billing-categories", BillingCategoryViewSet, basename="billingcategory")
 router.register(r"billing-items", BillingItemViewSet, basename="billingitem")
+# --- ✅ NUEVO: Servicios del Doctor (Patient Portal) ---
+router.register(r"patient/doctors", DoctorDirectoryViewSet, basename="patient-doctors")
+router.register(r"patient/doctor-profile", DoctorProfileViewSet, basename="patient-doctor-profile")
+router.register(r"patient/services", DoctorServiceViewSet, basename="patient-services")
+router.register(r"patient/service-categories", ServiceCategoryViewSet, basename="patient-service-categories")
 # --- Direcciones ---
 router.register(r"countries", CountryViewSet, basename="country")
 router.register(r"states", StateViewSet, basename="state")

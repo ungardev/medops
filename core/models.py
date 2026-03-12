@@ -12,7 +12,9 @@ from decimal import Decimal
 from django.utils import timezone
 from django.apps import apps
 from django.conf import settings
-from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES, BANK_CHOICES
+from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, PRESENTATION_CHOICES, MEDICATION_STATUS_CHOICES, BANK_CHOICES, SERVICE_CATEGORY_CHOICES, SERVICE_APPOINTMENT_STATUS_CHOICES
+# === NUEVO: Importar choices de servicios ===
+
 import hashlib
 import uuid
 from datetime import date, timedelta
@@ -434,21 +436,29 @@ class Appointment(models.Model):
         related_name='appointments'
     )
     
-    # NUEVO: Anclaje obligatorio a la sede. Una cita no existe sin una institución.
     institution = models.ForeignKey(
         'InstitutionSettings', 
-        on_delete=models.PROTECT, # No se puede borrar la sede si tiene citas
+        on_delete=models.PROTECT, 
         related_name='appointments',
         verbose_name="Sede de atención"
     )
     
-    # NUEVO: Vínculo con el médico (Practitioner)
     doctor = models.ForeignKey(
         'DoctorOperator', 
         on_delete=models.CASCADE, 
         related_name='appointments',
         verbose_name="Médico tratante"
     )
+    # === NUEVO CAMPO ===
+    doctor_service = models.ForeignKey(
+        'DoctorService',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointments',
+        verbose_name="Servicio específico agendado"
+    )
+    
     # --- DATOS TEMPORALES Y ESTADO ---
     appointment_date = models.DateField()
     status = models.CharField(
@@ -493,13 +503,14 @@ class Appointment(models.Model):
     started_at = models.DateTimeField(blank=True, null=True, verbose_name="Inicio de consulta")
     completed_at = models.DateTimeField(blank=True, null=True, verbose_name="Finalización de consulta")
     history = HistoricalRecords()
+    
     class Meta:
         verbose_name = "Cita Médica"
         verbose_name_plural = "Citas Médicas"
         ordering = ['-appointment_date', 'arrival_time']
+        
     def __str__(self):
         return f"{self.patient} - {self.institution.name} - {self.appointment_date}"
-
     # --- PROPIEDADES DE VALIDACIÓN PARA EL ADMIN ---
     @property
     def is_fully_paid(self):
@@ -509,14 +520,12 @@ class Appointment(models.Model):
         """
         # Si no hay saldo pendiente, está totalmente pagada
         return self.balance_due() <= 0
-
     # --- FINANZAS POR SEDE ---
     def total_paid(self):
         # Filtramos pagos confirmados en esta cita
         # Usamos 'completed' o 'confirmed' según tu lógica de Payment.status
         agg = self.payments.filter(status__in=['confirmed', 'completed']).aggregate(total=Sum('amount'))
         return agg.get('total') or Decimal('0.00')
-
     def balance_due(self):
         # El balance es específico a la ChargeOrder de esta cita en esta sede
         orders = self.charge_orders.exclude(status='void')
@@ -524,7 +533,6 @@ class Appointment(models.Model):
             agg = orders.aggregate(b=Sum('balance_due'))
             return agg.get('b') or Decimal('0.00')
         return max(self.expected_amount - self.total_paid(), Decimal('0.00'))
-
     # --- LÓGICA DE SINCRONIZACIÓN (SALA DE ESPERA) ---
     def sync_waiting_room_status(self):
         WR_Entry = apps.get_model('core', 'WaitingRoomEntry')
@@ -536,21 +544,17 @@ class Appointment(models.Model):
         }
         if self.status in status_map:
             WR_Entry.objects.filter(appointment=self).update(status=status_map[self.status])
-
     # --- FLUJO DE ESTADOS Y SEGURIDAD ---
     def save(self, *args, **kwargs):
         # 1. Validación de Verificación Profesional
         if not self.doctor.is_verified:
             # Aquí podrías lanzar una excepción si fuera necesario
             pass 
-
         # 2. Registro automático de hora de llegada
         if self.status == 'arrived' and not self.arrival_time:
             self.arrival_time = timezone.now().time()
-
         super().save(*args, **kwargs)
         self.sync_waiting_room_status()
-
     def update_status(self, new_status: str):
         self.status = new_status
         updated_fields = ["status"]
@@ -588,7 +592,6 @@ class Appointment(models.Model):
                 except Exception:
                     pass  # Si ya está void, ignorar
         self.save(update_fields=updated_fields)
-
     def mark_arrived(self, priority: str = "normal", source_type: str = "scheduled"):
         if self.status == "pending":
             self.status = "arrived"
@@ -1556,9 +1559,21 @@ class ChargeItem(models.Model):
     qty = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('1.00'))
     unit_price = models.DecimalField(max_digits=10, decimal_places=2)
     subtotal = models.DecimalField(max_digits=10, decimal_places=2, editable=False)
+    
+    # === NUEVO CAMPO ===
+    doctor_service = models.ForeignKey(
+        'DoctorService',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='charge_items',
+        verbose_name="Servicio facturado"
+    )
+    
     class Meta:
         verbose_name = "Ítem de Cobro"
         verbose_name_plural = "Ítems de Cobro"
+        
     def __str__(self):
         return f"{self.description or self.code} (x{self.qty})"
     
@@ -5079,3 +5094,127 @@ class PatientPaymentMethod(models.Model):
     
     def __str__(self):
         return f"Métodos de Pago - {self.patient.full_name}"
+
+
+# ============================================
+# NUEVOS MODELOS PARA SERVICIOS DEL DOCTOR
+# ============================================
+class ServiceCategory(models.Model):
+    """
+    Categorías genéricas de servicios (Consulta, Procedimiento, etc.).
+    No depende de doctor ni institución.
+    """
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    icon = models.CharField(max_length=50, blank=True, null=True, help_text="Nombre del icono para UI")
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = "Categoría de Servicio"
+        verbose_name_plural = "Categorías de Servicios"
+        ordering = ['name']
+    
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return self.name
+class DoctorService(models.Model):
+    """
+    Servicio instanciado por un doctor específico.
+    Es el "producto" que el doctor ofrece al paciente.
+    """
+    # Dueño del servicio
+    doctor = models.ForeignKey(
+        'DoctorOperator',
+        on_delete=models.CASCADE,
+        related_name='services'
+    )
+    
+    # Categoría genérica
+    category = models.ForeignKey(
+        'ServiceCategory',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    
+    # Institución donde se ofrece (opcional, si el doctor ofrece el servicio en varias sedes)
+    institution = models.ForeignKey(
+        'InstitutionSettings',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='doctor_services'
+    )
+    
+    # Datos del servicio
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    price_ves = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    duration_minutes = models.PositiveIntegerField(default=30)
+    
+    # Control de visibilidad
+    is_active = models.BooleanField(default=True)
+    is_visible_global = models.BooleanField(
+        default=True,
+        help_text="Si es True, aparece en el catálogo global"
+    )
+    
+    # Auditoría
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Servicio del Doctor"
+        verbose_name_plural = "Servicios de Doctores"
+        # Un doctor no puede tener dos servicios con el mismo nombre en la misma institución
+        unique_together = ['doctor', 'name', 'institution']
+        ordering = ['doctor', 'name']
+    
+    def __str__(self):
+        return f"{self.name} - {self.doctor.full_name}"
+    
+    def save(self, *args, **kwargs):
+        self.name = normalize_title_case(self.name)
+        super().save(*args, **kwargs)
+
+
+class ServiceAppointment(models.Model):
+    """
+    Cita específica para un servicio del doctor.
+    Vincula la cita general con el servicio específico ofertado.
+    """
+    # Relación con la cita existente (OneToOne opcional, puede ser ForeignKey si una cita tiene múltiples servicios)
+    # Usamos OneToOne por simplicidad inicial, asumiendo una cita = un servicio.
+    appointment = models.OneToOneField(
+        'Appointment',
+        on_delete=models.CASCADE,
+        related_name='service_appointment',
+        null=True,
+        blank=True
+    )
+    
+    # Servicio específico agendado
+    doctor_service = models.ForeignKey(
+        'DoctorService',
+        on_delete=models.CASCADE,
+        related_name='appointments'
+    )
+    
+    # Detalles de la cita
+    scheduled_date = models.DateTimeField()
+    status = models.CharField(
+        max_length=20,
+        choices=SERVICE_APPOINTMENT_STATUS_CHOICES,
+        default='pending'
+    )
+    
+    class Meta:
+        verbose_name = "Cita de Servicio"
+        verbose_name_plural = "Citas de Servicios"
+        ordering = ['-scheduled_date']
+    
+    def __str__(self):
+        return f"Cita {self.get_status_display()} - {self.doctor_service.name}"

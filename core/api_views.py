@@ -6599,3 +6599,73 @@ def payment_ocr_api(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+class DoctorDirectoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Directorio de doctores para el Patient Portal.
+    """
+    queryset = DoctorOperator.objects.filter(is_verified=True)
+    serializer_class = DoctorOperatorSerializer
+    permission_classes = [AllowAny] # O IsAuthenticated si prefieres
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtros opcionales
+        specialty_id = self.request.query_params.get('specialty')
+        if specialty_id:
+            queryset = queryset.filter(specialties__id=specialty_id)
+        return queryset
+
+
+class DoctorProfileViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Perfil de un doctor específico.
+    """
+    queryset = DoctorOperator.objects.filter(is_verified=True)
+    serializer_class = DoctorOperatorSerializer
+    permission_classes = [AllowAny]
+    @action(detail=True, methods=['get'], url_path='services')
+    def get_services(self, request, pk=None):
+        """
+        Obtener servicios activos y visibles de un doctor específico.
+        """
+        doctor = self.get_object()
+        services = DoctorService.objects.filter(
+            doctor=doctor, 
+            is_active=True, 
+            is_visible_global=True
+        )
+        serializer = DoctorServiceSerializer(services, many=True)
+        return Response(serializer.data)
+
+
+class DoctorServiceViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Catálogo global de servicios (instanced by doctors).
+    """
+    queryset = DoctorService.objects.filter(is_active=True, is_visible_global=True)
+    serializer_class = DoctorServiceSerializer
+    permission_classes = [AllowAny]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        # Filtros
+        category_id = self.request.query_params.get('category')
+        if category_id:
+            queryset = queryset.filter(category__id=category_id)
+        
+        doctor_id = self.request.query_params.get('doctor')
+        if doctor_id:
+            queryset = queryset.filter(doctor__id=doctor_id)
+            
+        return queryset
+
+
+class ServiceCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Categorías de servicios.
+    """
+    queryset = ServiceCategory.objects.filter(is_active=True)
+    serializer_class = ServiceCategorySerializer
+    permission_classes = [AllowAny]

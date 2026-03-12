@@ -9,7 +9,7 @@ from .models import (
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
     BillingItem, WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
-    PatientSubscription, PatientInvitation, PatientPaymentMethod
+    PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory, ServiceAppointment
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, BANK_CHOICES, get_bank_name
 from datetime import date
@@ -1387,10 +1387,11 @@ class ChargeItemSerializer(serializers.ModelSerializer):
     qty = serializers.FloatField()
     unit_price = serializers.FloatField()
     subtotal = serializers.FloatField(read_only=True)
-
     # 🔹 Ahora description es opcional y puede ser vacío
     description = serializers.CharField(allow_blank=True, required=False)
-
+    
+    # ✅ NUEVO: Servicio asociado (DoctorService)
+    doctor_service_name = serializers.CharField(source='doctor_service.name', read_only=True)
     class Meta:
         model = ChargeItem
         fields = [
@@ -1401,9 +1402,10 @@ class ChargeItemSerializer(serializers.ModelSerializer):
             "qty",
             "unit_price",
             "subtotal",
+            "doctor_service",     # <--- AGREGADO
+            "doctor_service_name",# <--- AGREGADO
         ]
         read_only_fields = ["id", "subtotal"]
-
     def validate(self, data):
         qty = data.get("qty", 1)
         unit_price = data.get("unit_price", 0)
@@ -1602,14 +1604,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
     """
     Serializer de LISTADO y ESCRITURA: Optimizado para el calendario y la 
     gestión administrativa de citas.
-    
-    ✅ ACTUALIZADO: Ahora acepta services (lista de servicios del catálogo)
-                   y optional initial_payment para pago inmediato
     """
     patient_name = serializers.SerializerMethodField()
-    doctor_name = serializers.SerializerMethodField()  # ✅ NUEVO: Nombre del doctor
+    doctor_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     appointment_type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
+    
+    # ✅ NUEVO: Servicio específico (DoctorService)
+    doctor_service_name = serializers.CharField(source='doctor_service.name', read_only=True)
     
     # ✅ NUEVOS CAMPOS para servicios del catálogo
     services = serializers.ListField(
@@ -1634,7 +1636,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "appointment_date", "appointment_type",
             "appointment_type_display", "status", "status_display",
             "expected_amount", "arrival_time",
-            # ✅ Nuevos campos
+            # ✅ Nuevos campos de servicio
+            "doctor_service",
+            "doctor_service_name",
+            # ✅ Nuevos campos de creación
             "services",
             "initial_payment",
             # 🆕 MÉTRICAS ANTROPOMÉTRICAS del Appointment
@@ -1660,12 +1665,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Creación Élite de Appointment con ChargeOrder automático.
-        
-        Flujo:
-        1. Crear Appointment
-        2. Crear ChargeOrder automáticamente
-        3. Crear ChargeItems directamente desde los datos del frontend
-        4. [OPCIONAL] Crear Payment si se incluye initial_payment
         """
         from .models import ChargeOrder, ChargeItem, Payment
         from decimal import Decimal
@@ -1989,6 +1988,31 @@ class SpecialtySerializer(serializers.ModelSerializer):
         fields = ["id", "code", "name", "category", "parent", "subspecialties", "icon_name"]
 
 
+class DoctorServiceSerializer(serializers.ModelSerializer):
+    # Para lectura: mostrar nombres de doctor e institución
+    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
+    institution_name = serializers.CharField(source='institution.name', read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    
+    # Para escritura: aceptar IDs
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=ServiceCategory.objects.all(), source='category', write_only=True, required=False
+    )
+    institution_id = serializers.PrimaryKeyRelatedField(
+        queryset=InstitutionSettings.objects.all(), source='institution', write_only=True, required=False
+    )
+    
+    class Meta:
+        model = DoctorService
+        fields = [
+            'id', 'doctor', 'doctor_name', 'category', 'category_id', 'category_name',
+            'institution', 'institution_id', 'institution_name',
+            'name', 'description', 'price_ves', 'duration_minutes',
+            'is_active', 'is_visible_global', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['doctor', 'created_at', 'updated_at']
+
+
 class DoctorOperatorSerializer(serializers.ModelSerializer):
     signature = serializers.ImageField(required=False, allow_null=True, use_url=True)
     specialties = SpecialtySerializer(many=True, read_only=True)
@@ -2011,6 +2035,9 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
     )
     formal_title = serializers.CharField(read_only=True)
     
+    # === NUEVO: Servicios del doctor ===
+    services = DoctorServiceSerializer(many=True, read_only=True)
+    
     class Meta:
         model = DoctorOperator
         fields = [
@@ -2023,11 +2050,12 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "specialties",
             "specialty_ids",
             "institutions",
-            "active_institution",  # ← AGREGADO
+            "active_institution",
             "email",
             "phone",
             "signature",
             "formal_title",
+            "services",  # <--- AGREGADO
         ]
     
     def to_representation(self, instance):
@@ -2039,6 +2067,7 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         rep["specialty_ids"] = list(instance.specialties.values_list("id", flat=True))
         rep["institution_ids"] = list(instance.institutions.values_list("id", flat=True))
         return rep
+        
     def update(self, instance, validated_data):
         """
         ✅ FIX DEFINITIVO:
@@ -3448,3 +3477,18 @@ class PatientPaymentMethodSerializer(serializers.ModelSerializer):
             from .choices import get_bank_name
             return get_bank_name(obj.preferred_bank)
         return None
+
+
+class ServiceCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceCategory
+        fields = ['id', 'name', 'description', 'icon', 'is_active']
+
+
+
+class ServiceAppointmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceAppointment
+        fields = ['id', 'appointment', 'doctor_service', 'scheduled_date', 'status']
+
+
