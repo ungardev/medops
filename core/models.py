@@ -497,6 +497,14 @@ class Appointment(models.Model):
         blank=True, 
         help_text="Altura del paciente en cm"
     )
+    doctor_service = models.ForeignKey(
+        'DoctorService',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='appointments',  # Único reverse accessor
+        verbose_name="Servicio específico agendado"
+    )
     
     notes = models.TextField(blank=True, null=True)
     # --- MÉTRICAS DE TIEMPO ---
@@ -5180,41 +5188,3 @@ class DoctorService(models.Model):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
 
-
-class ServiceAppointment(models.Model):
-    """
-    Cita específica para un servicio del doctor.
-    Vincula la cita general con el servicio específico ofertado.
-    """
-    # Relación con la cita existente (OneToOne opcional, puede ser ForeignKey si una cita tiene múltiples servicios)
-    # Usamos OneToOne por simplicidad inicial, asumiendo una cita = un servicio.
-    appointment = models.OneToOneField(
-        'Appointment',
-        on_delete=models.CASCADE,
-        related_name='service_appointment',
-        null=True,
-        blank=True
-    )
-    
-    # Servicio específico agendado
-    doctor_service = models.ForeignKey(
-        'DoctorService',
-        on_delete=models.CASCADE,
-        related_name='appointments'
-    )
-    
-    # Detalles de la cita
-    scheduled_date = models.DateTimeField()
-    status = models.CharField(
-        max_length=20,
-        choices=SERVICE_APPOINTMENT_STATUS_CHOICES,
-        default='pending'
-    )
-    
-    class Meta:
-        verbose_name = "Cita de Servicio"
-        verbose_name_plural = "Citas de Servicios"
-        ordering = ['-scheduled_date']
-    
-    def __str__(self):
-        return f"Cita {self.get_status_display()} - {self.doctor_service.name}"

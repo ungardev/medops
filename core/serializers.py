@@ -9,7 +9,7 @@ from .models import (
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, BillingCategory,
     BillingItem, WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
-    PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory, ServiceAppointment
+    PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, BANK_CHOICES, get_bank_name
 from datetime import date
@@ -3483,12 +3483,4 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceCategory
         fields = ['id', 'name', 'description', 'icon', 'is_active']
-
-
-
-class ServiceAppointmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ServiceAppointment
-        fields = ['id', 'appointment', 'doctor_service', 'scheduled_date', 'status']
-
 
