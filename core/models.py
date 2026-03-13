@@ -5018,6 +5018,10 @@ class ServiceCategory(models.Model):
     icon = models.CharField(max_length=50, blank=True, null=True, help_text="Nombre del icono para UI")
     is_active = models.BooleanField(default=True)
     
+    # Campos de auditoría (AGREGADOS)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     class Meta:
         verbose_name = "Categoría de Servicio"
         verbose_name_plural = "Categorías de Servicios"
