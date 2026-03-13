@@ -5019,8 +5019,8 @@ class ServiceCategory(models.Model):
     is_active = models.BooleanField(default=True)
     
     # Campos de auditoría (AGREGADOS)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(default=timezone.now) 
+    updated_at = models.DateTimeField(auto_now=True) 
     
     class Meta:
         verbose_name = "Categoría de Servicio"
