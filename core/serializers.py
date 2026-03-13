@@ -3437,7 +3437,7 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_services_count(self, obj):
-        return obj.doctor_services.filter(is_active=True).count()
+        return obj.doctorservice_set.filter(is_active=True).count()
 
 
 class ServiceCategoryWriteSerializer(serializers.ModelSerializer):
