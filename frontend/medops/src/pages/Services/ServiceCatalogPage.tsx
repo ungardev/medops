@@ -1,4 +1,4 @@
-// src/pages/Billing/BillingCatalogPage.tsx
+// src/pages/Services/ServiceCatalogPage.tsx
 import React, { useState, useEffect } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useServiceCategories, useCreateServiceCategory, useUpdateServiceCategory, useDeleteServiceCategory } from "@/hooks/services/useServiceCategories";
@@ -14,7 +14,7 @@ import {
   XMarkIcon,
   CheckIcon,
 } from "@heroicons/react/24/outline";
-export default function BillingCatalogPage() {
+export default function ServiceCatalogPage() {
   const notify = useNotify();
   
   // Obtener ID del doctor desde localStorage

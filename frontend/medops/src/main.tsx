@@ -27,7 +27,8 @@ import ReportsPage from "./pages/Reports/ReportsPage";
 import ConfigPage from "./pages/Settings/ConfigPage";
 import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
-import BillingCatalogPage from "./pages/Billing/BillingCatalogPage";
+// CAMBIO: Importar ServiceCatalogPage en lugar de BillingCatalogPage
+import ServiceCatalogPage from "./pages/Services/ServiceCatalogPage";
 // PatientPortal Imports
 import PatientLogin from "./pages/PatientPortal/PatientLogin";
 import PatientLogout from "./pages/PatientPortal/PatientLogout";
@@ -98,7 +99,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="payments" element={<Payments />} />
                 <Route path="payments/pending" element={<PendingPayments />} />  // 🆕 Nueva ruta
                 <Route path="payments/:id" element={<ChargeOrderDetail />} />
-                <Route path="billing/catalog" element={<BillingCatalogPage />} />
+                {/* CAMBIO: Ruta de servicios en lugar de billing/catalog */}
+                <Route path="services" element={<ServiceCatalogPage />} />
                 <Route path="events" element={<Events />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
                 <Route path="consultation" element={<Consultation />} />

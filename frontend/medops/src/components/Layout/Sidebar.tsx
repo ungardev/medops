@@ -28,7 +28,8 @@ const navItems = [
   { path: "/patients", label: "Pacientes", icon: Users },
   { path: "/appointments", label: "Citas", icon: CalendarDays },
   { path: "/payments", label: "Pagos", icon: CreditCard },
-  { path: "/billing/catalog", label: "Servicios", icon: Briefcase },
+  // CAMBIO: Actualizar path de navegación
+  { path: "/services", label: "Servicios", icon: Briefcase },
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
 ];
