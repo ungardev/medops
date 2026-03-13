@@ -5273,14 +5273,14 @@ def payment_stats_api(request):
 def bcv_rate_api(request):
     """Obtener tasa BCV actual"""
     try:
-        from .models import BCVRate
-        latest = BCVRate.objects.first()
+        from .models import BCVRateCache
+        latest = BCVRateCache.objects.first()
         
         if latest:
             return Response({
-                'rate': float(latest.rate),
+                'rate': float(latest.value), 
                 'date': latest.date.isoformat() if latest.date else None,
-                'source': latest.source
+                'source': 'BCV'
             })
         
         return Response({
