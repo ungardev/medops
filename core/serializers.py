@@ -3437,6 +3437,9 @@ class ServiceCategorySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_services_count(self, obj):
+        # CORREGIDO: Usar managers inversos estándar de Django
+        # La ForeignKey 'category' en DoctorService no tiene related_name explícito
+        # Por lo tanto, el manager inverso es 'doctorservice_set'
         return obj.doctorservice_set.filter(is_active=True).count()
 
 
