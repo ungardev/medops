@@ -5,6 +5,7 @@ import { useServiceCategories, useCreateServiceCategory, useUpdateServiceCategor
 import { useDoctorServices, useCreateDoctorService, useUpdateDoctorService, useDeleteDoctorService } from "@/hooks/services/useDoctorServices";
 import type { ServiceCategory, DoctorService, ServiceCategoryInput, DoctorServiceInput } from "@/types/services";
 import { useNotify } from "@/hooks/useNotify";
+import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig"; // ✅ NUEVO: Importar hook
 import {
   PlusIcon,
   PencilSquareIcon,
@@ -17,24 +18,9 @@ import {
 export default function ServiceCatalogPage() {
   const notify = useNotify();
   
-  // Obtener ID del doctor desde localStorage
-  const [doctorId, setDoctorId] = useState<number | null>(null);
-  
-  useEffect(() => {
-    // Intentar obtener el ID del doctor desde diferentes claves de localStorage
-    const storedDoctorId = localStorage.getItem('doctor_id') || 
-                          localStorage.getItem('doctorId') || 
-                          localStorage.getItem('user_id') ||
-                          localStorage.getItem('userId');
-    
-    if (storedDoctorId) {
-      setDoctorId(parseInt(storedDoctorId, 10));
-    } else {
-      // Si no hay ID en localStorage, intentar obtenerlo desde useDoctorConfig
-      // Opcional: puedes implementar esto si es necesario
-      console.warn('No se encontró doctor_id en localStorage');
-    }
-  }, []);
+  // ✅ CAMBIO: Obtener doctor ID desde backend en lugar de localStorage
+  const { data: doctorConfig, isLoading: loadingDoctor } = useDoctorConfig();
+  const doctorId = doctorConfig?.id ?? null;
   
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,7 +51,7 @@ export default function ServiceCatalogPage() {
   });
   
   const [serviceForm, setServiceForm] = useState<DoctorServiceInput>({
-    doctor: doctorId, // Usar el ID obtenido desde localStorage
+    doctor: doctorId, // Usar el ID obtenido desde backend
     category: null,
     institution: null,
     code: "",
@@ -77,7 +63,7 @@ export default function ServiceCatalogPage() {
     is_visible_global: true,
   });
   
-  // Actualizar serviceForm cuando cambie doctorId
+  // ✅ CAMBIO: Actualizar serviceForm cuando cambie doctorId desde backend
   useEffect(() => {
     if (doctorId) {
       setServiceForm(prev => ({ ...prev, doctor: doctorId }));
