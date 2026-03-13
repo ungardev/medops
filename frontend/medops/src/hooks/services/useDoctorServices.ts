@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/api/client";
 import type { DoctorService, DoctorServiceInput } from "@/types/services";
+// Definir interfaz para respuesta paginada
+interface PaginatedDoctorServices {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: DoctorService[];
+}
 // Hook para obtener servicios (con filtros opcionales)
 export function useDoctorServices(categoryId?: number | null, searchQuery?: string) {
   return useQuery<DoctorService[]>({
@@ -14,7 +21,9 @@ export function useDoctorServices(categoryId?: number | null, searchQuery?: stri
       
       if (params.toString()) url += `?${params.toString()}`;
       
-      return apiFetch<DoctorService[]>(url); // ✅ CORRECTO: apiFetch ya devuelve el dato parseado
+      // ✅ CORREGIDO: Extraer results de la respuesta paginada
+      const response = await apiFetch<PaginatedDoctorServices>(url);
+      return response.results;
     },
   });
 }
@@ -25,7 +34,9 @@ export function useDoctorServicesSearch(query: string) {
     queryFn: async () => {
       if (!query || query.length < 2) return [];
       
-      return apiFetch<DoctorService[]>(`doctor-services/?search=${encodeURIComponent(query)}`); // ✅ CORRECTO
+      // ✅ CORREGIDO: Extraer results de la respuesta paginada
+      const response = await apiFetch<PaginatedDoctorServices>(`doctor-services/?search=${encodeURIComponent(query)}`);
+      return response.results;
     },
     enabled: query.length >= 2,
   });
@@ -35,7 +46,8 @@ export function useDoctorService(id: number | null) {
   return useQuery<DoctorService>({
     queryKey: ["doctor-services", id],
     queryFn: async () => {
-      return apiFetch<DoctorService>(`doctor-services/${id}/`); // ✅ CORRECTO
+      // ✅ CORRECTO: Endpoint de detalle devuelve el objeto directamente
+      return apiFetch<DoctorService>(`doctor-services/${id}/`);
     },
     enabled: !!id,
   });
@@ -46,7 +58,8 @@ export function useCreateDoctorService() {
   
   return useMutation<DoctorService, Error, DoctorServiceInput>({
     mutationFn: async (data) => {
-      return apiFetch<DoctorService>("doctor-services/", { // ✅ CORRECTO
+      // ✅ CORRECTO: POST devuelve el objeto creado directamente
+      return apiFetch<DoctorService>("doctor-services/", {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -62,7 +75,8 @@ export function useUpdateDoctorService() {
   
   return useMutation<DoctorService, Error, { id: number; data: DoctorServiceInput }>({
     mutationFn: async ({ id, data }) => {
-      return apiFetch<DoctorService>(`doctor-services/${id}/`, { // ✅ CORRECTO
+      // ✅ CORRECTO: PUT devuelve el objeto actualizado directamente
+      return apiFetch<DoctorService>(`doctor-services/${id}/`, {
         method: "PUT",
         body: JSON.stringify(data),
       });
@@ -78,7 +92,7 @@ export function useDeleteDoctorService() {
   
   return useMutation<void, Error, number>({
     mutationFn: async (id) => {
-      await apiFetch<void>(`doctor-services/${id}/`, { // ✅ CORRECTO
+      await apiFetch<void>(`doctor-services/${id}/`, {
         method: "DELETE",
       });
     },

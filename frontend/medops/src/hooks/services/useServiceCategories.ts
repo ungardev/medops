@@ -6,7 +6,13 @@ export function useServiceCategories() {
   return useQuery<ServiceCategory[]>({
     queryKey: ["service-categories"],
     queryFn: async () => {
-      return apiFetch<ServiceCategory[]>("service-categories/"); // ✅ CORRECTO
+      const response = await apiFetch<{
+        count: number;
+        next: string | null;
+        previous: string | null;
+        results: ServiceCategory[];
+      }>("service-categories/");
+      return response.results;
     },
   });
 }
