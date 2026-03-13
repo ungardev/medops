@@ -175,7 +175,7 @@ export const ActiveInstitutionCard: React.FC = () => {
   }
   
   const bcvDisplay = bcvRate 
-    ? `${Number(bcvRate.value).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
+    ? `${Number(bcvRate.rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
     : "--";
   
   return (

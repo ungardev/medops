@@ -71,7 +71,7 @@ export function PatientDashboard() {
   };
   
   const bcvDisplay = bcvRate 
-    ? `${Number(bcvRate.value).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
+    ? `${Number(bcvRate.rate).toLocaleString('es-VE', { minimumFractionDigits: 2 })} Bs/USD`
     : "--";
   
   if (isLoading) {
