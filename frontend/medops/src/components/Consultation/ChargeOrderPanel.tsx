@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { ChargeOrder } from "../../types/payments";
 import { useChargeOrder } from "../../hooks/consultations/useChargeOrder";
 import { apiFetch } from "../../api/client";
-import type { BillingItem } from "../../types/billing";
+import type { DoctorService } from "../../types/services"; // CAMBIO: Importar DoctorService
 import ServiceSearchCombobox from "./ServiceSearchCombobox";
 import { 
   ChevronDownIcon, 
@@ -23,7 +23,7 @@ function isAppointmentMode(props: ChargeOrderPanelProps): props is { appointment
   return (props as any).appointmentId !== undefined;
 }
 interface PendingItem {
-  billingItem: BillingItem;
+  service: DoctorService; // CAMBIO: Cambiar de billingItem a service
   quantity: number;
 }
 const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
@@ -43,32 +43,32 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     }
     setOrder(data ?? null);
   }, [props, data]);
-  const handleSelectService = (item: BillingItem) => {
-    const existing = pendingItems.find(p => p.billingItem.id === item.id);
+  const handleSelectService = (service: DoctorService) => { // CAMBIO: Parámetro service en lugar de item
+    const existing = pendingItems.find(p => p.service.id === service.id);
     if (existing) {
       setPendingItems(pendingItems.map(p => 
-        p.billingItem.id === item.id 
+        p.service.id === service.id 
           ? { ...p, quantity: p.quantity + 1 }
           : p
       ));
     } else {
-      setPendingItems([...pendingItems, { billingItem: item, quantity: 1 }]);
+      setPendingItems([...pendingItems, { service: service, quantity: 1 }]);
     }
   };
-  const updatePendingQuantity = (itemId: number, delta: number) => {
+  const updatePendingQuantity = (serviceId: number, delta: number) => { // CAMBIO: serviceId
     setPendingItems(pendingItems.map(p => {
-      if (p.billingItem.id === itemId) {
+      if (p.service.id === serviceId) {
         const newQty = Math.max(1, p.quantity + delta);
         return { ...p, quantity: newQty };
       }
       return p;
     }));
   };
-  const removePendingItem = (itemId: number) => {
-    setPendingItems(pendingItems.filter(p => p.billingItem.id !== itemId));
+  const removePendingItem = (serviceId: number) => { // CAMBIO: serviceId
+    setPendingItems(pendingItems.filter(p => p.service.id !== serviceId));
   };
   const pendingSubtotal = pendingItems.reduce(
-    (sum, p) => sum + (Number(p.billingItem.unit_price) * p.quantity),
+    (sum, p) => sum + (Number(p.service.price_usd) * p.quantity), // CAMBIO: price_usd
     0
   );
   // ✅ NUEVO: Agregar items usando endpoint unificado (crea orden si no existe)
@@ -78,10 +78,10 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     setIsSavingItems(true);
     try {
       const itemsPayload = pendingItems.map(p => ({
-        code: p.billingItem.code,
-        description: p.billingItem.name,
+        code: p.service.code, // CAMBIO
+        description: p.service.name, // CAMBIO
         qty: p.quantity,
-        unit_price: p.billingItem.unit_price,
+        unit_price: p.service.price_usd, // CAMBIO: price_usd
       }));
       await apiFetch(`appointments/${props.appointmentId}/charge-order/add-items/`, {
         method: "POST",
@@ -194,11 +194,11 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                     
                     <div className="space-y-1">
                       {pendingItems.map((p) => (
-                        <div key={p.billingItem.id} className="flex items-center justify-between p-2 bg-black/30 border border-white/5 group">
+                        <div key={p.service.id} className="flex items-center justify-between p-2 bg-black/30 border border-white/5 group">
                           <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold truncate uppercase">{p.billingItem.name}</p>
+                            <p className="text-[10px] font-bold truncate uppercase">{p.service.name}</p>
                             <p className="text-[8px] font-mono text-[var(--palantir-muted)]">
-                              [{p.billingItem.code}] ${Number(p.billingItem.unit_price).toFixed(2)} c/u
+                              [{p.service.code}] ${Number(p.service.price_usd).toFixed(2)} c/u
                             </p>
                           </div>
                           
@@ -206,7 +206,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                             <div className="flex items-center gap-1 bg-black/40 border border-[var(--palantir-border)]">
                               <button
                                 type="button"
-                                onClick={() => updatePendingQuantity(p.billingItem.id, -1)}
+                                onClick={() => updatePendingQuantity(p.service.id, -1)}
                                 className="p-1 hover:bg-white/10"
                               >
                                 <MinusIcon className="w-3 h-3" />
@@ -216,7 +216,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                               </span>
                               <button
                                 type="button"
-                                onClick={() => updatePendingQuantity(p.billingItem.id, 1)}
+                                onClick={() => updatePendingQuantity(p.service.id, 1)}
                                 className="p-1 hover:bg-white/10"
                               >
                                 <PlusIcon className="w-3 h-3" />
@@ -224,12 +224,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                             </div>
                             
                             <span className="text-[10px] font-black font-mono w-16 text-right">
-                              ${(Number(p.billingItem.unit_price) * p.quantity).toFixed(2)}
+                              ${(Number(p.service.price_usd) * p.quantity).toFixed(2)}
                             </span>
                             
                             <button
                               type="button"
-                              onClick={() => removePendingItem(p.billingItem.id)}
+                              onClick={() => removePendingItem(p.service.id)}
                               className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
                             >
                               <XMarkIcon className="w-3 h-3 text-red-500" />
@@ -283,6 +283,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
         )}
       </div>
+      
       {/* 03. BOTÓN NAVEGAR A PAGOS - Solo si existe orden con items */}
       {!readOnly && hasItems && (
         <button

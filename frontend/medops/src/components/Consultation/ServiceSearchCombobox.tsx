@@ -1,24 +1,23 @@
-// src/components/Consultation/ServiceSearchCombobox.tsx
 import { Combobox, Transition } from "@headlessui/react";
 import { useState, Fragment } from "react";
-import type { BillingItem } from "../../types/billing";
-import { useBillingItemsSearch } from "../../hooks/billing/useBillingItems";
+import type { DoctorService } from "../../types/services";
+import { useDoctorServicesSearch } from "../../hooks/services/useDoctorServices";
 import { 
   MagnifyingGlassIcon, 
   ChevronUpDownIcon,
   CurrencyDollarIcon
 } from "@heroicons/react/20/solid";
 interface Props {
-  onSelect: (item: BillingItem) => void;
+  onSelect: (service: DoctorService) => void;
   disabled?: boolean;
 }
 export default function ServiceSearchCombobox({ onSelect, disabled }: Props) {
   const [query, setQuery] = useState("");
-  const { data: results = [], isFetching } = useBillingItemsSearch(query);
+  const { data: results = [], isFetching } = useDoctorServicesSearch(query);
   
-  const handleSelect = (item: BillingItem | null) => {
-    if (!item) return;
-    onSelect(item);
+  const handleSelect = (service: DoctorService | null) => {
+    if (!service) return;
+    onSelect(service);
     setQuery("");
   };
   return (
@@ -62,27 +61,27 @@ export default function ServiceSearchCombobox({ onSelect, disabled }: Props) {
                 ESCRIBE_PARA_BUSCAR...
               </div>
             ) : (
-              results.map((item) => (
+              results.map((service) => (
                 <Combobox.Option
-                  key={item.id}
+                  key={service.id}
                   className={({ active }) =>
                     `relative cursor-pointer select-none py-2 pl-10 pr-4 text-[10px] font-mono ${active ? 'bg-[var(--palantir-active)]/10 text-[var(--palantir-text)]' : 'text-[var(--palantir-muted)]'}`
                   }
-                  value={item}
+                  value={service}
                 >
                   {({ active }) => (
                     <>
                       <div className="flex items-center justify-between">
                         <span className="uppercase tracking-wider">
-                          <span className="opacity-50">[{item.code}]</span> {item.name}
+                          <span className="opacity-50">[{service.code}]</span> {service.name}
                         </span>
                         <span className="text-[var(--palantir-active)] font-black">
-                          ${Number(item.unit_price).toFixed(2)}
+                          ${Number(service.price_usd).toFixed(2)}
                         </span>
                       </div>
-                      {item.category_name && (
+                      {service.category_name && (
                         <span className="text-[8px] opacity-40 block mt-0.5">
-                          {item.category_name}
+                          {service.category_name}
                         </span>
                       )}
                       <span className="absolute inset-y-0 left-0 flex items-center pl-3">
