@@ -6,7 +6,7 @@ export interface BCVRate {
   timestamp: number;
 }
 const CACHE_KEY = "bcv_rate";
-const CACHE_EXPIRY = 60 * 60 * 1000; // 1 hora en milisegundos
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutos en milisegundos (reducido de 1 hora)
 // Helper para obtener tasa desde localStorage
 const getRateFromCache = (): BCVRate | null => {
   try {
@@ -16,7 +16,7 @@ const getRateFromCache = (): BCVRate | null => {
     const data: BCVRate = JSON.parse(cached);
     const now = Date.now();
     
-    // Verificar si el cache aún es válido (menos de 1 hora)
+    // Verificar si el cache aún es válido (menos de 5 minutos)
     if (now - data.timestamp < CACHE_EXPIRY) {
       return data;
     }
@@ -53,7 +53,6 @@ export function useBCVRate() {
       
       // 2. Si no hay cache, obtener desde API
       try {
-        // ✅ FIX: Usar apiFetch directamente (ya devuelve el dato parseado)
         const data = await apiFetch<any>("bcv-rate/");
         const rate = data.rate || data.value || 0;
         
@@ -73,7 +72,7 @@ export function useBCVRate() {
         };
       }
     },
-    staleTime: CACHE_EXPIRY, // Cache válido por 1 hora
+    staleTime: CACHE_EXPIRY, // Cache válido por 5 minutos
   });
 }
 // Helper para convertir USD a VES

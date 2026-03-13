@@ -1,6 +1,7 @@
 // src/components/Dashboard/ActiveInstitutionCard.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   BuildingOfficeIcon,
   ClipboardIcon,
@@ -70,6 +71,7 @@ const metricsConfig = {
 };
 export const ActiveInstitutionCard: React.FC = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { range, setRange, currency, setCurrency } = useDashboardFilters();
   
   const { data: activeData, isLoading } = useActiveInstitution({ range, currency });
@@ -78,6 +80,8 @@ export const ActiveInstitutionCard: React.FC = () => {
   
   // Clock state
   const [now, setNow] = useState(moment());
+  const [isUpdating, setIsUpdating] = useState(false);
+  
   useEffect(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
     return () => clearInterval(timer);
@@ -110,6 +114,22 @@ export const ActiveInstitutionCard: React.FC = () => {
   
   const handleMetricClick = (href?: string) => {
     if (href) navigate(href);
+  };
+  
+  // Función para actualizar tasa BCV manualmente
+  const handleUpdateBCVRate = async () => {
+    setIsUpdating(true);
+    try {
+      // 1. Limpiar caché local
+      localStorage.removeItem('bcv_rate');
+      
+      // 2. Invalidar query de React Query
+      await queryClient.invalidateQueries({ queryKey: ['bcv-rate'] });
+    } catch (error) {
+      console.error('Error actualizando tasa BCV:', error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
   
   const getMetricLabel = (key: string): string => {
@@ -252,10 +272,15 @@ export const ActiveInstitutionCard: React.FC = () => {
         {/* Controles + BCV - LadoDer en desktop */}
         <div className="flex flex-col items-start md:items-end gap-3 shrink-0 w-full md:w-auto">
           
-          {/* BCV Rate - siempre visible */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-sm">
+          {/* BCV Rate - Badge clickeable para actualizar */}
+          <div 
+            className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 rounded-sm cursor-pointer hover:bg-amber-500/20 transition-colors"
+            onClick={handleUpdateBCVRate}
+            title="Actualizar tasa BCV"
+          >
             <span className="text-[8px] font-black text-amber-500/70 uppercase tracking-wider">BCV:</span>
             <span className="text-[10px] font-mono font-bold text-amber-500">{bcvDisplay}</span>
+            {isUpdating && <span className="ml-1 animate-spin text-[10px]">⏳</span>}
           </div>
           
           {/* Botones filtros */}
