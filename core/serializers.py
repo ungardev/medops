@@ -3223,10 +3223,10 @@ class PaymentTransactionCreateSerializer(serializers.ModelSerializer):
     def _get_bcv_rate(self):
         """Obtiene tasa BCV"""
         try:
-            from .models import BCVRate
-            latest = BCVRate.objects.first()
+            from .models import BCVRateCache
+            latest = BCVRateCache.objects.first()
             if latest:
-                return latest.rate
+                return latest.value
         except Exception:
             pass
         return None
