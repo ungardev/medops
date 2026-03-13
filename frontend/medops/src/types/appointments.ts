@@ -124,7 +124,7 @@ export interface AppointmentUI extends Appointment {
 // SERVICIOS DEL CATÁLOGO (para AppointmentInput - NUEVO)
 // =====================================================
 export interface AppointmentServiceInput {
-  billing_item_id: number;
+  doctor_service_id: number;
   qty: number;
 }
 // =====================================================

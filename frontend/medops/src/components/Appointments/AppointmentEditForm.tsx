@@ -1,10 +1,14 @@
 // src/components/Appointments/AppointmentEditForm.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { AppointmentInput } from "../../types/appointments";
-import type { BillingItem } from "../../types/billing";
+// ✅ CAMBIO: Importar tipo DoctorService en lugar de BillingItem
+import type { DoctorService } from "../../types/services";
 import { useAppointment } from "../../hooks/appointments";
-import { useBillingCategories } from "@/hooks/billing/useBillingCategories";
-import { useBillingItemsSearch } from "@/hooks/billing/useBillingItems";
+// ✅ CAMBIO: Importar hooks de services
+import { useServiceCategories } from "@/hooks/services/useServiceCategories";
+import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices";
+// ✅ NUEVO: Hook para tasa BCV
+import { useBCVRate, convertUSDToVES } from "@/hooks/dashboard/useBCVRate";
 import { 
   XMarkIcon, 
   PencilSquareIcon, 
@@ -27,13 +31,31 @@ interface Props {
 interface FormErrors {
   appointment_date?: string;
 }
+// ✅ NUEVO: Interfaz auxiliar para servicios temporales
+interface TemporaryService {
+  id: number | string;
+  code: string;
+  name: string;
+  price_usd: number;
+  price_ves?: number;
+  category?: number | null;
+  category_name?: string;
+  doctor?: number;
+  duration_minutes: number;
+  is_active: boolean;
+  is_visible_global: boolean;
+}
+// ✅ CAMBIO: Tipo SelectedService usa TemporaryService
 interface SelectedService {
-  billingItem: BillingItem;
+  service: TemporaryService;
   quantity: number;
 }
 export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }: Props) {
   // ✅ FIX: Obtener datos completos del appointment
   const { data: appointmentData, isLoading } = useAppointment(appointmentId);
+  
+  // ✅ NUEVO: Obtener tasa BCV
+  const { data: bcvRate } = useBCVRate();
   
   const [form, setForm] = useState<AppointmentInput>({
     patient: 0,
@@ -51,12 +73,12 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   
-  // Servicios del catálogo
+  // ✅ CAMBIO: Servicios del catálogo usando hooks de services
   const [serviceSearch, setServiceSearch] = useState("");
-  const { data: categories = [] } = useBillingCategories();
-  const { data: serviceResults = [] } = useBillingItemsSearch(serviceSearch);
+  const { data: categories = [] } = useServiceCategories();
+  const { data: serviceResults = [] } = useDoctorServicesSearch(serviceSearch);
   
-  // ✅ FIX: Estado de servicios seleccionados
+  // ✅ FIX: Estado de servicios seleccionados (usando TemporaryService)
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   
   // ✅ FIX: Actualizar form cuando appointmentData cargue
@@ -72,44 +94,67 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
         notes: appointmentData.notes ?? "",
       });
       
-      // ✅ FIX: Cargar servicios desde charge_order existente
+      // ✅ FIX: Cargar servicios desde charge_order existente usando TemporaryService
       const items = appointmentData.charge_order?.items ?? [];
       if (items.length > 0) {
         setSelectedServices(items.map((item: any) => ({
-          billingItem: {
+          service: {
             id: item.id,
             code: item.code,
             name: item.description,
-            unit_price: item.unit_price,
+            price_usd: item.unit_price,
+            price_ves: bcvRate ? convertUSDToVES(item.unit_price, bcvRate) : undefined,
             category: null,
-          } as BillingItem,
+            category_name: undefined,
+            doctor: appointmentData.doctor?.id ?? 0,
+            duration_minutes: 30, // Valor predeterminado
+            is_active: true,       // Valor predeterminado
+            is_visible_global: true // Valor predeterminado
+          } as TemporaryService,
           quantity: item.qty
         })));
       } else if (appointmentData.expected_amount) {
         setSelectedServices([{
-          billingItem: {
+          service: {
             id: 0,
             code: 'CONSULT',
             name: 'Consulta',
-            unit_price: Number(appointmentData.expected_amount),
+            price_usd: Number(appointmentData.expected_amount),
+            price_ves: bcvRate ? convertUSDToVES(Number(appointmentData.expected_amount), bcvRate) : undefined,
             category: null,
-          } as BillingItem,
+            category_name: undefined,
+            doctor: appointmentData.doctor?.id ?? 0,
+            duration_minutes: 30, // Valor predeterminado
+            is_active: true,       // Valor predeterminado
+            is_visible_global: true // Valor predeterminado
+          } as TemporaryService,
           quantity: 1
         }]);
       }
     }
-  }, [appointmentData]);
-  
-  // Agrupar servicios por categoría
+  }, [appointmentData, bcvRate]);
+  // ✅ CAMBIO: Agrupar servicios por categoría usando TemporaryService
   const groupedServices = useMemo(() => {
-    const groups: Record<string, BillingItem[]> = {};
+    const groups: Record<string, TemporaryService[]> = {};
     serviceResults.forEach(item => {
       const cat = item.category_name || "OTROS";
       if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(item);
+      groups[cat].push({
+        id: item.id,
+        code: item.code,
+        name: item.name,
+        price_usd: item.price_usd,
+        price_ves: bcvRate ? convertUSDToVES(item.price_usd, bcvRate) : undefined,
+        category: item.category,
+        category_name: item.category_name,
+        doctor: item.doctor,
+        duration_minutes: item.duration_minutes || 30,
+        is_active: item.is_active || true,
+        is_visible_global: item.is_visible_global || true,
+      } as TemporaryService);
     });
     return groups;
-  }, [serviceResults]);
+  }, [serviceResults, bcvRate]);
   
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -133,37 +178,56 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
     }
   };
   
-  const handleAddService = (item: BillingItem) => {
-    const existing = selectedServices.find(s => s.billingItem.id === item.id);
+  // ✅ CAMBIO: handleAddService usa TemporaryService
+  const handleAddService = (service: DoctorService) => {
+    // Convertir DoctorService a TemporaryService
+    const tempService: TemporaryService = {
+      id: service.id,
+      code: service.code,
+      name: service.name,
+      price_usd: service.price_usd,
+      price_ves: bcvRate ? convertUSDToVES(service.price_usd, bcvRate) : undefined,
+      category: service.category,
+      category_name: service.category_name,
+      doctor: service.doctor,
+      duration_minutes: service.duration_minutes || 30,
+      is_active: service.is_active || true,
+      is_visible_global: service.is_visible_global || true,
+    };
+    
+    const existing = selectedServices.find(s => s.service.id === service.id);
     if (existing) {
       setSelectedServices(prev => prev.map(s => 
-        s.billingItem.id === item.id 
+        s.service.id === service.id 
           ? { ...s, quantity: s.quantity + 1 }
           : s
       ));
     } else {
-      setSelectedServices(prev => [...prev, { billingItem: item, quantity: 1 }]);
+      setSelectedServices(prev => [...prev, { service: tempService, quantity: 1 }]);
     }
     setServiceSearch("");
     setHasChanges(true);
   };
   
-  const handleRemoveService = (itemId: number) => {
-    setSelectedServices(prev => prev.filter(s => s.billingItem.id !== itemId));
+  // ✅ CAMBIO: handleRemoveService usa service.id
+  const handleRemoveService = (serviceId: number | string) => {
+    setSelectedServices(prev => prev.filter(s => s.service.id !== serviceId));
     setHasChanges(true);
   };
   
-  const handleServiceQuantity = (itemId: number, delta: number) => {
+  // ✅ CAMBIO: handleServiceQuantity usa service.id
+  const handleServiceQuantity = (serviceId: number | string, delta: number) => {
     setSelectedServices(prev => prev.map(s => 
-      s.billingItem.id === itemId 
+      s.service.id === serviceId 
         ? { ...s, quantity: Math.max(1, s.quantity + delta) }
         : s
     ));
     setHasChanges(true);
   };
   
+  // ✅ CAMBIO: Cálculo del total usa price_usd
   const totalAmount = selectedServices.reduce(
-    (sum, s) => sum + (Number(s.billingItem.unit_price) * s.quantity),
+    (sum, s) => sum + (Number(s.service.price_usd) * s.quantity),
     0
   );
   
@@ -183,6 +247,8 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       const payload: AppointmentInput = {
         ...form,
         expected_amount: totalAmount.toFixed(2),
+        // Nota: El backend de edición de cita no parece recibir servicios directamente aquí,
+        // pero se mantiene la estructura por consistencia o si se implementa en el futuro
       };
       
       if (onSubmit && appointmentId) {
@@ -198,187 +264,199 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       setIsSubmitting(false);
     }
   };
-  
-  // ✅ FIX: Mostrar loading mientras carga
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[60]">
-        <div className="flex flex-col items-center gap-4">
-          <ArrowPathIcon className="w-8 h-8 text-white/40 animate-spin" />
-          <span className="text-[10px] font-mono text-white/40 uppercase">Loading_Record...</span>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
       </div>
     );
   }
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-[60] p-4">
-      <div className="max-w-2xl w-full bg-[#0a0a0b] border border-white/10 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-        
-        {/* Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-black/40">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 border border-blue-500/20 text-blue-400">
-              <PencilSquareIcon className="h-5 w-5" />
-            </div>
-            <div>
-              <span className="text-[9px] font-black text-blue-400 uppercase tracking-[0.3em]">Record_Modification</span>
-              <h2 className="text-lg font-black text-white uppercase">
-                Edit_Entry <span className="text-white/40 font-mono ml-2">#ID-{appointmentId}</span>
-              </h2>
-            </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Información de la Cita Existente */}
+      <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
+        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+          <DocumentTextIcon className="w-4 h-4" /> Información de la Cita
+        </h3>
+        <div className="grid grid-cols-2 gap-4 text-white text-sm">
+          <div>
+            <span className="text-white/60">Paciente:</span>{" "}
+            {appointmentData?.patient?.full_name}
           </div>
-          <button type="button" className="p-2 hover:bg-red-500/20 text-white/40 hover:text-red-400" onClick={onClose}>
-            <XMarkIcon className="h-5 w-5" />
-          </button>
+          <div>
+            <span className="text-white/60">Doctor:</span>{" "}
+            {appointmentData?.doctor?.full_name}
+          </div>
+          <div>
+            <span className="text-white/60">Fecha Actual:</span>{" "}
+            {appointmentData?.appointment_date}
+          </div>
+          <div>
+            <span className="text-white/60">Estado:</span>{" "}
+            {appointmentData?.status}
+          </div>
         </div>
+      </div>
+      
+      {/* Selección de Servicios (Catálogo) */}
+      <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
+        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+          <CurrencyDollarIcon className="w-4 h-4" /> Agregar Servicios del Catálogo
+        </h3>
         
-        {submitError && (
-          <div className="mx-6 mt-4 p-3 bg-red-500/10 border border-red-500/30 flex items-center gap-2">
-            <ExclamationCircleIcon className="w-4 h-4 text-red-400" />
-            <span className="text-[10px] text-red-400 font-mono">{submitError}</span>
-          </div>
-        )}
-        
-        <div className="p-3 mx-6 mt-4 bg-blue-500/5 border-l-2 border-blue-500/50">
-          <p className="text-[9px] text-blue-400/80">SYSTEM_NOTICE: Subject identity locked. Services and date can be modified.</p>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          
-          {/* PATIENT (LOCKED) - ✅ Ahora muestra datos correctos */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
-              <UserIcon className="w-3 h-3" /> Locked_Subject
-            </label>
-            <div className="p-3 bg-white/5 border border-white/10 flex items-center gap-3 opacity-80">
-              <UserCircleIcon className="w-6 h-6 text-blue-400" />
-              <div>
-                <p className="text-sm font-bold text-white">{appointmentData?.patient?.full_name || "UNKNOWN"}</p>
-                <span className="text-[9px] text-white/40">ID: {appointmentData?.patient?.id} | DOC: {appointmentData?.patient?.national_id || "N/A"}</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* INSTITUTION (LOCKED) - ✅ Ahora muestra datos correctos */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
-              <BuildingOfficeIcon className="w-3 h-3" /> Medical_Center
-            </label>
-            <div className="p-3 bg-white/5 border border-white/10 flex items-center gap-3 opacity-60">
-              <BuildingOfficeIcon className="w-5 h-5 text-purple-400" />
-              <div>
-                <p className="text-sm font-bold text-white">{appointmentData?.institution?.name || "UNKNOWN_INSTITUTION"}</p>
-                <span className="text-[9px] text-white/40">TAX_ID: {appointmentData?.institution?.tax_id || "N/A"}</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* DOCTOR - ✅ Ahora muestra datos correctos */}
-          <div className="p-3 bg-white/5 border border-white/10 flex items-center gap-3">
-            <UserCircleIcon className="w-6 h-6 text-blue-400" />
-            <div>
-              <span className="text-[8px] text-white/40 uppercase">Attending_Physician</span>
-              <p className="text-sm font-bold text-white">{appointmentData?.doctor?.full_name || "UNKNOWN_DOCTOR"}</p>
-            </div>
-          </div>
-          
-          {/* SERVICES */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
-              <BeakerIcon className="w-3 h-3" /> Modify_Services
-            </label>
-            
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="ADD_SERVICE_FROM_CATALOG..."
-                value={serviceSearch}
-                onChange={(e) => setServiceSearch(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 pl-9 pr-3 py-2 text-sm font-mono text-white"
-              />
-            </div>
-            
-            {serviceSearch.length >= 2 && Object.keys(groupedServices).length > 0 && (
-              <div className="bg-black/80 border border-white/10 max-h-40 overflow-y-auto">
-                {Object.entries(groupedServices).map(([category, items]) => (
-                  <div key={category}>
-                    <div className="px-3 py-1 bg-white/5 text-[8px] text-white/40 uppercase sticky top-0">{category}</div>
-                    {items.slice(0, 3).map(item => (
-                      <button type="button" onClick={() => handleAddService(item)} className="w-full p-2 flex justify-between hover:bg-white/5 text-sm">
-                        <span className="text-white">{item.name}</span>
-                        <span className="text-emerald-400">${Number(item.unit_price).toFixed(2)}</span>
-                      </button>
-                    ))}
+        {/* Buscador de servicios */}
+        <div className="relative mb-4">
+          <input
+            type="text"
+            value={serviceSearch}
+            onChange={(e) => setServiceSearch(e.target.value)}
+            placeholder="Buscar servicios..."
+            className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none"
+          />
+          {serviceSearch.length >= 2 && (
+            <div className="absolute z-10 w-full mt-1 bg-[#1a1a1a] border border-white/10 max-h-60 overflow-y-auto rounded shadow-lg">
+              {Object.entries(groupedServices).map(([category, services]) => (
+                <div key={category}>
+                  <div className="px-3 py-2 bg-white/5 text-xs font-bold text-white/60 uppercase">
+                    {category}
                   </div>
-                ))}
-              </div>
-            )}
-            
-            {selectedServices.length > 0 && (
-              <div className="space-y-1">
-                {selectedServices.map(s => (
-                  <div key={s.billingItem.id} className="p-2 bg-white/5 border border-white/10 flex justify-between items-center">
-                    <span className="text-sm text-white">{s.billingItem.name}</span>
-                    <div className="flex items-center gap-2">
-                      <button type="button" onClick={() => handleServiceQuantity(s.billingItem.id, -1)} className="w-5 h-5 bg-white/10 text-white">-</button>
-                      <span className="w-6 text-center text-white">{s.quantity}</span>
-                      <button type="button" onClick={() => handleServiceQuantity(s.billingItem.id, 1)} className="w-5 h-5 bg-white/10 text-white">+</button>
-                      <span className="text-emerald-400 w-16 text-right">${(Number(s.billingItem.unit_price) * s.quantity).toFixed(2)}</span>
-                      <button type="button" onClick={() => handleRemoveService(s.billingItem.id)} className="text-red-400">
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
+                  {services.map((service) => (
+                    <div
+                      key={service.id}
+                      onClick={() => handleAddService(service as DoctorService)}
+                      className="p-3 hover:bg-white/10 cursor-pointer text-white text-sm flex justify-between items-center"
+                    >
+                      <div>
+                        <div>{service.name}</div>
+                        <div className="text-white/60 text-xs">
+                          {service.duration_minutes} min
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-emerald-400">${service.price_usd.toFixed(2)}</div>
+                        {service.price_ves && (
+                          <div className="text-yellow-400 text-xs">
+                            Bs. {service.price_ves.toFixed(2)}
+                          </div>
+                        )}
+                      </div>
                     </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Servicios seleccionados */}
+        {selectedServices.length > 0 && (
+          <div className="space-y-2">
+            {selectedServices.map((selected) => (
+              <div
+                key={selected.service.id}
+                className="flex items-center justify-between p-2 bg-black/30 border border-white/5 rounded"
+              >
+                <div className="flex-1">
+                  <div className="text-white text-sm">{selected.service.name}</div>
+                  <div className="text-white/60 text-xs">
+                    {selected.service.code} • {selected.service.duration_minutes} min
                   </div>
-                ))}
-                <div className="flex justify-between p-2 bg-blue-500/10 border border-blue-500/30">
-                  <span className="text-sm font-bold text-white">TOTAL</span>
-                  <span className="text-lg text-emerald-400">${totalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1 bg-black/40 border border-white/10 rounded">
+                    <button
+                      type="button"
+                      onClick={() => handleServiceQuantity(selected.service.id, -1)}
+                      className="p-1 hover:bg-white/10 text-white"
+                    >
+                      -
+                    </button>
+                    <span className="px-2 text-white text-sm">{selected.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleServiceQuantity(selected.service.id, 1)}
+                      className="p-1 hover:bg-white/10 text-white"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="text-right min-w-[100px]">
+                    <div className="text-emerald-400 text-sm">
+                      ${(selected.service.price_usd * selected.quantity).toFixed(2)}
+                    </div>
+                    {selected.service.price_ves && (
+                      <div className="text-yellow-400 text-xs">
+                        Bs. {(selected.service.price_ves * selected.quantity).toFixed(2)}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveService(selected.service.id)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            )}
+            ))}
+            <div className="flex justify-between items-center pt-2 border-t border-white/10">
+              <span className="text-white/60 text-sm">Total:</span>
+              <div className="text-right">
+                <div className="text-emerald-400 font-bold text-lg">
+                  ${totalAmount.toFixed(2)}
+                </div>
+                {bcvRate && (
+                  <div className="text-yellow-400 text-sm">
+                    Bs. {(totalAmount * bcvRate.rate).toFixed(2)}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          
-          {/* DATE */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
-              <CalendarIcon className="w-3 h-3" /> Re-Schedule
-            </label>
-            <input
-              type="date"
-              name="appointment_date"
-              value={form.appointment_date}
-              onChange={handleChange}
-              className="w-full bg-black/40 border border-white/10 px-3 py-2 text-sm font-mono text-white [color-scheme:dark]"
-              style={{ colorScheme: 'dark' }}
-            />
-            {errors.appointment_date && <span className="text-[9px] text-red-400">{errors.appointment_date}</span>}
-          </div>
-          
-          {/* NOTES */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase">
-              <DocumentTextIcon className="w-3 h-3" /> Notes
-            </label>
-            <textarea
-              name="notes"
-              value={form.notes}
-              onChange={handleChange}
-              rows={2}
-              className="w-full bg-black/40 border border-white/10 px-3 py-2 text-sm font-mono text-white"
-            />
-          </div>
-          
-          {/* ACTIONS */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
-            <button type="button" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 text-[10px] font-black uppercase text-white/40 hover:text-white">
-              Discard
-            </button>
-            <button type="submit" disabled={isSubmitting || !hasChanges} className="px-8 py-2 bg-blue-600 text-white text-[10px] font-black uppercase hover:bg-blue-500 disabled:opacity-50">
-              {isSubmitting ? "PROCESSING..." : "Update_Record"}
-            </button>
-          </div>
-        </form>
+        )}
       </div>
-    </div>
+      
+      {/* Fecha de la Cita */}
+      <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
+        <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
+          <CalendarIcon className="w-4 h-4" /> Nueva Fecha de la Cita
+        </h3>
+        <input
+          type="date"
+          name="appointment_date"
+          value={form.appointment_date}
+          onChange={handleChange}
+          className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none"
+        />
+        {errors.appointment_date && (
+          <div className="mt-1 text-red-400 text-xs">{errors.appointment_date}</div>
+        )}
+      </div>
+      
+      {/* Botones de acción */}
+      <div className="flex gap-3 pt-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex-1 py-3 bg-white/5 text-white/60 text-sm font-bold uppercase tracking-wider hover:bg-white/10 transition-all"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex-1 py-3 bg-emerald-600 text-white text-sm font-bold uppercase tracking-wider hover:bg-emerald-500 transition-all disabled:opacity-50"
+        >
+          {isSubmitting ? "Guardando..." : "Actualizar Cita"}
+        </button>
+      </div>
+      
+      {submitError && (
+        <div className="p-3 bg-red-500/20 border border-red-500/50 text-red-300 text-sm rounded">
+          Error: {submitError}
+        </div>
+      )}
+    </form>
   );
 }
