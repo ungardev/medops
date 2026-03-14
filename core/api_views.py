@@ -6573,16 +6573,24 @@ class DoctorServiceViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Obtener institución del header o del perfil
         institution_id = self.request.headers.get('X-Institution-ID')
-        
         if institution_id:
-            institution = InstitutionSettings.objects.get(pk=institution_id)
+            try:
+                institution = InstitutionSettings.objects.get(pk=institution_id)
+            except InstitutionSettings.DoesNotExist:
+                raise ValidationError(f"Institución con ID {institution_id} no existe")
         else:
+            # Usar el related_name correcto
             doctor = getattr(self.request.user, 'doctor_profile', None)
-            institution = doctor.active_institution or doctor.institutions.first() if doctor else None
-        
+            if not doctor:
+                # Fallback: intentar con el related_name alternativo (si existe)
+                doctor = getattr(self.request.user, 'doctor_operator', None)
+            
+            if doctor:
+                institution = doctor.active_institution or doctor.institutions.first()
+            else:
+                institution = None
         if not institution:
             raise ValidationError("No se pudo determinar la institución")
-        
         serializer.save(institution=institution, created_by=self.request.user)
     
     @action(detail=False, methods=['get'])
