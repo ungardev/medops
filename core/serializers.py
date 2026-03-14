@@ -1602,17 +1602,15 @@ class ClinicalNoteSerializer(serializers.ModelSerializer):
 # --- Citas ---
 class AppointmentSerializer(serializers.ModelSerializer):
     """
-    Serializer de LISTADO y ESCRITURA: Optimizado para el calendario y la 
+    Serializer de LISTADO y ESCRITURA: Optimizado para el calendario y la
     gestión administrativa de citas.
     """
     patient_name = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     appointment_type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
-    
     # ✅ NUEVO: Servicio específico (DoctorService)
     doctor_service_name = serializers.CharField(source='doctor_service.name', read_only=True)
-    
     # ✅ NUEVOS CAMPOS para servicios del catálogo
     services = serializers.ListField(
         child=serializers.DictField(
@@ -1622,13 +1620,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
         required=False,
         help_text="Lista de servicios: [{'doctor_service_id': 1, 'qty': 1}]"
     )
-    
     # ✅ NUEVO: Pago inicial opcional
     initial_payment = serializers.DictField(required=False, write_only=True)
-    
     # 🆕 AGREGADO: VitalSigns para obtener peso y talla desde signos vitales
     vital_signs = VitalSignsSerializer(read_only=True)
-    
+    # ✅ NUEVO: Campo charge_order (solo en respuesta de creación)
+    charge_order = ChargeOrderSerializer(read_only=True)
     class Meta:
         model = Appointment
         fields = [
@@ -1647,35 +1644,31 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "height",
             # 🆕 AGREGADO: VitalSigns (peso y talla desde signos vitales)
             "vital_signs",
+            # ✅ AGREGADO: ChargeOrder (respuesta)
+            "charge_order",
         ]
-        read_only_fields = ["id"]
-        
+        read_only_fields = ["id", "charge_order"]
     def get_patient_name(self, obj):
         """Obtiene el nombre completo del paciente de forma explícita."""
         if obj.patient:
             return obj.patient.full_name
         return "UNKNOWN_SUBJECT"
-    
     def get_doctor_name(self, obj):
         """✅ CORREGIDO: Obtiene el nombre completo del doctor directamente del modelo."""
         if obj.doctor:
             return obj.doctor.full_name
         return None
-    
     def create(self, validated_data):
         """
         Creación Élite de Appointment con ChargeOrder automático.
         """
         from .models import ChargeOrder, ChargeItem, Payment
         from decimal import Decimal
-        
         # Extraer servicios y pago inicial
         services_data = validated_data.pop('services', [])
         initial_payment = validated_data.pop('initial_payment', None)
-        
         # 1. Crear el Appointment
         appointment = Appointment.objects.create(**validated_data)
-        
         # 2. Crear ChargeOrder automáticamente
         charge_order = ChargeOrder.objects.create(
             appointment=appointment,
@@ -1687,14 +1680,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
             total=Decimal('0.00'),
             balance_due=Decimal('0.00'),
         )
-        
         # 3. Crear ChargeItems directamente desde los datos recibidos
         total_amount = Decimal('0.00')
-        
         for service in services_data:
             doctor_service_id = service.get('doctor_service_id')  # Cambiado de billing_item_id
             qty = service.get('qty', 1)
-            
             if doctor_service_id:
                 # ✅ FIX: Intentar buscar DoctorService, pero si no existe, usar datos directos
                 doctor_service = None
@@ -1705,7 +1695,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     ).first()
                 except Exception:
                     pass
-                
                 # Si existe DoctorService, usar sus datos; si no, usar datos del servicio
                 if doctor_service:
                     code = doctor_service.code
@@ -1716,7 +1705,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     code = service.get('code', f'SVC-{doctor_service_id}')
                     description = service.get('description', f'Servicio {doctor_service_id}')
                     unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
-                
                 # Crear ChargeItem
                 item = ChargeItem.objects.create(
                     order=charge_order,
@@ -1726,13 +1714,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     qty=Decimal(str(qty)),
                     unit_price=unit_price,
                 )
-                
                 total_amount += item.subtotal
-        
         # Recalcular totales del ChargeOrder
         charge_order.recalc_totals()
         charge_order.save(update_fields=['total', 'balance_due', 'status'])
-        
+        # ✅ FIX: Actualizar expected_amount en Appointment
+        appointment.expected_amount = charge_order.total
+        appointment.save(update_fields=['expected_amount'])
         # 4. [OPCIONAL] Procesar pago inicial
         if initial_payment and total_amount > 0:
             payment_amount = Decimal(str(initial_payment.get('amount', 0)))
@@ -1746,11 +1734,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     reference_number=initial_payment.get('reference_number', f"PRE-{charge_order.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"),
                     status='confirmed',
                 )
-                
                 # Recalcular después del pago
                 charge_order.recalc_totals()
                 charge_order.save(update_fields=['total', 'balance_due', 'status'])
-        
         return appointment
 
 
