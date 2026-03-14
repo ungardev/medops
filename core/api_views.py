@@ -3886,20 +3886,17 @@ def add_charge_order_items(request, appointment_id):
     """
     Agregar items a orden de cobro. Crea la orden automáticamente si no existe una activa.
     POST /api/appointments/{appointment_id}/charge-order/add-items/
-    Body: { "items": [{ "code": "C001", "description": "Consulta", "qty": 1, "unit_price": 50.00 }] }
+    Body: { "items": [{ "service_id": 1, "qty": 1 }] }
     """
     try:
         appointment = get_object_or_404(Appointment, pk=appointment_id)
         items_data = request.data.get('items', [])
-        
         if not items_data or len(items_data) == 0:
             return Response({"error": "No se proporcionaron items"}, status=400)
-        
         # Buscar orden activa existente (excluir void)
         charge_order = ChargeOrder.objects.filter(
             appointment_id=appointment_id
         ).exclude(status='void').order_by('-issued_at').first()
-        
         # Si no existe orden activa, crear una nueva
         if not charge_order:
             charge_order = ChargeOrder.objects.create(
@@ -3912,26 +3909,55 @@ def add_charge_order_items(request, appointment_id):
                 total=Decimal('0.00'),
                 balance_due=Decimal('0.00'),
             )
-        
         # Agregar items a la orden
         created_items = []
         for item_data in items_data:
+            # Validar service_id
+            service_id = item_data.get('service_id')
+            if not service_id:
+                return Response({"error": "service_id es requerido en cada item"}, status=400)
+            # Buscar servicio
+            try:
+                service = DoctorService.objects.get(id=service_id)
+            except DoctorService.DoesNotExist:
+                return Response({"error": f"Servicio con ID {service_id} no existe"}, status=400)
+            # Validar que el servicio esté activo
+            if not service.is_active:
+                return Response({"error": f"Servicio con ID {service_id} no está activo"}, status=400)
+            # Validar que el servicio pertenezca a la institución de la cita
+            if service.institution and service.institution != appointment.institution:
+                return Response({
+                    "error": f"Servicio con ID {service_id} no pertenece a la institución de la cita"
+                }, status=400)
+            # Validar cantidad
+            qty = item_data.get('qty', 1)
+            try:
+                qty = Decimal(str(qty))
+            except:
+                return Response({"error": f"Cantidad inválida para servicio {service_id}"}, status=400)
+            if qty <= 0:
+                return Response({"error": f"Cantidad debe ser mayor que 0 para servicio {service_id}"}, status=400)
+            # Límite máximo de cantidad (opcional pero recomendado)
+            MAX_QTY = 100
+            if qty > MAX_QTY:
+                return Response({
+                    "error": f"Cantidad excede el límite máximo ({MAX_QTY}) para servicio {service_id}"
+                }, status=400)
+            # Crear item con datos del servicio
             item = ChargeItem.objects.create(
                 order=charge_order,
-                code=item_data.get('code', ''),
-                description=item_data.get('description', ''),
-                qty=Decimal(str(item_data.get('qty', 1))),
-                unit_price=Decimal(str(item_data.get('unit_price', 0))),
+                doctor_service=service,      # Vinculación al servicio
+                code=service.code,           # Código del servicio
+                description=service.name,    # Nombre del servicio
+                qty=qty,
+                unit_price=service.price_usd, # Precio del servicio (no del payload)
             )
             created_items.append(item)
-        
-        # Recalcular totales (se hace automáticamente en ChargeItem.save(), pero lo aseguramos)
+        # Recalcular totales
         charge_order.recalc_totals()
         charge_order.save(update_fields=['total', 'balance_due', 'status'])
-        
         serializer = ChargeOrderSerializer(charge_order)
         return Response(serializer.data, status=200 if len(created_items) > 0 else 201)
-    
     except Exception as e:
         logger.error(f"Error en add_charge_order_items: {str(e)}")
         return Response({"error": str(e)}, status=500)
