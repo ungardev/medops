@@ -1,27 +1,19 @@
 // src/components/Appointments/AppointmentEditForm.tsx
 import React, { useState, useEffect, useMemo } from "react";
 import { AppointmentInput } from "../../types/appointments";
-// ✅ CAMBIO: Importar tipo DoctorService en lugar de BillingItem
 import type { DoctorService } from "../../types/services";
 import { useAppointment } from "../../hooks/appointments";
-// ✅ CAMBIO: Importar hooks de services
 import { useServiceCategories } from "@/hooks/services/useServiceCategories";
 import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices";
-// ✅ NUEVO: Hook para tasa BCV
 import { useBCVRate, convertUSDToVES } from "@/hooks/dashboard/useBCVRate";
 import { 
   XMarkIcon, 
-  PencilSquareIcon, 
   CalendarIcon,
   CurrencyDollarIcon,
-  UserIcon,
-  UserCircleIcon,
-  BuildingOfficeIcon,
   DocumentTextIcon,
   TrashIcon,
-  BeakerIcon,
-  ExclamationCircleIcon,
-  ArrowPathIcon
+  ArrowPathIcon,
+  UserIcon
 } from "@heroicons/react/24/outline";
 interface Props {
   appointmentId: number;
@@ -31,7 +23,6 @@ interface Props {
 interface FormErrors {
   appointment_date?: string;
 }
-// ✅ NUEVO: Interfaz auxiliar para servicios temporales
 interface TemporaryService {
   id: number | string;
   code: string;
@@ -45,16 +36,12 @@ interface TemporaryService {
   is_active: boolean;
   is_visible_global: boolean;
 }
-// ✅ CAMBIO: Tipo SelectedService usa TemporaryService
 interface SelectedService {
   service: TemporaryService;
   quantity: number;
 }
 export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }: Props) {
-  // ✅ FIX: Obtener datos completos del appointment
   const { data: appointmentData, isLoading } = useAppointment(appointmentId);
-  
-  // ✅ NUEVO: Obtener tasa BCV
   const { data: bcvRate } = useBCVRate();
   
   const [form, setForm] = useState<AppointmentInput>({
@@ -73,15 +60,9 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   
-  // ✅ CAMBIO: Servicios del catálogo usando hooks de services
   const [serviceSearch, setServiceSearch] = useState("");
-  const { data: categories = [] } = useServiceCategories();
   const { data: serviceResults = [] } = useDoctorServicesSearch(serviceSearch);
-  
-  // ✅ FIX: Estado de servicios seleccionados (usando TemporaryService)
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
-  
-  // ✅ FIX: Actualizar form cuando appointmentData cargue
   useEffect(() => {
     if (appointmentData) {
       setForm({
@@ -94,7 +75,6 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
         notes: appointmentData.notes ?? "",
       });
       
-      // ✅ FIX: Cargar servicios desde charge_order existente usando TemporaryService
       const items = appointmentData.charge_order?.items ?? [];
       if (items.length > 0) {
         setSelectedServices(items.map((item: any) => ({
@@ -107,9 +87,9 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
             category: null,
             category_name: undefined,
             doctor: appointmentData.doctor?.id ?? 0,
-            duration_minutes: 30, // Valor predeterminado
-            is_active: true,       // Valor predeterminado
-            is_visible_global: true // Valor predeterminado
+            duration_minutes: 30,
+            is_active: true,
+            is_visible_global: true
           } as TemporaryService,
           quantity: item.qty
         })));
@@ -124,16 +104,15 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
             category: null,
             category_name: undefined,
             doctor: appointmentData.doctor?.id ?? 0,
-            duration_minutes: 30, // Valor predeterminado
-            is_active: true,       // Valor predeterminado
-            is_visible_global: true // Valor predeterminado
+            duration_minutes: 30,
+            is_active: true,
+            is_visible_global: true
           } as TemporaryService,
           quantity: 1
         }]);
       }
     }
   }, [appointmentData, bcvRate]);
-  // ✅ CAMBIO: Agrupar servicios por categoría usando TemporaryService
   const groupedServices = useMemo(() => {
     const groups: Record<string, TemporaryService[]> = {};
     serviceResults.forEach(item => {
@@ -155,7 +134,6 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
     });
     return groups;
   }, [serviceResults, bcvRate]);
-  
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasChanges) {
@@ -166,7 +144,6 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasChanges]);
-  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     if (name === "patient") return;
@@ -177,10 +154,7 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
-  
-  // ✅ CAMBIO: handleAddService usa TemporaryService
   const handleAddService = (service: DoctorService) => {
-    // Convertir DoctorService a TemporaryService
     const tempService: TemporaryService = {
       id: service.id,
       code: service.code,
@@ -208,14 +182,10 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
     setServiceSearch("");
     setHasChanges(true);
   };
-  
-  // ✅ CAMBIO: handleRemoveService usa service.id
   const handleRemoveService = (serviceId: number | string) => {
     setSelectedServices(prev => prev.filter(s => s.service.id !== serviceId));
     setHasChanges(true);
   };
-  
-  // ✅ CAMBIO: handleServiceQuantity usa service.id
   const handleServiceQuantity = (serviceId: number | string, delta: number) => {
     setSelectedServices(prev => prev.map(s => 
       s.service.id === serviceId 
@@ -224,22 +194,16 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
     ));
     setHasChanges(true);
   };
-  
-  // ✅ CAMBIO: Cálculo del total usa price_usd
   const totalAmount = selectedServices.reduce(
     (sum, s) => sum + (Number(s.service.price_usd) * s.quantity),
     0
   );
-  
-  // =====================================================
-  // ✅ FIX: handleSubmit - Ahora envía los servicios con doctor_service_id
-  // =====================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ appointment_date: true });
     
     if (!form.appointment_date) {
-      setErrors({ appointment_date: "REQUIRED_FIELD: Select date" });
+      setErrors({ appointment_date: "CAMPO_REQUERIDO: Seleccione fecha" });
       return;
     }
     
@@ -250,7 +214,6 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       const payload: AppointmentInput = {
         ...form,
         expected_amount: totalAmount.toFixed(2),
-        // ✅ ENVÍAR SERVICIOS SELECCIONADOS AL BACKEND (cambio clave: doctor_service_id)
         services: selectedServices.map(s => ({
           doctor_service_id: Number(s.service.id),
           qty: s.quantity,
@@ -265,60 +228,86 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       onClose();
     } catch (err: any) {
       console.error("Update error:", err);
-      setSubmitError(err?.message || "UPDATE_FAILED");
+      setSubmitError(err?.message || "ERROR_AL_ACTUALIZAR");
     } finally {
       setIsSubmitting(false);
     }
   };
-  
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4">
         <div className="flex flex-col items-center gap-4">
           <ArrowPathIcon className="w-8 h-8 text-white/40 animate-spin" />
-          <span className="text-[10px] font-mono text-white/40 uppercase">Loading_Record...</span>
+          <span className="text-[10px] font-mono text-white/40 uppercase">Cargando...</span>
         </div>
       </div>
     );
   }
-  
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/95 flex items-center justify-center z-50 p-4">
       <div className="max-w-lg w-full bg-[#0a0a0b] border border-white/10 shadow-2xl overflow-hidden">
-        <form onSubmit={handleSubmit} className="space-y-6 p-6">
-          {/* Información de la Cita Existente */}
-          <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
-            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-              <DocumentTextIcon className="w-4 h-4" /> Información de la Cita
+        
+        {/* Header */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 border border-white/20 text-white/60 bg-white/5">
+              <CalendarIcon className="h-5 w-5" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black text-white/60 uppercase tracking-[0.3em]">
+                EDITAR CITA
+              </span>
+              <h2 className="text-lg font-black text-white uppercase">
+                #{appointmentId?.toString().padStart(6, '0') || '000000'}
+              </h2>
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            className="p-2 border border-white/10 text-white/40 hover:text-red-500 hover:border-red-500/50 transition-all"
+            onClick={onClose}
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+        
+        {/* Contenido */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
+          
+          {/* Información del Paciente (Solo lectura) */}
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+              INFORMACIÓN DEL PACIENTE
             </h3>
-            <div className="grid grid-cols-2 gap-4 text-white text-sm">
+            <div className="grid grid-cols-2 gap-4 text-white text-sm bg-white/5 p-4 border border-white/10">
               <div>
-                <span className="text-white/60">Paciente:</span>{" "}
-                {appointmentData?.patient?.full_name}
+                <span className="text-[8px] text-white/40 uppercase">Nombre</span>
+                <p>{appointmentData?.patient?.full_name}</p>
               </div>
               <div>
-                <span className="text-white/60">Doctor:</span>{" "}
-                {appointmentData?.doctor?.full_name}
+                <span className="text-[8px] text-white/40 uppercase">Doctor</span>
+                <p>{appointmentData?.doctor?.full_name}</p>
               </div>
               <div>
-                <span className="text-white/60">Fecha Actual:</span>{" "}
-                {appointmentData?.appointment_date}
+                <span className="text-[8px] text-white/40 uppercase">Fecha Actual</span>
+                <p>{appointmentData?.appointment_date}</p>
               </div>
               <div>
-                <span className="text-white/60">Estado:</span>{" "}
-                {appointmentData?.status}
+                <span className="text-[8px] text-white/40 uppercase">Estado</span>
+                <p className="uppercase">{appointmentData?.status}</p>
               </div>
             </div>
           </div>
           
-          {/* Selección de Servicios (Catálogo) */}
-          <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
-            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-              <CurrencyDollarIcon className="w-4 h-4" /> Agregar Servicios del Catálogo
+          {/* Selección de Servicios */}
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+              SERVICIOS
             </h3>
             
-            {/* Buscador de servicios */}
-            <div className="relative mb-4">
+            {/* Buscador */}
+            <div className="relative">
               <input
                 type="text"
                 value={serviceSearch}
@@ -361,13 +350,13 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
               )}
             </div>
             
-            {/* Servicios seleccionados */}
+            {/* Servicios Seleccionados */}
             {selectedServices.length > 0 && (
               <div className="space-y-2">
                 {selectedServices.map((selected) => (
                   <div
                     key={selected.service.id}
-                    className="flex items-center justify-between p-2 bg-black/30 border border-white/5 rounded"
+                    className="flex items-center justify-between p-3 bg-white/5 border border-white/10"
                   >
                     <div className="flex-1">
                       <div className="text-white text-sm">{selected.service.name}</div>
@@ -431,9 +420,9 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
           </div>
           
           {/* Fecha de la Cita */}
-          <div className="bg-white/5 border border-white/10 p-4 rounded-lg">
-            <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4" /> Nueva Fecha de la Cita
+          <div className="space-y-3">
+            <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+              NUEVA FECHA
             </h3>
             <input
               type="date"
@@ -443,12 +432,12 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
               className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none"
             />
             {errors.appointment_date && (
-              <div className="mt-1 text-red-400 text-xs">{errors.appointment_date}</div>
+              <div className="text-red-400 text-xs">{errors.appointment_date}</div>
             )}
           </div>
           
           {/* Botones de acción */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-4 border-t border-white/10">
             <button
               type="button"
               onClick={onClose}
