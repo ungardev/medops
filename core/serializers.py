@@ -1720,6 +1720,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 # Crear ChargeItem
                 item = ChargeItem.objects.create(
                     order=charge_order,
+                    doctor_service=doctor_service,  # AÑADIR ESTE CAMPO
                     code=code,
                     description=description,
                     qty=Decimal(str(qty)),
