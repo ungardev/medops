@@ -5,7 +5,6 @@ import {
   XMarkIcon, 
   PencilIcon, 
   CalendarIcon,
-  UserIcon,
   ArrowPathIcon
 } from "@heroicons/react/24/outline";
 interface Props {

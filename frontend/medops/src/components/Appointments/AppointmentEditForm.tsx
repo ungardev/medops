@@ -10,10 +10,8 @@ import {
   XMarkIcon, 
   CalendarIcon,
   CurrencyDollarIcon,
-  DocumentTextIcon,
   TrashIcon,
-  ArrowPathIcon,
-  UserIcon
+  ArrowPathIcon
 } from "@heroicons/react/24/outline";
 interface Props {
   appointmentId: number;
