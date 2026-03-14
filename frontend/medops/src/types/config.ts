@@ -32,25 +32,20 @@ export interface InstitutionSettings {
   phone: string;
   tax_id: string; // RIF/NIT/Fiscal ID
   logo?: string | File | null;
-  
   // ⚔️ Estructura Geográfica EXPANDIDA
-  neighborhood?: number | Neighborhood | null; 
+  neighborhood?: number | Neighborhood | null;
   address: string; // Dirección detallada (Calle/Av/Local)
-  
   // 🆕 CAMBIO: Campos geográficos completos para compatibilidad con IdentityInstitution
   country?: string | null;        // 🆕 Nombre del país
   state_name?: string | null;      // 🆕 Nombre del estado
   municipality_name?: string | null; // 🆕 Nombre del municipio
   parish_name?: string | null;     // 🆕 Nombre de la parroquia
-  
   // 💰 Motor Financiero
   active_gateway: 'none' | 'mercantil_ve' | 'banesco_ve' | 'stripe' | 'binance_pay' | 'paypal';
   is_gateway_test_mode: boolean; // Sandbox vs Production
-  
   // 🆕 CAMBIO: Compatible con null (backend consistency)
   settlement_bank_name?: string | null;    // 🆕 Cambiado a null-compatible
   settlement_account_id?: string | null;   // 🆕 Cambiado a null-compatible
-  
   // Estado del Nodo
   is_active: boolean;
 }
@@ -63,13 +58,19 @@ export interface Specialty {
   name: string;
 }
 // =====================================================
+// 🔹 Institución Simple (para DoctorConfig)
+// =====================================================
+export interface InstitutionSimple {
+  id: number;
+  name: string;
+}
+// =====================================================
 // 🔹 Configuración del Médico Operador (Identity v2.0)
 // =====================================================
 export interface DoctorConfig {
   id?: number;
   full_name?: string;
   gender: 'M' | 'F' | 'O'; // 👈 Nuevo: Discriminador de título formal
-  
   // Credenciales
   colegiado_id?: string;
   license?: string;
@@ -78,14 +79,13 @@ export interface DoctorConfig {
   specialty_ids?: number[];
   specialties?: Specialty[];
   institutions?: number[]; // IDs de las sedes donde opera
+  active_institution?: InstitutionSimple; // ✅ AÑADIDO: Institución activa (objeto con id y name)
   // Contacto & Firma
   email?: string;
   phone?: string;
   signature?: string | File | null;
-  
   // 🆕 AGREGADO: specialty (especialidad principal)
   specialty?: string | null;
-  
   // =====================================================
   // 🔹 WhatsApp Business Integration
   // =====================================================
