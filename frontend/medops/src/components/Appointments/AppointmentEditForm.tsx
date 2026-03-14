@@ -231,6 +231,9 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
     0
   );
   
+  // =====================================================
+  // ✅ FIX: handleSubmit - Ahora envía los servicios con doctor_service_id
+  // =====================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ appointment_date: true });
@@ -247,8 +250,11 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       const payload: AppointmentInput = {
         ...form,
         expected_amount: totalAmount.toFixed(2),
-        // Nota: El backend de edición de cita no parece recibir servicios directamente aquí,
-        // pero se mantiene la estructura por consistencia o si se implementa en el futuro
+        // ✅ ENVÍAR SERVICIOS SELECCIONADOS AL BACKEND (cambio clave: doctor_service_id)
+        services: selectedServices.map(s => ({
+          doctor_service_id: Number(s.service.id),
+          qty: s.quantity,
+        })),
       };
       
       if (onSubmit && appointmentId) {
@@ -264,6 +270,7 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       setIsSubmitting(false);
     }
   };
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -271,6 +278,7 @@ export default function AppointmentEditForm({ appointmentId, onClose, onSubmit }
       </div>
     );
   }
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Información de la Cita Existente */}
