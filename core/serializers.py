@@ -1738,6 +1738,89 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 charge_order.recalc_totals()
                 charge_order.save(update_fields=['total', 'balance_due', 'status'])
         return appointment
+    
+    def update(self, instance, validated_data):
+        """
+        Actualización Élite de Appointment.
+        Maneja la actualización de campos básicos y la sincronización de servicios.
+        """
+        from .models import ChargeOrder, ChargeItem, Payment
+        from decimal import Decimal
+        
+        # Extraer servicios y pago inicial
+        services_data = validated_data.pop('services', None)
+        initial_payment = validated_data.pop('initial_payment', None)
+        
+        # 1. Actualizar campos básicos del Appointment
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # 2. Sincronizar servicios si se proporcionan
+        if services_data is not None:
+            # Obtener o crear ChargeOrder
+            charge_order = ChargeOrder.objects.filter(
+                appointment=instance
+            ).exclude(status='void').order_by('-issued_at').first()
+            
+            if not charge_order:
+                charge_order = ChargeOrder.objects.create(
+                    appointment=instance,
+                    patient=instance.patient,
+                    doctor=instance.doctor,
+                    institution=instance.institution,
+                    currency="USD",
+                    status="open",
+                    total=Decimal('0.00'),
+                    balance_due=Decimal('0.00'),
+                )
+            
+            # Eliminar items existentes
+            ChargeItem.objects.filter(order=charge_order).delete()
+            
+            # Crear nuevos items
+            total_amount = Decimal('0.00')
+            for service in services_data:
+                doctor_service_id = service.get('doctor_service_id')
+                qty = service.get('qty', 1)
+                if doctor_service_id:
+                    doctor_service = None
+                    try:
+                        doctor_service = DoctorService.objects.filter(
+                            id=doctor_service_id,
+                            is_active=True
+                        ).first()
+                    except Exception:
+                        pass
+                    
+                    if doctor_service:
+                        code = doctor_service.code
+                        description = doctor_service.name
+                        unit_price = doctor_service.price_usd
+                    else:
+                        code = service.get('code', f'SVC-{doctor_service_id}')
+                        description = service.get('description', f'Servicio {doctor_service_id}')
+                        unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
+                    
+                    item = ChargeItem.objects.create(
+                        order=charge_order,
+                        doctor_service=doctor_service,
+                        code=code,
+                        description=description,
+                        qty=Decimal(str(qty)),
+                        unit_price=unit_price,
+                    )
+                    total_amount += item.subtotal
+            
+            # Recalcular totales del ChargeOrder
+            charge_order.recalc_totals()
+            charge_order.save(update_fields=['total', 'balance_due', 'status'])
+            
+            # Actualizar expected_amount en Appointment
+            instance.expected_amount = charge_order.total
+            instance.save(update_fields=['expected_amount'])
+        
+        return instance
 
 
 # --- Documentos clínicos ---
