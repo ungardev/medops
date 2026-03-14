@@ -1,5 +1,5 @@
 // src/components/Consultation/ChargeOrderPanel.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChargeOrder } from "../../types/payments";
 import { useChargeOrder } from "../../hooks/consultations/useChargeOrder";
@@ -8,7 +8,7 @@ import type { DoctorService } from "../../types/services"; // CAMBIO: Importar D
 import ServiceSearchCombobox from "./ServiceSearchCombobox";
 import { 
   ChevronDownIcon, 
-  ChevronRightIcon, 
+  ChevronRightIcon,
   TrashIcon,
   XMarkIcon,
   MinusIcon,
@@ -23,7 +23,7 @@ function isAppointmentMode(props: ChargeOrderPanelProps): props is { appointment
   return (props as any).appointmentId !== undefined;
 }
 interface PendingItem {
-  service: DoctorService; // CAMBIO: Cambiar de billingItem a service
+  service: DoctorService;
   quantity: number;
 }
 const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
@@ -33,6 +33,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const [showItems, setShowItems] = useState(true); // Siempre expandido para mostrar buscador
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [isSavingItems, setIsSavingItems] = useState(false);
+  
   const { data, isLoading, refetch } = isAppointmentMode(props)
     ? useChargeOrder(props.appointmentId)
     : { data: null, isLoading: false, refetch: async () => {} };
@@ -43,7 +44,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     }
     setOrder(data ?? null);
   }, [props, data]);
-  const handleSelectService = (service: DoctorService) => { // CAMBIO: Parámetro service en lugar de item
+  // Validación de servicio activo y visible
+  const handleSelectService = (service: DoctorService) => {
+    if (!service.is_active || !service.is_visible_global) {
+      alert("Este servicio no está disponible para facturación.");
+      return;
+    }
     const existing = pendingItems.find(p => p.service.id === service.id);
     if (existing) {
       setPendingItems(pendingItems.map(p => 
@@ -55,34 +61,39 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       setPendingItems([...pendingItems, { service: service, quantity: 1 }]);
     }
   };
-  const updatePendingQuantity = (serviceId: number, delta: number) => { // CAMBIO: serviceId
+  // Límite de cantidad máxima
+  const MAX_QUANTITY = 100;
+  const updatePendingQuantity = (serviceId: number, delta: number) => {
     setPendingItems(pendingItems.map(p => {
       if (p.service.id === serviceId) {
-        const newQty = Math.max(1, p.quantity + delta);
+        const newQty = Math.max(1, Math.min(p.quantity + delta, MAX_QUANTITY));
         return { ...p, quantity: newQty };
       }
       return p;
     }));
   };
-  const removePendingItem = (serviceId: number) => { // CAMBIO: serviceId
+  const removePendingItem = (serviceId: number) => {
     setPendingItems(pendingItems.filter(p => p.service.id !== serviceId));
   };
-  const pendingSubtotal = pendingItems.reduce(
-    (sum, p) => sum + (Number(p.service.price_usd) * p.quantity), // CAMBIO: price_usd
-    0
-  );
-  // ✅ NUEVO: Agregar items usando endpoint unificado (crea orden si no existe)
+  // Optimización con useMemo
+  const pendingSubtotal = useMemo(() => {
+    return pendingItems.reduce(
+      (sum, p) => sum + (Number(p.service.price_usd) * p.quantity),
+      0
+    );
+  }, [pendingItems]);
+  // ✅ NUEVO: Agregar items usando service_id (Opción A)
   const handleSavePendingItems = async () => {
     if (pendingItems.length === 0) return;
     if (!isAppointmentMode(props)) return;
     setIsSavingItems(true);
     try {
+      // Solo enviamos service_id y cantidad. El backend busca el precio real.
       const itemsPayload = pendingItems.map(p => ({
-        code: p.service.code, // CAMBIO
-        description: p.service.name, // CAMBIO
+        service_id: p.service.id,
         qty: p.quantity,
-        unit_price: p.service.price_usd, // CAMBIO: price_usd
       }));
+      
       await apiFetch(`appointments/${props.appointmentId}/charge-order/add-items/`, {
         method: "POST",
         body: JSON.stringify({ items: itemsPayload }),
@@ -92,6 +103,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       void refetch();
     } catch (err) {
       console.error("Save_Items_Fault:", err);
+      alert("Error al guardar los items. Por favor, intenta nuevamente.");
     } finally {
       setIsSavingItems(false);
     }
@@ -99,10 +111,13 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const handleDeleteItem = async (id: number) => {
     if (!confirm("Confirmar eliminación del ítem?")) return;
     try {
+      // Verificar si el endpoint correcto es /api/charge-items/ o /api/charge-order/items/
+      // Por ahora usamos el endpoint del frontend actual
       await apiFetch(`charge-items/${id}/`, { method: "DELETE" });
       void refetch();
     } catch (err) { 
       console.error("Delete_Fault:", err); 
+      alert("Error al eliminar el item.");
     }
   };
   const handleGoToPayments = () => {
