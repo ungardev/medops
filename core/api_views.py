@@ -6536,7 +6536,7 @@ class DoctorServiceViewSet(viewsets.ModelViewSet):
             queryset = DoctorService.objects.filter(institution_id=institution_id)
         else:
             # Fallback: usar institución activa del doctor
-            doctor = getattr(self.request.user, 'doctor_profile', None)
+            doctor = getattr(self.request.user, 'doctor_operator', None)
             if doctor:
                 institution = doctor.active_institution or doctor.institutions.first()
                 if institution:
