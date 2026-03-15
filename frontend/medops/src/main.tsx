@@ -86,6 +86,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="settings" element={<PatientSettings />} />
               <Route path="payments" element={<PatientPayments />} />
               <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
+              {/* NUEVA RUTA: Pago de Orden de Cobro */}
+              <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
             </Route>
             
             {/* === DOCTOR PORTAL - PROTECTED === */}

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
-import { Search, User, Building2, Loader2, Filter, Clock, DollarSign, ArrowRight, Stethoscope } from "lucide-react";
+import { Search, User, Building2, Loader2, Filter, Clock, DollarSign, ArrowRight, Stethoscope, Mail, Phone } from "lucide-react";
 import { patientClient, Doctor, ServiceSearchResult, DoctorService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
 export default function PatientSearch() {
@@ -147,6 +147,14 @@ export default function PatientSearch() {
                       {doctor.institutions?.map((i: any) => i.name).join(", ")}
                     </span>
                   </div>
+                  
+                  {/* Información de Contacto (si está disponible) */}
+                  {doctor.email && (
+                    <div className="flex items-center gap-1 text-[9px] text-white/30 mt-1">
+                      <Mail className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{doctor.email}</span>
+                    </div>
+                  )}
                 </div>
               </div>
               
@@ -166,7 +174,7 @@ export default function PatientSearch() {
           <div 
             key={service.id + index} 
             className="bg-[#0a0a0b] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors cursor-pointer"
-            onClick={() => setSelectedService(service as any)} // Cast a DoctorService para el modal
+            onClick={() => setSelectedService(service as any)}
           >
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
@@ -219,7 +227,6 @@ export default function PatientSearch() {
               patientId={currentPatientId}
               onSuccess={() => {
                 setSelectedService(null);
-                // Opcional: Redirigir a órdenes de cobro o mostrar toast
               }}
               onCancel={() => setSelectedService(null)}
             />

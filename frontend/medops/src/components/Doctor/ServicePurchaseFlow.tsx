@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import type { DoctorService, PurchaseServiceResponse } from '@/api/patient/client';
 import { chargeClient } from '@/api/patient/client';
-import { Loader2, CreditCardIcon, CheckCircleIcon, XCircleIcon, ArrowRightIcon } from 'lucide-react';
+import { Loader2, CreditCardIcon, CheckCircleIcon, XCircleIcon, ArrowRightIcon, AlertTriangle } from 'lucide-react';
 // Tipos de estado del flujo
-type PurchaseStep = 'confirm' | 'processing' | 'success' | 'error';
+type PurchaseStep = 'confirm-details' | 'confirm-final' | 'processing' | 'success' | 'error';
 interface ServicePurchaseFlowProps {
   service: DoctorService;
   patientId: number;
@@ -17,10 +17,9 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const [step, setStep] = useState<PurchaseStep>('confirm');
+  const [step, setStep] = useState<PurchaseStep>('confirm-details');
   const [error, setError] = useState<string | null>(null);
   const [chargeOrder, setChargeOrder] = useState<PurchaseServiceResponse | null>(null);
-  const [countdown, setCountdown] = useState(2);
   const handlePurchase = async () => {
     setStep('processing');
     setError(null);
@@ -32,30 +31,17 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
         qty: 1,
       });
       
-      // TypeScript ahora sabe que response.data es PurchaseServiceResponse
       setChargeOrder(response.data);
       setStep('success');
-      
-      // Redirección automática después de 2 segundos
-      const timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            window.location.href = `/patient/charge-orders/${response.data.id}/pay`;
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      
+      // No redirigimos automáticamente, el usuario decide pagar
     } catch (err) {
       console.error("Purchase error:", err);
-      setError("Error al procesar la compra. Intenta nuevamente.");
+      setError("Error al procesar la solicitud. Intenta nuevamente.");
       setStep('error');
     }
   };
   const handleRetry = () => {
-    setStep('confirm');
+    setStep('confirm-details');
     setError(null);
   };
   // Renderizado condicional según el estado
@@ -63,21 +49,23 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     case 'processing':
       return <ProcessingView />;
     case 'success':
-      return <SuccessView chargeOrder={chargeOrder} countdown={countdown} />;
+      return <SuccessView chargeOrder={chargeOrder} onCancel={onCancel} />;
     case 'error':
-      return <ErrorView error={error} onRetry={handlePurchase} onCancel={onCancel} />;
-    default: // 'confirm'
-      return <ConfirmView service={service} onConfirm={handlePurchase} onCancel={onCancel} />;
+      return <ErrorView error={error} onRetry={handleRetry} onCancel={onCancel} />;
+    case 'confirm-final':
+      return <ConfirmFinalView service={service} onConfirm={handlePurchase} onBack={() => setStep('confirm-details')} onCancel={onCancel} />;
+    default: // 'confirm-details'
+      return <ConfirmDetailsView service={service} onProceed={() => setStep('confirm-final')} onCancel={onCancel} />;
   }
 };
-// Vista de Confirmación
-const ConfirmView: React.FC<{
+// Vista de Confirmación de Detalles (Paso 1)
+const ConfirmDetailsView: React.FC<{
   service: DoctorService;
-  onConfirm: () => void;
+  onProceed: () => void;
   onCancel: () => void;
-}> = ({ service, onConfirm, onCancel }) => (
+}> = ({ service, onProceed, onCancel }) => (
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
-    <h3 className="text-white font-bold text-lg mb-4">Confirmar Compra</h3>
+    <h3 className="text-white font-bold text-lg mb-4">Detalles del Servicio</h3>
     
     <div className="mb-6 p-4 bg-white/5 rounded-sm">
       <div className="flex justify-between items-center mb-2">
@@ -98,6 +86,44 @@ const ConfirmView: React.FC<{
         Cancelar
       </button>
       <button
+        onClick={onProceed}
+        className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2"
+      >
+        <CreditCardIcon className="w-4 h-4" />
+        Proceder
+      </button>
+    </div>
+  </div>
+);
+// Vista de Confirmación Final (Paso 2)
+const ConfirmFinalView: React.FC<{
+  service: DoctorService;
+  onConfirm: () => void;
+  onBack: () => void;
+  onCancel: () => void;
+}> = ({ service, onConfirm, onBack, onCancel }) => (
+  <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
+    <div className="flex items-center gap-3 mb-4 text-amber-400">
+      <AlertTriangle className="w-8 h-8" />
+      <h3 className="text-white font-bold text-lg">Confirmar Compra</h3>
+    </div>
+    
+    <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-sm">
+      <p className="text-amber-200 text-sm">
+        ¿Estás seguro de que deseas solicitar el servicio <strong>{service.name}</strong> por <strong>$ {service.price_usd?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>?
+      </p>
+      <p className="text-white/50 text-xs mt-2">
+        Una vez confirmado, deberás proceder al pago para agendar tu cita.
+      </p>
+    </div>
+    <div className="flex gap-3">
+      <button
+        onClick={onBack}
+        className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
+      >
+        Atrás
+      </button>
+      <button
         onClick={onConfirm}
         className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2"
       >
@@ -111,31 +137,42 @@ const ConfirmView: React.FC<{
 const ProcessingView: React.FC = () => (
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
     <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
-    <p className="text-white/80 text-sm font-mono">PROCESANDO COMPRA...</p>
+    <p className="text-white/80 text-sm font-mono">PROCESANDO SOLICITUD...</p>
     <p className="text-white/50 text-xs mt-2">Por favor espera</p>
   </div>
 );
-// Vista de Éxito
-const SuccessView: React.FC<{ chargeOrder: PurchaseServiceResponse | null; countdown: number }> = ({
+// Vista de Éxito (Solicitud Recibida)
+const SuccessView: React.FC<{ chargeOrder: PurchaseServiceResponse | null; onCancel: () => void }> = ({
   chargeOrder,
-  countdown,
+  onCancel
 }) => (
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
     <CheckCircleIcon className="w-16 h-16 text-emerald-500 mb-4" />
-    <h4 className="text-white font-bold text-lg mb-2">¡Compra Exitosa!</h4>
+    <h4 className="text-white font-bold text-lg mb-2">¡Solicitud Recibida!</h4>
     <p className="text-white/70 text-sm mb-4">
-      Orden #{chargeOrder?.id} creada correctamente
+      Tu solicitud de servicio ha sido registrada correctamente.
     </p>
-    <p className="text-white/50 text-xs mb-6">
-      Redirigiendo a pago en {countdown} segundos...
+    <div className="bg-[#1a1a1b] border border-white/10 rounded-sm p-4 mb-4 w-full">
+      <p className="text-white/50 text-xs mb-1">Número de Orden</p>
+      <p className="text-white font-mono text-lg"># {chargeOrder?.id}</p>
+    </div>
+    <p className="text-white/50 text-xs mb-6 text-center">
+      Procede a cancelar el monto correspondiente para agendar tu cita.
     </p>
-    <a
-      href={`/patient/charge-orders/${chargeOrder?.id}/pay`}
-      className="text-emerald-400 text-sm hover:text-emerald-300 flex items-center gap-2"
-    >
-      Ir a pagar ahora
-      <ArrowRightIcon className="w-4 h-4" />
-    </a>
+    <div className="flex gap-3 w-full">
+      <button
+        onClick={onCancel}
+        className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
+      >
+        Cerrar
+      </button>
+      <a
+        href={`/patient/charge-orders/${chargeOrder?.id}/pay`}
+        className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2 text-center"
+      >
+        Ir a Pagar <ArrowRightIcon className="w-4 h-4" />
+      </a>
+    </div>
   </div>
 );
 // Vista de Error
@@ -147,7 +184,7 @@ const ErrorView: React.FC<{
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
     <div className="flex items-center gap-3 mb-4">
       <XCircleIcon className="w-8 h-8 text-red-500" />
-      <h4 className="text-white font-bold text-lg">Error en la Compra</h4>
+      <h4 className="text-white font-bold text-lg">Error en la Solicitud</h4>
     </div>
     
     <div className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-sm">
