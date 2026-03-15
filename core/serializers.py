@@ -2156,7 +2156,9 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "phone",
             "signature",
             "formal_title",
-            "services",  # <--- AGREGADO
+            "services",
+            "bio",
+            "photo_url",
         ]
     
     def to_representation(self, instance):

@@ -165,6 +165,7 @@ from .api_views import (
     PaymentWebhookViewSet,
     get_pending_payments,
     verify_payment,
+    purchase_service_direct,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -399,6 +400,7 @@ urlpatterns = [
     path('patient-activate/', api_views.activate_patient_portal, name='activate-patient'),
     path("payments/pending/", api_views.get_pending_payments, name="get-pending-payments"),
     path("payments/<int:payment_id>/verify/", api_views.verify_payment, name="verify-payment"),
+    path('charges/purchase-service/', purchase_service_direct, name='purchase-service-direct'),
     
     # OCR
     path('payments/ocr/', api_views.payment_ocr_api, name='payment-ocr'),

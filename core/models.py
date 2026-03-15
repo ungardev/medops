@@ -1820,6 +1820,20 @@ class DoctorOperator(models.Model):
     
     history = HistoricalRecords()
     
+    # --- PERFIL PÚBLICO (Portal Paciente) ---
+    bio = models.TextField(
+        blank=True, 
+        null=True, 
+        help_text="Biografía corta del doctor para el perfil público"
+    )
+    photo_url = models.CharField(
+        max_length=500, 
+        blank=True, 
+        null=True, 
+        help_text="URL de foto de perfil del doctor"
+    )
+    
+    
     class Meta:
         verbose_name = "Médico Operador"
         verbose_name_plural = "Médicos Operadores"

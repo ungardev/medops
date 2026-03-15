@@ -6634,3 +6634,67 @@ class ServiceCategoryViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         serializer.save()
+
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])  # Ajustar según necesidad
+def purchase_service_direct(request):
+    """
+    Compra directa de servicio sin cita previa.
+    Crea ChargeOrder asociada al paciente.
+    """
+    patient_id = request.data.get('patient_id')
+    doctor_service_id = request.data.get('doctor_service_id')
+    qty = request.data.get('qty', 1)
+    
+    # Validaciones
+    if not patient_id or not doctor_service_id:
+        return Response(
+            {"error": "Se requiere patient_id y doctor_service_id"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Buscar servicio
+    try:
+        service = DoctorService.objects.get(
+            id=doctor_service_id,
+            is_active=True,
+            is_visible_global=True
+        )
+    except DoctorService.DoesNotExist:
+        return Response(
+            {"error": "Servicio no encontrado o no disponible"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Buscar o crear ChargeOrder para el paciente (sin appointment)
+    charge_order, created = ChargeOrder.objects.get_or_create(
+        patient_id=patient_id,
+        appointment__isnull=True,  # Sin cita asociada
+        status='open',
+        defaults={
+            'doctor': service.doctor,
+            'institution': service.institution,
+            'currency': 'USD',
+            'total': 0,
+            'balance_due': 0
+        }
+    )
+    
+    # Crear ChargeItem
+    charge_item = ChargeItem.objects.create(
+        order=charge_order,
+        doctor_service=service,
+        code=service.code,
+        description=service.name,
+        qty=qty,
+        unit_price=service.price_usd
+    )
+    
+    # Recalcular totales
+    charge_order.recalc_totals()
+    charge_order.save(update_fields=['total', 'balance_due', 'status'])
+    
+    serializer = ChargeOrderSerializer(charge_order)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
