@@ -133,6 +133,25 @@ export interface ServiceSearchResult {
   times_used: number;
 }
 // ============================================
+// NUEVO: INTERFACES PARA COMPRAS DIRECTAS
+// ============================================
+export interface PurchaseServiceRequest {
+  patientId: number;
+  serviceId: number;
+  qty: number;
+}
+export interface PurchaseServiceResponse {
+  id: number;
+  patient: number;
+  doctor?: number;
+  institution: number;
+  total: number;
+  balance_due: number;
+  status: string;
+  issued_at?: string;
+  // Campos adicionales según la estructura real del backend
+}
+// ============================================
 // CONFIGURACIÓN DE AXIOS
 // ============================================
 const API_BASE_URL = '/api';
@@ -289,8 +308,8 @@ export const serviceClient = {
 // NUEVO: CLIENTE PARA OPERACIONES DE COBRO DIRECTO
 // ============================================
 export const chargeClient = {
-  purchaseServiceDirect: (data: { patientId: number; serviceId: number; qty: number }) => {
-    return patientApi.post('/charges/purchase-service/', data);
+  purchaseServiceDirect: (data: PurchaseServiceRequest) => {
+    return patientApi.post<PurchaseServiceResponse>('/charges/purchase-service/', data);
   }
 };
 export default patientApi;
