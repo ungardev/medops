@@ -6414,40 +6414,53 @@ def patient_search_doctors(request):
     except Exception as e:
         logger.error(f"Error en patient_search_doctors: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['GET'])
 def patient_search_services(request):
     """
     GET /api/patient-search/services/
     
-    Busca servicios por nombre o código.
+    Busca servicios activos y visibles por nombre, código o descripción.
+    Devuelve información completa del servicio incluyendo precio, médico y duración.
     """
     q = request.query_params.get('q', '').strip()
     
     try:
-        # Buscar en ChargeItems
-        items = ChargeItem.objects.values(
-            'code', 'description'
-        ).annotate(
-            times_used=Count('id')
-        ).filter(
-            times_used__gte=1
+        # Buscar en DoctorService con filtros de estado
+        services = DoctorService.objects.filter(
+            is_active=True,
+            is_visible_global=True
         )
         
+        # Aplicar búsqueda si hay consulta
         if q:
-            items = items.filter(
+            services = services.filter(
                 Q(code__icontains=q) |
+                Q(name__icontains=q) |
                 Q(description__icontains=q)
             )
         
-        items = items.distinct()[:30]
+        # Optimización: Cargar médico relacionado
+        services = services.select_related('doctor')
         
+        # Ordenar por relevancia (usos y nombre) y limitar resultados
+        services = services.order_by('-times_used', 'name')[:30]
+        
+        # Formatear resultados
         results = [
             {
-                'code': item['code'],
-                'description': item['description'],
-                'times_used': item['times_used'],
+                'id': service.id,
+                'code': service.code,
+                'name': service.name,
+                'description': service.description,
+                'doctor_name': service.doctor.full_name if service.doctor else None,
+                'price_ves': float(service.price_ves) if service.price_ves else float(service.price_usd or 0),
+                'duration_minutes': service.duration_minutes,
+                'times_used': service.times_used,
+                'is_active': service.is_active,
             }
-            for item in items
+            for service in services
         ]
         
         return Response({

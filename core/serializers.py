@@ -2076,9 +2076,12 @@ class DoctorServiceSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_price_ves(self, obj):
-        # Lógica para calcular precio en VES (se implementará en el frontend)
-        # Aquí podrías devolver el precio USD y dejar la conversión para el frontend
-        return obj.price_usd  # Por ahora, devolver USD (el frontend convertirá a VES)
+        # Si el modelo tiene un campo price_ves, devolverlo directamente
+        if hasattr(obj, 'price_ves') and obj.price_ves:
+            return float(obj.price_ves)
+        # Si no, calcular a partir de price_usd (asumiendo tasa de cambio disponible)
+        # Por ahora, devolver price_usd como fallback
+        return float(obj.price_usd) if obj.price_usd else 0.0
 
 
 class DoctorServiceWriteSerializer(serializers.ModelSerializer):
