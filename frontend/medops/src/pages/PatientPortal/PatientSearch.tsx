@@ -2,11 +2,11 @@
 import { useState, useEffect } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { Search, User, Building2, Loader2, Filter } from "lucide-react";
-import { patientClient, Doctor, DoctorService } from "@/api/patient/client";
+import { patientClient, Doctor, ServiceSearchResult } from "@/api/patient/client";
 export default function PatientSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchType, setSearchType] = useState<"doctors" | "services">("doctors");
-  const [results, setResults] = useState<Doctor[] | DoctorService[]>([]);
+  const [results, setResults] = useState<Doctor[] | ServiceSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const handleSearch = async () => {
@@ -20,7 +20,7 @@ export default function PatientSearch() {
         const response = await patientClient.searchDoctors(searchQuery);
         setResults(response.data.results || []);
       } else {
-        // ✅ FIX: Ahora searchServices retorna DoctorService[] (ServiceCatalogResponse)
+        // ✅ FIX: Ahora searchServices retorna ServiceSearchResponse (ServiceSearchResult[])
         const response = await patientClient.searchServices(searchQuery);
         setResults(response.data.results || []);
       }
@@ -133,23 +133,25 @@ export default function PatientSearch() {
             </div>
           </div>
         ))}
-        {searchType === "services" && (results as DoctorService[]).map((service, index) => (
-          <div key={service.id + index} className="bg-[#0a0a0b] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
+        {searchType === "services" && (results as ServiceSearchResult[]).map((service, index) => (
+          <div key={service.code + index} className="bg-[#0a0a0b] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                  <span className="text-blue-400 text-[10px] font-black">{service.name.substring(0, 3).toUpperCase()}</span>
+                  <span className="text-blue-400 text-[10px] font-black">
+                    {service.description ? service.description.substring(0, 3).toUpperCase() : '?'}
+                  </span>
                 </div>
                 <div>
-                  <p className="text-sm font-bold">{service.name}</p>
+                  <p className="text-sm font-bold">{service.description}</p>
                   <p className="text-[9px] text-white/40 mt-1">
-                    Dr. {service.doctor_name}
+                    Código: {service.code}
                   </p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-[9px] text-white/30">
-                  Bs {service.price_ves.toLocaleString('es-VE')}
+                  Usos: {service.times_used}
                 </p>
               </div>
             </div>

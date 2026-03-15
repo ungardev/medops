@@ -133,6 +133,13 @@ export interface ServiceSearchResult {
   times_used: number;
 }
 // ============================================
+// NUEVO: INTERFACES PARA BÚSQUEDA DE SERVICIOS
+// ============================================
+export interface ServiceSearchResponse {
+  count: number;
+  results: ServiceSearchResult[];
+}
+// ============================================
 // NUEVO: INTERFACES PARA COMPRAS DIRECTAS
 // ============================================
 export interface PurchaseServiceRequest {
@@ -263,9 +270,9 @@ export const patientClient = {
       `/patient-search/doctors/?q=${encodeURIComponent(query)}`
     ),
   
-  // ✅ FIX: Ahora retorna DoctorService[] en lugar de ServiceSearchResult[]
+  // ✅ FIX: Ahora retorna ServiceSearchResponse (ServiceSearchResult[])
   searchServices: (query: string) =>
-    patientApi.get<ServiceCatalogResponse>(
+    patientApi.get<ServiceSearchResponse>(
       `/patient-search/services/?q=${encodeURIComponent(query)}`
     ),
 };
