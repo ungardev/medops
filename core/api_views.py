@@ -6422,7 +6422,7 @@ def patient_search_services(request):
     GET /api/patient-search/services/
     
     Busca servicios activos y visibles por nombre, código o descripción.
-    Devuelve información completa del servicio incluyendo precio, médico y duración.
+    Devuelve información completa del servicio incluyendo precio (USD), médico y duración.
     """
     q = request.query_params.get('q', '').strip()
     
@@ -6441,6 +6441,10 @@ def patient_search_services(request):
                 Q(description__icontains=q)
             )
         
+        # Anotar con conteo de charge_items para obtener times_used
+        # Esto calcula el número de veces que el servicio ha sido usado
+        services = services.annotate(times_used=Count('charge_items'))
+        
         # Optimización: Cargar médico relacionado
         services = services.select_related('doctor')
         
@@ -6448,20 +6452,22 @@ def patient_search_services(request):
         services = services.order_by('-times_used', 'name')[:30]
         
         # Formatear resultados
-        results = [
-            {
+        results = []
+        for service in services:
+            # Calcular precio (usar price_usd, manejar nulos)
+            price = float(service.price_usd) if service.price_usd else 0.0
+            
+            results.append({
                 'id': service.id,
                 'code': service.code,
                 'name': service.name,
                 'description': service.description,
                 'doctor_name': service.doctor.full_name if service.doctor else None,
-                'price_ves': float(service.price_ves) if service.price_ves else float(service.price_usd or 0),
+                'price_usd': price,  # Devolvemos price_usd
                 'duration_minutes': service.duration_minutes,
                 'times_used': service.times_used,
                 'is_active': service.is_active,
-            }
-            for service in services
-        ]
+            })
         
         return Response({
             'count': len(results),
@@ -6469,7 +6475,9 @@ def patient_search_services(request):
         })
         
     except Exception as e:
+        import traceback
         logger.error(f"Error en patient_search_services: {str(e)}")
+        logger.error(traceback.format_exc())
         return Response({'error': str(e)}, status=500)
 
 
