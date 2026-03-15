@@ -1096,7 +1096,13 @@ class Payment(models.Model):
         on_delete=models.PROTECT,
         related_name='payments'
     )
-    appointment = models.ForeignKey('Appointment', on_delete=models.CASCADE, related_name="payments")
+    appointment = models.ForeignKey(
+        'Appointment', 
+        on_delete=models.CASCADE, 
+        related_name="payments",
+        null=True,
+        blank=True
+    )
     charge_order = models.ForeignKey('ChargeOrder', on_delete=models.CASCADE, related_name='payments')
     # NUEVO: CACHÉ de doctor para rendimiento y reportes
     doctor = models.ForeignKey(
@@ -1446,7 +1452,9 @@ class ChargeOrder(models.Model):
     appointment = models.ForeignKey(
         'Appointment', 
         on_delete=models.CASCADE, 
-        related_name='charge_orders'
+        related_name='charge_orders',
+        null=True,
+        blank=True
     )
     
     institution = models.ForeignKey(

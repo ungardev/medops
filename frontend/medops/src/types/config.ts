@@ -86,6 +86,9 @@ export interface DoctorConfig {
   signature?: string | File | null;
   // 🆕 AGREGADO: specialty (especialidad principal)
   specialty?: string | null;
+  // 🆕 AGREGADO: Campos de perfil público
+  bio?: string;          // Biografía corta del doctor
+  photo_url?: string;    // URL de foto de perfil
   // =====================================================
   // 🔹 WhatsApp Business Integration
   // =====================================================

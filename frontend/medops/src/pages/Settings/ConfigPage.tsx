@@ -7,8 +7,9 @@ import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import { InstitutionCard } from "@/components/Settings/InstitutionCard";
 import EditInstitutionModal from "@/components/Settings/EditInstitutionModal";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
+import { DoctorProfileCard } from "@/components/Doctor/DoctorProfileCard"; // NUEVO: Importar componente de perfil
 import { api } from "@/lib/apiClient";
-import type { Specialty } from "@/types/config";
+import type { Specialty, InstitutionSimple } from "@/types/config"; // NUEVO: Importar InstitutionSimple
 import { 
   FingerPrintIcon,
   ShieldCheckIcon,
@@ -26,6 +27,8 @@ type DoctorForm = {
   email: string;
   phone: string;
   signature?: string | File | null;
+  bio?: string;        // NUEVO: Biografía pública
+  photo_url?: string;  // NUEVO: URL de foto de perfil
 };
 type WhatsAppForm = {
   whatsappEnabled: boolean;
@@ -57,7 +60,10 @@ export default function ConfigPage() {
   
   const [docForm, setDocForm] = useState<DoctorForm>({
     full_name: "", gender: "M", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
+    bio: "",         // NUEVO
+    photo_url: "",   // NUEVO
   });
+  
   const [whatsAppForm, setWhatsAppForm] = useState<WhatsAppForm>({
     whatsappEnabled: false,
     whatsappBusinessNumber: '',
@@ -82,6 +88,8 @@ export default function ConfigPage() {
       email: doc.email || "",
       phone: doc.phone || "",
       signature: doc.signature || null,
+      bio: doc.bio || "",         // NUEVO
+      photo_url: doc.photo_url || "",   // NUEVO
     });
     // Cargar configuración WhatsApp
     if (doc.whatsapp_enabled !== undefined) {
@@ -154,6 +162,7 @@ export default function ConfigPage() {
       ...docForm, 
       specialty_ids: docForm.specialties.map(s => s.id),
       ...whatsAppForm
+      // bio y photo_url ya están en docForm, se incluyen automáticamente con el spread operator
     };
     await updateDoctor(payload);
     setEditingDoctor(false);
@@ -252,6 +261,36 @@ export default function ConfigPage() {
                     )}
                   </div>
                 </div>
+                
+                {/* NUEVO: Sección de Previsualización de Perfil (Solo lectura) */}
+                <div className="space-y-3">
+                  <span className={labelStyles}>Public_Profile_Preview</span>
+                  <div className="flex justify-center p-4 bg-white/5 rounded-sm border border-white/10">
+                     <DoctorProfileCard 
+                        doctor={{
+                          id: doc?.id || 0,
+                          full_name: docForm.full_name,
+                          gender: docForm.gender,
+                          is_verified: doc?.is_verified || false,
+                          colegiado_id: docForm.colegiado_id,
+                          license: docForm.license,
+                          specialties: docForm.specialties,
+                          // Transformar institutions de number[] a { id: number; name: string }[]
+                          // Usar active_institution si está disponible, de lo contrario mapear IDs
+                          institutions: doc?.active_institution 
+                            ? [doc.active_institution] 
+                            : doc?.institutions 
+                              ? doc.institutions.map(id => ({ id, name: `Institución ${id}` })) 
+                              : [],
+                          email: docForm.email,
+                          phone: docForm.phone,
+                          bio: docForm.bio,
+                          photo_url: docForm.photo_url,
+                        }} 
+                        mode="preview" 
+                      />
+                  </div>
+                </div>
                 <button 
                   onClick={() => setEditingDoctor(true)} 
                   className="w-full flex items-center justify-center gap-3 py-4 border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/50 hover:text-emerald-500 transition-all rounded-sm"
@@ -296,17 +335,42 @@ export default function ConfigPage() {
                     options={specialties}
                   />
                 </div>
+                
+                {/* NUEVO: Campos para Biografía y Foto */}
+                <div className="grid grid-cols-1 gap-6">
+                  <div>
+                    <label className={labelStyles}>Public_Biography</label>
+                    <textarea 
+                      className={inputStyles} 
+                      value={docForm.bio || ""} 
+                      onChange={(e) => setDocForm({...docForm, bio: e.target.value})}
+                      placeholder="Biografía corta para tu perfil público..."
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelStyles}>Profile_Photo_URL</label>
+                    <input 
+                      type="text"
+                      className={inputStyles} 
+                      value={docForm.photo_url || ""} 
+                      onChange={(e) => setDocForm({...docForm, photo_url: e.target.value})}
+                      placeholder="https://ejemplo.com/foto.jpg"
+                    />
+                  </div>
+                </div>
                 <div className="bg-black/40 p-6 border border-white/5 rounded-sm">
                   <label className={labelStyles}>Signature_Blob_Import</label>
                   <input type="file" onChange={handleSignatureUpload} className="w-full text-[10px] text-white/20 file:bg-white/10 file:border-none file:text-white/60 file:px-4 file:py-2 file:text-[9px] file:font-black file:uppercase file:rounded-sm file:mr-4 file:hover:bg-white file:hover:text-black transition-all" />
                 </div>
+                
                 {/* WhatsApp Section */}
                 <div className="pt-6 border-t border-white/10">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-4 flex items-center gap-2">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2325D366'%3E%3Cpath d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/%3E%3C/svg%3E" className="w-4 h-4" alt="WhatsApp" />
                     WhatsApp Business
                   </h4>
-                  
+                   
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
                       <input
@@ -320,7 +384,7 @@ export default function ConfigPage() {
                         Habilitar WhatsApp
                       </label>
                     </div>
-                    
+                     
                     {whatsAppForm.whatsappEnabled && (
                       <div className="grid grid-cols-2 gap-4 pl-7">
                         <div>
@@ -379,6 +443,7 @@ export default function ConfigPage() {
             )}
           </div>
         </section>
+        
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1 border-l-2 border-emerald-500/50 ml-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">

@@ -2,5 +2,6 @@
   "typeCheckingMode": "basic",
   "reportMissingImports": false,
   "reportMissingModuleSource": false,
-  "reportAttributeAccessIssue": false
+  "reportAttributeAccessIssue": false,
+  "reportOptionalIterable": "none"
 }

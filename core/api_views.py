@@ -37,6 +37,7 @@ from core.permissions import IsDoctorOperatorOrReadOnly
 from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
+from django.db.models import QuerySet
 #from datetime import date, timedelta
 
 
@@ -565,10 +566,14 @@ class PaymentViewSet(viewsets.ModelViewSet):
             timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
             reference_number = f"REC-{charge_order.id}-{timestamp}"
         
+        # ✅ FIX: Usar charge_order.patient y charge_order.doctor directamente
+        # En lugar de acceder a través de charge_order.appointment (que puede ser None)
         payment = Payment.objects.create(
             institution=charge_order.institution,
-            appointment=charge_order.appointment,
+            appointment=charge_order.appointment,  # Puede ser None
             charge_order=charge_order,
+            patient=charge_order.patient,  # ✅ Usar campo directo
+            doctor=charge_order.doctor,    # ✅ Usar campo directo
             amount=validated_data['amount'],
             method=validated_data['method'],
             reference_number=reference_number,
@@ -3491,9 +3496,9 @@ def verify_mobile_payment(request):
             payment = Payment.objects.create(
                 institution=institution,
                 charge_order=charge_order,
-                appointment=charge_order.appointment,
-                patient=charge_order.appointment.patient,
-                doctor=charge_order.appointment.doctor,
+                appointment=charge_order.appointment,  # Puede ser None
+                patient=charge_order.patient if charge_order.appointment is None else charge_order.appointment.patient,
+                doctor=charge_order.doctor if charge_order.appointment is None else charge_order.appointment.doctor,
                 amount=Decimal(str(best_match['amount'])),
                 currency=best_match.get('currency', 'VES'),
                 method='transfer',  # Mobile payment is a transfer
@@ -6186,13 +6191,11 @@ def get_pending_payments(request):
 # ============================================
 # PATIENT PORTAL - SERVICIOS
 # ============================================
-@api_view(['GET'])
 def patient_services_history(request):
     """
     GET /api/patient/services/history/
     
-    Historial de servicios consumidos por el paciente.
-    Devuelve ChargeOrder con sus ChargeItems.
+    Historial de servicios del paciente.
     """
     try:
         patient_user = get_patient_user_from_request(request)
@@ -6201,63 +6204,57 @@ def patient_services_history(request):
         
         patient = patient_user.patient
         
-        # Obtener todas las charge orders pagadas del paciente
-        charge_orders = ChargeOrder.objects.filter(
-            patient=patient,
+        # Obtener órdenes de cobro pagadas del paciente
+        paid_orders = ChargeOrder.objects.filter(
+            patient=patient, 
             status='paid'
-        ).select_related(
-            'institution', 'doctor', 'doctor__user'
-        ).prefetch_related('items').order_by('-issued_at')
+        ).select_related('doctor', 'institution')
         
-        # Calcular total invertido
-        total_invertido = sum(float(order.total) for order in charge_orders)
-        
-        # Obtener todos los servicios consumidos (ChargeItems)
-        all_items = []
-        for order in charge_orders:
+        # Construir historial de servicios
+        orders_data = []
+        for order in paid_orders:
+            order_items = []
             for item in order.items.all():
-                all_items.append({
-                    'order_id': order.id,
-                    'order_date': order.issued_at.strftime('%Y-%m-%d') if order.issued_at else None,
-                    'institution': order.institution.name if order.institution else 'N/A',
+                order_items.append({
                     'code': item.code,
                     'description': item.description,
                     'qty': float(item.qty),
                     'unit_price': float(item.unit_price),
                     'subtotal': float(item.subtotal),
                 })
+            
+            orders_data.append({
+                'id': order.id,
+                'date': order.issued_at.isoformat() if order.issued_at else None,
+                'institution': order.institution.name if order.institution else 'N/A',
+                'total': float(order.total),
+                'status': order.status,
+                'items': order_items,
+            })
+        
+        # Estadísticas resumidas
+        total_orders = len(orders_data)
+        total_invertido = sum(order['total'] for order in orders_data)
+        unique_services = len(set(
+            item['code'] 
+            for order in orders_data 
+            for item in order['items']
+        ))
         
         return Response({
-            'orders': [
-                {
-                    'id': order.id,
-                    'date': order.issued_at.strftime('%Y-%m-%d') if order.issued_at else None,
-                    'institution': order.institution.name if order.institution else 'N/A',
-                    'total': float(order.total),
-                    'status': order.status,
-                    'items': [
-                        {
-                            'code': item.code,
-                            'description': item.description,
-                            'qty': float(item.qty),
-                            'unit_price': float(item.unit_price),
-                            'subtotal': float(item.subtotal),
-                        }
-                        for item in order.items.all()
-                    ],
-                }
-                for order in charge_orders
-            ],
+            'orders': orders_data,
             'summary': {
-                'total_orders': charge_orders.count(),
+                'total_orders': total_orders,
                 'total_invertido': total_invertido,
-                'unique_services': len(set(item['code'] for item in all_items)),
+                'unique_services': unique_services,
             }
         })
         
     except Exception as e:
         logger.error(f"Error en patient_services_history: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+
 @api_view(['GET'])
 def patient_services_catalog(request):
     """
@@ -6268,8 +6265,6 @@ def patient_services_catalog(request):
     """
     try:
         # Obtener todos los ChargeItems únicos de todas las órdenes
-        # Esto representa los servicios que se han prestado
-        
         all_services = ChargeItem.objects.values(
             'code', 'description', 'unit_price'
         ).annotate(
@@ -6294,10 +6289,12 @@ def patient_services_catalog(request):
         
         # Obtener todas las especialidades únicas usadas
         specialties_used = set()
+        # FIX: Usar values_list en lugar de iterar sobre .all()
         for order in ChargeOrder.objects.filter(status='paid').select_related('doctor'):
-            if order.doctor and order.doctor.specialties:
-                for spec in order.doctor.specialties.all():
-                    specialties_used.add(spec.name)
+            if order.doctor:
+                # Obtener nombres de especialidades directamente sin iterar
+                spec_names = order.doctor.specialties.values_list('name', flat=True)
+                specialties_used.update(spec_names)
         
         return Response({
             'services': list(services_by_code.values()),
@@ -6308,7 +6305,8 @@ def patient_services_catalog(request):
     except Exception as e:
         logger.error(f"Error en patient_services_catalog: {str(e)}")
         return Response({'error': str(e)}, status=500)
-@api_view(['GET'])
+
+
 def patient_services_recommended(request):
     """
     GET /api/patient/services/recommended/
@@ -6322,12 +6320,27 @@ def patient_services_recommended(request):
         
         patient = patient_user.patient
         
+        # Estrategia 2: Desglose de consulta para optimización y tipado
+        # Paso 1: Obtener IDs de órdenes pagadas (consulta ligera)
+        paid_order_ids = ChargeOrder.objects.filter(
+            patient=patient, 
+            status='paid'
+        ).values_list('id', flat=True)
+        
+        # Paso 2: Obtener objetos completos con relaciones optimizadas
+        paid_orders = ChargeOrder.objects.filter(
+            id__in=paid_order_ids
+        ).select_related('doctor')
+        
         # Obtener las especialidades de los doctores que han atendido al paciente
         patient_doctor_specialties = set()
-        for order in ChargeOrder.objects.filter(patient=patient, status='paid').select_related('doctor'):
-            if order.doctor and order.doctor.specialties:
-                for spec in order.doctor.specialties.all():
-                    patient_doctor_specialties.add(spec.id)
+        
+        # FIX: Usar values_list en lugar de iterar sobre .all()
+        for order in paid_orders:
+            if order.doctor:
+                # Obtener IDs de especialidades directamente sin iterar
+                spec_ids = order.doctor.specialties.values_list('id', flat=True)
+                patient_doctor_specialties.update(spec_ids)
         
         # Encontrar doctores con esas especialidades
         recommended_doctors = DoctorOperator.objects.filter(

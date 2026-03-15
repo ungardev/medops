@@ -29,6 +29,8 @@ export interface Doctor {
   email: string;
   phone: string;
   services?: DoctorService[];
+  bio?: string;        // <--- AGREGADO: Biografía corta del doctor
+  photo_url?: string;  // <--- AGREGADO: URL de foto de perfil
 }
 export interface ServiceCategory {
   id: number;
@@ -282,5 +284,13 @@ export const serviceClient = {
   getCategories: () => {
     return patientApi.get<ServiceCategory[]>('/patient/service-categories/');
   },
+};
+// ============================================
+// NUEVO: CLIENTE PARA OPERACIONES DE COBRO DIRECTO
+// ============================================
+export const chargeClient = {
+  purchaseServiceDirect: (data: { patientId: number; serviceId: number; qty: number }) => {
+    return patientApi.post('/charges/purchase-service/', data);
+  }
 };
 export default patientApi;
