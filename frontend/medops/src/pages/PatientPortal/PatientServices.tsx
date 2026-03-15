@@ -184,7 +184,7 @@ export default function PatientServices() {
                 <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
                   <span className="text-[9px] text-white/40">Precio</span>
                   <span className="text-emerald-400 font-bold text-sm">
-                    Bs {service.price_ves ? service.price_ves.toLocaleString('es-VE', { minimumFractionDigits: 0 }) : 'N/A'}
+                    $ {service.price_usd ? service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'N/A'}
                   </span>
                 </div>
                 <div className="mt-2 text-[9px] text-white/40">

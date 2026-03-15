@@ -48,7 +48,7 @@ export default function DoctorProfile() {
                   </div>
                   <div className="text-right">
                     <p className="text-emerald-400 font-mono text-lg">
-                      Bs {service.price_ves.toLocaleString('es-VE')}
+                      $ {service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                     <button
                       onClick={() => setSelectedService(service)}

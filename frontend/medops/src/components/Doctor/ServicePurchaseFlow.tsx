@@ -82,8 +82,8 @@ const ConfirmView: React.FC<{
     <div className="mb-6 p-4 bg-white/5 rounded-sm">
       <div className="flex justify-between items-center mb-2">
         <span className="text-white/80">{service.name}</span>
-        <span className="text-white font-mono">
-          Bs {service.price_ves?.toLocaleString('es-VE')}
+        <span className="text-emerald-400 font-mono">
+          $ {service.price_usd?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
         </span>
       </div>
       <div className="text-white/50 text-sm">

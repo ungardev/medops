@@ -48,7 +48,7 @@ export interface DoctorService {
   institution_name: string;
   name: string;
   description: string;
-  price_ves: number;
+  price_usd: number;  // <--- CORREGIDO: Usamos price_usd
   duration_minutes: number;
   is_active: boolean;
   is_visible_global: boolean;
@@ -127,14 +127,20 @@ export interface DoctorSearchResult {
   license: string;
   is_verified: boolean;
 }
+// ============================================
+// NUEVO: INTERFACES PARA BÚSQUEDA DE SERVICIOS (ACTUALIZADA)
+// ============================================
 export interface ServiceSearchResult {
+  id: number;
   code: string;
+  name: string;
   description: string;
+  doctor_name: string;
+  price_usd: number;
+  duration_minutes: number;
   times_used: number;
+  is_active: boolean;
 }
-// ============================================
-// NUEVO: INTERFACES PARA BÚSQUEDA DE SERVICIOS
-// ============================================
 export interface ServiceSearchResponse {
   count: number;
   results: ServiceSearchResult[];
@@ -270,7 +276,7 @@ export const patientClient = {
       `/patient-search/doctors/?q=${encodeURIComponent(query)}`
     ),
   
-  // ✅ FIX: Ahora retorna ServiceSearchResponse (ServiceSearchResult[])
+  // ✅ FIX: Ahora retorna ServiceSearchResponse (ServiceSearchResult actualizado)
   searchServices: (query: string) =>
     patientApi.get<ServiceSearchResponse>(
       `/patient-search/services/?q=${encodeURIComponent(query)}`
