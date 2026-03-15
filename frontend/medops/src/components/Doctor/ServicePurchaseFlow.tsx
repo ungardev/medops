@@ -27,8 +27,8 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     
     try {
       const response = await chargeClient.purchaseServiceDirect({
-        patientId,
-        serviceId: service.id,
+        patient_id: patientId,
+        doctor_service_id: service.id,
         qty: 1,
       });
       

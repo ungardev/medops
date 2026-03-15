@@ -43,6 +43,8 @@ import PatientActivate from "./pages/PatientPortal/PatientActivate";
 import PatientAppointments from "./pages/PatientPortal/PatientAppointments";
 import PatientPayments from "./pages/PatientPortal/PatientPayments";
 import PatientChargeOrderDetail from "./pages/PatientPortal/PatientChargeOrderDetail";
+// Importación CORREGIDA: Añadir DoctorProfile
+import DoctorProfile from "./pages/PatientPortal/DoctorProfile";
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
@@ -79,6 +81,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="queue" element={<PatientQueue />} />
               <Route path="search" element={<PatientSearch />} />
               <Route path="services" element={<PatientServices />} /> {/* 🆕 Ruta Servicios */}
+              {/* NUEVA RUTA: Perfil del Doctor */}
+              <Route path="doctor/:id" element={<DoctorProfile />} />
               <Route path="settings" element={<PatientSettings />} />
               <Route path="payments" element={<PatientPayments />} />
               <Route path="payments/:id" element={<PatientChargeOrderDetail />} />

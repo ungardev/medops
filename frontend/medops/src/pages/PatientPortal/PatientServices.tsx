@@ -18,9 +18,14 @@ import {
   Loader2 
 } from "lucide-react";
 import { ServiceCatalogResponse, DoctorService } from "@/api/patient/client";
+import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow"; // Importar modal
 export default function PatientServices() {
   const [activeTab, setActiveTab] = useState<"history" | "catalog" | "recommended">("history");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  // Estado para el modal de compra de servicios
+  const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
+  // Placeholder para patientId (debería obtenerse del contexto de autenticación)
+  const currentPatientId = 1;
   const { data: historyData, isLoading: historyLoading } = usePatientServicesHistory();
   const { data: catalogData, isLoading: catalogLoading } = usePatientServicesCatalog();
   const { data: recommendedData, isLoading: recommendedLoading } = usePatientServicesRecommended();
@@ -171,7 +176,11 @@ export default function PatientServices() {
         {activeTab === "catalog" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {services.map((service) => (
-              <div key={service.id} className="bg-[#0a0a0b] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors">
+              <div 
+                key={service.id} 
+                className="bg-[#0a0a0b] border border-white/10 rounded-sm p-4 hover:border-white/20 transition-colors cursor-pointer"
+                onClick={() => setSelectedService(service)} // Abrir modal al hacer clic
+              >
                 <div className="flex justify-between items-start mb-2">
                   <span className="text-[8px] font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
                     {service.category_name || 'SERVICIO'}
@@ -222,6 +231,22 @@ export default function PatientServices() {
           </div>
         )}
       </div>
+      {/* Modal de Compra de Servicio */}
+      {selectedService && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="w-full max-w-md">
+            <ServicePurchaseFlow
+              service={selectedService}
+              patientId={currentPatientId}
+              onSuccess={() => {
+                setSelectedService(null);
+                // Opcional: Redirigir a órdenes de cobro o mostrar toast
+              }}
+              onCancel={() => setSelectedService(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

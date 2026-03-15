@@ -48,7 +48,7 @@ export interface DoctorService {
   institution_name: string;
   name: string;
   description: string;
-  price_usd: number;  // <--- CORREGIDO: Usamos price_usd
+  price_usd: number;
   duration_minutes: number;
   is_active: boolean;
   is_visible_global: boolean;
@@ -146,11 +146,11 @@ export interface ServiceSearchResponse {
   results: ServiceSearchResult[];
 }
 // ============================================
-// NUEVO: INTERFACES PARA COMPRAS DIRECTAS
+// NUEVO: INTERFACES PARA COMPRAS DIRECTAS (CORREGIDO)
 // ============================================
 export interface PurchaseServiceRequest {
-  patientId: number;
-  serviceId: number;
+  patient_id: number;      // CORREGIDO: snake_case
+  doctor_service_id: number; // CORREGIDO: snake_case y nombre específico
   qty: number;
 }
 export interface PurchaseServiceResponse {
@@ -162,7 +162,6 @@ export interface PurchaseServiceResponse {
   balance_due: number;
   status: string;
   issued_at?: string;
-  // Campos adicionales según la estructura real del backend
 }
 // ============================================
 // CONFIGURACIÓN DE AXIOS
@@ -276,7 +275,6 @@ export const patientClient = {
       `/patient-search/doctors/?q=${encodeURIComponent(query)}`
     ),
   
-  // ✅ FIX: Ahora retorna ServiceSearchResponse (ServiceSearchResult actualizado)
   searchServices: (query: string) =>
     patientApi.get<ServiceSearchResponse>(
       `/patient-search/services/?q=${encodeURIComponent(query)}`
@@ -286,18 +284,15 @@ export const patientClient = {
 // NUEVOS CLIENTES PARA FASE 2 (DOCTORES Y SERVICIOS)
 // ============================================
 export const doctorClient = {
-  // Obtener directorio de doctores (listado)
   getDoctors: (params?: { specialty?: number; institution?: number }) => {
     const queryString = params 
       ? '?' + new URLSearchParams(params as any).toString()
       : '';
     return patientApi.get<DoctorSearchResponse>(`/patient/doctors/${queryString}`);
   },
-  // Obtener perfil de un doctor específico
   getDoctorProfile: (doctorId: number) => {
     return patientApi.get<Doctor>(`/patient/doctor-profile/${doctorId}/`);
   },
-  // Obtener servicios de un doctor específico
   getDoctorServices: (doctorId: number) => {
     return patientApi.get<DoctorService[]>(
       `/patient/doctor-profile/${doctorId}/services/`
@@ -305,23 +300,22 @@ export const doctorClient = {
   },
 };
 export const serviceClient = {
-  // Obtener catálogo global de servicios (con info del doctor)
   getServices: (params?: { category?: number; doctor?: number }) => {
     const queryString = params 
       ? '?' + new URLSearchParams(params as any).toString()
       : '';
     return patientApi.get<ServiceCatalogResponse>(`/patient/services/${queryString}`);
   },
-  // Obtener categorías de servicios
   getCategories: () => {
     return patientApi.get<ServiceCategory[]>('/patient/service-categories/');
   },
 };
 // ============================================
-// NUEVO: CLIENTE PARA OPERACIONES DE COBRO DIRECTO
+// NUEVO: CLIENTE PARA OPERACIONES DE COBRO DIRECTO (CORREGIDO)
 // ============================================
 export const chargeClient = {
   purchaseServiceDirect: (data: PurchaseServiceRequest) => {
+    // Envía los datos en snake_case como espera el backend
     return patientApi.post<PurchaseServiceResponse>('/charges/purchase-service/', data);
   }
 };
