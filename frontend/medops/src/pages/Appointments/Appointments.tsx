@@ -78,9 +78,8 @@ export default function Appointments() {
     const fetchPendingAppointments = async () => {
       setIsLoadingPending(true);
       try {
-        // Asumiendo que hay un endpoint para doctores
-        // Nota: Ajustar la URL si es necesario (ej. /api/doctor/appointments/?status=tentative)
-        const response = await axios.get<PendingAppointment[]>('doctor/appointments/?status=tentative');
+        // Corregido: Usar la URL completa con prefijo /api/ para evitar duplicación
+        const response = await axios.get<PendingAppointment[]>('/api/doctor/appointments/?status=tentative');
         setPendingAppointments(response.data);
       } catch (error) {
         console.error("Error fetching pending appointments:", error);
@@ -149,8 +148,8 @@ export default function Appointments() {
   // ✅ NUEVO: Función para confirmar cita
   const handleConfirmAppointment = async (orderId: number) => {
     try {
-      // Llamar al endpoint de confirmación
-      await axios.post(`doctor/appointments/${orderId}/confirm/`);
+      // Corregido: Usar la URL completa con prefijo /api/
+      await axios.post(`/api/doctor/appointments/${orderId}/confirm/`);
       
       // Actualizar lista local eliminando la cita confirmada
       setPendingAppointments(prev => prev.filter((app: PendingAppointment) => app.id !== orderId));
@@ -260,7 +259,8 @@ export default function Appointments() {
          </div>
          
          {/* COLUMNA DERECHA: LISTA Y CONTROLES */}
-         <div className="xl:col-span-7 space-y-4" ref={listRef}>
+         {/* ✅ FIX: Añadido isolation: isolate para asegurar que los modales se superpongan correctamente */}
+         <div className="xl:col-span-7 space-y-4 relative" style={{ isolation: 'isolate' }} ref={listRef}>
            <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md p-4 space-y-4 rounded-sm">
              <div className="flex flex-col sm:flex-row justify-between gap-4 items-center">
                <div className="flex items-center gap-3">
