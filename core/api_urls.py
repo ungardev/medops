@@ -166,6 +166,11 @@ from .api_views import (
     get_pending_payments,
     verify_payment,
     purchase_service_direct,
+    # --- ✅ NUEVOS IMPORTS: Endpoints de compra y confirmación ---
+    ServiceAvailabilityView,
+    PurchaseServiceDirect,
+    ConfirmAppointmentView,
+    DoctorAppointmentsView,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -400,7 +405,19 @@ urlpatterns = [
     path('patient-activate/', api_views.activate_patient_portal, name='activate-patient'),
     path("payments/pending/", api_views.get_pending_payments, name="get-pending-payments"),
     path("payments/<int:payment_id>/verify/", api_views.verify_payment, name="verify-payment"),
-    path('charges/purchase-service/', purchase_service_direct, name='purchase-service-direct'),
+    
+    # --- 🆕 NUEVOS ENDPOINTS DE COMPRA Y CONFIRMACIÓN ---
+    # 1. Verificar disponibilidad de horarios (kebab-case)
+    path('patient/services/<int:service_id>/availability/', ServiceAvailabilityView.as_view(), name='service-availability'),
+    
+    # 2. Compra de servicio con fecha tentativa (Reemplaza la función antigua en línea 407)
+    path('charges/purchase-service/', PurchaseServiceDirect.as_view(), name='purchase-service-direct'),
+    
+    # 3. Confirmar cita desde el Portal Doctor (kebab-case)
+    path('doctor/appointments/<int:order_id>/confirm/', ConfirmAppointmentView.as_view(), name='confirm-appointment'),
+    
+    # 4. Listar citas pendientes del doctor (kebab-case)
+    path('doctor/appointments/', DoctorAppointmentsView.as_view(), name='doctor-appointments-list'),
     
     # OCR
     path('payments/ocr/', api_views.payment_ocr_api, name='payment-ocr'),

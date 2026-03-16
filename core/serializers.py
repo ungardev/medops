@@ -1444,6 +1444,10 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
     # Campo plano para Search.tsx y otros endpoints
     patient_name = serializers.SerializerMethodField()
     
+    # Nuevos campos de fecha tentativa
+    tentative_date = serializers.DateField(required=False, allow_null=True)
+    tentative_time = serializers.TimeField(required=False, allow_null=True)
+    
     class Meta:
         model = ChargeOrder
         fields = (
@@ -1461,6 +1465,8 @@ class ChargeOrderSerializer(serializers.ModelSerializer):
             "items",
             "payments",
             "patient_name",
+            "tentative_date",  # ✅ NUEVO: Agregado
+            "tentative_time",  # ✅ NUEVO: Agregado
             "created_at",
             "updated_at",
             "created_by",
@@ -1627,6 +1633,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
     vital_signs = VitalSignsSerializer(read_only=True)
     # ✅ NUEVO: Campo charge_order (solo en respuesta de creación)
     charge_order = ChargeOrderSerializer(read_only=True)
+    
+    # ✅ NUEVO: Campos de fecha tentativa (solo lectura para API de listado)
+    tentative_date = serializers.DateField(read_only=True)
+    tentative_time = serializers.TimeField(read_only=True)
+    confirmed_at = serializers.DateTimeField(read_only=True)
     class Meta:
         model = Appointment
         fields = [
@@ -1647,8 +1658,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "vital_signs",
             # ✅ AGREGADO: ChargeOrder (respuesta)
             "charge_order",
+            # ✅ NUEVO: Campos de fecha tentativa
+            "tentative_date",
+            "tentative_time",
+            "confirmed_at",
         ]
-        read_only_fields = ["id", "charge_order"]
+        read_only_fields = ["id", "charge_order", "tentative_date", "tentative_time", "confirmed_at"]
     def get_patient_name(self, obj):
         """Obtiene el nombre completo del paciente de forma explícita."""
         if obj.patient:
@@ -1668,8 +1683,19 @@ class AppointmentSerializer(serializers.ModelSerializer):
         # Extraer servicios y pago inicial
         services_data = validated_data.pop('services', [])
         initial_payment = validated_data.pop('initial_payment', None)
+        
         # 1. Crear el Appointment
+        # NOTA: Si se envía fecha tentativa desde la compra, se guardará en los campos correspondientes
+        # El flujo actual crea la cita directamente, pero para el nuevo flujo:
+        # Si el status es 'tentative', guardamos la fecha en tentative_date
+        if validated_data.get('status') == 'tentative':
+            validated_data['tentative_date'] = validated_data.get('appointment_date')
+            # appointment_date real se asignará después de la confirmación
+            # Por ahora, mantenemos appointment_date como la fecha tentativa para consistencia visual
+            pass
+            
         appointment = Appointment.objects.create(**validated_data)
+        
         # 2. Crear ChargeOrder automáticamente
         charge_order = ChargeOrder.objects.create(
             appointment=appointment,
@@ -1681,13 +1707,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
             total=Decimal('0.00'),
             balance_due=Decimal('0.00'),
         )
+        
         # 3. Crear ChargeItems directamente desde los datos recibidos
         total_amount = Decimal('0.00')
         for service in services_data:
-            doctor_service_id = service.get('doctor_service_id')  # Cambiado de billing_item_id
+            doctor_service_id = service.get('doctor_service_id')
             qty = service.get('qty', 1)
             if doctor_service_id:
-                # ✅ FIX: Intentar buscar DoctorService, pero si no existe, usar datos directos
                 doctor_service = None
                 try:
                     doctor_service = DoctorService.objects.filter(
@@ -1696,32 +1722,34 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     ).first()
                 except Exception:
                     pass
-                # Si existe DoctorService, usar sus datos; si no, usar datos del servicio
+                
                 if doctor_service:
                     code = doctor_service.code
                     description = doctor_service.name
-                    unit_price = doctor_service.price_usd  # Usar price_usd en lugar de unit_price
+                    unit_price = doctor_service.price_usd
                 else:
-                    # Usar datos del servicio directamente
                     code = service.get('code', f'SVC-{doctor_service_id}')
                     description = service.get('description', f'Servicio {doctor_service_id}')
                     unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
-                # Crear ChargeItem
+                
                 item = ChargeItem.objects.create(
                     order=charge_order,
-                    doctor_service=doctor_service,  # AÑADIR ESTE CAMPO
+                    doctor_service=doctor_service,
                     code=code,
                     description=description,
                     qty=Decimal(str(qty)),
                     unit_price=unit_price,
                 )
                 total_amount += item.subtotal
+        
         # Recalcular totales del ChargeOrder
         charge_order.recalc_totals()
         charge_order.save(update_fields=['total', 'balance_due', 'status'])
+        
         # ✅ FIX: Actualizar expected_amount en Appointment
         appointment.expected_amount = charge_order.total
         appointment.save(update_fields=['expected_amount'])
+        
         # 4. [OPCIONAL] Procesar pago inicial
         if initial_payment and total_amount > 0:
             payment_amount = Decimal(str(initial_payment.get('amount', 0)))
@@ -1738,6 +1766,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 # Recalcular después del pago
                 charge_order.recalc_totals()
                 charge_order.save(update_fields=['total', 'balance_due', 'status'])
+        
         return appointment
     
     def update(self, instance, validated_data):
@@ -2059,11 +2088,30 @@ class SpecialtySerializer(serializers.ModelSerializer):
         fields = ["id", "code", "name", "category", "parent", "subspecialties", "icon_name"]
 
 
+# --- Serializers de Horarios ---
+class ServiceScheduleSerializer(serializers.ModelSerializer):
+    institution_name = serializers.CharField(source='institution.name', read_only=True)
+    
+    class Meta:
+        model = ServiceSchedule
+        fields = '__all__'
+        read_only_fields = ['service']
+
+
+
 class DoctorServiceSerializer(serializers.ModelSerializer):
     """Serializer para servicios del doctor."""
     category_name = serializers.CharField(source='category.name', read_only=True)
     doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
     price_ves = serializers.SerializerMethodField()
+    
+    # Nuevos campos de configuración de citas
+    requires_appointment = serializers.BooleanField(default=True)
+    booking_lead_time = serializers.IntegerField(default=24)
+    cancellation_window = serializers.IntegerField(default=24)
+    
+    # Horarios asociados (solo lectura)
+    schedules = ServiceScheduleSerializer(many=True, read_only=True)
     
     class Meta:
         model = DoctorService
@@ -2072,6 +2120,8 @@ class DoctorServiceSerializer(serializers.ModelSerializer):
             'institution', 'code', 'name', 'description',
             'price_usd', 'price_ves', 'duration_minutes',
             'is_active', 'is_visible_global',
+            'requires_appointment', 'booking_lead_time', 'cancellation_window',
+            'schedules',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -2088,12 +2138,18 @@ class DoctorServiceSerializer(serializers.ModelSerializer):
 class DoctorServiceWriteSerializer(serializers.ModelSerializer):
     """Serializer de escritura para servicios del doctor."""
     
+    # Nuevos campos de configuración de citas
+    requires_appointment = serializers.BooleanField(default=True)
+    booking_lead_time = serializers.IntegerField(default=24)
+    cancellation_window = serializers.IntegerField(default=24)
+    
     class Meta:
         model = DoctorService
         fields = [
             'doctor', 'category', 'institution', 'code', 'name',
             'description', 'price_usd', 'duration_minutes',
-            'is_active', 'is_visible_global'
+            'is_active', 'is_visible_global',
+            'requires_appointment', 'booking_lead_time', 'cancellation_window'
         ]
     
     def validate_code(self, value):
@@ -3527,11 +3583,3 @@ class ServiceCategoryWriteSerializer(serializers.ModelSerializer):
         fields = ['name', 'description', 'icon', 'is_active']
 
 
-# --- Serializers de Horarios ---
-class ServiceScheduleSerializer(serializers.ModelSerializer):
-    institution_name = serializers.CharField(source='institution.name', read_only=True)
-    
-    class Meta:
-        model = ServiceSchedule
-        fields = '__all__'
-        read_only_fields = ['service']  # El servicio se asigna automáticamente

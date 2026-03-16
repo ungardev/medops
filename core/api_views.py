@@ -38,6 +38,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
 from django.db.models import QuerySet
+from rest_framework.views import APIView
 #from datetime import date, timedelta
 
 
@@ -6732,3 +6733,155 @@ def purchase_service_direct(request):
     
     serializer = ChargeOrderSerializer(charge_order)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ServiceAvailabilityView(APIView):
+    """
+    Endpoint para verificar disponibilidad de slots de tiempo para un servicio.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request, service_id):
+        institution_id = request.query_params.get('institution_id')
+        date_str = request.query_params.get('date')
+        
+        if not institution_id or not date_str:
+            return Response({"error": "Faltan parámetros: institution_id y date"}, status=400)
+        try:
+            service = DoctorService.objects.get(id=service_id)
+            institution = InstitutionSettings.objects.get(id=institution_id)
+            target_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except (DoctorService.DoesNotExist, InstitutionSettings.DoesNotExist, ValueError):
+            return Response({"error": "Servicio o institución no válida"}, status=404)
+        # Validar fecha mínima (lead time)
+        min_date = timezone.now().date() + timedelta(hours=service.booking_lead_time)
+        if target_date < min_date:
+            return Response({"error": f"La fecha debe ser al menos {service.booking_lead_time} horas en el futuro"}, status=400)
+        # Obtener horarios configurados para ese día de la semana
+        day_of_week = target_date.weekday()  # 0 = Lunes
+        schedules = ServiceSchedule.objects.filter(
+            service=service,
+            institution=institution,
+            day_of_week=day_of_week,
+            is_active=True
+        )
+        if not schedules.exists():
+            return Response({"available_slots": []})
+        # Generar slots y verificar ocupación
+        available_slots = []
+        for schedule in schedules:
+            current_time = datetime.combine(target_date, schedule.start_time)
+            end_time = datetime.combine(target_date, schedule.end_time)
+            
+            while current_time < end_time:
+                # Verificar si el slot está ocupado (citas confirmadas o tentativas)
+                is_occupied = Appointment.objects.filter(
+                    institution=institution,
+                    doctor=service.doctor,
+                    appointment_date=target_date,
+                    status__in=['tentative', 'confirmed', 'pending']
+                ).filter(
+                    tentative_time__range=[current_time.time(), (current_time + timedelta(minutes=schedule.slot_duration)).time()]
+                ).exists()
+                if not is_occupied:
+                    available_slots.append({
+                        "start": current_time.time().strftime('%H:%M'),
+                        "end": (current_time + timedelta(minutes=schedule.slot_duration)).strftime('%H:%M'),
+                        "available": True
+                    })
+                
+                current_time += timedelta(minutes=schedule.slot_duration)
+        return Response({
+            "service_id": service_id,
+            "institution_id": institution_id,
+            "date": date_str,
+            "available_slots": available_slots
+        })
+
+
+class PurchaseServiceDirect(APIView):
+    """
+    Endpoint para crear una orden de cobro con fecha tentativa.
+    """
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        data = request.data.copy()
+        
+        # Mapear IDs a relaciones de modelo
+        try:
+            patient_id = data.pop('patient_id')
+            doctor_service_id = data.pop('doctor_service_id')
+            institution_id = data.pop('institution_id')
+            
+            data['patient'] = patient_id
+            data['doctor_service'] = doctor_service_id
+            data['institution'] = institution_id
+            
+            # Obtener doctor desde el servicio
+            service = DoctorService.objects.get(id=doctor_service_id)
+            data['doctor'] = service.doctor.id
+            
+        except KeyError:
+            return Response({"error": "Faltan patient_id, doctor_service_id o institution_id"}, status=400)
+        except DoctorService.DoesNotExist:
+            return Response({"error": "Servicio no encontrado"}, status=404)
+        # Validar disponibilidad si se envía fecha tentativa
+        tentative_date = data.get('tentative_date')
+        tentative_time = data.get('tentative_time')
+        
+        if tentative_date and tentative_time:
+            # Lógica de validación de disponibilidad (opcional, se puede hacer aquí o en el serializer)
+            pass
+        
+        serializer = ChargeOrderSerializer(data=data)
+        if serializer.is_valid():
+            order = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ConfirmAppointmentView(APIView):
+    """
+    Endpoint para confirmar una cita tentativa desde el Portal Doctor.
+    """
+    permission_classes = [IsAuthenticated]
+    def post(self, request, order_id):
+        try:
+            order = ChargeOrder.objects.get(id=order_id)
+        except ChargeOrder.DoesNotExist:
+            return Response({"error": "Orden no encontrada"}, status=404)
+        # Crear cita oficial usando la fecha tentativa de la orden
+        appointment = Appointment.objects.create(
+            patient=order.patient,
+            doctor=order.doctor,
+            institution=order.institution,
+            doctor_service=order.doctor_service,
+            appointment_date=order.tentative_date,
+            tentative_date=order.tentative_date,
+            tentative_time=order.tentative_time,
+            status='confirmed',
+            confirmed_at=timezone.now()
+        )
+        
+        # Asociar cita a la orden y actualizar estado
+        order.appointment = appointment
+        order.status = 'confirmed'
+        order.save()
+        # TODO: Enviar notificación al paciente (email/WhatsApp)
+        
+        return Response({"message": "Cita confirmada exitosamente", "appointment_id": appointment.id})
+
+
+class DoctorAppointmentsView(APIView):
+    """
+    Endpoint para listar citas pendientes de confirmación para el doctor.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        # Filtrar citas del doctor autenticado con estado 'tentative'
+        appointments = Appointment.objects.filter(
+            doctor__user=request.user,
+            status='tentative'
+        )
+        
+        serializer = AppointmentSerializer(appointments, many=True)
+        return Response(serializer.data)
