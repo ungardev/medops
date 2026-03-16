@@ -5149,7 +5149,7 @@ class ServiceSchedule(models.Model):
         related_name='schedules'
     )
     institution = models.ForeignKey(
-        'Institution', 
+        'InstitutionSettings',  # ✅ CORREGIDO: Usar el modelo real
         on_delete=models.CASCADE,
         related_name='service_schedules'
     )
