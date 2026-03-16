@@ -80,7 +80,7 @@ export default function Appointments() {
       try {
         // Asumiendo que hay un endpoint para doctores
         // Nota: Ajustar la URL si es necesario (ej. /api/doctor/appointments/?status=tentative)
-        const response = await axios.get<PendingAppointment[]>('/api/doctor/appointments/?status=tentative');
+        const response = await axios.get<PendingAppointment[]>('doctor/appointments/?status=tentative');
         setPendingAppointments(response.data);
       } catch (error) {
         console.error("Error fetching pending appointments:", error);
@@ -150,7 +150,7 @@ export default function Appointments() {
   const handleConfirmAppointment = async (orderId: number) => {
     try {
       // Llamar al endpoint de confirmación
-      await axios.post(`/api/doctor/appointments/${orderId}/confirm/`);
+      await axios.post(`doctor/appointments/${orderId}/confirm/`);
       
       // Actualizar lista local eliminando la cita confirmada
       setPendingAppointments(prev => prev.filter((app: PendingAppointment) => app.id !== orderId));
