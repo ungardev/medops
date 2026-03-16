@@ -315,25 +315,33 @@ export default function Appointments() {
              </div>
            )}
          </div>
-       </div>
-       {/* MODALS */}
-       {showCreateForm && (
-         <AppointmentForm onSubmit={(data) => saveAppointment(data)} onClose={() => setShowCreateForm(false)} />
-       )}
-       {viewingAppointmentId && (
-         <AppointmentDetail
-           appointmentId={viewingAppointmentId}
-           onClose={() => setViewingAppointmentId(null)}
-           onEdit={(id: number) => { setViewingAppointmentId(null); setEditingAppointmentId(id); }}
-         />
-       )}
-       {editingAppointmentId && (
-         <AppointmentEditForm
-           appointmentId={editingAppointmentId}
-           onSubmit={(id, data) => saveAppointment(data, id)}
-           onClose={() => setEditingAppointmentId(null)}
-         />
-       )}
-     </div>
-   );
- }
+        </div>
+        {/* MODALS */}
+        {showCreateForm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <AppointmentForm onSubmit={(data) => saveAppointment(data)} onClose={() => setShowCreateForm(false)} />
+            </div>
+          </div>
+        )}
+        {viewingAppointmentId && (
+          <AppointmentDetail
+            appointmentId={viewingAppointmentId}
+            onClose={() => setViewingAppointmentId(null)}
+            onEdit={(id: number) => { setViewingAppointmentId(null); setEditingAppointmentId(id); }}
+          />
+        )}
+        {editingAppointmentId && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <AppointmentEditForm
+                appointmentId={editingAppointmentId}
+                onSubmit={(id, data) => saveAppointment(data, id)}
+                onClose={() => setEditingAppointmentId(null)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }

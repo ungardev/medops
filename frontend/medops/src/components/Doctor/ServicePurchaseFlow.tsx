@@ -167,8 +167,7 @@ const ConfirmDateView: React.FC<{
           setSelectedDate(e.target.value);
           setSelectedTime(''); // Reset time when date changes
         }}
-        className="w-full bg-black/40 border border-white/10 rounded-sm text-white p-3 [&::-webkit-calendar-picker-indicator]:invert"
-        style={{ colorScheme: 'dark' }}
+        className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none"
         min={new Date().toISOString().split('T')[0]} // Prevent past dates
       />
     </div>
@@ -326,7 +325,7 @@ const ErrorView: React.FC<{
       </button>
       <button
         onClick={onRetry}
-        className="flex-1 py-3 bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-amber-400 flex items-center justify-center gap-2"
+        className="flex-1 py-3 bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2"
       >
         <Loader2 className="w-4 h-4" />
         Reintentar
