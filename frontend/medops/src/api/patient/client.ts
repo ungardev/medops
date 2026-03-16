@@ -52,6 +52,9 @@ export interface DoctorService {
   duration_minutes: number;
   is_active: boolean;
   is_visible_global: boolean;
+  requires_appointment: boolean;
+  booking_lead_time: number;
+  cancellation_window: number;
 }
 // ============================================
 // INTERFACES DE RESPUESTA DE API
@@ -151,6 +154,9 @@ export interface ServiceSearchResponse {
 export interface PurchaseServiceRequest {
   patient_id: number;      // CORREGIDO: snake_case
   doctor_service_id: number; // CORREGIDO: snake_case y nombre específico
+  institution_id: number;   // NUEVO: ID de la institución
+  tentative_date: string;   // NUEVO: Fecha tentativa (YYYY-MM-DD)
+  tentative_time: string;   // NUEVO: Hora tentativa (HH:MM)
   qty: number;
 }
 export interface PurchaseServiceResponse {
@@ -162,6 +168,21 @@ export interface PurchaseServiceResponse {
   balance_due: number;
   status: string;
   issued_at?: string;
+  // Campos adicionales según la estructura real del backend
+}
+// ============================================
+// NUEVO: INTERFAZ PARA DISPONIBILIDAD
+// ============================================
+export interface AvailabilitySlot {
+  start: string;
+  end: string;
+  available: boolean;
+}
+export interface ServiceAvailabilityResponse {
+  service_id: number;
+  institution_id: number;
+  date: string;
+  available_slots: AvailabilitySlot[];
 }
 // ============================================
 // CONFIGURACIÓN DE AXIOS
@@ -279,20 +300,28 @@ export const patientClient = {
     patientApi.get<ServiceSearchResponse>(
       `/patient-search/services/?q=${encodeURIComponent(query)}`
     ),
+  // === DISPONIBILIDAD DE SERVICIOS ===
+  getAvailability: (serviceId: number, institutionId: number, date: string) =>
+    patientApi.get<ServiceAvailabilityResponse>(
+      `/patient/services/${serviceId}/availability/?institution_id=${institutionId}&date=${date}`
+    ),
 };
 // ============================================
 // NUEVOS CLIENTES PARA FASE 2 (DOCTORES Y SERVICIOS)
 // ============================================
 export const doctorClient = {
+  // Obtener directorio de doctores (listado)
   getDoctors: (params?: { specialty?: number; institution?: number }) => {
     const queryString = params 
       ? '?' + new URLSearchParams(params as any).toString()
       : '';
     return patientApi.get<DoctorSearchResponse>(`/patient/doctors/${queryString}`);
   },
+  // Obtener perfil de un doctor específico
   getDoctorProfile: (doctorId: number) => {
     return patientApi.get<Doctor>(`/patient/doctor-profile/${doctorId}/`);
   },
+  // Obtener servicios de un doctor específico
   getDoctorServices: (doctorId: number) => {
     return patientApi.get<DoctorService[]>(
       `/patient/doctor-profile/${doctorId}/services/`
@@ -300,12 +329,14 @@ export const doctorClient = {
   },
 };
 export const serviceClient = {
+  // Obtener catálogo global de servicios (con info del doctor)
   getServices: (params?: { category?: number; doctor?: number }) => {
     const queryString = params 
       ? '?' + new URLSearchParams(params as any).toString()
       : '';
     return patientApi.get<ServiceCatalogResponse>(`/patient/services/${queryString}`);
   },
+  // Obtener categorías de servicios
   getCategories: () => {
     return patientApi.get<ServiceCategory[]>('/patient/service-categories/');
   },
