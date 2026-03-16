@@ -171,6 +171,7 @@ from .api_views import (
     PurchaseServiceDirect,
     ConfirmAppointmentView,
     DoctorAppointmentsView,
+    OperationalHubView,  # NUEVO: Importar OperationalHubView
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -321,6 +322,9 @@ urlpatterns = [
     path("waitingroom/register/", register_arrival, name="waitingroom-register"),
     path("waitingroom/<int:entry_id>/start-consultation/", start_consultation_from_entry, name="start-consultation-from-entry"),
     
+    # NUEVO: Endpoint del Hub Operativo
+    path("operational-hub/", OperationalHubView.as_view(), name="operational-hub"),
+    
     # --- Tasa BCV ---
     path("bcv-rate/", bcv_rate_api, name="bcv-rate-api"),
     
@@ -413,8 +417,9 @@ urlpatterns = [
     # 2. Compra de servicio con fecha tentativa (Reemplaza la función antigua en línea 407)
     path('charges/purchase-service/', PurchaseServiceDirect.as_view(), name='purchase-service-direct'),
     
-    # 3. Confirmar cita desde el Portal Doctor (kebab-case)
-    path('doctor/appointments/<int:order_id>/confirm/', ConfirmAppointmentView.as_view(), name='confirm-appointment'),
+    # 3. Confirmar cita desde el Portal Doctor (MODIFICADO: Ahora usa appointment ID)
+    # path('doctor/appointments/<int:order_id>/confirm/', ConfirmAppointmentView.as_view(), name='confirm-appointment'), # LINEA ANTIGUA
+    path('appointments/<int:pk>/confirm/', ConfirmAppointmentView.as_view(), name='confirm-appointment'), # LINEA NUEVA (MODIFICADA)
     
     # 4. Listar citas pendientes del doctor (kebab-case)
     path('doctor/appointments/', DoctorAppointmentsView.as_view(), name='doctor-appointments-list'),

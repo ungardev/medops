@@ -6,17 +6,25 @@ import { PatientRef } from "../../types/patients";
 import type { WaitingRoomEntry } from "../../types/waitingRoom";
 import { UserPlusIcon, Search, CheckIcon, X } from "lucide-react";
 import NewPatientModal from "../Patients/NewPatientModal";
+// Definir interfaz local para servicios simplificados
+interface ServiceOption {
+  id: number;
+  name: string;
+  category_id?: number;
+}
 interface Props {
   onClose: () => void;
-  onSuccess: (patientId: number, institutionId: number | null) => void;
+  onSuccess: (patientId: number, institutionId: number | null, serviceId: number | null) => void;
   existingEntries: WaitingRoomEntry[];
   institutionId?: number | null;
+  services: ServiceOption[]; // CAMBIAR: De DoctorService[] a ServiceOption[]
 }
 const RegisterWalkinModal: React.FC<Props> = ({ 
   onClose, 
   onSuccess, 
   existingEntries,
-  institutionId 
+  institutionId,
+  services // NUEVO: Recibir servicios simplificados
 }) => {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
@@ -24,6 +32,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
   const [selectedPatient, setSelectedPatient] = useState<PatientRef | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   useEffect(() => {
     const fetchResults = async () => {
       if (!query || query.length < 1) {
@@ -47,17 +56,18 @@ const RegisterWalkinModal: React.FC<Props> = ({
     setSelectedPatient(patient);
     setQuery("");
     setResults([]);
+    setSelectedServiceId(null);
   };
   const handleProceedWithPatient = () => {
     if (selectedPatient) {
-      onSuccess(selectedPatient.id, institutionId || null);
+      onSuccess(selectedPatient.id, institutionId || null, selectedServiceId);
       onClose();
     }
   };
   const handleNewPatientCreated = (patientId: number) => {
     setShowNewPatientModal(false);
     queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    onSuccess(patientId, institutionId || null);
+    onSuccess(patientId, institutionId || null, selectedServiceId);
     onClose();
   };
   const alreadyInWaitingRoom = selectedPatient
@@ -126,6 +136,23 @@ const RegisterWalkinModal: React.FC<Props> = ({
                       <p className="text-xs font-mono text-white/50 mt-1">{selectedPatient.national_id}</p>
                     </div>
                     {!alreadyInWaitingRoom && <CheckIcon className="w-6 h-6 text-white" />}
+                  </div>
+                  
+                  {/* Selector de Servicio */}
+                  <div className="mt-4">
+                    <label className={labelStyles}>Tipo de Servicio</label>
+                    <select
+                      value={selectedServiceId ?? ''}
+                      onChange={(e) => setSelectedServiceId(e.target.value ? Number(e.target.value) : null)}
+                      className={inputStyles}
+                    >
+                      <option value="">Seleccionar Servicio</option>
+                      {services.map(service => (
+                        <option key={service.id} value={service.id}>
+                          {service.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   {alreadyInWaitingRoom ? (
                     <div className="mt-4 p-2 bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest text-center">

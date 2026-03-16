@@ -10,6 +10,7 @@ export function useRegisterArrival() {
         patient_id: number; 
         appointment_id?: number;
         institution_id: number | null;
+        service_id?: number | null; // NUEVO: Añadir service_id opcional
       }
     ): Promise<WaitingRoomEntry> => {
       return apiFetch<WaitingRoomEntry>("waitingroom/register/", {
@@ -18,8 +19,9 @@ export function useRegisterArrival() {
       });
     },
     onSuccess: () => {
-      // Invalidar queries para refresh automático de la lista
       queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
+      // Opcional: Invalidar también el query del hub operativo si se usa
+      // queryClient.invalidateQueries({ queryKey: ["operationalHub"] });
     },
   });
 }

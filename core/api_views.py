@@ -1236,6 +1236,9 @@ def register_arrival(request):
     """
     Registra la llegada de un paciente a la sala de espera.
     Permite múltiples visitas del mismo paciente (si la anterior ya completó).
+    
+    Si no se proporciona un appointment_id (Walk-in), crea una nueva Appointment
+    en estado 'pending' y la asocia a la entrada de la sala de espera.
     """
     patient_id = request.data.get('patient_id')
     institution_id = request.data.get('institution_id') or request.headers.get('X-Institution-ID')
@@ -1251,7 +1254,7 @@ def register_arrival(request):
     patient = get_object_or_404(Patient, pk=patient_id)
     institution = get_object_or_404(InstitutionSettings, pk=institution_id)
     
-    # ✅ NUEVA LÓGICA: Verificar si hay entrada ACTIVA
+    # Verificar si hay entrada ACTIVA
     active_entry = WaitingRoomEntry.objects.filter(
         patient=patient,
         institution=institution,
@@ -1265,18 +1268,34 @@ def register_arrival(request):
             "status": active_entry.status
         }, status=400)
     
-    # ✅ NUEVA LÓGICA: Crear nueva entrada (permitir múltiples visitas)
+    # Manejo de Appointment (Lógica modificada para Opción A)
     appointment_id = request.data.get('appointment_id')
     appointment = None
-    if appointment_id:
-        appointment = get_object_or_404(Appointment, pk=int(appointment_id))
     
+    if appointment_id:
+        # Si se proporciona un appointment_id, usar la cita existente
+        appointment = get_object_or_404(Appointment, pk=int(appointment_id))
+    else:
+        # Opción A: Crear una nueva Appointment para Walk-in
+        appointment = Appointment.objects.create(
+            patient=patient,
+            institution=institution,
+            doctor=None,  # Asignar doctor más tarde si es necesario
+            appointment_date=timezone.now().date(),
+            status='pending',  # Estado inicial: pendiente
+            appointment_type='general',
+            expected_amount=Decimal('0.00'),
+            tentative_date=timezone.now().date(),
+            tentative_time=timezone.now().time()
+        )
+    
+    # Crear la entrada en la sala de espera asociada a la Appointment
     entry = WaitingRoomEntry.objects.create(
         patient=patient,
         institution=institution,
-        appointment=appointment,
+        appointment=appointment,  # Ahora siempre tendrá una Appointment asociada
         status='waiting',
-        source_type='walkin' if not appointment else 'scheduled',
+        source_type='walkin' if not appointment_id else 'scheduled',
         arrival_time=timezone.now(),
     )
     
@@ -6843,33 +6862,42 @@ class PurchaseServiceDirect(APIView):
 class ConfirmAppointmentView(APIView):
     """
     Endpoint para confirmar una cita tentativa desde el Portal Doctor.
+    Opera sobre una Appointment existente y actualiza su estado a 'confirmed'.
+    También actualiza el estado de la ChargeOrder asociada a 'confirmed' si existe.
     """
     permission_classes = [IsAuthenticated]
-    def post(self, request, order_id):
+    
+    def post(self, request, pk): # Cambiado de order_id a pk (appointment_id)
         try:
-            order = ChargeOrder.objects.get(id=order_id)
-        except ChargeOrder.DoesNotExist:
-            return Response({"error": "Orden no encontrada"}, status=404)
-        # Crear cita oficial usando la fecha tentativa de la orden
-        appointment = Appointment.objects.create(
-            patient=order.patient,
-            doctor=order.doctor,
-            institution=order.institution,
-            doctor_service=order.doctor_service,
-            appointment_date=order.tentative_date,
-            tentative_date=order.tentative_date,
-            tentative_time=order.tentative_time,
-            status='confirmed',
-            confirmed_at=timezone.now()
-        )
+            appointment = Appointment.objects.get(id=pk)
+        except Appointment.DoesNotExist:
+            return Response({"error": "Cita no encontrada"}, status=404)
         
-        # Asociar cita a la orden y actualizar estado
-        order.appointment = appointment
-        order.status = 'confirmed'
-        order.save()
-        # TODO: Enviar notificación al paciente (email/WhatsApp)
+        # Validar que la cita esté en estado tentative
+        if appointment.status != 'tentative':
+            return Response({"error": "Esta cita no está en estado tentative"}, status=400)
         
-        return Response({"message": "Cita confirmada exitosamente", "appointment_id": appointment.id})
+        # Actualizar estado de la Appointment
+        appointment.status = 'confirmed'
+        appointment.confirmed_at = timezone.now()
+        # La fecha decisiva es la que el paciente seleccionó (tentative_date)
+        # Aseguramos que appointment_date coincida con la fecha tentativa
+        appointment.appointment_date = appointment.tentative_date
+        appointment.save()
+        
+        # Actualizar estado de la ChargeOrder asociada (si existe)
+        # Buscamos la ChargeOrder vinculada a esta Appointment
+        charge_order = appointment.charge_orders.first() # Usa el related_name 'charge_orders' del modelo ChargeOrder
+        if charge_order:
+            charge_order.status = 'confirmed'
+            charge_order.save()
+            # Opcional: Podríamos también actualizar el 'total' o 'balance_due' si fuera necesario,
+            # pero generalmente se mantienen igual hasta el pago.
+        return Response({
+            "message": "Cita confirmada exitosamente",
+            "appointment_id": appointment.id,
+            "charge_order_id": charge_order.id if charge_order else None
+        })
 
 
 class DoctorAppointmentsView(APIView):
@@ -6886,3 +6914,57 @@ class DoctorAppointmentsView(APIView):
         
         serializer = AppointmentSerializer(appointments, many=True)
         return Response(serializer.data)
+
+
+class OperationalHubView(APIView):
+    """
+    Endpoint unificado para el Hub Operativo del WaitingRoom.
+    Devuelve entradas en sala de espera y citas pendientes, clasificadas.
+    """
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        institution_id = request.query_params.get('institution_id')
+        if not institution_id:
+            return Response({"error": "institution_id es requerido"}, status=400)
+        try:
+            institution_id = int(institution_id)
+        except (ValueError, TypeError):
+            return Response({"error": "institution_id debe ser un entero"}, status=400)
+        # 1. Obtener entradas activas en sala de espera (Live Queue)
+        live_queue = WaitingRoomEntry.objects.filter(
+            institution_id=institution_id,
+            status__in=['waiting', 'in_consultation']
+        ).select_related('patient', 'appointment', 'institution')
+        # 2. Obtener citas pendientes (Pending Entries)
+        # Filtramos por fecha de hoy y estados relevantes
+        today = timezone.now().date()
+        pending_entries = Appointment.objects.filter(
+            institution_id=institution_id,
+            status__in=['pending', 'tentative', 'confirmed'],
+            appointment_date=today
+        ).select_related('patient', 'doctor', 'institution', 'doctor_service')
+        # 3. Obtener catálogos para filtros
+        categories = ServiceCategory.objects.filter(is_active=True)
+        services = DoctorService.objects.filter(is_active=True, institution_id=institution_id)
+        # 4. Serializar datos
+        live_queue_data = WaitingRoomEntrySerializer(live_queue, many=True).data
+        pending_entries_data = AppointmentSerializer(pending_entries, many=True).data
+        
+        # Enriquecer live_queue con nombres de servicio (opcional pero útil)
+        for entry in live_queue_data:
+            if entry.get('appointment') and entry['appointment'].get('doctor_service'):
+                service_id = entry['appointment']['doctor_service']
+                try:
+                    service = DoctorService.objects.get(id=service_id)
+                    entry['service_name'] = service.name
+                    entry['category_name'] = service.category.name if service.category else None
+                except DoctorService.DoesNotExist:
+                    pass
+        return Response({
+            "live_queue": live_queue_data,
+            "pending_entries": pending_entries_data,
+            "filters": {
+                "categories": [{"id": c.id, "name": c.name} for c in categories],
+                "services": [{"id": s.id, "name": s.name, "category_id": s.category_id} for s in services]
+            }
+        })

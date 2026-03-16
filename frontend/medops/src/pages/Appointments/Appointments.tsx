@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import moment from "moment";
-import axios from "axios"; // ✅ NUEVO: Importar axios
+// ELIMINADO: import axios from "axios";
 import { Appointment, AppointmentInput, AppointmentStatus } from "types/appointments";
 import { 
   PlusIcon, 
@@ -10,7 +10,7 @@ import {
   FunnelIcon, 
   ChartBarIcon, 
   ArrowPathIcon,
-  CheckCircleIcon // ✅ NUEVO: Icono para confirmar
+  CheckCircleIcon 
 } from "@heroicons/react/24/outline";
 // Componentes
 import AppointmentsList from "components/Appointments/AppointmentsList";
@@ -28,16 +28,9 @@ import {
   useUpdateAppointment,
   useUpdateAppointmentStatus,
 } from "hooks/appointments";
-import { useAllAppointments } from "hooks/appointments/useAllAppointments";
+// ELIMINADO: import { useAllAppointments } from "hooks/appointments/useAllAppointments";
+import { useScheduledItems } from "hooks/appointments/useScheduledItems"; // NUEVO
 import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch";
-// ✅ NUEVO: Definición de tipo para citas pendientes
-interface PendingAppointment {
-  id: number;
-  patient_name?: string;
-  tentative_date?: string;
-  tentative_time?: string;
-  doctor_service_name?: string;
-}
 export default function Appointments() {
   // ✅ CAMBIO: Usar IDs en lugar de objetos completos
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
@@ -50,10 +43,6 @@ export default function Appointments() {
   const pageSize = 10;
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  
-  // ✅ CAMBIO: Estado tipado correctamente
-  const [pendingAppointments, setPendingAppointments] = useState<PendingAppointment[]>([]);
-  const [isLoadingPending, setIsLoadingPending] = useState(false);
   
   // ✅ NUEVO: Leer parámetro ?view= de la URL para abrir modal directamente
   useEffect(() => {
@@ -69,29 +58,9 @@ export default function Appointments() {
     }
   }, [location.search]);
   
-  // 1. DATA LOADING
-  const { data: allData, isLoading, isFetching, error } = useAllAppointments();
-  const allAppointments = allData?.list ?? [];
-  
-  // ✅ NUEVO: Fetch de citas pendientes (solo para doctores/admin)
-  useEffect(() => {
-    const fetchPendingAppointments = async () => {
-      setIsLoadingPending(true);
-      try {
-        // Corregido: Usar la URL completa con prefijo /api/ para evitar duplicación
-        const response = await axios.get<PendingAppointment[]>('/api/doctor/appointments/?status=tentative');
-        setPendingAppointments(response.data);
-      } catch (error) {
-        console.error("Error fetching pending appointments:", error);
-      } finally {
-        setIsLoadingPending(false);
-      }
-    };
-    
-    // Solo fetch si el usuario es doctor/admin (ajustar lógica según autenticación)
-    // Por ahora, ejecutamos siempre para demostración
-    fetchPendingAppointments();
-  }, []);
+  // 1. DATA LOADING - AHORA USANDO useScheduledItems
+  const { data: allData, isLoading, isFetching, error } = useScheduledItems();
+  const allAppointments = allData ?? []; // useScheduledItems devuelve Appointment[] directamente
   
   // 2. SEARCH LOADING
   const { data: searchResults = [], isLoading: isSearching } = useAppointmentsSearch(search);
@@ -105,7 +74,7 @@ export default function Appointments() {
   // Métricas para el PageHeader
   const todayStr = moment().format("YYYY-MM-DD");
   const appointmentsToday = allAppointments.filter(a => a.appointment_date.startsWith(todayStr)).length;
-  const pendingCount = allAppointments.filter(a => a.status === 'pending').length;
+  const pendingCount = allAppointments.filter(a => a.status === 'pending' || a.status === 'tentative').length;
   
   useEffect(() => {
     setCurrentPage(1);
@@ -145,27 +114,35 @@ export default function Appointments() {
     ? finalAppointments 
     : finalAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   
-  // ✅ NUEVO: Función para confirmar cita
-  const handleConfirmAppointment = async (orderId: number) => {
+  // ✅ NUEVO: Función para confirmar cita (usando el nuevo endpoint)
+  const handleConfirmAppointment = async (appointmentId: number) => {
     try {
-      // Corregido: Usar la URL completa con prefijo /api/
-      await axios.post(`/api/doctor/appointments/${orderId}/confirm/`);
+      // Corregido: Usar el nuevo endpoint /api/appointments/<id>/confirm/
+      await fetch(`/api/appointments/${appointmentId}/confirm/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Asegúrate de incluir el token de autenticación si es necesario
+          // 'Authorization': `Bearer ${token}`
+        }
+      });
       
-      // Actualizar lista local eliminando la cita confirmada
-      setPendingAppointments(prev => prev.filter((app: PendingAppointment) => app.id !== orderId));
+      // Recargar las citas para reflejar el cambio
+      // (Depende de si useScheduledItems se actualiza automáticamente con invalidateQueries)
+      // Por ahora, forzamos una recarga manual si es necesario o confiamos en React Query
       
-      // Opcional: Recargar todas las citas para reflejar el cambio
-      // (Depende de si useAllAppointments se actualiza automáticamente)
     } catch (error) {
       console.error("Error confirming appointment:", error);
       alert("Error al confirmar la cita");
     }
   };
+  
   if (error) return (
     <div className="p-10 border border-red-500 bg-red-500/10 text-red-500 font-mono text-xs uppercase">
       Critical_Data_Link_Failure // Error loading appointments
     </div>
   );
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
         
@@ -203,45 +180,9 @@ export default function Appointments() {
           </div>
         }
       />
-      {/* ✅ NUEVO: SECCIÓN DE CITAS PENDIENTES (CONFIRMACIÓN) */}
-      <div className="border border-amber-500/30 bg-[#0a0a0b] backdrop-blur-md p-4 space-y-4 rounded-sm">
-        <div className="flex items-center gap-2 mb-4 border-b border-amber-500/20 pb-3">
-          <CheckCircleIcon className="w-4 h-4 text-amber-400" />
-          <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">
-            CITAS PENDIENTES POR CONFIRMACIÓN
-          </h2>
-          <span className="bg-amber-500/20 text-amber-400 text-[10px] px-2 py-0.5 rounded-full ml-auto">
-            {pendingAppointments.length}
-          </span>
-        </div>
-        
-        {isLoadingPending ? (
-          <div className="text-center py-4 text-white/50">Cargando citas pendientes...</div>
-        ) : pendingAppointments.length > 0 ? (
-          <div className="grid gap-2 max-h-48 overflow-y-auto">
-            {pendingAppointments.map((app) => (
-              <div key={app.id} className="flex justify-between items-center bg-white/5 p-3 rounded-sm hover:bg-white/10 transition-colors">
-                <div className="flex-1">
-                  <p className="text-white font-medium text-sm">{app.patient_name || 'Paciente'}</p>
-                  <div className="flex gap-4 mt-1 text-xs text-white/50">
-                    <span>{app.tentative_date} - {app.tentative_time}</span>
-                    <span>{app.doctor_service_name}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleConfirmAppointment(app.id)}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase rounded-sm hover:bg-emerald-500 hover:text-black transition-all"
-                >
-                  <CheckCircleIcon className="w-3 h-3" />
-                  Confirmar
-                </button>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-white/50 text-sm text-center py-4">No hay citas pendientes por confirmar.</p>
-        )}
-      </div>
+      
+      {/* ELIMINADO: SECCIÓN DE CITAS PENDIENTES MANUAL */}
+      
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
          {/* COLUMNA IZQUIERDA: CALENDARIO */}
          <div className="xl:col-span-5 space-y-6">
@@ -259,7 +200,6 @@ export default function Appointments() {
          </div>
          
          {/* COLUMNA DERECHA: LISTA Y CONTROLES */}
-         {/* ✅ FIX: Añadido isolation: isolate para asegurar que los modales se superpongan correctamente */}
          <div className="xl:col-span-7 space-y-4 relative" style={{ isolation: 'isolate' }} ref={listRef}>
            <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md p-4 space-y-4 rounded-sm">
              <div className="flex flex-col sm:flex-row justify-between gap-4 items-center">

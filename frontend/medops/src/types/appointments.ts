@@ -6,7 +6,7 @@ import type { IdentityPatient, IdentityDoctor, IdentityInstitution } from "./ide
 // =====================================================
 // ENUMS - Alineados con backend
 // =====================================================
-export type AppointmentStatus = "pending" | "arrived" | "in_consultation" | "completed" | "canceled";
+export type AppointmentStatus = "pending" | "tentative" | "arrived" | "in_consultation" | "completed" | "canceled";
 export type AppointmentType = "general" | "specialized";
 // =====================================================
 // TIPO PARA PAGOS (dentro de charge_order)
@@ -108,11 +108,19 @@ export interface Appointment {
   // 🆕 MÉTRICAS ANTROPOMÉTRICAS
   weight?: number | string | null;
   height?: number | string | null;
-
   doctor_name?: string | null;
   
   // 🆕 VITAL SIGNS (nested)
   vital_signs?: VitalSignsData | null;
+  
+  // 🆕 CAMPOS DE SERVICIO
+  doctor_service?: number;
+  doctor_service_name?: string;
+  
+  // 🆕 CAMPOS DE FECHA TENTATIVA
+  tentative_date?: string | null;
+  tentative_time?: string | null;
+  confirmed_at?: string | null;
 }
 // =====================================================
 // APPOINTMENT UI (para componentes)
@@ -143,6 +151,7 @@ export interface AppointmentInput {
   patient: number;
   institution: number;
   doctor: number;
+  doctor_service?: number; // ✅ NUEVO: Añadido para el flujo de compra
   appointment_date: string;
   start_time?: string;
   appointment_type: AppointmentType;
@@ -152,4 +161,7 @@ export interface AppointmentInput {
   // ✅ NUEVOS CAMPOS
   services?: AppointmentServiceInput[];
   initial_payment?: InitialPaymentInput;
+  // ✅ NUEVOS CAMPOS PARA FECHA TENTATIVA (requeridos para el flujo de compra)
+  tentative_date?: string;
+  tentative_time?: string;
 }

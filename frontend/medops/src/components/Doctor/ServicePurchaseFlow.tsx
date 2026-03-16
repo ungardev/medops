@@ -1,7 +1,10 @@
 // src/components/Doctor/ServicePurchaseFlow.tsx
 import React, { useState, useEffect } from 'react';
-import type { DoctorService, PurchaseServiceResponse, ServiceAvailabilityResponse, AvailabilitySlot } from '@/api/patient/client';
-import { chargeClient, patientClient } from '@/api/patient/client';
+import type { DoctorService, ServiceAvailabilityResponse, AvailabilitySlot } from '@/api/patient/client';
+import { patientClient } from '@/api/patient/client';
+// NUEVO: Importar createAppointment y tipos de Appointment
+import { createAppointment } from '@/api/appointments';
+import type { AppointmentInput } from '@/types/appointments';
 import { Loader2, CreditCardIcon, CheckCircleIcon, XCircleIcon, ArrowRightIcon, AlertTriangle, CalendarIcon, ClockIcon } from 'lucide-react';
 // Tipos de estado del flujo
 type PurchaseStep = 'confirm-details' | 'confirm-date' | 'confirm-final' | 'processing' | 'success' | 'error';
@@ -19,14 +22,15 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
 }) => {
   const [step, setStep] = useState<PurchaseStep>('confirm-details');
   const [error, setError] = useState<string | null>(null);
-  const [chargeOrder, setChargeOrder] = useState<PurchaseServiceResponse | null>(null);
+  // CAMBIO: Tipo modificado para aceptar la respuesta de createAppointment (que incluye charge_order)
+  const [chargeOrder, setChargeOrder] = useState<any | null>(null);
   
   // Estado para fecha/hora seleccionada
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-  // Cargar disponibilidad cuando cambia la fecha
+  // Cargar disponibilidad cuando cambia la fecha (sin cambios)
   useEffect(() => {
     if (step === 'confirm-date' && selectedDate && service.institution) {
       setIsLoadingSlots(true);
@@ -41,21 +45,36 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
         });
     }
   }, [step, selectedDate, service.id, service.institution]);
+  // CAMBIO CRÍTICO: Función handlePurchase modificada para crear una Appointment
   const handlePurchase = async () => {
     setStep('processing');
     setError(null);
     
     try {
-      const response = await chargeClient.purchaseServiceDirect({
-        patient_id: patientId,
-        doctor_service_id: service.id,
-        institution_id: service.institution,
+      // Construir payload para Appointment (Opción A)
+      const appointmentData: AppointmentInput = {
+        patient: patientId,
+        doctor: service.doctor, // Asegúrate de que DoctorService tenga el campo doctor (ID)
+        institution: service.institution,
+        doctor_service: service.id,
+        appointment_date: selectedDate, // Usar fecha tentativa como fecha inicial
         tentative_date: selectedDate,
         tentative_time: selectedTime,
-        qty: 1,
-      });
+        status: 'tentative',
+        appointment_type: 'general', // Asumir tipo general o derivar de service
+        services: [{ doctor_service_id: service.id, qty: 1 }] // Para generar ChargeOrder automáticamente
+      };
       
-      setChargeOrder(response.data);
+      const response = await createAppointment(appointmentData);
+      
+      // La respuesta es una Appointment, que incluye charge_order anidado
+      const chargeOrderData = response.charge_order;
+      
+      if (!chargeOrderData) {
+         throw new Error("No se generó la orden de cobro automáticamente");
+      }
+      
+      setChargeOrder(chargeOrderData);
       setStep('success');
     } catch (err) {
       console.error("Purchase error:", err);
@@ -67,7 +86,7 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     setStep('confirm-details');
     setError(null);
   };
-  // Renderizado condicional según el estado
+  // Renderizado condicional según el estado (sin cambios en la estructura)
   switch (step) {
     case 'processing':
       return <ProcessingView />;
@@ -105,7 +124,7 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
       return <ConfirmDetailsView service={service} onProceed={() => setStep('confirm-date')} onCancel={onCancel} />;
   }
 };
-// Vista de Confirmación de Detalles (Paso 1)
+// Vista de Confirmación de Detalles (Paso 1) - Sin cambios
 const ConfirmDetailsView: React.FC<{
   service: DoctorService;
   onProceed: () => void;
@@ -142,7 +161,7 @@ const ConfirmDetailsView: React.FC<{
     </div>
   </div>
 );
-// Vista de Selección de Fecha y Hora (Paso 2)
+// Vista de Selección de Fecha y Hora (Paso 2) - Sin cambios
 const ConfirmDateView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -218,7 +237,7 @@ const ConfirmDateView: React.FC<{
     </div>
   </div>
 );
-// Vista de Confirmación Final (Paso 3)
+// Vista de Confirmación Final (Paso 3) - Sin cambios
 const ConfirmFinalView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -260,7 +279,7 @@ const ConfirmFinalView: React.FC<{
     </div>
   </div>
 );
-// Vista de Procesamiento
+// Vista de Procesamiento - Sin cambios
 const ProcessingView: React.FC = () => (
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
     <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
@@ -268,8 +287,8 @@ const ProcessingView: React.FC = () => (
     <p className="text-white/50 text-xs mt-2">Por favor espera</p>
   </div>
 );
-// Vista de Éxito (Solicitud Recibida)
-const SuccessView: React.FC<{ chargeOrder: PurchaseServiceResponse | null; onCancel: () => void }> = ({
+// Vista de Éxito (Solicitud Recibida) - Ajustada para usar chargeOrder anidado
+const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> = ({
   chargeOrder,
   onCancel
 }) => (
@@ -302,7 +321,7 @@ const SuccessView: React.FC<{ chargeOrder: PurchaseServiceResponse | null; onCan
     </div>
   </div>
 );
-// Vista de Error
+// Vista de Error - Sin cambios
 const ErrorView: React.FC<{
   error: string | null;
   onRetry: () => void;
