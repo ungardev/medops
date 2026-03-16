@@ -5659,6 +5659,7 @@ def get_patient_invitation_status(request, patient_id):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def doctor_login(request):
     """
     POST /api/auth/doctor-login/
