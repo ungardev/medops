@@ -5120,6 +5120,11 @@ class DoctorService(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Campos para configuración de citas
+    requires_appointment = models.BooleanField(default=True)
+    booking_lead_time = models.IntegerField(default=24)  # Horas mínimas para agendar
+    cancellation_window = models.IntegerField(default=24)  # Horas mínimas para cancelar
+    
     class Meta:
         verbose_name = "Servicio del Doctor"
         verbose_name_plural = "Servicios de Doctores"
@@ -5132,3 +5137,36 @@ class DoctorService(models.Model):
         self.name = normalize_title_case(self.name)
         super().save(*args, **kwargs)
 
+
+class ServiceSchedule(models.Model):
+    """
+    Define horarios específicos para un servicio en una institución.
+    Permite múltiples configuraciones (ej: Lunes 9-12, Miércoles 14-18).
+    """
+    service = models.ForeignKey(
+        'DoctorService', 
+        on_delete=models.CASCADE, 
+        related_name='schedules'
+    )
+    institution = models.ForeignKey(
+        'Institution', 
+        on_delete=models.CASCADE,
+        related_name='service_schedules'
+    )
+    day_of_week = models.IntegerField(
+        choices=[
+            (0, 'Lunes'), (1, 'Martes'), (2, 'Miércoles'), 
+            (3, 'Jueves'), (4, 'Viernes'), (5, 'Sábado'), (6, 'Domingo')
+        ]
+    )
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    slot_duration = models.IntegerField(default=30)  # Duración de cada cita en minutos
+    max_appointments = models.IntegerField(default=5)  # Máximo citas en este horario
+    is_active = models.BooleanField(default=True)
+    class Meta:
+        verbose_name = "Horario de Servicio"
+        verbose_name_plural = "Horarios de Servicios"
+        unique_together = ('service', 'institution', 'day_of_week', 'start_time')
+    def __str__(self):
+        return f"{self.service.name} - {self.get_day_of_week_display()} {self.start_time}-{self.end_time}"
