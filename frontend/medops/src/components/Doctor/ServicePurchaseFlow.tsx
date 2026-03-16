@@ -167,7 +167,8 @@ const ConfirmDateView: React.FC<{
           setSelectedDate(e.target.value);
           setSelectedTime(''); // Reset time when date changes
         }}
-        className="w-full bg-black/40 border border-white/10 rounded-sm text-white p-3"
+        className="w-full bg-black/40 border border-white/10 rounded-sm text-white p-3 [&::-webkit-calendar-picker-indicator]:invert"
+        style={{ colorScheme: 'dark' }}
         min={new Date().toISOString().split('T')[0]} // Prevent past dates
       />
     </div>
