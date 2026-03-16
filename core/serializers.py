@@ -9,7 +9,8 @@ from .models import (
     Allergy, MedicalHistory, ClinicalAlert, Country, State, Municipality, City, Parish, Neighborhood,
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, 
     WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
-    PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory
+    PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory,
+    ServiceSchedule
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, BANK_CHOICES, get_bank_name
 from datetime import date
@@ -3526,3 +3527,11 @@ class ServiceCategoryWriteSerializer(serializers.ModelSerializer):
         fields = ['name', 'description', 'icon', 'is_active']
 
 
+# --- Serializers de Horarios ---
+class ServiceScheduleSerializer(serializers.ModelSerializer):
+    institution_name = serializers.CharField(source='institution.name', read_only=True)
+    
+    class Meta:
+        model = ServiceSchedule
+        fields = '__all__'
+        read_only_fields = ['service']  # El servicio se asigna automáticamente

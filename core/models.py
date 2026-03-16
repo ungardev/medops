@@ -420,10 +420,12 @@ class Patient(models.Model):
 class Appointment(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
+        ('tentative', 'Tentativa'),
         ('arrived', 'Arrived'),
         ('in_consultation', 'In Consultation'),
         ('completed', 'Completed'),
         ('canceled', 'Canceled'),
+        ('rejected', 'Rechazada'),
     ]
     TYPE_CHOICES = [
         ('general', 'Consulta General'),
@@ -464,8 +466,26 @@ class Appointment(models.Model):
     status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
-        default='pending'
+        default='pending'  
     )
+    
+    # === NUEVOS CAMPOS PARA FLUJO TENTATIVO ===
+    tentative_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha tentativa seleccionada"
+    )
+    tentative_time = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name="Hora tentativa seleccionada"
+    )
+    confirmed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha de confirmación"
+    )
+    
     arrival_time = models.TimeField(blank=True, null=True)
     
     appointment_type = models.CharField(
@@ -1505,6 +1525,18 @@ class ChargeOrder(models.Model):
         blank=True,
         related_name="charge_order_updates",
         verbose_name="Usuario que actualizó la orden"
+    )
+    
+    # === NUEVOS CAMPOS PARA FECHA TENTATIVA ===
+    tentative_date = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Fecha tentativa seleccionada por paciente"
+    )
+    tentative_time = models.TimeField(
+        null=True,
+        blank=True,
+        verbose_name="Hora tentativa seleccionada por paciente"
     )
     
     history = HistoricalRecords()
@@ -5124,6 +5156,22 @@ class DoctorService(models.Model):
     requires_appointment = models.BooleanField(default=True)
     booking_lead_time = models.IntegerField(default=24)  # Horas mínimas para agendar
     cancellation_window = models.IntegerField(default=24)  # Horas mínimas para cancelar
+    
+    # === NUEVOS CAMPOS PARA CONFIGURACIÓN DE CITAS ===
+    requires_appointment = models.BooleanField(
+        default=True,
+        verbose_name="Requiere cita previa"
+    )
+    booking_lead_time = models.IntegerField(
+        default=24,
+        verbose_name="Horas mínimas para agendar",
+        help_text="Horas de anticipación requeridas para agendar una cita"
+    )
+    cancellation_window = models.IntegerField(
+        default=24,
+        verbose_name="Horas mínimas para cancelar",
+        help_text="Horas de anticipación requeridas para cancelar una cita sin penalización"
+    )
     
     class Meta:
         verbose_name = "Servicio del Doctor"
