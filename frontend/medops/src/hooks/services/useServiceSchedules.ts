@@ -1,15 +1,21 @@
-// frontend/medops/src/hooks/services/useServiceSchedules.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '@/api/client';
 import type { ServiceSchedule, ServiceScheduleInput } from '@/types/services';
+// Interfaz para la respuesta paginada
+interface PaginatedServiceSchedules {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ServiceSchedule[];
+}
 export const useServiceSchedules = (serviceId: number) => {
   return useQuery<ServiceSchedule[]>({
     queryKey: ['serviceSchedules', serviceId],
     queryFn: async () => {
-      const response = await apiFetch<ServiceSchedule[]>(
+      const response = await apiFetch<PaginatedServiceSchedules>(
         `service-schedules/?service_id=${serviceId}`
       );
-      return response;
+      return response.results; // ✅ Extraer solo el array de horarios
     },
     enabled: !!serviceId,
   });
