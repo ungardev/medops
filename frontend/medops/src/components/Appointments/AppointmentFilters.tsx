@@ -1,25 +1,34 @@
 // src/components/Appointments/AppointmentFilters.tsx
 import { AppointmentStatus } from "types/appointments";
+import { 
+  FunnelIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  UserGroupIcon,
+  ClipboardIcon,
+  XCircleIcon 
+} from "@heroicons/react/24/outline";
 interface Props {
   activeFilter: AppointmentStatus | "all";
   onFilterChange: (status: AppointmentStatus | "all") => void;
 }
-const FILTERS: { key: AppointmentStatus | "all"; label: string; code: string }[] = [
-  { key: "all", label: "All_Records", code: "00" },
-  { key: "pending", label: "Pending", code: "WL" },
-  { key: "arrived", label: "Arrived", code: "SP" },
-  { key: "in_consultation", label: "Consulting", code: "IP" },
-  { key: "completed", label: "Completed", code: "OC" },
-  { key: "canceled", label: "Canceled", code: "TR" },
+const FILTERS: { 
+  key: AppointmentStatus | "all"; 
+  label: string; 
+  code: string;
+  icon: React.ReactNode;
+  color: string;
+}[] = [
+  { key: "all", label: "Todas", code: "00", icon: <FunnelIcon className="w-3 h-3" />, color: "text-white/60" },
+  { key: "pending", label: "Pendientes", code: "WL", icon: <ClockIcon className="w-3 h-3" />, color: "text-yellow-500" },
+  { key: "arrived", label: "Llegaron", code: "SP", icon: <UserGroupIcon className="w-3 h-3" />, color: "text-green-500" },
+  { key: "in_consultation", label: "En Consulta", code: "IP", icon: <ClipboardIcon className="w-3 h-3" />, color: "text-purple-500" },
+  { key: "completed", label: "Completadas", code: "OC", icon: <CheckCircleIcon className="w-3 h-3" />, color: "text-gray-500" },
+  { key: "canceled", label: "Canceladas", code: "TR", icon: <XCircleIcon className="w-3 h-3" />, color: "text-red-500" },
 ];
 export default function AppointmentFilters({ activeFilter, onFilterChange }: Props) {
   return (
-    <div className="flex flex-wrap items-center bg-black/20 border border-white/10 p-1 gap-1">
-      <div className="hidden lg:block px-2 py-1 border-r border-white/10 mr-1">
-        <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">
-          Filter_Stream:
-        </span>
-      </div>
+    <div className="flex items-center gap-1 bg-[#111] border border-white/10 p-1 rounded-sm">
       {FILTERS.map((f) => {
         const isActive = activeFilter === f.key;
         return (
@@ -27,19 +36,14 @@ export default function AppointmentFilters({ activeFilter, onFilterChange }: Pro
             key={f.key}
             onClick={() => onFilterChange(f.key)}
             className={`
-              relative flex items-center gap-2 px-3 py-1.5 transition-all duration-200
+              flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm transition-all duration-200
               ${isActive 
-                ? "text-white bg-white/10" 
-                : "text-white/30 hover:text-white/70 hover:bg-white/5"}
+                ? "bg-white/15 text-white" 
+                : "text-white/40 hover:text-white/70 hover:bg-white/5"}
             `}
           >
-            {isActive && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/30" />
-            )}
-            <span className="text-[8px] font-mono opacity-50">
-              [{f.code}]
-            </span>
-            <span className="text-[10px] font-black uppercase tracking-wider">
+            <div className={f.color}>{f.icon}</div>
+            <span className="text-[9px] font-medium">
               {f.label}
             </span>
           </button>
