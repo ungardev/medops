@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import moment from "moment";
 import { Appointment, AppointmentInput, AppointmentStatus } from "types/appointments";
+import { OperationalItem } from "@/types/operational";
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -29,6 +30,7 @@ import {
 } from "hooks/appointments";
 import { useScheduledItems } from "hooks/appointments/useScheduledItems";
 import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch";
+import { useCalendarItems } from "@/hooks/operational/useOperationalHub"; // NUEVO: Hook unificado
 export default function Appointments() {
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
@@ -45,6 +47,9 @@ export default function Appointments() {
   // Navegación de meses
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
+  // ID de institución (debería venir de contexto o localStorage)
+  const institutionId = 1; // 🔴 CAMBIAR: Obtener dinámicamente
+  
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const viewParam = params.get("view");
@@ -56,6 +61,10 @@ export default function Appointments() {
       }
     }
   }, [location.search]);
+  // ✅ NUEVO: Datos unificados para calendario (DoctorService paradigm)
+  const { data: operationalItems = [], isLoading: isLoadingOperational } = useCalendarItems(institutionId, currentMonth);
+  
+  // Datos legacy para lista y filtros
   const { data: allData, isLoading, isFetching, error } = useScheduledItems();
   const allAppointments = allData ?? [];
   
@@ -156,8 +165,8 @@ export default function Appointments() {
           },
           { 
             label: "Sync_Status", 
-            value: isLoading ? "INIT" : "READY",
-            color: isLoading ? "animate-pulse text-amber-500" : "text-emerald-500"
+            value: isLoadingOperational ? "INIT" : "READY",
+            color: isLoadingOperational ? "animate-pulse text-amber-500" : "text-emerald-500"
           }
         ]}
         actions={
@@ -250,8 +259,10 @@ export default function Appointments() {
               </div>
             </div>
             
+            {/* ✅ PASO CLAVE: Usar datos unificados (Operational Items) */}
             <CalendarGrid
               appointments={allAppointments}
+              operationalItems={operationalItems}
               currentDate={currentMonth}
               onSelectDate={(date: Date) => setSelectedDate(date)}
               onSelectAppointment={(appt: Appointment) => setViewingAppointmentId(appt.id)}

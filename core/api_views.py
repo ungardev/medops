@@ -39,6 +39,7 @@ from django.conf import settings
 from rest_framework.authentication import TokenAuthentication
 from django.db.models import QuerySet
 from rest_framework.views import APIView
+import calendar
 #from datetime import date, timedelta
 
 
@@ -6919,38 +6920,276 @@ class DoctorAppointmentsView(APIView):
 class OperationalHubView(APIView):
     """
     Endpoint unificado para el Hub Operativo del WaitingRoom.
-    Devuelve entradas en sala de espera y citas pendientes, clasificadas.
+    Versión 2.0: Soporte mensual + timeline unificado + disponibilidad.
+    
+    Parámetros:
+    - institution_id: ID de la institución (requerido)
+    - year: Año para filtro (opcional, predeterminado: año actual)
+    - month: Mes para filtro (opcional, predeterminado: mes actual)
+    
+    Retorna:
+    - timeline: Items unificados (citas + disponibilidad) para el calendario
+    - live_queue: Entradas activas en sala de espera
+    - pending_entries: Citas pendientes del día actual
+    - filters: Categorías y servicios para filtros UI
+    - stats: Estadísticas del periodo
     """
     permission_classes = [IsAuthenticated]
+    
     def get(self, request):
+        # 1. Validar y obtener parámetros
+        institution_id = self._validate_institution_id(request)
+        if isinstance(institution_id, Response):
+            return institution_id
+        
+        year = self._get_year(request)
+        month = self._get_month(request)
+        
+        # 2. Calcular rango de fechas
+        start_date, end_date = self._get_date_range(year, month)
+        
+        # 3. Obtener datos del mes actual
+        timeline = self._build_timeline(institution_id, start_date, end_date)
+        
+        # 4. Obtener datos para WaitingRoom (día actual)
+        today = timezone.now().date()
+        live_queue = self._get_live_queue(institution_id)
+        pending_entries = self._get_pending_entries(institution_id, today)
+        
+        # 5. Obtener catálogos para filtros
+        categories, services = self._get_catalogs(institution_id)
+        
+        # 6. Calcular estadísticas
+        stats = self._calculate_stats(timeline, start_date, end_date)
+        
+        return Response({
+            "timeline": timeline,
+            "live_queue": live_queue,
+            "pending_entries": pending_entries,
+            "filters": {
+                "categories": categories,
+                "services": services
+            },
+            "stats": stats,
+            "metadata": {
+                "year": year,
+                "month": month,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "total_days": (end_date - start_date).days + 1
+            }
+        })
+    
+    def _validate_institution_id(self, request):
+        """Valida el ID de la institución."""
         institution_id = request.query_params.get('institution_id')
         if not institution_id:
-            return Response({"error": "institution_id es requerido"}, status=400)
+            return Response(
+                {"error": "institution_id es requerido"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
         try:
-            institution_id = int(institution_id)
+            return int(institution_id)
         except (ValueError, TypeError):
-            return Response({"error": "institution_id debe ser un entero"}, status=400)
-        # 1. Obtener entradas activas en sala de espera (Live Queue)
+            return Response(
+                {"error": "institution_id debe ser un entero"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+    
+    def _get_year(self, request):
+        """Obtiene el año de los parámetros o usa el actual."""
+        year_param = request.query_params.get('year')
+        if year_param:
+            try:
+                return int(year_param)
+            except ValueError:
+                return timezone.now().year
+        return timezone.now().year
+    
+    def _get_month(self, request):
+        """Obtiene el mes de los parámetros o usa el actual."""
+        month_param = request.query_params.get('month')
+        if month_param:
+            try:
+                month = int(month_param)
+                if 1 <= month <= 12:
+                    return month
+            except ValueError:
+                pass
+        return timezone.now().month
+    
+    def _get_date_range(self, year, month):
+        """Calcula el rango de fechas para el mes solicitado."""
+        first_day = date(year, month, 1)
+        
+        # Último día del mes
+        last_day_num = calendar.monthrange(year, month)[1]
+        last_day = date(year, month, last_day_num)
+        
+        return first_day, last_day
+    
+    def _build_timeline(self, institution_id, start_date, end_date):
+        """
+        Construye el timeline unificado con citas y disponibilidad.
+        
+        Estrategia:
+        1. Obtener todas las citas del mes
+        2. Obtener todos los horarios de servicio activos
+        3. Generar "slots" de disponibilidad basados en horarios
+        4. Marcar slots ocupados por citas existentes
+        5. Combinar en timeline unificado
+        """
+        timeline = []
+        
+        # 1. Obtener citas del mes
+        appointments = Appointment.objects.filter(
+            institution_id=institution_id,
+            appointment_date__range=[start_date, end_date],
+            status__in=['pending', 'tentative', 'confirmed', 'arrived', 'in_consultation']
+        ).select_related(
+            'patient', 'doctor', 'institution', 
+            'doctor_service', 'doctor_service__category'
+        )
+        
+        # 2. Obtener horarios de servicio activos
+        service_schedules = ServiceSchedule.objects.filter(
+            institution_id=institution_id,
+            is_active=True
+        ).select_related('service', 'service__category')
+        
+        # 3. Construir diccionario de citas por fecha
+        appointments_by_date = {}
+        for apt in appointments:
+            date_str = apt.appointment_date.isoformat()
+            if date_str not in appointments_by_date:
+                appointments_by_date[date_str] = []
+            appointments_by_date[date_str].append(apt)
+        
+        # 4. Generar timeline
+        current_date = start_date
+        while current_date <= end_date:
+            date_str = current_date.isoformat()
+            day_of_week = current_date.weekday()  # 0=Monday, 6=Sunday
+            
+            # Obtener citas del día
+            day_appointments = appointments_by_date.get(date_str, [])
+            
+            # Obtener horarios para este día de la semana
+            day_schedules = service_schedules.filter(day_of_week=day_of_week)
+            
+            # Agendar citas al timeline
+            for apt in day_appointments:
+                timeline.append(self._appointment_to_timeline_item(apt))
+            
+            # Generar slots de disponibilidad para cada horario
+            for schedule in day_schedules:
+                availability_slots = self._generate_availability_slots(
+                    schedule, current_date, day_appointments
+                )
+                timeline.extend(availability_slots)
+            
+            current_date += timedelta(days=1)
+        
+        # 5. Ordenar timeline por fecha y hora
+        timeline.sort(key=lambda x: (x['date'], x.get('time') or ''))
+        
+        return timeline
+    
+    def _appointment_to_timeline_item(self, appointment):
+        """Convierte una Appointment a item de timeline."""
+        return {
+            'id': appointment.id,
+            'type': 'appointment',
+            'date': appointment.appointment_date.isoformat(),
+            'time': appointment.tentative_time,
+            'title': f"Cita con {appointment.doctor.full_name}",
+            'status': appointment.status,
+            'patient_name': appointment.patient.full_name,
+            'doctor_name': appointment.doctor.full_name,
+            'doctor_id': appointment.doctor.id,
+            'service_name': appointment.doctor_service.name if appointment.doctor_service else None,
+            'service_id': appointment.doctor_service.id if appointment.doctor_service else None,
+            'category_name': appointment.doctor_service.category.name if appointment.doctor_service and appointment.doctor_service.category else None,
+            'category_id': appointment.doctor_service.category.id if appointment.doctor_service and appointment.doctor_service.category else None,
+            'is_available': False,
+            'metadata': {
+                'appointment_id': appointment.id,
+                'doctor_service_id': appointment.doctor_service.id if appointment.doctor_service else None,
+                'appointment_type': appointment.appointment_type,
+                'expected_amount': str(appointment.expected_amount) if appointment.expected_amount else None
+            }
+        }
+    
+    def _generate_availability_slots(self, schedule, current_date, day_appointments):
+        """
+        Genera slots de disponibilidad basados en un horario de servicio.
+        
+        Lógica:
+        - Cada slot tiene duración = schedule.slot_duration
+        - Slots ocupados: donde hay citas existentes
+        - Slots disponibles: donde no hay citas
+        """
+        slots = []
+        
+        start_time = schedule.start_time
+        end_time = schedule.end_time
+        slot_duration = schedule.slot_duration  # en minutos
+        
+        # Convertir a datetime para cálculos
+        current_datetime = datetime.combine(current_date, start_time)
+        end_datetime = datetime.combine(current_date, end_time)
+        
+        # Generar slots
+        while current_datetime < end_datetime:
+            slot_time_str = current_datetime.time().strftime('%H:%M')
+            
+            # Verificar si este slot está ocupado por alguna cita
+            is_occupied = any(
+                apt.tentative_time == slot_time_str 
+                for apt in day_appointments
+                if apt.tentative_time
+            )
+            
+            if not is_occupied:
+                # Slot disponible
+                slots.append({
+                    'id': f"avail-{schedule.id}-{slot_time_str}",
+                    'type': 'availability',
+                    'date': current_date.isoformat(),
+                    'time': slot_time_str,
+                    'title': f"Disponible: {schedule.service.name}",
+                    'status': 'available',
+                    'patient_name': None,
+                    'doctor_name': schedule.service.doctor.full_name if hasattr(schedule.service, 'doctor') else None,
+                    'doctor_id': schedule.service.doctor.id if hasattr(schedule.service, 'doctor') else None,
+                    'service_name': schedule.service.name,
+                    'service_id': schedule.service.id,
+                    'category_name': schedule.service.category.name if schedule.service.category else None,
+                    'category_id': schedule.service.category.id if schedule.service.category else None,
+                    'is_available': True,
+                    'metadata': {
+                        'schedule_id': schedule.id,
+                        'service_id': schedule.service.id,
+                        'slot_duration': slot_duration,
+                        'max_appointments': schedule.max_appointments
+                    }
+                })
+            
+            # Avanzar al siguiente slot
+            current_datetime += timedelta(minutes=slot_duration)
+        
+        return slots
+    
+    def _get_live_queue(self, institution_id):
+        """Obtiene entradas activas en sala de espera."""
         live_queue = WaitingRoomEntry.objects.filter(
             institution_id=institution_id,
             status__in=['waiting', 'in_consultation']
         ).select_related('patient', 'appointment', 'institution')
-        # 2. Obtener citas pendientes (Pending Entries)
-        # Filtramos por fecha de hoy y estados relevantes
-        today = timezone.now().date()
-        pending_entries = Appointment.objects.filter(
-            institution_id=institution_id,
-            status__in=['pending', 'tentative', 'confirmed'],
-            appointment_date=today
-        ).select_related('patient', 'doctor', 'institution', 'doctor_service')
-        # 3. Obtener catálogos para filtros
-        categories = ServiceCategory.objects.filter(is_active=True)
-        services = DoctorService.objects.filter(is_active=True, institution_id=institution_id)
-        # 4. Serializar datos
-        live_queue_data = WaitingRoomEntrySerializer(live_queue, many=True).data
-        pending_entries_data = AppointmentSerializer(pending_entries, many=True).data
         
-        # Enriquecer live_queue con nombres de servicio (opcional pero útil)
+        live_queue_data = WaitingRoomEntrySerializer(live_queue, many=True).data
+        
+        # Enriquecer con nombres de servicio
         for entry in live_queue_data:
             if entry.get('appointment') and entry['appointment'].get('doctor_service'):
                 service_id = entry['appointment']['doctor_service']
@@ -6960,11 +7199,53 @@ class OperationalHubView(APIView):
                     entry['category_name'] = service.category.name if service.category else None
                 except DoctorService.DoesNotExist:
                     pass
-        return Response({
-            "live_queue": live_queue_data,
-            "pending_entries": pending_entries_data,
-            "filters": {
-                "categories": [{"id": c.id, "name": c.name} for c in categories],
-                "services": [{"id": s.id, "name": s.name, "category_id": s.category_id} for s in services]
-            }
-        })
+        
+        return live_queue_data
+    
+    def _get_pending_entries(self, institution_id, today):
+        """Obtiene citas pendientes del día actual."""
+        pending_entries = Appointment.objects.filter(
+            institution_id=institution_id,
+            status__in=['pending', 'tentative', 'confirmed'],
+            appointment_date=today
+        ).select_related('patient', 'doctor', 'institution', 'doctor_service')
+        
+        return AppointmentSerializer(pending_entries, many=True).data
+    
+    def _get_catalogs(self, institution_id):
+        """Obtiene catálogos para filtros UI."""
+        categories = ServiceCategory.objects.filter(is_active=True)
+        services = DoctorService.objects.filter(
+            is_active=True, 
+            institution_id=institution_id
+        )
+        
+        categories_data = [{"id": c.id, "name": c.name} for c in categories]
+        services_data = [
+            {
+                "id": s.id,
+                "name": s.name,
+                "category_id": s.category_id,
+                "category_name": s.category.name if s.category else None
+            } 
+            for s in services
+        ]
+        
+        return categories_data, services_data
+    
+    def _calculate_stats(self, timeline, start_date, end_date):
+        """Calcula estadísticas del periodo."""
+        total_items = len(timeline)
+        appointments_count = sum(1 for item in timeline if item['type'] == 'appointment')
+        availability_count = sum(1 for item in timeline if item['type'] == 'availability')
+        
+        # Calcular días con actividad
+        dates_with_activity = len(set(item['date'] for item in timeline))
+        
+        return {
+            "total_items": total_items,
+            "appointments_count": appointments_count,
+            "availability_count": availability_count,
+            "dates_with_activity": dates_with_activity,
+            "avg_items_per_day": round(total_items / dates_with_activity, 1) if dates_with_activity > 0 else 0
+        }
