@@ -41,7 +41,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const [internalDate, setInternalDate] = useState(currentDate);
   const [showAvailability, setShowAvailability] = useState(true);
   
-  // Colores para el calendario en tema oscuro
   const calendarColors: Record<string, string> = {
     pending: 'border-l-2 border-yellow-500/70',
     tentative: 'border-l-2 border-blue-500/70',
@@ -70,7 +69,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   };
   const handleOperationalItemClick = (item: OperationalItem) => {
     if (onOperationalItemClick) onOperationalItemClick(item);
-    // Si es una cita, también disparar el handler de appointment
     if (item.type === 'appointment' && item.metadata?.appointment) {
       handleAppointmentClick(item.metadata.appointment);
     }
@@ -90,29 +88,28 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const closeDayDetail = () => {
     setSelectedDay(null);
   };
-  // ✅ CORRECCIÓN CRÍTICA: Filtrar por fecha completa usando strings ISO para evitar errores de zona horaria
+  // ✅ CORRECCIÓN: Filtrar por fecha completa usando strings ISO
   const getItemsForDay = (day: number) => {
     return operationalItems.filter(item => {
-      // item.date viene del backend como "YYYY-MM-DD"
       const itemDateStr = item.date; 
       const [year, month, dateDay] = itemDateStr.split('-').map(Number);
       
       return dateDay === day &&
-             month - 1 === internalDate.getMonth() && // Los meses en Date() son 0-indexados
+             month - 1 === internalDate.getMonth() && 
              year === internalDate.getFullYear();
     });
   };
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(internalDate);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
-  // Obtener items del día seleccionado
+  // ✅ CORRECCIÓN: Comparación de fechas usando strings ISO para evitar errores de zona horaria
   const selectedDayItems = selectedDay 
     ? operationalItems.filter(item => {
-        const itemDate = new Date(item.date);
-        return itemDate.toDateString() === selectedDay.toDateString();
+        const itemDateStr = item.date;
+        const selectedDateStr = selectedDay.toISOString().split('T')[0];
+        return itemDateStr === selectedDateStr;
       })
     : [];
-  // Filtrar items para mostrar en celda (solo citas o citas + disponibilidad)
   const getItemsForCell = (day: number) => {
     const items = getItemsForDay(day);
     return showAvailability ? items : items.filter(item => item.type === 'appointment');
@@ -124,24 +121,18 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
         {/* Header del calendario con navegación */}
         <div className="flex items-center justify-between p-2 bg-[#111] border-b border-white/10">
           <div className="flex items-center gap-2">
-            <button 
-              onClick={handlePrevMonth}
-              className="p-1 hover:bg-white/10 rounded transition-colors"
-            >
+            <button onClick={handlePrevMonth} className="p-1 hover:bg-white/10 rounded transition-colors">
               <ChevronLeftIcon className="w-4 h-4 text-white/60" />
             </button>
             <span className="text-[10px] font-mono text-white/80 uppercase tracking-wider">
               {internalDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
             </span>
-            <button 
-              onClick={handleNextMonth}
-              className="p-1 hover:bg-white/10 rounded transition-colors"
-            >
+            <button onClick={handleNextMonth} className="p-1 hover:bg-white/10 rounded transition-colors">
               <ChevronRightIcon className="w-4 h-4 text-white/60" />
             </button>
           </div>
           
-          {/* Toggle de disponibilidad */}
+          {/* Toggle de disponibilidad (Ojo) */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAvailability(!showAvailability)}
@@ -203,6 +194,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                       ? 'bg-green-500/10 border-l-2 border-green-500/70' 
                       : (calendarColors[item.status] || calendarColors.pending);
                     
+                    // ✅ MEJORA: Mostrar nombre del paciente o servicio
+                    const displayText = item.type === 'availability' 
+                      ? item.serviceName || 'Disponible'
+                      : item.patientName || item.title || 'Cita';
+                    
                     return (
                       <div
                         key={`${item.type}-${item.id}`}
@@ -214,7 +210,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           item.type === 'availability' ? 'text-green-300/80' : ''
                         }`}
                       >
-                        {item.title}
+                        {displayText}
                       </div>
                     );
                   })}
@@ -246,10 +242,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                 })}
               </span>
             </div>
-            <button 
-              onClick={closeDayDetail}
-              className="p-1 hover:bg-white/10 rounded transition-colors"
-            >
+            <button onClick={closeDayDetail} className="p-1 hover:bg-white/10 rounded transition-colors">
               <XMarkIcon className="w-4 h-4 text-white/60" />
             </button>
           </div>
@@ -282,13 +275,20 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                         item.type === 'availability' ? 'bg-green-500/70' : style.dot
                       }`} />
                       <div className="flex-1 min-w-0">
+                        {/* ✅ MEJORA: Mostrar paciente y servicio */}
                         <div className={`text-[10px] font-medium truncate ${
                           item.type === 'availability' ? 'text-green-300' : 'text-white'
                         }`}>
-                          {item.title}
+                          {item.type === 'availability' 
+                            ? `Disponible: ${item.serviceName}`
+                            : `${item.patientName} - ${item.serviceName}`
+                          }
                         </div>
                         <div className="text-[9px] text-white/40">
-                          {item.doctorName || item.serviceName || 'Sin asignar'}
+                          {item.type === 'availability' 
+                            ? item.doctorName || 'Sin asignar'
+                            : `Dr. ${item.doctorName || 'Sin asignar'}`
+                          }
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-[8px] text-white/30 font-mono">

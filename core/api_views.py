@@ -7138,7 +7138,8 @@ class OperationalHubView(APIView):
                 'type': 'appointment',
                 'date': appointment.appointment_date.isoformat(),
                 'time': appointment.tentative_time,
-                'title': f"Cita con {appointment.doctor.full_name if appointment.doctor else 'Médico'}",
+                # ✅ CAMBIO: Mostrar nombre del paciente en lugar del médico
+                'title': appointment.patient.full_name if appointment.patient else 'Sin nombre',
                 'status': appointment.status,
                 'patient_name': appointment.patient.full_name if appointment.patient else 'Sin nombre',
                 'doctor_name': appointment.doctor.full_name if appointment.doctor else 'Sin asignar',
