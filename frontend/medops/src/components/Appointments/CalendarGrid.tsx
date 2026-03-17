@@ -46,9 +46,10 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     tentative: 'border-l-2 border-blue-500/70',
     arrived: 'border-l-2 border-green-500/70',
     in_consultation: 'border-l-2 border-purple-500/70',
-    completed: 'border-l-2 border-gray-500/70',
+    completed: 'border-l-2 border-emerald-500/70', // ✅ CAMBIO: Color verde para completadas
     canceled: 'border-l-2 border-red-500/70',
   };
+  
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -58,37 +59,43 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     const startingDayOfWeek = firstDay.getDay();
     return { daysInMonth, startingDayOfWeek };
   };
+  
   const handleDateClick = (date: Date) => {
     setSelectedDay(date);
     if (onDateClick) onDateClick(date);
     if (onSelectDate) onSelectDate(date);
   };
+  
   const handleAppointmentClick = (appointment: Appointment) => {
     if (onAppointmentClick) onAppointmentClick(appointment);
     if (onSelectAppointment) onSelectAppointment(appointment);
   };
+  
   const handleOperationalItemClick = (item: OperationalItem) => {
     if (onOperationalItemClick) onOperationalItemClick(item);
     if (item.type === 'appointment' && item.metadata?.appointment) {
       handleAppointmentClick(item.metadata.appointment);
     }
   };
+  
   const handlePrevMonth = () => {
     const newDate = new Date(internalDate);
     newDate.setMonth(newDate.getMonth() - 1);
     setInternalDate(newDate);
     if (onPrevMonth) onPrevMonth();
   };
+  
   const handleNextMonth = () => {
     const newDate = new Date(internalDate);
     newDate.setMonth(newDate.getMonth() + 1);
     setInternalDate(newDate);
     if (onNextMonth) onNextMonth();
   };
+  
   const closeDayDetail = () => {
     setSelectedDay(null);
   };
-  // ✅ CORRECCIÓN: Filtrar por fecha completa usando strings ISO
+  
   const getItemsForDay = (day: number) => {
     return operationalItems.filter(item => {
       const itemDateStr = item.date; 
@@ -99,10 +106,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
              year === internalDate.getFullYear();
     });
   };
+  
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(internalDate);
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
-  // ✅ CORRECCIÓN: Comparación de fechas usando strings ISO para evitar errores de zona horaria
+  
   const selectedDayItems = selectedDay 
     ? operationalItems.filter(item => {
         const itemDateStr = item.date;
@@ -110,10 +118,12 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
         return itemDateStr === selectedDateStr;
       })
     : [];
+  
   const getItemsForCell = (day: number) => {
     const items = getItemsForDay(day);
     return showAvailability ? items : items.filter(item => item.type === 'appointment');
   };
+  
   return (
     <div className="flex gap-4">
       {/* Calendario principal */}
@@ -194,7 +204,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                       ? 'bg-green-500/10 border-l-2 border-green-500/70' 
                       : (calendarColors[item.status] || calendarColors.pending);
                     
-                    // ✅ MEJORA: Mostrar nombre del paciente o servicio
                     const displayText = item.type === 'availability' 
                       ? item.serviceName || 'Disponible'
                       : item.patientName || item.title || 'Cita';
@@ -227,6 +236,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
           })}
         </div>
       </div>
+      
       {/* Panel de detalles del día seleccionado */}
       {selectedDay && (
         <div className="w-80 bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden flex flex-col">
@@ -275,7 +285,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                         item.type === 'availability' ? 'bg-green-500/70' : style.dot
                       }`} />
                       <div className="flex-1 min-w-0">
-                        {/* ✅ MEJORA: Mostrar paciente y servicio */}
                         <div className={`text-[10px] font-medium truncate ${
                           item.type === 'availability' ? 'text-green-300' : 'text-white'
                         }`}>

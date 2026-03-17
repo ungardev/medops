@@ -29,6 +29,8 @@ import {
 import { useScheduledItems } from "hooks/appointments/useScheduledItems";
 import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch";
 import { useCalendarTimeline } from "@/hooks/operational/useOperationalHub";
+import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
+import { generateAvailabilityFromSchedules } from '@/utils/scheduleUtils';
 export default function Appointments() {
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
@@ -64,10 +66,15 @@ export default function Appointments() {
   } = useCalendarTimeline(institutionId, currentMonth);
   
   const operationalItems = hubData?.timeline || [];
+  
+  const { data: serviceSchedules = [] } = useAllServiceSchedules(institutionId);
+  const generatedAvailability = generateAvailabilityFromSchedules(serviceSchedules, currentMonth);
+  const operationalItemsWithAvailability = [...operationalItems, ...generatedAvailability];
+  
   const operationalStats = hubData?.stats || {
-    total_items: 0,
-    appointments_count: 0,
-    availability_count: 0,
+    total_items: operationalItemsWithAvailability.length,
+    appointments_count: operationalItemsWithAvailability.filter(i => i.type === 'appointment').length,
+    availability_count: operationalItemsWithAvailability.filter(i => i.type === 'availability').length,
     dates_with_activity: 0,
     avg_items_per_day: 0,
     period_days: 0
@@ -158,6 +165,13 @@ export default function Appointments() {
     if (item.type === 'appointment' && item.metadata?.appointment_id) {
       setViewingAppointmentId(item.metadata.appointment_id);
     } else if (item.type === 'availability') {
+      const slotDate = new Date(item.date);
+      // ✅ CORREGIDO: Manejo seguro de item.time (posiblemente undefined)
+      const [hours, minutes] = (item.time || '00:00').split(':').map(Number);
+      slotDate.setHours(hours, minutes);
+      
+      setSelectedDate(slotDate);
+      setShowCreateForm(true);
       console.log('Slot disponible clickeado:', item);
     }
   };
@@ -279,7 +293,7 @@ export default function Appointments() {
             
             <CalendarGrid
               appointments={allAppointments}
-              operationalItems={operationalItems}
+              operationalItems={operationalItemsWithAvailability}
               currentDate={currentMonth}
               onSelectDate={(date: Date) => setSelectedDate(date)}
               onSelectAppointment={(appt: Appointment) => setViewingAppointmentId(appt.id)}
@@ -333,7 +347,11 @@ export default function Appointments() {
       {showCreateForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <AppointmentForm onSubmit={(data) => saveAppointment(data)} onClose={() => setShowCreateForm(false)} />
+            <AppointmentForm 
+              date={selectedDate || undefined}
+              onSubmit={(data) => saveAppointment(data)} 
+              onClose={() => setShowCreateForm(false)} 
+            />
           </div>
         </div>
       )}

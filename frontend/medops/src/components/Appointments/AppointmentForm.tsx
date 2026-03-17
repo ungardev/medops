@@ -2,16 +2,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { AppointmentInput } from "types/appointments";
 import type { Patient } from "types/patients";
-// ✅ CAMBIO: Importar tipos de services en lugar de billing
 import type { DoctorService, ServiceCategory } from "@/types/services";
 import { usePatients } from "hooks/patients/usePatients";
-import { useInstitutions } from "@/hooks/settings/useInstitutions";
-import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
-// ✅ CAMBIO: Importar hooks de services en lugar de billing
+import { useInstitutions } from "hooks/settings/useInstitutions";
+import { useDoctorConfig } from "hooks/settings/useDoctorConfig";
 import { useServiceCategories } from "@/hooks/services/useServiceCategories";
 import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices";
-// ✅ NUEVO: Hook para tasa BCV
 import { useBCVRate, convertUSDToVES } from "@/hooks/dashboard/useBCVRate";
+import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import NewPatientModal from "components/Patients/NewPatientModal";
 import { 
   UserPlusIcon, 
@@ -38,6 +36,7 @@ interface FormErrors {
   patient?: string;
   services?: string;
   appointment_date?: string;
+  appointment_time?: string;
 }
 interface TemporaryService {
   id: number | string;
@@ -71,11 +70,19 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   
+  // ✅ NUEVO: Estado para servicio y fecha seleccionados
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(date || null);
+  const [selectedTime, setSelectedTime] = useState<string>('');
+  
   const { data, isLoading: isLoadingPatients, isError: isErrorPatients, refetch } = usePatients(1, 100);
   const patientList: Patient[] = data?.results ?? [];
   
   const { data: categories = [] } = useServiceCategories();
   const { data: serviceResults = [], isFetching: isFetchingServices } = useDoctorServicesSearch(serviceSearch);
+  
+  const institutionId = activeInstitution?.id ?? 0;
+  const { data: serviceSchedules = [] } = useAllServiceSchedules(institutionId);
   
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patientList;
@@ -109,7 +116,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     return groups;
   }, [serviceResults, bcvRate]);
   
-  const institutionId = activeInstitution?.id ?? 0;
   const doctorId = doctorConfig?.id ?? 0;
   
   const [form, setForm] = useState<AppointmentInput>({
@@ -123,6 +129,35 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   });
   
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // ✅ NUEVO: Generar slots disponibles basados en horarios
+  const availableSlots = useMemo(() => {
+    if (!selectedServiceId || !selectedDate) return [];
+    
+    const dayOfWeek = selectedDate.getDay();
+    const serviceSchedulesForService = serviceSchedules.filter(
+      s => s.service === selectedServiceId && s.day_of_week === dayOfWeek
+    );
+    
+    const slots: { time: string; label: string }[] = [];
+    serviceSchedulesForService.forEach(schedule => {
+      const startTime = new Date(`2000-01-01T${schedule.start_time}`);
+      const endTime = new Date(`2000-01-01T${schedule.end_time}`);
+      const slotDuration = schedule.slot_duration;
+      
+      let currentTime = startTime;
+      while (currentTime < endTime) {
+        const slotEnd = new Date(currentTime.getTime() + slotDuration * 60000);
+        if (slotEnd <= endTime) {
+          const timeStr = currentTime.toTimeString().slice(0, 5);
+          slots.push({ time: timeStr, label: timeStr });
+        }
+        currentTime = slotEnd;
+      }
+    });
+    
+    return slots;
+  }, [selectedServiceId, selectedDate, serviceSchedules]);
   
   useEffect(() => {
     if (activeInstitution?.id) {
@@ -188,6 +223,10 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     } else {
       setSelectedServices(prev => [...prev, { service: tempService, quantity: 1 }]);
     }
+    
+    // ✅ NUEVO: Establecer servicio seleccionado para filtrar horarios
+    setSelectedServiceId(service.id);
+    
     setServiceSearch("");
     setHasChanges(true);
     setTouched(prev => ({ ...prev, services: true }));
@@ -196,6 +235,10 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   
   const handleRemoveService = (serviceId: number | string) => {
     setSelectedServices(prev => prev.filter(s => s.service.id !== serviceId));
+    // ✅ NUEVO: Limpiar servicio seleccionado si se quita el único
+    if (selectedServices.length === 1 && selectedServices[0].service.id === serviceId) {
+      setSelectedServiceId(null);
+    }
     setHasChanges(true);
   };
   
@@ -221,6 +264,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     if (!selectedPatient) newErrors.patient = "REQUIRED_FIELD: Select patient";
     if (selectedServices.length === 0) newErrors.services = "REQUIRED_FIELD: Add at least one service";
     if (!form.appointment_date) newErrors.appointment_date = "REQUIRED_FIELD: Select date";
+    if (!selectedTime) newErrors.appointment_time = "REQUIRED_FIELD: Select time";
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -234,6 +278,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       const payload: AppointmentInput = {
         ...form,
         patient: selectedPatient!.id,
+        appointment_date: form.appointment_date,
+        start_time: selectedTime, // ✅ CORREGIDO: Usar start_time en lugar de appointment_time
         expected_amount: totalAmount.toString(),
         services: selectedServices.map(s => ({
           doctor_service_id: Number(s.service.id),
@@ -312,6 +358,15 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
           {errors.patient && (
             <div className="mt-1 text-red-400 text-xs">{errors.patient}</div>
           )}
+          {/* ✅ NUEVO: Botón para agregar nuevo paciente */}
+          <button
+            type="button"
+            onClick={() => setShowNewPatientModal(true)}
+            className="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-sm mt-2"
+          >
+            <UserPlusIcon className="w-4 h-4" />
+            Crear nuevo paciente
+          </button>
         </div>
         
         <div className="space-y-3">
@@ -446,6 +501,34 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             <div className="mt-1 text-red-400 text-xs">{errors.appointment_date}</div>
           )}
         </div>
+        
+        {/* ✅ NUEVO: Campo de hora con filtros de horarios */}
+        <div className="space-y-3">
+          <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
+            HORA DE LA CITA
+          </h3>
+          <select
+            value={selectedTime}
+            onChange={(e) => setSelectedTime(e.target.value)}
+            disabled={!availableSlots.length}
+            className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none"
+          >
+            <option value="">Seleccionar hora...</option>
+            {availableSlots.map(slot => (
+              <option key={slot.time} value={slot.time}>
+                {slot.label}
+              </option>
+            ))}
+          </select>
+          {!availableSlots.length && selectedServiceId && (
+            <div className="text-[10px] text-amber-400">
+              No hay horarios disponibles para el servicio seleccionado en este día.
+            </div>
+          )}
+          {errors.appointment_time && (
+            <div className="mt-1 text-red-400 text-xs">{errors.appointment_time}</div>
+          )}
+        </div>
       </div>
       
       <div className="px-6 py-3 bg-white/5 border-t border-white/10 flex justify-between items-center">
@@ -468,6 +551,18 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
         <div className="p-3 bg-red-500/20 border border-red-500/50 text-red-300 text-sm rounded">
           Error: {submitError}
         </div>
+      )}
+      
+      {/* ✅ CORREGIDO: NewPatientModal con props requeridas */}
+      {showNewPatientModal && (
+        <NewPatientModal 
+          open={showNewPatientModal}
+          onClose={() => setShowNewPatientModal(false)}
+          onCreated={() => {
+            setShowNewPatientModal(false);
+            refetch(); // Recargar lista de pacientes
+          }}
+        />
       )}
     </form>
   );

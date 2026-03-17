@@ -1,4 +1,4 @@
-// src/hooks/appointments/useAppointmentStatusStyles.ts
+// frontend/medops/src/hooks/appointments/useAppointmentStatusStyles.ts
 import { AppointmentStatus } from '@/types/appointments';
 export interface StatusStyle {
   label: string;
@@ -35,9 +35,9 @@ export const useAppointmentStatusStyles = () => {
     },
     completed: {
       label: 'Completada',
-      bg: 'bg-gray-100',
-      text: 'text-gray-800',
-      dot: 'bg-gray-500',
+      bg: 'bg-emerald-100',      // ✅ CAMBIO: De bg-gray-100 a bg-emerald-100
+      text: 'text-emerald-800',  // ✅ CAMBIO: De text-gray-800 a text-emerald-800
+      dot: 'bg-emerald-500',     // ✅ CAMBIO: De bg-gray-500 a bg-emerald-500
     },
     canceled: {
       label: 'Cancelada',
@@ -46,9 +46,11 @@ export const useAppointmentStatusStyles = () => {
       dot: 'bg-red-500',
     },
   };
+  
   const getStatusStyle = (status: AppointmentStatus): StatusStyle => {
     return statusStyles[status] || statusStyles.pending;
   };
+  
   return { statusStyles, getStatusStyle };
 };
 export default useAppointmentStatusStyles;
