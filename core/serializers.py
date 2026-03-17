@@ -2095,7 +2095,6 @@ class ServiceScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceSchedule
         fields = '__all__'
-        read_only_fields = ['service']
 
 
 
