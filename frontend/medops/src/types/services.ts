@@ -1,5 +1,4 @@
 // src/types/services.ts
-
 export interface ServiceCategory {
   id: number;
   name: string;
@@ -21,7 +20,7 @@ export interface DoctorService {
   name: string;
   description?: string;
   price_usd: number;
-  price_ves?: number; // Calculado en frontend usando tasa BCV
+  price_ves?: number;
   duration_minutes: number;
   is_active: boolean;
   is_visible_global: boolean;
@@ -46,20 +45,19 @@ export interface DoctorServiceInput {
   is_active: boolean;
   is_visible_global: boolean;
 }
-
-
 export interface ServiceSchedule {
   id: number;
-  service: number; // ID del servicio
-  day_of_week: number; // 0-6
-  start_time: string; // HH:MM
-  end_time: string;   // HH:MM
+  service: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
   slot_duration: number;
   max_appointments: number;
   is_active: boolean;
 }
 export interface ServiceScheduleInput {
   service: number;
+  institution: number;  // ✅ CAMBIO AGREGADO
   day_of_week: number;
   start_time: string;
   end_time: string;

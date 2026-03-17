@@ -33,6 +33,7 @@ export default function ServiceDetailPage() {
   const { data: schedules = [] } = useServiceSchedules(Number(id));
   const createSchedule = useCreateServiceSchedule();
   const deleteSchedule = useDeleteServiceSchedule();
+  
   const [newSchedule, setNewSchedule] = useState({
     day_of_week: 0,
     start_time: '09:00',
@@ -46,6 +47,7 @@ export default function ServiceDetailPage() {
     try {
       await createSchedule.mutateAsync({
         service: Number(id),
+        institution: service.institution!,  // ✅ CAMBIO AGREGADO
         ...newSchedule,
       });
       // Opcional: Resetear formulario
@@ -101,7 +103,6 @@ export default function ServiceDetailPage() {
           <div className="space-y-4">
             <h2 className="text-lg font-bold text-white">Detalles del Servicio</h2>
             <p className="text-white/70">{service.description || 'Sin descripción.'}</p>
-            {/* Aquí podría ir un botón para editar si se desea, pero recomendamos el modal desde la lista */}
           </div>
         )}
         {activeTab === 'schedules' && (
