@@ -6946,11 +6946,18 @@ class OperationalHubView(APIView):
             year = self._get_year(request)
             month = self._get_month(request)
             
+            # LOG: Depuración de parámetros
+            logger.info(f"[OperationalHubView] institution_id={institution_id}, year={year}, month={month}")
+            
             # 2. Calcular rango de fechas
             start_date, end_date = self._get_date_range(year, month)
+            logger.info(f"[OperationalHubView] Date range: {start_date} to {end_date}")
             
             # 3. Obtener datos del mes actual
             timeline = self._build_timeline(institution_id, start_date, end_date)
+            
+            # LOG: Depuración de timeline
+            logger.info(f"[OperationalHubView] Timeline items: {len(timeline)}")
             
             # 4. Obtener datos para WaitingRoom (día actual)
             today = timezone.now().date()
@@ -6977,12 +6984,13 @@ class OperationalHubView(APIView):
                     "month": month,
                     "start_date": start_date.isoformat(),
                     "end_date": end_date.isoformat(),
-                    "total_days": (end_date - start_date).days + 1
+                    "total_days": (end_date - start_date).days + 1,
+                    "timeline_count": len(timeline)
                 }
             })
             
         except Exception as e:
-            logger.error(f"Error en OperationalHubView: {str(e)}", exc_info=True)
+            logger.error(f"[OperationalHubView] Error: {str(e)}", exc_info=True)
             return Response(
                 {"error": "Error interno del servidor", "detail": str(e)}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -6997,14 +7005,8 @@ class OperationalHubView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         try:
-            # Verificar que la institución existe
-            institution = InstitutionSettings.objects.filter(id=int(institution_id)).first()
-            if not institution:
-                return Response(
-                    {"error": "Institución no encontrada"}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            return int(institution_id)
+            institution_id = int(institution_id)
+            return institution_id
         except (ValueError, TypeError):
             return Response(
                 {"error": "institution_id debe ser un entero válido"}, 
@@ -7017,7 +7019,6 @@ class OperationalHubView(APIView):
         if year_param:
             try:
                 year = int(year_param)
-                # Validar rango razonable (últimos 5 años - próximos 5 años)
                 current_year = timezone.now().year
                 if current_year - 5 <= year <= current_year + 5:
                     return year
@@ -7040,29 +7041,28 @@ class OperationalHubView(APIView):
     def _get_date_range(self, year, month):
         """Calcula el rango de fechas para el mes solicitado."""
         first_day = date(year, month, 1)
-        
-        # Último día del mes
         last_day_num = calendar.monthrange(year, month)[1]
         last_day = date(year, month, last_day_num)
-        
         return first_day, last_day
     
     def _build_timeline(self, institution_id, start_date, end_date):
         """
         Construye el timeline unificado con citas y disponibilidad.
+        CORRECCIÓN: Muestra TODAS las citas del mes, no solo las activas.
         """
         timeline = []
         
         try:
-            # 1. Obtener citas del mes (optimizado con select_related)
+            # 1. Obtener TODAS las citas del mes (sin filtro de estado)
             appointments = Appointment.objects.filter(
                 institution_id=institution_id,
-                appointment_date__range=[start_date, end_date],
-                status__in=['pending', 'tentative', 'confirmed', 'arrived', 'in_consultation']
+                appointment_date__range=[start_date, end_date]
             ).select_related(
                 'patient', 'doctor', 'institution', 
                 'doctor_service', 'doctor_service__category'
             ).order_by('appointment_date', 'tentative_time')
+            
+            logger.info(f"[OperationalHubView] Citas encontradas en rango: {appointments.count()}")
             
             # 2. Obtener horarios de servicio activos
             service_schedules = ServiceSchedule.objects.filter(
@@ -7078,18 +7078,22 @@ class OperationalHubView(APIView):
                     appointments_by_date[date_str] = []
                 appointments_by_date[date_str].append(apt)
             
+            logger.info(f"[OperationalHubView] Citas por fecha: {list(appointments_by_date.keys())}")
+            
             # 4. Generar timeline día por día
             current_date = start_date
             while current_date <= end_date:
                 date_str = current_date.isoformat()
-                day_of_week = current_date.weekday()  # 0=Monday, 6=Sunday
+                day_of_week = current_date.weekday()
                 
                 # Obtener citas del día
                 day_appointments = appointments_by_date.get(date_str, [])
                 
                 # Agendar citas al timeline
                 for apt in day_appointments:
-                    timeline.append(self._appointment_to_timeline_item(apt))
+                    timeline_item = self._appointment_to_timeline_item(apt)
+                    if timeline_item:
+                        timeline.append(timeline_item)
                 
                 # Obtener horarios para este día de la semana
                 day_schedules = service_schedules.filter(day_of_week=day_of_week)
@@ -7106,9 +7110,10 @@ class OperationalHubView(APIView):
             # 5. Ordenar timeline por fecha y hora
             timeline.sort(key=lambda x: (x['date'], x.get('time') or ''))
             
+            logger.info(f"[OperationalHubView] Timeline total items: {len(timeline)}")
+            
         except Exception as e:
-            logger.error(f"Error construyendo timeline: {str(e)}", exc_info=True)
-            # Retornar timeline vacío en caso de error
+            logger.error(f"[OperationalHubView] Error construyendo timeline: {str(e)}", exc_info=True)
             timeline = []
         
         return timeline
@@ -7165,13 +7170,11 @@ class OperationalHubView(APIView):
         try:
             start_time = schedule.start_time
             end_time = schedule.end_time
-            slot_duration = schedule.slot_duration  # en minutos
+            slot_duration = schedule.slot_duration
             
-            # Convertir a datetime para cálculos
             current_datetime = datetime.combine(current_date, start_time)
             end_datetime = datetime.combine(current_date, end_time)
             
-            # Generar slots
             while current_datetime < end_datetime:
                 slot_time_str = current_datetime.time().strftime('%H:%M')
                 
@@ -7183,17 +7186,14 @@ class OperationalHubView(APIView):
                 )
                 
                 if not is_occupied:
-                    # Calcular cupos restantes
                     slots_remaining = schedule.max_appointments
                     
-                    # Obtener doctor del servicio
                     doctor_name = None
                     doctor_id = None
                     if hasattr(schedule.service, 'doctor'):
                         doctor_name = schedule.service.doctor.full_name if schedule.service.doctor else None
                         doctor_id = schedule.service.doctor.id if schedule.service.doctor else None
                     
-                    # Slot disponible
                     slots.append({
                         'id': f"avail-{schedule.id}-{slot_time_str}",
                         'type': 'availability',
@@ -7222,7 +7222,6 @@ class OperationalHubView(APIView):
                         }
                     })
                 
-                # Avanzar al siguiente slot
                 current_datetime += timedelta(minutes=slot_duration)
             
         except Exception as e:
@@ -7233,23 +7232,15 @@ class OperationalHubView(APIView):
     def _get_live_queue(self, institution_id):
         """Obtiene entradas activas en sala de espera."""
         try:
+            from core.models import WaitingRoomEntry
+            from core.serializers import WaitingRoomEntrySerializer
+            
             live_queue = WaitingRoomEntry.objects.filter(
                 institution_id=institution_id,
                 status__in=['waiting', 'in_consultation']
             ).select_related('patient', 'appointment', 'institution')
             
             live_queue_data = WaitingRoomEntrySerializer(live_queue, many=True).data
-            
-            # Enriquecer con nombres de servicio
-            for entry in live_queue_data:
-                if entry.get('appointment') and entry['appointment'].get('doctor_service'):
-                    service_id = entry['appointment']['doctor_service']
-                    try:
-                        service = DoctorService.objects.get(id=service_id)
-                        entry['service_name'] = service.name
-                        entry['category_name'] = service.category.name if service.category else None
-                    except DoctorService.DoesNotExist:
-                        pass
             
             return live_queue_data
             
@@ -7260,6 +7251,8 @@ class OperationalHubView(APIView):
     def _get_pending_entries(self, institution_id, today):
         """Obtiene citas pendientes del día actual."""
         try:
+            from core.serializers import AppointmentSerializer
+            
             pending_entries = Appointment.objects.filter(
                 institution_id=institution_id,
                 status__in=['pending', 'tentative', 'confirmed'],
@@ -7275,6 +7268,8 @@ class OperationalHubView(APIView):
     def _get_catalogs(self, institution_id):
         """Obtiene catálogos para filtros UI."""
         try:
+            from core.models import ServiceCategory, DoctorService
+            
             categories = ServiceCategory.objects.filter(is_active=True)
             services = DoctorService.objects.filter(
                 is_active=True, 
@@ -7307,7 +7302,6 @@ class OperationalHubView(APIView):
             appointments_count = sum(1 for item in timeline if item['type'] == 'appointment')
             availability_count = sum(1 for item in timeline if item['type'] == 'availability')
             
-            # Calcular días con actividad
             dates_with_activity = len(set(item['date'] for item in timeline))
             
             return {
