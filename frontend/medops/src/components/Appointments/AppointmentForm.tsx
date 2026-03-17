@@ -39,7 +39,6 @@ interface FormErrors {
   services?: string;
   appointment_date?: string;
 }
-// ✅ NUEVO: Interfaz auxiliar para servicios temporales
 interface TemporaryService {
   id: number | string;
   code: string;
@@ -53,7 +52,6 @@ interface TemporaryService {
   is_active: boolean;
   is_visible_global: boolean;
 }
-// ✅ CAMBIO: Tipo SelectedService usa TemporaryService
 interface SelectedService {
   service: TemporaryService;
   quantity: number;
@@ -61,7 +59,6 @@ interface SelectedService {
 export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   const { institutions, activeInstitution } = useInstitutions();
   const { data: doctorConfig } = useDoctorConfig();
-  // ✅ NUEVO: Obtener tasa BCV
   const { data: bcvRate } = useBCVRate();
   
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
@@ -72,18 +69,14 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  // ✅ CAMBIO: Estado usa TemporaryService
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   
-  // Pacientes
   const { data, isLoading: isLoadingPatients, isError: isErrorPatients, refetch } = usePatients(1, 100);
   const patientList: Patient[] = data?.results ?? [];
   
-  // ✅ CAMBIO: Servicios del catálogo usando hooks de services
   const { data: categories = [] } = useServiceCategories();
   const { data: serviceResults = [], isFetching: isFetchingServices } = useDoctorServicesSearch(serviceSearch);
   
-  // Filtrar pacientes por búsqueda
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patientList;
     const search = patientSearch.toLowerCase();
@@ -94,7 +87,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     );
   }, [patientList, patientSearch]);
   
-  // ✅ CAMBIO: Agrupar servicios por categoría usando TemporaryService
   const groupedServices = useMemo(() => {
     const groups: Record<string, TemporaryService[]> = {};
     serviceResults.forEach(item => {
@@ -116,6 +108,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     });
     return groups;
   }, [serviceResults, bcvRate]);
+  
   const institutionId = activeInstitution?.id ?? 0;
   const doctorId = doctorConfig?.id ?? 0;
   
@@ -128,6 +121,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     expected_amount: "",
     notes: "",
   });
+  
   const [hasChanges, setHasChanges] = useState(false);
   
   useEffect(() => {
@@ -138,6 +132,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       }));
     }
   }, [activeInstitution?.id]);
+  
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasChanges || selectedPatient || selectedServices.length > 0) {
@@ -148,7 +143,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasChanges, selectedPatient, selectedServices]);
-  // ✅ NUEVO: Función handleChange (faltaba)
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
@@ -158,6 +153,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
   };
+  
   const handlePatientSelect = (patient: Patient) => {
     setSelectedPatient(patient);
     setForm(prev => ({ ...prev, patient: patient.id }));
@@ -166,9 +162,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     setTouched(prev => ({ ...prev, patient: true }));
     if (errors.patient) setErrors(prev => ({ ...prev, patient: undefined }));
   };
-  // ✅ CAMBIO: handleAddService usa TemporaryService
+  
   const handleAddService = (service: DoctorService) => {
-    // Convertir DoctorService a TemporaryService
     const tempService: TemporaryService = {
       id: service.id,
       code: service.code,
@@ -198,12 +193,12 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     setTouched(prev => ({ ...prev, services: true }));
     if (errors.services) setErrors(prev => ({ ...prev, services: undefined }));
   };
-  // ✅ CAMBIO: handleRemoveService usa service.id
+  
   const handleRemoveService = (serviceId: number | string) => {
     setSelectedServices(prev => prev.filter(s => s.service.id !== serviceId));
     setHasChanges(true);
   };
-  // ✅ CAMBIO: handleServiceQuantity usa service.id
+  
   const handleServiceQuantity = (serviceId: number | string, delta: number) => {
     setSelectedServices(prev => prev.map(s => 
       s.service.id === serviceId 
@@ -212,14 +207,12 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     ));
     setHasChanges(true);
   };
-  // ✅ CAMBIO: Cálculo del total usa price_usd
+  
   const totalAmount = selectedServices.reduce(
     (sum, s) => sum + (Number(s.service.price_usd) * s.quantity),
     0
   );
-  // =====================================================
-  // ✅ FIX: handleSubmit - Ahora envía los servicios con doctor_service_id
-  // =====================================================
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setTouched({ patient: true, services: true, appointment_date: true });
@@ -238,14 +231,12 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     setSubmitError(null);
     
     try {
-      // ✅ CONSTRUIR PAYLOAD CON SERVICIOS DEL CATÁLOGO (DoctorService)
       const payload: AppointmentInput = {
         ...form,
         patient: selectedPatient!.id,
-        expected_amount: totalAmount.toFixed(2),
-        // ✅ ENVÍAR SERVICIOS SELECCIONADOS AL BACKEND (cambio clave: doctor_service_id)
+        expected_amount: totalAmount.toString(),
         services: selectedServices.map(s => ({
-          doctor_service_id: Number(s.service.id), // ✅ CAMBIO: de billing_item_id a doctor_service_id
+          doctor_service_id: Number(s.service.id),
           qty: s.quantity,
         })),
       };
@@ -260,9 +251,9 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       setIsSubmitting(false);
     }
   };
+  
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Header Estilizado (Similar a AppointmentDetail) */}
       <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5">
         <div className="flex items-center gap-3">
           <div className="p-2 border border-white/20 text-white/60 bg-white/5">
@@ -285,10 +276,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
           <XMarkIcon className="h-5 w-5" />
         </button>
       </div>
-      {/* Contenido del Formulario */}
+      
       <div className="p-6 space-y-6">
-        
-        {/* Selección de Paciente */}
         <div className="space-y-3">
           <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
             INFORMACIÓN DEL PACIENTE
@@ -324,13 +313,12 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             <div className="mt-1 text-red-400 text-xs">{errors.patient}</div>
           )}
         </div>
-        {/* Selección de Servicios */}
+        
         <div className="space-y-3">
           <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
             SERVICIOS
           </h3>
           
-          {/* Buscador de servicios */}
           <div className="relative mb-4">
             <input
               type="text"
@@ -373,7 +361,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
               </div>
             )}
           </div>
-          {/* Servicios seleccionados */}
+          
           {selectedServices.length > 0 && (
             <div className="space-y-2">
               {selectedServices.map((selected) => (
@@ -429,7 +417,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
                   <div className="text-emerald-400 font-bold text-lg">
                     ${totalAmount.toFixed(2)}
                   </div>
-                  {bcvRate && (
+                  {bcvRate?.rate && (
                     <div className="text-yellow-400 text-sm">
                       Bs. {(totalAmount * bcvRate.rate).toFixed(2)}
                     </div>
@@ -442,7 +430,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
             <div className="mt-1 text-red-400 text-xs">{errors.services}</div>
           )}
         </div>
-        {/* Fecha de la Cita */}
+        
         <div className="space-y-3">
           <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
             FECHA DE LA CITA
@@ -459,7 +447,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
           )}
         </div>
       </div>
-      {/* Footer */}
+      
       <div className="px-6 py-3 bg-white/5 border-t border-white/10 flex justify-between items-center">
         <button
           type="button"

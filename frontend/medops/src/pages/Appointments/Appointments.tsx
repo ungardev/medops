@@ -12,7 +12,6 @@ import {
   CalendarDaysIcon,
   ListBulletIcon
 } from "@heroicons/react/24/outline";
-// Componentes
 import AppointmentsList from "components/Appointments/AppointmentsList";
 import AppointmentForm from "components/Appointments/AppointmentForm";
 import AppointmentEditForm from "components/Appointments/AppointmentEditForm";
@@ -20,8 +19,7 @@ import CalendarGrid from "components/Appointments/CalendarGrid";
 import AppointmentFilters from "components/Appointments/AppointmentFilters";
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
 import Pagination from "components/Common/Pagination";
-import PageHeader from "../../components/Common/PageHeader"; 
-// Hooks
+import PageHeader from "../../components/Common/PageHeader";
 import {
   useCreateAppointment,
   useCancelAppointment,
@@ -44,11 +42,8 @@ export default function Appointments() {
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   
-  // Navegación de meses
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // ID de institución (debería venir de contexto o localStorage)
-  const institutionId = 1; // 🔴 CAMBIAR: Obtener dinámicamente
+  const institutionId = 1;
   
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -61,7 +56,7 @@ export default function Appointments() {
       }
     }
   }, [location.search]);
-  // ✅ NUEVO: Datos unificados para calendario (DoctorService paradigm)
+  
   const { 
     data: hubData, 
     isLoading: isLoadingOperational,
@@ -78,7 +73,6 @@ export default function Appointments() {
     period_days: 0
   };
   
-  // Datos legacy para lista y filtros (mantener para retrocompatibilidad)
   const { data: allData, isLoading, isFetching, error } = useScheduledItems();
   const allAppointments = allData ?? [];
   
@@ -107,6 +101,7 @@ export default function Appointments() {
       }, 300);
     }
   }, [location.search]);
+  
   const saveAppointment = (data: AppointmentInput, id?: number) => {
     if (id) {
       updateMutation.mutate({ id, data });
@@ -116,6 +111,7 @@ export default function Appointments() {
       setShowCreateForm(false);
     }
   };
+  
   const isSearchingActive = search.trim().length > 0;
   const localFiltered = allAppointments
     .filter((appt) => 
@@ -123,6 +119,7 @@ export default function Appointments() {
     )
     .filter((appt) => (statusFilter === "all" ? true : appt.status === statusFilter))
     .sort((a, b) => b.appointment_date.localeCompare(a.appointment_date));
+  
   const finalAppointments = isSearchingActive ? searchResults : localFiltered;
   const totalItems = finalAppointments.length;
   const paginatedAppointments = isSearchingActive 
@@ -140,6 +137,7 @@ export default function Appointments() {
       alert("Error al confirmar la cita");
     }
   };
+  
   const goToPrevMonth = () => {
     setCurrentMonth(prev => {
       const newDate = new Date(prev);
@@ -147,6 +145,7 @@ export default function Appointments() {
       return newDate;
     });
   };
+  
   const goToNextMonth = () => {
     setCurrentMonth(prev => {
       const newDate = new Date(prev);
@@ -154,24 +153,23 @@ export default function Appointments() {
       return newDate;
     });
   };
-  // Manejar clic en item operativo (cita o disponibilidad)
+  
   const handleOperationalItemClick = (item: OperationalItem) => {
     if (item.type === 'appointment' && item.metadata?.appointment_id) {
       setViewingAppointmentId(item.metadata.appointment_id);
     } else if (item.type === 'availability') {
-      // Abrir modal para crear cita con datos pre-llenados
-      // TODO: Implementar lógica para crear cita desde slot disponible
       console.log('Slot disponible clickeado:', item);
     }
   };
+  
   if (error) return (
     <div className="p-10 border border-red-500 bg-red-500/10 text-red-500 font-mono text-xs uppercase">
       Critical_Data_Link_Failure // Error loading appointments
     </div>
   );
+  
   return (
     <div className="max-w-[1800px] mx-auto p-4 lg:p-6 space-y-6">
-      {/* HEADER ELITE */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -195,7 +193,6 @@ export default function Appointments() {
         ]}
         actions={
           <div className="flex items-center gap-2">
-            {/* Toggle View Mode */}
             <div className="flex bg-[#111] border border-white/10 p-1 rounded-sm">
               <button
                 onClick={() => setViewMode("calendar")}
@@ -219,7 +216,6 @@ export default function Appointments() {
               </button>
             </div>
             
-            {/* New Appointment Button */}
             <button
               onClick={() => setShowCreateForm(true)}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-sm transition-all border border-white/5 active:scale-[0.98]"
@@ -231,9 +227,7 @@ export default function Appointments() {
         }
       />
       
-      {/* CONTROLS BAR */}
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between bg-[#0a0a0b] border border-white/10 p-3 rounded-sm">
-        {/* Search */}
         <div className="relative group flex-1 max-w-md">
           <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/20'}`} />
           <input
@@ -248,10 +242,8 @@ export default function Appointments() {
           )}
         </div>
         
-        {/* Filters */}
         <AppointmentFilters activeFilter={statusFilter} onFilterChange={setStatusFilter} />
         
-        {/* Date Filter */}
         {selectedDate && (
           <div className="flex items-center gap-2 bg-[#111] border border-white/10 px-3 py-1.5 rounded-sm">
             <span className="text-[10px] text-white/60">
@@ -266,9 +258,8 @@ export default function Appointments() {
           </div>
         )}
       </div>
-      {/* MAIN CONTENT */}
+      
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        {/* CALENDAR COLUMN */}
         <div className="xl:col-span-7 space-y-4">
           <section className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md p-4 rounded-sm shadow-inner">
             <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
@@ -286,7 +277,6 @@ export default function Appointments() {
               </div>
             </div>
             
-            {/* ✅ PASO CLAVE: Usar datos unificados (Operational Items) */}
             <CalendarGrid
               appointments={allAppointments}
               operationalItems={operationalItems}
@@ -299,7 +289,7 @@ export default function Appointments() {
             />
           </section>
         </div>
-        {/* LIST COLUMN */}
+        
         <div className="xl:col-span-5 space-y-4 relative" style={{ isolation: 'isolate' }} ref={listRef}>
           <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md p-4 rounded-sm">
             <div className="flex items-center justify-between mb-4">
@@ -324,7 +314,6 @@ export default function Appointments() {
             </div>
           </div>
           
-          {/* PAGINATION */}
           {!isSearchingActive && totalItems > 0 && (
             <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md px-4 py-3 flex justify-between items-center rounded-sm">
               <div className="text-[10px] font-mono text-white/20 uppercase tracking-widest">
@@ -340,7 +329,7 @@ export default function Appointments() {
           )}
         </div>
       </div>
-      {/* MODALS */}
+      
       {showCreateForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -348,6 +337,7 @@ export default function Appointments() {
           </div>
         </div>
       )}
+      
       {viewingAppointmentId && (
         <AppointmentDetail
           appointmentId={viewingAppointmentId}
@@ -355,6 +345,7 @@ export default function Appointments() {
           onEdit={(id: number) => { setViewingAppointmentId(null); setEditingAppointmentId(id); }}
         />
       )}
+      
       {editingAppointmentId && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">

@@ -90,13 +90,16 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const closeDayDetail = () => {
     setSelectedDay(null);
   };
-  // ✅ CORRECCIÓN CRÍTICA: Filtrar por fecha completa (día, mes, año)
+  // ✅ CORRECCIÓN CRÍTICA: Filtrar por fecha completa usando strings ISO para evitar errores de zona horaria
   const getItemsForDay = (day: number) => {
     return operationalItems.filter(item => {
-      const itemDate = new Date(item.date);
-      return itemDate.getDate() === day &&
-             itemDate.getMonth() === internalDate.getMonth() &&
-             itemDate.getFullYear() === internalDate.getFullYear();
+      // item.date viene del backend como "YYYY-MM-DD"
+      const itemDateStr = item.date; 
+      const [year, month, dateDay] = itemDateStr.split('-').map(Number);
+      
+      return dateDay === day &&
+             month - 1 === internalDate.getMonth() && // Los meses en Date() son 0-indexados
+             year === internalDate.getFullYear();
     });
   };
   const { daysInMonth, startingDayOfWeek } = getDaysInMonth(internalDate);
