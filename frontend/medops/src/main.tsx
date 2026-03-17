@@ -29,6 +29,8 @@ import VisualAudit from "./pages/VisualAudit";
 import SearchPage from "./pages/Search/Search";
 // CAMBIO: Importar ServiceCatalogPage en lugar de BillingCatalogPage
 import ServiceCatalogPage from "./pages/Services/ServiceCatalogPage";
+// NUEVO: Importar ServiceDetailPage
+import ServiceDetailPage from "./pages/Services/ServiceDetailPage";
 // PatientPortal Imports
 import PatientLogin from "./pages/PatientPortal/PatientLogin";
 import PatientLogout from "./pages/PatientPortal/PatientLogout";
@@ -107,6 +109,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="payments/:id" element={<ChargeOrderDetail />} />
                 {/* CAMBIO: Ruta de servicios en lugar de billing/catalog */}
                 <Route path="services" element={<ServiceCatalogPage />} />
+                {/* NUEVO: Ruta de detalle de servicio */}
+                <Route path="services/:id" element={<ServiceDetailPage />} />
                 <Route path="events" element={<Events />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
                 <Route path="consultation" element={<Consultation />} />

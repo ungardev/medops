@@ -46,3 +46,24 @@ export interface DoctorServiceInput {
   is_active: boolean;
   is_visible_global: boolean;
 }
+
+
+export interface ServiceSchedule {
+  id: number;
+  service: number; // ID del servicio
+  day_of_week: number; // 0-6
+  start_time: string; // HH:MM
+  end_time: string;   // HH:MM
+  slot_duration: number;
+  max_appointments: number;
+  is_active: boolean;
+}
+export interface ServiceScheduleInput {
+  service: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  slot_duration: number;
+  max_appointments: number;
+  is_active?: boolean;
+}

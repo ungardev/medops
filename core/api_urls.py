@@ -49,6 +49,8 @@ from .api_views import (
     # --- ✅ NUEVO: ViewSets de Servicios del Doctor ---
     DoctorDirectoryViewSet,
     DoctorProfileViewSet,
+    # --- ✅ NUEVO: ViewSet de Horarios de Servicios ---
+    ServiceScheduleViewSet,  # AÑADIDO AQUÍ
     # --- Funciones ---
     update_appointment_status,
     update_waitingroom_status,
@@ -211,6 +213,8 @@ router.register(r"medications", MedicationCatalogViewSet, basename="medication")
 # --- ✅ NUEVO: Catálogo de Servicios Unificado (Reemplaza Billing) ---
 router.register(r"service-categories", ServiceCategoryViewSet, basename="service-category")
 router.register(r"doctor-services", DoctorServiceViewSet, basename="doctor-service")
+# --- ✅ NUEVO: Gestión de Horarios de Servicios ---
+router.register(r"service-schedules", ServiceScheduleViewSet, basename="service-schedule")  # AÑADIDO AQUÍ
 # --- ✅ NUEVO: Servicios del Doctor (Patient Portal) ---
 router.register(r"patient/doctors", DoctorDirectoryViewSet, basename="patient-doctors")
 router.register(r"patient/doctor-profile", DoctorProfileViewSet, basename="patient-doctor-profile")

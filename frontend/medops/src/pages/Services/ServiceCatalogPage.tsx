@@ -1,11 +1,12 @@
 // src/pages/Services/ServiceCatalogPage.tsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // CAMBIO: Importar useNavigate
 import PageHeader from "@/components/Common/PageHeader";
 import { useServiceCategories, useCreateServiceCategory, useUpdateServiceCategory, useDeleteServiceCategory } from "@/hooks/services/useServiceCategories";
 import { useDoctorServices, useCreateDoctorService, useUpdateDoctorService, useDeleteDoctorService } from "@/hooks/services/useDoctorServices";
 import type { ServiceCategory, DoctorService, ServiceCategoryInput, DoctorServiceInput } from "@/types/services";
 import { useNotify } from "@/hooks/useNotify";
-import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig"; // ✅ NUEVO: Importar hook
+import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import {
   PlusIcon,
   PencilSquareIcon,
@@ -14,11 +15,12 @@ import {
   TagIcon,
   XMarkIcon,
   CheckIcon,
+  EyeIcon, // CAMBIO: Icono para ver detalles (opcional)
 } from "@heroicons/react/24/outline";
 export default function ServiceCatalogPage() {
   const notify = useNotify();
-  
-  // ✅ CAMBIO: Obtener doctor ID desde backend en lugar de localStorage
+  const navigate = useNavigate(); // CAMBIO: Hook de navegación
+  // ... (código previo sin cambios hasta la línea 168) ...
   const { data: doctorConfig, isLoading: loadingDoctor } = useDoctorConfig();
   const doctorId = doctorConfig?.id ?? null;
   
@@ -51,7 +53,7 @@ export default function ServiceCatalogPage() {
   });
   
   const [serviceForm, setServiceForm] = useState<DoctorServiceInput>({
-    doctor: doctorId, // Usar el ID obtenido desde backend
+    doctor: doctorId,
     category: null,
     institution: null,
     code: "",
@@ -63,14 +65,12 @@ export default function ServiceCatalogPage() {
     is_visible_global: true,
   });
   
-  // ✅ CAMBIO: Actualizar serviceForm cuando cambie doctorId desde backend
   useEffect(() => {
     if (doctorId) {
       setServiceForm(prev => ({ ...prev, doctor: doctorId }));
     }
   }, [doctorId]);
   
-  // Handlers para categorías (similares a antes)
   const handleOpenCategoryModal = (category?: ServiceCategory) => {
     if (category) {
       setEditingCategory(category);
@@ -101,7 +101,6 @@ export default function ServiceCatalogPage() {
     }
   };
   
-  // Handlers para servicios (nuevos)
   const handleOpenServiceModal = (service?: DoctorService) => {
     if (service) {
       setEditingService(service);
@@ -158,6 +157,10 @@ export default function ServiceCatalogPage() {
     } catch (err) {
       notify.error("Error al eliminar servicio");
     }
+  };
+  // Navegación a la página de detalle
+  const handleViewDetails = (serviceId: number) => {
+    navigate(`/services/${serviceId}`);
   };
   
   const totalServices = categories.reduce((sum, c) => sum + (c.services_count || 0), 0);
@@ -245,7 +248,9 @@ export default function ServiceCatalogPage() {
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              className="group relative bg-white/[0.02] border border-white/10 p-4 hover:border-emerald-500/30 transition-all"
+              // CAMBIO: Añadir cursor-pointer y onClick para navegar
+              className="group relative bg-white/[0.02] border border-white/10 p-4 hover:border-emerald-500/30 transition-all cursor-pointer"
+              onClick={() => handleViewDetails(service.id)}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
@@ -258,18 +263,29 @@ export default function ServiceCatalogPage() {
                     </span>
                   )}
                 </div>
+                {/* Botones de acción: Detener propagación para no navegar */}
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
-                    onClick={() => handleOpenServiceModal(service)}
+                    onClick={(e) => { e.stopPropagation(); handleOpenServiceModal(service); }}
                     className="p-1 text-white/40 hover:text-emerald-400 transition-colors"
+                    title="Editar servicio"
                   >
                     <PencilSquareIcon className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={() => handleDeleteService(service.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteService(service.id); }}
                     className="p-1 text-white/40 hover:text-red-400 transition-colors"
+                    title="Eliminar servicio"
                   >
                     <TrashIcon className="w-3.5 h-3.5" />
+                  </button>
+                  {/* Botón para ver detalles (alternativa al clic en la tarjeta) */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleViewDetails(service.id); }}
+                    className="p-1 text-white/40 hover:text-blue-400 transition-colors"
+                    title="Ver detalles y horarios"
+                  >
+                    <EyeIcon className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>

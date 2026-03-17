@@ -7324,3 +7324,22 @@ class OperationalHubView(APIView):
                 "avg_items_per_day": 0,
                 "period_days": (end_date - start_date).days + 1
             }
+
+
+class ServiceScheduleViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar horarios de servicios.
+    Permite configurar rangos horarios por día de la semana.
+    """
+    queryset = ServiceSchedule.objects.all()
+    serializer_class = ServiceScheduleSerializer  # Asegúrate de tener este serializer en core/serializers.py
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        # Filtrar por servicio si se pasa el parámetro service_id
+        service_id = self.request.query_params.get('service_id')
+        if service_id:
+            return self.queryset.filter(service_id=service_id)
+        return self.queryset
+    def perform_create(self, serializer):
+        # Lógica opcional: Validar que el servicio pertenece a la institución del usuario
+        serializer.save()
