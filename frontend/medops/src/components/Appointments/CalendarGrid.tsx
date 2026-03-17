@@ -19,14 +19,15 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   onSelectAppointment,
 }) => {
   const { statusStyles } = useAppointmentStatusStyles();
-  // Generar colores para el calendario basados en statusStyles
+  
+  // Colores para el calendario en tema oscuro
   const calendarColors: Record<string, string> = {
-    pending: 'border-l-4 border-yellow-500',
-    tentative: 'border-l-4 border-blue-500',
-    arrived: 'border-l-4 border-green-500',
-    in_consultation: 'border-l-4 border-purple-500',
-    completed: 'border-l-4 border-gray-500',
-    canceled: 'border-l-4 border-red-500',
+    pending: 'border-l-2 border-yellow-500/70',
+    tentative: 'border-l-2 border-blue-500/70',
+    arrived: 'border-l-2 border-green-500/70',
+    in_consultation: 'border-l-2 border-purple-500/70',
+    completed: 'border-l-2 border-gray-500/70',
+    canceled: 'border-l-2 border-red-500/70',
   };
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -49,17 +50,20 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
   return (
-    <div className="bg-white shadow rounded-lg overflow-hidden">
-      <div className="grid grid-cols-7 gap-1 p-2 bg-gray-100">
+    <div className="bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden">
+      {/* Header del calendario */}
+      <div className="grid grid-cols-7 gap-1 p-2 bg-[#111] border-b border-white/10">
         {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-          <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
+          <div key={day} className="text-center text-[10px] font-mono text-white/60 py-1 uppercase tracking-wider">
             {day}
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1 p-2">
+      
+      {/* Grid de días */}
+      <div className="grid grid-cols-7 gap-[1px] p-1 bg-[#1a1a1a]">
         {emptyDays.map((_, index) => (
-          <div key={`empty-${index}`} className="h-24 bg-gray-50" />
+          <div key={`empty-${index}`} className="h-20 bg-[#0a0a0b]" />
         ))}
         {days.map((day) => {
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -70,12 +74,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
             <div
               key={day}
               onClick={() => handleDateClick(date)}
-              className="h-24 border border-gray-200 bg-white hover:bg-gray-50 cursor-pointer p-1 overflow-y-auto"
+              className="h-20 bg-[#0a0a0b] border border-white/5 hover:border-white/20 hover:bg-[#111] cursor-pointer p-1 overflow-y-auto transition-all"
             >
-              <div className="text-xs font-medium text-gray-700 mb-1">{day}</div>
-              <div className="space-y-1">
+              <div className="text-[10px] font-mono text-white/80 mb-1">{day}</div>
+              <div className="space-y-[2px]">
                 {dayAppointments.slice(0, 3).map((appointment) => {
-                  const style = statusStyles[appointment.status] || statusStyles.pending;
                   const colorClass = calendarColors[appointment.status] || calendarColors.pending;
                   return (
                     <div
@@ -84,15 +87,15 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                         e.stopPropagation();
                         handleAppointmentClick(appointment);
                       }}
-                      className={`text-xs p-1 rounded cursor-pointer ${colorClass} bg-opacity-20 truncate`}
+                      className={`${colorClass} bg-white/5 hover:bg-white/10 text-[9px] text-white/80 px-1 py-0.5 rounded cursor-pointer truncate`}
                     >
-                      {appointment.patient.full_name}
+                      {appointment.patient.full_name.split(' ')[0]}
                     </div>
                   );
                 })}
                 {dayAppointments.length > 3 && (
-                  <div className="text-xs text-gray-500 text-center">
-                    +{dayAppointments.length - 3} más
+                  <div className="text-[9px] text-white/40 text-center">
+                    +{dayAppointments.length - 3}
                   </div>
                 )}
               </div>
