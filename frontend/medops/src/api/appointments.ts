@@ -1,9 +1,11 @@
 // src/api/appointments.ts
 import { apiFetch } from "./client";
 import { Appointment, AppointmentInput, AppointmentStatus } from "../types/appointments";
+import { mapAppointmentList } from "../utils/appointmentsMapper";
 export const getAppointments = async (): Promise<Appointment[]> => {
-  const response = await apiFetch<{ results: Appointment[] }>("appointments/");
-  return response.results;
+  const response = await apiFetch<{ results: any[] }>("appointments/");
+  // ✅ APLICAR MAPPER A LOS RESULTADOS
+  return response.results.map(mapAppointmentList);
 };
 export const createAppointment = (data: AppointmentInput): Promise<Appointment> =>
   apiFetch<Appointment>("appointments/", {
@@ -40,9 +42,18 @@ export const updateAppointmentNotes = (
     method: "PATCH",
     body: JSON.stringify({ notes }),
   });
-export const getAppointmentsByPatient = (patientId: number): Promise<Appointment[]> =>
-  apiFetch<Appointment[]>(`appointments/?patient=${patientId}`);
-export const getCompletedAppointmentsByPatient = (patientId: number): Promise<Appointment[]> =>
-  apiFetch<Appointment[]>(`patients/${patientId}/completed_appointments/`);
-export const getPendingAppointmentsByPatient = (patientId: number): Promise<Appointment[]> =>
-  apiFetch<Appointment[]>(`patients/${patientId}/pending_appointments/`);
+export const getAppointmentsByPatient = async (patientId: number): Promise<Appointment[]> => {
+  const response = await apiFetch<any[]>(`appointments/?patient=${patientId}`);
+  // ✅ APLICAR MAPPER A LOS RESULTADOS
+  return response.map(mapAppointmentList);
+};
+export const getCompletedAppointmentsByPatient = async (patientId: number): Promise<Appointment[]> => {
+  const response = await apiFetch<any[]>(`patients/${patientId}/completed_appointments/`);
+  // ✅ APLICAR MAPPER A LOS RESULTADOS
+  return response.map(mapAppointmentList);
+};
+export const getPendingAppointmentsByPatient = async (patientId: number): Promise<Appointment[]> => {
+  const response = await apiFetch<any[]>(`patients/${patientId}/pending_appointments/`);
+  // ✅ APLICAR MAPPER A LOS RESULTADOS
+  return response.map(mapAppointmentList);
+};

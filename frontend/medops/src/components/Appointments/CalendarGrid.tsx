@@ -2,6 +2,10 @@
 import React from 'react';
 import { Appointment } from '@/types/appointments';
 import { useAppointmentStatusStyles } from '@/hooks/appointments/useAppointmentStatusStyles';
+import { 
+  ChevronLeftIcon, 
+  ChevronRightIcon 
+} from '@heroicons/react/24/outline';
 interface CalendarGridProps {
   appointments: Appointment[];
   currentDate?: Date;
@@ -51,19 +55,32 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
   return (
     <div className="bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden">
-      {/* Header del calendario */}
-      <div className="grid grid-cols-7 gap-1 p-2 bg-[#111] border-b border-white/10">
-        {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-          <div key={day} className="text-center text-[10px] font-mono text-white/60 py-1 uppercase tracking-wider">
-            {day}
-          </div>
-        ))}
+      {/* Header del calendario con navegación */}
+      <div className="flex items-center justify-between p-2 bg-[#111] border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <button className="p-1 hover:bg-white/10 rounded transition-colors">
+            <ChevronLeftIcon className="w-4 h-4 text-white/60" />
+          </button>
+          <span className="text-[10px] font-mono text-white/80 uppercase tracking-wider">
+            {currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+          </span>
+          <button className="p-1 hover:bg-white/10 rounded transition-colors">
+            <ChevronRightIcon className="w-4 h-4 text-white/60" />
+          </button>
+        </div>
+        <div className="grid grid-cols-7 gap-1 flex-1 mx-4">
+          {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((day) => (
+            <div key={day} className="text-center text-[9px] font-mono text-white/40 py-1">
+              {day}
+            </div>
+          ))}
+        </div>
       </div>
       
       {/* Grid de días */}
       <div className="grid grid-cols-7 gap-[1px] p-1 bg-[#1a1a1a]">
         {emptyDays.map((_, index) => (
-          <div key={`empty-${index}`} className="h-20 bg-[#0a0a0b]" />
+          <div key={`empty-${index}`} className="h-16 bg-[#0a0a0b]" />
         ))}
         {days.map((day) => {
           const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -74,12 +91,21 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
             <div
               key={day}
               onClick={() => handleDateClick(date)}
-              className="h-20 bg-[#0a0a0b] border border-white/5 hover:border-white/20 hover:bg-[#111] cursor-pointer p-1 overflow-y-auto transition-all"
+              className="h-16 bg-[#0a0a0b] border border-white/5 hover:border-white/20 hover:bg-[#111] cursor-pointer p-1 overflow-y-auto transition-all"
             >
-              <div className="text-[10px] font-mono text-white/80 mb-1">{day}</div>
-              <div className="space-y-[2px]">
-                {dayAppointments.slice(0, 3).map((appointment) => {
+              <div className="flex justify-between items-center mb-1">
+                <div className="text-[9px] font-mono text-white/60">{day}</div>
+                {dayAppointments.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+                  </div>
+                )}
+              </div>
+              <div className="space-y-[1px]">
+                {dayAppointments.slice(0, 2).map((appointment) => {
                   const colorClass = calendarColors[appointment.status] || calendarColors.pending;
+                  // ✅ MANEJO SEGURO DE DATOS CON OPTIONAL CHAINING
+                  const patientName = appointment.patient?.full_name?.split(' ')[0] || 'Sin nombre';
                   return (
                     <div
                       key={appointment.id}
@@ -87,15 +113,15 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                         e.stopPropagation();
                         handleAppointmentClick(appointment);
                       }}
-                      className={`${colorClass} bg-white/5 hover:bg-white/10 text-[9px] text-white/80 px-1 py-0.5 rounded cursor-pointer truncate`}
+                      className={`${colorClass} bg-white/5 hover:bg-white/10 text-[8px] text-white/70 px-1 py-0.5 rounded cursor-pointer truncate`}
                     >
-                      {appointment.patient.full_name.split(' ')[0]}
+                      {patientName}
                     </div>
                   );
                 })}
-                {dayAppointments.length > 3 && (
-                  <div className="text-[9px] text-white/40 text-center">
-                    +{dayAppointments.length - 3}
+                {dayAppointments.length > 2 && (
+                  <div className="text-[8px] text-white/40 text-center">
+                    +{dayAppointments.length - 2}
                   </div>
                 )}
               </div>
