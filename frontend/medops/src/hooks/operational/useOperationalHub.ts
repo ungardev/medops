@@ -1,91 +1,63 @@
 // src/hooks/operational/useOperationalHub.ts
 import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '@/api/client';
-import { Appointment } from '@/types/appointments';
-// Interfaz unificada para items operativos
-export interface OperationalItem {
-  id: number;
-  type: 'appointment' | 'service' | 'block';
-  date: string;
-  time?: string;
-  title: string;
-  status: string;
-  patientName?: string;
-  doctorName?: string;
-  serviceName?: string;
-  color?: string;
-  metadata: Record<string, any>;
-}
-// Interfaz para la respuesta del endpoint unificado
-export interface OperationalHubResponse {
-  live_queue: OperationalItem[];
-  pending_entries: OperationalItem[];
-  filters: {
-    categories: { id: number; name: string }[];
-    services: { id: number; name: string; category_id: number }[];
-  };
-  timeline: OperationalItem[]; // Items unificados para el calendario
-}
-export const useOperationalHub = (institutionId: number | null) => {
+import { OperationalHubResponse, OperationalItem, OperationalStats } from '@/types/operational';
+// Hook principal para Operational Hub
+export const useOperationalHub = (institutionId: number | null, year?: number, month?: number) => {
   return useQuery({
-    queryKey: ['operationalHub', institutionId],
+    queryKey: ['operationalHub', institutionId, year, month],
     queryFn: async () => {
       if (!institutionId) {
+        // Retornar estructura vacía válida si no hay institución
         return {
+          timeline: [],
           live_queue: [],
           pending_entries: [],
           filters: { categories: [], services: [] },
-          timeline: []
+          stats: {
+            total_items: 0,
+            appointments_count: 0,
+            availability_count: 0,
+            dates_with_activity: 0,
+            avg_items_per_day: 0,
+            period_days: 0
+          },
+          metadata: {
+            year: year || new Date().getFullYear(),
+            month: month || new Date().getMonth() + 1,
+            start_date: '',
+            end_date: '',
+            total_days: 0
+          }
         } as OperationalHubResponse;
       }
       
-      const response = await apiFetch<OperationalHubResponse>(
-        `operational-hub/?institution_id=${institutionId}`
-      );
+      // Construir URL con parámetros
+      let url = `operational-hub/?institution_id=${institutionId}`;
+      if (year) url += `&year=${year}`;
+      if (month) url += `&month=${month}`;
       
-      // Si el backend no devuelve timeline, generar uno combinado
-      if (!response.timeline) {
-        response.timeline = [
-          ...response.live_queue.map(item => ({ ...item, type: 'appointment' as const })),
-          ...response.pending_entries.map(item => ({ ...item, type: 'appointment' as const }))
-        ];
-      }
-      
+      const response = await apiFetch<OperationalHubResponse>(url);
       return response;
     },
     staleTime: 1000 * 60 * 5, // 5 minutos de stale time
     enabled: !!institutionId
   });
 };
-// Hook específico para items del calendario
-export const useCalendarItems = (institutionId: number | null, month: Date) => {
-  return useQuery({
-    queryKey: ['calendarItems', institutionId, month.toISOString()],
-    queryFn: async () => {
-      if (!institutionId) return [] as OperationalItem[];
-      
-      const year = month.getFullYear();
-      const monthNum = month.getMonth() + 1;
-      
-      const response = await apiFetch<{ results: any[] }>(
-        `operational-hub/?institution_id=${institutionId}&year=${year}&month=${monthNum}`
-      );
-      
-      // Mapear a OperationalItem si es necesario
-      return response.results.map((item: any) => ({
-        id: item.id,
-        type: item.type || 'appointment',
-        date: item.date || item.appointment_date,
-        time: item.time || item.tentative_time,
-        title: item.title || item.patient_name || 'Servicio',
-        status: item.status,
-        patientName: item.patient_name,
-        doctorName: item.doctor_name,
-        serviceName: item.service_name,
-        metadata: item
-      })) as OperationalItem[];
-    },
-    staleTime: 1000 * 60 * 5,
-    enabled: !!institutionId
-  });
+// Hook específico para items del calendario (timeline)
+export const useCalendarTimeline = (institutionId: number | null, date: Date) => {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  
+  return useOperationalHub(institutionId, year, month);
+};
+// Hook para items del día específico
+export const useDayItems = (institutionId: number | null, date: Date) => {
+  const { data: hubData } = useOperationalHub(institutionId, date.getFullYear(), date.getMonth() + 1);
+  
+  const dayItems = hubData?.timeline.filter(item => 
+    item.date === date.toISOString().split('T')[0]
+  ) || [];
+  
+  return { dayItems, isLoading: !hubData };
 };

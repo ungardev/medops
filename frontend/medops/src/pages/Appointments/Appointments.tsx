@@ -30,7 +30,7 @@ import {
 } from "hooks/appointments";
 import { useScheduledItems } from "hooks/appointments/useScheduledItems";
 import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch";
-import { useCalendarItems } from "@/hooks/operational/useOperationalHub"; // NUEVO: Hook unificado
+import { useCalendarTimeline } from "@/hooks/operational/useOperationalHub";
 export default function Appointments() {
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
@@ -62,9 +62,23 @@ export default function Appointments() {
     }
   }, [location.search]);
   // ✅ NUEVO: Datos unificados para calendario (DoctorService paradigm)
-  const { data: operationalItems = [], isLoading: isLoadingOperational } = useCalendarItems(institutionId, currentMonth);
+  const { 
+    data: hubData, 
+    isLoading: isLoadingOperational,
+    isFetching: isFetchingOperational 
+  } = useCalendarTimeline(institutionId, currentMonth);
   
-  // Datos legacy para lista y filtros
+  const operationalItems = hubData?.timeline || [];
+  const operationalStats = hubData?.stats || {
+    total_items: 0,
+    appointments_count: 0,
+    availability_count: 0,
+    dates_with_activity: 0,
+    avg_items_per_day: 0,
+    period_days: 0
+  };
+  
+  // Datos legacy para lista y filtros (mantener para retrocompatibilidad)
   const { data: allData, isLoading, isFetching, error } = useScheduledItems();
   const allAppointments = allData ?? [];
   
@@ -139,6 +153,16 @@ export default function Appointments() {
       newDate.setMonth(newDate.getMonth() + 1);
       return newDate;
     });
+  };
+  // Manejar clic en item operativo (cita o disponibilidad)
+  const handleOperationalItemClick = (item: OperationalItem) => {
+    if (item.type === 'appointment' && item.metadata?.appointment_id) {
+      setViewingAppointmentId(item.metadata.appointment_id);
+    } else if (item.type === 'availability') {
+      // Abrir modal para crear cita con datos pre-llenados
+      // TODO: Implementar lógica para crear cita desde slot disponible
+      console.log('Slot disponible clickeado:', item);
+    }
   };
   if (error) return (
     <div className="p-10 border border-red-500 bg-red-500/10 text-red-500 font-mono text-xs uppercase">
@@ -255,7 +279,10 @@ export default function Appointments() {
                 </h2>
               </div>
               <div className="text-[9px] text-white/40 font-mono">
-                {viewMode === "calendar" ? "VISTA_CALENDARIO" : "VISTA_LISTA"}
+                {viewMode === "calendar" ? "VISTA_CALENDARIO" : "VISTA_LISTA"} | 
+                Items: {operationalStats.total_items} | 
+                Citas: {operationalStats.appointments_count} | 
+                Disponibles: {operationalStats.availability_count}
               </div>
             </div>
             
@@ -266,6 +293,7 @@ export default function Appointments() {
               currentDate={currentMonth}
               onSelectDate={(date: Date) => setSelectedDate(date)}
               onSelectAppointment={(appt: Appointment) => setViewingAppointmentId(appt.id)}
+              onOperationalItemClick={handleOperationalItemClick}
               onPrevMonth={goToPrevMonth}
               onNextMonth={goToNextMonth}
             />

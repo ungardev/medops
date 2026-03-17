@@ -1,7 +1,7 @@
 // src/components/Appointments/CalendarGrid.tsx
 import React, { useState } from 'react';
 import { Appointment } from '@/types/appointments';
-import { OperationalItem } from '@/types/operational';
+import { OperationalItem, OperationalItemType } from '@/types/operational';
 import { useAppointmentStatusStyles } from '@/hooks/appointments/useAppointmentStatusStyles';
 import { 
   ChevronLeftIcon, 
@@ -9,11 +9,12 @@ import {
   XMarkIcon,
   CalendarIcon,
   ClipboardDocumentIcon,
-  UserGroupIcon
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline';
 interface CalendarGridProps {
   appointments?: Appointment[];
-  operationalItems?: OperationalItem[]; // NUEVO: Items unificados
+  operationalItems?: OperationalItem[];
   currentDate?: Date;
   onDateClick?: (date: Date) => void;
   onAppointmentClick?: (appointment: Appointment) => void;
@@ -38,23 +39,8 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const { statusStyles } = useAppointmentStatusStyles();
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [internalDate, setInternalDate] = useState(currentDate);
+  const [showAvailability, setShowAvailability] = useState(true);
   
-  // Combinar citas y items operativos
-  const allItems = React.useMemo(() => {
-    const appointmentItems: OperationalItem[] = appointments.map(apt => ({
-      id: apt.id,
-      type: 'appointment' as const,
-      date: apt.appointment_date,
-      time: apt.tentative_time ?? undefined, // ✅ CORREGIDO: Convertir null a undefined
-      title: apt.patient?.full_name || 'Cita',
-      status: apt.status,
-      patientName: apt.patient?.full_name,
-      doctorName: apt.doctor?.full_name,
-      metadata: { appointment: apt }
-    }));
-    
-    return [...appointmentItems, ...operationalItems];
-  }, [appointments, operationalItems]);
   // Colores para el calendario en tema oscuro
   const calendarColors: Record<string, string> = {
     pending: 'border-l-2 border-yellow-500/70',
@@ -106,7 +92,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   };
   // ✅ CORRECCIÓN CRÍTICA: Filtrar por fecha completa (día, mes, año)
   const getItemsForDay = (day: number) => {
-    return allItems.filter(item => {
+    return operationalItems.filter(item => {
       const itemDate = new Date(item.date);
       return itemDate.getDate() === day &&
              itemDate.getMonth() === internalDate.getMonth() &&
@@ -118,11 +104,16 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
   // Obtener items del día seleccionado
   const selectedDayItems = selectedDay 
-    ? allItems.filter(item => {
+    ? operationalItems.filter(item => {
         const itemDate = new Date(item.date);
         return itemDate.toDateString() === selectedDay.toDateString();
       })
     : [];
+  // Filtrar items para mostrar en celda (solo citas o citas + disponibilidad)
+  const getItemsForCell = (day: number) => {
+    const items = getItemsForDay(day);
+    return showAvailability ? items : items.filter(item => item.type === 'appointment');
+  };
   return (
     <div className="flex gap-4">
       {/* Calendario principal */}
@@ -146,6 +137,24 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
               <ChevronRightIcon className="w-4 h-4 text-white/60" />
             </button>
           </div>
+          
+          {/* Toggle de disponibilidad */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAvailability(!showAvailability)}
+              className={`p-1.5 rounded transition-colors ${
+                showAvailability ? 'bg-blue-500/20 text-blue-400' : 'text-white/40 hover:text-white/70'
+              }`}
+              title={showAvailability ? 'Ocultar disponibilidad' : 'Mostrar disponibilidad'}
+            >
+              {showAvailability ? (
+                <EyeIcon className="w-4 h-4" />
+              ) : (
+                <EyeSlashIcon className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+          
           <div className="grid grid-cols-7 gap-1 flex-1 mx-4">
             {['D', 'L', 'M', 'M', 'J', 'V', 'S'].map((day) => (
               <div key={day} className="text-center text-[9px] font-mono text-white/40 py-1">
@@ -162,7 +171,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
           ))}
           {days.map((day) => {
             const date = new Date(internalDate.getFullYear(), internalDate.getMonth(), day);
-            const dayItems = getItemsForDay(day);
+            const dayItems = getItemsForCell(day);
             const isSelected = selectedDay && selectedDay.toDateString() === date.toDateString();
             return (
               <div
@@ -187,7 +196,10 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                 <div className="space-y-[1px]">
                   {/* Mostrar items (máximo 2) */}
                   {dayItems.slice(0, 2).map((item) => {
-                    const colorClass = calendarColors[item.status] || calendarColors.pending;
+                    const colorClass = item.type === 'availability' 
+                      ? 'bg-green-500/10 border-l-2 border-green-500/70' 
+                      : (calendarColors[item.status] || calendarColors.pending);
+                    
                     return (
                       <div
                         key={`${item.type}-${item.id}`}
@@ -195,7 +207,9 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           e.stopPropagation();
                           handleOperationalItemClick(item);
                         }}
-                        className={`${colorClass} bg-white/5 hover:bg-white/10 text-[8px] text-white/70 px-1 py-0.5 rounded cursor-pointer truncate`}
+                        className={`${colorClass} hover:bg-white/10 text-[8px] text-white/70 px-1 py-0.5 rounded cursor-pointer truncate ${
+                          item.type === 'availability' ? 'text-green-300/80' : ''
+                        }`}
                       >
                         {item.title}
                       </div>
@@ -254,12 +268,20 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                   <div
                     key={`${item.type}-${item.id}`}
                     onClick={() => handleOperationalItemClick(item)}
-                    className="bg-[#111] border border-white/10 hover:border-white/20 rounded-sm p-2 cursor-pointer transition-all"
+                    className={`bg-[#111] border rounded-sm p-2 cursor-pointer transition-all ${
+                      item.type === 'availability' 
+                        ? 'border-green-500/30 hover:border-green-500/50' 
+                        : 'border-white/10 hover:border-white/20'
+                    }`}
                   >
                     <div className="flex items-center gap-2">
-                      <div className={`w-1 h-8 rounded-full ${style.dot}`} />
+                      <div className={`w-1 h-8 rounded-full ${
+                        item.type === 'availability' ? 'bg-green-500/70' : style.dot
+                      }`} />
                       <div className="flex-1 min-w-0">
-                        <div className="text-[10px] font-medium text-white truncate">
+                        <div className={`text-[10px] font-medium truncate ${
+                          item.type === 'availability' ? 'text-green-300' : 'text-white'
+                        }`}>
                           {item.title}
                         </div>
                         <div className="text-[9px] text-white/40">
@@ -269,10 +291,17 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           <span className="text-[8px] text-white/30 font-mono">
                             {item.time || '--:--'}
                           </span>
-                          <span className={`text-[8px] px-1 rounded ${style.bg} ${style.text}`}>
-                            {item.type.toUpperCase()}
+                          <span className={`text-[8px] px-1 rounded ${
+                            item.type === 'availability' ? 'bg-green-500/10 text-green-300' : `${style.bg} ${style.text}`
+                          }`}>
+                            {item.type === 'availability' ? 'DISPONIBLE' : style.label}
                           </span>
                         </div>
+                        {item.type === 'availability' && item.slotsRemaining !== undefined && (
+                          <div className="text-[8px] text-green-400/70 mt-1">
+                            Cupos: {item.slotsRemaining}/{item.maxSlots}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -287,8 +316,9 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
           
           {/* Footer del panel */}
           <div className="p-2 bg-[#111] border-t border-white/10">
-            <div className="text-[9px] text-white/40 text-center">
-              {selectedDayItems.length} item{selectedDayItems.length !== 1 ? 's' : ''}
+            <div className="text-[9px] text-white/40 text-center flex justify-between">
+              <span>{selectedDayItems.filter(i => i.type === 'appointment').length} citas</span>
+              <span>{selectedDayItems.filter(i => i.type === 'availability').length} disponibles</span>
             </div>
           </div>
         </div>
