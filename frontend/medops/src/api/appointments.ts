@@ -1,8 +1,10 @@
 // src/api/appointments.ts
 import { apiFetch } from "./client";
 import { Appointment, AppointmentInput, AppointmentStatus } from "../types/appointments";
-export const getAppointments = (): Promise<Appointment[]> =>
-  apiFetch<Appointment[]>("appointments/");
+export const getAppointments = async (): Promise<Appointment[]> => {
+  const response = await apiFetch<{ results: Appointment[] }>("appointments/");
+  return response.results;
+};
 export const createAppointment = (data: AppointmentInput): Promise<Appointment> =>
   apiFetch<Appointment>("appointments/", {
     method: "POST",
@@ -27,7 +29,7 @@ export const updateAppointmentStatus = (
   newStatus: AppointmentStatus
 ): Promise<Appointment> =>
   apiFetch<Appointment>(`appointments/${id}/status/`, {
-    method: "POST",  // ← CORREGIDO: era PATCH
+    method: "POST",
     body: JSON.stringify({ status: newStatus }),
   });
 export const updateAppointmentNotes = (
