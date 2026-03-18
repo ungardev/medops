@@ -11,7 +11,7 @@ import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices";
 import { useBCVRate, convertUSDToVES } from "@/hooks/dashboard/useBCVRate";
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import NewPatientModal from "components/Patients/NewPatientModal";
-import InteractiveCalendar from "@/components/Appointments/InteractiveCalendar"; // ✅ NUEVO: Importar calendario
+import InteractiveCalendar from "@/components/Appointments/InteractiveCalendar";
 import { 
   UserPlusIcon, 
   XMarkIcon, 
@@ -39,11 +39,12 @@ interface FormErrors {
   appointment_date?: string;
   appointment_time?: string;
 }
+// ✅ CAMBIO: Permitir price_usd como number, string o null
 interface TemporaryService {
   id: number | string;
   code: string;
   name: string;
-  price_usd: number;
+  price_usd: number | string | null;
   price_ves?: number;
   category?: number | null;
   category_name?: string;
@@ -71,7 +72,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   
-  // ✅ NUEVO: Estado para servicio y fecha seleccionados
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(date || null);
   const [selectedTime, setSelectedTime] = useState<string>('');
@@ -85,6 +85,18 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   const institutionId = activeInstitution?.id ?? 0;
   const { data: serviceSchedules = [] } = useAllServiceSchedules(institutionId);
   
+  // ✅ NUEVO: Función segura para formatear precios
+  const formatPrice = (price: any): string => {
+    if (price === null || price === undefined || price === "") return "N/A";
+    const num = parseFloat(String(price));
+    return isNaN(num) ? "N/A" : num.toFixed(2);
+  };
+  // ✅ NUEVO: Función para convertir precio a número seguro
+  const safePriceToNumber = (price: any): number => {
+    if (price === null || price === undefined || price === "") return 0;
+    const num = parseFloat(String(price));
+    return isNaN(num) ? 0 : num;
+  };
   const filteredPatients = useMemo(() => {
     if (!patientSearch.trim()) return patientList;
     const search = patientSearch.toLowerCase();
@@ -104,8 +116,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
         id: item.id,
         code: item.code,
         name: item.name,
-        price_usd: item.price_usd,
-        price_ves: bcvRate ? convertUSDToVES(item.price_usd, bcvRate) : undefined,
+        price_usd: safePriceToNumber(item.price_usd), // ✅ CAMBIO: Conversión segura
+        price_ves: bcvRate ? convertUSDToVES(safePriceToNumber(item.price_usd), bcvRate) : undefined,
         category: item.category,
         category_name: item.category_name,
         doctor: item.doctor,
@@ -131,7 +143,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   
   const [hasChanges, setHasChanges] = useState(false);
   
-  // ✅ NUEVO: Generar slots disponibles basados en horarios
   const availableSlots = useMemo(() => {
     if (!selectedServiceId || !selectedDate) return [];
     
@@ -159,7 +170,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     
     return slots;
   }, [selectedServiceId, selectedDate, serviceSchedules]);
-  // ✅ NUEVO: Sincronizar selectedDate con form.appointment_date
   useEffect(() => {
     if (selectedDate) {
       setForm(prev => ({
@@ -213,8 +223,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       id: service.id,
       code: service.code,
       name: service.name,
-      price_usd: service.price_usd,
-      price_ves: bcvRate ? convertUSDToVES(service.price_usd, bcvRate) : undefined,
+      price_usd: safePriceToNumber(service.price_usd), // ✅ CAMBIO: Conversión segura
+      price_ves: bcvRate ? convertUSDToVES(safePriceToNumber(service.price_usd), bcvRate) : undefined,
       category: service.category,
       category_name: service.category_name,
       doctor: service.doctor,
@@ -234,7 +244,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
       setSelectedServices(prev => [...prev, { service: tempService, quantity: 1 }]);
     }
     
-    // ✅ NUEVO: Establecer servicio seleccionado para filtrar horarios
     setSelectedServiceId(service.id);
     
     setServiceSearch("");
@@ -245,7 +254,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   
   const handleRemoveService = (serviceId: number | string) => {
     setSelectedServices(prev => prev.filter(s => s.service.id !== serviceId));
-    // ✅ NUEVO: Limpiar servicio seleccionado si se quita el único
     if (selectedServices.length === 1 && selectedServices[0].service.id === serviceId) {
       setSelectedServiceId(null);
     }
@@ -262,7 +270,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   };
   
   const totalAmount = selectedServices.reduce(
-    (sum, s) => sum + (Number(s.service.price_usd) * s.quantity),
+    (sum, s) => sum + (safePriceToNumber(s.service.price_usd) * s.quantity),
     0
   );
   
@@ -273,7 +281,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     const newErrors: FormErrors = {};
     if (!selectedPatient) newErrors.patient = "REQUIRED_FIELD: Select patient";
     if (selectedServices.length === 0) newErrors.services = "REQUIRED_FIELD: Add at least one service";
-    if (!selectedDate) newErrors.appointment_date = "REQUIRED_FIELD: Select date"; // ✅ CAMBIO: Usar selectedDate
+    if (!selectedDate) newErrors.appointment_date = "REQUIRED_FIELD: Select date";
     if (!selectedTime) newErrors.appointment_time = "REQUIRED_FIELD: Select time";
     
     if (Object.keys(newErrors).length > 0) {
@@ -289,7 +297,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
         ...form,
         patient: selectedPatient!.id,
         appointment_date: form.appointment_date,
-        start_time: selectedTime, // ✅ CORREGIDO: Usar start_time en lugar de appointment_time
+        start_time: selectedTime,
         expected_amount: totalAmount.toString(),
         services: selectedServices.map(s => ({
           doctor_service_id: Number(s.service.id),
@@ -368,7 +376,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
           {errors.patient && (
             <div className="mt-1 text-red-400 text-xs">{errors.patient}</div>
           )}
-          {/* ✅ NUEVO: Botón para agregar nuevo paciente */}
           <button
             type="button"
             onClick={() => setShowNewPatientModal(true)}
@@ -412,7 +419,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-emerald-400">${service.price_usd.toFixed(2)}</div>
+                          <div className="text-emerald-400">${formatPrice(service.price_usd)}</div>
                           {service.price_ves && (
                             <div className="text-yellow-400 text-xs">
                               Bs. {service.price_ves.toFixed(2)}
@@ -458,7 +465,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
                     </div>
                     <div className="text-right min-w-[100px]">
                       <div className="text-emerald-400 text-sm">
-                        ${(selected.service.price_usd * selected.quantity).toFixed(2)}
+                        ${formatPrice(safePriceToNumber(selected.service.price_usd) * selected.quantity)}
                       </div>
                       {selected.service.price_ves && (
                         <div className="text-yellow-400 text-xs">
@@ -480,7 +487,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
                 <span className="text-white/60 text-sm">Total:</span>
                 <div className="text-right">
                   <div className="text-emerald-400 font-bold text-lg">
-                    ${totalAmount.toFixed(2)}
+                    ${formatPrice(totalAmount)}
                   </div>
                   {bcvRate?.rate && (
                     <div className="text-yellow-400 text-sm">
@@ -496,7 +503,6 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
           )}
         </div>
         
-        {/* ✅ NUEVO: Sección de Fecha y Hora con Calendario Interactivo */}
         <div className="space-y-3">
           <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
             FECHA Y HORA DE LA CITA
@@ -543,14 +549,13 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
         </div>
       )}
       
-      {/* ✅ CORREGIDO: NewPatientModal con props requeridas */}
       {showNewPatientModal && (
         <NewPatientModal 
           open={showNewPatientModal}
           onClose={() => setShowNewPatientModal(false)}
           onCreated={() => {
             setShowNewPatientModal(false);
-            refetch(); // Recargar lista de pacientes
+            refetch();
           }}
         />
       )}

@@ -2131,7 +2131,7 @@ class DoctorServiceSerializer(serializers.ModelSerializer):
             return float(obj.price_ves)
         # Si no, calcular a partir de price_usd (asumiendo tasa de cambio disponible)
         # Por ahora, devolver price_usd como fallback
-        return float(obj.price_usd) if obj.price_usd else 0.0
+        return float(obj.price_usd) if obj.price_usd is not None else 0.0
 
 
 class DoctorServiceWriteSerializer(serializers.ModelSerializer):
