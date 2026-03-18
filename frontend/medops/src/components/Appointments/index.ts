@@ -1,6 +1,6 @@
 // src/components/Appointments/index.ts
 
-export { default as AppointmentsList } from "./AppointmentsList";
+export { default as AppointmentsList } from "./ServiceItemsList";
 export { default as AppointmentForm } from "./AppointmentForm";
 export { default as AppointmentEditForm } from "./AppointmentEditForm";
 export { default as AppointmentDetail } from "./AppointmentDetail";

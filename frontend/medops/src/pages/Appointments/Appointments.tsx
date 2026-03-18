@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import moment from "moment";
 import { Appointment, AppointmentInput, AppointmentStatus } from "types/appointments";
 import { OperationalItem } from "@/types/operational";
+import { DoctorService } from "@/types/services";
 import { 
   PlusIcon, 
   MagnifyingGlassIcon,
@@ -12,7 +13,7 @@ import {
   CalendarDaysIcon,
   ListBulletIcon
 } from "@heroicons/react/24/outline";
-import AppointmentsList from "components/Appointments/AppointmentsList";
+import ServiceItemsList from "@/components/Appointments/ServiceItemsList"; // ✅ CAMBIO: Import renombrado
 import AppointmentForm from "components/Appointments/AppointmentForm";
 import AppointmentEditForm from "components/Appointments/AppointmentEditForm";
 import CalendarGrid from "components/Appointments/CalendarGrid";
@@ -32,6 +33,7 @@ import { useCalendarTimeline } from "@/hooks/operational/useOperationalHub";
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import { generateAvailabilityFromSchedules } from '@/utils/scheduleUtils';
 import DayDetailsPanel from '@/components/Appointments/DayDetailsPanel';
+import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices"; // Import para servicios
 export default function Appointments() {
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
@@ -41,6 +43,7 @@ export default function Appointments() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null); // ✅ NUEVO: Estado para filtro de servicio
   const pageSize = 10;
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -83,6 +86,12 @@ export default function Appointments() {
   
   const { data: allData, isLoading, isFetching, error } = useScheduledItems();
   const allAppointments = allData ?? [];
+  
+  // Obtener servicios para el selector (usando búsqueda vacía para traer todos o un hook específico)
+  // Nota: Asumiendo que useDoctorServicesSearch('') funciona o usando un hook de lista completa si existe.
+  // Para este ejemplo, usaremos serviceResults de una búsqueda vacía o un hook de lista.
+  // Idealmente, usar un hook que liste todos los servicios de la institución.
+  const { data: serviceResults = [] } = useDoctorServicesSearch(''); 
   
   const { data: searchResults = [], isLoading: isSearching } = useAppointmentsSearch(search);
   
@@ -184,6 +193,7 @@ export default function Appointments() {
         moment(item.date).isSame(selectedDate, 'day')
       )
     : [];
+  
   // ✅ NUEVO: Filtrar citas para el panel derecho según día y estado
   const filteredAppointmentsForDay = selectedDate
     ? allAppointments.filter(appt => 
@@ -316,7 +326,7 @@ export default function Appointments() {
               statusFilter={statusFilter}
               onSelectDate={(date: Date) => setSelectedDate(date)}
               onSelectAppointment={(appt: Appointment) => setViewingAppointmentId(appt.id)}
-              onOperationalItemClick={handleItemClick} // ✅ CAMBIO: Usar handler unificado
+              onOperationalItemClick={handleItemClick}
               onPrevMonth={goToPrevMonth}
               onNextMonth={goToNextMonth}
             />
@@ -331,29 +341,24 @@ export default function Appointments() {
               <DayDetailsPanel
                 day={selectedDate}
                 items={selectedDayItems}
-                onItemClick={handleItemClick} // ✅ CAMBIO: onSlotClick → onItemClick
+                onItemClick={handleItemClick}
               />
             </div>
           )}
           
-          {/* Lista de Citas del Día Seleccionado */}
+          {/* Lista de Items Operacionales del Día Seleccionado */}
           <div className={`flex-1 bg-[#0a0a0b] border border-white/10 rounded-sm p-4 overflow-y-auto ${selectedDate ? 'h-2/3' : 'h-full'}`}>
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-xs text-white/60">
-                {selectedDate 
-                  ? `Citas para ${selectedDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}`
-                  : 'Todas las citas'
-                }
-              </span>
-              <span className="text-xs text-white/40">
-                {filteredAppointmentsForDay.length} items
-              </span>
-            </div>
-            
-            <AppointmentsList
-              appointments={selectedDate ? filteredAppointmentsForDay : paginatedAppointments}
+            <ServiceItemsList
+              items={selectedDayItems.length > 0 ? selectedDayItems : []}
+              services={serviceResults}
+              selectedServiceId={selectedServiceId}
+              onServiceChange={setSelectedServiceId}
+              onAppointmentClick={(a: Appointment) => setViewingAppointmentId(a.id)}
+              onItemClick={handleItemClick}
               onEdit={(a: Appointment) => setViewingAppointmentId(a.id)}
-              onDelete={() => {}}
+              onDelete={(item: OperationalItem) => {
+                console.log('Eliminar item:', item);
+              }}
               onStatusChange={(id: number, status: AppointmentStatus) => statusMutation.mutate({ id, status })}
             />
             
