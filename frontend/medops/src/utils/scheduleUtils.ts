@@ -12,9 +12,11 @@ export const generateAvailabilityFromSchedules = (
   
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, monthNum, day);
-    const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ...
     
-    // Filtrar horarios que apliquen a este día (ajustar según tu lógica de días)
+    // ✅ CORRECCIÓN CRÍTICA: Mapeo de días (0=Domingo JS → 0=Lunes Backend)
+    const dayOfWeek = (date.getDay() + 6) % 7;
+    
+    // Filtrar horarios que apliquen a este día específico
     const daySchedules = schedules.filter(s => s.day_of_week === dayOfWeek);
     
     daySchedules.forEach(schedule => {
@@ -33,7 +35,7 @@ export const generateAvailabilityFromSchedules = (
             time: currentTime.toTimeString().slice(0, 5),
             title: 'Disponible',
             status: 'available',
-            isAvailable: true, // ✅ AGREGADO: Propiedad requerida
+            isAvailable: true,
             metadata: {
               service_id: schedule.service,
               schedule_id: schedule.id,

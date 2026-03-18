@@ -1,4 +1,4 @@
-// frontend/medops/src/hooks/appointments/useAppointmentStatusStyles.ts
+// src/hooks/appointments/useAppointmentStatusStyles.ts
 import { AppointmentStatus } from '@/types/appointments';
 export interface StatusStyle {
   label: string;

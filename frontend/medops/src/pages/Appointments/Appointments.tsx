@@ -31,6 +31,7 @@ import { useAppointmentsSearch } from "hooks/appointments/useAppointmentsSearch"
 import { useCalendarTimeline } from "@/hooks/operational/useOperationalHub";
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import { generateAvailabilityFromSchedules } from '@/utils/scheduleUtils';
+import DayDetailsPanel from '@/components/Appointments/DayDetailsPanel';
 export default function Appointments() {
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
@@ -160,21 +161,36 @@ export default function Appointments() {
       return newDate;
     });
   };
-  
-  const handleOperationalItemClick = (item: OperationalItem) => {
-    if (item.type === 'appointment' && item.metadata?.appointment_id) {
-      setViewingAppointmentId(item.metadata.appointment_id);
+  // ✅ NUEVO: Handler unificado para clicks en items (citas y slots)
+  const handleItemClick = (item: OperationalItem) => {
+    if (item.type === 'appointment' && typeof item.id === 'number') {
+      // Es una cita existente -> Ver detalle
+      setViewingAppointmentId(item.id);
     } else if (item.type === 'availability') {
+      // Es un slot disponible -> Agendar nueva cita
       const slotDate = new Date(item.date);
-      // ✅ CORREGIDO: Manejo seguro de item.time (posiblemente undefined)
-      const [hours, minutes] = (item.time || '00:00').split(':').map(Number);
-      slotDate.setHours(hours, minutes);
-      
+      if (item.time) {
+        const [hours, minutes] = item.time.split(':').map(Number);
+        slotDate.setHours(hours, minutes);
+      }
       setSelectedDate(slotDate);
       setShowCreateForm(true);
-      console.log('Slot disponible clickeado:', item);
     }
   };
+  
+  // ✅ NUEVO: Filtrar items operacionales para el panel derecho según día seleccionado
+  const selectedDayItems = selectedDate
+    ? operationalItemsWithAvailability.filter(item => 
+        moment(item.date).isSame(selectedDate, 'day')
+      )
+    : [];
+  // ✅ NUEVO: Filtrar citas para el panel derecho según día y estado
+  const filteredAppointmentsForDay = selectedDate
+    ? allAppointments.filter(appt => 
+        moment(appt.appointment_date).isSame(selectedDate, "day") &&
+        (statusFilter === "all" || appt.status === statusFilter)
+      )
+    : [];
   
   if (error) return (
     <div className="p-10 border border-red-500 bg-red-500/10 text-red-500 font-mono text-xs uppercase">
@@ -183,7 +199,7 @@ export default function Appointments() {
   );
   
   return (
-    <div className="max-w-[1800px] mx-auto p-4 lg:p-6 space-y-6">
+    <div className="max-w-[1800px] mx-auto p-4 lg:p-6 space-y-6 h-screen flex flex-col">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -273,77 +289,90 @@ export default function Appointments() {
         )}
       </div>
       
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        <div className="xl:col-span-7 space-y-4">
-          <section className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md p-4 rounded-sm shadow-inner">
-            <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
-              <div className="flex items-center gap-2">
-                <ChartBarIcon className="w-4 h-4 text-white/40" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                  TEMPORAL_HEATMAP
-                </h2>
-              </div>
-              <div className="text-[9px] text-white/40 font-mono">
-                {viewMode === "calendar" ? "VISTA_CALENDARIO" : "VISTA_LISTA"} | 
-                Items: {operationalStats.total_items} | 
-                Citas: {operationalStats.appointments_count} | 
-                Disponibles: {operationalStats.availability_count}
-              </div>
+      {/* ✅ NUEVO: Layout de dos columnas (70/30) responsive */}
+      <div className="flex flex-col lg:flex-row h-full gap-4 flex-1 min-h-0">
+        {/* Columna Izquierda: Calendario (70% en lg, 100% en móvil) */}
+        <div className="lg:w-7/12 w-full bg-[#0a0a0b] border border-white/10 rounded-sm p-4 flex flex-col">
+          <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-3">
+            <div className="flex items-center gap-2">
+              <ChartBarIcon className="w-4 h-4 text-white/40" />
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
+                TEMPORAL_HEATMAP
+              </h2>
             </div>
-            
+            <div className="text-[9px] text-white/40 font-mono">
+              {viewMode === "calendar" ? "VISTA_CALENDARIO" : "VISTA_LISTA"} | 
+              Items: {operationalStats.total_items} | 
+              Citas: {operationalStats.appointments_count} | 
+              Disponibles: {operationalStats.availability_count}
+            </div>
+          </div>
+          
+          <div className="flex-1 min-h-0">
             <CalendarGrid
               appointments={allAppointments}
               operationalItems={operationalItemsWithAvailability}
               currentDate={currentMonth}
+              statusFilter={statusFilter}
               onSelectDate={(date: Date) => setSelectedDate(date)}
               onSelectAppointment={(appt: Appointment) => setViewingAppointmentId(appt.id)}
-              onOperationalItemClick={handleOperationalItemClick}
+              onOperationalItemClick={handleItemClick} // ✅ CAMBIO: Usar handler unificado
               onPrevMonth={goToPrevMonth}
               onNextMonth={goToNextMonth}
             />
-          </section>
+          </div>
         </div>
         
-        <div className="xl:col-span-5 space-y-4 relative" style={{ isolation: 'isolate' }} ref={listRef}>
-          <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md p-4 rounded-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <ListBulletIcon className="w-4 h-4 text-white/40" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                  {selectedDate ? `DAY_REGISTRY` : "GLOBAL_REGISTRY"}
-                </h2>
-              </div>
-              <div className="text-[9px] text-white/40 font-mono">
-                {paginatedAppointments.length} / {totalItems}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <AppointmentsList
-                appointments={paginatedAppointments}
-                onEdit={(a: Appointment) => setViewingAppointmentId(a.id)}
-                onDelete={() => {}}
-                onStatusChange={(id: number, status: AppointmentStatus) => statusMutation.mutate({ id, status })}
-              />
-            </div>
-          </div>
-          
-          {!isSearchingActive && totalItems > 0 && (
-            <div className="border border-white/10 bg-[#0a0a0b] backdrop-blur-md px-4 py-3 flex justify-between items-center rounded-sm">
-              <div className="text-[10px] font-mono text-white/20 uppercase tracking-widest">
-                Data_Slice: <span className="text-white/80">{(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, totalItems)}</span>
-              </div>
-              <Pagination
-                currentPage={currentPage}
-                totalItems={totalItems}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
+        {/* Columna Derecha: Filtros + Lista (30% en lg, 100% en móvil) */}
+        <div className="lg:w-5/12 w-full flex flex-col gap-4">
+          {/* Panel de Detalles del Día (si hay día seleccionado) */}
+          {selectedDate && (
+            <div className="h-1/3 min-h-[200px]">
+              <DayDetailsPanel
+                day={selectedDate}
+                items={selectedDayItems}
+                onItemClick={handleItemClick} // ✅ CAMBIO: onSlotClick → onItemClick
               />
             </div>
           )}
+          
+          {/* Lista de Citas del Día Seleccionado */}
+          <div className={`flex-1 bg-[#0a0a0b] border border-white/10 rounded-sm p-4 overflow-y-auto ${selectedDate ? 'h-2/3' : 'h-full'}`}>
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-xs text-white/60">
+                {selectedDate 
+                  ? `Citas para ${selectedDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                  : 'Todas las citas'
+                }
+              </span>
+              <span className="text-xs text-white/40">
+                {filteredAppointmentsForDay.length} items
+              </span>
+            </div>
+            
+            <AppointmentsList
+              appointments={selectedDate ? filteredAppointmentsForDay : paginatedAppointments}
+              onEdit={(a: Appointment) => setViewingAppointmentId(a.id)}
+              onDelete={() => {}}
+              onStatusChange={(id: number, status: AppointmentStatus) => statusMutation.mutate({ id, status })}
+            />
+            
+            {/* Paginación solo si no hay día seleccionado */}
+            {!selectedDate && !isSearchingActive && totalItems > 0 && (
+              <div className="mt-4 pt-4 border-t border-white/10">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={totalItems}
+                  pageSize={pageSize}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
+      {/* Modales y Formularios */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -356,7 +385,7 @@ export default function Appointments() {
         </div>
       )}
       
-      {viewingAppointmentId && (
+      {viewingAppointmentId !== null && (
         <AppointmentDetail
           appointmentId={viewingAppointmentId}
           onClose={() => setViewingAppointmentId(null)}
@@ -364,7 +393,7 @@ export default function Appointments() {
         />
       )}
       
-      {editingAppointmentId && (
+      {editingAppointmentId !== null && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <AppointmentEditForm

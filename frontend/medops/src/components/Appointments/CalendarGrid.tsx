@@ -1,6 +1,6 @@
 // src/components/Appointments/CalendarGrid.tsx
 import React, { useState } from 'react';
-import { Appointment } from '@/types/appointments';
+import { Appointment, AppointmentStatus } from '@/types/appointments';  // ✅ CAMBIO: Agregar AppointmentStatus
 import { OperationalItem, OperationalItemType } from '@/types/operational';
 import { useAppointmentStatusStyles } from '@/hooks/appointments/useAppointmentStatusStyles';
 import { 
@@ -16,6 +16,7 @@ interface CalendarGridProps {
   appointments?: Appointment[];
   operationalItems?: OperationalItem[];
   currentDate?: Date;
+  statusFilter?: AppointmentStatus | "all";
   onDateClick?: (date: Date) => void;
   onAppointmentClick?: (appointment: Appointment) => void;
   onOperationalItemClick?: (item: OperationalItem) => void;
@@ -28,6 +29,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   appointments = [],
   operationalItems = [],
   currentDate = new Date(),
+  statusFilter = "all",
   onDateClick,
   onAppointmentClick,
   onOperationalItemClick,
@@ -46,7 +48,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     tentative: 'border-l-2 border-blue-500/70',
     arrived: 'border-l-2 border-green-500/70',
     in_consultation: 'border-l-2 border-purple-500/70',
-    completed: 'border-l-2 border-emerald-500/70', // ✅ CAMBIO: Color verde para completadas
+    completed: 'border-l-2 border-emerald-500/70',
     canceled: 'border-l-2 border-red-500/70',
   };
   
@@ -121,13 +123,22 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   
   const getItemsForCell = (day: number) => {
     const items = getItemsForDay(day);
-    return showAvailability ? items : items.filter(item => item.type === 'appointment');
+    let filteredItems = showAvailability ? items : items.filter(item => item.type === 'appointment');
+    
+    // ✅ NUEVO: Aplicar filtro de estado
+    if (statusFilter !== "all") {
+      filteredItems = filteredItems.filter(item => 
+        item.type === 'appointment' && item.status === statusFilter
+      );
+    }
+    
+    return filteredItems;
   };
   
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 h-full">
       {/* Calendario principal */}
-      <div className="flex-1 bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden">
+      <div className="flex-1 bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden flex flex-col">
         {/* Header del calendario con navegación */}
         <div className="flex items-center justify-between p-2 bg-[#111] border-b border-white/10">
           <div className="flex items-center gap-2">
@@ -142,7 +153,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
             </button>
           </div>
           
-          {/* Toggle de disponibilidad (Ojo) */}
+          {/* Toggle de disponibilidad */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAvailability(!showAvailability)}
@@ -169,21 +180,27 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
         </div>
         
         {/* Grid de días */}
-        <div className="grid grid-cols-7 gap-[1px] p-1 bg-[#1a1a1a]">
+        <div className="grid grid-cols-7 gap-[1px] p-1 bg-[#1a1a1a] flex-1 overflow-y-auto">
           {emptyDays.map((_, index) => (
-            <div key={`empty-${index}`} className="h-16 bg-[#0a0a0b]" />
+            <div key={`empty-${index}`} className="min-h-[100px] bg-[#0a0a0b]" />
           ))}
           {days.map((day) => {
             const date = new Date(internalDate.getFullYear(), internalDate.getMonth(), day);
             const dayItems = getItemsForCell(day);
             const isSelected = selectedDay && selectedDay.toDateString() === date.toDateString();
+            
+            // ✅ NUEVO: Indicador de filtro de estado
+            const hasFilteredItems = statusFilter !== "all" && dayItems.length > 0;
+            
             return (
               <div
                 key={day}
                 onClick={() => handleDateClick(date)}
-                className={`h-16 bg-[#0a0a0b] border cursor-pointer p-1 overflow-y-auto transition-all ${
+                className={`min-h-[100px] bg-[#0a0a0b] border cursor-pointer p-2 overflow-hidden transition-all ${
                   isSelected 
                     ? 'border-blue-500/50 bg-blue-500/10' 
+                    : hasFilteredItems
+                    ? 'border-emerald-500/30 bg-emerald-900/10'
                     : 'border-white/5 hover:border-white/20 hover:bg-[#111]'
                 }`}
               >
@@ -197,16 +214,16 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                     </div>
                   )}
                 </div>
-                <div className="space-y-[1px]">
+                <div className="space-y-1 mt-1">
                   {/* Mostrar items (máximo 2) */}
                   {dayItems.slice(0, 2).map((item) => {
                     const colorClass = item.type === 'availability' 
-                      ? 'bg-green-500/10 border-l-2 border-green-500/70' 
+                      ? 'bg-emerald-900/30 border-l-2 border-emerald-500/50' 
                       : (calendarColors[item.status] || calendarColors.pending);
                     
                     const displayText = item.type === 'availability' 
-                      ? item.serviceName || 'Disponible'
-                      : item.patientName || item.title || 'Cita';
+                      ? item.time
+                      : item.patientName?.split(' ')[0] || 'Cita';
                     
                     return (
                       <div
@@ -215,19 +232,19 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
                           e.stopPropagation();
                           handleOperationalItemClick(item);
                         }}
-                        className={`${colorClass} hover:bg-white/10 text-[8px] text-white/70 px-1 py-0.5 rounded cursor-pointer truncate ${
-                          item.type === 'availability' ? 'text-green-300/80' : ''
+                        className={`${colorClass} hover:bg-white/10 text-[9px] text-white/70 px-1 py-0.5 rounded cursor-pointer truncate ${
+                          item.type === 'availability' ? 'text-emerald-300/80' : ''
                         }`}
                       >
-                        {displayText}
+                        {item.type === 'availability' ? `🟢 ${displayText}` : `👤 ${displayText}`}
                       </div>
                     );
                   })}
                   
                   {/* Indicador de más items */}
                   {dayItems.length > 2 && (
-                    <div className="text-[8px] text-white/40 text-center">
-                      +{dayItems.length - 2}
+                    <div className="text-[9px] text-white/40 text-center">
+                      +{dayItems.length - 2} más
                     </div>
                   )}
                 </div>
@@ -236,105 +253,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
           })}
         </div>
       </div>
-      
-      {/* Panel de detalles del día seleccionado */}
-      {selectedDay && (
-        <div className="w-80 bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden flex flex-col">
-          {/* Header del panel */}
-          <div className="flex items-center justify-between p-2 bg-[#111] border-b border-white/10">
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4 text-white/60" />
-              <span className="text-[10px] font-mono text-white/80">
-                {selectedDay.toLocaleDateString('es-ES', { 
-                  weekday: 'long', 
-                  day: 'numeric', 
-                  month: 'long' 
-                })}
-              </span>
-            </div>
-            <button onClick={closeDayDetail} className="p-1 hover:bg-white/10 rounded transition-colors">
-              <XMarkIcon className="w-4 h-4 text-white/60" />
-            </button>
-          </div>
-          
-          {/* Tabs para Tipos de Items */}
-          <div className="flex border-b border-white/10">
-            <button className="flex-1 p-2 text-[10px] font-medium text-white bg-white/10 border-b-2 border-blue-500">
-              <ClipboardDocumentIcon className="w-3 h-3 inline mr-1" />
-              Todos
-            </button>
-          </div>
-          
-          {/* Lista de items del día */}
-          <div className="flex-1 overflow-y-auto p-2 space-y-2">
-            {selectedDayItems.length > 0 ? (
-              selectedDayItems.map((item) => {
-                const style = statusStyles[item.status as keyof typeof statusStyles] || statusStyles.pending;
-                return (
-                  <div
-                    key={`${item.type}-${item.id}`}
-                    onClick={() => handleOperationalItemClick(item)}
-                    className={`bg-[#111] border rounded-sm p-2 cursor-pointer transition-all ${
-                      item.type === 'availability' 
-                        ? 'border-green-500/30 hover:border-green-500/50' 
-                        : 'border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-1 h-8 rounded-full ${
-                        item.type === 'availability' ? 'bg-green-500/70' : style.dot
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-[10px] font-medium truncate ${
-                          item.type === 'availability' ? 'text-green-300' : 'text-white'
-                        }`}>
-                          {item.type === 'availability' 
-                            ? `Disponible: ${item.serviceName}`
-                            : `${item.patientName} - ${item.serviceName}`
-                          }
-                        </div>
-                        <div className="text-[9px] text-white/40">
-                          {item.type === 'availability' 
-                            ? item.doctorName || 'Sin asignar'
-                            : `Dr. ${item.doctorName || 'Sin asignar'}`
-                          }
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[8px] text-white/30 font-mono">
-                            {item.time || '--:--'}
-                          </span>
-                          <span className={`text-[8px] px-1 rounded ${
-                            item.type === 'availability' ? 'bg-green-500/10 text-green-300' : `${style.bg} ${style.text}`
-                          }`}>
-                            {item.type === 'availability' ? 'DISPONIBLE' : style.label}
-                          </span>
-                        </div>
-                        {item.type === 'availability' && item.slotsRemaining !== undefined && (
-                          <div className="text-[8px] text-green-400/70 mt-1">
-                            Cupos: {item.slotsRemaining}/{item.maxSlots}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="text-center py-8 text-white/40 text-[10px]">
-                No hay items programados
-              </div>
-            )}
-          </div>
-          
-          {/* Footer del panel */}
-          <div className="p-2 bg-[#111] border-t border-white/10">
-            <div className="text-[9px] text-white/40 text-center flex justify-between">
-              <span>{selectedDayItems.filter(i => i.type === 'appointment').length} citas</span>
-              <span>{selectedDayItems.filter(i => i.type === 'availability').length} disponibles</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
