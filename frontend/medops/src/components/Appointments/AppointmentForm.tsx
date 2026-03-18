@@ -30,6 +30,7 @@ import {
 } from "@heroicons/react/24/outline";
 interface Props {
   date?: Date;
+  preselectedServiceId?: number; // ✅ CAMBIO: Nuevo prop para pre-selección
   onClose: () => void;
   onSubmit: (data: AppointmentInput) => Promise<void> | void;
 }
@@ -57,7 +58,7 @@ interface SelectedService {
   service: TemporaryService;
   quantity: number;
 }
-export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
+export default function AppointmentForm({ date, preselectedServiceId, onClose, onSubmit }: Props) {
   const { institutions, activeInstitution } = useInstitutions();
   const { data: doctorConfig } = useDoctorConfig();
   const { data: bcvRate } = useBCVRate();
@@ -72,7 +73,8 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedServices, setSelectedServices] = useState<SelectedService[]>([]);
   
-  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
+  // ✅ CAMBIO: Inicializar con preselectedServiceId
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(preselectedServiceId || null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(date || null);
   const [selectedTime, setSelectedTime] = useState<string>('');
   

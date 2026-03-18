@@ -1,6 +1,6 @@
 // src/components/Appointments/CalendarGrid.tsx
 import React, { useState } from 'react';
-import { Appointment, AppointmentStatus } from '@/types/appointments';  // ✅ CAMBIO: Agregar AppointmentStatus
+import { Appointment, AppointmentStatus } from '@/types/appointments';
 import { OperationalItem, OperationalItemType } from '@/types/operational';
 import { useAppointmentStatusStyles } from '@/hooks/appointments/useAppointmentStatusStyles';
 import { 
@@ -17,6 +17,7 @@ interface CalendarGridProps {
   operationalItems?: OperationalItem[];
   currentDate?: Date;
   statusFilter?: AppointmentStatus | "all";
+  selectedServiceId?: number | null;
   onDateClick?: (date: Date) => void;
   onAppointmentClick?: (appointment: Appointment) => void;
   onOperationalItemClick?: (item: OperationalItem) => void;
@@ -30,6 +31,7 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   operationalItems = [],
   currentDate = new Date(),
   statusFilter = "all",
+  selectedServiceId = null,
   onDateClick,
   onAppointmentClick,
   onOperationalItemClick,
@@ -125,7 +127,21 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     const items = getItemsForDay(day);
     let filteredItems = showAvailability ? items : items.filter(item => item.type === 'appointment');
     
-    // ✅ NUEVO: Aplicar filtro de estado
+    // ✅ NUEVO: Aplicar filtro por servicio
+    if (selectedServiceId) {
+      filteredItems = filteredItems.filter(item => {
+        if (item.type === 'appointment' && item.metadata?.appointment) {
+          const appointment = item.metadata.appointment as Appointment;
+          return appointment.doctor_service === selectedServiceId;
+        }
+        if (item.type === 'availability') {
+          return item.serviceId === selectedServiceId;
+        }
+        return false;
+      });
+    }
+    
+    // ✅ NUEVO: Aplicar filtro de estado (solo para citas)
     if (statusFilter !== "all") {
       filteredItems = filteredItems.filter(item => 
         item.type === 'appointment' && item.status === statusFilter

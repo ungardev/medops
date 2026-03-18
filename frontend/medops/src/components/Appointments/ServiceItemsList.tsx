@@ -17,6 +17,7 @@ interface ServiceItemsListProps {
   items: OperationalItem[];
   services: DoctorService[];
   selectedServiceId: number | null;
+  statusFilter?: AppointmentStatus | "all";
   onServiceChange: (serviceId: number | null) => void;
   onAppointmentClick?: (appointment: Appointment) => void;
   onItemClick?: (item: OperationalItem) => void;
@@ -28,6 +29,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
   items,
   services,
   selectedServiceId,
+  statusFilter = "all",
   onServiceChange,
   onAppointmentClick,
   onItemClick,
@@ -37,25 +39,36 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
 }) => {
   const { statusStyles } = useAppointmentStatusStyles();
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
-  // Filtrar items por servicio seleccionado
+  // ✅ CAMBIO: Coordinar filtrado por servicio Y estado
   const filteredItems = useMemo(() => {
-    if (!selectedServiceId) return items;
-    return items.filter(item => {
-      // Para citas: verificar servicio del appointment
-      if (item.type === 'appointment' && item.metadata?.appointment) {
-        const appointment = item.metadata.appointment as Appointment;
-        return appointment.doctor_service === selectedServiceId;
-      }
-      // Para disponibilidades: verificar servicioId
-      if (item.type === 'availability') {
-        return item.serviceId === selectedServiceId;
-      }
-      return false;
-    });
-  }, [items, selectedServiceId]);
-  // Obtener nombre del servicio seleccionado
+    let result = items;
+    
+    // 1. Filtrar por servicio
+    if (selectedServiceId) {
+      result = result.filter(item => {
+        if (item.type === 'appointment' && item.metadata?.appointment) {
+          const appointment = item.metadata.appointment as Appointment;
+          return appointment.doctor_service === selectedServiceId;
+        }
+        if (item.type === 'availability') {
+          return item.serviceId === selectedServiceId;
+        }
+        return false;
+      });
+    }
+    
+    // 2. Filtrar por estado (solo para citas)
+    if (statusFilter && statusFilter !== "all") {
+      result = result.filter(item => 
+        item.type === 'appointment' && item.status === statusFilter
+      );
+    }
+    
+    return result;
+  }, [items, selectedServiceId, statusFilter]);
+  // ✅ CAMBIO: Texto dinámico según servicio seleccionado
   const selectedServiceName = useMemo(() => {
-    if (!selectedServiceId) return 'Todas las Citas';
+    if (!selectedServiceId) return 'Todos los Servicios';
     const service = services.find(s => s.id === selectedServiceId);
     return service?.name || 'Servicio Desconocido';
   }, [selectedServiceId, services]);
@@ -99,7 +112,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                   !selectedServiceId ? 'bg-white/10 text-white' : 'text-white/60'
                 }`}
               >
-                Todas las Citas
+                Todos los Servicios
               </button>
               {services.map(service => (
                 <button

@@ -13,7 +13,7 @@ import {
   CalendarDaysIcon,
   ListBulletIcon
 } from "@heroicons/react/24/outline";
-import ServiceItemsList from "@/components/Appointments/ServiceItemsList"; // ✅ CAMBIO: Import renombrado
+import ServiceItemsList from "@/components/Appointments/ServiceItemsList";
 import AppointmentForm from "components/Appointments/AppointmentForm";
 import AppointmentEditForm from "components/Appointments/AppointmentEditForm";
 import CalendarGrid from "components/Appointments/CalendarGrid";
@@ -33,7 +33,7 @@ import { useCalendarTimeline } from "@/hooks/operational/useOperationalHub";
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import { generateAvailabilityFromSchedules } from '@/utils/scheduleUtils';
 import DayDetailsPanel from '@/components/Appointments/DayDetailsPanel';
-import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices"; // Import para servicios
+import { useDoctorServices } from "@/hooks/services/useDoctorServices"; // ✅ CAMBIO: Import correcto
 export default function Appointments() {
   const [editingAppointmentId, setEditingAppointmentId] = useState<number | null>(null);
   const [viewingAppointmentId, setViewingAppointmentId] = useState<number | null>(null);
@@ -43,7 +43,7 @@ export default function Appointments() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
-  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null); // ✅ NUEVO: Estado para filtro de servicio
+  const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const pageSize = 10;
   const listRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -87,11 +87,8 @@ export default function Appointments() {
   const { data: allData, isLoading, isFetching, error } = useScheduledItems();
   const allAppointments = allData ?? [];
   
-  // Obtener servicios para el selector (usando búsqueda vacía para traer todos o un hook específico)
-  // Nota: Asumiendo que useDoctorServicesSearch('') funciona o usando un hook de lista completa si existe.
-  // Para este ejemplo, usaremos serviceResults de una búsqueda vacía o un hook de lista.
-  // Idealmente, usar un hook que liste todos los servicios de la institución.
-  const { data: serviceResults = [] } = useDoctorServicesSearch(''); 
+  // ✅ CAMBIO: Usar useDoctorServices() en lugar de useDoctorServicesSearch('')
+  const { data: serviceResults = [] } = useDoctorServices();
   
   const { data: searchResults = [], isLoading: isSearching } = useAppointmentsSearch(search);
   
@@ -170,13 +167,10 @@ export default function Appointments() {
       return newDate;
     });
   };
-  // ✅ NUEVO: Handler unificado para clicks en items (citas y slots)
   const handleItemClick = (item: OperationalItem) => {
     if (item.type === 'appointment' && typeof item.id === 'number') {
-      // Es una cita existente -> Ver detalle
       setViewingAppointmentId(item.id);
     } else if (item.type === 'availability') {
-      // Es un slot disponible -> Agendar nueva cita
       const slotDate = new Date(item.date);
       if (item.time) {
         const [hours, minutes] = item.time.split(':').map(Number);
@@ -187,14 +181,12 @@ export default function Appointments() {
     }
   };
   
-  // ✅ NUEVO: Filtrar items operacionales para el panel derecho según día seleccionado
   const selectedDayItems = selectedDate
     ? operationalItemsWithAvailability.filter(item => 
         moment(item.date).isSame(selectedDate, 'day')
       )
     : [];
   
-  // ✅ NUEVO: Filtrar citas para el panel derecho según día y estado
   const filteredAppointmentsForDay = selectedDate
     ? allAppointments.filter(appt => 
         moment(appt.appointment_date).isSame(selectedDate, "day") &&
@@ -256,6 +248,7 @@ export default function Appointments() {
               </button>
             </div>
             
+            {/* ✅ CAMBIO: Botón NEW con pre-selección de servicio */}
             <button
               onClick={() => setShowCreateForm(true)}
               className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-sm transition-all border border-white/5 active:scale-[0.98]"
@@ -282,7 +275,10 @@ export default function Appointments() {
           )}
         </div>
         
-        <AppointmentFilters activeFilter={statusFilter} onFilterChange={setStatusFilter} />
+        {/* ✅ CAMBIO: Condicionar visibilidad de AppointmentFilters */}
+        {selectedServiceId === null && (
+          <AppointmentFilters activeFilter={statusFilter} onFilterChange={setStatusFilter} />
+        )}
         
         {selectedDate && (
           <div className="flex items-center gap-2 bg-[#111] border border-white/10 px-3 py-1.5 rounded-sm">
@@ -324,6 +320,7 @@ export default function Appointments() {
               operationalItems={operationalItemsWithAvailability}
               currentDate={currentMonth}
               statusFilter={statusFilter}
+              selectedServiceId={selectedServiceId} // ✅ CAMBIO: Pasar filtro de servicio
               onSelectDate={(date: Date) => setSelectedDate(date)}
               onSelectAppointment={(appt: Appointment) => setViewingAppointmentId(appt.id)}
               onOperationalItemClick={handleItemClick}
@@ -352,6 +349,7 @@ export default function Appointments() {
               items={selectedDayItems.length > 0 ? selectedDayItems : []}
               services={serviceResults}
               selectedServiceId={selectedServiceId}
+              statusFilter={statusFilter} // ✅ CAMBIO: Pasar filtro de estado
               onServiceChange={setSelectedServiceId}
               onAppointmentClick={(a: Appointment) => setViewingAppointmentId(a.id)}
               onItemClick={handleItemClick}
@@ -383,6 +381,7 @@ export default function Appointments() {
           <div className="bg-[#0a0a0b] border border-white/10 rounded-sm w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <AppointmentForm 
               date={selectedDate || undefined}
+              preselectedServiceId={selectedServiceId ?? undefined} // ✅ CORRECCIÓN: Convertir null a undefined
               onSubmit={(data) => saveAppointment(data)} 
               onClose={() => setShowCreateForm(false)} 
             />
