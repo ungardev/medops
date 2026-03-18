@@ -11,6 +11,7 @@ import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices";
 import { useBCVRate, convertUSDToVES } from "@/hooks/dashboard/useBCVRate";
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import NewPatientModal from "components/Patients/NewPatientModal";
+import InteractiveCalendar from "@/components/Appointments/InteractiveCalendar"; // ✅ NUEVO: Importar calendario
 import { 
   UserPlusIcon, 
   XMarkIcon, 
@@ -158,6 +159,15 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     
     return slots;
   }, [selectedServiceId, selectedDate, serviceSchedules]);
+  // ✅ NUEVO: Sincronizar selectedDate con form.appointment_date
+  useEffect(() => {
+    if (selectedDate) {
+      setForm(prev => ({
+        ...prev,
+        appointment_date: selectedDate.toISOString().slice(0, 10)
+      }));
+    }
+  }, [selectedDate]);
   
   useEffect(() => {
     if (activeInstitution?.id) {
@@ -263,7 +273,7 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
     const newErrors: FormErrors = {};
     if (!selectedPatient) newErrors.patient = "REQUIRED_FIELD: Select patient";
     if (selectedServices.length === 0) newErrors.services = "REQUIRED_FIELD: Add at least one service";
-    if (!form.appointment_date) newErrors.appointment_date = "REQUIRED_FIELD: Select date";
+    if (!selectedDate) newErrors.appointment_date = "REQUIRED_FIELD: Select date"; // ✅ CAMBIO: Usar selectedDate
     if (!selectedTime) newErrors.appointment_time = "REQUIRED_FIELD: Select time";
     
     if (Object.keys(newErrors).length > 0) {
@@ -486,44 +496,24 @@ export default function AppointmentForm({ date, onClose, onSubmit }: Props) {
           )}
         </div>
         
+        {/* ✅ NUEVO: Sección de Fecha y Hora con Calendario Interactivo */}
         <div className="space-y-3">
           <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
-            FECHA DE LA CITA
+            FECHA Y HORA DE LA CITA
           </h3>
-          <input
-            type="date"
-            name="appointment_date"
-            value={form.appointment_date}
-            onChange={handleChange}
-            className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none"
+          
+          <InteractiveCalendar
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+            serviceSchedules={serviceSchedules}
+            selectedServiceId={selectedServiceId}
+            availableSlots={availableSlots}
+            onTimeSelect={setSelectedTime}
+            selectedTime={selectedTime}
           />
+          
           {errors.appointment_date && (
             <div className="mt-1 text-red-400 text-xs">{errors.appointment_date}</div>
-          )}
-        </div>
-        
-        {/* ✅ NUEVO: Campo de hora con filtros de horarios */}
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">
-            HORA DE LA CITA
-          </h3>
-          <select
-            value={selectedTime}
-            onChange={(e) => setSelectedTime(e.target.value)}
-            disabled={!availableSlots.length}
-            className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none"
-          >
-            <option value="">Seleccionar hora...</option>
-            {availableSlots.map(slot => (
-              <option key={slot.time} value={slot.time}>
-                {slot.label}
-              </option>
-            ))}
-          </select>
-          {!availableSlots.length && selectedServiceId && (
-            <div className="text-[10px] text-amber-400">
-              No hay horarios disponibles para el servicio seleccionado en este día.
-            </div>
           )}
           {errors.appointment_time && (
             <div className="mt-1 text-red-400 text-xs">{errors.appointment_time}</div>
