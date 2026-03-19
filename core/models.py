@@ -5067,12 +5067,29 @@ class ServiceCategory(models.Model):
     Categorías genéricas de servicios (Consulta, Procedimiento, etc.).
     Unificación de BillingCategory y ServiceCategory.
     """
+    # TIPOS PREDEFINIDOS (Enum)
+    CATEGORY_TYPES = [
+        ('APPOINTMENT', 'Consulta/Cita'),
+        ('PROCEDURE', 'Procedimiento Médico'),
+        ('DIAGNOSTIC', 'Diagnóstico/Laboratorio'),
+        ('PHARMACY', 'Farmacia/Medicamento'),
+        ('PACKAGE', 'Paquete/Promoción'),
+        ('ADMIN', 'Servicio Administrativo'),
+    ]
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, null=True)
-    icon = models.CharField(max_length=50, blank=True, null=True, help_text="Nombre del icono para UI")
+    icon = models.CharField(max_length=50, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     
-    # Campos de auditoría (AGREGADOS)
+    # NUEVO CAMPO: Tipo estructurado
+    category_type = models.CharField(
+        max_length=20, 
+        choices=CATEGORY_TYPES, 
+        default='ADMIN',
+        verbose_name="Tipo de Categoría"
+    )
+    
+    # Campos de auditoría
     created_at = models.DateTimeField(default=timezone.now) 
     updated_at = models.DateTimeField(auto_now=True) 
     
