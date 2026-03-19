@@ -127,21 +127,12 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     const items = getItemsForDay(day);
     let filteredItems = showAvailability ? items : items.filter(item => item.type === 'appointment');
     
-    // ✅ NUEVO: Aplicar filtro por servicio
+    // ✅ CAMBIO: Aplicar filtro por servicio usando item.serviceId
     if (selectedServiceId) {
-      filteredItems = filteredItems.filter(item => {
-        if (item.type === 'appointment' && item.metadata?.appointment) {
-          const appointment = item.metadata.appointment as Appointment;
-          return appointment.doctor_service === selectedServiceId;
-        }
-        if (item.type === 'availability') {
-          return item.serviceId === selectedServiceId;
-        }
-        return false;
-      });
+      filteredItems = filteredItems.filter(item => item.serviceId === selectedServiceId);
     }
     
-    // ✅ NUEVO: Aplicar filtro de estado (solo para citas)
+    // ✅ CAMBIO: Aplicar filtro de estado (solo para citas)
     if (statusFilter !== "all") {
       filteredItems = filteredItems.filter(item => 
         item.type === 'appointment' && item.status === statusFilter

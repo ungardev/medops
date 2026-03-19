@@ -17,7 +17,7 @@ import ServiceItemsList from "@/components/Appointments/ServiceItemsList";
 import AppointmentForm from "components/Appointments/AppointmentForm";
 import AppointmentEditForm from "components/Appointments/AppointmentEditForm";
 import CalendarGrid from "components/Appointments/CalendarGrid";
-import AppointmentFilters from "components/Appointments/AppointmentFilters";
+import ServiceStatusFilters from "@/components/Appointments/ServiceStatusFilters"; // ✅ CAMBIO: Nuevo componente
 import AppointmentDetail from "components/Appointments/AppointmentDetail";
 import Pagination from "components/Common/Pagination";
 import PageHeader from "../../components/Common/PageHeader";
@@ -89,6 +89,21 @@ export default function Appointments() {
   
   // ✅ CAMBIO: Usar useDoctorServices() en lugar de useDoctorServicesSearch('')
   const { data: serviceResults = [] } = useDoctorServices();
+  
+  // ✅ CAMBIO: Determinar tipo de servicio seleccionado (usando category_name)
+  const selectedServiceType = selectedServiceId 
+    ? (() => {
+        const service = serviceResults.find(s => s.id === selectedServiceId);
+        const categoryName = service?.category_name?.toLowerCase() || '';
+        
+        if (categoryName.includes('consulta')) return 'APPOINTMENT';
+        if (categoryName.includes('procedimiento')) return 'PROCEDURE';
+        if (categoryName.includes('diagnostico')) return 'DIAGNOSTIC';
+        if (categoryName.includes('farmacia') || categoryName.includes('medicamento')) return 'PHARMACY';
+        if (categoryName.includes('paquete') || categoryName.includes('promocion')) return 'PACKAGE';
+        return 'APPOINTMENT'; // Default
+      })()
+    : 'APPOINTMENT';
   
   const { data: searchResults = [], isLoading: isSearching } = useAppointmentsSearch(search);
   
@@ -200,6 +215,9 @@ export default function Appointments() {
     </div>
   );
   
+  // ✅ CAMBIO: Determinar items para la lista
+  const itemsForList = selectedDate ? selectedDayItems : operationalItemsWithAvailability;
+  
   return (
     <div className="max-w-[1800px] mx-auto p-4 lg:p-6 space-y-6 h-screen flex flex-col">
       <PageHeader 
@@ -275,10 +293,12 @@ export default function Appointments() {
           )}
         </div>
         
-        {/* ✅ CAMBIO: Condicionar visibilidad de AppointmentFilters */}
-        {selectedServiceId === null && (
-          <AppointmentFilters activeFilter={statusFilter} onFilterChange={setStatusFilter} />
-        )}
+        {/* ✅ CAMBIO: Usar ServiceStatusFilters en lugar de AppointmentFilters */}
+        <ServiceStatusFilters
+          categoryType={selectedServiceType}
+          activeFilter={statusFilter}
+          onFilterChange={(status: string) => setStatusFilter(status as AppointmentStatus | "all")}
+        />
         
         {selectedDate && (
           <div className="flex items-center gap-2 bg-[#111] border border-white/10 px-3 py-1.5 rounded-sm">
@@ -346,10 +366,10 @@ export default function Appointments() {
           {/* Lista de Items Operacionales del Día Seleccionado */}
           <div className={`flex-1 bg-[#0a0a0b] border border-white/10 rounded-sm p-4 overflow-y-auto ${selectedDate ? 'h-2/3' : 'h-full'}`}>
             <ServiceItemsList
-              items={selectedDayItems.length > 0 ? selectedDayItems : []}
+              items={itemsForList} // ✅ CAMBIO: Usar itemsForList
               services={serviceResults}
               selectedServiceId={selectedServiceId}
-              statusFilter={statusFilter} // ✅ CAMBIO: Pasar filtro de estado
+              statusFilter={statusFilter}
               onServiceChange={setSelectedServiceId}
               onAppointmentClick={(a: Appointment) => setViewingAppointmentId(a.id)}
               onItemClick={handleItemClick}

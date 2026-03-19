@@ -45,16 +45,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
     
     // 1. Filtrar por servicio
     if (selectedServiceId) {
-      result = result.filter(item => {
-        if (item.type === 'appointment' && item.metadata?.appointment) {
-          const appointment = item.metadata.appointment as Appointment;
-          return appointment.doctor_service === selectedServiceId;
-        }
-        if (item.type === 'availability') {
-          return item.serviceId === selectedServiceId;
-        }
-        return false;
-      });
+      result = result.filter(item => item.serviceId === selectedServiceId);
     }
     
     // 2. Filtrar por estado (solo para citas)
