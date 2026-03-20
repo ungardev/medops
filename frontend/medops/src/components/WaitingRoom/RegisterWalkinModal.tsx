@@ -17,14 +17,14 @@ interface Props {
   onSuccess: (patientId: number, institutionId: number | null, serviceId: number | null) => void;
   existingEntries: WaitingRoomEntry[];
   institutionId?: number | null;
-  services: ServiceOption[]; // CAMBIAR: De DoctorService[] a ServiceOption[]
+  services: ServiceOption[];
 }
 const RegisterWalkinModal: React.FC<Props> = ({ 
   onClose, 
   onSuccess, 
   existingEntries,
   institutionId,
-  services // NUEVO: Recibir servicios simplificados
+  services 
 }) => {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
@@ -56,7 +56,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
     setSelectedPatient(patient);
     setQuery("");
     setResults([]);
-    setSelectedServiceId(null);
+    setSelectedServiceId(null); // Reset service selection on new patient
   };
   const handleProceedWithPatient = () => {
     if (selectedPatient) {
@@ -100,6 +100,7 @@ const RegisterWalkinModal: React.FC<Props> = ({
               <X className="w-5 h-5" />
             </button>
           </div>
+          
           {/* Content */}
           <div className="p-6 space-y-5">
             <div className={sectionStyles}>

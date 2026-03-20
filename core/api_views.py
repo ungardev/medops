@@ -1243,6 +1243,7 @@ def register_arrival(request):
     """
     patient_id = request.data.get('patient_id')
     institution_id = request.data.get('institution_id') or request.headers.get('X-Institution-ID')
+    service_id = request.data.get('service_id')  # ✅ NUEVO: Obtener service_id
     
     if not institution_id:
         return Response({"error": "Institution ID required"}, status=400)
@@ -1269,7 +1270,15 @@ def register_arrival(request):
             "status": active_entry.status
         }, status=400)
     
-    # Manejo de Appointment (Lógica modificada para Opción A)
+    # ✅ NUEVO: Obtener DoctorService si se proporciona service_id
+    doctor_service = None
+    if service_id:
+        try:
+            doctor_service = DoctorService.objects.get(id=service_id, institution_id=institution_id)
+        except DoctorService.DoesNotExist:
+            return Response({"error": "Service not found in this institution"}, status=400)
+    
+    # Manejo de Appointment
     appointment_id = request.data.get('appointment_id')
     appointment = None
     
@@ -1278,23 +1287,46 @@ def register_arrival(request):
         appointment = get_object_or_404(Appointment, pk=int(appointment_id))
     else:
         # Opción A: Crear una nueva Appointment para Walk-in
-        appointment = Appointment.objects.create(
-            patient=patient,
-            institution=institution,
-            doctor=None,  # Asignar doctor más tarde si es necesario
-            appointment_date=timezone.now().date(),
-            status='pending',  # Estado inicial: pendiente
-            appointment_type='general',
-            expected_amount=Decimal('0.00'),
-            tentative_date=timezone.now().date(),
-            tentative_time=timezone.now().time()
-        )
+        appointment_data = {
+            'patient': patient,
+            'institution': institution,
+            'doctor': None,
+            'appointment_date': timezone.now().date(),
+            'status': 'pending',
+            'appointment_type': 'general',
+            'expected_amount': Decimal('0.00'),
+            'tentative_date': timezone.now().date(),
+            'tentative_time': timezone.now().time()
+        }
+        
+        # ✅ NUEVO: Asignar servicio y doctor si se seleccionó
+        if doctor_service:
+            appointment_data['doctor_service'] = doctor_service
+            appointment_data['doctor'] = doctor_service.doctor
+            
+            # Mapeo de appointment_type basado en categoría del servicio
+            if doctor_service.category:
+                category_name = doctor_service.category.name.lower()
+                if 'consulta' in category_name:
+                    appointment_data['appointment_type'] = 'consultation'
+                elif 'laboratorio' in category_name or 'diagnostico' in category_name:
+                    appointment_data['appointment_type'] = 'diagnostic'
+                elif 'procedimiento' in category_name:
+                    appointment_data['appointment_type'] = 'procedure'
+                elif 'medicamento' in category_name or 'farmacia' in category_name:
+                    appointment_data['appointment_type'] = 'pharmacy'
+                elif 'paquete' in category_name or 'promocion' in category_name:
+                    appointment_data['appointment_type'] = 'package'
+                elif 'administrativo' in category_name:
+                    appointment_data['appointment_type'] = 'admin'
+        
+        appointment = Appointment.objects.create(**appointment_data)
     
     # Crear la entrada en la sala de espera asociada a la Appointment
     entry = WaitingRoomEntry.objects.create(
         patient=patient,
         institution=institution,
-        appointment=appointment,  # Ahora siempre tendrá una Appointment asociada
+        appointment=appointment,
         status='waiting',
         source_type='walkin' if not appointment_id else 'scheduled',
         arrival_time=timezone.now(),
