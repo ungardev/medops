@@ -91,7 +91,8 @@ export default function WaitingRoom() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   
-  const { data: hubData, isLoading, isFetching } = useOperationalHub(selectedInstitutionId);
+  // Extraemos refetch para forzar recargas manuales
+  const { data: hubData, isLoading, isFetching, refetch } = useOperationalHub(selectedInstitutionId);
   
   const liveQueue = hubData?.live_queue ?? [];
   const pendingEntries = hubData?.pending_entries ?? [];
@@ -109,8 +110,10 @@ export default function WaitingRoom() {
     const serviceId = entry.appointment?.serviceId;
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
+    
     // Si se selecciona categoría/servicio pero la entrada no tiene servicio, no mostrar
     const hasServiceOrNoFilter = (serviceId !== undefined) || (!selectedCategory && !selectedService);
+    
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
     
@@ -123,8 +126,10 @@ export default function WaitingRoom() {
     const serviceId = appt.appointment?.serviceId;
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
+    
     // Filtro similar a liveQueue
     const hasServiceOrNoFilter = (serviceId !== undefined) || (!selectedCategory && !selectedService);
+    
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
     
@@ -176,6 +181,14 @@ export default function WaitingRoom() {
       setToast({ message: "Error al registrar llegada", type: "error" });
     }
   };
+  // Nueva función para abrir el modal con datos precargados
+  const handleOpenRegisterModal = async () => {
+    // Si no hay datos de servicios o están vacíos, intentar refrescar
+    if (!services || services.length === 0) {
+      await refetch(); // Forza la recarga de datos del hub
+    }
+    setShowModal(true);
+  };
   const FilterControls = () => (
     <div className="flex gap-2">
       <select 
@@ -224,7 +237,7 @@ export default function WaitingRoom() {
               Cerrar Jornada
             </button>
             <button
-              onClick={() => setShowModal(true)}
+              onClick={handleOpenRegisterModal} // Usar la nueva función
               className="px-3 py-1.5 text-[10px] font-black uppercase bg-white text-black border border-white rounded-sm hover:bg-white/90 flex items-center gap-2 transition-all duration-300"
             >
               <PlusIcon className="w-3.5 h-3.5 stroke-[3px]" />
@@ -379,54 +392,54 @@ export default function WaitingRoom() {
            </div>
          </div>
        </div>
-      
-        {/* MODALES */}
-        {showModal && (
-          <RegisterWalkinModal 
-            onClose={() => setShowModal(false)}
-            onSuccess={(id, institutionId, serviceId) => registerArrival.mutate({ 
-              patient_id: id, 
-              institution_id: institutionId,
-              service_id: serviceId 
-            })} 
-            existingEntries={liveQueue} 
-            institutionId={selectedInstitutionId}
-            services={services} 
-          />
-        )}
-        
-        {entryToCancel && (
-          <ConfirmGenericModal
-            open={showConfirmCancel}
-            title="DESTRUCTIVE_ACTION_CONFIRMATION"
-            message={`Protocol: Cancel operational flow for subject ${entryToCancel.patient.full_name}?`}
-            confirmLabel="ABORT_OPERATION"
-            cancelLabel="CANCEL_PROTOCOL"
-            isDestructive={true}
-            onConfirm={() => { 
-              handleStatusChange(entryToCancel, "canceled"); 
-              setEntryToCancel(null); 
-              setShowConfirmCancel(false);
-            }}
-            onCancel={() => { 
-              setEntryToCancel(null); 
-              setShowConfirmCancel(false);
-            }}
-          />
-        )}
-        
-        {showConfirmClose && (
-          <ConfirmCloseDayModal
-            onConfirm={() => { 
-              queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] }); 
-              setShowConfirmClose(false); 
-              setToast({ message: "Daily operations terminated successfully", type: "success" });
-            }}
-            onCancel={() => setShowConfirmClose(false)}
-          />
-        )}
-        
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      </div>
+       
+         {/* MODALES */}
+         {showModal && (
+           <RegisterWalkinModal 
+             onClose={() => setShowModal(false)}
+             onSuccess={(id, institutionId, serviceId) => registerArrival.mutate({ 
+               patient_id: id, 
+               institution_id: institutionId,
+               service_id: serviceId 
+             })} 
+             existingEntries={liveQueue} 
+             institutionId={selectedInstitutionId}
+             services={services} 
+           />
+         )}
+         
+         {entryToCancel && (
+           <ConfirmGenericModal
+             open={showConfirmCancel}
+             title="DESTRUCTIVE_ACTION_CONFIRMATION"
+             message={`Protocol: Cancel operational flow for subject ${entryToCancel.patient.full_name}?`}
+             confirmLabel="ABORT_OPERATION"
+             cancelLabel="CANCEL_PROTOCOL"
+             isDestructive={true}
+             onConfirm={() => { 
+               handleStatusChange(entryToCancel, "canceled"); 
+               setEntryToCancel(null); 
+               setShowConfirmCancel(false);
+             }}
+             onCancel={() => { 
+               setEntryToCancel(null); 
+               setShowConfirmCancel(false);
+             }}
+           />
+         )}
+         
+         {showConfirmClose && (
+           <ConfirmCloseDayModal
+             onConfirm={() => { 
+               queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] }); 
+               setShowConfirmClose(false); 
+               setToast({ message: "Daily operations terminated successfully", type: "success" });
+             }}
+             onCancel={() => setShowConfirmClose(false)}
+           />
+         )}
+         
+         {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+       </div>
     );
 }
