@@ -11,6 +11,7 @@ class Command(BaseCommand):
             # Nivel 1 (Hojas)
             'core_medicaldocument',      # Documentos médicos
             'core_payment',              # Pagos
+            'core_prescriptioncomponent',# Componentes de recetas (NUEVO - depende de prescription)
             'core_prescription',         # Recetas
             'core_treatment',            # Tratamientos
             
@@ -27,9 +28,6 @@ class Command(BaseCommand):
             # Usar transacción para garantizar consistencia
             with transaction.atomic():
                 with connection.cursor() as cursor:
-                    # PostgreSQL no requiere SET FOREIGN_KEY_CHECKS.
-                    # El orden de eliminación (hojas a raíz) gestiona las dependencias.
-                    
                     for tabla in tablas_a_limpiar:
                         try:
                             cursor.execute(f"DELETE FROM {tabla};")
