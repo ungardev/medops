@@ -1236,14 +1236,11 @@ def update_appointment_notes(request, pk): return Response({"ok": True})
 def register_arrival(request):
     """
     Registra la llegada de un paciente a la sala de espera.
-    Permite múltiples visitas del mismo paciente (si la anterior ya completó).
-    
-    Si no se proporciona un appointment_id (Walk-in), crea una nueva Appointment
-    en estado 'pending' y la asocia a la entrada de la sala de espera.
+    Crea una Appointment walk-in asociada al servicio seleccionado.
     """
     patient_id = request.data.get('patient_id')
     institution_id = request.data.get('institution_id') or request.headers.get('X-Institution-ID')
-    service_id = request.data.get('service_id')  # ✅ NUEVO: Obtener service_id
+    service_id = request.data.get('service_id')  # Nuevo: Servicio seleccionado
     
     if not institution_id:
         return Response({"error": "Institution ID required"}, status=400)
@@ -1270,11 +1267,15 @@ def register_arrival(request):
             "status": active_entry.status
         }, status=400)
     
-    # ✅ NUEVO: Obtener DoctorService si se proporciona service_id
+    # Obtener DoctorService si se proporciona service_id
     doctor_service = None
     if service_id:
         try:
-            doctor_service = DoctorService.objects.get(id=service_id, institution_id=institution_id)
+            # Verificar que el servicio pertenece a la institución o es global
+            doctor_service = DoctorService.objects.get(
+                id=service_id, 
+                institution_id__in=[institution_id, None] # Permitir servicios globales
+            )
         except DoctorService.DoesNotExist:
             return Response({"error": "Service not found in this institution"}, status=400)
     
@@ -1286,11 +1287,11 @@ def register_arrival(request):
         # Si se proporciona un appointment_id, usar la cita existente
         appointment = get_object_or_404(Appointment, pk=int(appointment_id))
     else:
-        # Opción A: Crear una nueva Appointment para Walk-in
+        # Crear una nueva Appointment para Walk-in
         appointment_data = {
             'patient': patient,
             'institution': institution,
-            'doctor': None,
+            'doctor': doctor_service.doctor if doctor_service else None,
             'appointment_date': timezone.now().date(),
             'status': 'pending',
             'appointment_type': 'general',
@@ -1299,10 +1300,9 @@ def register_arrival(request):
             'tentative_time': timezone.now().time()
         }
         
-        # ✅ NUEVO: Asignar servicio y doctor si se seleccionó
+        # Asignar servicio y mapear tipo de cita
         if doctor_service:
             appointment_data['doctor_service'] = doctor_service
-            appointment_data['doctor'] = doctor_service.doctor
             
             # Mapeo de appointment_type basado en categoría del servicio
             if doctor_service.category:
