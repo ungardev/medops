@@ -11,9 +11,10 @@ class Command(BaseCommand):
             # Nivel 1 (Hojas)
             'core_medicaldocument',      # Documentos médicos
             'core_payment',              # Pagos
-            'core_prescriptioncomponent',# Componentes de recetas (NUEVO - depende de prescription)
+            'core_prescriptioncomponent',# Componentes de recetas
             'core_prescription',         # Recetas
             'core_treatment',            # Tratamientos
+            'core_medicalreferral',      # Referencias médicas (NUEVO - depende de diagnosis)
             
             # Nivel 2 (Intermedios)
             'core_diagnosis',            # Diagnósticos
