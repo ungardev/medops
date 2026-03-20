@@ -17,7 +17,8 @@ class Command(BaseCommand):
             'core_medicalreferral_specialties', # Tabla intermedia
             'core_medicalreferral',      # Referencias médicas
             'core_chargeitem',           # Ítems de cobro
-            'core_medicalreport',        # Informes médicos (NUEVO - depende de appointment)
+            'core_medicalreport',        # Informes médicos
+            'core_clinicalnote',         # Notas clínicas (NUEVO - depende de appointment)
             
             # Nivel 2 (Intermedios)
             'core_diagnosis',            # Diagnósticos
