@@ -1,12 +1,13 @@
 // src/pages/Services/ServiceCatalogPage.tsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // CAMBIO: Importar useNavigate
+import { useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { useServiceCategories, useCreateServiceCategory, useUpdateServiceCategory, useDeleteServiceCategory } from "@/hooks/services/useServiceCategories";
 import { useDoctorServices, useCreateDoctorService, useUpdateDoctorService, useDeleteDoctorService } from "@/hooks/services/useDoctorServices";
 import type { ServiceCategory, DoctorService, ServiceCategoryInput, DoctorServiceInput } from "@/types/services";
 import { useNotify } from "@/hooks/useNotify";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
+import { useInstitutions } from "@/hooks/settings/useInstitutions"; // NUEVO: Importar hook de instituciones
 import {
   PlusIcon,
   PencilSquareIcon,
@@ -15,15 +16,17 @@ import {
   TagIcon,
   XMarkIcon,
   CheckIcon,
-  EyeIcon, // CAMBIO: Icono para ver detalles (opcional)
+  EyeIcon,
 } from "@heroicons/react/24/outline";
 export default function ServiceCatalogPage() {
   const notify = useNotify();
-  const navigate = useNavigate(); // CAMBIO: Hook de navegación
-  // ... (código previo sin cambios hasta la línea 168) ...
+  const navigate = useNavigate();
+  
   const { data: doctorConfig, isLoading: loadingDoctor } = useDoctorConfig();
   const doctorId = doctorConfig?.id ?? null;
   
+  // NUEVO: Hook de instituciones
+  const { institutions, activeInstitution } = useInstitutions();
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -52,10 +55,11 @@ export default function ServiceCatalogPage() {
     is_active: true,
   });
   
+  // Inicializar serviceForm con institución activa
   const [serviceForm, setServiceForm] = useState<DoctorServiceInput>({
     doctor: doctorId,
     category: null,
-    institution: null,
+    institution: activeInstitution?.id || null, // ASIGNAR INSTITUCIÓN ACTIVA
     code: "",
     name: "",
     description: "",
@@ -70,6 +74,12 @@ export default function ServiceCatalogPage() {
       setServiceForm(prev => ({ ...prev, doctor: doctorId }));
     }
   }, [doctorId]);
+  // Actualizar serviceForm si activeInstitution cambia
+  useEffect(() => {
+    if (activeInstitution?.id) {
+      setServiceForm(prev => ({ ...prev, institution: activeInstitution.id }));
+    }
+  }, [activeInstitution]);
   
   const handleOpenCategoryModal = (category?: ServiceCategory) => {
     if (category) {
@@ -121,7 +131,7 @@ export default function ServiceCatalogPage() {
       setServiceForm({
         doctor: doctorId,
         category: activeCategory,
-        institution: null,
+        institution: activeInstitution?.id || null, // Usar institución activa
         code: "",
         name: "",
         description: "",
@@ -158,7 +168,7 @@ export default function ServiceCatalogPage() {
       notify.error("Error al eliminar servicio");
     }
   };
-  // Navegación a la página de detalle
+  
   const handleViewDetails = (serviceId: number) => {
     navigate(`/services/${serviceId}`);
   };
@@ -248,7 +258,6 @@ export default function ServiceCatalogPage() {
           {filteredServices.map((service) => (
             <div
               key={service.id}
-              // CAMBIO: Añadir cursor-pointer y onClick para navegar
               className="group relative bg-white/[0.02] border border-white/10 p-4 hover:border-emerald-500/30 transition-all cursor-pointer"
               onClick={() => handleViewDetails(service.id)}
             >
@@ -279,7 +288,6 @@ export default function ServiceCatalogPage() {
                   >
                     <TrashIcon className="w-3.5 h-3.5" />
                   </button>
-                  {/* Botón para ver detalles (alternativa al clic en la tarjeta) */}
                   <button
                     onClick={(e) => { e.stopPropagation(); handleViewDetails(service.id); }}
                     className="p-1 text-white/40 hover:text-blue-400 transition-colors"
@@ -409,6 +417,21 @@ export default function ServiceCatalogPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+              
+              {/* NUEVO: Selector de Institución */}
+              <div>
+                <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">Institución</label>
+                <select
+                  value={serviceForm.institution || ""}
+                  onChange={(e) => setServiceForm({ ...serviceForm, institution: Number(e.target.value) || null })}
+                  className="w-full bg-black/40 border border-white/10 p-3 text-[11px] text-white focus:border-emerald-500/50 outline-none"
+                >
+                  <option value="">Global (Todas)</option>
+                  {institutions.map((inst) => (
+                    <option key={inst.id} value={inst.id}>{inst.name}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">Nombre del Servicio</label>

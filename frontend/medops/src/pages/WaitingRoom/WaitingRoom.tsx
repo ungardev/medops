@@ -26,6 +26,7 @@ import {
   CheckCircleIcon
 } from "@heroicons/react/24/outline";
 import { useOperationalHub } from "@/hooks/waitingroom/useOperationalHub";
+import { useInstitutions } from "@/hooks/settings/useInstitutions"; // NUEVO: Importar hook de instituciones
 const renderStatusBadge = (status: string) => {
   const base = "inline-flex items-center justify-center px-2 py-0.5 text-[8px] rounded-sm font-black uppercase tracking-wider border whitespace-nowrap transition-all duration-300";
   
@@ -84,7 +85,19 @@ export default function WaitingRoom() {
   const [showConfirmCancel, setShowConfirmCancel] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   
-  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(null);
+  // NUEVO: Obtener institución activa del contexto global
+  const { activeInstitution } = useInstitutions();
+  
+  // Lógica para manejar selectedInstitutionId:
+  // Prioridad: selección manual > institución activa global > null
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState<number | null>(() => activeInstitution?.id || null);
+  
+  // Efecto para sincronizar si la institución activa cambia en ConfigPage
+  useEffect(() => {
+    if (activeInstitution?.id && selectedInstitutionId !== activeInstitution.id) {
+      setSelectedInstitutionId(activeInstitution.id);
+    }
+  }, [activeInstitution, selectedInstitutionId]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedService, setSelectedService] = useState<number | null>(null);
   
@@ -122,12 +135,10 @@ export default function WaitingRoom() {
   const filteredPendingEntries = pendingEntries.filter(appt => {
     const matchesInstitution = !selectedInstitutionId || appt.institution === selectedInstitutionId;
     
-    // Asumiendo estructura de WaitingRoomEntry para pendingEntries
     const serviceId = appt.appointment?.serviceId;
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
     
-    // Filtro similar a liveQueue
     const hasServiceOrNoFilter = (serviceId !== undefined) || (!selectedCategory && !selectedService);
     
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
@@ -237,7 +248,7 @@ export default function WaitingRoom() {
               Cerrar Jornada
             </button>
             <button
-              onClick={handleOpenRegisterModal} // Usar la nueva función
+              onClick={handleOpenRegisterModal}
               className="px-3 py-1.5 text-[10px] font-black uppercase bg-white text-black border border-white rounded-sm hover:bg-white/90 flex items-center gap-2 transition-all duration-300"
             >
               <PlusIcon className="w-3.5 h-3.5 stroke-[3px]" />
@@ -399,7 +410,7 @@ export default function WaitingRoom() {
              onClose={() => setShowModal(false)}
              onSuccess={(id, institutionId, serviceId) => registerArrival.mutate({ 
                patient_id: id, 
-               institution_id: institutionId,
+               institution_id: institutionId || selectedInstitutionId, // Usar selectedInstitutionId si es null
                service_id: serviceId 
              })} 
              existingEntries={liveQueue} 
