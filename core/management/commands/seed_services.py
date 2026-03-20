@@ -1,6 +1,6 @@
 # core/management/commands/seed_services.py
 from django.core.management.base import BaseCommand
-from core.models import ServiceCategory, DoctorService, InstitutionSettings
+from core.models import ServiceCategory, DoctorService, InstitutionSettings, DoctorOperator
 class Command(BaseCommand):
     help = 'Crea categorías iniciales y un servicio de ejemplo'
     def handle(self, *args, **options):
@@ -15,7 +15,6 @@ class Command(BaseCommand):
         ]
         
         for cat_data in categorias_data:
-            # Solución: Desempaquetar explícitamente para evitar error de Pylance
             ServiceCategory.objects.get_or_create(
                 name=cat_data['name'],
                 defaults={'category_type': cat_data['category_type']}
@@ -26,14 +25,20 @@ class Command(BaseCommand):
         try:
             category = ServiceCategory.objects.get(name='Consulta Medica')
             institution = InstitutionSettings.objects.first()
+            doctor = DoctorOperator.objects.first()  # <-- NUEVO: Obtener un doctor existente
             
             if not institution:
                 self.stdout.write(self.style.WARNING('⚠️  No hay instituciones. Crear una manualmente en el admin.'))
                 return
             
+            if not doctor:
+                self.stdout.write(self.style.WARNING('⚠️  No hay doctores. Crear uno manualmente en el admin.'))
+                return
+            
             service, created = DoctorService.objects.get_or_create(
                 name='Consulta General',
                 defaults={
+                    'doctor': doctor,  # <-- NUEVO: Asignar doctor
                     'category': category,
                     'institution': institution,
                     'code': 'CONS-001',
