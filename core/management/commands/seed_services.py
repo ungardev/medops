@@ -1,33 +1,30 @@
 # core/management/commands/seed_services.py
 from django.core.management.base import BaseCommand
 from core.models import ServiceCategory, DoctorService, InstitutionSettings, DoctorOperator
+from django.db import IntegrityError
 class Command(BaseCommand):
     help = 'Crea categorías iniciales y un servicio de ejemplo'
     def handle(self, *args, **options):
-        # 1. Crear Categorías (con ignore_conflicts para evitar errores de duplicados)
+        # 1. Crear Categorías usando bulk_create con ignore_conflicts
         categorias_data = [
-            {'name': 'Consulta Medica', 'category_type': 'APPOINTMENT'},
-            {'name': 'Procedimientos Medicos', 'category_type': 'PROCEDURE'},
-            {'name': 'Laboratorio y Diagnostico', 'category_type': 'DIAGNOSTIC'},
-            {'name': 'Medicamentos y Farmacia', 'category_type': 'PHARMACY'},
-            {'name': 'Paquetes y Promociones', 'category_type': 'PACKAGE'},
-            {'name': 'Servicios Administrativos', 'category_type': 'ADMIN'},
+            ServiceCategory(name='Consulta Medica', category_type='APPOINTMENT'),
+            ServiceCategory(name='Procedimientos Medicos', category_type='PROCEDURE'),
+            ServiceCategory(name='Laboratorio y Diagnostico', category_type='DIAGNOSTIC'),
+            ServiceCategory(name='Medicamentos y Farmacia', category_type='PHARMACY'),
+            ServiceCategory(name='Paquetes y Promociones', category_type='PACKAGE'),
+            ServiceCategory(name='Servicios Administrativos', category_type='ADMIN'),
         ]
         
-        for cat_data in categorias_data:
-            # Usamos ignore_conflicts=True para evitar errores si la categoría ya existe
-            ServiceCategory.objects.get_or_create(
-                name=cat_data['name'],
-                defaults={'category_type': cat_data['category_type']},
-                ignore_conflicts=True
-            )
-        
-        self.stdout.write(self.style.SUCCESS('✓ Categorías iniciales creadas/verificadas'))
+        try:
+            ServiceCategory.objects.bulk_create(categorias_data, ignore_conflicts=True)
+            self.stdout.write(self.style.SUCCESS('✓ Categorías iniciales creadas/verificadas'))
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'✗ Error creando categorías: {e}'))
         # 2. Crear Servicio de Ejemplo
         try:
             category = ServiceCategory.objects.get(name='Consulta Medica')
             institution = InstitutionSettings.objects.first()
-            doctor = DoctorOperator.objects.first()  # Obtener un doctor existente
+            doctor = DoctorOperator.objects.first()
             
             if not institution:
                 self.stdout.write(self.style.WARNING('⚠️  No hay instituciones. Crear una manualmente en el admin.'))
