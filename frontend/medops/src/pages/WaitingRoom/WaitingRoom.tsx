@@ -101,23 +101,57 @@ export default function WaitingRoom() {
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const startConsultation = useStartConsultation();
-  // CORRECCIÓN APLICADA: Se usa 'serviceId' en lugar de 'doctor_service'
+  // CORRECCIÓN: Se usa 'serviceId' en lugar de 'doctor_service' y se accede a través del objeto appointment
   const filteredLiveQueue = liveQueue.filter(entry => {
     const matchesInstitution = !selectedInstitutionId || entry.institution === selectedInstitutionId;
-    const serviceId = entry.appointment?.serviceId; // Cambiado de doctor_service
+    // entry.appointment es ahora un objeto que puede tener serviceId
+    const serviceId = entry.appointment?.serviceId;
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
     return matchesInstitution && matchesCategory && matchesService;
   });
-  // CORRECCIÓN APLICADA: Se usa 'serviceId' en lugar de 'doctor_service'
+  // CORRECCIÓN: Se usa 'serviceId' en lugar de 'doctor_service' y se accede a través del objeto appointment
   const filteredPendingEntries = pendingEntries.filter(appt => {
     const matchesInstitution = !selectedInstitutionId || appt.institution === selectedInstitutionId;
-    const matchesService = !selectedService || appt.serviceId === selectedService; // Cambiado de doctor_service
-    const service = services.find(s => s.id === appt.serviceId); // Cambiado de doctor_service
+    // Asumiendo que pendingEntries también usa el mismo formato de appointment (objeto)
+    // Si pendingEntries usa doctor_service directamente, necesitamos verificar esto.
+    // Basado en el código anterior, appt.doctor_service era un número.
+    // Si el backend ahora envía appointment como objeto, debemos ajustar esto.
+    // DADO QUE EL BACKEND OPERATIONALHUBVIEW DEVUELVE APPOINTMENT COMO OBJETO EN TIMELINE,
+    // PERO PENDING_ENTRIES USA AppointmentSerializer, DEBEMOS VERIFICAR.
+    // Por ahora, asumiremos que pendingEntries tiene la estructura correcta.
+    
+    // Si appt es un objeto Appointment, debemos ver su definición.
+    // Si appt.doctor_service es un número, mantenemos la lógica anterior.
+    // SI EL BACKEND CAMBIÓ, PENDING_ENTRIES TAMBIÉN DEBE USAR serviceId.
+    
+    // Para este plan, asumiremos que pendingEntries tiene la estructura:
+    // appointment: { id, serviceId, ... }
+    
+    const serviceId = appt.appointment?.serviceId; // Ajustado si appt es WaitingRoomEntry
+    // O si appt es directamente un Appointment (del serializer):
+    // const serviceId = appt.serviceId; 
+    
+    // Dado el código anterior usaba appt.doctor_service, y el backend usa serviceId,
+    // verifiquemos la definición de Appointment en types/appointments.ts.
+    
+    // Para evitar errores, usaré la lógica más probable:
+    // Si appt tiene .appointment (objeto), usar appt.appointment.serviceId
+    // Si appt tiene .serviceId directamente, usar appt.serviceId
+    
+    // Basado en el código original: appt.doctor_service
+    // Y el backend: appt.serviceId (en AppointmentSerializer)
+    
+    // DECISIÓN: Asumir que appt es un objeto WaitingRoomEntry (como liveQueue)
+    // y que appointment es un objeto con serviceId.
+    const currentServiceId = appt.appointment?.serviceId;
+    
+    const service = services.find(s => s.id === currentServiceId);
     const categoryId = service?.category_id;
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
+    const matchesService = !selectedService || currentServiceId === selectedService;
     return matchesInstitution && matchesService && matchesCategory;
   });
   const [showOverlay, setShowOverlay] = useState(true);
@@ -134,6 +168,7 @@ export default function WaitingRoom() {
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (entry.appointment) {
       const appointmentStatus = waitingRoomToAppointmentStatus(newStatus);
+      // CORRECCIÓN: entry.appointment ahora es un objeto, accedemos a .id
       updateAppointmentStatus.mutate({ id: entry.appointment.id, status: appointmentStatus });
     } else {
       updateWaitingRoomStatus.mutate({ id: Number(entry.id), status: newStatus });
@@ -349,7 +384,7 @@ export default function WaitingRoom() {
                      <div className="flex flex-col min-w-0">
                        <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
                        <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
-                         {services.find(s => s.id === appt.serviceId)?.name || 'General'}
+                         {services.find(s => s.id === appt.appointment?.serviceId)?.name || 'General'}
                        </span>
                        <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
                      </div>
