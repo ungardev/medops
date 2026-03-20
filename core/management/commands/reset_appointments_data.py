@@ -14,8 +14,9 @@ class Command(BaseCommand):
             'core_prescriptioncomponent',# Componentes de recetas
             'core_prescription',         # Recetas
             'core_treatment',            # Tratamientos
-            'core_medicalreferral_specialties', # Tabla intermedia (NUEVO)
+            'core_medicalreferral_specialties', # Tabla intermedia
             'core_medicalreferral',      # Referencias médicas
+            'core_chargeitem',           # Ítems de cobro (NUEVO - depende de chargeorder)
             
             # Nivel 2 (Intermedios)
             'core_diagnosis',            # Diagnósticos
