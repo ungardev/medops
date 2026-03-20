@@ -2,35 +2,35 @@
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 class Command(BaseCommand):
-    help = 'Elimina datos de citas y operaciones, preservando datos maestros (ICD, Medication, Geo)'
+    help = 'Elimina datos de citas y operaciones, preservando datos maestros'
     def handle(self, *args, **options):
         self.stdout.write(self.style.WARNING('Iniciando reseteo de datos...'))
         
         # Tablas a limpiar en orden de dependencia (hojas a raíz)
         tablas_a_limpiar = [
-            # Nivel 1 (Hojas)
-            'core_medicaldocument',      # Documentos médicos
-            'core_payment',              # Pagos
-            'core_prescriptioncomponent',# Componentes de recetas
-            'core_prescription',         # Recetas
-            'core_treatment',            # Tratamientos
-            'core_medicalreferral_specialties', # Tabla intermedia
-            'core_medicalreferral',      # Referencias médicas
-            'core_chargeitem',           # Ítems de cobro
-            'core_medicalreport',        # Informes médicos
-            'core_clinicalnote',         # Notas clínicas (NUEVO - depende de appointment)
+            # Nivel 1 (Hojas - tablas que dependen de otras que vamos a borrar)
+            'core_medicaldocument',      # Dependencia: Appointment
+            'core_payment',              # Dependencia: ChargeOrder
+            'core_prescriptioncomponent',# Dependencia: Prescription
+            'core_prescription',         # Dependencia: Diagnosis
+            'core_treatment',            # Dependencia: Diagnosis
+            'core_medicalreferral_specialties', # Dependencia: MedicalReferral
+            'core_medicalreferral',      # Dependencia: Diagnosis
+            'core_chargeitem',           # Dependencia: ChargeOrder
+            'core_medicalreport',        # Dependencia: Appointment
+            'core_clinicalnote',         # Dependencia: Appointment
+            'core_vitalsigns',           # Dependencia: Appointment
             
             # Nivel 2 (Intermedios)
-            'core_diagnosis',            # Diagnósticos
-            'core_chargeorder',          # Órdenes de cobro
-            'core_waitingroomentry',     # Sala de espera
+            'core_diagnosis',            # Dependencia: Appointment
+            'core_chargeorder',          # Dependencia: Appointment
+            'core_waitingroomentry',     # Dependencia: Appointment (OneToOne)
             
             # Nivel 3 (Raíz)
-            'core_appointment',          # Citas
+            'core_appointment',          # Principal
         ]
         
         try:
-            # Usar transacción para garantizar consistencia
             with transaction.atomic():
                 with connection.cursor() as cursor:
                     for tabla in tablas_a_limpiar:
@@ -38,7 +38,6 @@ class Command(BaseCommand):
                             cursor.execute(f"DELETE FROM {tabla};")
                             self.stdout.write(self.style.SUCCESS(f'✓ Datos eliminados de {tabla}'))
                         except Exception as e:
-                            # Si la tabla no existe, ignora el error
                             if "does not exist" in str(e) or "no existe" in str(e):
                                 self.stdout.write(self.style.WARNING(f'⚠️  Tabla no existe: {tabla}'))
                             else:
