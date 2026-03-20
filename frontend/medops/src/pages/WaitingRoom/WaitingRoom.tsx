@@ -53,7 +53,7 @@ const renderWaitTime = (entry: WaitingRoomEntry) => {
       </div>
     );
   }
-  const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime() / 60000));
+  const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime()) / 60000);
   return (
     <div className="flex items-center gap-1 font-mono text-[10px] text-[var(--palantir-muted)]">
       <ClockIcon className="w-3 h-3 text-amber-500/70" />
@@ -101,19 +101,21 @@ export default function WaitingRoom() {
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const startConsultation = useStartConsultation();
+  // CORRECCIÓN APLICADA: Se usa 'serviceId' en lugar de 'doctor_service'
   const filteredLiveQueue = liveQueue.filter(entry => {
     const matchesInstitution = !selectedInstitutionId || entry.institution === selectedInstitutionId;
-    const serviceId = entry.appointment?.doctor_service;
+    const serviceId = entry.appointment?.serviceId; // Cambiado de doctor_service
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
     return matchesInstitution && matchesCategory && matchesService;
   });
+  // CORRECCIÓN APLICADA: Se usa 'serviceId' en lugar de 'doctor_service'
   const filteredPendingEntries = pendingEntries.filter(appt => {
     const matchesInstitution = !selectedInstitutionId || appt.institution === selectedInstitutionId;
-    const matchesService = !selectedService || appt.doctor_service === selectedService;
-    const service = services.find(s => s.id === appt.doctor_service);
+    const matchesService = !selectedService || appt.serviceId === selectedService; // Cambiado de doctor_service
+    const service = services.find(s => s.id === appt.serviceId); // Cambiado de doctor_service
     const categoryId = service?.category_id;
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     return matchesInstitution && matchesService && matchesCategory;
@@ -132,7 +134,7 @@ export default function WaitingRoom() {
   const handleStatusChange = (entry: WaitingRoomEntry, newStatus: WaitingRoomStatus) => {
     if (entry.appointment) {
       const appointmentStatus = waitingRoomToAppointmentStatus(newStatus);
-      updateAppointmentStatus.mutate({ id: entry.appointment, status: appointmentStatus });
+      updateAppointmentStatus.mutate({ id: entry.appointment.id, status: appointmentStatus });
     } else {
       updateWaitingRoomStatus.mutate({ id: Number(entry.id), status: newStatus });
     }
@@ -269,9 +271,9 @@ export default function WaitingRoom() {
                            {entry.patient.full_name}
                          </p>
                          
-                         {entry.appointment?.doctor_service && (
+                         {entry.appointment?.serviceId && (
                            <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
-                             {services.find(s => s.id === entry.appointment.doctor_service)?.name || 'General'}
+                             {services.find(s => s.id === entry.appointment.serviceId)?.name || 'General'}
                            </span>
                          )}
                          
@@ -347,7 +349,7 @@ export default function WaitingRoom() {
                      <div className="flex flex-col min-w-0">
                        <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
                        <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
-                         {services.find(s => s.id === appt.doctor_service)?.name || 'General'}
+                         {services.find(s => s.id === appt.serviceId)?.name || 'General'}
                        </span>
                        <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
                      </div>
@@ -365,55 +367,55 @@ export default function WaitingRoom() {
              )}
            </div>
          </div>
-        </div>
-       
-       {/* MODALES */}
-       {showModal && (
-         <RegisterWalkinModal 
-           onClose={() => setShowModal(false)}
-           onSuccess={(id, institutionId, serviceId) => registerArrival.mutate({ 
-             patient_id: id, 
-             institution_id: institutionId,
-             service_id: serviceId 
-           })} 
-           existingEntries={liveQueue} 
-           institutionId={selectedInstitutionId}
-           services={services} 
-         />
-       )}
-       
-       {entryToCancel && (
-         <ConfirmGenericModal
-           open={showConfirmCancel}
-           title="DESTRUCTIVE_ACTION_CONFIRMATION"
-           message={`Protocol: Cancel operational flow for subject ${entryToCancel.patient.full_name}?`}
-           confirmLabel="ABORT_OPERATION"
-           cancelLabel="CANCEL_PROTOCOL"
-           isDestructive={true}
-           onConfirm={() => { 
-             handleStatusChange(entryToCancel, "canceled"); 
-             setEntryToCancel(null); 
-             setShowConfirmCancel(false);
-           }}
-           onCancel={() => { 
-             setEntryToCancel(null); 
-             setShowConfirmCancel(false);
-           }}
-         />
-       )}
-       
-       {showConfirmClose && (
-         <ConfirmCloseDayModal
-           onConfirm={() => { 
-             queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] }); 
-             setShowConfirmClose(false); 
-             setToast({ message: "Daily operations terminated successfully", type: "success" });
-           }}
-           onCancel={() => setShowConfirmClose(false)}
-         />
-       )}
-       
-       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-     </div>
-   );
- }
+       </div>
+      
+        {/* MODALES */}
+        {showModal && (
+          <RegisterWalkinModal 
+            onClose={() => setShowModal(false)}
+            onSuccess={(id, institutionId, serviceId) => registerArrival.mutate({ 
+              patient_id: id, 
+              institution_id: institutionId,
+              service_id: serviceId 
+            })} 
+            existingEntries={liveQueue} 
+            institutionId={selectedInstitutionId}
+            services={services} 
+          />
+        )}
+        
+        {entryToCancel && (
+          <ConfirmGenericModal
+            open={showConfirmCancel}
+            title="DESTRUCTIVE_ACTION_CONFIRMATION"
+            message={`Protocol: Cancel operational flow for subject ${entryToCancel.patient.full_name}?`}
+            confirmLabel="ABORT_OPERATION"
+            cancelLabel="CANCEL_PROTOCOL"
+            isDestructive={true}
+            onConfirm={() => { 
+              handleStatusChange(entryToCancel, "canceled"); 
+              setEntryToCancel(null); 
+              setShowConfirmCancel(false);
+            }}
+            onCancel={() => { 
+              setEntryToCancel(null); 
+              setShowConfirmCancel(false);
+            }}
+          />
+        )}
+        
+        {showConfirmClose && (
+          <ConfirmCloseDayModal
+            onConfirm={() => { 
+              queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] }); 
+              setShowConfirmClose(false); 
+              setToast({ message: "Daily operations terminated successfully", type: "success" });
+            }}
+            onCancel={() => setShowConfirmClose(false)}
+          />
+        )}
+        
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </div>
+    );
+}

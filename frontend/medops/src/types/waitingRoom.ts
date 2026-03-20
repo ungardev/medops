@@ -20,11 +20,8 @@ export type WaitingRoomSourceType =
 // ENTRADA DE SALA DE ESPERA
 // =====================================================
 export interface WaitingRoomEntry {
-  id: number | string;  // 👈 permite ID temporal para optimistic update
-  
-  // Relaciones
-  institution: number;  // 🆕 Segmentación por sede (ya existía)
-  // ✅ CAMPOS AGREGADOS: Datos cacheados de la institución
+  id: number | string;
+  institution: number;
   institution_data?: IdentityInstitution | null;
   
   patient: {
@@ -32,23 +29,28 @@ export interface WaitingRoomEntry {
     full_name: string;
     national_id?: string | null;
   };
-  appointment?: number | null;
   
-  // Control de tiempos y flujo
+  // CAMBIO PRINCIPAL: Definir appointment como objeto con serviceId
+  appointment?: {
+    id: number;
+    serviceId?: number; // Alineado con el backend (OperationalHubView)
+    status?: string;
+    // Agregar otros campos si el backend los envía (ej. patient_id, doctor_service, etc.)
+  } | null;
+  
+  // ... resto de campos existentes
   arrival_time: string | null;
-  called_at?: string | null;  // 🆕 Hora de llamado a consultorio
+  called_at?: string | null;
   status: WaitingRoomStatus;
   status_display?: string;
   priority: WaitingRoomPriority;
   priority_display?: string;
   source_type: WaitingRoomSourceType;
   order: number;
-  
-  // Utilidades
-  waiting_time_minutes?: number;  // 🆕 Tiempo en minutos
-  patient_id_number?: string;  // 🆕 Campo display
-  appointment_status?: string;  // 🆕 Campo display
-  effective_status?: string;  // 🆕 Estado unificado
+  waiting_time_minutes?: number;
+  patient_id_number?: string;
+  appointment_status?: string;
+  effective_status?: string;
 }
 // =====================================================
 // DATOS DE ENTRADA PARA CREAR/EDITAR ENTRADA
