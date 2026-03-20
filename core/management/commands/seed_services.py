@@ -4,7 +4,7 @@ from core.models import ServiceCategory, DoctorService, InstitutionSettings, Doc
 class Command(BaseCommand):
     help = 'Crea categorías iniciales y un servicio de ejemplo'
     def handle(self, *args, **options):
-        # 1. Crear Categorías
+        # 1. Crear Categorías (con ignore_conflicts para evitar errores de duplicados)
         categorias_data = [
             {'name': 'Consulta Medica', 'category_type': 'APPOINTMENT'},
             {'name': 'Procedimientos Medicos', 'category_type': 'PROCEDURE'},
@@ -15,9 +15,11 @@ class Command(BaseCommand):
         ]
         
         for cat_data in categorias_data:
+            # Usamos ignore_conflicts=True para evitar errores si la categoría ya existe
             ServiceCategory.objects.get_or_create(
                 name=cat_data['name'],
-                defaults={'category_type': cat_data['category_type']}
+                defaults={'category_type': cat_data['category_type']},
+                ignore_conflicts=True
             )
         
         self.stdout.write(self.style.SUCCESS('✓ Categorías iniciales creadas/verificadas'))
@@ -25,7 +27,7 @@ class Command(BaseCommand):
         try:
             category = ServiceCategory.objects.get(name='Consulta Medica')
             institution = InstitutionSettings.objects.first()
-            doctor = DoctorOperator.objects.first()  # <-- NUEVO: Obtener un doctor existente
+            doctor = DoctorOperator.objects.first()  # Obtener un doctor existente
             
             if not institution:
                 self.stdout.write(self.style.WARNING('⚠️  No hay instituciones. Crear una manualmente en el admin.'))
@@ -38,7 +40,7 @@ class Command(BaseCommand):
             service, created = DoctorService.objects.get_or_create(
                 name='Consulta General',
                 defaults={
-                    'doctor': doctor,  # <-- NUEVO: Asignar doctor
+                    'doctor': doctor,
                     'category': category,
                     'institution': institution,
                     'code': 'CONS-001',
