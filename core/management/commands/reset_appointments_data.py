@@ -1,3 +1,4 @@
+# core/management/commands/reset_appointments_data.py
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 class Command(BaseCommand):
@@ -20,9 +21,6 @@ class Command(BaseCommand):
             
             # Nivel 3 (Raíz)
             'core_appointment',          # Citas
-            
-            # Tablas de servicios (si existen y son independientes)
-            # NOTA: ServiceRecord no existe en models.py, se omite
         ]
         
         try:

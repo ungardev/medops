@@ -15,8 +15,11 @@ class Command(BaseCommand):
         ]
         
         for cat_data in categorias_data:
-            # Ignorar error de Pylance (falso positivo)
-            ServiceCategory.objects.get_or_create(**cat_data) # type: ignore[arg-type]
+            # Solución: Desempaquetar explícitamente para evitar error de Pylance
+            ServiceCategory.objects.get_or_create(
+                name=cat_data['name'],
+                defaults={'category_type': cat_data['category_type']}
+            )
         
         self.stdout.write(self.style.SUCCESS('✓ Categorías iniciales creadas/verificadas'))
         # 2. Crear Servicio de Ejemplo
