@@ -1,15 +1,8 @@
 // src/components/Consultation/PatientHeader.tsx
 import type { Patient } from "../../types/patients";
-import { Link } from "react-router-dom";
 import { 
   UserIcon, 
-  MapPinIcon, 
-  PhoneIcon, 
-  EnvelopeIcon, 
-  CakeIcon,
   ExclamationTriangleIcon,
-  IdentificationIcon,
-  ArrowTopRightOnSquareIcon
 } from "@heroicons/react/24/outline";
 interface PatientHeaderProps {
   patient: Patient & {
@@ -17,132 +10,41 @@ interface PatientHeaderProps {
     age?: number | null;
   };
 }
-interface AddressChain {
-  country: string; state: string; municipality: string;
-  parish: string; neighborhood: string;
-}
-const extractPhone = (contact: any): string => {
-  if (!contact) return "NO_DATA_LINK";
-  try {
-    const p = typeof contact === 'string' && contact.startsWith('{') ? JSON.parse(contact) : contact;
-    return p.phone || p.tel || p.mobile || String(contact);
-  } catch { return String(contact); }
-};
-const buildFullAddress = (patient: Patient): string => {
-  const c = (patient.address_chain as AddressChain);
-  return [c?.neighborhood, c?.parish, c?.state, c?.country]
-    .filter(Boolean).join(", ") || "LOCATION_UNKNOWN";
-};
 export default function PatientHeader({ patient }: PatientHeaderProps) {
-  const phone = extractPhone(patient.contact_info);
-  const fullAddress = buildFullAddress(patient);
-  
   return (
-    <div className="relative overflow-hidden bg-black/40 border border-[var(--palantir-border)] p-4 group">
-      {/* ✅ Eliminado: Marco azul lateral izquierdo (línea con grupo) */}
-      
-      <div className="flex flex-col md:flex-row gap-6 relative z-10">
-        
-        {/* AVATAR / STATUS SECTION */}
-        <div className="flex flex-row md:flex-col items-center gap-4 pb-4 md:pb-0">
-          <div className="relative">
-            <div className="w-16 h-16 rounded-full border-2 border-[var(--palantir-active)] flex items-center justify-center bg-[var(--palantir-active)]/10 shadow-[0_0_15px_rgba(30,136,229,0.2)]">
-              <UserIcon className="w-8 h-8 text-[var(--palantir-active)]" />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-[var(--palantir-bg)] rounded-full animate-pulse" />
+    <div className="flex items-center justify-end gap-6 w-full">
+      {/* Datos del Paciente (Izquierda) */}
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-[var(--palantir-active)]/10 flex items-center justify-center border border-[var(--palantir-active)]/30">
+          <UserIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+        </div>
+        <div className="text-right">
+          <div className="text-sm font-bold uppercase text-white truncate max-w-[150px] leading-tight">
+            {patient.full_name || "MISSING_IDENTITY"}
           </div>
-          <div className="text-center md:text-left">
-            <span className="text-[9px] font-mono text-white/40 uppercase tracking-tighter">Subject_Status</span>
-            {/* ✅ FIX: Quitado italic */}
-            <div className="text-[10px] font-black text-emerald-500 uppercase">Active_Session</div>
+          <div className="text-[8px] font-mono text-white/50">
+            REF: {patient.id.toString().padStart(6, '0')}
           </div>
         </div>
+      </div>
+      {/* Indicadores Rápidos (Derecha) */}
+      <div className="flex items-center gap-4 pl-4 border-l border-white/10">
+        {/* Alerta Médica (Discreta) */}
+        {patient.allergies && (
+          <div className="flex items-center gap-1 text-amber-400" title="Biological Risk Alert">
+            <ExclamationTriangleIcon className="w-3 h-3" />
+            <span className="text-[8px] font-black uppercase">ALERT</span>
+          </div>
+        )}
         
-        {/* CORE INFO SECTION */}
-        <div className="flex-1 space-y-4">
-          {/* Nombre y Acceso Rápido */}
-          <div className="flex items-center justify-between group-name">
-            <div className="flex items-baseline gap-3">
-              {/* ✅ FIX: Quitado italic del nombre */}
-              <h2 className="text-xl font-black uppercase tracking-tighter text-white">
-                {patient.full_name || "MISSING_IDENTITY"}
-              </h2>
-              <span className="text-[10px] font-mono text-[var(--palantir-active)] border border-[var(--palantir-active)]/30 px-2">
-                REF:{patient.id.toString().padStart(6, '0')}
-              </span>
-            </div>
-            <Link
-              to={`/patients/${patient.id}`}
-              className="flex items-center gap-2 text-[10px] font-black uppercase text-white/40 hover:text-emerald-400 transition-colors"
-            >
-              Master_Profile <ArrowTopRightOnSquareIcon className="w-3 h-3" />
-            </Link>
-          </div>
-          
-          {/* Grid de Biometría Táctica */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest flex items-center gap-1">
-                <CakeIcon className="w-3 h-3" /> Bio_Age
-              </p>
-              <p className="text-xs font-bold text-white">{patient.age || "—"} Years</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest flex items-center gap-1">
-                <IdentificationIcon className="w-3 h-3" /> Gender_ID
-              </p>
-              <p className="text-xs font-bold uppercase text-white">{patient.gender === 'M' ? 'Male' : patient.gender === 'F' ? 'Female' : 'Other'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest flex items-center gap-1">
-                <PhoneIcon className="w-3 h-3" /> Comms_Link
-              </p>
-              <p className="text-xs font-bold font-mono text-white tracking-tighter">{phone}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[9px] font-mono text-white/40 uppercase tracking-widest flex items-center gap-1">
-                <EnvelopeIcon className="w-3 h-3" /> Data_Relay
-              </p>
-              <p className="text-xs font-bold truncate max-w-[150px] text-white">{patient.email || "N/A"}</p>
-            </div>
-          </div>
-          
-          {/* Dirección */}
-          {/* ✅ FIX: Quitado italic */}
-          <div className="flex items-start gap-2 pt-2 border-t border-white/10">
-            <MapPinIcon className="w-3 h-3 text-emerald-400 mt-0.5" />
-            <p className="text-[10px] font-mono text-white/50 uppercase">
-              Geographic_Coords: <span className="text-white">{fullAddress}</span>
-            </p>
-          </div>
-        </div>
-        
-        {/* ALERTS & BALANCE SECTION */}
-        <div className="md:w-64 space-y-3">
-          {/* Alertas Médicas */}
-          {patient.allergies && (
-            <div className="bg-amber-500/10 border border-amber-500/30 p-2">
-              <div className="flex items-center gap-2 mb-1">
-                <ExclamationTriangleIcon className="w-3 h-3 text-amber-400" />
-                <span className="text-[9px] font-black text-amber-400 uppercase tracking-widest">Biological_Risk</span>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {String(patient.allergies).split(",").map((a, i) => (
-                  <span key={i} className="text-[8px] font-black bg-amber-500 text-black px-1 uppercase">
-                    {a.trim()}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Balance Financiero */}
-          <div className="p-2 border border-white/10">
-            <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">Financial_Ledger</span>
-            <p className="text-sm font-bold text-white">
-              {patient.balance_due && patient.balance_due > 0 ? `DEBIT: $${patient.balance_due.toFixed(2)}` : 'CREDIT_CLEAR'}
-            </p>
-          </div>
+        {/* Balance Financiero */}
+        <div className="text-[9px] font-mono">
+          <span className="text-white/40">BALANCE:</span>
+          <span className={`font-bold ml-1 ${patient.balance_due && patient.balance_due > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+            {patient.balance_due && patient.balance_due > 0 
+              ? `$${patient.balance_due.toFixed(2)}` 
+              : '$0.00'}
+          </span>
         </div>
       </div>
     </div>

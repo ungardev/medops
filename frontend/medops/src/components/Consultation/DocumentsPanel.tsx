@@ -66,7 +66,6 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
               <CloudArrowUpIcon className="w-3.5 h-3.5 text-blue-400" />
               File Upload
             </span>
-            {/* ⚠️ ELIMINADO: Badge de encriptación */}
           </div>
           <form onSubmit={handleUpload} className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -79,7 +78,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 />
                 <div className={`h-10 flex items-center justify-center border border-dashed rounded-sm transition-all ${file ? 'border-blue-400 bg-blue-400/5' : 'border-white/10 group-hover:border-blue-400/50'}`}>
                   <span className="text-[10px] font-mono text-white/60 truncate px-2">
-                    {file ? file.name : "Select File"}
+                    {file ? file.name : "SELECT FILE"}
                   </span>
                 </div>
               </div>
@@ -95,7 +94,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 onChange={(e) => setCategory(e.target.value)}
                 className="bg-black/40 border border-white/10 px-3 h-10 text-[10px] font-mono text-white focus:outline-none focus:border-blue-400/50"
               >
-                <option value="">Category</option>
+                <option value="">CATEGORY</option>
                 {CATEGORY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
