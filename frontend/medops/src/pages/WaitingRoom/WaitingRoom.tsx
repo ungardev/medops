@@ -8,6 +8,7 @@ import Toast from "@/components/Common/Toast";
 import PageHeader from "@/components/Common/PageHeader";
 import InstitutionSelector from "@/components/WaitingRoom/InstitutionSelector";
 import InstitutionFilter from "@/components/WaitingRoom/InstitutionFilter";
+import EliteDropdown from "@/components/Common/EliteDropdown"; // ⚠️ NUEVO: Componente estilizado
 import { useUpdateWaitingRoomStatus } from "@/hooks/waitingroom/useUpdateWaitingRoomStatus";
 import { useRegisterArrival } from "@/hooks/waitingroom/useRegisterArrival";
 import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
@@ -150,6 +151,10 @@ export default function WaitingRoom() {
     return matchesInstitution && matchesService && matchesCategory && hasServiceOrNoFilter;
   });
   // ----------------------------------
+  // Servicios filtrados por categoría seleccionada (para el dropdown de servicios)
+  const filteredServices = selectedCategory
+    ? services.filter(s => s.category_id === selectedCategory)
+    : services;
   const [showOverlay, setShowOverlay] = useState(true);
   
   useEffect(() => {
@@ -210,26 +215,26 @@ export default function WaitingRoom() {
     }
     setShowModal(true);
   };
+  // Componente de filtros actualizado con EliteDropdown
   const FilterControls = () => (
     <div className="flex gap-2">
-      <select 
-        value={selectedCategory ?? ''}
-        onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : null)}
-        className="bg-black/40 border border-white/10 text-white text-xs p-1 rounded max-w-[150px]"
-      >
-        <option value="">Todas las Categorías</option>
-        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-      </select>
-      <select 
-        value={selectedService ?? ''}
-        onChange={(e) => setSelectedService(e.target.value ? Number(e.target.value) : null)}
-        className="bg-black/40 border border-white/10 text-white text-xs p-1 rounded max-w-[150px]"
-      >
-        <option value="">Todos los Servicios</option>
-        {services
-          .filter(s => !selectedCategory || s.category_id === selectedCategory)
-          .map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-      </select>
+      {/* Selector de Categorías con diseño Elite */}
+      <EliteDropdown
+        options={categories}
+        value={selectedCategory}
+        onChange={setSelectedCategory}
+        placeholder="Todas las Categorías"
+        label="CATEGORÍAS"
+      />
+      
+      {/* Selector de Servicios con diseño Elite */}
+      <EliteDropdown
+        options={filteredServices}
+        value={selectedService}
+        onChange={setSelectedService}
+        placeholder="Todos los Servicios"
+        label="SERVICIOS"
+      />
     </div>
   );
   return (
