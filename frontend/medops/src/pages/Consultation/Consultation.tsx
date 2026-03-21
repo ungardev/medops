@@ -138,7 +138,7 @@ export default function Consultation() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 space-y-4">
       
-      {/* PageHeader con PatientHeader integrado (sin botones de acción aquí) */}
+      {/* PageHeader sin PatientHeader (se mueve debajo) */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -156,9 +156,11 @@ export default function Consultation() {
             color: "text-emerald-400 font-bold"
           }
         ]}
-        // PatientHeader como children, centrado en el espacio disponible
-        children={patient ? <PatientHeader patient={patient} /> : null}
       />
+      
+      {/* PatientHeader ahora es un elemento hermano debajo de PageHeader */}
+      {patient && <PatientHeader patient={patient} />}
+      
       {/* Alerta Cross-Institution (Discreta) */}
       {isCrossInstitution && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-sm p-2 mx-4">
@@ -175,9 +177,10 @@ export default function Consultation() {
           </div>
         </div>
       )}
+      
       {/* Layout Principal Compacto */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4">
-        {/* SWAPPED: Main (Workflow) now first in DOM to appear on Left (col-span-9) */}
+        {/* Main (Workflow) - Izquierda (9 columnas) */}
         <main className="lg:col-span-9 space-y-4">
           <div className="bg-black/20 border border-white/10 p-1 relative min-h-[500px] flex flex-col shadow-2xl">
             <div className="flex-1 bg-black/10 p-4">
@@ -189,7 +192,7 @@ export default function Consultation() {
               />
             </div>
             
-            {/* Footer con Botones de Acción (Restaurados) */}
+            {/* Footer con Botones de Acción */}
             <footer className="border-t border-white/10 bg-black/40 p-3 flex flex-wrap items-center justify-between gap-2 backdrop-blur-md">
               <div className="flex gap-2">
                 <button
@@ -241,7 +244,7 @@ export default function Consultation() {
           </div>
         </main>
         
-        {/* SWAPPED: Aside (Docs/Charges) now second in DOM to appear on Right (col-span-3) */}
+        {/* Aside (Docs/Charges) - Derecha (3 columnas) */}
         <aside className="lg:col-span-3 space-y-4">
           <CollapsiblePanel title="Clinical_Documents">
             <DocumentsPanel patientId={appointment.patient.id} appointmentId={appointment.id} />
@@ -251,6 +254,7 @@ export default function Consultation() {
           </CollapsiblePanel>
         </aside>
       </div>
+      
       {/* Commit Session Modal */}
       <CommitSessionModal
         open={showCommitModal}
