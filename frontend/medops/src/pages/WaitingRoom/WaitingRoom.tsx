@@ -26,7 +26,8 @@ import {
   CheckCircleIcon
 } from "@heroicons/react/24/outline";
 import { useOperationalHub } from "@/hooks/waitingroom/useOperationalHub";
-import { useInstitutions } from "@/hooks/settings/useInstitutions"; // NUEVO: Importar hook de instituciones
+import { useInstitutions } from "@/hooks/settings/useInstitutions"; 
+// ... (renderStatusBadge y renderWaitTime permanecen igual - no cambian)
 const renderStatusBadge = (status: string) => {
   const base = "inline-flex items-center justify-center px-2 py-0.5 text-[8px] rounded-sm font-black uppercase tracking-wider border whitespace-nowrap transition-all duration-300";
   
@@ -98,6 +99,7 @@ export default function WaitingRoom() {
       setSelectedInstitutionId(activeInstitution.id);
     }
   }, [activeInstitution, selectedInstitutionId]);
+  
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedService, setSelectedService] = useState<number | null>(null);
   
@@ -119,13 +121,13 @@ export default function WaitingRoom() {
   const filteredLiveQueue = liveQueue.filter(entry => {
     const matchesInstitution = !selectedInstitutionId || entry.institution === selectedInstitutionId;
     
-    // Verificar si hay servicio asignado en la cita
-    const serviceId = entry.appointment?.serviceId;
+    // ⚠️ CORRECCIÓN: Manejo seguro de serviceId (usando el nuevo campo del serializer)
+    const serviceId = entry.serviceId; // Acceso directo al campo serviceId del serializer
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
     
     // Si se selecciona categoría/servicio pero la entrada no tiene servicio, no mostrar
-    const hasServiceOrNoFilter = (serviceId !== undefined) || (!selectedCategory && !selectedService);
+    const hasServiceOrNoFilter = (serviceId !== undefined && serviceId !== null) || (!selectedCategory && !selectedService);
     
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
@@ -135,11 +137,12 @@ export default function WaitingRoom() {
   const filteredPendingEntries = pendingEntries.filter(appt => {
     const matchesInstitution = !selectedInstitutionId || appt.institution === selectedInstitutionId;
     
-    const serviceId = appt.appointment?.serviceId;
+    // ⚠️ CORRECCIÓN: Para appointments, el serviceId suele estar en doctor_service o doctor_service.id
+    const serviceId = appt.doctor_service || appt.doctor_service?.id; 
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
     
-    const hasServiceOrNoFilter = (serviceId !== undefined) || (!selectedCategory && !selectedService);
+    const hasServiceOrNoFilter = (serviceId !== undefined && serviceId !== null) || (!selectedCategory && !selectedService);
     
     const matchesCategory = !selectedCategory || categoryId === selectedCategory;
     const matchesService = !selectedService || serviceId === selectedService;
@@ -177,13 +180,21 @@ export default function WaitingRoom() {
     }
   };
   const handleCheckIn = async (appointment: Appointment) => {
+    // ⚠️ CORRECCIÓN DE TIPO: Asegurar que institution_id sea number | null
+    const institutionIdToSend = selectedInstitutionId ?? activeInstitution?.id ?? null;
+    
+    if (!institutionIdToSend) {
+      setToast({ message: "No se puede registrar llegada sin institución activa", type: "error" });
+      return;
+    }
     try {
       await registerArrival.mutateAsync({
         patient_id: appointment.patient.id,
         appointment_id: appointment.id,
-        institution_id: selectedInstitutionId
+        institution_id: institutionIdToSend
       });
       
+      // Invalidar caché operativa
       queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] });
       
       setToast({ message: "Llegada registrada exitosamente", type: "success" });
@@ -192,7 +203,6 @@ export default function WaitingRoom() {
       setToast({ message: "Error al registrar llegada", type: "error" });
     }
   };
-  // Nueva función para abrir el modal con datos precargados
   const handleOpenRegisterModal = async () => {
     // Si no hay datos de servicios o están vacíos, intentar refrescar
     if (!services || services.length === 0) {
@@ -306,9 +316,10 @@ export default function WaitingRoom() {
                            {entry.patient.full_name}
                          </p>
                          
-                         {entry.appointment?.serviceId && (
+                         {/* ⚠️ CORRECCIÓN: Usar entry.serviceId directamente del serializer */}
+                         {entry.serviceId && (
                            <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
-                             {services.find(s => s.id === entry.appointment.serviceId)?.name || 'General'}
+                             {services.find(s => s.id === entry.serviceId)?.name || 'General'}
                            </span>
                          )}
                          
@@ -384,7 +395,7 @@ export default function WaitingRoom() {
                      <div className="flex flex-col min-w-0">
                        <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
                        <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
-                         {services.find(s => s.id === appt.appointment?.serviceId)?.name || 'General'}
+                         {services.find(s => s.id === appt.doctor_service)?.name || 'General'}
                        </span>
                        <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
                      </div>
@@ -408,13 +419,19 @@ export default function WaitingRoom() {
          {showModal && (
            <RegisterWalkinModal 
              onClose={() => setShowModal(false)}
-             onSuccess={(id, institutionId, serviceId) => registerArrival.mutate({ 
-               patient_id: id, 
-               institution_id: institutionId || selectedInstitutionId, // Usar selectedInstitutionId si es null
-               service_id: serviceId 
-             })} 
+             onSuccess={async (id, institutionId, serviceId) => {
+                // ⚠️ CORRECCIÓN DE TIPO: Asegurar que institution_id sea number | null
+                const institutionIdToSend = institutionId ?? selectedInstitutionId ?? activeInstitution?.id ?? null;
+                await registerArrival.mutateAsync({ 
+                  patient_id: id, 
+                  institution_id: institutionIdToSend,
+                  service_id: serviceId 
+                });
+                // ⚠️ CORRECCIÓN: Invalidar caché operativa para ver la entrada inmediatamente
+                queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] });
+             }}
              existingEntries={liveQueue} 
-             institutionId={selectedInstitutionId}
+             institutionId={selectedInstitutionId || activeInstitution?.id}
              services={services} 
            />
          )}
@@ -452,5 +469,5 @@ export default function WaitingRoom() {
          
          {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
        </div>
-    );
+     );
 }

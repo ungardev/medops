@@ -1235,105 +1235,80 @@ def update_appointment_notes(request, pk): return Response({"ok": True})
 @permission_classes([conditional_permission()])
 def register_arrival(request):
     """
-    Registra la llegada de un paciente a la sala de espera.
-    Crea una Appointment walk-in asociada al servicio seleccionado.
+    Registra la llegada de un paciente (walk-in o cita existente).
+    Crea una Appointment (si no existe) y una WaitingRoomEntry.
     """
-    patient_id = request.data.get('patient_id')
-    institution_id = request.data.get('institution_id') or request.headers.get('X-Institution-ID')
-    service_id = request.data.get('service_id')  # Nuevo: Servicio seleccionado
-    
-    if not institution_id:
-        return Response({"error": "Institution ID required"}, status=400)
-    
     try:
-        institution_id = int(institution_id)
-    except (ValueError, TypeError):
-        return Response({"error": "Invalid institution ID format"}, status=400)
-    
-    patient = get_object_or_404(Patient, pk=patient_id)
-    institution = get_object_or_404(InstitutionSettings, pk=institution_id)
-    
-    # Verificar si hay entrada ACTIVA
-    active_entry = WaitingRoomEntry.objects.filter(
-        patient=patient,
-        institution=institution,
-        status__in=['waiting', 'in_consultation']
-    ).first()
-    
-    if active_entry:
-        return Response({
-            "error": "Patient already in waiting room",
-            "entry_id": active_entry.id,
-            "status": active_entry.status
-        }, status=400)
-    
-    # Obtener DoctorService si se proporciona service_id
-    doctor_service = None
-    if service_id:
-        try:
-            # Verificar que el servicio pertenece a la institución o es global
-            doctor_service = DoctorService.objects.get(
-                id=service_id, 
-                institution_id__in=[institution_id, None] # Permitir servicios globales
-            )
-        except DoctorService.DoesNotExist:
-            return Response({"error": "Service not found in this institution"}, status=400)
-    
-    # Manejo de Appointment
-    appointment_id = request.data.get('appointment_id')
-    appointment = None
-    
-    if appointment_id:
-        # Si se proporciona un appointment_id, usar la cita existente
-        appointment = get_object_or_404(Appointment, pk=int(appointment_id))
-    else:
-        # Crear una nueva Appointment para Walk-in
-        appointment_data = {
-            'patient': patient,
-            'institution': institution,
-            'doctor': doctor_service.doctor if doctor_service else None,
-            'appointment_date': timezone.now().date(),
-            'status': 'pending',
-            'appointment_type': 'general',
-            'expected_amount': Decimal('0.00'),
-            'tentative_date': timezone.now().date(),
-            'tentative_time': timezone.now().time()
-        }
+        # Validar datos de entrada
+        patient_id = request.data.get('patient_id')
+        appointment_id = request.data.get('appointment_id')
+        institution_id = request.data.get('institution_id') or request.headers.get('X-Institution-ID')
+        service_id = request.data.get('service_id')
         
-        # Asignar servicio y mapear tipo de cita
-        if doctor_service:
-            appointment_data['doctor_service'] = doctor_service
+        if not patient_id:
+            return Response({"error": "El ID del paciente es requerido"}, status=400)
+        
+        if not institution_id:
+            return Response({"error": "El ID de la institución es requerido"}, status=400)
+        
+        # Obtener paciente e institución
+        patient = get_object_or_404(Patient, pk=int(patient_id))
+        institution = get_object_or_404(InstitutionSettings, pk=int(institution_id))
+        
+        # Manejo de Appointment
+        appointment = None
+        
+        if appointment_id:
+            # Si se proporciona un appointment_id, usar la cita existente
+            appointment = get_object_or_404(Appointment, pk=int(appointment_id))
+            # Actualizar estado a 'arrived' si estaba 'pending'
+            if appointment.status in ['pending', 'tentative', 'confirmed']:
+                appointment.status = 'arrived'
+                appointment.arrival_time = timezone.now()
+                appointment.save(update_fields=['status', 'arrival_time'])
+        else:
+            # Crear una nueva Appointment para Walk-in
+            appointment_data = {
+                'patient': patient,
+                'doctor': request.user.doctor_profile if hasattr(request.user, 'doctor_profile') else None,
+                'institution': institution,
+                'appointment_date': timezone.now().date(),
+                'status': 'arrived',  # ⚠️ CORRECCIÓN: Estado 'arrived' inmediatamente para walk-in
+                'arrival_time': timezone.now(),
+                'appointment_type': 'walkin',
+                'notes': 'Llegada Walk-in registrada manualmente',
+            }
             
-            # Mapeo de appointment_type basado en categoría del servicio
-            if doctor_service.category:
-                category_name = doctor_service.category.name.lower()
-                if 'consulta' in category_name:
-                    appointment_data['appointment_type'] = 'consultation'
-                elif 'laboratorio' in category_name or 'diagnostico' in category_name:
-                    appointment_data['appointment_type'] = 'diagnostic'
-                elif 'procedimiento' in category_name:
-                    appointment_data['appointment_type'] = 'procedure'
-                elif 'medicamento' in category_name or 'farmacia' in category_name:
-                    appointment_data['appointment_type'] = 'pharmacy'
-                elif 'paquete' in category_name or 'promocion' in category_name:
-                    appointment_data['appointment_type'] = 'package'
-                elif 'administrativo' in category_name:
-                    appointment_data['appointment_type'] = 'admin'
+            # Asignar servicio si se proporciona
+            if service_id:
+                try:
+                    doctor_service = DoctorService.objects.get(
+                        id=service_id, 
+                        institution_id__in=[institution_id, None]
+                    )
+                    appointment_data['doctor_service'] = doctor_service
+                except DoctorService.DoesNotExist:
+                    return Response({"error": "Service not found in this institution"}, status=400)
+            
+            appointment = Appointment.objects.create(**appointment_data)
         
-        appointment = Appointment.objects.create(**appointment_data)
-    
-    # Crear la entrada en la sala de espera asociada a la Appointment
-    entry = WaitingRoomEntry.objects.create(
-        patient=patient,
-        institution=institution,
-        appointment=appointment,
-        status='waiting',
-        source_type='walkin' if not appointment_id else 'scheduled',
-        arrival_time=timezone.now(),
-    )
-    
-    serializer = WaitingRoomEntrySerializer(entry)
-    return Response(serializer.data, status=201)
+        # Crear la entrada en la sala de espera asociada a la Appointment
+        # ⚠️ CORRECCIÓN: Asegurar que el estado sea 'waiting' para que aparezca en la cola
+        entry = WaitingRoomEntry.objects.create(
+            patient=patient,
+            institution=institution,
+            appointment=appointment,
+            status='waiting',
+            source_type='walkin' if not appointment_id else 'scheduled',
+            arrival_time=timezone.now(),
+        )
+        
+        serializer = WaitingRoomEntrySerializer(entry)
+        return Response(serializer.data, status=201)
+        
+    except Exception as e:
+        logger.error(f"Error en register_arrival: {str(e)}")
+        return Response({"error": str(e)}, status=500)
 
 
 # Auditoría y Logs

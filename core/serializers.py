@@ -1293,9 +1293,7 @@ class InstitutionSettingsSerializer(serializers.ModelSerializer):
 class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     """
     Serializer de LISTADO: Optimizado para el tablero de control de recepción.
-    Muestra quién está en fila, su prioridad y cuánto tiempo lleva esperando.
     """
-    # ✅ AGREGAR: Patient anidado para el frontend
     patient = PatientReadSerializer(read_only=True)
     patient_name = serializers.CharField(source='patient.get_full_name', read_only=True)
     patient_id_number = serializers.CharField(source='patient.national_id', read_only=True)
@@ -1303,17 +1301,21 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
     waiting_time_minutes = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     
-    # ✅ AGREGAR: Institution anidado
     institution_data = InstitutionSettingsSerializer(source='institution', read_only=True)
+    
+    # ⚠️ NUEVO CAMPO: serviceId para filtro frontend
+    serviceId = serializers.SerializerMethodField()
+    
     class Meta:
         model = WaitingRoomEntry
         fields = [
             "id", 
-            "patient",           # ✅ Objeto completo del paciente
-            "patient_name",       # ✅ Nombre formateado
-            "patient_id_number",  # ✅ Cédula del paciente
+            "patient",           
+            "patient_name",       
+            "patient_id_number",  
             "appointment", 
             "appointment_status",
+            "serviceId",          # ⚠️ NUEVO
             "arrival_time", 
             "waiting_time_minutes",
             "status", 
@@ -1321,15 +1323,21 @@ class WaitingRoomEntrySerializer(serializers.ModelSerializer):
             "priority", 
             "source_type", 
             "order",
-            "institution",       # ✅ ID de la institución
-            "institution_data",  # ✅ Objeto completo de la institución
+            "institution",       
+            "institution_data",  
         ]
+    
     def get_waiting_time_minutes(self, obj) -> int:
         """Calcula el tiempo transcurrido desde la llegada en tiempo real."""
         if obj.status == 'waiting' and obj.arrival_time:
             delta = timezone.now() - obj.arrival_time
             return int(delta.total_seconds() // 60)
         return 0
+    def get_serviceId(self, obj):
+        """Obtiene el ID del servicio asociado a la cita (si existe)."""
+        if obj.appointment and obj.appointment.doctor_service:
+            return obj.appointment.doctor_service.id
+        return None
 
 
 class WaitingRoomEntryWriteSerializer(serializers.ModelSerializer):
