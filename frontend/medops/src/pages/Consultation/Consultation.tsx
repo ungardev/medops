@@ -155,17 +155,8 @@ export default function Consultation() {
             label: "STATUS_CORE", 
             value: appointment.status.toUpperCase(),
             color: appointment.status === 'in_consultation' ? "text-emerald-500" : "text-amber-500"
-          },
-          { 
-            label: "INSTITUTION", 
-            value: activeInstitution?.name?.toUpperCase().slice(0, 15) || "NONE_SELECTED",
-            color: isCrossInstitution ? "text-yellow-500" : "text-purple-500"
-          },
-          { 
-            label: "ENCRYPTION", 
-            value: "LIVE_AES256",
-            color: "text-white/40"
           }
+          // ⚠️ SE ELIMINARON LOS BADGES: INSTITUTION Y ENCRYPTION
         ]}
         actions={
           <div className="flex items-center gap-3 px-3">
