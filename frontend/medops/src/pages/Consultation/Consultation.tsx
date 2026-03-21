@@ -7,8 +7,6 @@ import {
   DocumentTextIcon, 
   ChevronRightIcon,
   ExclamationTriangleIcon,
-  // FingerPrintIcon, // ELIMINADO: Ya no se usa
-  // BuildingOfficeIcon, // ELIMINADO: Ya no se usa
 } from "@heroicons/react/24/outline";
 import { PatientHeader, DocumentsPanel, ChargeOrderPanel } from "../../components/Consultation";
 import ConsultationWorkflow from "../../components/Consultation/ConsultationWorkflow";
@@ -140,7 +138,7 @@ export default function Consultation() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 space-y-4">
       
-      {/* PageHeader con PatientHeader integrado y acciones optimizadas */}
+      {/* PageHeader con PatientHeader integrado (sin botones de acción aquí) */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -158,55 +156,8 @@ export default function Consultation() {
             color: "text-emerald-400 font-bold"
           }
         ]}
-        // Children: PatientHeader Compacto (Alineado a la derecha, antes de los botones)
+        // PatientHeader como children, centrado en el espacio disponible
         children={patient ? <PatientHeader patient={patient} /> : null}
-        // Actions: Botones de control
-        actions={
-          <div className="flex items-center gap-2">
-            <button
-              onClick={async () => {
-                if(confirm("Confirm: Abort and Discard Session?")) {
-                  queryClient.setQueryData(["appointment", "current"], null);
-                  await updateStatus.mutateAsync({ id: appointment.id, status: "canceled" });
-                  navigate("/waitingroom");
-                }
-              }}
-              disabled={updateStatus.isPending || !isInstitutionMatch}
-              className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 border border-red-500/20 transition-all disabled:opacity-50"
-            >
-              <ExclamationTriangleIcon className="w-3.5 h-3.5" /> Abort
-            </button>
-            
-            {canGenerateReport && isInstitutionMatch && (
-              <>
-                <button
-                  disabled={generateDocuments.isPending}
-                  onClick={handleGenerateDocuments}
-                  className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all"
-                >
-                  <DocumentTextIcon className="w-3.5 h-3.5" /> Export
-                </button>
-                <button
-                  disabled={generateReport.isPending}
-                  onClick={handleGenerateReport}
-                  className="flex items-center gap-2 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest border border-blue-500/40 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
-                >
-                  <ShieldCheckIcon className="w-3.5 h-3.5" /> Report
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => setShowCommitModal(true)}
-              disabled={updateStatus.isPending || !isInstitutionMatch}
-              className="group flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all"
-            >
-              <span className="text-[10px] font-black uppercase tracking-widest">
-                Commit
-              </span>
-              <ChevronRightIcon className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        }
       />
       {/* Alerta Cross-Institution (Discreta) */}
       {isCrossInstitution && (
@@ -246,9 +197,54 @@ export default function Consultation() {
               />
             </div>
             
-            <footer className="border-t border-white/10 bg-black/40 p-3 flex flex-wrap items-center justify-end gap-2 backdrop-blur-md">
-               {/* Botones redundantes eliminados del footer, ya están en el PageHeader */}
-               <span className="text-[9px] text-white/30 mr-auto">SESS-{appointment.id}</span>
+            {/* Footer con Botones de Acción (Restaurados) */}
+            <footer className="border-t border-white/10 bg-black/40 p-3 flex flex-wrap items-center justify-between gap-2 backdrop-blur-md">
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if(confirm("Confirm: Abort and Discard Session?")) {
+                      queryClient.setQueryData(["appointment", "current"], null);
+                      await updateStatus.mutateAsync({ id: appointment.id, status: "canceled" });
+                      navigate("/waitingroom");
+                    }
+                  }}
+                  disabled={updateStatus.isPending || !isInstitutionMatch}
+                  className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 border border-red-500/20 transition-all disabled:opacity-50"
+                >
+                  <ExclamationTriangleIcon className="w-4 h-4" /> Abort_Mission
+                </button>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                {canGenerateReport && isInstitutionMatch && (
+                  <>
+                    <button
+                      disabled={generateDocuments.isPending}
+                      onClick={handleGenerateDocuments}
+                      className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all"
+                    >
+                      <DocumentTextIcon className="w-4 h-4" /> Batch_Export
+                    </button>
+                    <button
+                      disabled={generateReport.isPending}
+                      onClick={handleGenerateReport}
+                      className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-blue-500/40 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
+                    >
+                      <ShieldCheckIcon className="w-4 h-4" /> Final_Medical_Report
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => setShowCommitModal(true)}
+                  disabled={updateStatus.isPending || !isInstitutionMatch}
+                  className="group flex items-center gap-3 px-6 py-2 bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all"
+                >
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    Commit_Session
+                  </span>
+                  <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
             </footer>
           </div>
         </main>

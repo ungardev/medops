@@ -1,5 +1,6 @@
 // src/components/Consultation/PatientHeader.tsx
 import type { Patient } from "../../types/patients";
+import { Link } from "react-router-dom";
 import { 
   UserIcon, 
   ExclamationTriangleIcon,
@@ -13,21 +14,21 @@ interface PatientHeaderProps {
 export default function PatientHeader({ patient }: PatientHeaderProps) {
   return (
     <div className="flex items-center justify-end gap-6 w-full">
-      {/* Datos del Paciente (Izquierda) */}
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-[var(--palantir-active)]/10 flex items-center justify-center border border-[var(--palantir-active)]/30">
+      {/* Datos del Paciente (Izquierda) - CLICKEABLES */}
+      <Link to={`/patients/${patient.id}`} className="flex items-center gap-3 group hover:opacity-80 transition-opacity">
+        <div className="w-8 h-8 rounded-full bg-[var(--palantir-active)]/10 flex items-center justify-center border border-[var(--palantir-active)]/30 group-hover:bg-[var(--palantir-active)]/20 transition-colors">
           <UserIcon className="w-4 h-4 text-[var(--palantir-active)]" />
         </div>
         <div className="text-right">
-          <div className="text-sm font-bold uppercase text-white truncate max-w-[150px] leading-tight">
+          <div className="text-sm font-bold uppercase text-white leading-tight group-hover:text-[var(--palantir-active)] transition-colors">
             {patient.full_name || "MISSING_IDENTITY"}
           </div>
           <div className="text-[8px] font-mono text-white/50">
             REF: {patient.id.toString().padStart(6, '0')}
           </div>
         </div>
-      </div>
-      {/* Indicadores Rápidos (Derecha) */}
+      </Link>
+      {/* Indicadores Rápidos (Derecha) - NO CLICKEABLES */}
       <div className="flex items-center gap-4 pl-4 border-l border-white/10">
         {/* Alerta Médica (Discreta) */}
         {patient.allergies && (
