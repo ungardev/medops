@@ -177,15 +177,7 @@ export default function Consultation() {
       )}
       {/* Layout Principal Compacto */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4">
-        <aside className="lg:col-span-3 space-y-4">
-          <CollapsiblePanel title="Clinical_Documents">
-            <DocumentsPanel patientId={appointment.patient.id} appointmentId={appointment.id} />
-          </CollapsiblePanel>
-          <CollapsiblePanel title="Financial_Ledger">
-            <ChargeOrderPanel appointmentId={appointment.id} />
-          </CollapsiblePanel>
-        </aside>
-        
+        {/* SWAPPED: Main (Workflow) now first in DOM to appear on Left (col-span-9) */}
         <main className="lg:col-span-9 space-y-4">
           <div className="bg-black/20 border border-white/10 p-1 relative min-h-[500px] flex flex-col shadow-2xl">
             <div className="flex-1 bg-black/10 p-4">
@@ -248,6 +240,16 @@ export default function Consultation() {
             </footer>
           </div>
         </main>
+        
+        {/* SWAPPED: Aside (Docs/Charges) now second in DOM to appear on Right (col-span-3) */}
+        <aside className="lg:col-span-3 space-y-4">
+          <CollapsiblePanel title="Clinical_Documents">
+            <DocumentsPanel patientId={appointment.patient.id} appointmentId={appointment.id} />
+          </CollapsiblePanel>
+          <CollapsiblePanel title="Financial_Ledger">
+            <ChargeOrderPanel appointmentId={appointment.id} />
+          </CollapsiblePanel>
+        </aside>
       </div>
       {/* Commit Session Modal */}
       <CommitSessionModal
