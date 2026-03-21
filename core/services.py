@@ -1072,7 +1072,7 @@ def lock_consultation_integrity(appointment_id: int):
     return note
 
 
-def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]:
+def generate_generic_pdf(instance: Any, category: str, institution: InstitutionSettings) -> Tuple[bytes, str, str]:
     """
     Fábrica universal de PDFs médicos con QR de auditoría.
     Soporta: prescription, treatment, medical_referral, medical_test_order.
@@ -1101,8 +1101,9 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
     
     doctor = appointment.doctor if appointment else None
     
-    # Institución
-    institution = InstitutionSettings.objects.first()
+    # ✅ CAMBIO: Usar la institución pasada como parámetro
+    # institution = InstitutionSettings.objects.first()  # ❌ Antes
+    # institution = institution  # ✅ Ahora (el parámetro de la función)
     
     # ========================================
     # 2. CÓDIGO DE AUDITORÍA Y QR
@@ -1291,7 +1292,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         elif hasattr(instance, 'referred_to_external') and instance.referred_to_external:
             referred_to_doctor_name = instance.referred_to_external
         
-        # ✅ NUEVO: Diagnósticos relacionados con la referencia
+        # Diagnósticos relacionados con la referencia
         diagnoses_data = []
         if hasattr(instance, 'diagnosis') and instance.diagnosis:
             diag = instance.diagnosis
@@ -1306,7 +1307,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "patient": patient_data,
             "appointment": appointment_data,
             "referring_doctor": referring_doctor_data,
-            "institution": institution,
+            "institution": institution, # ✅ Usa el parámetro
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
@@ -1316,9 +1317,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "referred_to_contact": getattr(instance, 'referred_to_contact', None) or "",
             "urgency_display": format_urgency(getattr(instance, 'urgency', None)),
             "status_display": format_status(getattr(instance, 'status', None)),
-            # ✅ NUEVO: Diagnósticos
             "diagnoses": diagnoses_data,
-            # ✅ NUEVO: Instrucciones
             "instructions": getattr(instance, 'clinical_summary', None) or getattr(instance, 'instructions', None) or "",
         }
     
@@ -1351,7 +1350,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         elif hasattr(instance, 'medication_text') and instance.medication_text:
             medication_name = instance.medication_text
         
-        # ✅ NUEVO: Construir items para la plantilla
+        # Construir items para la plantilla
         items_data = []
         item = {
             "medication": medication_name,
@@ -1378,12 +1377,11 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "patient": patient_data,
             "appointment": appointment_data,
             "doctor": prescribing_doctor_data,
-            "institution": institution,
+            "institution": institution, # ✅ Usa el parámetro
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
             "medication_name": medication_name,
-            # ✅ NUEVO: Items para la plantilla
             "items": items_data,
         }
     
@@ -1408,7 +1406,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
                 "signature": getattr(doctor, 'signature', None),
             }
         
-        # ✅ NUEVO: Construir items para la plantilla
+        # Construir items para la plantilla
         items_data = []
         items_data.append({
             "description": getattr(instance, 'plan', None) or getattr(instance, 'title', None) or "",
@@ -1420,11 +1418,10 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "patient": patient_data,
             "appointment": appointment_data,
             "doctor": treating_doctor_data,
-            "institution": institution,
+            "institution": institution, # ✅ Usa el parámetro
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
-            # ✅ NUEVO: Items para la plantilla
             "items": items_data,
         }
     
@@ -1451,7 +1448,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
         # Obtener display del tipo de examen
         test_type_display = instance.get_test_type_display() if hasattr(instance, 'get_test_type_display') else getattr(instance, 'test_type', '')
         
-        # ✅ NUEVO: Clasificar exámenes en laboratorios e imágenes
+        # Clasificar exámenes en laboratorios e imágenes
         # Categorías típicas de laboratorio
         lab_prefixes = ['hemogram', 'glucose', 'hemoglobin', 'platelets', 'coag', 'blood', 
                        'lipid', 'renal', 'liver', 'electrolytes', 'thyroid', 'bone', 
@@ -1464,7 +1461,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
                        'dhea', 'insulin', 'peptide', 'drug', 'alcohol', 'heavy',
                        'therapeutic', 'pregnancy', 'sweat', 'mantoux', 'patch']
         
-        # ✅ NUEVO: Separar en lab_tests e image_tests
+        # Separar en lab_tests e image_tests
         lab_tests = []
         image_tests = []
         
@@ -1491,14 +1488,13 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "patient": patient_data,
             "appointment": appointment_data,
             "doctor": ordering_doctor_data,
-            "institution": institution,
+            "institution": institution, # ✅ Usa el parámetro
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
             "test_type_display": test_type_display,
             "urgency_display": format_urgency(getattr(instance, 'urgency', None)),
             "status_display": format_status(getattr(instance, 'status', None)),
-            # ✅ NUEVO: Listas separadas
             "lab_tests": lab_tests,
             "image_tests": image_tests,
         }
@@ -1512,7 +1508,7 @@ def generate_generic_pdf(instance: Any, category: str) -> Tuple[bytes, str, str]
             "patient": patient_data,
             "appointment": appointment_data,
             "doctor": doctor,
-            "institution": institution,
+            "institution": institution, # ✅ Usa el parámetro
             "audit_code": audit_code,
             "qr_code_url": f"data:image/png;base64,{qr_base64}",
             "generated_at": timezone.now(),
@@ -1830,7 +1826,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
             
             if len(prescription_list) == 1:
                 # Comportamiento original: 1 documento por prescripción
-                pdf_bytes, filename, audit_code = generate_generic_pdf(prescription_list[0], 'prescription')
+                pdf_bytes, filename, audit_code = generate_generic_pdf(prescription_list[0], 'prescription', appointment.institution)
                 description = f"Receta: {prescription_list[0].medication_catalog.name if prescription_list[0].medication_catalog else prescription_list[0].medication_text or 'Medicamento'}"
             else:
                 # ✅ NUEVO: Generar documento consolidado
@@ -1876,7 +1872,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
             
             if len(treatment_list) == 1:
                 # Comportamiento original: 1 documento por tratamiento
-                pdf_bytes, filename, audit_code = generate_generic_pdf(treatment_list[0], 'treatment')
+                pdf_bytes, filename, audit_code = generate_generic_pdf(treatment_list[0], 'treatment', appointment.institution)
                 title = treatment_list[0].plan or treatment_list[0].title or "Tratamiento"
                 description = f"Tratamiento: {title[:100]}"
             else:
@@ -1924,7 +1920,7 @@ def bulk_generate_appointment_docs(appointment, user) -> Dict[str, Any]:
     for category, queryset in other_generators.items():
         for item in queryset:
             try:
-                pdf_bytes, filename, audit_code = generate_generic_pdf(item, category)
+                pdf_bytes, filename, audit_code = generate_generic_pdf(item, category, appointment.institution)
                 
                 # Descripciones específicas por categoría
                 if category == 'medical_referral':

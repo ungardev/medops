@@ -1993,46 +1993,60 @@ def generate_prescription_pdf(request, pk):
     Genera PDF de receta médica.
     """
     try:
-        # Obtener la receta
         prescription = get_object_or_404(Prescription, pk=pk)
         
-        # Usar el servicio de generación de PDFs existente
-        pdf_bytes, filename, mime_type = services.generate_generic_pdf(
-            prescription, 'prescriptions'
+        # ✅ VALIDACIÓN DE INSTITUCIÓN (ya implementada)
+        if not hasattr(request, 'current_institution'):
+            return Response({"error": "Institución no especificada"}, status=400)
+        
+        if prescription.institution != request.current_institution:
+            return Response({"error": "Acceso denegado: receta no pertenece a la institución activa"}, status=403)
+        
+        # ✅ GENERACIÓN DE PDF (corregido)
+        pdf_bytes, filename, audit_code = services.generate_generic_pdf(
+            prescription, 
+            'prescriptions',
+            request.current_institution  # <--- Opción C: Usar institución activa
         )
         
-        # Crear respuesta HTTP con PDF
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
         
     except Exception as e:
-        logger.error(f"Error generando receta: {str(e)}")
-        return Response({"error": str(e)}, status=500)
+        logger.error(f"Error generando PDF de receta: {str(e)}", exc_info=True)
+        return Response({"error": "Error interno del servidor"}, status=500)
 
 
 @api_view(['POST', 'GET'])
 def generate_treatment_pdf(request, pk):
     """
-    Genera PDF de tratamiento.
+    Genera PDF de tratamiento médico.
     """
     try:
-        # Obtener el tratamiento
         treatment = get_object_or_404(Treatment, pk=pk)
         
-        # Usar el servicio de generación de PDFs existente
-        pdf_bytes, filename, mime_type = services.generate_generic_pdf(
-            treatment, 'treatments'
+        # ✅ VALIDACIÓN DE INSTITUCIÓN (ya implementada)
+        if not hasattr(request, 'current_institution'):
+            return Response({"error": "Institución no especificada"}, status=400)
+        
+        if treatment.institution != request.current_institution:
+            return Response({"error": "Acceso denegado: tratamiento no pertenece a la institución activa"}, status=403)
+        
+        # ✅ GENERACIÓN DE PDF (corregido)
+        pdf_bytes, filename, audit_code = services.generate_generic_pdf(
+            treatment, 
+            'treatments',
+            request.current_institution  # <--- Opción C: Usar institución activa
         )
         
-        # Crear respuesta HTTP con PDF
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
         
     except Exception as e:
-        logger.error(f"Error generando tratamiento: {str(e)}")
-        return Response({"error": str(e)}, status=500)
+        logger.error(f"Error generando PDF de tratamiento: {str(e)}", exc_info=True)
+        return Response({"error": "Error interno del servidor"}, status=500)
 
 
 @api_view(['POST', 'GET'])
@@ -2041,22 +2055,29 @@ def generate_referral_pdf(request, pk):
     Genera PDF de referencia médica.
     """
     try:
-        # Obtener la referencia
         referral = get_object_or_404(MedicalReferral, pk=pk)
         
-        # Usar el servicio de generación de PDFs existente
-        pdf_bytes, filename, mime_type = services.generate_generic_pdf(
-            referral, 'referrals'
+        # ✅ VALIDACIÓN DE INSTITUCIÓN (ya implementada)
+        if not hasattr(request, 'current_institution'):
+            return Response({"error": "Institución no especificada"}, status=400)
+        
+        if referral.institution != request.current_institution:
+            return Response({"error": "Acceso denegado: referencia no pertenece a la institución activa"}, status=403)
+        
+        # ✅ GENERACIÓN DE PDF (corregido)
+        pdf_bytes, filename, audit_code = services.generate_generic_pdf(
+            referral, 
+            'referrals',
+            request.current_institution  # <--- Opción C: Usar institución activa
         )
         
-        # Crear respuesta HTTP con PDF
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         return response
         
     except Exception as e:
-        logger.error(f"Error generando referencia: {str(e)}")
-        return Response({"error": str(e)}, status=500)
+        logger.error(f"Error generando PDF de referencia: {str(e)}", exc_info=True)
+        return Response({"error": "Error interno del servidor"}, status=500)
 
 
 @api_view(['POST', 'GET'])
