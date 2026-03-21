@@ -7145,17 +7145,17 @@ class OperationalHubView(APIView):
                 'type': 'appointment',
                 'date': appointment.appointment_date.isoformat(),
                 'time': appointment.tentative_time,
-                # ✅ CAMBIO: Mostrar nombre del paciente en lugar del médico
+                # ✅ CAMBIO: Usar camelCase para consistencia con frontend
                 'title': appointment.patient.full_name if appointment.patient else 'Sin nombre',
                 'status': appointment.status,
-                'patient_name': appointment.patient.full_name if appointment.patient else 'Sin nombre',
-                'doctor_name': appointment.doctor.full_name if appointment.doctor else 'Sin asignar',
+                'patientName': appointment.patient.full_name if appointment.patient else 'Sin nombre',
+                'doctorName': appointment.doctor.full_name if appointment.doctor else 'Sin asignar',
                 'doctorId': appointment.doctor.id if appointment.doctor else None,
-                'service_name': service_name,
+                'serviceName': service_name,
                 'serviceId': service_id,
-                'category_name': category_name,
+                'categoryName': category_name,
                 'categoryId': category_id,
-                'is_available': False,
+                'isAvailable': False,
                 'metadata': {
                     'appointment_id': appointment.id,
                     'doctor_service_id': service_id,
@@ -7202,6 +7202,7 @@ class OperationalHubView(APIView):
                         doctor_name = schedule.service.doctor.full_name if schedule.service.doctor else None
                         doctor_id = schedule.service.doctor.id if schedule.service.doctor else None
                     
+                    # ✅ CAMBIO: Usar camelCase para consistencia con frontend
                     slots.append({
                         'id': f"avail-{schedule.id}-{slot_time_str}",
                         'type': 'availability',
@@ -7209,16 +7210,16 @@ class OperationalHubView(APIView):
                         'time': slot_time_str,
                         'title': f"Disponible: {schedule.service.name}",
                         'status': 'available',
-                        'patient_name': None,
-                        'doctor_name': doctor_name,
+                        'patientName': None,
+                        'doctorName': doctor_name,
                         'doctorId': doctor_id,
-                        'service_name': schedule.service.name,
+                        'serviceName': schedule.service.name,
                         'serviceId': schedule.service.id,
-                        'category_name': schedule.service.category.name if schedule.service.category else None,
+                        'categoryName': schedule.service.category.name if schedule.service.category else None,
                         'categoryId': schedule.service.category.id if schedule.service.category else None,
-                        'is_available': True,
-                        'slots_remaining': slots_remaining,
-                        'max_slots': schedule.max_appointments,
+                        'isAvailable': True,
+                        'slotsRemaining': slots_remaining,
+                        'maxSlots': schedule.max_appointments,
                         'metadata': {
                             'schedule_id': schedule.id,
                             'service_id': schedule.service.id,

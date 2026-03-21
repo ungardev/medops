@@ -37,19 +37,15 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
   onDelete,
   onStatusChange,
 }) => {
-  // ✅ CAMBIO: Obtener getStatusStyle del hook
   const { statusStyles, getStatusStyle } = useAppointmentStatusStyles();
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
-  // ✅ CAMBIO: Coordinar filtrado por servicio Y estado
   const filteredItems = useMemo(() => {
     let result = items;
     
-    // 1. Filtrar por servicio
     if (selectedServiceId) {
       result = result.filter(item => item.serviceId === selectedServiceId);
     }
     
-    // 2. Filtrar por estado (solo para citas)
     if (statusFilter && statusFilter !== "all") {
       result = result.filter(item => 
         item.type === 'appointment' && item.status === statusFilter
@@ -58,8 +54,9 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
     
     return result;
   }, [items, selectedServiceId, statusFilter]);
-  // ✅ CAMBIO: Función auxiliar para extraer datos de manera segura
+  // ✅ CAMBIO: Función auxiliar mejorada para extraer datos de múltiples rutas
   const extractAppointmentData = (item: OperationalItem) => {
+    // 1. Intentar extraer de metadata.appointment (si existe)
     if (item.metadata?.appointment) {
       const appointment = item.metadata.appointment as Appointment;
       return {
@@ -71,15 +68,18 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
       };
     }
     
+    // 2. Intentar extraer del item directamente (soportando camelCase y snake_case)
+    const patientName = item.patientName || (item as any).patient_name;
+    const doctorName = item.doctorName || (item as any).doctor_name;
+    
     return {
-      patientName: item.patientName || 'Sin nombre',
-      doctorName: item.doctorName || 'Sin asignar',
+      patientName: patientName || 'Sin nombre',
+      doctorName: doctorName || 'Sin asignar',
       date: item.date,
       status: item.status,
       rawAppointment: null
     };
   };
-  // ✅ CAMBIO: Texto dinámico según servicio seleccionado
   const selectedServiceName = useMemo(() => {
     if (!selectedServiceId) return 'Todos los Servicios';
     const service = services.find(s => s.id === selectedServiceId);
@@ -94,7 +94,6 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
   const handleItemClick = (item: OperationalItem) => {
     if (onItemClick) onItemClick(item);
     
-    // Intentar obtener la cita desde metadata o asumir que el item es la cita
     const appointment = item.metadata?.appointment as Appointment || item as any;
     
     if (item.type === 'appointment' && onAppointmentClick) {
@@ -155,11 +154,8 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
           </div>
         ) : (
           filteredItems.map((item) => {
-            // ✅ CAMBIO: Renderizado para citas usando la función auxiliar
             if (item.type === 'appointment') {
               const data = extractAppointmentData(item);
-              
-              // ✅ CAMBIO: Usar getStatusStyle con casteo seguro
               const style = getStatusStyle(data.status as AppointmentStatus);
               
               return (
