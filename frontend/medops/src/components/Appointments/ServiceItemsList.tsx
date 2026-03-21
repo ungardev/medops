@@ -37,7 +37,8 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
   onDelete,
   onStatusChange,
 }) => {
-  const { statusStyles } = useAppointmentStatusStyles();
+  // ✅ CAMBIO: Obtener getStatusStyle del hook
+  const { statusStyles, getStatusStyle } = useAppointmentStatusStyles();
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   // ✅ CAMBIO: Coordinar filtrado por servicio Y estado
   const filteredItems = useMemo(() => {
@@ -57,6 +58,27 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
     
     return result;
   }, [items, selectedServiceId, statusFilter]);
+  // ✅ CAMBIO: Función auxiliar para extraer datos de manera segura
+  const extractAppointmentData = (item: OperationalItem) => {
+    if (item.metadata?.appointment) {
+      const appointment = item.metadata.appointment as Appointment;
+      return {
+        patientName: appointment.patient?.full_name || 'Sin nombre',
+        doctorName: appointment.doctor?.full_name || 'Sin asignar',
+        date: appointment.appointment_date,
+        status: appointment.status,
+        rawAppointment: appointment
+      };
+    }
+    
+    return {
+      patientName: item.patientName || 'Sin nombre',
+      doctorName: item.doctorName || 'Sin asignar',
+      date: item.date,
+      status: item.status,
+      rawAppointment: null
+    };
+  };
   // ✅ CAMBIO: Texto dinámico según servicio seleccionado
   const selectedServiceName = useMemo(() => {
     if (!selectedServiceId) return 'Todos los Servicios';
@@ -71,8 +93,12 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
   };
   const handleItemClick = (item: OperationalItem) => {
     if (onItemClick) onItemClick(item);
-    if (item.type === 'appointment' && item.metadata?.appointment && onAppointmentClick) {
-      onAppointmentClick(item.metadata.appointment as Appointment);
+    
+    // Intentar obtener la cita desde metadata o asumir que el item es la cita
+    const appointment = item.metadata?.appointment as Appointment || item as any;
+    
+    if (item.type === 'appointment' && onAppointmentClick) {
+      onAppointmentClick(appointment);
     }
   };
   return (
@@ -120,6 +146,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
           )}
         </div>
       </div>
+      
       {/* Lista de Items */}
       <div className="flex-1 overflow-y-auto space-y-[2px]">
         {filteredItems.length === 0 ? (
@@ -128,13 +155,13 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
           </div>
         ) : (
           filteredItems.map((item) => {
-            // Renderizado para citas
-            if (item.type === 'appointment' && item.metadata?.appointment) {
-              const appointment = item.metadata.appointment as Appointment;
-              const status = appointment.status;
-              const style = statusStyles[status] || statusStyles.pending;
-              const patientName = appointment.patient?.full_name || 'Sin nombre';
-              const doctorName = appointment.doctor?.full_name || 'Sin asignar';
+            // ✅ CAMBIO: Renderizado para citas usando la función auxiliar
+            if (item.type === 'appointment') {
+              const data = extractAppointmentData(item);
+              
+              // ✅ CAMBIO: Usar getStatusStyle con casteo seguro
+              const style = getStatusStyle(data.status as AppointmentStatus);
+              
               return (
                 <div
                   key={`${item.type}-${item.id}`}
@@ -147,10 +174,10 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] font-medium text-white truncate">
-                            {patientName}
+                            {data.patientName}
                           </span>
                           <span className="text-[9px] text-white/40 font-mono">
-                            {new Date(appointment.appointment_date).toLocaleDateString('es-ES', {
+                            {new Date(data.date).toLocaleDateString('es-ES', {
                               day: '2-digit',
                               month: '2-digit'
                             })}
@@ -158,7 +185,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[9px] text-white/30 truncate">
-                            {doctorName}
+                            {data.doctorName}
                           </span>
                           <span className={`text-[8px] px-1 rounded ${style.bg} ${style.text}`}>
                             {style.label}
@@ -168,25 +195,25 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                     </div>
                     
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {onEdit && (
+                      {onEdit && data.rawAppointment && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); onEdit(appointment); }}
+                          onClick={(e) => { e.stopPropagation(); onEdit(data.rawAppointment); }}
                           className="p-1.5 text-white/40 hover:text-blue-400 hover:bg-white/5 rounded transition-all"
                           title="Editar"
                         >
                           <PencilSquareIcon className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {onStatusChange && (
+                      {onStatusChange && data.rawAppointment && (
                         <button
                           onClick={(e) => { 
                             e.stopPropagation(); 
-                            handleStatusChange(appointment);
+                            handleStatusChange(data.rawAppointment);
                           }}
                           className="p-1.5 text-white/40 hover:text-green-400 hover:bg-white/5 rounded transition-all"
-                          title={appointment.status === 'pending' ? 'Completar' : 'Reabrir'}
+                          title={data.rawAppointment.status === 'pending' ? 'Completar' : 'Reabrir'}
                         >
-                          {appointment.status === 'pending' ? (
+                          {data.rawAppointment.status === 'pending' ? (
                             <CheckCircleIcon className="w-3.5 h-3.5" />
                           ) : (
                             <ArrowRightIcon className="w-3.5 h-3.5" />
@@ -258,6 +285,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                 </div>
               );
             }
+            
             // Renderizado para otros tipos (bloqueos, etc.)
             return (
               <div
@@ -302,6 +330,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
           })
         )}
       </div>
+      
       {/* Footer con estadísticas */}
       <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center text-[9px] text-white/40">
         <span>{filteredItems.length} items mostrados</span>
