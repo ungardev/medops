@@ -13,13 +13,13 @@ interface PatientHeaderProps {
 }
 export default function PatientHeader({ patient }: PatientHeaderProps) {
   return (
-    <div className="flex items-center justify-start gap-6 w-full px-4"> {/* Changed justify-end to justify-start */}
+    <div className="flex items-center justify-end gap-6 w-full px-4">
       {/* Datos del Paciente (Izquierda) - CLICKEABLES */}
       <Link to={`/patients/${patient.id}`} className="flex items-center gap-3 group hover:opacity-80 transition-opacity">
         <div className="w-8 h-8 rounded-full bg-[var(--palantir-active)]/10 flex items-center justify-center border border-[var(--palantir-active)]/30 group-hover:bg-[var(--palantir-active)]/20 transition-colors">
           <UserIcon className="w-4 h-4 text-[var(--palantir-active)]" />
         </div>
-        <div className="text-left"> {/* Changed text-right to text-left */}
+        <div className="text-right">
           <div className="text-sm font-bold uppercase text-white leading-tight group-hover:text-[var(--palantir-active)] transition-colors">
             {patient.full_name || "MISSING_IDENTITY"}
           </div>

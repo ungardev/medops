@@ -138,7 +138,7 @@ export default function Consultation() {
   return (
     <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 space-y-4">
       
-      {/* PageHeader sin PatientHeader (se mueve debajo) */}
+      {/* PageHeader con PatientHeader como children (alineado a la derecha de las stats) */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -156,10 +156,8 @@ export default function Consultation() {
             color: "text-emerald-400 font-bold"
           }
         ]}
+        children={patient ? <PatientHeader patient={patient} /> : null}
       />
-      
-      {/* PatientHeader ahora es un elemento hermano debajo de PageHeader */}
-      {patient && <PatientHeader patient={patient} />}
       
       {/* Alerta Cross-Institution (Discreta) */}
       {isCrossInstitution && (
