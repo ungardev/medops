@@ -1,20 +1,16 @@
-// src/components/Common/CollapsiblePanel.tsx
 import { useState } from "react";
 import { ChevronRightIcon } from "@heroicons/react/20/solid";
-
 interface Props {
   title: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }
-
 export default function CollapsiblePanel({
   title,
   children,
   defaultOpen = true,
 }: Props) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-
   return (
     <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden transition-all duration-300">
       {/* Header Estilo Terminal */}
@@ -40,12 +36,8 @@ export default function CollapsiblePanel({
             {title}
           </h3>
         </div>
-
         <div className="flex items-center gap-4">
-          {/* Status Label sutil */}
-          <span className="hidden sm:inline text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
-            {isOpen ? "MODULE_EXPANDED" : "MODULE_PAUSED"}
-          </span>
+          {/* ⚠️ ELIMINADO: Texto técnico "MODULE_PAUSED/MODULE_EXPANDED" */}
           
           <ChevronRightIcon
             className={`w-4 h-4 text-[var(--palantir-muted)] transition-transform duration-300 ${
@@ -54,7 +46,6 @@ export default function CollapsiblePanel({
           />
         </div>
       </button>
-
       {/* Área de Contenido con Animación CSS Nativa */}
       <div
         className={`grid transition-all duration-300 ease-in-out ${

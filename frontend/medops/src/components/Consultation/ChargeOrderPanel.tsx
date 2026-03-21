@@ -1,11 +1,11 @@
-// src/components/Consultation/ChargeOrderPanel.tsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChargeOrder } from "../../types/payments";
 import { useChargeOrder } from "../../hooks/consultations/useChargeOrder";
 import { apiFetch } from "../../api/client";
-import type { DoctorService } from "../../types/services"; // CAMBIO: Importar DoctorService
+import type { DoctorService } from "../../types/services";
 import ServiceSearchCombobox from "./ServiceSearchCombobox";
+import { useInstitutions } from "../../hooks/settings/useInstitutions"; // ⚠️ NUEVO
 import { 
   ChevronDownIcon, 
   ChevronRightIcon,
@@ -14,7 +14,8 @@ import {
   MinusIcon,
   PlusIcon,
   ReceiptPercentIcon,
-  ArrowRightIcon
+  ArrowRightIcon,
+  BuildingOfficeIcon // ⚠️ NUEVO
 } from "@heroicons/react/24/outline";
 export type ChargeOrderPanelProps =
   | { appointmentId: number; readOnly?: boolean }
@@ -30,9 +31,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const readOnly = props.readOnly ?? false;
   const navigate = useNavigate();
   const [order, setOrder] = useState<ChargeOrder | null>(null);
-  const [showItems, setShowItems] = useState(true); // Siempre expandido para mostrar buscador
+  const [showItems, setShowItems] = useState(true);
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [isSavingItems, setIsSavingItems] = useState(false);
+  
+  // ⚠️ NUEVO: Obtener institución activa
+  const { activeInstitution } = useInstitutions();
   
   const { data, isLoading, refetch } = isAppointmentMode(props)
     ? useChargeOrder(props.appointmentId)
@@ -50,6 +54,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       alert("Este servicio no está disponible para facturación.");
       return;
     }
+    
+    // ⚠️ NUEVO: Validar que el servicio pertenezca a la institución activa
+    if (activeInstitution && service.institution && service.institution !== activeInstitution.id) {
+      alert(`Este servicio no pertenece a la institución activa: ${activeInstitution.name}`);
+      return;
+    }
     const existing = pendingItems.find(p => p.service.id === service.id);
     if (existing) {
       setPendingItems(pendingItems.map(p => 
@@ -61,7 +71,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       setPendingItems([...pendingItems, { service: service, quantity: 1 }]);
     }
   };
-  // Límite de cantidad máxima
   const MAX_QUANTITY = 100;
   const updatePendingQuantity = (serviceId: number, delta: number) => {
     setPendingItems(pendingItems.map(p => {
@@ -75,20 +84,17 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const removePendingItem = (serviceId: number) => {
     setPendingItems(pendingItems.filter(p => p.service.id !== serviceId));
   };
-  // Optimización con useMemo
   const pendingSubtotal = useMemo(() => {
     return pendingItems.reduce(
       (sum, p) => sum + (Number(p.service.price_usd) * p.quantity),
       0
     );
   }, [pendingItems]);
-  // ✅ NUEVO: Agregar items usando service_id (Opción A)
   const handleSavePendingItems = async () => {
     if (pendingItems.length === 0) return;
     if (!isAppointmentMode(props)) return;
     setIsSavingItems(true);
     try {
-      // Solo enviamos service_id y cantidad. El backend busca el precio real.
       const itemsPayload = pendingItems.map(p => ({
         service_id: p.service.id,
         qty: p.quantity,
@@ -111,8 +117,6 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const handleDeleteItem = async (id: number) => {
     if (!confirm("Confirmar eliminación del ítem?")) return;
     try {
-      // Verificar si el endpoint correcto es /api/charge-items/ o /api/charge-order/items/
-      // Por ahora usamos el endpoint del frontend actual
       await apiFetch(`charge-items/${id}/`, { method: "DELETE" });
       void refetch();
     } catch (err) { 
@@ -168,7 +172,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
         </div>
       </div>
-      {/* 02. SECCIÓN DE ÍTEMS - Siempre visible con buscador */}
+      {/* 02. SECCIÓN DE ÍTEMS */}
       <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
         <button 
           onClick={() => setShowItems(!showItems)}
@@ -186,15 +190,25 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
         
         {showItems && (
           <div className="p-3 space-y-3 border-t border-[var(--palantir-border)]">
+            {/* ⚠️ NUEVO: Indicador de Institución Activa */}
+            {activeInstitution && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-sm w-fit">
+                <BuildingOfficeIcon className="w-3 h-3 text-purple-400" />
+                <span className="text-[8px] font-mono text-purple-300 uppercase tracking-[0.2em]">
+                  {activeInstitution.name}
+                </span>
+              </div>
+            )}
             {!readOnly && (
               <>
-                {/* BUSCADOR DE CATÁLOGO - Siempre visible */}
+                {/* BUSCADOR DE CATÁLOGO */}
                 <div className="space-y-2">
                   <label className="text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">
                     Agregar_Servicio_Catalogo
                   </label>
                   <ServiceSearchCombobox onSelect={handleSelectService} />
                 </div>
+                
                 {/* ÍTEMS PENDIENTES */}
                 {pendingItems.length > 0 && (
                   <div className="space-y-2 border border-[var(--palantir-active)]/30 bg-[var(--palantir-active)]/5 p-2">
@@ -265,6 +279,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                 )}
               </>
             )}
+            
             {/* ÍTEMS GUARDADOS EN LA ORDEN */}
             <div className="space-y-1">
               {hasItems ? (
@@ -299,7 +314,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
         )}
       </div>
       
-      {/* 03. BOTÓN NAVEGAR A PAGOS - Solo si existe orden con items */}
+      {/* 03. BOTÓN NAVEGAR A PAGOS */}
       {!readOnly && hasItems && (
         <button
           onClick={handleGoToPayments}

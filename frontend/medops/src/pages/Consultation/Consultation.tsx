@@ -150,13 +150,8 @@ export default function Consultation() {
             label: "ELAPSED_TIME", 
             value: <SessionTimer startTime={appointment.started_at} />,
             color: "text-emerald-400 font-bold"
-          },
-          { 
-            label: "STATUS_CORE", 
-            value: appointment.status.toUpperCase(),
-            color: appointment.status === 'in_consultation' ? "text-emerald-500" : "text-amber-500"
           }
-          // ⚠️ SE ELIMINARON LOS BADGES: INSTITUTION Y ENCRYPTION
+          // ⚠️ SE ELIMINARON: STATUS_CORE, INSTITUTION, ENCRYPTION
         ]}
         actions={
           <div className="flex items-center gap-3 px-3">

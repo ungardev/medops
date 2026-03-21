@@ -37,13 +37,13 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   useEffect(() => {
-    if (uploadDocument.isSuccess) notify.success("ENCRYPTED_UPLOAD_COMPLETE");
-    if (deleteDocument.isSuccess) notify.success("RECORD_PURGED_SUCCESSFULLY");
+    if (uploadDocument.isSuccess) notify.success("Upload complete");
+    if (deleteDocument.isSuccess) notify.success("Record deleted");
   }, [uploadDocument.isSuccess, deleteDocument.isSuccess, notify]);
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !description.trim() || !category) {
-      notify.error("MISSING_REQUIRED_FIELDS");
+      notify.error("Missing required fields");
       return;
     }
     await uploadDocument.mutateAsync({ file, description, category });
@@ -64,9 +64,9 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
           <div className="px-4 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
             <span className="text-[10px] font-mono font-black text-blue-300 uppercase tracking-widest flex items-center gap-2">
               <CloudArrowUpIcon className="w-3.5 h-3.5 text-blue-400" />
-              File_Upload_Protocol
+              File Upload
             </span>
-            <span className="text-[9px] font-mono text-white/60">ENCRYPTION: AES_256_ACTIVE</span>
+            {/* ⚠️ ELIMINADO: Badge de encriptación */}
           </div>
           <form onSubmit={handleUpload} className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -79,13 +79,13 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 />
                 <div className={`h-10 flex items-center justify-center border border-dashed rounded-sm transition-all ${file ? 'border-blue-400 bg-blue-400/5' : 'border-white/10 group-hover:border-blue-400/50'}`}>
                   <span className="text-[10px] font-mono text-white/60 truncate px-2">
-                    {file ? file.name : "SELECT_FILE_RAW"}
+                    {file ? file.name : "Select File"}
                   </span>
                 </div>
               </div>
               <input
                 type="text"
-                placeholder="DESCRIPTION_ID"
+                placeholder="Description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="bg-black/40 border border-white/10 px-3 h-10 text-[10px] font-mono text-white focus:outline-none focus:border-blue-400/50 uppercase"
@@ -95,7 +95,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 onChange={(e) => setCategory(e.target.value)}
                 className="bg-black/40 border border-white/10 px-3 h-10 text-[10px] font-mono text-white focus:outline-none focus:border-blue-400/50"
               >
-                <option value="">CATEGORY_SELECT</option>
+                <option value="">Category</option>
                 {CATEGORY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -105,7 +105,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 disabled={uploadDocument.isPending}
                 className="h-10 bg-white/5 border border-white/10 text-[10px] font-mono font-black tracking-widest uppercase hover:bg-blue-400/10 hover:text-white hover:border-blue-400 transition-all disabled:opacity-50"
               >
-                {uploadDocument.isPending ? "UPLOADING..." : "EXEC_UPLOAD"}
+                {uploadDocument.isPending ? "Uploading..." : "Upload"}
               </button>
             </div>
           </form>
@@ -114,20 +114,20 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
       <div className="space-y-2">
         <div className="flex items-center justify-between border-b border-[var(--palantir-border)] pb-2">
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
-            Repository_Status
+            Documents Status
           </span>
           <span className="text-[9px] font-mono text-white/60">
-            {documents.length} RECORDS_INDEXED
+            {documents.length} documents registered
           </span>
         </div>
         {isLoading ? (
           <div className="py-8 text-center text-[10px] font-mono text-white/60 animate-pulse uppercase tracking-widest">
-            Scanning_Data_Vault...
+            Loading...
           </div>
         ) : documents.length === 0 ? (
           <div className="py-8 border border-dashed border-white/10 flex flex-col items-center opacity-40">
             <DocumentIcon className="w-8 h-8 mb-2" />
-            <span className="text-[10px] font-mono uppercase tracking-widest">No_Binary_Records_Found</span>
+            <span className="text-[10px] font-mono uppercase tracking-widest">No documents found</span>
           </div>
         ) : (
           <div className="max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--palantir-border)] space-y-2 pr-1">
@@ -142,7 +142,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <h4 className="text-[10px] font-black text-white uppercase tracking-tight truncate">
-                      {d.description || "UNTITLED_RECORD"}
+                      {d.description || "Untitled"}
                     </h4>
                     <div className="flex gap-1 ml-2">
                       {d.file_url && (
@@ -158,7 +158,7 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                       )}
                       {!readOnly && (
                         <button
-                          onClick={() => { if(confirm("EXEC_PURGE?")) deleteDocument.mutate(d.id); }}
+                          onClick={() => { if(confirm("Delete document?")) deleteDocument.mutate(d.id); }}
                           className="p-1 text-white/60 hover:text-red-500"
                         >
                           <TrashIcon className="w-3.5 h-3.5" />
@@ -179,12 +179,6 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
             ))}
           </div>
         )}
-      </div>
-      <div className="pt-3 border-t border-white/10 flex items-center gap-2 opacity-50">
-        <ShieldCheckIcon className="w-3 h-3 text-emerald-500" />
-        <span className="text-[8px] font-mono text-white/60 uppercase tracking-widest">
-          All document access is logged and audited by institutional security protocols.
-        </span>
       </div>
     </div>
   );
