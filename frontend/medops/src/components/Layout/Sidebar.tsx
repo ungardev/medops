@@ -172,7 +172,7 @@ export default function Sidebar({
               <div className="flex flex-col gap-2 px-4">
                 <div className="flex items-center gap-2">
                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
-                   <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">Medopz_Live_Link</span>
+                   <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">DOCTOR</span>
                 </div>
               </div>
             ) : (
