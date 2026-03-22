@@ -280,16 +280,19 @@ export default function Appointments() {
       
       <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between bg-[#0a0a0b] border border-white/10 p-3 rounded-sm">
         <div className="relative group flex-1 max-w-md">
-          <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/20'}`} />
+          {/* ✅ FIX: Mejorado contraste del icono de búsqueda (text-white/20 -> text-white/30) */}
+          <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/30'}`} />
           <input
             type="text"
             placeholder="SEARCH_PATIENT_OR_ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-black/40 border border-white/10 pl-10 pr-10 py-2 text-[11px] font-mono tracking-widest focus:border-white/30 outline-none transition-all placeholder:text-white/10 uppercase rounded-sm"
+            /* ✅ FIX: Mejorado contraste del placeholder y texto (placeholder:text-white/10 -> text-white/30, text-white) */
+            className="w-full bg-black/40 border border-white/10 pl-10 pr-10 py-2 text-[11px] font-mono tracking-widest focus:border-white/30 outline-none transition-all placeholder:text-white/30 text-white uppercase rounded-sm"
           />
           {(isSearching || isFetching) && (
-            <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 animate-spin" />
+            /* ✅ FIX: Mejorado contraste del icono de carga (text-white/40 -> text-white/50) */
+            <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 animate-spin" />
           )}
         </div>
         
