@@ -7271,7 +7271,7 @@ class OperationalHubView(APIView):
             live_queue = WaitingRoomEntry.objects.filter(
                 institution_id=institution_id,
                 status__in=['waiting', 'in_consultation', 'completed', 'canceled', 'no_show'],
-                arrival_time__date=today
+                arrival_time__date=today  # Filtrar por fecha de llegada del día actual
             ).select_related('patient', 'appointment', 'institution')
             
             live_queue_data = WaitingRoomEntrySerializer(live_queue, many=True).data
