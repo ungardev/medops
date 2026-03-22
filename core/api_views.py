@@ -7269,7 +7269,7 @@ class OperationalHubView(APIView):
             # Logging para depuración
             logger.info(f"[_get_live_queue] institution_id={institution_id}, today={today}")
             
-            # Contar todos los registros de hoy (independientemente del estado)
+            # Contar todas las entradas del día (independientemente del estado)
             count_today = WaitingRoomEntry.objects.filter(
                 institution_id=institution_id,
                 arrival_time__date=today
