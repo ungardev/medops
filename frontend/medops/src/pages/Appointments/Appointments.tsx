@@ -278,44 +278,48 @@ export default function Appointments() {
         }
       />
       
-      <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between bg-[#0a0a0b] border border-white/10 p-3 rounded-sm">
-        <div className="relative group flex-1 max-w-md">
-          {/* ✅ FIX: Mejorado contraste del icono de búsqueda (text-white/20 -> text-white/30) */}
+      {/* ✅ FIX: Layout Grid para equilibrar Buscador y Botones de Filtro */}
+      <div className="grid grid-cols-12 gap-4 items-center bg-[#0a0a0b] border border-white/10 p-3 rounded-sm">
+        {/* Buscador: 4 de 12 columnas (33.33%) */}
+        <div className="col-span-4 relative group">
           <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/30'}`} />
           <input
             type="text"
             placeholder="SEARCH_PATIENT_OR_ID..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            /* ✅ FIX: Mejorado contraste del placeholder y texto (placeholder:text-white/10 -> text-white/30, text-white) */
             className="w-full bg-black/40 border border-white/10 pl-10 pr-10 py-2 text-[11px] font-mono tracking-widest focus:border-white/30 outline-none transition-all placeholder:text-white/30 text-white uppercase rounded-sm"
           />
           {(isSearching || isFetching) && (
-            /* ✅ FIX: Mejorado contraste del icono de carga (text-white/40 -> text-white/50) */
             <ArrowPathIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 animate-spin" />
           )}
         </div>
         
-        {/* ✅ CAMBIO: Usar ServiceStatusFilters en lugar de AppointmentFilters */}
-        <ServiceStatusFilters
-          categoryType={selectedServiceType}
-          activeFilter={statusFilter}
-          onFilterChange={(status: string) => setStatusFilter(status as AppointmentStatus | "all")}
-        />
+        {/* Botones de filtro: 7 de 12 columnas (58.33%) */}
+        <div className="col-span-7">
+          <ServiceStatusFilters
+            categoryType={selectedServiceType}
+            activeFilter={statusFilter}
+            onFilterChange={(status: string) => setStatusFilter(status as AppointmentStatus | "all")}
+          />
+        </div>
         
-        {selectedDate && (
-          <div className="flex items-center gap-2 bg-[#111] border border-white/10 px-3 py-1.5 rounded-sm">
-            <span className="text-[10px] text-white/60">
-              {moment(selectedDate).format("DD MMM YYYY")}
-            </span>
-            <button 
-              onClick={() => setSelectedDate(null)}
-              className="text-[10px] text-red-400 hover:text-red-300"
-            >
-              ×
-            </button>
-          </div>
-        )}
+        {/* Fecha seleccionada: 1 de 12 columnas (8.33%) */}
+        <div className="col-span-1">
+          {selectedDate && (
+            <div className="flex items-center gap-2 bg-[#111] border border-white/10 px-3 py-1.5 rounded-sm">
+              <span className="text-[10px] text-white/60">
+                {moment(selectedDate).format("DD MMM")}
+              </span>
+              <button 
+                onClick={() => setSelectedDate(null)}
+                className="text-[10px] text-red-400 hover:text-red-300"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       
       {/* ✅ NUEVO: Layout de dos columnas (70/30) responsive */}

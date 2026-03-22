@@ -9,7 +9,7 @@ const ServiceStatusFilters = ({ categoryType, activeFilter, onFilterChange }: Pr
   const config = SERVICE_STATUS_CONFIG[categoryType as keyof typeof SERVICE_STATUS_CONFIG] || SERVICE_STATUS_CONFIG.APPOINTMENT;
   
   return (
-    <div className="flex items-center gap-1 bg-[#111] border border-white/10 p-1 rounded-sm w-full">
+    <div className="flex items-center gap-1 bg-[#111] border border-white/10 p-1 rounded-sm max-w-full">
       {config.states.map((state: string) => (
         <button
           key={state}
