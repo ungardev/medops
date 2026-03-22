@@ -7260,11 +7260,13 @@ class OperationalHubView(APIView):
         return slots
     
     def _get_live_queue(self, institution_id):
+        """Obtiene entradas de sala de espera del día actual (todos los estados)."""
         try:
             from core.models import WaitingRoomEntry
             from core.serializers import WaitingRoomEntrySerializer
             
-            today = timezone.now().date()
+            # ✅ CAMBIO: Usar timezone.local para obtener la fecha en la zona horaria local
+            today = timezone.localdate()  # En lugar de timezone.now().date()
             
             # Logging para depuración
             logger.info(f"[_get_live_queue] institution_id={institution_id}, today={today}")
