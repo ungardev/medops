@@ -7260,26 +7260,45 @@ class OperationalHubView(APIView):
         return slots
     
     def _get_live_queue(self, institution_id):
-        """Obtiene entradas de sala de espera del día actual (todos los estados)."""
         try:
             from core.models import WaitingRoomEntry
             from core.serializers import WaitingRoomEntrySerializer
             
             today = timezone.now().date()
             
-            # ✅ CAMBIO: Incluir TODOS los estados y usar arrival_time
+            # Logging para depuración
+            logger.info(f"[_get_live_queue] institution_id={institution_id}, today={today}")
+            
+            # Contar todos los registros de hoy (independientemente del estado)
+            count_today = WaitingRoomEntry.objects.filter(
+                institution_id=institution_id,
+                arrival_time__date=today
+            ).count()
+            logger.info(f"[_get_live_queue] Total entradas hoy: {count_today}")
+            
+            # Contar por estado
+            for status in ['waiting', 'in_consultation', 'completed', 'canceled', 'no_show']:
+                count = WaitingRoomEntry.objects.filter(
+                    institution_id=institution_id,
+                    arrival_time__date=today,
+                    status=status
+                ).count()
+                logger.info(f"[_get_live_queue] Entradas con status '{status}': {count}")
+            
             live_queue = WaitingRoomEntry.objects.filter(
                 institution_id=institution_id,
                 status__in=['waiting', 'in_consultation', 'completed', 'canceled', 'no_show'],
-                arrival_time__date=today  # Filtrar por fecha de llegada del día actual
+                arrival_time__date=today
             ).select_related('patient', 'appointment', 'institution')
+            
+            logger.info(f"[_get_live_queue] Resultado final: {live_queue.count()} entradas")
             
             live_queue_data = WaitingRoomEntrySerializer(live_queue, many=True).data
             
             return live_queue_data
             
         except Exception as e:
-            logger.error(f"Error obteniendo live queue: {str(e)}")
+            logger.error(f"Error obteniendo live queue: {str(e)}", exc_info=True)
             return []
     
     def _get_pending_entries(self, institution_id, today):
