@@ -31,6 +31,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   const location = useLocation();
   const isPatientRoute = location.pathname.startsWith("/patient");
   const homePath = isPatientRoute ? "/patient" : "/";
+  
   useEffect(() => {
     const timer = setInterval(() => setNow(moment()), 1000);
     return () => clearInterval(timer);
@@ -49,7 +50,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <ol role="list" className="flex items-center space-x-2">
               <li>
                 <div>
-                  <Link to={homePath} className="text-white/30 hover:text-white transition-colors">
+                  {/* ✅ FIX: Mejorado contraste del icono Home (text-white/30 -> text-white/50) */}
+                  <Link to={homePath} className="text-white/50 hover:text-white transition-colors">
                     <HomeIcon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
                     <span className="sr-only">Home</span>
                   </Link>
@@ -67,7 +69,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                       {item.path ? (
                         <Link
                           to={item.path}
-                          className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-all duration-300"
+                          /* ✅ FIX: Mejorado contraste del breadcrumb (text-white/40 -> text-white/60) */
+                          className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white transition-all duration-300"
                         >
                           {item.label}
                         </Link>
@@ -76,7 +79,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                           className={`ml-2 text-[10px] font-black uppercase tracking-[0.2em] ${
                             item.active
                               ? "text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]"
-                              : "text-white/30"
+                              : "text-white/60"
                           }`}
                           aria-current={item.active ? "page" : undefined}
                         >
@@ -90,7 +93,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 <li>
                   <div className="flex items-center">
                     <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/40" aria-hidden="true" />
-                    <h2 className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 leading-none">
+                    {/* ✅ FIX: Mejorado contraste del título del breadcrumb (text-white/60 -> text-white/80) */}
+                    <h2 className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 leading-none">
                       {breadcrumb}
                     </h2>
                   </div>
@@ -99,14 +103,21 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             </ol>
           </nav>
         </div>
-        {/* System Clock - Refined */}
-        <div className="hidden sm:flex items-center gap-4 font-mono text-[9px] tracking-[0.15em]">
-          <span className="text-white/20 uppercase tracking-[0.3em]">System_Clock</span>
-          <span className="text-white/80 font-bold tabular-nums bg-white/5 px-2 py-0.5 rounded-sm border border-white/10">
-            {now.format("HH:mm:ss").toUpperCase()} <span className="text-white/30 ml-1">{now.format("ZZ")}</span>
+        
+        {/* ✅ FIX: Sistema de Reloj con mayor tamaño y legibilidad */}
+        <div className="hidden sm:flex items-center gap-6 font-mono text-[11px] tracking-[0.15em]">
+          {/* Label con opacidad mejorada (20% -> 50%) y tamaño ligeramente mayor */}
+          <span className="text-white/50 uppercase tracking-[0.3em] font-semibold">System_Clock</span>
+          
+          {/* Hora con mejor contraste y padding */}
+          <span className="text-white font-bold tabular-nums bg-white/10 px-3 py-1 rounded-sm border border-white/15 shadow-lg">
+            {now.format("HH:mm:ss").toUpperCase()} 
+            {/* Zona horaria con mejor opacidad (30% -> 50%) */}
+            <span className="text-white/50 ml-1">{now.format("ZZ")}</span>
           </span>
         </div>
       </div>
+      
       {/* 2. OPERATIONAL CORE: Stats & Actions (Layout simplificado) */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         
@@ -118,7 +129,8 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 key={i}
                 className="flex flex-col px-6 py-2.5 min-w-[130px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat"
               >
-                <span className="text-[8px] font-black uppercase tracking-[0.25em] text-white/20 group-hover/stat:text-white/40 transition-colors">
+                {/* ✅ FIX: Etiquetas de estadísticas con mejor contraste (20% -> 40%) y tamaño ligeramente mayor (8px -> 9px) */}
+                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/40 group-hover/stat:text-white/60 transition-colors">
                   {stat.label}
                 </span>
                 <div className={`text-[12px] font-mono font-black tracking-[0.1em] mt-0.5 ${stat.color || "text-white"} drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]`}>
@@ -130,6 +142,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         ) : (
           <div className="flex-1" />
         )}
+        
         {/* Control Interface: Actions & Children (Buttons suben aquí) */}
         {(actions || children) && (
           <div className="flex items-center gap-4 self-start lg:self-center p-1.5 bg-black/40 border border-white/5 rounded-sm backdrop-blur-xl shadow-2xl">
@@ -150,6 +163,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
         )}
       </div>
+      
       {/* Decorative Tactical Baseline */}
       <div className="absolute -bottom-6 left-0 w-full flex items-center gap-3 opacity-20 pointer-events-none">
         <div className="h-[1px] flex-1 bg-gradient-to-r from-white/40 to-transparent" />

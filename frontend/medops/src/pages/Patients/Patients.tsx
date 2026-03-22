@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { 
   UserPlusIcon, 
-  MagnifyingGlassIcon, 
+  MagnifyingGlassIcon,
   TrashIcon,
   CpuChipIcon,
   ServerIcon
@@ -83,7 +83,8 @@ export default function Patients() {
   const searchSection = (
     <div className="relative group">
       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-        <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/20'}`} />
+        {/* ✅ FIX: Mejorado contraste del icono de búsqueda (text-white/20 -> text-white/30) */}
+        <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/30'}`} />
       </div>
       <input
         type="text"
@@ -93,11 +94,13 @@ export default function Patients() {
           setCurrentPage(1);
         }}
         placeholder="ACCESS_CENTRAL_DATABASE: BUSCAR POR NOMBRE, UID O FOLIO..."
-        className="w-full bg-black/40 border border-white/10 text-white text-xs font-mono py-4 pl-12 pr-4 rounded-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/10 uppercase tracking-[0.1em] shadow-inner"
+        /* ✅ FIX: Mejorado contraste del placeholder (placeholder:text-white/10 -> placeholder:text-white/30) */
+        className="w-full bg-black/40 border border-white/10 text-white text-xs font-mono py-4 pl-12 pr-4 rounded-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/30 uppercase tracking-[0.1em] shadow-inner"
       />
       {(isSearching || query.length > 0) && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <CpuChipIcon className={`w-4 h-4 ${isSearching ? 'text-white animate-spin opacity-40' : 'text-white/10'}`} />
+          {/* ✅ FIX: Mejorado contraste del icono de carga inactivo (text-white/10 -> text-white/30) */}
+          <CpuChipIcon className={`w-4 h-4 ${isSearching ? 'text-white animate-spin opacity-40' : 'text-white/30'}`} />
         </div>
       )}
     </div>
