@@ -18,7 +18,9 @@ export function useUpdateAppointmentStatus() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-      queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] }); // ✅ NUEVO
+      // ❌ ANTES: queryClient.invalidateQueries({ queryKey: ["waitingRoomEntriesToday"] });
+      // ✅ AHORA: Invalidar todas las variaciones de operationalHub
+      queryClient.invalidateQueries({ queryKey: ["operationalHub"] });
     },
   });
 }
