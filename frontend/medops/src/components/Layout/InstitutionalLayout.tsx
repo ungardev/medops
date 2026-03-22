@@ -9,18 +9,22 @@ export default function InstitutionalLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const location = useLocation();
+  
   // Persistencia del estado del sidebar
   useEffect(() => {
     const saved = localStorage.getItem("sidebarCollapsed");
     if (saved === "true") setCollapsed(true);
   }, []);
+  
   useEffect(() => {
     localStorage.setItem("sidebarCollapsed", collapsed.toString());
   }, [collapsed]);
+  
   // Cerrar sidebar móvil al navegar
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
+  
   // Bloqueo de scroll en móvil
   useEffect(() => {
     if (mobileSidebarOpen) {
@@ -30,6 +34,7 @@ export default function InstitutionalLayout() {
     }
     return () => document.body.classList.remove("overflow-hidden");
   }, [mobileSidebarOpen]);
+  
   // Forzar redibujado de gráficos/tablas al colapsar
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,11 +52,12 @@ export default function InstitutionalLayout() {
         }`}
         onClick={() => setMobileSidebarOpen(false)}
       />
+      
       <div className="relative flex flex-1 overflow-hidden">
         
         {/* 🔹 Sidebar Container: Corregido para desaparición total en móvil */}
         <aside
-          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-white/5 bg-[#0a0a0b] overflow-hidden // ✅ FIX: Aumentado z-index
+          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-white/5 bg-[#0a0a0b] overflow-hidden
             ${mobileSidebarOpen 
               ? "translate-x-0 w-64 border-r" 
               : "-translate-x-full w-0 lg:w-auto lg:translate-x-0 lg:border-r"
@@ -67,6 +73,7 @@ export default function InstitutionalLayout() {
             setMobileOpen={setMobileSidebarOpen}
           />
         </aside>
+        
         {/* 🔹 Área de Contenido Principal */}
         <div
           className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
@@ -80,15 +87,19 @@ export default function InstitutionalLayout() {
               setMobileOpen={setMobileSidebarOpen}
             />
           </header>
+          
           {/* 🔹 Main Content */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden relative custom-scrollbar">
-            <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
+            {/* ✅ FIX: Reducido padding vertical para subir el contenido (p-4 sm:p-6 lg:p-8 -> p-2 sm:p-3 lg:p-4) */}
+            <div className="max-w-[1600px] mx-auto p-2 sm:p-3 lg:p-4 animate-in fade-in duration-500">
               <Outlet />
             </div>
           </main>
+          
           <InstitutionalFooter />
         </div>
       </div>
+      
       {/* 🔹 Toaster */}
       <Toaster
         position="top-right"

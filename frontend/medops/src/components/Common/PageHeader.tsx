@@ -37,7 +37,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     return () => clearInterval(timer);
   }, []);
   return (
-    <section className="relative flex flex-col gap-6 mb-8 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
+    <section className="relative flex flex-col gap-6 mb-4 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
       
       {/* 1. TOP BAR: Breadcrumbs (Elite Navigation) & System Clock */}
       <div className="flex items-center justify-between border-b border-white/10 pb-2">
@@ -50,7 +50,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             <ol role="list" className="flex items-center space-x-2">
               <li>
                 <div>
-                  {/* ✅ FIX: Mejorado contraste del icono Home (text-white/30 -> text-white/50) */}
                   <Link to={homePath} className="text-white/50 hover:text-white transition-colors">
                     <HomeIcon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
                     <span className="sr-only">Home</span>
@@ -69,7 +68,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                       {item.path ? (
                         <Link
                           to={item.path}
-                          /* ✅ FIX: Mejorado contraste del breadcrumb (text-white/40 -> text-white/60) */
                           className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white transition-all duration-300"
                         >
                           {item.label}
@@ -93,7 +91,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 <li>
                   <div className="flex items-center">
                     <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/40" aria-hidden="true" />
-                    {/* ✅ FIX: Mejorado contraste del título del breadcrumb (text-white/60 -> text-white/80) */}
                     <h2 className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 leading-none">
                       {breadcrumb}
                     </h2>
@@ -104,15 +101,12 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           </nav>
         </div>
         
-        {/* ✅ FIX: Sistema de Reloj con mayor tamaño y legibilidad */}
+        {/* Sistema de Reloj con mayor tamaño y legibilidad */}
         <div className="hidden sm:flex items-center gap-6 font-mono text-[11px] tracking-[0.15em]">
-          {/* Label con opacidad mejorada (20% -> 50%) y tamaño ligeramente mayor */}
           <span className="text-white/50 uppercase tracking-[0.3em] font-semibold">System_Clock</span>
           
-          {/* Hora con mejor contraste y padding */}
           <span className="text-white font-bold tabular-nums bg-white/10 px-3 py-1 rounded-sm border border-white/15 shadow-lg">
             {now.format("HH:mm:ss").toUpperCase()} 
-            {/* Zona horaria con mejor opacidad (30% -> 50%) */}
             <span className="text-white/50 ml-1">{now.format("ZZ")}</span>
           </span>
         </div>
@@ -129,7 +123,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
                 key={i}
                 className="flex flex-col px-6 py-2.5 min-w-[130px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat"
               >
-                {/* ✅ FIX: Etiquetas de estadísticas con mejor contraste (20% -> 40%) y tamaño ligeramente mayor (8px -> 9px) */}
                 <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/40 group-hover/stat:text-white/60 transition-colors">
                   {stat.label}
                 </span>
