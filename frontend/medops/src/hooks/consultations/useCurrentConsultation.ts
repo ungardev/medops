@@ -10,6 +10,7 @@ import { mapAppointment } from "../../utils/appointmentMapper";
 import { apiFetch } from "@/api/client";
 export function useCurrentConsultation() {
   const queryClient = useQueryClient();
+  
   // 1. QUERY: Obtener la consulta activa
   const consultationQuery = useQuery<AppointmentUI | null>({
     queryKey: ["appointment", "current"],
@@ -23,6 +24,7 @@ export function useCurrentConsultation() {
     refetchInterval: 30_000, // Refresco automático cada 30s
     staleTime: 10_000,
   });
+  
   // 2. MUTACIÓN: Actualizar Notas (con Invalidación Local)
   const updateNotes = useMutation({
     mutationFn: (data: { id: number; notes: string }) =>
@@ -31,9 +33,10 @@ export function useCurrentConsultation() {
       queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     },
   });
+  
   // 3. MUTACIÓN: Actualizar Estado (con Invalidación Cruzada)
   const updateStatus = useMutation({
-    mutationFn: (data: { id: number; status: AppointmentStatus }) =>  // ✅ CORREGIDO: AppointmentStatus en lugar de string
+    mutationFn: (data: { id: number; status: AppointmentStatus }) =>
       updateAppointmentStatus(data.id, data.status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
@@ -44,8 +47,12 @@ export function useCurrentConsultation() {
       
       // Sincroniza cualquier otra lista de citas hoy
       queryClient.invalidateQueries({ queryKey: ["appointmentsToday"] });
+      
+      // ✅ FIX CRÍTICO: Invalidar operationalHub para actualizar Live Queue
+      queryClient.invalidateQueries({ queryKey: ["operationalHub"] });
     },
   });
+  
   return {
     consultationQuery,
     updateNotes,
