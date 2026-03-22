@@ -6,9 +6,9 @@ import ConfirmCloseDayModal from "@/components/WaitingRoom/ConfirmCloseDayModal"
 import ConfirmGenericModal from "@/components/Common/ConfirmGenericModal";
 import Toast from "@/components/Common/Toast";
 import PageHeader from "@/components/Common/PageHeader";
-import InstitutionSelector from "@/components/WaitingRoom/InstitutionSelector";
+// ELIMINADO: import InstitutionSelector from "@/components/WaitingRoom/InstitutionSelector";
 import InstitutionFilter from "@/components/WaitingRoom/InstitutionFilter";
-import EliteDropdown from "@/components/Common/EliteDropdown"; // ⚠️ NUEVO: Componente estilizado
+import EliteDropdown from "@/components/Common/EliteDropdown";
 import { useUpdateWaitingRoomStatus } from "@/hooks/waitingroom/useUpdateWaitingRoomStatus";
 import { useRegisterArrival } from "@/hooks/waitingroom/useRegisterArrival";
 import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
@@ -109,7 +109,6 @@ export default function WaitingRoom() {
   
   // Extraemos refetch para forzar recargas manuales
   const { data: hubData, isLoading, isFetching, refetch } = useOperationalHub(selectedInstitutionId);
-  
   const liveQueue = hubData?.live_queue ?? [];
   const pendingEntries = hubData?.pending_entries ?? [];
   const categories = hubData?.filters.categories ?? [];
@@ -118,6 +117,7 @@ export default function WaitingRoom() {
   const updateAppointmentStatus = useUpdateAppointmentStatus();
   const registerArrival = useRegisterArrival();
   const startConsultation = useStartConsultation();
+  
   // --- Lógica de Filtrado Mejorada ---
   const filteredLiveQueue = liveQueue.filter(entry => {
     const matchesInstitution = !selectedInstitutionId || entry.institution === selectedInstitutionId;
@@ -135,6 +135,7 @@ export default function WaitingRoom() {
     
     return matchesInstitution && matchesCategory && matchesService && hasServiceOrNoFilter;
   });
+  
   const filteredPendingEntries = pendingEntries.filter(appt => {
     const matchesInstitution = !selectedInstitutionId || appt.institution === selectedInstitutionId;
     
@@ -151,10 +152,12 @@ export default function WaitingRoom() {
     return matchesInstitution && matchesService && matchesCategory && hasServiceOrNoFilter;
   });
   // ----------------------------------
+  
   // Servicios filtrados por categoría seleccionada (para el dropdown de servicios)
   const filteredServices = selectedCategory
     ? services.filter(s => s.category_id === selectedCategory)
     : services;
+    
   const [showOverlay, setShowOverlay] = useState(true);
   
   useEffect(() => {
@@ -184,6 +187,7 @@ export default function WaitingRoom() {
       setToast({ message: "Error al iniciar consulta", type: "error" });
     }
   };
+  
   const handleCheckIn = async (appointment: Appointment) => {
     // ⚠️ CORRECCIÓN DE TIPO: Asegurar que institution_id sea number | null
     const institutionIdToSend = selectedInstitutionId ?? activeInstitution?.id ?? null;
@@ -208,6 +212,7 @@ export default function WaitingRoom() {
       setToast({ message: "Error al registrar llegada", type: "error" });
     }
   };
+  
   const handleOpenRegisterModal = async () => {
     // Si no hay datos de servicios o están vacíos, intentar refrescar
     if (!services || services.length === 0) {
@@ -215,6 +220,7 @@ export default function WaitingRoom() {
     }
     setShowModal(true);
   };
+  
   // Componente de filtros actualizado con EliteDropdown
   const FilterControls = () => (
     <div className="flex gap-2">
@@ -251,8 +257,8 @@ export default function WaitingRoom() {
           { label: "Finalizados", value: filteredLiveQueue.filter(e => e.status === 'completed').length, color: "text-emerald-500" }
         ]}
         actions={
-          <div className="flex gap-2">
-            <InstitutionSelector />
+          <div className="flex flex-wrap gap-2 justify-end items-center">
+            {/* ELIMINADO: <InstitutionSelector /> */}
             <FilterControls />
             
             <button
@@ -475,4 +481,4 @@ export default function WaitingRoom() {
          {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
        </div>
      );
-}
+   }
