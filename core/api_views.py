@@ -7260,14 +7260,17 @@ class OperationalHubView(APIView):
         return slots
     
     def _get_live_queue(self, institution_id):
-        """Obtiene entradas activas en sala de espera."""
+        """Obtiene entradas activas en sala de espera (incluyendo recientemente completadas)."""
         try:
             from core.models import WaitingRoomEntry
             from core.serializers import WaitingRoomEntrySerializer
             
+            today = timezone.now().date()
+            
             live_queue = WaitingRoomEntry.objects.filter(
                 institution_id=institution_id,
-                status__in=['waiting', 'in_consultation']
+                status__in=['waiting', 'in_consultation', 'completed'],
+                created_at__date=today
             ).select_related('patient', 'appointment', 'institution')
             
             live_queue_data = WaitingRoomEntrySerializer(live_queue, many=True).data
