@@ -5,7 +5,8 @@ import { useChargeOrder } from "../../hooks/consultations/useChargeOrder";
 import { apiFetch } from "../../api/client";
 import type { DoctorService } from "../../types/services";
 import ServiceSearchCombobox from "./ServiceSearchCombobox";
-import { useInstitutions } from "../../hooks/settings/useInstitutions"; // ⚠️ NUEVO
+import { useInstitutions } from "../../hooks/settings/useInstitutions";
+import { useQueryClient } from "@tanstack/react-query"; // ✅ NUEVO: Importar useQueryClient
 import { 
   ChevronDownIcon, 
   ChevronRightIcon,
@@ -15,7 +16,7 @@ import {
   PlusIcon,
   ReceiptPercentIcon,
   ArrowRightIcon,
-  BuildingOfficeIcon // ⚠️ NUEVO
+  BuildingOfficeIcon
 } from "@heroicons/react/24/outline";
 export type ChargeOrderPanelProps =
   | { appointmentId: number; readOnly?: boolean }
@@ -34,6 +35,9 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const [showItems, setShowItems] = useState(true);
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [isSavingItems, setIsSavingItems] = useState(false);
+  
+  // ✅ NUEVO: Inicializar query client para invalidación de caché
+  const queryClient = useQueryClient();
   
   // ⚠️ NUEVO: Obtener institución activa
   const { activeInstitution } = useInstitutions();
@@ -107,6 +111,9 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       
       setPendingItems([]);
       void refetch();
+      
+      // ✅ FIX CRÍTICO: Invalidar query de la cita para actualizar modal inmediatamente
+      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     } catch (err) {
       console.error("Save_Items_Fault:", err);
       alert("Error al guardar los items. Por favor, intenta nuevamente.");
@@ -119,6 +126,9 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     try {
       await apiFetch(`charge-items/${id}/`, { method: "DELETE" });
       void refetch();
+      
+      // ✅ FIX CRÍTICO: Invalidar query de la cita para actualizar modal inmediatamente
+      queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     } catch (err) { 
       console.error("Delete_Fault:", err); 
       alert("Error al eliminar el item.");
@@ -172,6 +182,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
           </div>
         </div>
       </div>
+      
       {/* 02. SECCIÓN DE ÍTEMS */}
       <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
         <button 
