@@ -48,6 +48,7 @@ export default function SearchPage() {
   const params = new URLSearchParams(location.search);
   const query = params.get("query") || "";
   const [searchTerm, setSearchTerm] = useState(query);
+  
   useEffect(() => {
     if (!query.trim()) {
       setResults({ patients: [], appointments: [], orders: [] });
@@ -71,13 +72,16 @@ export default function SearchPage() {
         setLoading(false);
       });
   }, [query]);
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       navigate(`/search?query=${encodeURIComponent(searchTerm.trim())}`);
     }
   };
+  
   const totalResults = results.patients.length + results.appointments.length + results.orders.length;
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       <PageHeader 
@@ -90,6 +94,7 @@ export default function SearchPage() {
           { label: "MATCHES_FOUND", value: totalResults.toString().padStart(3, '0'), color: "text-white" }
         ]}
       />
+      
       {/* 🔍 BARRA DE BÚSQUEDA TÉCNICA */}
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="relative group">
@@ -98,21 +103,29 @@ export default function SearchPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Query: Patient_Name, ID, or Order_Number..."
-            className="w-full bg-white/[0.03] border border-white/10 rounded-sm py-4 pl-12 pr-4 text-sm font-mono text-white placeholder:text-white/20 focus:outline-none focus:border-[var(--palantir-active)]/50 focus:bg-white/[0.05] transition-all"
+            /* ✅ FIX: Mejorado contraste del placeholder (20% -> 40%) y fondo (0.03 -> 0.05) */
+            className="w-full bg-white/[0.05] border border-white/10 rounded-sm py-4 pl-12 pr-4 text-sm font-mono text-white placeholder:text-white/40 focus:outline-none focus:border-[var(--palantir-active)]/50 focus:bg-white/[0.07] transition-all"
           />
-          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-[var(--palantir-active)] transition-colors" />
+          {/* ✅ FIX: Mejorado contraste del icono (20% -> 40%) */}
+          <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/40 group-focus-within:text-[var(--palantir-active)] transition-colors" />
           <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-[var(--palantir-active)] text-black text-[10px] font-black px-4 py-1.5 uppercase tracking-tighter hover:bg-white transition-colors">
             Execute_Query
           </button>
         </form>
       </div>
+      
       <div className="max-w-6xl mx-auto space-y-10">
         {!query.trim() ? (
-          <EmptyState icon={<MagnifyingGlassIcon className="w-12 h-12 text-white/5" />} title="IDLE_MODE" description="System is waiting for a query parameter to begin cross-reference." />
+          /* ✅ FIX: EmptyState con diseño minimalista mejorado */
+          <EmptyState 
+            icon={<MagnifyingGlassIcon className="w-12 h-12 text-white/20" />} 
+            title="IDLE_MODE" 
+            description="System is waiting for a query parameter to begin cross-reference." 
+          />
         ) : loading ? (
           <div className="flex flex-col items-center justify-center py-20 space-y-4">
             <div className="w-8 h-8 border-2 border-[var(--palantir-active)]/30 border-t-[var(--palantir-active)] rounded-full animate-spin" />
-            <span className="text-[10px] font-mono text-[var(--palantir-active)] uppercase tracking-[0.3em] animate-pulse">Scanning_Database...</span>
+            <span className="text-[12px] font-mono text-[var(--palantir-active)] uppercase tracking-[0.3em] animate-pulse">Scanning_Database...</span>
           </div>
         ) : error ? (
           <div className="p-6 border border-red-500/20 bg-red-500/5 flex items-center gap-4">
@@ -121,7 +134,7 @@ export default function SearchPage() {
           </div>
         ) : totalResults > 0 ? (
           <div className="grid grid-cols-1 gap-12">
-             
+            
             {/* 👥 CATEGORÍA: PACIENTES */}
             {results.patients.length > 0 && (
               <section className="space-y-4">
@@ -133,6 +146,7 @@ export default function SearchPage() {
                 </div>
               </section>
             )}
+            
             {/* 📅 CATEGORÍA: CITAS */}
             {results.appointments.length > 0 && (
               <section className="space-y-4">
@@ -150,6 +164,7 @@ export default function SearchPage() {
                 </div>
               </section>
             )}
+            
             {/* 💳 CATEGORÍA: ÓRDENES */}
             {results.orders.length > 0 && (
               <section className="space-y-4">
@@ -169,7 +184,12 @@ export default function SearchPage() {
             )}
           </div>
         ) : (
-          <EmptyState icon={<ExclamationTriangleIcon className="w-12 h-12 text-white/5" />} title="ZERO_MATCHES" description={`No records found matching query "${query}".`} />
+          /* ✅ FIX: EmptyState para cero resultados con diseño minimalista */
+          <EmptyState 
+            icon={<ExclamationTriangleIcon className="w-12 h-12 text-white/20" />} 
+            title="ZERO_MATCHES" 
+            description={`No records found matching query "${query}".`} 
+          />
         )}
       </div>
     </div>
@@ -179,11 +199,13 @@ export default function SearchPage() {
 function SectionLabel({ icon, text, count }: { icon: React.ReactNode, text: string, count: number }) {
   return (
     <div className="flex items-center justify-between border-b border-white/5 pb-2">
-      <div className="flex items-center gap-2 text-[var(--palantir-muted)]">
+      <div className="flex items-center gap-2 text-white/70">
         {icon}
-        <span className="text-[10px] font-black uppercase tracking-[0.3em]">{text}</span>
+        {/* ✅ FIX: Texto de sección más grande (10px -> 12px) y más visible (var(--palantir-muted) -> white/70) */}
+        <span className="text-[12px] font-black uppercase tracking-[0.3em]">{text}</span>
       </div>
-      <span className="text-[9px] font-mono bg-white/5 px-2 py-0.5 rounded-full text-white/40">{count} matches</span>
+      {/* ✅ FIX: Contador de matches más legible (9px -> 10px, white/40 -> white/60) */}
+      <span className="text-[10px] font-mono bg-white/5 px-2 py-0.5 rounded-full text-white/60">{count} matches</span>
     </div>
   );
 }
@@ -194,27 +216,35 @@ function ResultCard({ to, title, subtitle, type }: { to: string, title: string, 
     FINANCE: "border-amber-500/20 hover:border-amber-500/50"
   };
   const borderColor = colors[type] || "border-white/10 hover:border-white/30";
+  
   return (
-    <Link to={to} className={`group block p-4 bg-white/[0.02] border ${borderColor} rounded-sm transition-all hover:bg-white/[0.04]`}>
+    <Link to={to} className={`group block p-4 bg-white/[0.04] border ${borderColor} rounded-sm transition-all hover:bg-white/[0.07]`}>
       <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <p className="text-[11px] font-bold text-white uppercase tracking-tight">{title}</p>
-          <p className="text-[9px] font-mono text-[var(--palantir-muted)] leading-relaxed">{subtitle}</p>
+          {/* ✅ FIX: Título más grande (11px -> 13px) y manteniendo contraste total */}
+          <p className="text-[13px] font-bold text-white uppercase tracking-tight">{title}</p>
+          {/* ✅ FIX: Subtítulo más grande (9px -> 11px) y más visible (var(--palantir-muted) -> white/60) */}
+          <p className="text-[11px] font-mono text-white/60 leading-relaxed">{subtitle}</p>
         </div>
-        <ChevronRightIcon className="w-4 h-4 text-white/10 group-hover:text-white group-hover:translate-x-1 transition-all" />
+        {/* ✅ FIX: Icono más visible (white/10 -> white/40) */}
+        <ChevronRightIcon className="w-4 h-4 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
       </div>
       <div className="mt-3 flex gap-2">
-        <span className="text-[7px] font-mono px-1.5 py-0.5 bg-white/5 text-white/30 uppercase tracking-widest">Type: {type}</span>
+        {/* ✅ FIX: Badge "Type" mucho más legible (7px -> 10px, white/30 -> white/50, bg-white/5 -> bg-white/10) */}
+        <span className="text-[10px] font-mono px-1.5 py-0.5 bg-white/10 text-white/50 uppercase tracking-widest">Type: {type}</span>
       </div>
     </Link>
   );
 }
 function EmptyState({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-white/10 rounded-sm">
-      <div className="mb-4">{icon}</div>
-      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">{title}</h3>
-      <p className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase mt-2 max-w-xs">{description}</p>
+    /* ✅ FIX: Aumentado padding vertical (py-20 -> py-32) para más aire y minimalismo */
+    <div className="flex flex-col items-center justify-center py-32 text-center border border-dashed border-white/10 rounded-sm">
+      <div className="mb-6">{icon}</div>
+      {/* ✅ FIX: Título más grande (10px -> 14px) y más visible (white/40 -> white/70) */}
+      <h3 className="text-[14px] font-black uppercase tracking-[0.4em] text-white/70">{title}</h3>
+      {/* ✅ FIX: Descripción más grande (9px -> 12px) y más visible (var(--palantir-muted) -> white/50) */}
+      <p className="text-[12px] font-mono text-white/50 uppercase mt-3 max-w-xs">{description}</p>
     </div>
   );
 }
