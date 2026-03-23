@@ -131,7 +131,7 @@ export function PatientDashboard() {
               {/* Email + Teléfono */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 md:mt-2">
                 {dashboard.patient.email && (
-                  <div className="flex items-center gap-1.5 text-white/40">
+                  <div className="flex items-center gap-1.5 text-white/60">
                     <EnvelopeIcon className="w-3 h-3 shrink-0" />
                     <span className="text-[10px] font-mono uppercase whitespace-normal break-words">
                       {dashboard.patient.email}
@@ -139,7 +139,7 @@ export function PatientDashboard() {
                   </div>
                 )}
                 {dashboard.patient.phone && (
-                  <div className="flex items-center gap-1.5 text-white/40">
+                  <div className="flex items-center gap-1.5 text-white/60">
                     <PhoneIcon className="w-3 h-3 shrink-0" />
                     <span className="text-[10px] font-mono uppercase">
                       {dashboard.patient.phone}
@@ -179,7 +179,7 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-blue-400/60">
               <IdentificationIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               Cédula
             </span>
           </div>
@@ -194,7 +194,7 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-purple-400/60">
               <CakeIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               Nacimiento
             </span>
           </div>
@@ -211,7 +211,7 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-emerald-400/60">
               <UserIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               Edad
             </span>
           </div>
@@ -226,7 +226,7 @@ export function PatientDashboard() {
             <div className="p-1.5 rounded-sm bg-white/[0.03] border border-white/5 text-cyan-400/60">
               <PhoneIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               Teléfono
             </span>
           </div>
@@ -246,7 +246,7 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-sm bg-white/[0.03] border border-white/5 ${metricsConfig.next_appointment.color}`}>
               <CalendarIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               {metricsConfig.next_appointment.label}
             </span>
           </div>
@@ -254,7 +254,7 @@ export function PatientDashboard() {
             {nextAppointmentDate || "Sin citas"}
           </div>
           {nextAppointment?.doctor && (
-            <div className="text-[10px] font-mono text-white/40 mt-1">
+            <div className="text-[10px] font-mono text-white/50 mt-1">
               Dr. {nextAppointment.doctor.name}
             </div>
           )}
@@ -267,14 +267,14 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-sm bg-white/[0.03] border border-white/5 ${metricsConfig.past_appointments.color}`}>
               <CheckCircleIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               {metricsConfig.past_appointments.label}
             </span>
           </div>
           <div className="text-xl font-mono font-bold text-white">
             {dashboard.past_appointments_count || 0}
           </div>
-          <div className="text-[10px] font-mono text-white/40 mt-1">
+          <div className="text-[10px] font-mono text-white/50 mt-1">
             consultas completadas
           </div>
         </div>
@@ -286,7 +286,7 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-sm bg-white/[0.03] border border-white/5 ${metricsConfig.subscription.color}`}>
               <CreditCardIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               {metricsConfig.subscription.label}
             </span>
           </div>
@@ -295,7 +295,7 @@ export function PatientDashboard() {
               <div className="text-xl font-mono font-bold text-white capitalize">
                 {dashboard.subscription.plan}
               </div>
-              <div className="text-[10px] font-mono text-white/40 mt-1">
+              <div className="text-[10px] font-mono text-white/50 mt-1">
                 {dashboard.subscription.days_remaining} días restantes
               </div>
             </>
@@ -313,14 +313,14 @@ export function PatientDashboard() {
             <div className={`p-1.5 rounded-sm bg-white/[0.03] border border-white/5 ${metricsConfig.notifications.color}`}>
               <BellIcon className="h-4 w-4" />
             </div>
-            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40">
+            <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/60">
               {metricsConfig.notifications.label}
             </span>
           </div>
           <div className="text-xl font-mono font-bold text-white">
             {unreadNotifications}
           </div>
-          <div className="text-[10px] font-mono text-white/40 mt-1">
+          <div className="text-[10px] font-mono text-white/50 mt-1">
             mensajes sin leer
           </div>
         </div>
