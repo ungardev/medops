@@ -28,7 +28,6 @@ const navItems = [
   { path: "/patients", label: "Pacientes", icon: Users },
   { path: "/appointments", label: "Citas", icon: CalendarDays },
   { path: "/payments", label: "Pagos", icon: CreditCard },
-  // CAMBIO: Actualizar path de navegación
   { path: "/services", label: "Servicios", icon: Briefcase },
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
@@ -55,7 +54,8 @@ export default function Sidebar({
   const getFontSrc = () => isDarkMode ? "/medopz_fuente_blanco.svg" : "/medopz_fuente_negro.svg";
   const itemBase = "group relative flex items-center px-4 py-3 transition-all duration-300 ease-out mb-1.5 overflow-hidden";
   const itemActive = "bg-white/[0.08] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.02)]";
-  const itemIdle = "text-white/40 hover:text-white hover:bg-white/[0.04]";
+  // CAMBIO: Texto inactivo ahora blanco puro para máxima legibilidad
+  const itemIdle = "text-white hover:text-white hover:bg-white/[0.04]";
   return (
     <aside
       className={`border-r border-white/5 transition-all duration-500 ease-in-out
@@ -155,7 +155,8 @@ export default function Sidebar({
                     />
                     
                     {!effectiveCollapsed && (
-                      <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase ${isActive ? "text-white" : "opacity-80 group-hover:opacity-100"}`}>
+                      // CAMBIO: Eliminado opacity-80 para texto blanco puro
+                      <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase ${isActive ? "text-white" : "text-white group-hover:text-white"}`}>
                         {label}
                       </span>
                     )}
