@@ -41,7 +41,8 @@ export default function PatientSidebar({
   
   const itemBase = "group relative flex items-center px-4 py-3 transition-all duration-300 ease-out mb-1.5 overflow-hidden";
   const itemActive = "bg-white/[0.08] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.02)]";
-  const itemIdle = "text-white/40 hover:text-white hover:bg-white/[0.04]";
+  // CAMBIO: Texto inactivo ahora blanco puro para máxima legibilidad
+  const itemIdle = "text-white hover:text-white hover:bg-white/[0.04]";
   
   return (
     <div className="flex flex-col h-full pt-4 pb-6 px-3">
@@ -140,7 +141,8 @@ export default function PatientSidebar({
                   />
                   
                   {!effectiveCollapsed && (
-                    <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase ${isActive ? "text-white" : "opacity-80 group-hover:opacity-100"}`}>
+                    // CAMBIO: Eliminado opacity-80 para texto blanco puro
+                    <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase ${isActive ? "text-white" : "text-white group-hover:text-white"}`}>
                       {label}
                     </span>
                   )}
