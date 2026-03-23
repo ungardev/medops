@@ -17,10 +17,8 @@ import { apiFetch } from "../../api/client";
 import { 
   LockClosedIcon, 
   LockOpenIcon,
-  CommandLineIcon,
   ShieldCheckIcon,
   ChevronLeftIcon,
-  ArrowPathIcon
 } from "@heroicons/react/24/outline";
 import { getPatient } from "../../api/patients";
 import { toPatientHeaderPatient } from "../../utils/patientTransform";
@@ -95,7 +93,6 @@ export default function PatientConsultationsDetail() {
   const patientFullName = patient?.full_name || 
     appointment?.patient?.full_name || 
     `PATIENTE_${appointment?.patient?.id || 'UNKNOWN'}`;
-  const sessionDate = appointment.appointment_date || "";
   const statusLabel = appointment.status_display || appointment.status || "N/A";
   // Función para navegar atrás
   const handleGoBack = () => {
@@ -108,7 +105,7 @@ export default function PatientConsultationsDetail() {
   return (
     <div className="min-h-screen bg-black text-white p-4 space-y-4">
       
-      {/* ✅ PAGE HEADER (Estilo Consultation.tsx) */}
+      {/* ✅ PAGE HEADER (Estilo Consultation.tsx + Switch Estado) */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -128,10 +125,39 @@ export default function PatientConsultationsDetail() {
             color: "text-emerald-400 font-bold"
           }
         ]}
-        children={patient ? <PatientHeader patient={patient} /> : null}
+        children={
+          <div className="flex items-center gap-4">
+            {/* Patient Header (alineado a la derecha) */}
+            {patient ? <PatientHeader patient={patient} /> : null}
+            
+            {/* Switch Estado (Read Only / Edit Mode) */}
+            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
+              {readOnly ? (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm">
+                  <LockClosedIcon className="w-4 h-4 text-white/40" />
+                  <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Read_Only</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-sm">
+                  <LockOpenIcon className="w-4 h-4 text-amber-400" />
+                  <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">Edit_Mode</span>
+                </div>
+              )}
+              
+              {/* Botón Back (integrado en el header) */}
+              <button 
+                onClick={handleGoBack}
+                className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-white/40 hover:text-white border border-white/10 hover:border-white/30 transition-all rounded-sm"
+              >
+                <ChevronLeftIcon className="w-3 h-3" />
+                Back
+              </button>
+            </div>
+          </div>
+        }
       />
       
-      {/* Layout Principal Compacto (Estilo Consultation.tsx) */}
+      {/* ✅ Layout Principal Compacto (Estilo Consultation.tsx) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4">
         
         {/* Main (Workflow) - Izquierda (9 columnas) */}
