@@ -1,7 +1,6 @@
 // src/pages/Dashboard/index.tsx
 import React, { useEffect } from "react";
 import AuditLog from "@/components/Dashboard/AuditLog";
-import PageHeader from "@/components/Common/PageHeader"; 
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { queryClient } from "@/lib/reactQuery";
 import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
@@ -30,9 +29,6 @@ export default function Dashboard() {
     return (
       <DashboardFiltersProvider>
         <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
-          <PageHeader 
-            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
-          />
           <div className="animate-pulse space-y-4">
             <div className="h-32 bg-white/5 rounded-lg"></div>
             <div className="h-24 bg-white/5 rounded-lg"></div>
@@ -47,9 +43,6 @@ export default function Dashboard() {
     return (
       <DashboardFiltersProvider>
         <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
-          <PageHeader 
-            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
-          />
           <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
             <div className="mb-6">
               <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -77,9 +70,6 @@ export default function Dashboard() {
     return (
       <DashboardFiltersProvider>
         <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
-          <PageHeader 
-            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
-          />
           <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
             <div className="mb-6">
               <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -138,11 +128,6 @@ export default function Dashboard() {
   return (
     <DashboardFiltersProvider>
       <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
-        
-        {/* PageHeader LIMPIO */}
-        <PageHeader 
-          breadcrumbs={[{ label: "MEDOPZ", active: true }]}
-        />
         
         {/* 🎯 COMPONENTE UNIFICADO - ActiveInstitutionCard con Live Clock integrado */}
         <section className="animate-in slide-in-from-bottom-1 duration-700 delay-50">
