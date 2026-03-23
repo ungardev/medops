@@ -1,130 +1,163 @@
 // src/pages/Dashboard/index.tsx
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import { 
-  UsersIcon, 
-  CalendarIcon, 
-  CurrencyDollarIcon,
-  ClockIcon,
-  ArrowRightIcon
-} from "@heroicons/react/24/outline";
-// Importar componentes del dashboard si es necesario
-// import StatCard from "@/components/Dashboard/StatCard";
-// import RecentActivity from "@/components/Dashboard/RecentActivity";
+import React, { useEffect } from "react";
+import AuditLog from "@/components/Dashboard/AuditLog";
+import PageHeader from "@/components/Common/PageHeader"; 
+import { useAuthToken } from "@/hooks/useAuthToken";
+import { queryClient } from "@/lib/reactQuery";
+import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
+import ActiveInstitutionCard from "@/components/Dashboard/ActiveInstitutionCard";
+import { useInstitutions } from "@/hooks/settings/useInstitutions";
+import type { InstitutionSettings } from "@/types/config";
 export default function Dashboard() {
-  const navigate = useNavigate();
+  const { token } = useAuthToken();
   
-  // Datos de ejemplo para las tarjetas estadísticas
-  const stats = [
-    { 
-      title: "Pacientes Activos", 
-      value: "1,245", 
-      change: "+12%", 
-      icon: UsersIcon, 
-      color: "text-blue-400",
-      bg: "bg-blue-400/10"
-    },
-    { 
-      title: "Citas Hoy", 
-      value: "42", 
-      change: "+8%", 
-      icon: CalendarIcon, 
-      color: "text-emerald-400",
-      bg: "bg-emerald-400/10"
-    },
-    { 
-      title: "Ingresos del Día", 
-      value: "$3,450", 
-      change: "+5%", 
-      icon: CurrencyDollarIcon, 
-      color: "text-amber-400",
-      bg: "bg-amber-400/10"
-    },
-    { 
-      title: "En Espera", 
-      value: "8", 
-      change: "Activo", 
-      icon: ClockIcon, 
-      color: "text-purple-400",
-      bg: "bg-purple-400/10"
+  const { 
+    institutions, 
+    activeInstitution, 
+    setActiveInstitution,
+    isLoading: isLoadingInstitutions,
+    isSettingActive
+  } = useInstitutions();
+  
+  useEffect(() => {
+    if (token) {
+      queryClient.invalidateQueries({ queryKey: ["notifications", token] });
     }
-  ];
-  return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* 
-        NOTA: El PageHeader ha sido eliminado según la solicitud.
-        Los widgets ahora subirán naturalmente en el layout.
-      */}
-      
-      {/* Grid de Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <div 
-            key={index}
-            className="bg-[#0a0a0b] border border-white/5 rounded-sm p-6 hover:border-white/10 transition-colors group cursor-pointer"
-            onClick={() => stat.title === "Citas Hoy" && navigate("/appointments")}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`p-2 rounded-sm ${stat.bg}`}>
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
-              </div>
-              <span className={`text-xs font-bold ${stat.color}`}>
-                {stat.change}
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-1">{stat.value}</h3>
-            <p className="text-xs text-white/40 uppercase tracking-wider">{stat.title}</p>
+  }, [token]);
+  
+  // ✅ ESTADO 1: Cargando instituciones
+  if (isLoadingInstitutions) {
+    return (
+      <DashboardFiltersProvider>
+        <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+          <PageHeader 
+            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
+          />
+          <div className="animate-pulse space-y-4">
+            <div className="h-32 bg-white/5 rounded-lg"></div>
+            <div className="h-24 bg-white/5 rounded-lg"></div>
           </div>
-        ))}
-      </div>
-      {/* Sección de Actividad Reciente y Gráficos (Ejemplo) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Columna Principal */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[#0a0a0b] border border-white/5 rounded-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                Actividad Reciente
-              </h3>
-              <button className="text-xs text-white/40 hover:text-white flex items-center gap-1">
-                Ver Todo <ArrowRightIcon className="w-3 h-3" />
+        </div>
+      </DashboardFiltersProvider>
+    );
+  }
+  
+  // ✅ ESTADO 2: No hay instituciones configuradas
+  if (!activeInstitution && institutions.length === 0) {
+    return (
+      <DashboardFiltersProvider>
+        <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+          <PageHeader 
+            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
+          />
+          <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">No tienes instituciones configuradas</h3>
+              <p className="text-white/60 mb-6">Configura tu primera institución para comenzar a usar MEDOPS</p>
+              <button 
+                onClick={() => window.location.href = "/settings/config"}
+                className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors"
+              >
+                Configurar Institución
               </button>
             </div>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-4 p-3 bg-white/5 rounded-sm">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm text-white">Nueva cita agendada para el paciente #{1000 + i}</p>
-                    <p className="text-xs text-white/40">Hace {i * 15} minutos</p>
+          </div>
+        </div>
+      </DashboardFiltersProvider>
+    );
+  }
+  
+  // ✅ ESTADO 3: Hay instituciones pero ninguna está activa
+  if (!activeInstitution && institutions.length > 0) {
+    return (
+      <DashboardFiltersProvider>
+        <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+          <PageHeader 
+            breadcrumbs={[{ label: "MEDOPZ", active: true }]}
+          />
+          <div className="bg-[#0A0A0A] border border-white/5 p-8 rounded-lg text-center">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Selecciona una institución activa</h3>
+              <p className="text-white/60 mb-6">Tienes {institutions.length} institución(es) disponible(s). Selecciona cuál quieres usar:</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                {institutions.map((institution: InstitutionSettings) => (
+                  <div 
+                    key={institution.id}
+                    className="bg-black/30 border border-white/10 rounded-lg p-4 hover:border-emerald-500/30 transition-all cursor-pointer"
+                    onClick={() => institution.id && setActiveInstitution(institution.id)}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      {institution.logo && typeof institution.logo === 'string' ? (
+                        <img src={institution.logo} alt={institution.name} className="w-10 h-10 object-contain" />
+                      ) : (
+                        <div className="w-10 h-10 bg-white/10 rounded flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className="text-left">
+                        <h4 className="font-medium text-white text-sm">{institution.name}</h4>
+                        <p className="text-xs text-white/50">{institution.tax_id}</p>
+                      </div>
+                    </div>
+                    <button className="w-full py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-xs font-medium rounded transition-colors">
+                      Establecer como Activa
+                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              
+              <div className="mt-6 text-xs text-white/40">
+                {isSettingActive && (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+                    Estableciendo institución activa...
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        {/* Sidebar Derecho */}
-        <div className="space-y-6">
-          <div className="bg-[#0a0a0b] border border-white/5 rounded-sm p-6">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4">
-              Próximas Citas
-            </h3>
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-white/5 rounded-sm border-l-2 border-blue-500">
-                  <div className="text-xs text-white/60 font-mono">
-                    0{9 + i}:00 AM
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-white font-medium">Paciente #{2000 + i}</p>
-                    <p className="text-[10px] text-white/40">Consulta General</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+      </DashboardFiltersProvider>
+    );
+  }
+  
+  // ✅ ESTADO 4: Todo listo - Dashboard simplificado
+  return (
+    <DashboardFiltersProvider>
+      <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
+        
+        {/* PageHeader LIMPIO */}
+        <PageHeader 
+          breadcrumbs={[{ label: "MEDOPZ", active: true }]}
+        />
+        
+        {/* 🎯 COMPONENTE UNIFICADO - ActiveInstitutionCard con Live Clock integrado */}
+        <section className="animate-in slide-in-from-bottom-1 duration-700 delay-50">
+          <ActiveInstitutionCard />
+        </section>
+        
+        {/* LOG DE AUDITORÍA */}
+        <section className="pt-4 border-t border-white/10">
+          <div className="flex items-center gap-2 mb-4">
+             <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
+             <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">Auditoría_Operacional_Live</span>
           </div>
-        </div>
+          <AuditLog />
+        </section>
       </div>
-    </div>
+    </DashboardFiltersProvider>
   );
 }
