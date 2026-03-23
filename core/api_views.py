@@ -1343,7 +1343,7 @@ def event_log_api(request):
 def reports_api(request):
     """
     Genera reportes financieros y clínicos por período.
-    Soporta filtros de tipo, fecha inicio, fecha fin, moneda.
+    Nuevo paradigma: Agrupación por DoctorService (vía ChargeItem).
     """
     report_type = request.query_params.get('type', 'FINANCIAL').upper()
     start_date = request.query_params.get('start_date')
@@ -1351,70 +1351,52 @@ def reports_api(request):
     currency = request.query_params.get('currency', 'USD')
     
     try:
-        # Parsear fechas como date (no datetime) para comparar correctamente con DateField
+        # Parsear fechas
         start = datetime.strptime(start_date, '%Y-%m-%d').date() if start_date else None
         end = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else None
         
         rows = []
         
-        if report_type == 'FINANCIAL':
-            # Reporte financiero: pagos por período
-            payments = Payment.objects.filter(status='confirmed')
-            
-            if start:
-                start_dt = timezone.make_aware(datetime.combine(start, datetime.min.time()))
-                payments = payments.filter(received_at__gte=start_dt)
-            if end:
-                end_dt = timezone.make_aware(datetime.combine(end, datetime.max.time()))
-                payments = payments.filter(received_at__lte=end_dt)
-            
-            # Agrupar por fecha
-            payments_by_date = payments.values('received_at').annotate(
-                total=Sum('amount'),
-                count=Count('id')
-            ).order_by('-received_at')
-            
-            for item in payments_by_date:
-                rows.append({
-                    'id': f"FIN-{item['received_at']}",
-                    'date': str(item['received_at'].date()) if item['received_at'] else '',
-                    'type': 'FINANCIAL',
-                    'entity': 'Payment',
-                    'status': 'CONFIRMED',
-                    'amount': float(item['total']),
-                    'currency': currency,
-                })
-        
-        elif report_type == 'CLINICAL':
-            # Reporte clínico: citas por período y estado
-            appointments = Appointment.objects.filter(
-                status__in=['pending', 'completed', 'canceled']
-            )
-            
+        # --- REPORTE CLÍNICO (Agrupado por DoctorService) ---
+        if report_type in ['CLINICAL', 'COMBINED']:
+            # Filtrar citas por fecha
+            appointments = Appointment.objects.all()
             if start:
                 appointments = appointments.filter(appointment_date__gte=start)
             if end:
                 appointments = appointments.filter(appointment_date__lte=end)
             
-            # Agrupar por fecha y estado
-            appointments_by_status = appointments.values('appointment_date', 'status').annotate(
-                count=Count('id')
-            ).order_by('-appointment_date')
+            # Obtener ítems de cobro asociados a las citas (vía ChargeOrder)
+            charge_items = ChargeItem.objects.filter(
+                order__appointment__in=appointments
+            ).select_related('doctor_service', 'order__appointment')
             
-            for item in appointments_by_status:
+            # Agrupar por servicio y fecha de cita
+            items_by_service = charge_items.values(
+                'doctor_service__name',
+                'order__appointment__appointment_date'
+            ).annotate(
+                total_amount=Sum('subtotal'), # Monto del ítem (subtotal)
+                count=Count('id')
+            ).order_by('-order__appointment__appointment_date')
+            
+            for item in items_by_service:
+                service_name = item['doctor_service__name'] or 'General Service'
+                appointment_date = item['order__appointment__appointment_date']
+                
                 rows.append({
-                    'id': f"CLI-{item['appointment_date']}.{item['status']}",
-                    'date': str(item['appointment_date']) if item['appointment_date'] else '',
-                    'type': 'CLINICAL',
-                    'entity': 'Appointment',
-                    'status': item['status'].upper(),
-                    'amount': 0,
+                    'id': f"CLI-{appointment_date}-{service_name}",
+                    'date': str(appointment_date),
+                    'type': 'clinical',
+                    'entity': service_name,
+                    'status': 'COMPLETED',
+                    'amount': float(item['total_amount']),
                     'currency': currency,
                 })
         
-        elif report_type == 'COMBINED':
-            # Reporte combinado: pagos + citas
-            # Pagos
+        # --- REPORTE FINANCIERO (Agrupado por DoctorService) ---
+        if report_type in ['FINANCIAL', 'COMBINED']:
+            # Filtrar pagos confirmados por fecha
             payments = Payment.objects.filter(status='confirmed')
             if start:
                 start_dt = timezone.make_aware(datetime.combine(start, datetime.min.time()))
@@ -1423,58 +1405,40 @@ def reports_api(request):
                 end_dt = timezone.make_aware(datetime.combine(end, datetime.max.time()))
                 payments = payments.filter(received_at__lte=end_dt)
             
-            payments_by_date = payments.values('received_at').annotate(
-                total=Sum('amount'),
+            # Obtener ítems de cobro asociados a los pagos (vía ChargeOrder)
+            charge_items = ChargeItem.objects.filter(
+                order__payments__in=payments
+            ).select_related('doctor_service', 'order')
+            
+            # Agrupar por servicio y fecha de pago
+            items_by_service = charge_items.values(
+                'doctor_service__name',
+                'order__payments__received_at__date'
+            ).annotate(
+                total_amount=Sum('subtotal'), # Monto del ítem pagado
                 count=Count('id')
-            ).order_by('-received_at')
+            ).order_by('-order__payments__received_at__date')
             
-            # Citas
-            appointments = Appointment.objects.filter(
-                status__in=['pending', 'completed', 'canceled']
-            )
-            if start:
-                appointments = appointments.filter(appointment_date__gte=start)
-            if end:
-                appointments = appointments.filter(appointment_date__lte=end)
-            
-            # Agrupar por fecha y estado
-            appointments_by_status = appointments.values('appointment_date', 'status').annotate(
-                count=Count('id')
-            ).order_by('-appointment_date')
-            
-            # Agregar filas financieras
-            for item in payments_by_date:
+            for item in items_by_service:
+                service_name = item['doctor_service__name'] or 'General Service'
+                payment_date = item['order__payments__received_at__date']
+                
                 rows.append({
-                    'id': f"FIN-{item['received_at']}",
-                    'date': str(item['received_at'].date()) if item['received_at'] else '',
-                    'type': 'FINANCIAL',
-                    'entity': 'Payment',
+                    'id': f"FIN-{payment_date}-{service_name}",
+                    'date': str(payment_date),
+                    'type': 'financial',
+                    'entity': service_name,
                     'status': 'CONFIRMED',
-                    'amount': float(item['total']),
-                    'count': item['count'],
+                    'amount': float(item['total_amount']),
                     'currency': currency,
                 })
-            
-            # Agregar filas clínicas
-            for item in appointments_by_status:
-                rows.append({
-                    'id': f"CLI-{item['appointment_date']}.{item['status']}",
-                    'date': str(item['appointment_date']) if item['appointment_date'] else '',
-                    'type': 'CLINICAL',
-                    'entity': 'Appointment',
-                    'status': item['status'].upper(),
-                    'amount': 0,
-                    'count': item['count'],
-                    'currency': currency,
-                })
-        else:
-            # Tipo de reporte no soportado
-            return Response({"error": f"Tipo de reporte no soportado: {report_type}"}, status=400)
         
-        # Ordenar por fecha descendente (usar string para evitar comparaciones de tipos)
-        rows.sort(key=lambda x: x.get('date', ''), reverse=True)
+        # Ordenar filas combinadas por fecha
+        if report_type == 'COMBINED':
+            rows.sort(key=lambda x: x.get('date', ''), reverse=True)
         
         return Response(rows)
+        
     except Exception as e:
         logger.error(f"Error en reports_api: {str(e)}")
         return Response({"error": str(e)}, status=500)
