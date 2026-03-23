@@ -18,10 +18,10 @@ const ServiceStatusFilters = ({ categoryType, activeFilter, onFilterChange }: Pr
             flex-1 min-w-0 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-sm transition-all duration-200
             ${activeFilter === state 
               ? "bg-white/20 text-white" 
-              : "text-white/60 hover:text-white hover:bg-white/10"}
+              : "text-white/80 hover:text-white hover:bg-white/10"}
           `}
         >
-          <span className="text-[10px] font-semibold truncate">
+          <span className="text-[12px] font-semibold truncate">
             {config.labels[state as keyof typeof config.labels]}
           </span>
         </button>
