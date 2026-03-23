@@ -220,7 +220,8 @@ export const ActiveInstitutionCard: React.FC = () => {
         {/* Institution Info + Live Clock + Location - LadoIzq en desktop */}
         <div className="flex-1 min-w-0 w-full">
           <div className="flex items-center gap-3 flex-wrap">
-            <h4 className="text-sm font-black text-white uppercase truncate tracking-widest">
+            {/* 🚀 CAMBIO: Título más grande y blanco puro */}
+            <h4 className="text-lg font-black text-white uppercase truncate tracking-widest">
               {institution.name}
             </h4>
             
@@ -239,8 +240,10 @@ export const ActiveInstitutionCard: React.FC = () => {
               <button onClick={handleConfigure} className="p-1 hover:bg-white/5 rounded transition-colors">
                 <CogIcon className="w-3 h-3 text-white/30 hover:text-white/60" />
               </button>
-              <span className="text-[8px] font-mono text-white/20 uppercase tracking-tighter">Fiscal_UID:</span>
-              <p className="text-[10px] font-mono text-white/60">{institution.tax_id || "PENDING_REGISTRATION"}</p>
+              {/* 🚀 CAMBIO: Label con opacidad reducida (legible) */}
+              <span className="text-[8px] font-mono text-white/60 uppercase tracking-tighter">Fiscal_UID:</span>
+              {/* 🚀 CAMBIO: Valor blanco puro */}
+              <p className="text-[10px] font-mono text-white">{institution.tax_id || "PENDING_REGISTRATION"}</p>
             </div>
           </div>
           
@@ -252,7 +255,7 @@ export const ActiveInstitutionCard: React.FC = () => {
               </span>
             </div>
             <div className="h-4 w-[1px] bg-white/10"></div>
-            <div className="flex items-center gap-2 text-white/40">
+            <div className="flex items-center gap-2 text-white/70">
               <span className="text-[10px] font-mono uppercase">
                 {now.format("dddd, DD MMMM YYYY")}
               </span>
@@ -260,7 +263,7 @@ export const ActiveInstitutionCard: React.FC = () => {
             {locationInfo.full && locationInfo.full !== "Sin ubicación" && (
               <>
                 <div className="h-4 w-[1px] bg-white/10"></div>
-                <div className="flex items-center gap-1 text-white/40">
+                <div className="flex items-center gap-1 text-white/70">
                   <MapPinIcon className="w-3 h-3" />
                   <span className="text-[10px] font-mono">{locationInfo.full}</span>
                 </div>
@@ -314,13 +317,15 @@ export const ActiveInstitutionCard: React.FC = () => {
           </span>
         </div>
         <div className="text-right">
-          <div className="text-[10px] font-mono text-white/60 uppercase">
+          {/* 🚀 CAMBIO: Fecha mobile con opacidad reducida */}
+          <div className="text-[10px] font-mono text-white/70 uppercase">
             {now.format("dddd, DD MMMM YYYY")}
           </div>
           {locationInfo.full && locationInfo.full !== "Sin ubicación" && (
             <div className="flex items-center justify-end gap-1 mt-1">
               <MapPinIcon className="w-3 h-3 text-white/30" />
-              <span className="text-[8px] font-mono text-white/40">{locationInfo.full}</span>
+              {/* 🚀 CAMBIO: Ubicación mobile con opacidad reducida */}
+              <span className="text-[8px] font-mono text-white/70">{locationInfo.full}</span>
             </div>
           )}
         </div>
@@ -347,7 +352,8 @@ export const ActiveInstitutionCard: React.FC = () => {
                   <div className={`p-1 rounded-sm bg-white/[0.03] border border-white/5 ${cfg.color} group-hover:border-[var(--palantir-active)]/20 transition-colors`}>
                     <Icon className="h-3 w-3" />
                   </div>
-                  <span className="text-[8px] font-black uppercase tracking-[0.15em] text-white/40 group-hover:text-white/60 truncate">
+                  {/* 🚀 CAMBIO: Label métrica más grande y blanco puro */}
+                  <span className="text-[10px] font-black uppercase tracking-[0.15em] text-white group-hover:text-white/80 truncate">
                     {getMetricLabel(key)}
                   </span>
                 </div>
@@ -359,7 +365,8 @@ export const ActiveInstitutionCard: React.FC = () => {
                 
                 {/* Footer: ID + Live Indicator */}
                 <div className="flex justify-between items-center w-full pt-1 border-t border-white/[0.03]">
-                  <span className="text-[7px] font-mono text-white/20 uppercase tracking-tighter">
+                  {/* 🚀 CAMBIO: Footer métrica con opacidad reducida */}
+                  <span className="text-[7px] font-mono text-white/50 uppercase tracking-tighter">
                     {key.slice(0, 5)}
                   </span>
                   <div className="flex items-center gap-1">
