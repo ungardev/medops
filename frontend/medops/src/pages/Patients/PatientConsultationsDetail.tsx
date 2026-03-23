@@ -33,9 +33,12 @@ export default function PatientConsultationsDetail() {
   const [successData, setSuccessData] = useState<{ docs: any[], skipped: string[] } | null>(null);
   const [errorData, setErrorData] = useState<{ category: string, error: string }[] | null>(null);
   
-  // Estado de solo lectura - automático según estado de la cita
+  // ✅ ESTADO LOCAL PARA MODO EDICIÓN
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Lógica de solo lectura actualizada
   const isCompleted = appointment?.status === 'completed';
-  const readOnly = isCompleted;
+  const readOnly = isCompleted || !isEditMode; // Solo editable si NO está completada Y está en modo edición
   
   // Cargar perfil completo del paciente
   useEffect(() => {
@@ -105,7 +108,7 @@ export default function PatientConsultationsDetail() {
   return (
     <div className="min-h-screen bg-black text-white p-4 space-y-4">
       
-      {/* ✅ PAGE HEADER (Estilo Consultation.tsx + Switch Estado) */}
+      {/* ✅ PAGE HEADER (Estilo Consultation.tsx + Switch Estado Dinámico) */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
@@ -126,22 +129,31 @@ export default function PatientConsultationsDetail() {
           }
         ]}
         children={
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Patient Header (alineado a la derecha) */}
             {patient ? <PatientHeader patient={patient} /> : null}
             
-            {/* Switch Estado (Read Only / Edit Mode) */}
+            {/* Switch Estado (Read Only / Edit Mode) - Dinámico */}
             <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
-              {readOnly ? (
+              {isCompleted ? (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm">
                   <LockClosedIcon className="w-4 h-4 text-white/40" />
-                  <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Read_Only</span>
+                  <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Completed</span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-sm">
-                  <LockOpenIcon className="w-4 h-4 text-amber-400" />
-                  <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider">Edit_Mode</span>
-                </div>
+                <button 
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  className={`flex items-center gap-2 px-3 py-1.5 border rounded-sm transition-all ${
+                    isEditMode 
+                      ? "bg-amber-500/10 border-amber-500/30" 
+                      : "bg-white/5 border-white/10"
+                  }`}
+                >
+                  <LockOpenIcon className={`w-4 h-4 ${isEditMode ? "text-amber-400" : "text-white/40"}`} />
+                  <span className={`text-[9px] font-bold uppercase tracking-wider ${isEditMode ? "text-amber-400" : "text-white/40"}`}>
+                    {isEditMode ? "Edit_Mode" : "Read_Only"}
+                  </span>
+                </button>
               )}
               
               {/* Botón Back (integrado en el header) */}
