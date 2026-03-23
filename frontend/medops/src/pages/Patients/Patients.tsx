@@ -29,6 +29,7 @@ export default function Patients() {
   const { mutate: deletePatient, isPending: isDeleting } = useDeletePatient();
   const { data: paged, isLoading: isLoadingPaged, refetch } = usePatients(currentPage, pageSize);
   const { data: searchResults = [], isLoading: isSearching } = usePatientsSearch(query);
+  
   const list = useMemo(() => {
     return query.trim().length > 0 
       ? searchResults 
@@ -83,7 +84,6 @@ export default function Patients() {
   const searchSection = (
     <div className="relative group">
       <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-        {/* ✅ FIX: Mejorado contraste del icono de búsqueda (text-white/20 -> text-white/30) */}
         <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isSearching ? 'text-white animate-pulse' : 'text-white/30'}`} />
       </div>
       <input
@@ -94,12 +94,10 @@ export default function Patients() {
           setCurrentPage(1);
         }}
         placeholder="ACCESS_CENTRAL_DATABASE: BUSCAR POR NOMBRE, UID O FOLIO..."
-        /* ✅ FIX: Mejorado contraste del placeholder (placeholder:text-white/10 -> placeholder:text-white/30) */
         className="w-full bg-black/40 border border-white/10 text-white text-xs font-mono py-4 pl-12 pr-4 rounded-sm focus:outline-none focus:border-white/30 transition-all placeholder:text-white/30 uppercase tracking-[0.1em] shadow-inner"
       />
       {(isSearching || query.length > 0) && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          {/* ✅ FIX: Mejorado contraste del icono de carga inactivo (text-white/10 -> text-white/30) */}
           <CpuChipIcon className={`w-4 h-4 ${isSearching ? 'text-white animate-spin opacity-40' : 'text-white/30'}`} />
         </div>
       )}
@@ -130,7 +128,7 @@ export default function Patients() {
                 onClick={() => handleView(p.id)}
               >
                 {/* UID - siempre visible pero más pequeño en mobile */}
-                <td className="px-3 py-3 lg:py-4 text-[10px] lg:text-[11px] font-mono text-white font-bold w-[100px] lg:w-[120px]">
+                <td className="px-3 py-3 lg:py-4 text-[11px] lg:text-[12px] font-mono text-white font-bold w-[100px] lg:w-[120px]">
                   #{String(p.id).padStart(5, '0')}
                 </td>
                 
@@ -142,19 +140,19 @@ export default function Patients() {
                 </td>
                 
                 {/* National ID - oculto en mobile */}
-                <td className="hidden md:table-cell px-3 py-3 lg:py-4 text-[10px] lg:text-[11px] font-mono text-white/40 w-[140px] lg:w-[160px]">
+                <td className="hidden md:table-cell px-3 py-3 lg:py-4 text-[10px] lg:text-[11px] font-mono text-white/70 w-[140px] lg:w-[160px]">
                   {p.national_id || "NOT_ASSIGNED"}
                 </td>
                 
                 {/* Gender - oculto en mobile, visible en lg */}
                 <td className="hidden md:table-cell px-3 py-3 lg:py-4 w-[100px] lg:w-[130px]">
-                  <span className="text-[8px] lg:text-[9px] px-2 py-0.5 border border-white/10 text-white/40 font-mono uppercase bg-black/40 block text-center truncate">
+                  <span className="text-[8px] lg:text-[9px] px-2 py-0.5 border border-white/10 text-white font-mono uppercase bg-black/40 block text-center truncate">
                     {p.gender || "UDF"}
                   </span>
                 </td>
                 
                 {/* Comm Link - oculto en mobile */}
-                <td className="hidden lg:table-cell px-3 py-3 lg:py-4 text-[9px] lg:text-[10px] font-mono text-white/40 max-w-[180px] lg:max-w-[220px]">
+                <td className="hidden lg:table-cell px-3 py-3 lg:py-4 text-[9px] lg:text-[10px] font-mono text-white/70 max-w-[180px] lg:max-w-[220px]">
                   <div className="truncate" title={p.contact_info || ""}>
                     {p.contact_info || "---"}
                   </div>
@@ -169,7 +167,7 @@ export default function Patients() {
                     <button 
                       disabled={isDeleting}
                       onClick={() => handleDelete(p)}
-                      className="text-white/10 hover:text-red-500 transition-colors"
+                      className="text-white/40 hover:text-red-500 transition-colors"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
@@ -186,10 +184,10 @@ export default function Patients() {
         <div className="flex items-center gap-3">
           <ServerIcon className="w-4 h-4 text-white/20" />
           <div className="flex flex-col">
-            <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">
+            <span className="text-[10px] font-mono text-white/60 uppercase tracking-widest">
               Data_Slice: {((currentPage - 1) * pageSize) + 1} — {Math.min(currentPage * pageSize, paged?.total ?? 0)}
             </span>
-            <span className="text-[7px] font-mono text-emerald-500/30 uppercase">Integrity_Verified: 100%</span>
+            <span className="text-[7px] font-mono text-emerald-500/60 uppercase">Integrity_Verified: 100%</span>
           </div>
         </div>
         
