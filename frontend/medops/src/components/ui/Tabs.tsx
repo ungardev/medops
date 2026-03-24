@@ -37,7 +37,7 @@ export function Tabs({
     <div className={className ?? "space-y-4"}>
       
       {/* 🛠️ NAVIGATION HEADER */}
-      <div className="flex flex-wrap gap-1 border-b border-white/10 pb-0 overflow-x-auto scrollbar-hide bg-black/20">
+      <div className="flex flex-wrap gap-1 border-b border-white/20 pb-0 overflow-x-auto scrollbar-hide bg-black/30">
         {tabs.map((tab) => {
           const isActive = value === tab.props.id;
           return (
@@ -48,8 +48,8 @@ export function Tabs({
               className={`
                 relative px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200
                 ${isActive 
-                  ? "text-white bg-white/10"  // ✅ Cambiado: Neutro, letras blancas
-                  : "text-white/30 hover:text-white/70 hover:bg-white/5"}
+                  ? "text-white bg-white/10"  // Activo: blanco puro, fondo sutil
+                  : "text-white/60 hover:text-white hover:bg-white/5"}  // Inactivo: más legible, hover máximo contraste
               `}
             >
               {/* Contenedor flexible para alinear iconos y texto */}
@@ -59,7 +59,7 @@ export function Tabs({
               
               {/* 💡 Active Indicator Line - Neutro, sin azul */}
               {isActive && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/50" />  // ✅ Cambiado: Sin azul
+                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/50" />
               )}
             </button>
           );
@@ -75,7 +75,7 @@ export function Tabs({
                 layout === "vertical" ? "" : "w-full"
               }`}
             >
-              <div className="bg-black/40 border border-white/10 rounded-sm p-4 sm:p-6 shadow-2xl">
+              <div className="bg-black/50 border border-white/20 rounded-sm p-4 sm:p-6 shadow-2xl">
                 {tab.props.children}
               </div>
             </div>
