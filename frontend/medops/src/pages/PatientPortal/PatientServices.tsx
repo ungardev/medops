@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { DoctorService, RecommendedService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
+// Importar nuevo componente ServiceDetail
+import { ServiceDetail } from "@/components/Common/ServiceDetail";
 // Definición de categorías completas de MEDOPZ
 const CATEGORIES = [
   "Consulta Medica",
@@ -35,8 +37,12 @@ const CATEGORIES = [
 export default function PatientServices() {
   const [activeTab, setActiveTab] = useState<"history" | "catalog" | "recommended">("catalog");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
-  const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
   
+  // Estados para modales
+  const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
+  const [showServiceDetail, setShowServiceDetail] = useState(false);
+  
+  // Estados para filtros
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const currentPatientId = localStorage.getItem('patient_id') 
@@ -76,6 +82,7 @@ export default function PatientServices() {
       cancellation_window: 24,
     };
     setSelectedService(doctorService);
+    setShowServiceDetail(true); // Abrir modal de detalles
   };
   let services: DoctorService[] = [];
   if (catalogData) {
@@ -123,7 +130,7 @@ export default function PatientServices() {
         
         <Tab id="catalog" label={<><ListIcon className="w-4 h-4" /> Catálogo</>}>
           <div className="flex gap-4 mt-6">
-            {/* Sidebar de Categorías - Mejorado contraste */}
+            {/* Sidebar de Categorías */}
             <div className="w-48 flex-shrink-0">
               <div className="bg-black/30 border border-white/20 rounded-sm p-3 sticky top-4">
                 <p className="text-[11px] font-black text-white/80 uppercase tracking-widest mb-3">
@@ -168,7 +175,7 @@ export default function PatientServices() {
             
             {/* Área Principal del Catálogo */}
             <div className="flex-1">
-              {/* Buscador - Mejorado contraste */}
+              {/* Buscador */}
               <div className="mb-4 relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70" />
                 <input
@@ -188,7 +195,7 @@ export default function PatientServices() {
                 )}
               </div>
               
-              {/* Estado y Resultados - Mejorado contraste */}
+              {/* Estado y Resultados */}
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] text-white/70">
                   {filteredServices.length} servicios encontrados
@@ -213,7 +220,10 @@ export default function PatientServices() {
                     <div 
                       key={service.id} 
                       className="group bg-black/40 border border-white/20 rounded-sm p-4 hover:bg-black/50 hover:border-white/30 transition-all cursor-pointer"
-                      onClick={() => setSelectedService(service)}
+                      onClick={() => {
+                        setSelectedService(service);
+                        setShowServiceDetail(true);
+                      }}
                     >
                       {/* Header: Categoría y Duración */}
                       <div className="flex justify-between items-start mb-3">
@@ -252,7 +262,7 @@ export default function PatientServices() {
                   ))}
                 </div>
               ) : (
-                /* Estado Vacío - Mejorado contraste */
+                /* Estado Vacío */
                 <div className="flex flex-col items-center justify-center py-16 bg-black/30 border border-dashed border-white/20 rounded-sm">
                   <div className="bg-white/10 p-4 rounded-full mb-4">
                     <ListIcon className="w-6 h-6 text-white/50" />
@@ -387,9 +397,28 @@ export default function PatientServices() {
         </Tab>
       </Tabs>
       
-      {/* Modal de Compra de Servicio */}
-      {selectedService && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+      {/* Modal de Service Detail (Intermedio) */}
+      {showServiceDetail && selectedService && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-lg">
+            <ServiceDetail
+              service={selectedService}
+              onClose={() => {
+                setShowServiceDetail(false);
+                setSelectedService(null);
+              }}
+              onBuy={() => {
+                setShowServiceDetail(false);
+                // El modal de ServicePurchaseFlow se renderiza automáticamente 
+                // gracias a la condición !showServiceDetail && selectedService
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {/* Modal de Compra de Servicio (Flujo Final) */}
+      {!showServiceDetail && selectedService && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
             <ServicePurchaseFlow
               service={selectedService}
