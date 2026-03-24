@@ -6205,6 +6205,7 @@ def get_pending_payments(request):
 # ============================================
 # PATIENT PORTAL - SERVICIOS
 # ============================================
+@api_view(['GET'])
 def patient_services_history(request):
     """
     GET /api/patient/services/history/
@@ -6229,8 +6230,14 @@ def patient_services_history(request):
         for order in paid_orders:
             order_items = []
             for item in order.items.all():
+                # ✅ NUEVO: Agregar service_id desde doctor_service
+                service_id = None
+                if hasattr(item, 'doctor_service') and item.doctor_service:
+                    service_id = item.doctor_service.id
+                
                 order_items.append({
                     'code': item.code,
+                    'service_id': service_id,  # ✅ NUEVO CAMPO
                     'description': item.description,
                     'qty': float(item.qty),
                     'unit_price': float(item.unit_price),
@@ -6278,42 +6285,48 @@ def patient_services_catalog(request):
     Agrupa por especialidad y muestra precios.
     """
     try:
-        # Obtener todos los ChargeItems únicos de todas las órdenes
-        all_services = ChargeItem.objects.values(
-            'code', 'description', 'unit_price'
-        ).annotate(
-            times_used=Count('id'),
-            last_used=Max('order__issued_at')
-        ).filter(
-            times_used__gte=1
-        ).order_by('-times_used', 'description')
+        # ✅ NUEVO: Obtener servicios directamente desde DoctorService
+        # (más eficiente que agrupar ChargeItems)
+        from django.db.models import Count, Max, Q
         
-        # Agrupar por código
-        services_by_code = {}
-        for item in all_services:
-            code = item['code']
-            if code not in services_by_code:
-                services_by_code[code] = {
-                    'code': code,
-                    'description': item['description'],
-                    'average_price': item['unit_price'],
-                    'times_used': item['times_used'],
-                    'last_used': item['last_used'].strftime('%Y-%m-%d') if item['last_used'] else None,
-                }
+        services = DoctorService.objects.filter(
+            is_active=True,
+            is_visible_global=True
+        ).select_related('doctor', 'category', 'institution')
         
-        # Obtener todas las especialidades únicas usadas
+        # Anotar con conteo de usos
+        services = services.annotate(times_used=Count('charge_items'))
+        
+        # Ordenar por relevancia (usos y nombre)
+        services = services.order_by('-times_used', 'name')
+        
+        # Formatear resultados
+        results = []
+        for service in services:
+            results.append({
+                'id': service.id,
+                'code': service.code,
+                'name': service.name,
+                'description': service.description,
+                'doctor_name': service.doctor.full_name if service.doctor else None,
+                'institution_name': service.institution.name if service.institution else None,
+                'price_usd': float(service.price_usd) if service.price_usd else 0.0,
+                'duration_minutes': service.duration_minutes,
+                'times_used': service.times_used,
+                'is_active': service.is_active,
+                'category_name': service.category.name if service.category else None,
+            })
+        
+        # Obtener especialidades únicas
         specialties_used = set()
-        # FIX: Usar values_list en lugar de iterar sobre .all()
-        for order in ChargeOrder.objects.filter(status='paid').select_related('doctor'):
-            if order.doctor:
-                # Obtener nombres de especialidades directamente sin iterar
-                spec_names = order.doctor.specialties.values_list('name', flat=True)
-                specialties_used.update(spec_names)
+        for service in services:
+            if service.category:
+                specialties_used.add(service.category.name)
         
         return Response({
-            'services': list(services_by_code.values()),
+            'services': results,
             'specialties': sorted(list(specialties_used)),
-            'total_services': len(services_by_code),
+            'total_services': len(results),
         })
         
     except Exception as e:
@@ -6321,6 +6334,7 @@ def patient_services_catalog(request):
         return Response({'error': str(e)}, status=500)
 
 
+@api_view(['GET'])
 def patient_services_recommended(request):
     """
     GET /api/patient/services/recommended/
@@ -6334,8 +6348,7 @@ def patient_services_recommended(request):
         
         patient = patient_user.patient
         
-        # Estrategia 2: Desglose de consulta para optimización y tipado
-        # Paso 1: Obtener IDs de órdenes pagadas (consulta ligera)
+        # Paso 1: Obtener IDs de órdenes pagadas
         paid_order_ids = ChargeOrder.objects.filter(
             patient=patient, 
             status='paid'
@@ -6349,10 +6362,8 @@ def patient_services_recommended(request):
         # Obtener las especialidades de los doctores que han atendido al paciente
         patient_doctor_specialties = set()
         
-        # FIX: Usar values_list en lugar de iterar sobre .all()
         for order in paid_orders:
             if order.doctor:
-                # Obtener IDs de especialidades directamente sin iterar
                 spec_ids = order.doctor.specialties.values_list('id', flat=True)
                 patient_doctor_specialties.update(spec_ids)
         
@@ -6361,6 +6372,35 @@ def patient_services_recommended(request):
             specialties__id__in=patient_doctor_specialties,
             is_verified=True
         ).distinct()[:5]
+        
+        # ✅ NUEVO: Obtener servicios recomendados de esos doctores
+        from django.db.models import Count
+        
+        recommended_services = DoctorService.objects.filter(
+            doctor__in=recommended_doctors,
+            is_active=True,
+            is_visible_global=True
+        ).select_related('doctor', 'institution')
+        
+        # Anotar con conteo de usos
+        recommended_services = recommended_services.annotate(times_used=Count('charge_items'))
+        
+        # Ordenar por popularidad
+        recommended_services = recommended_services.order_by('-times_used', 'name')[:10]
+        
+        # Formatear servicios recomendados
+        services_data = []
+        for service in recommended_services:
+            services_data.append({
+                'id': service.id,
+                'code': service.code,
+                'name': service.name,
+                'doctor_name': service.doctor.full_name if service.doctor else None,
+                'institution_name': service.institution.name if service.institution else None,
+                'price_usd': float(service.price_usd) if service.price_usd else 0.0,
+                'duration_minutes': service.duration_minutes,
+                'times_used': service.times_used,
+            })
         
         return Response({
             'recommended_doctors': [
@@ -6373,6 +6413,7 @@ def patient_services_recommended(request):
                 }
                 for doc in recommended_doctors
             ],
+            'recommended_services': services_data,
             'based_on': 'Tu historial de servicios',
         })
         
