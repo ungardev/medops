@@ -11,6 +11,7 @@ import DemographicsSection from "./sections/DemographicsSection";
 import AlertsSection from "./sections/AlertsSection";
 import ClinicalProfileSection from "./sections/ClinicalProfileSection";
 import { useVaccinations } from "../../hooks/patients/useVaccinations";
+import CollapsibleSection from "../../components/Common/CollapsibleSection"; // NUEVO: Importar componente colapsable
 interface PatientInfoTabProps {
   patientId: number;
   readOnly?: boolean;
@@ -64,39 +65,27 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
   return (
     <div className="space-y-12">
       
-      {/* SECCIÓN 1: DEMOGRÁFICOS */}
-      <section className="relative">
-        <div className="absolute -left-4 top-0 h-full w-0.5 bg-[var(--palantir-active)]/30 hidden lg:block" />
-        
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-1.5 bg-[var(--palantir-active)]/10 rounded-sm">
-            <UserCircleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-            Subject_Identity_Core
-          </span>
-          <div className="flex-1 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] to-transparent" />
-        </div>
-        
+      {/* SECCIÓN 1: DEMOGRÁFICOS - Ahora colapsable */}
+      <CollapsibleSection
+        title="Subject_Identity_Core"
+        icon={<UserCircleIcon className="w-4 h-4" />}
+        color="var(--palantir-active)"
+        defaultExpanded={true}
+      >
         <DemographicsSection 
           patient={profile} 
           onRefresh={refreshProfile} 
           readOnly={readOnly}
         />
-      </section>
+      </CollapsibleSection>
       
-      {/* SECCIÓN 2: ALERTAS Y BIOMETRÍA */}
-      <section>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-1.5 bg-red-500/10 rounded-sm">
-            <ShieldCheckIcon className="w-4 h-4 text-red-500" />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500">
-            Critical_Risk_Assessment
-          </span>
-          <div className="flex-1 h-[1px] bg-gradient-to-r from-red-900/30 to-transparent" />
-        </div>
-        
+      {/* SECCIÓN 2: ALERTAS - Ahora colapsable */}
+      <CollapsibleSection
+        title="Critical_Risk_Assessment"
+        icon={<ShieldCheckIcon className="w-4 h-4" />}
+        color="red-500"
+        defaultExpanded={false}
+      >
         <AlertsSection
           patient={profile}
           backgrounds={profile.clinical_background ?? []}
@@ -107,20 +96,15 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
           vaccinationSchedule={Array.isArray(schedule.data) ? schedule.data : []}
           readOnly={readOnly}
         />
-      </section>
+      </CollapsibleSection>
       
-      {/* SECCIÓN 3: PERFIL CLÍNICO */}
-      <section>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-1.5 bg-blue-500/10 rounded-sm">
-            <CpuChipIcon className="w-4 h-4 text-blue-400" />
-          </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">
-            Historical_Clinical_Database
-          </span>
-          <div className="flex-1 h-[1px] bg-gradient-to-r from-blue-900/30 to-transparent" />
-        </div>
-        
+      {/* SECCIÓN 3: PERFIL CLÍNICO - Ahora colapsable */}
+      <CollapsibleSection
+        title="Historical_Clinical_Database"
+        icon={<CpuChipIcon className="w-4 h-4" />}
+        color="blue-400"
+        defaultExpanded={false}
+      >
         <ClinicalProfileSection
           backgrounds={profile.clinical_background ?? []}
           allergies={profile.allergies ?? []}
@@ -129,9 +113,9 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
           onRefresh={refreshProfile}
           readOnly={readOnly}
         />
-      </section>
+      </CollapsibleSection>
       
-      {/* FOOTER DE ESTADO */}
+      {/* FOOTER DE ESTADO (sin cambios) */}
       <div className="pt-6 border-t border-[var(--palantir-border)] flex justify-between items-center">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1.5 text-[8px] font-mono text-[var(--palantir-active)] uppercase">
