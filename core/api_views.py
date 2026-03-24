@@ -7361,3 +7361,14 @@ class ServiceScheduleViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Lógica opcional: Validar que el servicio pertenece a la institución del usuario
         serializer.save()
+
+
+class MedicalServicesListView(APIView):
+    """
+    Endpoint para obtener lista de servicios médicos.
+    Público (no requiere institución activa) para uso del Portal Paciente.
+    """
+    def get(self, request):
+        services = DoctorService.objects.filter(is_active=True).select_related('category')
+        serializer = DoctorServiceSerializer(services, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

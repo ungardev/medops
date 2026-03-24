@@ -5,6 +5,7 @@ from rest_framework import routers
 from rest_framework_nested import routers as nested_routers
 from . import api_views
 from .api_views import (
+    MedicalServicesListView,
     PatientViewSet,
     AppointmentViewSet,
     PaymentViewSet,
@@ -430,6 +431,7 @@ urlpatterns = [
     
     # OCR
     path('payments/ocr/', api_views.payment_ocr_api, name='payment-ocr'),
+    path('api/medical-services/', MedicalServicesListView.as_view(), name='medical-services-list'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [

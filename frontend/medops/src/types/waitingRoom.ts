@@ -27,6 +27,9 @@ export interface WaitingRoomEntry {
   // ✅ CAMPOS AGREGADOS: Datos cacheados de la institución
   institution_data?: IdentityInstitution | null;
   
+  // ⚠️ NUEVO CAMPO: serviceId en raíz (alineado con backend)
+  serviceId?: number;
+  
   patient: {
     id: number;
     full_name: string;

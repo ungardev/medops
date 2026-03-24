@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { usePatientWaitingRoom } from "@/hooks/patients/usePatientWaitingRoom";
+import { useMedicalServices } from "@/hooks/services/useMedicalServices";
 import PageHeader from "@/components/Common/PageHeader";
 import { 
   ClockIcon, 
@@ -9,7 +10,8 @@ import {
   UserIcon,
   BuildingOfficeIcon,
   ArrowUpIcon,
-  BellAlertIcon
+  BellAlertIcon,
+  ClipboardDocumentIcon
 } from "@heroicons/react/24/outline";
 const renderStatusBadge = (status: string, isPatient: boolean = false) => {
   const base = "inline-flex items-center justify-center px-2 py-0.5 text-[8px] rounded-sm font-black uppercase tracking-wider border whitespace-nowrap";
@@ -56,12 +58,18 @@ const renderWaitTime = (entry: any) => {
 export default function PatientQueue() {
   const navigate = useNavigate();
   const storedPatientId = localStorage.getItem("patient_id");
+  
+  // Obtener lista de servicios para mapeo
+  const { data: medicalServices, isLoading: servicesLoading } = useMedicalServices();
+  
   useEffect(() => {
     if (!storedPatientId) {
       navigate("/patient/login");
     }
   }, [navigate, storedPatientId]);
+  
   if (!storedPatientId) return null;
+  
   const patientId = Number(storedPatientId);
   const { 
     allEntries, 
@@ -71,8 +79,16 @@ export default function PatientQueue() {
     inConsultationCount, 
     completedCount 
   } = usePatientWaitingRoom();
+  
   const isLoading = false;
-  if (isLoading) return (
+  
+  // Función para obtener nombre del servicio
+  const getServiceName = (serviceId?: number) => {
+    if (!serviceId || !medicalServices) return null;
+    const service = medicalServices.find(s => s.id === serviceId);
+    return service?.name || null;
+  };
+  if (isLoading || servicesLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -80,6 +96,7 @@ export default function PatientQueue() {
       </div>
     </div>
   );
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       {/* HEADER */}
@@ -111,6 +128,7 @@ export default function PatientQueue() {
           </div>
         }
       />
+      
       {/* PACIENTE ACTUAL DESTACADO */}
       {patientEntry && (
         <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-sm p-4">
@@ -126,6 +144,13 @@ export default function PatientQueue() {
                   {patientEntry.status === "in_consultation" && "En Consulta"}
                   {patientEntry.status === "completed" && "Atendido"}
                 </p>
+                {/* NUEVO: Mostrar servicio del paciente actual */}
+                {patientEntry.serviceId && (
+                  <div className="flex items-center gap-1.5 text-[9px] font-mono text-cyan-300 mt-1">
+                    <ClipboardDocumentIcon className="w-3 h-3" />
+                    <span>{getServiceName(patientEntry.serviceId) || "Servicio No Identificado"}</span>
+                  </div>
+                )}
                 {patientEntry.status === "waiting" && patientsAhead > 0 && (
                   <p className="text-[10px] text-white/60">
                     {patientsAhead} paciente{patientsAhead !== 1 ? 's' : ''} antes que tú
@@ -145,6 +170,7 @@ export default function PatientQueue() {
           </div>
         </div>
       )}
+      
       {/* MENSAJE SI NO ESTÁ EN LA COLA */}
       {!patientEntry && waitingCount > 0 && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-sm p-4">
@@ -157,10 +183,11 @@ export default function PatientQueue() {
           </div>
         </div>
       )}
+      
       {/* LISTA COMPLETA DE LA COLA */}
       <div className="bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden">
         <div className="px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">
             Cola_de_Espera_Hoy
           </h3>
         </div>
@@ -172,6 +199,7 @@ export default function PatientQueue() {
           <div className="divide-y divide-white/5">
             {allEntries.map((entry, index) => {
               const isCurrentPatient = entry.patient?.id === patientId;
+              const serviceName = getServiceName(entry.serviceId);
               
               return (
                 <div 
@@ -199,8 +227,16 @@ export default function PatientQueue() {
                         {renderStatusBadge(entry.status, isCurrentPatient)}
                       </div>
                       
+                      {/* NUEVO: Mostrar servicio */}
+                      {serviceName && (
+                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-blue-400/80">
+                          <ClipboardDocumentIcon className="w-3 h-3" />
+                          <span>{serviceName}</span>
+                        </div>
+                      )}
+                      
                       {entry.institution_data && (
-                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-white/40">
+                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-white/60">
                           <BuildingOfficeIcon className="w-3 h-3 text-blue-500/50" />
                           <span>{entry.institution_data.name}</span>
                         </div>
