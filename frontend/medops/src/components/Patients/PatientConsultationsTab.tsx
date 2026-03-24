@@ -17,6 +17,7 @@ interface PatientConsultationsTabProps {
 export default function PatientConsultationsTab({ patient, readOnly = false }: PatientConsultationsTabProps) {
   const navigate = useNavigate();
   const { data, isLoading, error } = useConsultationsByPatient(patient.id);
+  
   if (isLoading) {
     return (
       <div className="p-8 flex flex-col items-center justify-center border border-dashed border-[var(--palantir-border)] rounded-sm">
@@ -27,6 +28,7 @@ export default function PatientConsultationsTab({ patient, readOnly = false }: P
       </div>
     );
   }
+  
   if (error || !data || !Array.isArray(data.list) || typeof data.totalCount !== 'number') {
     return (
       <div className="p-8 border border-red-500/20 bg-red-500/5 rounded-sm flex items-center gap-4">
@@ -38,6 +40,7 @@ export default function PatientConsultationsTab({ patient, readOnly = false }: P
       </div>
     );
   }
+  
   if (data.list.length === 0) {
     return (
       <div className="p-12 text-center border border-dashed border-[var(--palantir-border)] rounded-sm">
@@ -48,6 +51,7 @@ export default function PatientConsultationsTab({ patient, readOnly = false }: P
       </div>
     );
   }
+  
   const getStatusStyle = (status: string) => {
     const s = status.toLowerCase();
     if (s.includes('completada') || s.includes('finished')) return 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5';
@@ -68,6 +72,7 @@ export default function PatientConsultationsTab({ patient, readOnly = false }: P
           </p>
         </div>
       </div>
+      
       {/* Timeline List */}
       <div className="relative">
         <div className="absolute left-[15px] top-0 bottom-0 w-[1px] bg-gradient-to-b from-[var(--palantir-active)]/50 via-[var(--palantir-border)] to-transparent hidden sm:block" />
@@ -78,18 +83,23 @@ export default function PatientConsultationsTab({ patient, readOnly = false }: P
               className="group relative flex flex-col sm:flex-row items-start sm:items-center gap-4 pl-0 sm:pl-10"
             >
               <div className="absolute left-[11px] top-[14px] w-2 h-2 rounded-full bg-[var(--palantir-bg)] border-2 border-[var(--palantir-active)] hidden sm:block z-10 group-hover:scale-150 transition-transform" />
-              <div className="flex-1 w-full bg-[var(--palantir-surface)]/30 border border-[var(--palantir-border)] rounded-sm p-4 hover:border-[var(--palantir-active)]/40 transition-all hover:shadow-[0_0_15px_rgba(0,0,0,0.2)]">
+              
+              {/* Tarjeta de Consulta */}
+              <div className="flex-1 w-full bg-[var(--palantir-surface)]/40 border border-[var(--palantir-border)] rounded-sm p-4 hover:border-[var(--palantir-active)]/40 transition-all hover:shadow-[0_0_15px_rgba(0,0,0,0.2)]">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
-                      <span className="text-[11px] font-black text-[var(--palantir-text)] font-mono uppercase tracking-tighter">
+                      {/* TEXTO PRINCIPAL - Blanco puro para máxima legibilidad */}
+                      <span className="text-[11px] font-black text-white font-mono uppercase tracking-tighter">
                         LOG_ENTRY_{c.id.toString().padStart(4, '0')}
                       </span>
                       <span className={`text-[8px] px-2 py-0.5 border font-bold rounded-sm uppercase tracking-widest ${getStatusStyle(c.status)}`}>
                         {c.status}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-[var(--palantir-muted)] font-mono">
+                    
+                    {/* TEXTO SECUNDARIO - Más visible (text-white/70) y ligeramente mayor (11px) */}
+                    <div className="flex items-center gap-2 text-[11px] text-white/70 font-mono">
                       <ClockIcon className="w-3 h-3" />
                       <span>
                         {c.appointment_date 
@@ -120,9 +130,10 @@ export default function PatientConsultationsTab({ patient, readOnly = false }: P
           ))}
         </div>
       </div>
-      {/* Footer Stats */}
+      
+      {/* Footer Stats - Texto más visible */}
       <div className="pt-6 border-t border-[var(--palantir-border)] flex justify-end">
-        <div className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase flex items-center gap-4">
+        <div className="text-[10px] font-mono text-white/70 uppercase flex items-center gap-4">
           <span>Integrity: Verified</span>
           <span>Encryption: AES-256</span>
           <span className="text-[var(--palantir-active)]">System_Status: Optimal</span>
