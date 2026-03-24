@@ -40,6 +40,7 @@ export interface ServiceCategory {
 }
 export interface DoctorService {
   id: number;
+  code: string;  // ✅ NUEVO
   doctor: number;
   doctor_name: string;
   category: number;
@@ -105,7 +106,7 @@ export interface ServiceCatalogItem {
   last_used?: string;
 }
 export interface ServiceCatalogResponseLegacy {
-  services: ServiceCatalogItem[];
+  services: DoctorService[]; // ✅ Cambiar de ServiceCatalogItem[] a DoctorService[]
   specialties: string[];
   total_services: number;
 }
@@ -116,8 +117,19 @@ export interface RecommendedDoctor {
   specialties: string[];
   is_verified: boolean;
 }
+export interface RecommendedService {
+  id: number;
+  code: string;
+  name: string;
+  doctor_name: string;
+  institution_name: string;
+  price_usd: number;
+  duration_minutes: number;
+  times_used: number;
+}
 export interface ServicesRecommendedResponse {
   recommended_doctors: RecommendedDoctor[];
+  recommended_services: RecommendedService[];  // ✅ NUEVO
   based_on: string;
 }
 // Interfaces para búsqueda (compatibilidad)
