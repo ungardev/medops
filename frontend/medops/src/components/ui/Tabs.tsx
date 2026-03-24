@@ -49,7 +49,7 @@ export function Tabs({
                 relative px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200
                 ${isActive 
                   ? "text-white bg-white/10"  // Activo: blanco puro, fondo sutil
-                  : "text-white/60 hover:text-white hover:bg-white/5"}  // Inactivo: más legible, hover máximo contraste
+                  : "text-white/80 hover:text-white hover:bg-white/5"}  // Inactivo: MÁS VISIBLE (80%), hover blanco
               `}
             >
               {/* Contenedor flexible para alinear iconos y texto */}
