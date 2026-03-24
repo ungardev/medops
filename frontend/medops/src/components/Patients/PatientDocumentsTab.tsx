@@ -57,12 +57,12 @@ export default function PatientDocumentsTab({ patient }: PatientTabProps) {
     <div className="space-y-6">
       {/* --- SECTION 01: FILE UPLOAD TERMINAL --- */}
       <div className="bg-black/40 border border-white/10 rounded-sm overflow-hidden">
-        <div className="px-6 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
-          <span className="text-[12px] font-mono font-black text-blue-300 uppercase tracking-widest flex items-center gap-2">
+        <div className="px-6 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between gap-2">
+          <span className="text-[12px] font-mono font-black text-blue-300 uppercase tracking-widest flex items-center gap-2 flex-shrink-0 truncate">
             <CloudArrowUpIcon className="w-3.5 h-3.5 text-blue-400" />
             File_Upload_Protocol
           </span>
-          <span className="text-[10px] font-mono text-white/70">ENCRYPTION: AES_256_ACTIVE</span>
+          {/* Texto de encriptación eliminado para evitar desbordamiento en móviles */}
         </div>
         <form onSubmit={handleUpload} className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
