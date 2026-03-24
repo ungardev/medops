@@ -22,10 +22,13 @@ import {
 import { DoctorService, RecommendedService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
 export default function PatientServices() {
-  const [activeTab, setActiveTab] = useState<"history" | "catalog" | "recommended">("history");
+  // FASE 1: Ordenar tabs - Catalogo es el primero
+  const [activeTab, setActiveTab] = useState<"history" | "catalog" | "recommended">("catalog");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
   
+  // Preparación FASE 2: Estado para categoria seleccionada
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   // Obtener patientId de localStorage
   const currentPatientId = localStorage.getItem('patient_id') 
     ? Number(localStorage.getItem('patient_id')) 
@@ -90,31 +93,74 @@ export default function PatientServices() {
   }
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
+      {/* FASE 1: Eliminado stats del PageHeader */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
           { label: "SERVICIOS", active: true }
         ]}
-        stats={[
-          { 
-            label: "ORDENES", 
-            value: historyData?.summary?.total_orders?.toString() || "0",
-            color: "text-white"
-          },
-          { 
-            label: "INVERTIDO", 
-            value: `Bs ${totalInvertido.toLocaleString('es-VE', { minimumFractionDigits: 0 })}`,
-            color: "text-emerald-400"
-          },
-          { 
-            label: "SERVICIOS", 
-            value: historyData?.summary?.unique_services?.toString() || "0",
-            color: "text-blue-400"
-          },
-        ]}
       />
-      {/* Tabs Componente */}
+      
+      {/* Tabs Componente - FASE 1: Reordenados */}
       <Tabs value={activeTab} onChange={handleTabChange} layout="horizontal">
+        
+        {/* TAB 1: CATALOGO (Ahora primero) */}
+        <Tab id="catalog" label={<><ListIcon className="w-4 h-4" /> Catálogo</>}>
+          {/* Contenido Catálogo - Preparado para Fase 2 (Sidebar + Grid) */}
+          <div className="flex gap-4 mt-6">
+            {/* Espacio reservado para Sidebar de Categorias (Fase 2) */}
+            <div className="w-48 flex-shrink-0 hidden md:block">
+              <p className="text-xs text-white/50 mb-2">CATEGORÍAS</p>
+              {/* Aquí irá el componente SidebarCategorias */}
+            </div>
+            
+            {/* Grid de Servicios */}
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {services.map((service) => (
+                <div 
+                  key={service.id} 
+                  className="group bg-black/30 border border-white/10 rounded-sm p-4 hover:border-white/20 hover:bg-black/40 transition-all cursor-pointer"
+                  onClick={() => setSelectedService(service)}
+                >
+                  {/* Header: Categoría y Duración */}
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="text-[8px] font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
+                      {service.category_name || 'SERVICIO'}
+                    </span>
+                    <span className="flex items-center gap-1 text-[9px] text-white/50">
+                      <ClockIcon className="w-3 h-3" />
+                      {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
+                    </span>
+                  </div>
+                  {/* Nombre del Servicio (Prioridad 1) */}
+                  <h4 className="text-[13px] font-black text-white uppercase tracking-tight mb-3 line-clamp-2">
+                    {service.name || 'Servicio sin nombre'}
+                  </h4>
+                  {/* Doctor (Prioridad 2) */}
+                  <div className="flex items-center gap-2 text-[11px] text-white/70 mb-2">
+                    <UserIcon className="w-3.5 h-3.5" />
+                    <span>Dr. {service.doctor_name || 'Médico no especificado'}</span>
+                  </div>
+                  {/* Institución (Prioridad 3) */}
+                  <div className="flex items-center gap-2 text-[10px] text-white/60 mb-3">
+                    <Building2Icon className="w-3.5 h-3.5" />
+                    <span>{service.institution_name || 'Institución no especificada'}</span>
+                  </div>
+                  {/* Precio y Código (Prioridad 4 y 5) */}
+                  <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                    <span className="text-[8px] font-mono text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
+                      {service.code}
+                    </span>
+                    <span className="text-emerald-400 font-bold text-sm">
+                      $ {service.price_usd ? service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Tab>
+        {/* TAB 2: HISTORIAL */}
         <Tab id="history" label={<><ReceiptIcon className="w-4 h-4" /> Historial</>}>
           {/* Contenido Historial */}
           <div className="space-y-4 mt-6">
@@ -167,52 +213,7 @@ export default function PatientServices() {
             ))}
           </div>
         </Tab>
-        <Tab id="catalog" label={<><ListIcon className="w-4 h-4" /> Catálogo</>}>
-          {/* Contenido Catálogo */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
-            {services.map((service) => (
-              <div 
-                key={service.id} 
-                className="group bg-black/30 border border-white/10 rounded-sm p-4 hover:border-white/20 hover:bg-black/40 transition-all cursor-pointer"
-                onClick={() => setSelectedService(service)}
-              >
-                {/* Header: Categoría y Duración */}
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-[8px] font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
-                    {service.category_name || 'SERVICIO'}
-                  </span>
-                  <span className="flex items-center gap-1 text-[9px] text-white/50">
-                    <ClockIcon className="w-3 h-3" />
-                    {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
-                  </span>
-                </div>
-                {/* Nombre del Servicio (Prioridad 1) */}
-                <h4 className="text-[13px] font-black text-white uppercase tracking-tight mb-3 line-clamp-2">
-                  {service.name || 'Servicio sin nombre'}
-                </h4>
-                {/* Doctor (Prioridad 2) */}
-                <div className="flex items-center gap-2 text-[11px] text-white/70 mb-2">
-                  <UserIcon className="w-3.5 h-3.5" />
-                  <span>Dr. {service.doctor_name || 'Médico no especificado'}</span>
-                </div>
-                {/* Institución (Prioridad 3) */}
-                <div className="flex items-center gap-2 text-[10px] text-white/60 mb-3">
-                  <Building2Icon className="w-3.5 h-3.5" />
-                  <span>{service.institution_name || 'Institución no especificada'}</span>
-                </div>
-                {/* Precio y Código (Prioridad 4 y 5) */}
-                <div className="flex justify-between items-center pt-3 border-t border-white/5">
-                  <span className="text-[8px] font-mono text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
-                    {service.code}
-                  </span>
-                  <span className="text-emerald-400 font-bold text-sm">
-                    $ {service.price_usd ? service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 }) : 'N/A'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Tab>
+        {/* TAB 3: RECOMENDADOS */}
         <Tab id="recommended" label={<><StethoscopeIcon className="w-4 h-4" /> Recomendados</>}>
           {/* Contenido Recomendados */}
           <div className="space-y-6 mt-6">
@@ -273,6 +274,7 @@ export default function PatientServices() {
           </div>
         </Tab>
       </Tabs>
+      
       {/* Modal de Compra de Servicio */}
       {selectedService && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
