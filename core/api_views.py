@@ -572,9 +572,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 institution=charge_order.institution,
                 appointment=charge_order.appointment,
                 charge_order=charge_order,
-                patient=charge_order.patient,  # ✅ FUNCIONARÁ DESPUÉS DE AGREGAR EL CAMPO
+                patient=charge_order.patient,  # ✅ AHORA FUNCIONARÁ
                 doctor=charge_order.doctor,
-                amount=validated_data['amount'],  # Acceso directo, ya que es requerido
+                amount=validated_data['amount'],
                 method=validated_data['method'],
                 reference_number=reference_number,
                 status='confirmed',
