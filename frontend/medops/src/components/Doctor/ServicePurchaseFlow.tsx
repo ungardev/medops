@@ -1,7 +1,6 @@
 // src/components/Doctor/ServicePurchaseFlow.tsx
-import React, { useState, useEffect } from 'react';
-import type { DoctorService, ServiceAvailabilityResponse, AvailabilitySlot } from '@/api/patient/client';
-import { patientClient } from '@/api/patient/client';
+import React, { useState, useMemo } from 'react';
+import type { DoctorService, AvailabilitySlot } from '@/api/patient/client';
 import { createAppointment } from '@/api/appointments';
 import type { AppointmentInput } from '@/types/appointments';
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
@@ -13,7 +12,6 @@ import {
   XCircleIcon, 
   ArrowRightIcon, 
   AlertTriangle, 
-  CalendarIcon, 
   ClockIcon 
 } from 'lucide-react';
 // Tipos de estado del flujo
@@ -35,7 +33,6 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  // CAMBIO: Iniciar directamente en la vista de fecha
   const [step, setStep] = useState<PurchaseStep>('confirm-date');
   const [error, setError] = useState<string | null>(null);
   const [chargeOrder, setChargeOrder] = useState<any | null>(null);
@@ -43,27 +40,41 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   // Estado para fecha/hora seleccionada
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
-  const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
-  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   // Obtener horarios del servicio (para el calendario visual)
   const { data: serviceSchedules = [] } = useAllServiceSchedules(service.institution);
   // Filtrar horarios para el servicio específico actual
   const filteredSchedules = serviceSchedules.filter((schedule: any) => schedule.service === service.id);
-  // Cargar disponibilidad cuando cambia la fecha
-  useEffect(() => {
-    if (step === 'confirm-date' && selectedDate && service.institution) {
-      setIsLoadingSlots(true);
-      patientClient.getAvailability(service.id, service.institution, selectedDate)
-        .then(response => {
-          setAvailableSlots(response.data.available_slots);
-          setIsLoadingSlots(false);
-        })
-        .catch(() => {
-          setAvailableSlots([]);
-          setIsLoadingSlots(false);
-        });
-    }
-  }, [step, selectedDate, service.id, service.institution]);
+  // GENERAR SLOTS LOCALES BASADOS EN HORARIOS RECURRENTES
+  const availableSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    
+    const selectedDateObj = new Date(selectedDate);
+    const dayOfWeek = selectedDateObj.getDay();
+    
+    // Filtrar horarios del servicio para el día de la semana seleccionado
+    const serviceSchedulesForService = filteredSchedules.filter(
+      (schedule: any) => schedule.day_of_week === dayOfWeek
+    );
+    
+    const slots: { time: string; label: string }[] = [];
+    serviceSchedulesForService.forEach((schedule: any) => {
+      const startTime = new Date(`2000-01-01T${schedule.start_time}`);
+      const endTime = new Date(`2000-01-01T${schedule.end_time}`);
+      const slotDuration = schedule.slot_duration || 30; // Default 30 min
+      
+      let currentTime = startTime;
+      while (currentTime < endTime) {
+        const slotEnd = new Date(currentTime.getTime() + slotDuration * 60000);
+        if (slotEnd <= endTime) {
+          const timeStr = currentTime.toTimeString().slice(0, 5);
+          slots.push({ time: timeStr, label: timeStr });
+        }
+        currentTime = slotEnd;
+      }
+    });
+    
+    return slots;
+  }, [selectedDate, filteredSchedules]);
   // Función handlePurchase modificada para crear una Appointment
   const handlePurchase = async () => {
     setStep('processing');
@@ -99,7 +110,7 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     }
   };
   const handleRetry = () => {
-    setStep('confirm-date'); // Reiniciar en calendario
+    setStep('confirm-date');
     setError(null);
   };
   // Renderizado condicional según el estado
@@ -119,7 +130,6 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
           selectedTime={selectedTime}
           setSelectedTime={setSelectedTime}
           availableSlots={availableSlots}
-          isLoadingSlots={isLoadingSlots}
           onProceed={() => setStep('confirm-final')}
           onBack={onCancel}
           onCancel={onCancel}
@@ -145,7 +155,6 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
                 selectedTime={selectedTime} 
                 setSelectedTime={setSelectedTime} 
                 availableSlots={availableSlots} 
-                isLoadingSlots={isLoadingSlots} 
                 onProceed={() => setStep('confirm-final')} 
                 onBack={onCancel} 
                 onCancel={onCancel}
@@ -160,19 +169,13 @@ const ConfirmDateView: React.FC<{
   setSelectedDate: (date: string) => void;
   selectedTime: string;
   setSelectedTime: (time: string) => void;
-  availableSlots: AvailabilitySlot[];
-  isLoadingSlots: boolean;
+  availableSlots: { time: string; label: string }[];
   onProceed: () => void;
   onBack: () => void;
   onCancel: () => void;
   schedules: any[];
-}> = ({ service, selectedDate, setSelectedDate, selectedTime, setSelectedTime, availableSlots, isLoadingSlots, onProceed, onBack, onCancel, schedules }) => {
+}> = ({ service, selectedDate, setSelectedDate, selectedTime, setSelectedTime, availableSlots, onProceed, onBack, onCancel, schedules }) => {
   
-  // CORRECCIÓN: Transformar AvailabilitySlot[] al formato esperado por InteractiveCalendar
-  const transformedSlots: TransformedSlot[] = availableSlots.map(slot => ({
-    time: slot.start,      // Usamos la propiedad 'start' como 'time'
-    label: slot.start      // Usamos la propiedad 'start' como 'label'
-  }));
   // Convertir string a Date para el componente InteractiveCalendar
   const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
   return (
@@ -189,22 +192,29 @@ const ConfirmDateView: React.FC<{
           }}
           serviceSchedules={schedules}
           selectedServiceId={service.id}
-          availableSlots={transformedSlots} // USAMOS LOS SLOTS TRANSFORMADOS
+          availableSlots={availableSlots}
           onTimeSelect={setSelectedTime}
           selectedTime={selectedTime}
         />
       </div>
+      
+      {/* Mensaje informativo si no hay slots */}
+      {availableSlots.length === 0 && selectedDate && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-sm text-yellow-200 text-sm text-center">
+          No hay horarios específicos para este día. La hora será confirmada por el doctor.
+        </div>
+      )}
       {/* Botones de acción */}
       <div className="flex gap-3">
         <button
-          onClick={onBack} // Cierra el modal
+          onClick={onBack}
           className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
         >
           Volver
         </button>
         <button
           onClick={onProceed}
-          disabled={!selectedDate || !selectedTime}
+          disabled={!selectedDate}
           className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           <ClockIcon className="w-4 h-4" />
@@ -244,7 +254,7 @@ const ConfirmFinalView: React.FC<{
         </div>
         <div className="flex justify-between">
             <span className="text-white/50">Hora:</span>
-            <span>{selectedTime}</span>
+            <span>{selectedTime || 'Por confirmar'}</span>
         </div>
         <p className="text-white/50 text-xs mt-2">Nota: Esta es una fecha tentativa. El doctor la confirmará pronto.</p>
       </div>
