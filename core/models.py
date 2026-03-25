@@ -1212,6 +1212,15 @@ class Payment(models.Model):
         verbose_name="Captura de pago"
     )
     
+    patient = models.ForeignKey(
+        'Patient',
+        on_delete=models.CASCADE,
+        related_name='payments',
+        null=True,
+        blank=True,
+        verbose_name="Paciente asociado al pago"
+    )
+    
     # --- AUDITORÍA ---
     received_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)

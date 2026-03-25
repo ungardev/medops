@@ -552,15 +552,14 @@ class PaymentViewSet(viewsets.ModelViewSet):
         serializer = PaymentWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Solución 1: Usar assert para ayudar a Pylance
-        validated_data = serializer.validated_data
-        assert isinstance(validated_data, dict), "validated_data debe ser un diccionario"
+        # ✅ SOLUCIÓN: Usar cast para ayudar a Pylance
+        validated_data: Dict[str, Any] = cast(Dict[str, Any], serializer.validated_data)
         
-        # Ahora Pylance sabe que validated_data es un dict
+        # Ahora Pylance sabe que validated_data es un dict[str, Any]
         charge_order = validated_data.get('charge_order')
         
         if not charge_order:
-            return Response({"error": "charge_order es requerido"}, status=400)
+            return Response({"error": "charge_order es requerido"}, status=status.HTTP_400_BAD_REQUEST)
         
         # Autogenerar referencia
         reference_number = validated_data.get('reference_number')
@@ -573,7 +572,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
                 institution=charge_order.institution,
                 appointment=charge_order.appointment,
                 charge_order=charge_order,
-                patient=charge_order.patient,
+                patient=charge_order.patient,  # ✅ FUNCIONARÁ DESPUÉS DE AGREGAR EL CAMPO
                 doctor=charge_order.doctor,
                 amount=validated_data['amount'],  # Acceso directo, ya que es requerido
                 method=validated_data['method'],
@@ -584,11 +583,11 @@ class PaymentViewSet(viewsets.ModelViewSet):
             charge_order.recalc_totals()
             charge_order.save()
             
-            return Response(PaymentSerializer(payment).data, status=201)
+            return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
         
         except Exception as e:
             logger.error(f"Error creando pago: {str(e)}")
-            return Response({"error": str(e)}, status=500)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet): queryset = WaitingRoomEntry.objects.all(); serializer_class = WaitingRoomEntrySerializer
