@@ -151,10 +151,19 @@ export interface ServiceSearchResult {
   name: string;
   description: string;
   doctor_name: string;
+  institution_name: string;
   price_usd: number;
   duration_minutes: number;
   times_used: number;
   is_active: boolean;
+  category_name: string;
+  doctor: number;
+  category: number;
+  institution: number;
+  is_visible_global: boolean;
+  requires_appointment: boolean;
+  booking_lead_time: number;
+  cancellation_window: number;
 }
 export interface ServiceSearchResponse {
   count: number;

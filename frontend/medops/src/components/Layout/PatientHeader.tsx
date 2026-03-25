@@ -1,6 +1,6 @@
 // src/components/Layout/PatientHeader.tsx
 import { useNavigate } from "react-router-dom";
-import { Menu, LogOut, Bell, User, Settings, ChevronDown } from "lucide-react";
+import { Menu, LogOut, Bell, User, Settings, ChevronDown, Search, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 interface PatientHeaderProps {
   setCollapsed: (value: boolean) => void;
@@ -12,7 +12,9 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
   const patientName = localStorage.getItem("patient_name") || "Paciente";
   
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   
   // Cerrar dropdown al hacer click fuera
   useEffect(() => {
@@ -24,6 +26,17 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
     };
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+  // Atajo de teclado Ctrl + K para búsqueda
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
   
   const handleLogout = async () => {
@@ -50,6 +63,14 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
     setMenuOpen(false);
     navigate("/patient/settings");
   };
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/patient/search?query=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery("");
+      searchInputRef.current?.blur();
+    }
+  };
   
   return (
     <div className="flex items-center justify-between w-full px-4 bg-black/40 border-b border-white/[0.05]">
@@ -74,6 +95,32 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
             Patient Portal
           </span>
         </div>
+      </div>
+      
+      {/* Center: Search Bar */}
+      <div className="hidden md:flex flex-1 max-w-lg mx-8">
+        <form onSubmit={handleSearchSubmit} className="relative w-full group flex items-center">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="w-4 h-4 text-white/50 group-focus-within:text-emerald-400 transition-colors" />
+          </div>
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Buscar doctores o servicios... (Ctrl+K)"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-10 py-2 bg-white/[0.04] border border-white/10 rounded-sm text-[11px] text-white placeholder-white/40 focus:outline-none focus:border-emerald-500/50 focus:bg-white/[0.06] transition-all"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </form>
       </div>
       
       {/* Right: User menu + notifications */}

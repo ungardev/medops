@@ -7,7 +7,6 @@ import {
   CalendarDays, 
   CreditCard,
   Briefcase,
-  Search, 
   Settings,
   X,
   ChevronLeft,
@@ -19,7 +18,7 @@ interface PatientSidebarProps {
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
 }
-// Orden igual al Doctor Portal
+// Orden igual al Doctor Portal (sin "Buscar")
 const navItems = [
   { path: "/patient", label: "Dashboard", icon: LayoutDashboard },
   { path: "/patient/queue", label: "Sala de Espera", icon: Clock },
@@ -27,7 +26,6 @@ const navItems = [
   { path: "/patient/appointments", label: "Citas", icon: CalendarDays },
   { path: "/patient/payments", label: "Pagos", icon: CreditCard },
   { path: "/patient/services", label: "Servicios", icon: Briefcase },
-  { path: "/patient/search", label: "Buscar", icon: Search },
   { path: "/patient/settings", label: "Configuración", icon: Settings },
 ];
 export default function PatientSidebar({ 
@@ -41,7 +39,6 @@ export default function PatientSidebar({
   
   const itemBase = "group relative flex items-center px-4 py-3 transition-all duration-300 ease-out mb-1.5 overflow-hidden";
   const itemActive = "bg-white/[0.08] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.02)]";
-  // CAMBIO: Texto inactivo ahora blanco puro para máxima legibilidad
   const itemIdle = "text-white hover:text-white hover:bg-white/[0.04]";
   
   return (
@@ -141,7 +138,6 @@ export default function PatientSidebar({
                   />
                   
                   {!effectiveCollapsed && (
-                    // CAMBIO: Eliminado opacity-80 para texto blanco puro
                     <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase ${isActive ? "text-white" : "text-white group-hover:text-white"}`}>
                       {label}
                     </span>
@@ -159,7 +155,7 @@ export default function PatientSidebar({
         {!effectiveCollapsed ? (
           <div className="flex items-center gap-2 px-4">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
-            <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">Medopz_Live_Link</span>
+            <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">Patient</span>
           </div>
         ) : (
           <div className="flex justify-center">

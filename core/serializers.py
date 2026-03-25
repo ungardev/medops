@@ -2175,10 +2175,23 @@ class DoctorServiceWriteSerializer(serializers.ModelSerializer):
 class DoctorServiceSearchSerializer(serializers.ModelSerializer):
     """Serializer liviano para búsqueda/autocomplete de servicios."""
     category_name = serializers.CharField(source='category.name', read_only=True)
+    doctor_name = serializers.CharField(source='doctor.full_name', read_only=True)
+    institution_name = serializers.CharField(source='institution.name', read_only=True)
+    # Opcional: times_used podría requerir un método si no es un campo del modelo
     
     class Meta:
         model = DoctorService
-        fields = ['id', 'code', 'name', 'price_usd', 'category_name']
+        fields = [
+            'id', 
+            'code', 
+            'name', 
+            'price_usd', 
+            'category_name', 
+            'doctor_name', 
+            'institution_name', 
+            'duration_minutes',
+            'is_active'
+        ]
 
 
 class DoctorOperatorSerializer(serializers.ModelSerializer):
