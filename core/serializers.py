@@ -915,7 +915,7 @@ class PaymentWriteSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Payment
-        fields = ["amount", "method", "reference_number", "bank_name", "detail", "screenshot"]
+        fields = ["charge_order","amount", "method", "reference_number", "bank_name", "detail", "screenshot"]
     
     def validate_amount(self, value):
         if value <= Decimal('0.00'):

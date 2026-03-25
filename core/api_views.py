@@ -552,40 +552,43 @@ class PaymentViewSet(viewsets.ModelViewSet):
         serializer = PaymentWriteSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        # Type assertion para Pylance
-        validated_data: dict[str, Any] = cast(dict[str, Any], serializer.validated_data)
+        # Solución 1: Usar assert para ayudar a Pylance
+        validated_data = serializer.validated_data
+        assert isinstance(validated_data, dict), "validated_data debe ser un diccionario"
         
-        charge_order_id = request.data.get('charge_order')
+        # Ahora Pylance sabe que validated_data es un dict
+        charge_order = validated_data.get('charge_order')
         
-        if not charge_order_id:
+        if not charge_order:
             return Response({"error": "charge_order es requerido"}, status=400)
         
-        charge_order = ChargeOrder.objects.get(pk=charge_order_id)
-        
-        # Autogenerar referencia si no se proporciona
+        # Autogenerar referencia
         reference_number = validated_data.get('reference_number')
         if not reference_number:
             timestamp = timezone.now().strftime('%Y%m%d%H%M%S')
             reference_number = f"REC-{charge_order.id}-{timestamp}"
         
-        # ✅ FIX: Usar charge_order.patient y charge_order.doctor directamente
-        # En lugar de acceder a través de charge_order.appointment (que puede ser None)
-        payment = Payment.objects.create(
-            institution=charge_order.institution,
-            appointment=charge_order.appointment,  # Puede ser None
-            charge_order=charge_order,
-            patient=charge_order.patient,  # ✅ Usar campo directo
-            doctor=charge_order.doctor,    # ✅ Usar campo directo
-            amount=validated_data['amount'],
-            method=validated_data['method'],
-            reference_number=reference_number,
-            status='confirmed',
-        )
+        try:
+            payment = Payment.objects.create(
+                institution=charge_order.institution,
+                appointment=charge_order.appointment,
+                charge_order=charge_order,
+                patient=charge_order.patient,
+                doctor=charge_order.doctor,
+                amount=validated_data['amount'],  # Acceso directo, ya que es requerido
+                method=validated_data['method'],
+                reference_number=reference_number,
+                status='confirmed',
+            )
+            
+            charge_order.recalc_totals()
+            charge_order.save()
+            
+            return Response(PaymentSerializer(payment).data, status=201)
         
-        charge_order.recalc_totals()
-        charge_order.save()
-        
-        return Response(PaymentSerializer(payment).data, status=201)
+        except Exception as e:
+            logger.error(f"Error creando pago: {str(e)}")
+            return Response({"error": str(e)}, status=500)
 
 
 class WaitingRoomEntryViewSet(viewsets.ModelViewSet): queryset = WaitingRoomEntry.objects.all(); serializer_class = WaitingRoomEntrySerializer
