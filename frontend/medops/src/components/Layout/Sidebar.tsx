@@ -22,7 +22,7 @@ interface SidebarProps {
   setMobileOpen: (value: boolean) => void;
 }
 const navItems = [
-  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/doctor", label: "Dashboard", icon: LayoutDashboard },
   { path: "/waitingroom", label: "Sala de Espera", icon: Clock },
   { path: "/consultation", label: "Consulta", icon: Stethoscope },
   { path: "/patients", label: "Pacientes", icon: Users },
@@ -82,10 +82,10 @@ export default function Sidebar({
                   </button>
                 )}
                 <Link 
-                  to="/" 
+                  to="/doctor" 
                   className={`flex items-center transition-all duration-500 hover:opacity-100 ${
                     mobileOpen ? "flex-col gap-1" : "gap-3"
-                  } ${location.pathname === "/" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+                  } ${location.pathname === "/doctor" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
                 >
                     <img
                         src={getIconSrc()}
