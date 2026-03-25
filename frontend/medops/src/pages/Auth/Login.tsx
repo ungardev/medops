@@ -37,7 +37,7 @@ export default function Login() {
       api.defaults.headers.common["Authorization"] = `Token ${data.token}`;
       queryClient.invalidateQueries({ queryKey: ["notifications", data.token] });
       setTimeout(() => {
-        navigate("/");
+        navigate("/doctor"); // CORRECCIÓN: Navegar a /doctor en lugar de /
       }, 100);
     } catch (err: any) {
       setError(err.message || "Error de conexión con el servidor");
