@@ -4,7 +4,7 @@ import type { DoctorService, AvailabilitySlot } from '@/api/patient/client';
 import { createAppointment } from '@/api/appointments';
 import type { AppointmentInput } from '@/types/appointments';
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
-import InteractiveCalendar from "@/components/Appointments/InteractiveCalendar";
+import SimpleCalendar from "@/components/Common/SimpleCalendar"; // CAMBIO: Importar SimpleCalendar
 import { 
   Loader2, 
   CreditCardIcon, 
@@ -22,11 +22,6 @@ interface ServicePurchaseFlowProps {
   onSuccess: () => void;
   onCancel: () => void;
 }
-// Tipo para los slots transformados para InteractiveCalendar
-interface TransformedSlot {
-  time: string;
-  label: string;
-}
 export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   service,
   patientId,
@@ -40,10 +35,13 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   // Estado para fecha/hora seleccionada
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
+  
   // Obtener horarios del servicio (para el calendario visual)
   const { data: serviceSchedules = [] } = useAllServiceSchedules(service.institution);
+  
   // Filtrar horarios para el servicio específico actual
   const filteredSchedules = serviceSchedules.filter((schedule: any) => schedule.service === service.id);
+  
   // GENERAR SLOTS LOCALES BASADOS EN HORARIOS RECURRENTES
   const availableSlots = useMemo(() => {
     if (!selectedDate) return [];
@@ -75,6 +73,7 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     
     return slots;
   }, [selectedDate, filteredSchedules]);
+  
   // Función handlePurchase modificada para crear una Appointment
   const handlePurchase = async () => {
     setStep('processing');
@@ -162,7 +161,7 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
               />;
   }
 };
-// Vista de Selección de Fecha y Hora (Paso 1 - Ahora Calendario Visual)
+// Vista de Selección de Fecha y Hora (Paso 1 - Ahora Calendario Simplificado)
 const ConfirmDateView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -176,27 +175,46 @@ const ConfirmDateView: React.FC<{
   schedules: any[];
 }> = ({ service, selectedDate, setSelectedDate, selectedTime, setSelectedTime, availableSlots, onProceed, onBack, onCancel, schedules }) => {
   
-  // Convertir string a Date para el componente InteractiveCalendar
+  // Convertir string a Date para el componente SimpleCalendar
   const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
+  
   return (
     <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
       <h3 className="text-white font-bold text-lg mb-4">Seleccionar Fecha y Hora</h3>
       
-      {/* Contenedor del Calendario Visual */}
+      {/* Contenedor del Calendario Simplificado */}
       <div className="mb-6">
-        <InteractiveCalendar
+        <SimpleCalendar
           selectedDate={selectedDateObj}
           onDateSelect={(date) => {
             setSelectedDate(date ? date.toISOString().split('T')[0] : '');
             setSelectedTime(''); // Reset time when date changes
           }}
           serviceSchedules={schedules}
-          selectedServiceId={service.id}
-          availableSlots={availableSlots}
-          onTimeSelect={setSelectedTime}
-          selectedTime={selectedTime}
         />
       </div>
+      
+      {/* Selección de Hora (si hay slots disponibles) */}
+      {availableSlots.length > 0 && (
+        <div className="mb-4">
+          <label className="text-white/70 text-sm block mb-2">Horarios Disponibles</label>
+          <div className="grid grid-cols-3 gap-2">
+            {availableSlots.map((slot, index) => (
+              <button
+                key={index}
+                onClick={() => setSelectedTime(slot.time)}
+                className={`py-2 px-3 rounded-sm text-xs font-mono transition-all ${
+                  selectedTime === slot.time
+                    ? 'bg-emerald-500 text-black'
+                    : 'bg-white/5 text-white hover:bg-white/10'
+                }`}
+              >
+                {slot.time}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       
       {/* Mensaje informativo si no hay slots */}
       {availableSlots.length === 0 && selectedDate && (
@@ -204,6 +222,7 @@ const ConfirmDateView: React.FC<{
           No hay horarios específicos para este día. La hora será confirmada por el doctor.
         </div>
       )}
+      
       {/* Botones de acción */}
       <div className="flex gap-3">
         <button
@@ -224,7 +243,7 @@ const ConfirmDateView: React.FC<{
     </div>
   );
 };
-// Vista de Confirmación Final (Paso 2)
+// Vista de Confirmación Final (Paso 2) - Sin cambios
 const ConfirmFinalView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -276,7 +295,7 @@ const ConfirmFinalView: React.FC<{
     </div>
   </div>
 );
-// Vista de Procesamiento
+// Vista de Procesamiento - Sin cambios
 const ProcessingView: React.FC = () => (
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
     <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
@@ -284,7 +303,7 @@ const ProcessingView: React.FC = () => (
     <p className="text-white/50 text-xs mt-2">Por favor espera</p>
   </div>
 );
-// Vista de Éxito
+// Vista de Éxito - Sin cambios
 const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> = ({
   chargeOrder,
   onCancel
@@ -318,7 +337,7 @@ const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> =
     </div>
   </div>
 );
-// Vista de Error
+// Vista de Error - Sin cambios
 const ErrorView: React.FC<{
   error: string | null;
   onRetry: () => void;
