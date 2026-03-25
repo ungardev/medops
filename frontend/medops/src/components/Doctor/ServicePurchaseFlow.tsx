@@ -4,7 +4,7 @@ import type { DoctorService, AvailabilitySlot } from '@/api/patient/client';
 import { createAppointment } from '@/api/appointments';
 import type { AppointmentInput } from '@/types/appointments';
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
-import SimpleCalendar from "@/components/Common/SimpleCalendar"; // CAMBIO: Importar SimpleCalendar
+import SimpleCalendar from "@/components/Common/SimpleCalendar";
 import { 
   Loader2, 
   CreditCardIcon, 
@@ -46,8 +46,9 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   const availableSlots = useMemo(() => {
     if (!selectedDate) return [];
     
-    const selectedDateObj = new Date(selectedDate);
-    const dayOfWeek = selectedDateObj.getDay();
+    // CORRECCIÓN: Forzar interpretación UTC de la fecha seleccionada
+    const selectedDateObj = new Date(selectedDate + 'T00:00:00Z');
+    const dayOfWeek = selectedDateObj.getUTCDay(); // Usar getUTCDay para consistencia
     
     // Filtrar horarios del servicio para el día de la semana seleccionado
     const serviceSchedulesForService = filteredSchedules.filter(
@@ -175,8 +176,23 @@ const ConfirmDateView: React.FC<{
   schedules: any[];
 }> = ({ service, selectedDate, setSelectedDate, selectedTime, setSelectedTime, availableSlots, onProceed, onBack, onCancel, schedules }) => {
   
-  // Convertir string a Date para el componente SimpleCalendar
-  const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
+  // CORRECCIÓN: Convertir string (UTC) a Date para el calendario
+  // Añadimos 'T00:00:00Z' para forzar la interpretación en UTC
+  const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00Z') : null;
+  
+  // CORRECCIÓN: Manejador de selección de fecha que normaliza a UTC
+  const handleDateSelect = (date: Date | null) => {
+    if (date) {
+      // Convertir a string YYYY-MM-DD usando UTC
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      setSelectedDate(`${year}-${month}-${day}`);
+    } else {
+      setSelectedDate('');
+    }
+    setSelectedTime(''); // Reset time when date changes
+  };
   
   return (
     <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
@@ -186,10 +202,7 @@ const ConfirmDateView: React.FC<{
       <div className="mb-6">
         <SimpleCalendar
           selectedDate={selectedDateObj}
-          onDateSelect={(date) => {
-            setSelectedDate(date ? date.toISOString().split('T')[0] : '');
-            setSelectedTime(''); // Reset time when date changes
-          }}
+          onDateSelect={handleDateSelect}
           serviceSchedules={schedules}
         />
       </div>

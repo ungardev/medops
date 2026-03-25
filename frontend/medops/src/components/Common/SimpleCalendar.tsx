@@ -42,7 +42,10 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
     const dayOfWeek = date.getDay();
     return serviceSchedules.some(schedule => schedule.day_of_week === dayOfWeek);
   };
-  
+  // CORRECCIÓN: Normalizar fecha seleccionada a string UTC (YYYY-MM-DD) para comparación segura
+  const selectedDateStr = selectedDate 
+    ? new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    : null;
   const days = getDaysInMonth();
   
   return (
@@ -77,7 +80,10 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
       
       <div className="grid grid-cols-7 gap-1">
         {days.map((date, index) => {
-          const isSelected = date && selectedDate && date.toDateString() === selectedDate.toDateString();
+          // CORRECCIÓN: Comparar usando strings UTC normalizados
+          const currentDayStr = date ? date.toISOString().split('T')[0] : null;
+          const isSelected = currentDayStr && selectedDateStr && currentDayStr === selectedDateStr;
+          
           const isWorking = date && isWorkingDay(date);
           const isToday = date && date.toDateString() === new Date().toDateString();
           
