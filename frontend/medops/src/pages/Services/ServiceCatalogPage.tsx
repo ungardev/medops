@@ -190,12 +190,20 @@ export default function ServiceCatalogPage() {
           { label: "SERVICIOS", value: String(totalServices), color: "text-emerald-400" },
         ]}
         actions={
-          <button
-            onClick={() => handleOpenServiceModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            <PlusIcon className="w-4 h-4" /> Nuevo_Servicio
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleOpenServiceModal()}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest transition-all"
+            >
+              <PlusIcon className="w-4 h-4" /> Nuevo_Servicio
+            </button>
+            <button 
+              onClick={() => navigate('/doctor/manage-services')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest transition-all"
+            >
+              <EyeIcon className="w-4 h-4" /> Gestionar_Solicitudes
+            </button>
+          </div>
         }
       />
       

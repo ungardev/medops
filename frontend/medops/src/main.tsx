@@ -4,14 +4,14 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App";
-import DashboardPage from "./pages/Dashboard";
+// import DashboardPage from "./pages/Dashboard"; // REMOVIDO: Dashboard antiguo
 import Patients from "./pages/Patients/Patients";
 import PatientDetail from "./pages/Patients/PatientDetail";
 import PatientConsultationDetail from "./pages/Patients/PatientConsultationsDetail";
 import Appointments from "./pages/Appointments/Appointments";
 import Payments from "./pages/Payments/Payments";
 import ChargeOrderDetail from "./pages/Payments/ChargeOrderDetail";
-import PendingPayments from "./pages/Payments/PendingPayments";  // 🆕 Import
+import PendingPayments from "./pages/Payments/PendingPayments";
 import Events from "./pages/Events/Events";
 import WaitingRoom from "./pages/WaitingRoom/WaitingRoom";
 import Consultation from "./pages/Consultation/Consultation";
@@ -39,7 +39,7 @@ import { PatientDashboard } from "./pages/PatientPortal/PatientDashboard";
 import PatientRecord from "./pages/PatientPortal/PatientRecord";
 import PatientQueue from "./pages/PatientPortal/PatientQueue";
 import PatientSearch from "./pages/PatientPortal/PatientSearch";
-import PatientServices from "./pages/PatientPortal/PatientServices"; // 🆕 Import Servicios
+import PatientServices from "./pages/PatientPortal/PatientServices";
 import PatientSettings from "./pages/PatientPortal/PatientSettings";
 import PatientActivate from "./pages/PatientPortal/PatientActivate";
 import PatientAppointments from "./pages/PatientPortal/PatientAppointments";
@@ -47,6 +47,9 @@ import PatientPayments from "./pages/PatientPortal/PatientPayments";
 import PatientChargeOrderDetail from "./pages/PatientPortal/PatientChargeOrderDetail";
 // Importación CORREGIDA: Añadir DoctorProfile
 import DoctorProfile from "./pages/PatientPortal/DoctorProfile";
+// NUEVAS IMPORTACIONES: Doctor Dashboard y Manage Services
+import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
+import ManageServicesPage from "./pages/Doctor/ManageServicesPage";
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
@@ -82,20 +85,27 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               <Route path="appointments" element={<PatientAppointments />} />
               <Route path="queue" element={<PatientQueue />} />
               <Route path="search" element={<PatientSearch />} />
-              <Route path="services" element={<PatientServices />} /> {/* 🆕 Ruta Servicios */}
-              {/* NUEVA RUTA: Perfil del Doctor */}
+              <Route path="services" element={<PatientServices />} />
               <Route path="doctor/:id" element={<DoctorProfile />} />
               <Route path="settings" element={<PatientSettings />} />
               <Route path="payments" element={<PatientPayments />} />
               <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
-              {/* NUEVA RUTA: Pago de Orden de Cobro */}
               <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
             </Route>
             
             {/* === DOCTOR PORTAL - PROTECTED === */}
             <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
               <Route element={<App />}>
-                <Route index element={<DashboardPage />} />
+                {/* Ruta raíz: Redirige a login para el portal elite */}
+                <Route index element={<Navigate to="/login" replace />} />
+                
+                {/* Ruta del Dashboard del Doctor (reemplaza al antiguo index) */}
+                <Route path="doctor" element={<DoctorDashboard />} />
+                
+                {/* Ruta de gestión de servicios/citas */}
+                <Route path="doctor/manage-services" element={<ManageServicesPage />} />
+                
+                {/* Otras rutas existentes */}
                 <Route path="patients" element={<Patients />} />
                 <Route path="patients/:id" element={<PatientDetail />} />
                 <Route
@@ -105,11 +115,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                 <Route path="waitingroom" element={<WaitingRoom />} />
                 <Route path="appointments" element={<Appointments />} />
                 <Route path="payments" element={<Payments />} />
-                <Route path="payments/pending" element={<PendingPayments />} />  // 🆕 Nueva ruta
+                <Route path="payments/pending" element={<PendingPayments />} />
                 <Route path="payments/:id" element={<ChargeOrderDetail />} />
-                {/* CAMBIO: Ruta de servicios en lugar de billing/catalog */}
                 <Route path="services" element={<ServiceCatalogPage />} />
-                {/* NUEVO: Ruta de detalle de servicio */}
                 <Route path="services/:id" element={<ServiceDetailPage />} />
                 <Route path="events" element={<Events />} />
                 <Route path="visual-audit" element={<VisualAudit />} />
