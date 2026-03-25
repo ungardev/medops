@@ -8,7 +8,6 @@ import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
 import ActiveInstitutionCard from "@/components/Dashboard/ActiveInstitutionCard";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import type { InstitutionSettings } from "@/types/config";
-import { CalendarCheckIcon, FileTextIcon } from "lucide-react"; // Iconos adicionales
 export default function DoctorDashboard() {
   const { token } = useAuthToken();
   const navigate = useNavigate();
@@ -127,26 +126,10 @@ export default function DoctorDashboard() {
     );
   }
   
-  // ✅ ESTADO 4: Dashboard del Doctor
+  // ✅ ESTADO 4: Dashboard del Doctor (Sin encabezado de "Portal Doctor")
   return (
     <DashboardFiltersProvider>
       <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
-        
-        {/* Header del Dashboard */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Portal Doctor</h1>
-            <p className="text-white/60">Gestión de citas y servicios</p>
-          </div>
-          <div className="flex gap-2">
-             <button 
-               onClick={() => navigate('/doctor/manage-services')}
-               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold uppercase tracking-wider transition-all"
-             >
-               <FileTextIcon className="w-4 h-4" /> Gestionar Servicios
-             </button>
-          </div>
-        </div>
         {/* 🎯 COMPONENTE UNIFICADO - ActiveInstitutionCard con Live Clock integrado */}
         <section className="animate-in slide-in-from-bottom-1 duration-700 delay-50">
           <ActiveInstitutionCard />
