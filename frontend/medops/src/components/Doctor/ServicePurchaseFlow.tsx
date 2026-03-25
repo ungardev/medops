@@ -2,17 +2,32 @@
 import React, { useState, useEffect } from 'react';
 import type { DoctorService, ServiceAvailabilityResponse, AvailabilitySlot } from '@/api/patient/client';
 import { patientClient } from '@/api/patient/client';
-// NUEVO: Importar createAppointment y tipos de Appointment
 import { createAppointment } from '@/api/appointments';
 import type { AppointmentInput } from '@/types/appointments';
-import { Loader2, CreditCardIcon, CheckCircleIcon, XCircleIcon, ArrowRightIcon, AlertTriangle, CalendarIcon, ClockIcon } from 'lucide-react';
+import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
+import InteractiveCalendar from "@/components/Appointments/InteractiveCalendar";
+import { 
+  Loader2, 
+  CreditCardIcon, 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  ArrowRightIcon, 
+  AlertTriangle, 
+  CalendarIcon, 
+  ClockIcon 
+} from 'lucide-react';
 // Tipos de estado del flujo
-type PurchaseStep = 'confirm-details' | 'confirm-date' | 'confirm-final' | 'processing' | 'success' | 'error';
+type PurchaseStep = 'confirm-date' | 'confirm-final' | 'processing' | 'success' | 'error';
 interface ServicePurchaseFlowProps {
   service: DoctorService;
   patientId: number;
   onSuccess: () => void;
   onCancel: () => void;
+}
+// Tipo para los slots transformados para InteractiveCalendar
+interface TransformedSlot {
+  time: string;
+  label: string;
 }
 export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   service,
@@ -20,9 +35,9 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const [step, setStep] = useState<PurchaseStep>('confirm-details');
+  // CAMBIO: Iniciar directamente en la vista de fecha
+  const [step, setStep] = useState<PurchaseStep>('confirm-date');
   const [error, setError] = useState<string | null>(null);
-  // CAMBIO: Tipo modificado para aceptar la respuesta de createAppointment (que incluye charge_order)
   const [chargeOrder, setChargeOrder] = useState<any | null>(null);
   
   // Estado para fecha/hora seleccionada
@@ -30,7 +45,11 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   const [selectedTime, setSelectedTime] = useState<string>('');
   const [availableSlots, setAvailableSlots] = useState<AvailabilitySlot[]>([]);
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
-  // Cargar disponibilidad cuando cambia la fecha (sin cambios)
+  // Obtener horarios del servicio (para el calendario visual)
+  const { data: serviceSchedules = [] } = useAllServiceSchedules(service.institution);
+  // Filtrar horarios para el servicio específico actual
+  const filteredSchedules = serviceSchedules.filter((schedule: any) => schedule.service === service.id);
+  // Cargar disponibilidad cuando cambia la fecha
   useEffect(() => {
     if (step === 'confirm-date' && selectedDate && service.institution) {
       setIsLoadingSlots(true);
@@ -45,29 +64,26 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
         });
     }
   }, [step, selectedDate, service.id, service.institution]);
-  // CAMBIO CRÍTICO: Función handlePurchase modificada para crear una Appointment
+  // Función handlePurchase modificada para crear una Appointment
   const handlePurchase = async () => {
     setStep('processing');
     setError(null);
     
     try {
-      // Construir payload para Appointment (Opción A)
       const appointmentData: AppointmentInput = {
         patient: patientId,
-        doctor: service.doctor, // Asegúrate de que DoctorService tenga el campo doctor (ID)
+        doctor: service.doctor,
         institution: service.institution,
         doctor_service: service.id,
-        appointment_date: selectedDate, // Usar fecha tentativa como fecha inicial
+        appointment_date: selectedDate,
         tentative_date: selectedDate,
         tentative_time: selectedTime,
         status: 'tentative',
-        appointment_type: 'general', // Asumir tipo general o derivar de service
-        services: [{ doctor_service_id: service.id, qty: 1 }] // Para generar ChargeOrder automáticamente
+        appointment_type: 'general',
+        services: [{ doctor_service_id: service.id, qty: 1 }]
       };
       
       const response = await createAppointment(appointmentData);
-      
-      // La respuesta es una Appointment, que incluye charge_order anidado
       const chargeOrderData = response.charge_order;
       
       if (!chargeOrderData) {
@@ -83,10 +99,10 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     }
   };
   const handleRetry = () => {
-    setStep('confirm-details');
+    setStep('confirm-date'); // Reiniciar en calendario
     setError(null);
   };
-  // Renderizado condicional según el estado (sin cambios en la estructura)
+  // Renderizado condicional según el estado
   switch (step) {
     case 'processing':
       return <ProcessingView />;
@@ -105,8 +121,9 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
           availableSlots={availableSlots}
           isLoadingSlots={isLoadingSlots}
           onProceed={() => setStep('confirm-final')}
-          onBack={() => setStep('confirm-details')}
+          onBack={onCancel}
           onCancel={onCancel}
+          schedules={filteredSchedules}
         />
       );
     case 'confirm-final':
@@ -120,48 +137,23 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
           onCancel={onCancel}
         />
       );
-    default: // 'confirm-details'
-      return <ConfirmDetailsView service={service} onProceed={() => setStep('confirm-date')} onCancel={onCancel} />;
+    default:
+      return <ConfirmDateView 
+                service={service} 
+                selectedDate={selectedDate} 
+                setSelectedDate={setSelectedDate} 
+                selectedTime={selectedTime} 
+                setSelectedTime={setSelectedTime} 
+                availableSlots={availableSlots} 
+                isLoadingSlots={isLoadingSlots} 
+                onProceed={() => setStep('confirm-final')} 
+                onBack={onCancel} 
+                onCancel={onCancel}
+                schedules={filteredSchedules}
+              />;
   }
 };
-// Vista de Confirmación de Detalles (Paso 1) - Sin cambios
-const ConfirmDetailsView: React.FC<{
-  service: DoctorService;
-  onProceed: () => void;
-  onCancel: () => void;
-}> = ({ service, onProceed, onCancel }) => (
-  <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
-    <h3 className="text-white font-bold text-lg mb-4">Detalles del Servicio</h3>
-    
-    <div className="mb-6 p-4 bg-white/5 rounded-sm">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-white/80">{service.name}</span>
-        <span className="text-emerald-400 font-mono">
-          $ {service.price_usd?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-        </span>
-      </div>
-      <div className="text-white/50 text-sm">
-        Duración: {service.duration_minutes} min
-      </div>
-    </div>
-    <div className="flex gap-3">
-      <button
-        onClick={onCancel}
-        className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
-      >
-        Cancelar
-      </button>
-      <button
-        onClick={onProceed}
-        className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2"
-      >
-        <CalendarIcon className="w-4 h-4" />
-        Seleccionar Fecha
-      </button>
-    </div>
-  </div>
-);
-// Vista de Selección de Fecha y Hora (Paso 2) - Sin cambios
+// Vista de Selección de Fecha y Hora (Paso 1 - Ahora Calendario Visual)
 const ConfirmDateView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -173,71 +165,56 @@ const ConfirmDateView: React.FC<{
   onProceed: () => void;
   onBack: () => void;
   onCancel: () => void;
-}> = ({ service, selectedDate, setSelectedDate, selectedTime, setSelectedTime, availableSlots, isLoadingSlots, onProceed, onBack, onCancel }) => (
-  <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
-    <h3 className="text-white font-bold text-lg mb-4">Seleccionar Fecha y Hora</h3>
-    
-    <div className="mb-4">
-      <label className="text-white/70 text-sm block mb-2">Fecha</label>
-      <input
-        type="date"
-        value={selectedDate}
-        onChange={(e) => {
-          setSelectedDate(e.target.value);
-          setSelectedTime(''); // Reset time when date changes
-        }}
-        className="w-full bg-black/40 border border-white/10 p-3 text-sm text-white rounded focus:border-emerald-500/50 outline-none [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-        style={{ colorScheme: 'dark' }}
-        min={new Date().toISOString().split('T')[0]} // Prevent past dates
-      />
-    </div>
-    {selectedDate && (
+  schedules: any[];
+}> = ({ service, selectedDate, setSelectedDate, selectedTime, setSelectedTime, availableSlots, isLoadingSlots, onProceed, onBack, onCancel, schedules }) => {
+  
+  // CORRECCIÓN: Transformar AvailabilitySlot[] al formato esperado por InteractiveCalendar
+  const transformedSlots: TransformedSlot[] = availableSlots.map(slot => ({
+    time: slot.start,      // Usamos la propiedad 'start' como 'time'
+    label: slot.start      // Usamos la propiedad 'start' como 'label'
+  }));
+  // Convertir string a Date para el componente InteractiveCalendar
+  const selectedDateObj = selectedDate ? new Date(selectedDate) : null;
+  return (
+    <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
+      <h3 className="text-white font-bold text-lg mb-4">Seleccionar Fecha y Hora</h3>
+      
+      {/* Contenedor del Calendario Visual */}
       <div className="mb-6">
-        <label className="text-white/70 text-sm block mb-2">Horarios Disponibles</label>
-        {isLoadingSlots ? (
-          <div className="text-center py-4">
-            <Loader2 className="w-6 h-6 animate-spin text-emerald-500 mx-auto" />
-          </div>
-        ) : availableSlots.length > 0 ? (
-          <div className="grid grid-cols-3 gap-2">
-            {availableSlots.map((slot, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedTime(slot.start)}
-                className={`py-2 px-3 rounded-sm text-xs font-mono transition-all ${
-                  selectedTime === slot.start
-                    ? 'bg-emerald-500 text-black'
-                    : 'bg-white/5 text-white hover:bg-white/10'
-                }`}
-              >
-                {slot.start}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p className="text-white/50 text-sm text-center py-4">No hay horarios disponibles para esta fecha.</p>
-        )}
+        <InteractiveCalendar
+          selectedDate={selectedDateObj}
+          onDateSelect={(date) => {
+            setSelectedDate(date ? date.toISOString().split('T')[0] : '');
+            setSelectedTime(''); // Reset time when date changes
+          }}
+          serviceSchedules={schedules}
+          selectedServiceId={service.id}
+          availableSlots={transformedSlots} // USAMOS LOS SLOTS TRANSFORMADOS
+          onTimeSelect={setSelectedTime}
+          selectedTime={selectedTime}
+        />
       </div>
-    )}
-    <div className="flex gap-3">
-      <button
-        onClick={onBack}
-        className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
-      >
-        Atrás
-      </button>
-      <button
-        onClick={onProceed}
-        disabled={!selectedDate || !selectedTime}
-        className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 disabled:opacity-50 flex items-center justify-center gap-2"
-      >
-        <ClockIcon className="w-4 h-4" />
-        Confirmar Horario
-      </button>
+      {/* Botones de acción */}
+      <div className="flex gap-3">
+        <button
+          onClick={onBack} // Cierra el modal
+          className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
+        >
+          Volver
+        </button>
+        <button
+          onClick={onProceed}
+          disabled={!selectedDate || !selectedTime}
+          className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <ClockIcon className="w-4 h-4" />
+          Confirmar Horario
+        </button>
+      </div>
     </div>
-  </div>
-);
-// Vista de Confirmación Final (Paso 3) - Sin cambios
+  );
+};
+// Vista de Confirmación Final (Paso 2)
 const ConfirmFinalView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -256,9 +233,19 @@ const ConfirmFinalView: React.FC<{
       <p className="text-amber-200 text-sm">
         ¿Estás seguro de que deseas solicitar el servicio <strong>{service.name}</strong> por <strong>$ {service.price_usd?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>?
       </p>
-      <div className="mt-3 text-white/80 text-sm">
-        <p>Fecha: {selectedDate}</p>
-        <p>Hora: {selectedTime}</p>
+      <div className="mt-3 text-white/80 text-sm space-y-1">
+        <div className="flex justify-between">
+            <span className="text-white/50">Institución:</span>
+            <span>{service.institution_name || 'N/A'}</span>
+        </div>
+        <div className="flex justify-between">
+            <span className="text-white/50">Fecha:</span>
+            <span>{selectedDate}</span>
+        </div>
+        <div className="flex justify-between">
+            <span className="text-white/50">Hora:</span>
+            <span>{selectedTime}</span>
+        </div>
         <p className="text-white/50 text-xs mt-2">Nota: Esta es una fecha tentativa. El doctor la confirmará pronto.</p>
       </div>
     </div>
@@ -279,7 +266,7 @@ const ConfirmFinalView: React.FC<{
     </div>
   </div>
 );
-// Vista de Procesamiento - Sin cambios
+// Vista de Procesamiento
 const ProcessingView: React.FC = () => (
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
     <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
@@ -287,7 +274,7 @@ const ProcessingView: React.FC = () => (
     <p className="text-white/50 text-xs mt-2">Por favor espera</p>
   </div>
 );
-// Vista de Éxito (Solicitud Recibida) - Ajustada para usar chargeOrder anidado
+// Vista de Éxito
 const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> = ({
   chargeOrder,
   onCancel
@@ -321,7 +308,7 @@ const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> =
     </div>
   </div>
 );
-// Vista de Error - Sin cambios
+// Vista de Error
 const ErrorView: React.FC<{
   error: string | null;
   onRetry: () => void;
