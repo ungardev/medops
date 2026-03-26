@@ -40,18 +40,18 @@ export interface ServiceCategory {
 }
 export interface DoctorService {
   id: number;
-  code: string;  // ✅ NUEVO
-  doctor: number;
-  doctor_name: string;
-  category: number;
-  category_name: string;
-  institution: number;
-  institution_name: string;
+  code: string;
   name: string;
-  description: string;
+  description?: string;
+  doctor: number; // ID del doctor
+  doctor_name: string; // Nombre del doctor (requerido)
+  institution: number; // ID de la institución
+  institution_name?: string;
+  category: number;
+  category_name?: string;
   price_usd: number;
   duration_minutes: number;
-  is_active: boolean;
+  is_active?: boolean;
   is_visible_global: boolean;
   requires_appointment: boolean;
   booking_lead_time: number;
@@ -149,21 +149,20 @@ export interface ServiceSearchResult {
   id: number;
   code: string;
   name: string;
-  description: string;
-  doctor_name: string;
-  institution_name: string;
+  description?: string;
+  doctor?: {
+    id: number;
+    full_name: string;
+  };
+  institution_name?: string;
   price_usd: number;
   duration_minutes: number;
-  times_used: number;
-  is_active: boolean;
-  category_name: string;
-  doctor: number;
-  category: number;
-  institution: number;
-  is_visible_global: boolean;
-  requires_appointment: boolean;
-  booking_lead_time: number;
-  cancellation_window: number;
+  times_used?: number;
+  is_active?: boolean;
+  // Otros campos opcionales según necesidad
+  category?: number;
+  category_name?: string;
+  institution?: number;
 }
 export interface ServiceSearchResponse {
   count: number;

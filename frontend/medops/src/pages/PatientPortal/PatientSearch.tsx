@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { patientClient, Doctor, ServiceSearchResult, DoctorService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
+import PageHeader from "@/components/Common/PageHeader";
 export default function PatientSearch() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -18,12 +19,18 @@ export default function PatientSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Estado para el modal de compra de servicios
-  const [selectedService, setSelectedService] = useState<DoctorService | ServiceSearchResult | null>(null);
+  const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
   const currentPatientId = localStorage.getItem('patient_id') ? Number(localStorage.getItem('patient_id')) : 1;
-  // Filtrado por tipo (Doctores/Servicios/All)
+  
   const [filterType, setFilterType] = useState<"all" | "doctors" | "services">("all");
-  // Búsqueda unificada
+  
+  const [currentTime, setCurrentTime] = useState(new Date());
+  
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       setDoctorsResults([]);
@@ -35,7 +42,6 @@ export default function PatientSearch() {
     setError(null);
     
     try {
-      // Búsqueda paralela
       const [doctorsRes, servicesRes] = await Promise.all([
         filterType !== "services" ? patientClient.searchDoctors(searchQuery).catch(() => ({ data: { results: [] } })) : Promise.resolve({ data: { results: [] } }),
         filterType !== "doctors" ? patientClient.searchServices(searchQuery).catch(() => ({ data: { results: [] } })) : Promise.resolve({ data: { results: [] } })
@@ -49,21 +55,23 @@ export default function PatientSearch() {
       setIsSearching(false);
     }
   };
-  // Debounce
+  
   useEffect(() => {
     const timer = setTimeout(() => {
       handleSearch();
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, filterType]);
-  // Resultados filtrados visualmente
+  
   const filteredDoctors = useMemo(() => doctorsResults, [doctorsResults]);
   const filteredServices = useMemo(() => servicesResults, [servicesResults]);
-  // Mapeo de ServiceSearchResult a DoctorService para el modal
+  
   const handleSelectService = (service: ServiceSearchResult) => {
     const compatibleService: DoctorService = {
       ...service,
-      doctor: service.doctor || 0,
+      // CORRECCIÓN: Agregar doctor_name desde service.doctor.full_name
+      doctor_name: service.doctor?.full_name || '',
+      doctor: service.doctor?.id || 0,
       institution: service.institution || 0,
       category: service.category || 0,
       category_name: service.category_name || '',
@@ -75,9 +83,22 @@ export default function PatientSearch() {
     };
     setSelectedService(compatibleService);
   };
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* Barra de Búsqueda Principal (Estilo PatientServices) */}
+      <div className="flex items-center justify-between mb-6">
+        <PageHeader 
+          breadcrumbs={[
+            { label: "MEDOPZ", path: "/patient" },
+            { label: "Búsqueda", active: true }
+          ]}
+        />
+        <div className="flex items-center gap-2 text-sm text-white/70">
+          <Clock className="w-4 h-4" />
+          <span>{currentTime.toLocaleTimeString()}</span>
+        </div>
+      </div>
+      
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/70" />
         <input
@@ -96,9 +117,8 @@ export default function PatientSearch() {
           </button>
         )}
       </div>
-      {/* Filtros y Resultados */}
+      
       <div className="flex gap-6">
-        {/* Sidebar de Filtros */}
         <div className="w-48 flex-shrink-0 hidden lg:block">
           <div className="bg-black/30 border border-white/20 rounded-sm p-3 sticky top-4">
             <p className="text-[11px] font-black text-white/80 uppercase tracking-widest mb-3">
@@ -142,7 +162,7 @@ export default function PatientSearch() {
             </div>
           </div>
         </div>
-        {/* Grid de Resultados */}
+        
         <div className="flex-1">
           {isSearching ? (
             <div className="flex justify-center py-12">
@@ -150,7 +170,6 @@ export default function PatientSearch() {
             </div>
           ) : (
             <div className="space-y-8">
-              {/* Sección Doctores */}
               {(filterType === "all" || filterType === "doctors") && filteredDoctors.length > 0 && (
                 <div>
                   <h3 className="text-[12px] font-black text-white/80 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -202,7 +221,7 @@ export default function PatientSearch() {
                   </div>
                 </div>
               )}
-              {/* Sección Servicios */}
+              
               {(filterType === "all" || filterType === "services") && filteredServices.length > 0 && (
                 <div>
                   <h3 className="text-[12px] font-black text-white/80 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -229,7 +248,7 @@ export default function PatientSearch() {
                         </h4>
                         <div className="flex items-center gap-2 text-[12px] text-white/80 mb-2">
                           <User className="w-4 h-4" />
-                          <span>Dr. {service.doctor_name || 'Médico no especificado'}</span>
+                          <span>Dr. {service.doctor?.full_name || 'Médico no especificado'}</span>
                         </div>
                         <div className="flex items-center gap-2 text-[11px] text-white/70 mb-3">
                           <Building2 className="w-4 h-4" />
@@ -248,7 +267,7 @@ export default function PatientSearch() {
                   </div>
                 </div>
               )}
-              {/* Estado Vacío */}
+              
               {(filteredDoctors.length === 0 && filteredServices.length === 0 && !isSearching) && (
                 <div className="flex flex-col items-center justify-center py-16 bg-black/30 border border-dashed border-white/20 rounded-sm">
                   <div className="bg-white/10 p-4 rounded-full mb-4">
@@ -270,7 +289,7 @@ export default function PatientSearch() {
           )}
         </div>
       </div>
-      {/* Modal de Compra de Servicio */}
+      
       {selectedService && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
