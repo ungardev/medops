@@ -1,11 +1,10 @@
 // src/pages/PatientPortal/DoctorProfile.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDoctor, useDoctorServices } from '@/hooks/doctor/useDoctor';
 import { DoctorProfileCard } from '@/components/Doctor/DoctorProfileCard';
 import { ServicePurchaseFlow } from '@/components/Doctor/ServicePurchaseFlow';
 import PageHeader from '@/components/Common/PageHeader';
-import { Clock } from 'lucide-react';
 export default function DoctorProfile() {
   const { id } = useParams<{ id: string }>();
   const doctorId = parseInt(id || '0');
@@ -14,12 +13,6 @@ export default function DoctorProfile() {
   const { data: services, isLoading: servicesLoading } = useDoctorServices(doctorId);
   
   const [selectedService, setSelectedService] = useState<any>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
-  // Efecto para actualizar el reloj
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
   
   if (doctorLoading || servicesLoading) {
     return (
@@ -44,20 +37,13 @@ export default function DoctorProfile() {
   const currentPatientId = localStorage.getItem('patient_id') ? Number(localStorage.getItem('patient_id')) : 1;
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* PageHeader con Breadcrumbs */}
-      <div className="flex items-center justify-between">
-        <PageHeader 
-          breadcrumbs={[
-            { label: "MEDOPZ", path: "/patient" },
-            { label: "Perfiles", path: "/patient/search" },
-            { label: doctor.full_name, active: true }
-          ]}
-        />
-        <div className="flex items-center gap-2 text-sm text-white/70">
-          <Clock className="w-4 h-4" />
-          <span>{currentTime.toLocaleTimeString()}</span>
-        </div>
-      </div>
+      {/* PageHeader idéntico a PatientServices.tsx */}
+      <PageHeader 
+        breadcrumbs={[
+          { label: "MEDOPZ", path: "/patient" },
+          { label: "Perfil del Doctor", active: true }
+        ]}
+      />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Perfil del Doctor - Columna Izquierda */}
         <div className="lg:col-span-1">
