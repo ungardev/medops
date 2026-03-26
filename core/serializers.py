@@ -2232,7 +2232,8 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "license",
             "specialties",
             "specialty_ids",
-            "institutions",
+            "institutions",      # Para leer objetos completos
+            "institution_ids",   # AGREGAR ESTE CAMPO
             "active_institution",
             "email",
             "phone",
