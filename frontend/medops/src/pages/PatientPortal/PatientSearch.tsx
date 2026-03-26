@@ -1,7 +1,6 @@
 // src/pages/PatientPortal/PatientSearch.tsx
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import PageHeader from "@/components/Common/PageHeader";
 import { 
   Search, User, Building2, Loader2, Filter, Clock, DollarSign, ArrowRight, 
   Stethoscope, XIcon, ListIcon
@@ -20,7 +19,6 @@ export default function PatientSearch() {
   const [error, setError] = useState<string | null>(null);
   
   // Estado para el modal de compra de servicios
-  // Nota: ServiceSearchResult debe ser compatible con DoctorService o mapearse
   const [selectedService, setSelectedService] = useState<DoctorService | ServiceSearchResult | null>(null);
   const currentPatientId = localStorage.getItem('patient_id') ? Number(localStorage.getItem('patient_id')) : 1;
   // Filtrado por tipo (Doctores/Servicios/All)
@@ -62,14 +60,12 @@ export default function PatientSearch() {
   const filteredDoctors = useMemo(() => doctorsResults, [doctorsResults]);
   const filteredServices = useMemo(() => servicesResults, [servicesResults]);
   // Mapeo de ServiceSearchResult a DoctorService para el modal
-  // Asumiendo que ServiceSearchResult ahora tiene los campos necesarios del serializer actualizado
   const handleSelectService = (service: ServiceSearchResult) => {
-    // Convertimos a DoctorService compatible
     const compatibleService: DoctorService = {
       ...service,
-      doctor: 0, // ID del doctor (si no está en el resultado, podría requerir mapeo adicional)
-      institution: 0, // ID de la institución
-      category: 0, // ID de la categoría
+      doctor: service.doctor || 0,
+      institution: service.institution || 0,
+      category: service.category || 0,
       category_name: service.category_name || '',
       is_visible_global: true,
       requires_appointment: true,
@@ -81,25 +77,6 @@ export default function PatientSearch() {
   };
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      <PageHeader 
-        breadcrumbs={[
-          { label: "MEDOPZ", path: "/patient" },
-          { label: "BUSCAR", active: true }
-        ]}
-        stats={[
-          { 
-            label: "RESULTADOS", 
-            value: (filteredDoctors.length + filteredServices.length).toString(), 
-            color: "text-white" 
-          },
-          { 
-            label: "TIPO", 
-            value: filterType === "all" ? "Todo" : filterType === "doctors" ? "Doctores" : "Servicios", 
-            color: "text-blue-400" 
-          },
-        ]}
-      />
-      
       {/* Barra de Búsqueda Principal (Estilo PatientServices) */}
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/70" />

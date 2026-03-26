@@ -1,5 +1,6 @@
 // src/components/Common/ServiceDetail.tsx
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { DoctorService } from '@/api/patient/client';
 import { 
   XIcon, 
@@ -43,18 +44,22 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
       </div>
       {/* Contenido */}
       <div className="p-5 space-y-4">
-        {/* Doctor */}
-        <div className="flex items-center gap-3 bg-black/30 p-3 rounded-sm border border-white/10">
+        {/* Doctor - Ahora es un Link clickeable */}
+        <Link 
+          to={`/patient/doctor/${service.doctor}`} 
+          className="flex items-center gap-3 bg-black/30 p-3 rounded-sm border border-white/10 hover:bg-black/50 transition-colors cursor-pointer"
+        >
           <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shrink-0">
             <UserIcon className="w-5 h-5 text-white/70" />
           </div>
           <div className="min-w-0">
-            <p className="text-white/90 text-sm font-medium truncate">
+            <p className="text-white/90 text-sm font-medium truncate group-hover:text-emerald-400 transition-colors">
               Dr. {service.doctor_name || 'Médico no especificado'}
             </p>
             <p className="text-white/50 text-xs">Especialista Principal</p>
           </div>
-        </div>
+        </Link>
+        
         {/* Institución */}
         <div className="flex items-center gap-3 bg-black/30 p-3 rounded-sm border border-white/10">
           <Building2Icon className="w-5 h-5 text-white/70 shrink-0" />
@@ -64,6 +69,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
             </p>
           </div>
         </div>
+        
         {/* Detalles Grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-black/30 p-3 rounded-sm flex items-center gap-2 border border-white/10">
@@ -85,6 +91,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
             </div>
           </div>
         </div>
+        
         {/* Descripción */}
         {service.description && (
           <div className="bg-black/30 p-3 rounded-sm border border-white/10">
@@ -93,6 +100,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
             </p>
           </div>
         )}
+        
         {/* Precio Destacado */}
         <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-sm text-center mt-4">
           <p className="text-emerald-400/80 text-[10px] uppercase tracking-widest mb-1">Precio del servicio</p>

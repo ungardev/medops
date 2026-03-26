@@ -1,6 +1,6 @@
 // src/components/Layout/PatientHeader.tsx
 import { useNavigate } from "react-router-dom";
-import { Menu, LogOut, Bell, User, Settings, ChevronDown, Search, X } from "lucide-react";
+import { LogOut, Bell, User, Settings, ChevronDown, Search, X } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 interface PatientHeaderProps {
   setCollapsed: (value: boolean) => void;
@@ -74,56 +74,35 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
   
   return (
     <div className="flex items-center justify-between w-full px-4 bg-black/40 border-b border-white/[0.05]">
-      {/* Left: Menu button + Title */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => setMobileOpen(true)}
-          className="lg:hidden p-2 text-white/40 hover:text-white transition-colors"
-        >
-          <Menu size={20} />
-        </button>
-        
-        <button
-          onClick={() => setCollapsed(!false)}
-          className="hidden lg:block p-2 text-white/20 hover:text-white transition-colors"
-        >
-          <Menu size={20} />
-        </button>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
-            Patient Portal
-          </span>
+      {/* Left: Search Bar (ahora ocupa todo el espacio a la izquierda) */}
+      <div className="flex items-center gap-4 flex-1">
+        <div className="flex-1 max-w-lg">
+          <form onSubmit={handleSearchSubmit} className="relative w-full group flex items-center">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="w-4 h-4 text-white/50 group-focus-within:text-emerald-400 transition-colors" />
+            </div>
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Buscar doctores o servicios... (Ctrl+K)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 bg-white/[0.04] border border-white/10 rounded-sm text-[11px] text-white placeholder-white/40 focus:outline-none focus:border-emerald-500/50 focus:bg-white/[0.06] transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </form>
         </div>
       </div>
       
-      {/* Center: Search Bar */}
-      <div className="hidden md:flex flex-1 max-w-lg mx-8">
-        <form onSubmit={handleSearchSubmit} className="relative w-full group flex items-center">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="w-4 h-4 text-white/50 group-focus-within:text-emerald-400 transition-colors" />
-          </div>
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder="Buscar doctores o servicios... (Ctrl+K)"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-10 py-2 bg-white/[0.04] border border-white/10 rounded-sm text-[11px] text-white placeholder-white/40 focus:outline-none focus:border-emerald-500/50 focus:bg-white/[0.06] transition-all"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </form>
-      </div>
-      
-      {/* Right: User menu + notifications */}
+      {/* Right: User menu + notifications (sin cambios) */}
       <div className="flex items-center gap-4">
         <button className="p-2 text-white/40 hover:text-white transition-colors relative">
           <Bell size={18} />
