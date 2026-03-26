@@ -6450,15 +6450,29 @@ def patient_search_doctors(request):
             # Obtener especialidades
             specialties = [s.name for s in doc.specialties.all()]
             
-            # Obtener instituciones
-            institutions = [i.name for i in doc.institutions.all()[:3]]
+            # --- CORRECCIÓN DEL ERROR ---
+            # Obtener institución activa o primera institución
+            institution_name = None
+            
+            # 1. Intentar con active_institution (ForeignKey, puede ser None)
+            if doc.active_institution:
+                institution_name = doc.active_institution.name
+            
+            # 2. Si no hay active_institution, intentar con institutions (ManyToMany)
+            if institution_name is None:
+                first_institution = doc.institutions.first()
+                if first_institution:  # Verificar que no sea None antes de acceder a .name
+                    institution_name = first_institution.name
             
             results.append({
                 'id': doc.id,
+                'name': doc.full_name,  # Para compatibilidad con frontend
                 'full_name': doc.full_name,
                 'gender': doc.gender,
                 'specialties': specialties,
-                'institutions': institutions,
+                'institution_name': institution_name,  # Ahora seguro contra None
+                'image_url': doc.photo_url,
+                'rating': None,  # Temporalmente null
                 'license': doc.license,
                 'is_verified': doc.is_verified,
             })
@@ -6499,11 +6513,10 @@ def patient_search_services(request):
             )
         
         # Anotar con conteo de charge_items para obtener times_used
-        # Esto calcula el número de veces que el servicio ha sido usado
         services = services.annotate(times_used=Count('charge_items'))
         
-        # Optimización: Cargar médico relacionado
-        services = services.select_related('doctor')
+        # Optimización: Cargar médico relacionado e institución
+        services = services.select_related('doctor', 'institution')
         
         # Ordenar por relevancia (usos y nombre) y limitar resultados
         services = services.order_by('-times_used', 'name')[:30]
@@ -6514,13 +6527,20 @@ def patient_search_services(request):
             # Calcular precio (usar price_usd, manejar nulos)
             price = float(service.price_usd) if service.price_usd else 0.0
             
+            # Obtener nombre de institución
+            institution_name = service.institution.name if service.institution else None
+            
             results.append({
                 'id': service.id,
                 'code': service.code,
                 'name': service.name,
                 'description': service.description,
-                'doctor_name': service.doctor.full_name if service.doctor else None,
-                'price_usd': price,  # Devolvemos price_usd
+                'doctor': {
+                    'id': service.doctor.id,
+                    'full_name': service.doctor.full_name
+                } if service.doctor else None,
+                'institution_name': institution_name,
+                'price_usd': price,
                 'duration_minutes': service.duration_minutes,
                 'times_used': service.times_used,
                 'is_active': service.is_active,

@@ -432,6 +432,8 @@ urlpatterns = [
     # OCR
     path('payments/ocr/', api_views.payment_ocr_api, name='payment-ocr'),
     path('api/medical-services/', MedicalServicesListView.as_view(), name='medical-services-list'),
+    path('patient-search/doctors/', patient_search_doctors, name='patient-search-doctors'),
+    path('patient-search/services/', patient_search_services, name='patient-search-services'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [
