@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { useDoctor, useDoctorServices } from '@/hooks/doctor/useDoctor';
 import { DoctorProfileCard } from '@/components/Doctor/DoctorProfileCard';
 import { ServicePurchaseFlow } from '@/components/Doctor/ServicePurchaseFlow';
+import { ServiceDetail } from '@/components/Common/ServiceDetail';
 import PageHeader from '@/components/Common/PageHeader';
 export default function DoctorProfile() {
   const { id } = useParams<{ id: string }>();
@@ -12,7 +13,9 @@ export default function DoctorProfile() {
   const { data: doctor, isLoading: doctorLoading } = useDoctor(doctorId);
   const { data: services, isLoading: servicesLoading } = useDoctorServices(doctorId);
   
+  // Estados para modales
   const [selectedService, setSelectedService] = useState<any>(null);
+  const [showServiceDetail, setShowServiceDetail] = useState(false);
   
   if (doctorLoading || servicesLoading) {
     return (
@@ -99,11 +102,15 @@ export default function DoctorProfile() {
                   </p>
                 )}
                 
+                {/* Botón que abre ServiceDetail en lugar de ServicePurchaseFlow */}
                 <button
-                  onClick={() => setSelectedService(service)}
+                  onClick={() => {
+                    setSelectedService(service);
+                    setShowServiceDetail(true);
+                  }}
                   className="w-full py-3 bg-emerald-500 text-black text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
                 >
-                  Reservar Ahora
+                  Ver Detalles
                 </button>
               </div>
             ))}
@@ -117,8 +124,28 @@ export default function DoctorProfile() {
         </div>
       </div>
       
-      {/* Modal de Compra */}
-      {selectedService && (
+      {/* Modal de Service Detail (Intermedio) */}
+      {showServiceDetail && selectedService && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-lg">
+            <ServiceDetail
+              service={selectedService}
+              onClose={() => {
+                setShowServiceDetail(false);
+                setSelectedService(null);
+              }}
+              onBuy={() => {
+                setShowServiceDetail(false);
+                // El modal de ServicePurchaseFlow se renderiza automáticamente 
+                // gracias a la condición !showServiceDetail && selectedService
+              }}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* Modal de Compra de Servicio (Flujo Final) */}
+      {!showServiceDetail && selectedService && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
             <ServicePurchaseFlow
