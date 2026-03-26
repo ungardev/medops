@@ -1,6 +1,6 @@
 // src/components/Layout/PatientHeader.tsx
 import { useNavigate } from "react-router-dom";
-import { LogOut, Bell, User, Settings, ChevronDown, Search, X } from "lucide-react";
+import { LogOut, Bell, User, Settings, ChevronDown, Search, X, Menu } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 interface PatientHeaderProps {
   setCollapsed: (value: boolean) => void;
@@ -27,6 +27,7 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+  
   // Atajo de teclado Ctrl + K para búsqueda
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -63,6 +64,7 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
     setMenuOpen(false);
     navigate("/patient/settings");
   };
+  
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -74,8 +76,17 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
   
   return (
     <div className="flex items-center justify-between w-full px-4 bg-black/40 border-b border-white/[0.05]">
-      {/* Left: Search Bar (ahora ocupa todo el espacio a la izquierda) */}
-      <div className="flex items-center gap-4 flex-1">
+      {/* Sección Izquierda: Hamburger + Buscador */}
+      <div className="flex items-center gap-2 lg:gap-4 flex-1 min-w-0">
+        
+        {/* Botón Hamburger (Solo Móvil) */}
+        <button 
+          onClick={() => setMobileOpen(true)} 
+          className="lg:hidden p-2 text-white hover:text-white transition-colors shrink-0"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        {/* Barra de Búsqueda */}
         <div className="flex-1 max-w-lg">
           <form onSubmit={handleSearchSubmit} className="relative w-full group flex items-center">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -102,26 +113,32 @@ export default function PatientHeader({ setCollapsed, setMobileOpen }: PatientHe
         </div>
       </div>
       
-      {/* Right: User menu + notifications (sin cambios) */}
-      <div className="flex items-center gap-4">
+      {/* Sección Derecha: Notificaciones + Menú de Usuario */}
+      <div className="flex items-center gap-2 lg:gap-4 shrink-0">
+        
+        {/* Notificaciones */}
         <button className="p-2 text-white/40 hover:text-white transition-colors relative">
           <Bell size={18} />
           <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full"></span>
         </button>
         
-        {/* User Menu with Dropdown */}
+        {/* Menú de Usuario (Compacto para Móvil) */}
         <div className="relative" ref={menuRef}>
           <button 
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-sm border border-white/5 hover:bg-white/10 transition-all"
+            className="flex items-center gap-2 p-1.5 bg-white/5 rounded-sm border border-white/5 hover:bg-white/10 transition-all"
           >
-            <div className="w-6 h-6 bg-emerald-500/20 rounded-full flex items-center justify-center">
+            {/* Icono/Avatar */}
+            <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center shrink-0">
               <User size={14} className="text-emerald-400" />
             </div>
-            <span className="text-[10px] font-medium text-white/80 uppercase">
-              {patientName}
-            </span>
-            <ChevronDown className={`w-3 h-3 text-white/40 transition-transform ${menuOpen ? 'rotate-180' : ''}`} />
+            {/* Nombre (Oculto en Móvil) */}
+            <div className="hidden sm:block text-left">
+              <span className="text-[10px] font-medium text-white/80 uppercase">
+                {patientName}
+              </span>
+            </div>
+            <ChevronDown className={`w-3 h-3 text-white/40 transition-transform hidden sm:block ${menuOpen ? 'rotate-180' : ''}`} />
           </button>
           
           {menuOpen && (
