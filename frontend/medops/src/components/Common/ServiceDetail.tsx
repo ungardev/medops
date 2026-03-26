@@ -20,6 +20,8 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
   onClose,
   onBuy
 }) => {
+  // Verificar si service.doctor es un ID válido (mayor que 0)
+  const hasValidDoctor = service.doctor && service.doctor > 0;
   return (
     <div className="bg-[#0a0a0b] border border-white/20 rounded-sm overflow-hidden shadow-2xl">
       {/* Header */}
@@ -42,23 +44,38 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
           <XIcon className="w-5 h-5" />
         </button>
       </div>
+      
       {/* Contenido */}
       <div className="p-5 space-y-4">
-        {/* Doctor - Ahora es un Link clickeable */}
-        <Link 
-          to={`/patient/doctor/${service.doctor}`} 
-          className="flex items-center gap-3 bg-black/30 p-3 rounded-sm border border-white/10 hover:bg-black/50 transition-colors cursor-pointer"
-        >
-          <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shrink-0">
-            <UserIcon className="w-5 h-5 text-white/70" />
+        {/* Doctor - Link condicional */}
+        {hasValidDoctor ? (
+          <Link 
+            to={`/patient/doctor/${service.doctor}`} 
+            className="flex items-center gap-3 bg-black/30 p-3 rounded-sm border border-white/10 hover:bg-black/50 transition-colors cursor-pointer"
+          >
+            <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shrink-0">
+              <UserIcon className="w-5 h-5 text-white/70" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white/90 text-sm font-medium truncate group-hover:text-emerald-400 transition-colors">
+                Dr. {service.doctor_name || 'Médico no especificado'}
+              </p>
+              <p className="text-white/50 text-xs">Especialista Principal</p>
+            </div>
+          </Link>
+        ) : (
+          <div className="flex items-center gap-3 bg-black/30 p-3 rounded-sm border border-white/10">
+            <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shrink-0">
+              <UserIcon className="w-5 h-5 text-white/70" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-white/90 text-sm font-medium truncate">
+                {service.doctor_name || 'Médico no especificado'}
+              </p>
+              <p className="text-white/50 text-xs">Especialista Principal</p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-white/90 text-sm font-medium truncate group-hover:text-emerald-400 transition-colors">
-              Dr. {service.doctor_name || 'Médico no especificado'}
-            </p>
-            <p className="text-white/50 text-xs">Especialista Principal</p>
-          </div>
-        </Link>
+        )}
         
         {/* Institución */}
         <div className="flex items-center gap-3 bg-black/30 p-3 rounded-sm border border-white/10">
@@ -109,6 +126,7 @@ export const ServiceDetail: React.FC<ServiceDetailProps> = ({
           </p>
         </div>
       </div>
+      
       {/* Footer */}
       <div className="flex gap-3 p-4 border-t border-white/20 bg-black/40">
         <button

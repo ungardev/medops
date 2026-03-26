@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { patientClient, Doctor, ServiceSearchResult, DoctorService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
+import { ServiceDetail } from "@/components/Common/ServiceDetail";
 import PageHeader from "@/components/Common/PageHeader";
 export default function PatientSearch() {
   const navigate = useNavigate();
@@ -19,18 +20,21 @@ export default function PatientSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // Estados para modales
   const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
+  const [showServiceDetail, setShowServiceDetail] = useState(false);
+  
   const currentPatientId = localStorage.getItem('patient_id') ? Number(localStorage.getItem('patient_id')) : 1;
   
   const [filterType, setFilterType] = useState<"all" | "doctors" | "services">("all");
   
-  const [currentTime, setCurrentTime] = useState(new Date());
-  
+  // Efecto para reaccionar a cambios en el parámetro URL (desde PatientHeader)
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-  
+    const queryParam = searchParams.get("query");
+    if (queryParam) {
+      setSearchQuery(queryParam);
+    }
+  }, [searchParams]);
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
       setDoctorsResults([]);
@@ -69,7 +73,6 @@ export default function PatientSearch() {
   const handleSelectService = (service: ServiceSearchResult) => {
     const compatibleService: DoctorService = {
       ...service,
-      // CORRECCIÓN: Agregar doctor_name desde service.doctor.full_name
       doctor_name: service.doctor?.full_name || '',
       doctor: service.doctor?.id || 0,
       institution: service.institution || 0,
@@ -82,23 +85,20 @@ export default function PatientSearch() {
       description: service.description || '',
     };
     setSelectedService(compatibleService);
+    setShowServiceDetail(true); // Abrir modal de detalles primero
   };
   
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      <div className="flex items-center justify-between mb-6">
-        <PageHeader 
-          breadcrumbs={[
-            { label: "MEDOPZ", path: "/patient" },
-            { label: "Búsqueda", active: true }
-          ]}
-        />
-        <div className="flex items-center gap-2 text-sm text-white/70">
-          <Clock className="w-4 h-4" />
-          <span>{currentTime.toLocaleTimeString()}</span>
-        </div>
-      </div>
+      {/* PageHeader como en PatientServices.tsx */}
+      <PageHeader 
+        breadcrumbs={[
+          { label: "MEDOPZ", path: "/patient" },
+          { label: "Búsqueda", active: true }
+        ]}
+      />
       
+      {/* Barra de Búsqueda Principal */}
       <div className="relative mb-6">
         <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/70" />
         <input
@@ -118,7 +118,9 @@ export default function PatientSearch() {
         )}
       </div>
       
+      {/* Filtros y Resultados */}
       <div className="flex gap-6">
+        {/* Sidebar de Filtros */}
         <div className="w-48 flex-shrink-0 hidden lg:block">
           <div className="bg-black/30 border border-white/20 rounded-sm p-3 sticky top-4">
             <p className="text-[11px] font-black text-white/80 uppercase tracking-widest mb-3">
@@ -170,6 +172,7 @@ export default function PatientSearch() {
             </div>
           ) : (
             <div className="space-y-8">
+              {/* Sección Doctores */}
               {(filterType === "all" || filterType === "doctors") && filteredDoctors.length > 0 && (
                 <div>
                   <h3 className="text-[12px] font-black text-white/80 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -222,6 +225,7 @@ export default function PatientSearch() {
                 </div>
               )}
               
+              {/* Sección Servicios */}
               {(filterType === "all" || filterType === "services") && filteredServices.length > 0 && (
                 <div>
                   <h3 className="text-[12px] font-black text-white/80 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -268,6 +272,7 @@ export default function PatientSearch() {
                 </div>
               )}
               
+              {/* Estado Vacío */}
               {(filteredDoctors.length === 0 && filteredServices.length === 0 && !isSearching) && (
                 <div className="flex flex-col items-center justify-center py-16 bg-black/30 border border-dashed border-white/20 rounded-sm">
                   <div className="bg-white/10 p-4 rounded-full mb-4">
@@ -290,7 +295,27 @@ export default function PatientSearch() {
         </div>
       </div>
       
-      {selectedService && (
+      {/* Modal de Service Detail (Intermedio) */}
+      {showServiceDetail && selectedService && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="w-full max-w-lg">
+            <ServiceDetail
+              service={selectedService}
+              onClose={() => {
+                setShowServiceDetail(false);
+                setSelectedService(null);
+              }}
+              onBuy={() => {
+                setShowServiceDetail(false);
+                // El modal de ServicePurchaseFlow se renderiza automáticamente 
+                // gracias a la condición !showServiceDetail && selectedService
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {/* Modal de Compra de Servicio (Flujo Final) */}
+      {!showServiceDetail && selectedService && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
             <ServicePurchaseFlow
