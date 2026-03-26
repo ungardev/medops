@@ -6431,6 +6431,7 @@ def patient_search_doctors(request):
     GET /api/patient-search/doctors/
     
     Busca doctores por nombre o especialidad.
+    Devuelve información estructurada compatible con DoctorProfile (Frontend).
     """
     q = request.query_params.get('q', '').strip()
     
@@ -6447,34 +6448,36 @@ def patient_search_doctors(request):
         
         results = []
         for doc in doctors:
-            # Obtener especialidades
-            specialties = [s.name for s in doc.specialties.all()]
+            # --- MAPEO DE ESPECIALIDADES ---
+            # Frontend espera: { id: number, name: string }[]
+            specialties = [{'id': s.id, 'name': s.name} for s in doc.specialties.all()]
             
-            # --- CORRECCIÓN DEL ERROR ---
-            # Obtener institución activa o primera institución
-            institution_name = None
+            # --- MAPEO DE INSTITUCIONES ---
+            # Frontend espera: { id: number, name: string }[]
+            # Usamos doc.institutions.all() para todas las instituciones del doctor
+            institutions = [{'id': i.id, 'name': i.name} for i in doc.institutions.all()[:5]]
             
-            # 1. Intentar con active_institution (ForeignKey, puede ser None)
-            if doc.active_institution:
-                institution_name = doc.active_institution.name
+            # --- INSTITUCIÓN ACTIVA (Opcional) ---
+            # Para el campo 'institution_name' en el frontend (string simple)
+            active_institution_name = doc.active_institution.name if doc.active_institution else None
             
-            # 2. Si no hay active_institution, intentar con institutions (ManyToMany)
-            if institution_name is None:
-                first_institution = doc.institutions.first()
-                if first_institution:  # Verificar que no sea None antes de acceder a .name
-                    institution_name = first_institution.name
-            
+            # Si no hay active_institution, usar la primera de la lista (si existe)
+            if not active_institution_name and institutions:
+                active_institution_name = institutions[0]['name']
             results.append({
                 'id': doc.id,
-                'name': doc.full_name,  # Para compatibilidad con frontend
                 'full_name': doc.full_name,
                 'gender': doc.gender,
-                'specialties': specialties,
-                'institution_name': institution_name,  # Ahora seguro contra None
-                'image_url': doc.photo_url,
-                'rating': None,  # Temporalmente null
-                'license': doc.license,
                 'is_verified': doc.is_verified,
+                'colegiado_id': doc.colegiado_id,
+                'license': doc.license,
+                'specialties': specialties,      # Array de objetos con id y name
+                'institutions': institutions,    # Array de objetos con id y name
+                'institution_name': active_institution_name, # String opcional
+                'email': doc.email,
+                'phone': doc.phone,
+                'bio': doc.bio,
+                'photo_url': doc.photo_url,
             })
         
         return Response({

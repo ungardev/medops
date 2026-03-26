@@ -2203,11 +2203,13 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
         write_only=True,
         source="specialties"
     )
-    institutions = serializers.PrimaryKeyRelatedField(
+    institutions = InstitutionSettingsSerializer(many=True, read_only=True)
+    institution_ids = serializers.PrimaryKeyRelatedField(
         queryset=InstitutionSettings.objects.all(),
         many=True,
         required=False,
-        allow_null=True
+        allow_null=True,
+        source="institutions"
     )
     active_institution = serializers.PrimaryKeyRelatedField(
         queryset=InstitutionSettings.objects.all(),
