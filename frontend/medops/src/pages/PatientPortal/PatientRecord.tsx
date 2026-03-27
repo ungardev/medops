@@ -57,6 +57,9 @@ export default function PatientRecord() {
   }
   // Obtener ID del paciente
   const patientId = authPatient?.id ?? Number(localStorage.getItem("patient_id"));
+  console.log('🔴 DEBUG PatientRecord - authPatient:', authPatient);
+  console.log('🔴 DEBUG PatientRecord - localStorage patient_id:', localStorage.getItem("patient_id"));
+  console.log('🔴 DEBUG PatientRecord - patientId calculado:', patientId);
   
   if (!patientId) {
     return (
