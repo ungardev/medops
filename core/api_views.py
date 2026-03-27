@@ -7452,3 +7452,23 @@ class MedicalServicesListView(APIView):
         services = DoctorService.objects.filter(is_active=True).select_related('category')
         serializer = DoctorServiceSerializer(services, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_token(request):
+        """
+        Verifica si el token de autenticación es válido.
+        Retorna datos básicos del usuario autenticado.
+        """
+        user = request.user
+        return Response({
+            'valid': True,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'is_staff': user.is_staff,
+                'is_superuser': user.is_superuser,
+            }
+        })

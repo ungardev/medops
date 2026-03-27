@@ -60,6 +60,7 @@ from .api_views import (
     audit_by_appointment,
     audit_by_patient,
     register_arrival,
+    verify_token,
     waitingroom_entries_today_api,
     appointments_pending_api,
     reports_api,
@@ -434,6 +435,7 @@ urlpatterns = [
     path('api/medical-services/', MedicalServicesListView.as_view(), name='medical-services-list'),
     path('patient-search/doctors/', patient_search_doctors, name='patient-search-doctors'),
     path('patient-search/services/', patient_search_services, name='patient-search-services'),
+    path('api/auth/verify/', verify_token, name='verify_token'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [
