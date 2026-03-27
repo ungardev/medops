@@ -14,7 +14,7 @@ import SurgeriesTab from "@/components/Patients/SurgeriesTab";
 import PageHeader from "@/components/Common/PageHeader";
 import { IdentificationIcon, HeartIcon, UserIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, useMemo } from "react";
-import { useAuth } from "@/hooks/patient/useAuth"; // ✅ NUEVA IMPORTACIÓN
+import { useAuth } from "@/hooks/patient/useAuth";
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -34,9 +34,15 @@ function normalizeTab(id?: string): string {
 export default function PatientRecord() {
   const navigate = useNavigate();
   
-  // ✅ CORRECCIÓN: Usar el hook de autenticación
+  // Usar el hook de autenticación
   const { isAuthenticated, isLoading: authLoading, patient: authPatient } = useAuth();
-  // ✅ CORRECCIÓN: Esperar a que useAuth termine de verificar
+  // ✅ CORRECCIÓN: Efecto para navegación condicional (evita bucle infinito)
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate("/patient/login");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
+  // Loader mientras se verifica autenticación
   if (authLoading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
@@ -47,12 +53,12 @@ export default function PatientRecord() {
       </div>
     );
   }
-  // ✅ CORRECCIÓN: Redirigir solo si NO está autenticado
+  // Si no está autenticado (y ya no está loading), no renderizar nada
+  // El useEffect anterior se encargará de la navegación
   if (!isAuthenticated) {
-    navigate("/patient/login");
     return null;
   }
-  // ✅ CORRECCIÓN: Obtener ID del paciente del hook o del localStorage como fallback
+  // Obtener ID del paciente del hook o del localStorage como fallback
   const patientId = authPatient?.id ?? Number(localStorage.getItem("patient_id"));
   
   // Si aún no hay ID (raro pero posible), mostrar loader o manejar error
