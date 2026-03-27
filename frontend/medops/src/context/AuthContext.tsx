@@ -29,6 +29,8 @@ const STORAGE_KEYS = {
 };
 // Canal de broadcast para sincronización entre pestañas
 const authChannel = new BroadcastChannel('auth_channel');
+// Obtener URL base del backend desde variables de entorno
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,9 +50,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return;
       }
       // Determinar endpoint según tipo de token
+      // IMPORTANTE: API_URL ya incluye "/api" en .env
       const endpoint = tokens.patient_access_token 
-        ? '/api/patient/auth/verify/' 
-        : '/api/auth/verify/';
+        ? `${API_URL}/patient/auth/verify/` 
+        : `${API_URL}/auth/verify/`;
       
       const response = await fetch(endpoint, {
         headers: {

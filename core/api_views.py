@@ -7457,18 +7457,36 @@ class MedicalServicesListView(APIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def verify_token(request):
-        """
-        Verifica si el token de autenticación es válido.
-        Retorna datos básicos del usuario autenticado.
-        """
-        user = request.user
-        return Response({
-            'valid': True,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'is_staff': user.is_staff,
-                'is_superuser': user.is_superuser,
-            }
-        })
+    """
+    Verifica si el token de autenticación es válido.
+    Retorna datos básicos del usuario autenticado.
+    """
+    user = request.user
+    return Response({
+        'valid': True,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_staff': user.is_staff,
+            'is_superuser': user.is_superuser,
+        }
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verify_patient_token(request):
+    user = request.user
+    # Asegurar que el usuario es un paciente (ajustar según tu modelo)
+    if not hasattr(user, 'patient_profile'):
+        return Response({"error": "No es un paciente"}, status=403)
+    
+    return Response({
+        'valid': True,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+        }
+    })
