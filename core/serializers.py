@@ -1726,6 +1726,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             status="open",
             total=Decimal('0.00'),
             balance_due=Decimal('0.00'),
+            tentative_date=appointment.tentative_date,
+            tentative_time=appointment.tentative_time,
         )
         
         # 3. Crear ChargeItems directamente desde los datos recibidos

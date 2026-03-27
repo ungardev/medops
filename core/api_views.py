@@ -6764,70 +6764,6 @@ class ServiceCategoryViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])  # Ajustar según necesidad
-def purchase_service_direct(request):
-    """
-    Compra directa de servicio sin cita previa.
-    Crea ChargeOrder asociada al paciente.
-    """
-    patient_id = request.data.get('patient_id')
-    doctor_service_id = request.data.get('doctor_service_id')
-    qty = request.data.get('qty', 1)
-    
-    # Validaciones
-    if not patient_id or not doctor_service_id:
-        return Response(
-            {"error": "Se requiere patient_id y doctor_service_id"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    # Buscar servicio
-    try:
-        service = DoctorService.objects.get(
-            id=doctor_service_id,
-            is_active=True,
-            is_visible_global=True
-        )
-    except DoctorService.DoesNotExist:
-        return Response(
-            {"error": "Servicio no encontrado o no disponible"},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    
-    # Buscar o crear ChargeOrder para el paciente (sin appointment)
-    charge_order, created = ChargeOrder.objects.get_or_create(
-        patient_id=patient_id,
-        appointment__isnull=True,  # Sin cita asociada
-        status='open',
-        defaults={
-            'doctor': service.doctor,
-            'institution': service.institution,
-            'currency': 'USD',
-            'total': 0,
-            'balance_due': 0
-        }
-    )
-    
-    # Crear ChargeItem
-    charge_item = ChargeItem.objects.create(
-        order=charge_order,
-        doctor_service=service,
-        code=service.code,
-        description=service.name,
-        qty=qty,
-        unit_price=service.price_usd
-    )
-    
-    # Recalcular totales
-    charge_order.recalc_totals()
-    charge_order.save(update_fields=['total', 'balance_due', 'status'])
-    
-    serializer = ChargeOrderSerializer(charge_order)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
 class ServiceAvailabilityView(APIView):
     """
     Endpoint para verificar disponibilidad de slots de tiempo para un servicio.
@@ -6893,41 +6829,53 @@ class ServiceAvailabilityView(APIView):
 
 class PurchaseServiceDirect(APIView):
     """
-    Endpoint para crear una orden de cobro con fecha tentativa.
+    Endpoint para comprar un servicio directamente desde el Portal Paciente.
+    Crea Appointment + ChargeOrder + ChargeItems en un solo paso usando
+    el flujo estándar del AppointmentSerializer.
     """
     permission_classes = [IsAuthenticated]
+    
     def post(self, request):
         data = request.data.copy()
         
-        # Mapear IDs a relaciones de modelo
+        # Extraer datos requeridos del frontend
         try:
             patient_id = data.pop('patient_id')
             doctor_service_id = data.pop('doctor_service_id')
             institution_id = data.pop('institution_id')
-            
-            data['patient'] = patient_id
-            data['doctor_service'] = doctor_service_id
-            data['institution'] = institution_id
-            
-            # Obtener doctor desde el servicio
-            service = DoctorService.objects.get(id=doctor_service_id)
-            data['doctor'] = service.doctor.id
-            
         except KeyError:
-            return Response({"error": "Faltan patient_id, doctor_service_id o institution_id"}, status=400)
+            return Response(
+                {"error": "Faltan patient_id, doctor_service_id o institution_id"}, 
+                status=400
+            )
+        
+        # Obtener el servicio y su doctor asociado
+        try:
+            service = DoctorService.objects.select_related('doctor').get(
+                id=doctor_service_id, 
+                is_active=True
+            )
         except DoctorService.DoesNotExist:
             return Response({"error": "Servicio no encontrado"}, status=404)
-        # Validar disponibilidad si se envía fecha tentativa
-        tentative_date = data.get('tentative_date')
-        tentative_time = data.get('tentative_time')
         
-        if tentative_date and tentative_time:
-            # Lógica de validación de disponibilidad (opcional, se puede hacer aquí o en el serializer)
-            pass
+        # Construir datos para AppointmentSerializer
+        # El serializer crea Appointment + ChargeOrder + ChargeItems automáticamente
+        appointment_data = {
+            'patient': patient_id,
+            'doctor': service.doctor.id,
+            'institution': institution_id,
+            'doctor_service': doctor_service_id,
+            'appointment_date': data.get('tentative_date', timezone.now().date().isoformat()),
+            'appointment_type': data.get('appointment_type', 'specialized'),
+            'status': 'tentative',
+            'tentative_time': data.get('tentative_time'),
+            'services': [{'doctor_service_id': doctor_service_id, 'qty': 1}],
+            'initial_payment': data.get('initial_payment'),
+        }
         
-        serializer = ChargeOrderSerializer(data=data)
+        serializer = AppointmentSerializer(data=appointment_data)
         if serializer.is_valid():
-            order = serializer.save()
+            appointment = serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -6935,12 +6883,12 @@ class PurchaseServiceDirect(APIView):
 class ConfirmAppointmentView(APIView):
     """
     Endpoint para confirmar una cita tentativa desde el Portal Doctor.
-    Opera sobre una Appointment existente y actualiza su estado a 'confirmed'.
-    También actualiza el estado de la ChargeOrder asociada a 'confirmed' si existe.
+    Opera sobre una Appointment existente y actualiza su estado a 'pending'.
+    La ChargeOrder se gestiona automáticamente via recalc_totals() al registrar pagos.
     """
     permission_classes = [IsAuthenticated]
     
-    def post(self, request, pk): # Cambiado de order_id a pk (appointment_id)
+    def post(self, request, pk):
         try:
             appointment = Appointment.objects.get(id=pk)
         except Appointment.DoesNotExist:
@@ -6950,26 +6898,30 @@ class ConfirmAppointmentView(APIView):
         if appointment.status != 'tentative':
             return Response({"error": "Esta cita no está en estado tentative"}, status=400)
         
-        # Actualizar estado de la Appointment
-        appointment.status = 'confirmed'
+        # Actualizar estado de la Appointment a 'pending' (confirmada por el doctor, pendiente de consulta)
+        # NOTA: 'confirmed' no existe en Appointment.STATUS_CHOICES
+        # Los status válidos son: pending, tentative, arrived, in_consultation, completed, canceled, rejected
+        appointment.status = 'pending'
         appointment.confirmed_at = timezone.now()
-        # La fecha decisiva es la que el paciente seleccionó (tentative_date)
-        # Aseguramos que appointment_date coincida con la fecha tentativa
+        # La fecha definitiva es la que el paciente seleccionó (tentative_date)
         appointment.appointment_date = appointment.tentative_date
-        appointment.save()
+        appointment.save(update_fields=['status', 'confirmed_at', 'appointment_date'])
         
-        # Actualizar estado de la ChargeOrder asociada (si existe)
-        # Buscamos la ChargeOrder vinculada a esta Appointment
-        charge_order = appointment.charge_orders.first() # Usa el related_name 'charge_orders' del modelo ChargeOrder
+        # ChargeOrder: NO cambiar su status directamente
+        # 'confirmed' NO es un status válido en ChargeOrder.STATUS_CHOICES
+        # Los status válidos son: open, partially_paid, paid, void, waived
+        # La ChargeOrder se actualiza automáticamente via recalc_totals() cuando se registran pagos
+        charge_order = appointment.charge_orders.first()
         if charge_order:
-            charge_order.status = 'confirmed'
-            charge_order.save()
-            # Opcional: Podríamos también actualizar el 'total' o 'balance_due' si fuera necesario,
-            # pero generalmente se mantienen igual hasta el pago.
+            charge_order.recalc_totals()
+            charge_order.save(update_fields=['status', 'total', 'balance_due'])
+        
         return Response({
             "message": "Cita confirmada exitosamente",
             "appointment_id": appointment.id,
-            "charge_order_id": charge_order.id if charge_order else None
+            "appointment_status": appointment.status,
+            "charge_order_id": charge_order.id if charge_order else None,
+            "charge_order_status": charge_order.status if charge_order else None
         })
 
 

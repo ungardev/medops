@@ -517,14 +517,6 @@ class Appointment(models.Model):
         blank=True, 
         help_text="Altura del paciente en cm"
     )
-    doctor_service = models.ForeignKey(
-        'DoctorService',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='appointments',  # Único reverse accessor
-        verbose_name="Servicio específico agendado"
-    )
     
     notes = models.TextField(blank=True, null=True)
     # --- MÉTRICAS DE TIEMPO ---
