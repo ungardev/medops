@@ -1,9 +1,10 @@
+// src/pages/Auth/Login.tsx
 import { useState } from "react";
-import { useAuthToken } from "../../hooks/useAuthToken";
+import { useAuthToken } from "@/hooks/useAuthToken";
 import { useNavigate } from "react-router-dom";
-import { queryClient } from "../../lib/reactQuery";
+import { queryClient } from "@/lib/reactQuery";
 import axios from "axios";
-import { api } from "../../lib/apiClient";
+import { api } from "@/lib/apiClient";
 import { Lock, User, Loader2 } from "lucide-react";
 export default function Login() {
   const { saveToken } = useAuthToken();
@@ -36,8 +37,9 @@ export default function Login() {
       axios.defaults.headers.common["Authorization"] = `Token ${data.token}`;
       api.defaults.headers.common["Authorization"] = `Token ${data.token}`;
       queryClient.invalidateQueries({ queryKey: ["notifications", data.token] });
+      
       setTimeout(() => {
-        navigate("/doctor"); // CORRECCIÓN: Navegar a /doctor en lugar de /
+        navigate("/doctor");
       }, 100);
     } catch (err: any) {
       setError(err.message || "Error de conexión con el servidor");

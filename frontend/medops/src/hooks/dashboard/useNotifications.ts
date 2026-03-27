@@ -1,7 +1,7 @@
 // src/hooks/dashboard/useNotifications.ts
 import { useQuery } from "@tanstack/react-query";
 import { NotificationEvent } from "@/types/notifications";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuth } from "@/context/AuthContext"; // Cambiado de useAuthToken
 import { DashboardAPI } from "@/api/dashboard";
 const DAYS_WINDOW = 7;
 const MAX_NOTIFICATIONS = 3;
@@ -12,7 +12,8 @@ function isWithinDays(ts: string, days: number) {
   return diffDays <= days;
 }
 export function useNotifications() {
-  const { token } = useAuthToken();
+  const { tokens } = useAuth(); // Obtener token del contexto
+  const token = tokens.authToken; // Token para Doctor Portal
   return useQuery<NotificationEvent[]>({
     queryKey: ["notifications", token],
     enabled: !!token,

@@ -2,14 +2,15 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AuditLog from "@/components/Dashboard/AuditLog";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuth } from "@/context/AuthContext"; // Cambiado de useAuthToken
 import { queryClient } from "@/lib/reactQuery";
 import { DashboardFiltersProvider } from "@/context/DashboardFiltersContext";
 import ActiveInstitutionCard from "@/components/Dashboard/ActiveInstitutionCard";
 import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import type { InstitutionSettings } from "@/types/config";
 export default function DoctorDashboard() {
-  const { token } = useAuthToken();
+  const { tokens, user } = useAuth(); // Obtener del contexto
+  const token = tokens.authToken; // Token para Doctor Portal
   const navigate = useNavigate();
   
   const { 

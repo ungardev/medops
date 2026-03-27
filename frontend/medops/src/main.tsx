@@ -22,6 +22,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "@/lib/reactQuery";
 import { NotifyProvider } from "./context/NotifyContext";
+import { AuthProvider } from "./context/AuthContext"; // ✅ NUEVO: Importar AuthProvider
 import axios from "axios";
 import ReportsPage from "./pages/Reports/ReportsPage";
 import ConfigPage from "./pages/Settings/ConfigPage";
@@ -61,75 +62,78 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <NotifyProvider>
         <BrowserRouter>
-          <Routes>
-            {/* === PUBLIC ROUTES === */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/logout" element={<Logout />} />
-            
-            {/* === PATIENT PORTAL - PUBLIC === */}
-            <Route path="/patient/login" element={<PatientLogin />} />
-            <Route path="/patient/logout" element={<PatientLogout />} />
-            <Route path="/patient/activate" element={<PatientActivate />} />
-            
-            {/* === PATIENT PORTAL - PROTECTED === */}
-            <Route 
-              path="/patient" 
-              element={
-                <ProtectedRoute allowedRoles={['patient']}>
-                  <PatientLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<PatientDashboard />} />
-              <Route path="record" element={<PatientRecord />} />
-              <Route path="appointments" element={<PatientAppointments />} />
-              <Route path="queue" element={<PatientQueue />} />
-              <Route path="search" element={<PatientSearch />} />
-              <Route path="services" element={<PatientServices />} />
-              <Route path="doctor/:id" element={<DoctorProfile />} />
-              <Route path="settings" element={<PatientSettings />} />
-              <Route path="payments" element={<PatientPayments />} />
-              <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
-              <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
-            </Route>
-            
-            {/* === DOCTOR PORTAL - PROTECTED === */}
-            <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
-              <Route element={<App />}>
-                {/* Ruta raíz: Redirige a login para el portal elite */}
-                <Route index element={<Navigate to="/login" replace />} />
-                
-                {/* Ruta del Dashboard del Doctor (reemplaza al antiguo index) */}
-                <Route path="doctor" element={<DoctorDashboard />} />
-                
-                {/* Ruta de gestión de servicios/citas */}
-                <Route path="doctor/manage-services" element={<ManageServicesPage />} />
-                
-                {/* Otras rutas existentes */}
-                <Route path="patients" element={<Patients />} />
-                <Route path="patients/:id" element={<PatientDetail />} />
-                <Route
-                  path="patients/:patientId/consultations/:appointmentId"
-                  element={<PatientConsultationDetail />}
-                />
-                <Route path="waitingroom" element={<WaitingRoom />} />
-                <Route path="appointments" element={<Appointments />} />
-                <Route path="payments" element={<Payments />} />
-                <Route path="payments/pending" element={<PendingPayments />} />
-                <Route path="payments/:id" element={<ChargeOrderDetail />} />
-                <Route path="services" element={<ServiceCatalogPage />} />
-                <Route path="services/:id" element={<ServiceDetailPage />} />
-                <Route path="events" element={<Events />} />
-                <Route path="visual-audit" element={<VisualAudit />} />
-                <Route path="consultation" element={<Consultation />} />
-                <Route path="reports" element={<ReportsPage />} />
-                <Route path="reports/:id" element={<ReportsPage />} />
-                <Route path="documents/:id" element={<ReportsPage />} />
-                <Route path="settings/config" element={<ConfigPage />} />
-                <Route path="search" element={<SearchPage />} />
+          {/* ✅ Envolver la app con AuthProvider para manejar estado de autenticación globalmente */}
+          <AuthProvider>
+            <Routes>
+              {/* === PUBLIC ROUTES === */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/logout" element={<Logout />} />
+              
+              {/* === PATIENT PORTAL - PUBLIC === */}
+              <Route path="/patient/login" element={<PatientLogin />} />
+              <Route path="/patient/logout" element={<PatientLogout />} />
+              <Route path="/patient/activate" element={<PatientActivate />} />
+              
+              {/* === PATIENT PORTAL - PROTECTED === */}
+              <Route 
+                path="/patient" 
+                element={
+                  <ProtectedRoute allowedRoles={['patient']}>
+                    <PatientLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<PatientDashboard />} />
+                <Route path="record" element={<PatientRecord />} />
+                <Route path="appointments" element={<PatientAppointments />} />
+                <Route path="queue" element={<PatientQueue />} />
+                <Route path="search" element={<PatientSearch />} />
+                <Route path="services" element={<PatientServices />} />
+                <Route path="doctor/:id" element={<DoctorProfile />} />
+                <Route path="settings" element={<PatientSettings />} />
+                <Route path="payments" element={<PatientPayments />} />
+                <Route path="payments/:id" element={<PatientChargeOrderDetail />} />
+                <Route path="charge-orders/:id/pay" element={<PatientChargeOrderDetail />} />
               </Route>
-            </Route>
-          </Routes>
+              
+              {/* === DOCTOR PORTAL - PROTECTED === */}
+              <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
+                <Route element={<App />}>
+                  {/* Ruta raíz: Redirige a login para el portal elite */}
+                  <Route index element={<Navigate to="/login" replace />} />
+                  
+                  {/* Ruta del Dashboard del Doctor (reemplaza al antiguo index) */}
+                  <Route path="doctor" element={<DoctorDashboard />} />
+                  
+                  {/* Ruta de gestión de servicios/citas */}
+                  <Route path="doctor/manage-services" element={<ManageServicesPage />} />
+                  
+                  {/* Otras rutas existentes */}
+                  <Route path="patients" element={<Patients />} />
+                  <Route path="patients/:id" element={<PatientDetail />} />
+                  <Route
+                    path="patients/:patientId/consultations/:appointmentId"
+                    element={<PatientConsultationDetail />}
+                  />
+                  <Route path="waitingroom" element={<WaitingRoom />} />
+                  <Route path="appointments" element={<Appointments />} />
+                  <Route path="payments" element={<Payments />} />
+                  <Route path="payments/pending" element={<PendingPayments />} />
+                  <Route path="payments/:id" element={<ChargeOrderDetail />} />
+                  <Route path="services" element={<ServiceCatalogPage />} />
+                  <Route path="services/:id" element={<ServiceDetailPage />} />
+                  <Route path="events" element={<Events />} />
+                  <Route path="visual-audit" element={<VisualAudit />} />
+                  <Route path="consultation" element={<Consultation />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="reports/:id" element={<ReportsPage />} />
+                  <Route path="documents/:id" element={<ReportsPage />} />
+                  <Route path="settings/config" element={<ConfigPage />} />
+                  <Route path="search" element={<SearchPage />} />
+                </Route>
+              </Route>
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </NotifyProvider>
       <ReactQueryDevtools initialIsOpen={false} />

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { useAuthToken } from "@/hooks/useAuthToken";
+import { useAuth } from "@/context/AuthContext"; // Cambiado de useAuthToken
 import { useNotifications } from "@/hooks/dashboard/useNotifications";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import moment from "moment";
@@ -41,7 +41,7 @@ const getPrimarySpecialty = (specialties?: any[]): string => {
 };
 export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   const navigate = useNavigate();
-  const { clearToken } = useAuthToken();
+  const { logout, user } = useAuth(); // Usar AuthContext
   
   const { data: rawData, isLoading } = useNotifications();
   const notifications = Array.isArray(rawData) ? rawData : (rawData as any)?.results || [];
@@ -112,8 +112,7 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   };
   
   const handleLogout = () => {
-    clearToken();
-    navigate("/login");
+    logout(); // Usar logout del contexto
   };
   
   return (

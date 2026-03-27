@@ -1,36 +1,30 @@
 // src/hooks/useAuthToken.ts
-import { useState, useEffect, useCallback } from "react";
-
+import { useAuth as useAuthContext } from '@/context/AuthContext';
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 export function useAuthToken() {
-  const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem("authToken") // ✅ lazy init
-  );
-
-  // ✅ Guardar token
+  const { 
+    tokens, 
+    login: contextLogin, 
+    logout: contextLogout,
+    isAuthenticated,
+    user 
+  } = useAuthContext();
+  const navigate = useNavigate();
+  // Token para Doctor Portal (compatibilidad)
+  const token = tokens.authToken;
+  // Guardar token (para Doctor Login)
   const saveToken = useCallback((newToken: string) => {
-    localStorage.setItem("authToken", newToken);
-    setToken(newToken);
-  }, []);
-
-  // ✅ Limpiar token y redirigir al login frontend
+    contextLogin('doctor', newToken, user || undefined);
+    localStorage.setItem('authToken', newToken);
+  }, [contextLogin, user]);
+  // Limpiar token y redirigir
   const clearToken = useCallback(() => {
-    localStorage.removeItem("authToken");
-    setToken(null);
-
-    // 🔹 Redirigir al login institucional del frontend (React Router)
-    window.location.href = "/login";
-  }, []);
-
-  // ✅ Sincronizar entre pestañas
-  useEffect(() => {
-    const syncToken = (e: StorageEvent) => {
-      if (e.key === "authToken") {
-        setToken(e.newValue);
-      }
-    };
-    window.addEventListener("storage", syncToken);
-    return () => window.removeEventListener("storage", syncToken);
-  }, []);
-
-  return { token, saveToken, clearToken };
+    contextLogout();
+    localStorage.removeItem('authToken');
+    navigate('/login');
+  }, [contextLogout, navigate]);
+  // Sincronizar entre pestañas (ya lo hace el contexto, pero mantenemos compatibilidad)
+  // El contexto ya usa BroadcastChannel
+  return { token, saveToken, clearToken, isAuthenticated, user };
 }
