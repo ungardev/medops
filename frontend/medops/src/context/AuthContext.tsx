@@ -21,15 +21,12 @@ interface AuthContextType {
   verifyToken: () => Promise<void>;
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-// Nombres de claves en localStorage
 const STORAGE_KEYS = {
   PATIENT_TOKEN: 'patient_access_token',
   DOCTOR_TOKEN: 'authToken',
   USER: 'auth_user',
 };
-// Canal de broadcast para sincronización entre pestañas
 const authChannel = new BroadcastChannel('auth_channel');
-// Obtener URL base del backend desde variables de entorno
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
@@ -40,46 +37,70 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     patient_access_token: localStorage.getItem(STORAGE_KEYS.PATIENT_TOKEN),
     authToken: localStorage.getItem(STORAGE_KEYS.DOCTOR_TOKEN),
   });
+  // Función auxiliar para obtener el token de paciente (con fallback a DRF token)
+  const getPatientToken = useCallback((): string | null => {
+    return localStorage.getItem('patient_access_token') 
+      || localStorage.getItem('patient_drf_token') 
+      || null;
+  }, []);
   // Verificar token al montar la app
   const verifyToken = useCallback(async () => {
     setIsLoading(true);
     try {
-      const token = tokens.patient_access_token || tokens.authToken;
+      // Obtener token de doctor o paciente
+      const doctorToken = localStorage.getItem(STORAGE_KEYS.DOCTOR_TOKEN);
+      const patientToken = getPatientToken();
+      
+      const token = doctorToken || patientToken;
+      
       if (!token) {
         setIsAuthenticated(false);
+        setIsLoading(false);
         return;
       }
-      // Determinar endpoint según tipo de token
-      // IMPORTANTE: API_URL ya incluye "/api" en .env
-      const endpoint = tokens.patient_access_token 
+      const isPatient = !doctorToken && !!patientToken;
+      const endpoint = isPatient 
         ? `${API_URL}/patient/auth/verify/` 
         : `${API_URL}/auth/verify/`;
       
       const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Token ${token}`,
+          'Content-Type': 'application/json',
         },
       });
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
         setIsAuthenticated(true);
+        
+        // Actualizar tokens en estado
+        setTokens({
+          patient_access_token: patientToken,
+          authToken: doctorToken,
+        });
       } else {
-        // Token inválido, limpiar storage
-        logout();
+        // Token inválido, limpiar todo
+        localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
+        localStorage.removeItem('patient_drf_token');
+        localStorage.removeItem('patient_refresh_token');
+        localStorage.removeItem('patient_id');
+        localStorage.removeItem('patient_name');
+        setTokens({ patient_access_token: null, authToken: null });
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Error verifying token:', error);
-      logout();
+      setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
     }
-  }, [tokens]);
-  // Efecto para verificar token al montar
+  }, [getPatientToken]);
   useEffect(() => {
     verifyToken();
-  }, [verifyToken]);
-  // Escuchar cambios de autenticación desde otras pestañas
+  }, []);
   useEffect(() => {
     const handleAuthChange = (event: MessageEvent) => {
       if (event.data.type === 'AUTH_CHANGE') {
@@ -99,7 +120,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           setIsAuthenticated(true);
         } else if (action === 'LOGOUT') {
-          logout(false); // No retransmitir para evitar loops
+          setTokens({ patient_access_token: null, authToken: null });
+          setUser(null);
+          setIsAuthenticated(false);
         }
       }
     };
@@ -120,7 +143,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     setIsAuthenticated(true);
     setIsLoading(false);
-    // Transmitir a otras pestañas
     authChannel.postMessage({
       type: 'AUTH_CHANGE',
       action: 'LOGIN',
@@ -130,32 +152,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   }, []);
   const logout = useCallback((broadcast = true) => {
-    // Limpiar storage
+    // Limpiar TODOS los tokens
     localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
-    // Limpiar estado
+    localStorage.removeItem('patient_drf_token');
+    localStorage.removeItem('patient_refresh_token');
+    localStorage.removeItem('patient_id');
+    localStorage.removeItem('patient_name');
     setTokens({ patient_access_token: null, authToken: null });
     setUser(null);
     setIsAuthenticated(false);
     setIsLoading(false);
-    // Transmitir a otras pestañas
     if (broadcast) {
       authChannel.postMessage({
         type: 'AUTH_CHANGE',
         action: 'LOGOUT',
       });
     }
-    // Redirigir a login (solo si no estamos ya en una página de login)
-    const currentPath = window.location.pathname;
-    if (!currentPath.includes('/login')) {
-      if (currentPath.includes('/patient')) {
-        navigate('/patient/login');
-      } else {
-        navigate('/login');
-      }
-    }
-  }, [navigate]);
+  }, []);
   return (
     <AuthContext.Provider
       value={{

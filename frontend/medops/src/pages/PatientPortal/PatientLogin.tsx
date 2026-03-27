@@ -1,10 +1,11 @@
+// src/pages/PatientPortal/PatientLogin.tsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/patient/useAuth';
+import { usePatientAuth } from '@/hooks/patient/usePatientAuth'; 
 import { Lock, User, Loader2 } from 'lucide-react';
 export default function PatientLogin() {
   const navigate = useNavigate();
-  const { login, isLoading, error } = useAuth();
+  const { login, isLoading, error } = usePatientAuth(); // ✅ CORREGIDO
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -28,7 +29,6 @@ export default function PatientLogin() {
       {/* Columna Izquierda: Formulario */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#0a0c10] min-h-screen">
         <div className="w-full max-w-md animate-in fade-in duration-500">
-          {/* Logo pequeño */}
           <img
             src="/medopz_logo_blanco_solo.svg"
             alt="MedOpz Logo"
@@ -114,7 +114,6 @@ export default function PatientLogin() {
               ← Volver al portal médico
             </Link>
           </div>
-          {/* Footer */}
           <footer className="mt-12 text-[10px] text-gray-600 uppercase tracking-[0.3em] text-center">
             © 2026 MedOpz Clinical OS // v1.2.0-Stable
           </footer>
@@ -122,7 +121,6 @@ export default function PatientLogin() {
       </div>
       {/* Columna Derecha: Visual */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#111827] to-[#0a0c10] items-center justify-center relative min-h-screen">
-        {/* Logo grande centrado con efecto de brillo sutil */}
         <img
           src="/medopz_logo_blanco_solo.svg"
           alt="MedOpz Logo"
