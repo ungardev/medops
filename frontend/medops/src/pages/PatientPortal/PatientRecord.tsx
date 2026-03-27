@@ -1,6 +1,5 @@
 // src/pages/PatientPortal/PatientRecord.tsx
-import { useSearchParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { usePatient } from "@/hooks/patients/usePatient";
 import { useConsultationsByPatient } from "@/hooks/patients/useConsultationsByPatient";
 import { Tabs, Tab } from "@/components/ui/Tabs";
@@ -15,6 +14,7 @@ import SurgeriesTab from "@/components/Patients/SurgeriesTab";
 import PageHeader from "@/components/Common/PageHeader";
 import { IdentificationIcon, HeartIcon, UserIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, useMemo } from "react";
+import { useAuth } from "@/hooks/patient/useAuth"; // ✅ NUEVA IMPORTACIÓN
 function normalizeTab(id?: string): string {
   const map: Record<string, string> = {
     info: "info",
@@ -34,22 +34,43 @@ function normalizeTab(id?: string): string {
 export default function PatientRecord() {
   const navigate = useNavigate();
   
-  const storedPatientId = localStorage.getItem("patient_id");
-  
-  if (!storedPatientId) {
-    useEffect(() => {
-      navigate("/patient/login");
-    }, [navigate]);
+  // ✅ CORRECCIÓN: Usar el hook de autenticación
+  const { isAuthenticated, isLoading: authLoading, patient: authPatient } = useAuth();
+  // ✅ CORRECCIÓN: Esperar a que useAuth termine de verificar
+  if (authLoading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-500">Verificando Autenticación...</p>
+        </div>
+      </div>
+    );
+  }
+  // ✅ CORRECCIÓN: Redirigir solo si NO está autenticado
+  if (!isAuthenticated) {
+    navigate("/patient/login");
     return null;
   }
+  // ✅ CORRECCIÓN: Obtener ID del paciente del hook o del localStorage como fallback
+  const patientId = authPatient?.id ?? Number(localStorage.getItem("patient_id"));
   
-  const patientId = Number(storedPatientId);
-  
+  // Si aún no hay ID (raro pero posible), mostrar loader o manejar error
+  if (!patientId) {
+     return (
+      <div className="p-8 flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-red-500">Error: No se encontró ID de paciente</p>
+        </div>
+      </div>
+    );
+  }
   const { data: patient, isLoading, error } = usePatient(patientId);
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
   const appointmentsList = completedConsultations?.list ?? [];
+  
   const latestBiometrics = useMemo(() => {
     if (!appointmentsList || appointmentsList.length === 0) {
       return { weight: null, height: null };
@@ -103,6 +124,7 @@ export default function PatientRecord() {
     }
     return age;
   };
+  
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
@@ -111,6 +133,7 @@ export default function PatientRecord() {
       </div>
     </div>
   );
+  
   if (error || !patient) return (
     <div className="p-8">
       <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-sm">
@@ -118,9 +141,11 @@ export default function PatientRecord() {
       </div>
     </div>
   );
+  
   const patientAge = patient.age ?? calculateAge(patient.birthdate);
   const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} KG` : "--";
   const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
+  
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
       <PageHeader 
