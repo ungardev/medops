@@ -46,8 +46,9 @@ export function usePatientAuth() {
         localStorage.setItem('patient_name', data.patient.full_name);
       }
       
-      // Notificar al contexto
-      contextLogin('patient', data.access_token || data.token, {
+      // ✅ CORRECCIÓN CRÍTICA: Usar data.token (DRF token) en lugar de data.access_token (PatientSession token)
+      // El endpoint verify_patient_token acepta DRF token, NO PatientSession token
+      contextLogin('patient', data.token, {
         id: data.patient.id,
         username: data.patient.full_name || '',
         email: data.patient.email || email,
