@@ -3774,7 +3774,6 @@ class MercantilP2CConfig(models.Model):
         return "sandbox" if self.is_test_mode else "production"
 
 
-
 # ==========================================
 # ARIO PACIENTE20. USU - Portal de Autenticación
 # ==========================================

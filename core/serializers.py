@@ -1632,7 +1632,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             child=serializers.CharField()
         ),
         write_only=True,
-        required=False,
+        required=True,  # Servicios requeridos para crear ChargeOrder
         help_text="Lista de servicios: [{'doctor_service_id': 1, 'qty': 1}]"
     )
     # ✅ NUEVO: Pago inicial opcional
@@ -1646,6 +1646,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     tentative_date = serializers.DateField(read_only=True)
     tentative_time = serializers.TimeField(read_only=True)
     confirmed_at = serializers.DateTimeField(read_only=True)
+    
     class Meta:
         model = Appointment
         fields = [
@@ -1672,35 +1673,46 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "confirmed_at",
         ]
         read_only_fields = ["id", "charge_order", "tentative_date", "tentative_time", "confirmed_at"]
+    
     def get_patient_name(self, obj):
         """Obtiene el nombre completo del paciente de forma explícita."""
         if obj.patient:
             return obj.patient.full_name
         return "UNKNOWN_SUBJECT"
+    
     def get_doctor_name(self, obj):
         """✅ CORREGIDO: Obtiene el nombre completo del doctor directamente del modelo."""
         if obj.doctor:
             return obj.doctor.full_name
         return None
+    
+    def validate(self, data):
+        """
+        Validación adicional: Asegurar que el doctor existe y tiene institución.
+        """
+        doctor = data.get('doctor')
+        if not doctor:
+            raise serializers.ValidationError({"doctor": "El campo 'doctor' es requerido."})
+        
+        # Derivar institución del doctor si no está presente
+        if 'institution' not in data or not data['institution']:
+            data['institution'] = doctor.institution
+        
+        return data
+    
     def create(self, validated_data):
         """
         Creación Élite de Appointment con ChargeOrder automático.
         """
-        from .models import ChargeOrder, ChargeItem, Payment
-        from decimal import Decimal
         # Extraer servicios y pago inicial
         services_data = validated_data.pop('services', [])
         initial_payment = validated_data.pop('initial_payment', None)
         
         # 1. Crear el Appointment
-        # NOTA: Si se envía fecha tentativa desde la compra, se guardará en los campos correspondientes
-        # El flujo actual crea la cita directamente, pero para el nuevo flujo:
-        # Si el status es 'tentative', guardamos la fecha en tentative_date
+        # NOTA: appointment_date es DateField, enviado como YYYY-MM-DD
         if validated_data.get('status') == 'tentative':
             validated_data['tentative_date'] = validated_data.get('appointment_date')
-            # appointment_date real se asignará después de la confirmación
-            # Por ahora, mantenemos appointment_date como la fecha tentativa para consistencia visual
-            pass
+            validated_data['tentative_time'] = validated_data.get('tentative_time')  # ✅ FIX: Asignar hora tentativa
             
         appointment = Appointment.objects.create(**validated_data)
         
@@ -1782,9 +1794,6 @@ class AppointmentSerializer(serializers.ModelSerializer):
         Actualización Élite de Appointment.
         Maneja la actualización de campos básicos y la sincronización de servicios.
         """
-        from .models import ChargeOrder, ChargeItem, Payment
-        from decimal import Decimal
-        
         # Extraer servicios y pago inicial
         services_data = validated_data.pop('services', None)
         initial_payment = validated_data.pop('initial_payment', None)
