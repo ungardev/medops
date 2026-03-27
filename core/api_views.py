@@ -7477,16 +7477,32 @@ def verify_token(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def verify_patient_token(request):
+    """
+    Verifica si el token de autenticación del paciente es válido.
+    Retorna el Patient ID (no el User ID) para que el frontend
+    pueda cargar los datos correctos del paciente.
+    """
     user = request.user
-    # Asegurar que el usuario es un paciente (ajustar según tu modelo)
-    if not hasattr(user, 'patient_profile'):
-        return Response({"error": "No es un paciente"}, status=403)
+    
+    # Obtener el Patient ID real desde PatientUser
+    patient_id = user.id  # Fallback: User ID
+    full_name = user.username
+    email = user.email
+    
+    try:
+        patient_user = PatientUser.objects.select_related('patient').get(user=user)
+        patient_id = patient_user.patient.id  # Patient ID real
+        full_name = patient_user.patient.full_name
+        email = patient_user.email
+    except PatientUser.DoesNotExist:
+        pass
     
     return Response({
         'valid': True,
         'user': {
-            'id': user.id,
-            'username': user.username,
-            'email': user.email,
+            'id': patient_id,           # Patient ID (NO User ID)
+            'user_id': user.id,         # User ID por separado
+            'username': full_name,
+            'email': email,
         }
     })

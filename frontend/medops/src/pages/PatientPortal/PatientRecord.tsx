@@ -34,13 +34,11 @@ function normalizeTab(id?: string): string {
 export default function PatientRecord() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, patient: authPatient } = usePatientAuth();
-  // Efecto para navegación condicional (evita bucle infinito)
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate("/patient/login");
     }
   }, [authLoading, isAuthenticated, navigate]);
-  // Loader mientras se verifica autenticación
   if (authLoading) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
@@ -51,15 +49,13 @@ export default function PatientRecord() {
       </div>
     );
   }
-  // Si no está autenticado, no renderizar nada
   if (!isAuthenticated) {
     return null;
   }
-  // Obtener ID del paciente
-  const patientId = authPatient?.id ?? Number(localStorage.getItem("patient_id"));
-  console.log('🔴 DEBUG PatientRecord - authPatient:', authPatient);
-  console.log('🔴 DEBUG PatientRecord - localStorage patient_id:', localStorage.getItem("patient_id"));
-  console.log('🔴 DEBUG PatientRecord - patientId calculado:', patientId);
+  // ✅ CORREGIDO: localStorage patient_id tiene PRIORIDAD sobre authPatient.id
+  // authPatient.id es el Django User ID, NO el Patient ID
+  // localStorage patient_id es el Patient ID real guardado durante el login
+  const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id;
   
   if (!patientId) {
     return (
