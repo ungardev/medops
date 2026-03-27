@@ -9,8 +9,10 @@ async function doFetch<T>(
     ? endpoint
     : `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
   
-  // ✅ Token del DoctorOperator: SOLO usar authToken
-  const token = localStorage.getItem("authToken") || "";
+  // ✅ CORREGIDO: Usar token de doctor O paciente (fallback)
+  const token = localStorage.getItem("authToken") 
+    || localStorage.getItem("patient_drf_token") 
+    || "";
   
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -37,10 +39,27 @@ async function doFetch<T>(
   const end = performance.now();
   console.log(`⏱️ Tiempo fetch (solo red): ${(end - start).toFixed(2)} ms`);
   
-  // ✅ Manejo de errores de autenticación
+  // ✅ CORREGIDO: Manejo de errores de autenticación con redirección inteligente
   if (response.status === 401) {
-    localStorage.removeItem("authToken");
-    window.location.href = "/login";
+    // Determinar en qué portal estamos
+    const currentPath = window.location.pathname;
+    const isPatientPortal = currentPath.startsWith('/patient');
+    
+    if (isPatientPortal) {
+      // Portal Paciente: limpiar solo tokens de paciente
+      localStorage.removeItem("patient_access_token");
+      localStorage.removeItem("patient_drf_token");
+      localStorage.removeItem("patient_refresh_token");
+      localStorage.removeItem("patient_id");
+      localStorage.removeItem("patient_name");
+      console.warn("[CLIENT] 401 en Patient Portal, redirigiendo a /patient/login");
+      window.location.href = "/patient/login";
+    } else {
+      // Portal Doctor: limpiar token de doctor
+      localStorage.removeItem("authToken");
+      console.warn("[CLIENT] 401 en Doctor Portal, redirigiendo a /login");
+      window.location.href = "/login";
+    }
     throw new Error("Sesión expirada. Redirigiendo al login...");
   }
   
