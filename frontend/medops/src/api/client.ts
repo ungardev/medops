@@ -4,12 +4,11 @@ async function doFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> {
-  // ✅ Blindaje: si endpoint ya es absoluto, úsalo tal cual
   const url = endpoint.startsWith("http")
     ? endpoint
     : `${API_BASE}/${endpoint}`.replace(/([^:]\/)\/+/g, "$1");
   
-  // ✅ CORREGIDO: Usar token de doctor O paciente (fallback)
+  // Usar token de doctor O paciente (fallback)
   const token = localStorage.getItem("authToken") 
     || localStorage.getItem("patient_drf_token") 
     || "";
@@ -20,44 +19,35 @@ async function doFetch<T>(
     ...(options.headers as Record<string, string>),
   };
   
-  // ✅ AGREGAR: Institution ID header
+  // Institution ID header
   const activeInstitutionId = localStorage.getItem("active_institution_id");
   if (activeInstitutionId) {
     headers["X-Institution-ID"] = activeInstitutionId;
   }
   
-  // ✅ NO establecer Content-Type si hay FormData - el navegador lo hace automáticamente
+  // NO establecer Content-Type si hay FormData
   if (options.body && options.body instanceof FormData) {
     delete headers["Content-Type"];
   } else if (options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
   
-  console.log("[CLIENT] Fetch →", url, options.method || "GET");
-  const start = performance.now();
   const response = await fetch(url, { ...options, headers });
-  const end = performance.now();
-  console.log(`⏱️ Tiempo fetch (solo red): ${(end - start).toFixed(2)} ms`);
   
-  // ✅ CORREGIDO: Manejo de errores de autenticación con redirección inteligente
+  // Manejo de errores de autenticación con redirección inteligente
   if (response.status === 401) {
-    // Determinar en qué portal estamos
     const currentPath = window.location.pathname;
     const isPatientPortal = currentPath.startsWith('/patient');
     
     if (isPatientPortal) {
-      // Portal Paciente: limpiar solo tokens de paciente
       localStorage.removeItem("patient_access_token");
       localStorage.removeItem("patient_drf_token");
       localStorage.removeItem("patient_refresh_token");
       localStorage.removeItem("patient_id");
       localStorage.removeItem("patient_name");
-      console.warn("[CLIENT] 401 en Patient Portal, redirigiendo a /patient/login");
       window.location.href = "/patient/login";
     } else {
-      // Portal Doctor: limpiar token de doctor
       localStorage.removeItem("authToken");
-      console.warn("[CLIENT] 401 en Doctor Portal, redirigiendo a /login");
       window.location.href = "/login";
     }
     throw new Error("Sesión expirada. Redirigiendo al login...");
@@ -65,7 +55,6 @@ async function doFetch<T>(
   
   return response;
 }
-// 🔹 Endpoints estrictos (PATCH/POST/PUT/GET/DELETE)
 export async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -80,7 +69,6 @@ export async function apiFetch<T>(
       error.status = response.status;
       throw error;
     }
-    console.log("[CLIENT] DELETE completado en", endpoint);
     return {} as T;
   }
   
@@ -97,14 +85,9 @@ export async function apiFetch<T>(
     throw error;
   }
   
-  const parseStart = performance.now();
   const data = await response.json() as T;
-  const parseEnd = performance.now();
-  console.log(`⏱️ Tiempo parse JSON: ${(parseEnd - parseStart).toFixed(2)} ms`);
-  
   return data;
 }
-// 🔹 Endpoints GET opcionales (mapear 404/204 → null)
 export async function apiFetchOptional<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -122,10 +105,6 @@ export async function apiFetchOptional<T>(
     throw error;
   }
   
-  const parseStart = performance.now();
   const data = await response.json() as T;
-  const parseEnd = performance.now();
-  console.log(`⏱️ Tiempo parse JSON (optional): ${(parseEnd - parseStart).toFixed(2)} ms`);
-  
   return data;
 }
