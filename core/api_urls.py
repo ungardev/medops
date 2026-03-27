@@ -436,8 +436,8 @@ urlpatterns = [
     path('api/medical-services/', MedicalServicesListView.as_view(), name='medical-services-list'),
     path('patient-search/doctors/', patient_search_doctors, name='patient-search-doctors'),
     path('patient-search/services/', patient_search_services, name='patient-search-services'),
-    path('api/auth/verify/', verify_token, name='verify_token'),
-    path('api/patient/auth/verify/', verify_patient_token, name='verify-patient-token'),
+    path('auth/verify/', verify_token, name='verify_token'),
+    path('patient/auth/verify/', verify_patient_token, name='verify-patient-token'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [
