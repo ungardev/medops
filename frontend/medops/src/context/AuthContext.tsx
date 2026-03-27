@@ -37,23 +37,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     patient_access_token: localStorage.getItem(STORAGE_KEYS.PATIENT_TOKEN),
     authToken: localStorage.getItem(STORAGE_KEYS.DOCTOR_TOKEN),
   });
-  // Función auxiliar para obtener el token de paciente (con fallback a DRF token)
   const getPatientToken = useCallback((): string | null => {
     return localStorage.getItem('patient_access_token') 
       || localStorage.getItem('patient_drf_token') 
       || null;
   }, []);
-  // Verificar token al montar la app
   const verifyToken = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Obtener token de doctor o paciente
       const doctorToken = localStorage.getItem(STORAGE_KEYS.DOCTOR_TOKEN);
       const patientToken = getPatientToken();
       
       const token = doctorToken || patientToken;
       
+      // 🔍 DEBUG LOGS
+      console.log('🔍 verifyToken - doctorToken:', doctorToken ? 'EXISTE' : 'NO EXISTE');
+      console.log('🔍 verifyToken - patientToken:', patientToken ? patientToken.substring(0, 10) + '...' : 'NO EXISTE');
+      console.log('🔍 verifyToken - token enviado:', token ? token.substring(0, 10) + '...' : 'NINGUNO');
+      
       if (!token) {
+        console.log('🔴 verifyToken - NO HAY TOKEN, isAuthenticated = false');
         setIsAuthenticated(false);
         setIsLoading(false);
         return;
@@ -63,24 +66,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ? `${API_URL}/patient/auth/verify/` 
         : `${API_URL}/auth/verify/`;
       
+      // 🔍 DEBUG LOGS
+      console.log('🔍 verifyToken - endpoint:', endpoint);
+      console.log('🔍 verifyToken - isPatient:', isPatient);
+      console.log('🔍 verifyToken - API_URL:', API_URL);
+      
       const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
         },
       });
+      // 🔍 DEBUG LOGS
+      console.log('🔍 verifyToken - response status:', response.status);
+      console.log('🔍 verifyToken - response ok:', response.ok);
       if (response.ok) {
         const data = await response.json();
+        console.log('🟢 verifyToken - ÉXITO, user:', data.user);
         setUser(data.user);
         setIsAuthenticated(true);
         
-        // Actualizar tokens en estado
         setTokens({
           patient_access_token: patientToken,
           authToken: doctorToken,
         });
       } else {
-        // Token inválido, limpiar todo
+        const errorText = await response.text();
+        console.log('🔴 verifyToken - FALLO, response body:', errorText);
         localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
         localStorage.removeItem('patient_drf_token');
@@ -92,13 +104,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsAuthenticated(false);
       }
     } catch (error) {
-      console.error('Error verifying token:', error);
+      console.error('🔴 verifyToken - ERROR CATCH:', error);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
+      // 🔍 DEBUG LOG
+      console.log('🔍 verifyToken - FINALIZADO, isLoading = false');
     }
   }, [getPatientToken]);
   useEffect(() => {
+    console.log('🟢 AuthProvider - MONTADO, ejecutando verifyToken');
     verifyToken();
   }, []);
   useEffect(() => {
@@ -130,6 +145,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return () => authChannel.removeEventListener('message', handleAuthChange);
   }, []);
   const login = useCallback((type: 'patient' | 'doctor', token: string, userData?: User) => {
+    // 🔍 DEBUG LOG
+    console.log('🟢 contextLogin - type:', type, 'token:', token.substring(0, 10) + '...');
+    
     if (type === 'patient') {
       setTokens(prev => ({ ...prev, patient_access_token: token }));
       localStorage.setItem(STORAGE_KEYS.PATIENT_TOKEN, token);
@@ -143,6 +161,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     setIsAuthenticated(true);
     setIsLoading(false);
+    // 🔍 DEBUG LOG
+    console.log('🟢 contextLogin - isAuthenticated = true, isLoading = false');
     authChannel.postMessage({
       type: 'AUTH_CHANGE',
       action: 'LOGIN',
@@ -152,7 +172,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
   }, []);
   const logout = useCallback((broadcast = true) => {
-    // Limpiar TODOS los tokens
+    console.log('🔴 contextLogout - ejecutado');
+    
     localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
@@ -171,6 +192,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
     }
   }, []);
+  // 🔍 DEBUG LOG - Estado actual del contexto
+  console.log('🔍 AuthContext STATE:', { isAuthenticated, isLoading, user: user?.username || 'null' });
   return (
     <AuthContext.Provider
       value={{
