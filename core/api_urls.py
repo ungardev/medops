@@ -367,8 +367,8 @@ urlpatterns = [
     
     # --- Portal Paciente - Autenticación ---
     path('patient-auth/register/', api_views.patient_register, name='patient-register'),
-    path('patient-auth/login/', api_views.patient_login, name='patient-login'),
-    path('patient-auth/logout/', api_views.patient_logout, name='patient-logout'),
+    path('patient/auth/login/', api_views.patient_login, name='patient-login'),
+    path('patient/auth/logout/', api_views.patient_logout, name='patient-logout'),
     
     # --- Portal Paciente - Datos ---
     path('patient-dashboard/', api_views.patient_dashboard, name='patient-dashboard'),
