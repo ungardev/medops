@@ -403,7 +403,7 @@ urlpatterns = [
     path('payments/stats/', payment_stats_api, name='payment-stats-api'),
     
     # Webhooks
-    path('payments/webhook/mercantil/', webhook_mercantil, name='webhook-mercantil'),
+    path('payments/webhook/mercantil/', mercantil_p2c_webhook, name='webhook-mercantil'),
     path('payments/webhook/banesco/', webhook_banesco, name='webhook-banesco'),
     path('payments/webhook/binance/', webhook_binance, name='webhook-binance'),
     

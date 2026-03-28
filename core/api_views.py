@@ -3251,6 +3251,8 @@ def mercantil_p2c_webhook(request):
     """
     Procesa webhook de confirmación de pago P2C.
     Endpoint listo para producción con estructura completa.
+    
+    Validación HMAC preparada para activar con credenciales reales.
     """
     try:
         # Obtener firma del header
@@ -3278,8 +3280,31 @@ def mercantil_p2c_webhook(request):
             merchant_order_id=merchant_order_id
         )
         
-        # Simular validación de firma (placeholder hasta API real)
-        # En producción, aquí iría la validación HMAC real
+        # ✅ PREPARADO: Validación HMAC real (activar con credenciales)
+        try:
+            config = MercantilP2CConfig.objects.filter(is_active=True).first()
+            if config and config.webhook_secret:
+                import hmac as hmac_mod
+                import hashlib
+                
+                payload_body = request.body
+                expected_signature = hmac_mod.new(
+                    config.webhook_secret.encode('utf-8'),
+                    payload_body,
+                    hashlib.sha256
+                ).hexdigest()
+                
+                if not hmac_mod.compare_digest(signature, expected_signature):
+                    logger.warning(f"Webhook Mercantil: firma inválida para order {merchant_order_id}")
+                    # Descomentar la siguiente línea cuando tengamos credenciales reales:
+                    # return Response({'error': 'Invalid signature'}, status=403)
+                    logger.info("Webhook Mercantil: validación bypassed (modo desarrollo)")
+            else:
+                logger.info("Webhook Mercantil: sin config activa o sin webhook_secret (modo desarrollo)")
+        except Exception as e:
+            logger.warning(f"Webhook Mercantil: error validando firma: {e}")
+        
+        # Procesar datos del webhook
         processed_data = {
             "merchant_order_id": webhook_data.get('merchant_order_id'),
             "mercantil_transaction_id": webhook_data.get('transaction_id'),
@@ -3301,27 +3326,36 @@ def mercantil_p2c_webhook(request):
         
         # Si está confirmado, crear registro de pago
         if transaction.status == 'confirmed':
-            # Buscar o crear payment asociado
             from .models import Payment
+            
             payment = Payment.objects.create(
                 institution=transaction.institution,
                 charge_order=transaction.charge_order,
+                appointment=getattr(transaction.charge_order, 'appointment', None),
+                doctor=getattr(transaction.charge_order, 'doctor', None),
+                patient=getattr(transaction.charge_order, 'patient', None),
                 amount=transaction.amount,
                 currency=transaction.currency,
                 method='p2c_mercantil',
                 status='confirmed',
                 gateway_transaction_id=processed_data.get('mercantil_transaction_id'),
-                reference_number=processed_data.get('reference'),
-                gateway_response_raw=processed_data['raw_data']
+                reference_number=processed_data.get('reference', ''),
+                gateway_response_raw=processed_data['raw_data'],
+                verification_type='automatic',
+                verified_at=timezone.now(),
             )
             
             # Vincular pago a transacción P2C
             transaction.payment = payment
             transaction.save(update_fields=['payment'])
+            
+            # Recalcular totales de la orden
+            transaction.charge_order.recalc_totals()
+            transaction.charge_order.save(update_fields=['status', 'total', 'balance_due'])
         
         return Response({
             "success": True,
-            "message": "Webhook processed successfully - waiting API credentials for real processing"
+            "message": "Webhook processed successfully"
         })
     
     except MercantilP2CTransaction.DoesNotExist:

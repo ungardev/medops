@@ -32,6 +32,9 @@ DEBUG = os.environ.get("DEBUG", "False") == "True"
 # Ajuste para Docker y local
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 
+# === SITE URL (para callback URLs de webhooks y P2C) ===
+SITE_URL = os.environ.get("SITE_URL", "https://medopz.com")
+
 # === Apps ===
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -264,3 +267,14 @@ LOGGING = {
         },
     },
 }
+
+
+# === CELERY CONFIGURACIÓN (preparado para activar con Redis) ===
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'America/Caracas'
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos máximo por tarea
