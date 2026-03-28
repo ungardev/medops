@@ -1704,9 +1704,18 @@ class AppointmentSerializer(serializers.ModelSerializer):
         """
         Creación Élite de Appointment con ChargeOrder automático.
         """
+        # ✅ DEBUG TEMPORAL
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔍 AppointmentSerializer.create() llamado")
+        logger.info(f"🔍 validated_data keys: {list(validated_data.keys())}")
+        logger.info(f"🔍 services: {validated_data.get('services', 'NO ENCONTRADO')}")
+        
         # Extraer servicios y pago inicial
         services_data = validated_data.pop('services', [])
         initial_payment = validated_data.pop('initial_payment', None)
+        
+        logger.info(f"🔍 services_data extraído: {services_data}")
         
         # 1. Crear el Appointment
         # NOTA: appointment_date es DateField, enviado como YYYY-MM-DD
