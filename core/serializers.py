@@ -1744,24 +1744,34 @@ class AppointmentSerializer(serializers.ModelSerializer):
         for service in services_data:
             doctor_service_id = service.get('doctor_service_id')
             qty = service.get('qty', 1)
+            
+            # ✅ DEBUG
+            logger.info(f"🔍 Procesando servicio: id={doctor_service_id}, qty={qty}, type_id={type(doctor_service_id)}")
+            
             if doctor_service_id:
                 doctor_service = None
                 try:
+                    # Convertir a integer por seguridad
+                    service_id_int = int(doctor_service_id)
                     doctor_service = DoctorService.objects.filter(
-                        id=doctor_service_id,
+                        id=service_id_int,
                         is_active=True
                     ).first()
-                except Exception:
+                    logger.info(f"🔍 DoctorService encontrado: {doctor_service}")
+                except Exception as e:
+                    logger.error(f"🔍 Error buscando DoctorService: {e}")
                     pass
                 
                 if doctor_service:
                     code = doctor_service.code
                     description = doctor_service.name
                     unit_price = doctor_service.price_usd
+                    logger.info(f"🔍 Servicio encontrado: {code} - {description} - ${unit_price}")
                 else:
                     code = service.get('code', f'SVC-{doctor_service_id}')
                     description = service.get('description', f'Servicio {doctor_service_id}')
                     unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
+                    logger.info(f"🔍 Servicio NO encontrado, usando fallback: {code} - {description}")
                 
                 item = ChargeItem.objects.create(
                     order=charge_order,
@@ -1771,7 +1781,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     qty=Decimal(str(qty)),
                     unit_price=unit_price,
                 )
+                logger.info(f"🔍 ChargeItem creado: id={item.id}, subtotal={item.subtotal}")
                 total_amount += item.subtotal
+        
+        logger.info(f"🔍 Total ChargeItems: {total_amount}")
         
         # Recalcular totales del ChargeOrder
         charge_order.recalc_totals()
