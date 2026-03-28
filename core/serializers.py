@@ -1624,25 +1624,19 @@ class AppointmentSerializer(serializers.ModelSerializer):
     doctor_name = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     appointment_type_display = serializers.CharField(source='get_appointment_type_display', read_only=True)
-    # ✅ NUEVO: Servicio específico (DoctorService)
     doctor_service_name = serializers.CharField(source='doctor_service.name', read_only=True)
-    # ✅ NUEVOS CAMPOS para servicios del catálogo
     services = serializers.ListField(
         child=serializers.DictField(
             child=serializers.CharField()
         ),
         write_only=True,
-        required=True,  # Servicios requeridos para crear ChargeOrder
+        required=True,
         help_text="Lista de servicios: [{'doctor_service_id': 1, 'qty': 1}]"
     )
-    # ✅ NUEVO: Pago inicial opcional
     initial_payment = serializers.DictField(required=False, write_only=True)
-    # 🆕 AGREGADO: VitalSigns para obtener peso y talla desde signos vitales
     vital_signs = VitalSignsSerializer(read_only=True)
-    # ✅ NUEVO: Campo charge_order (solo en respuesta de creación)
     charge_order = ChargeOrderSerializer(read_only=True)
     
-    # ✅ NUEVO: Campos de fecha tentativa (solo lectura para API de listado)
     tentative_date = serializers.DateField(read_only=True)
     tentative_time = serializers.TimeField(read_only=True)
     confirmed_at = serializers.DateTimeField(read_only=True)
@@ -1654,20 +1648,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "appointment_date", "appointment_type",
             "appointment_type_display", "status", "status_display",
             "expected_amount", "arrival_time",
-            # ✅ Nuevos campos de servicio
             "doctor_service",
             "doctor_service_name",
-            # ✅ Nuevos campos de creación
             "services",
             "initial_payment",
-            # 🆕 MÉTRICAS ANTROPOMÉTRICAS del Appointment
             "weight",
             "height",
-            # 🆕 AGREGADO: VitalSigns (peso y talla desde signos vitales)
             "vital_signs",
-            # ✅ AGREGADO: ChargeOrder (respuesta)
             "charge_order",
-            # ✅ NUEVO: Campos de fecha tentativa
             "tentative_date",
             "tentative_time",
             "confirmed_at",
@@ -1675,28 +1663,41 @@ class AppointmentSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "charge_order", "tentative_date", "tentative_time", "confirmed_at"]
     
     def get_patient_name(self, obj):
-        """Obtiene el nombre completo del paciente de forma explícita."""
         if obj.patient:
             return obj.patient.full_name
         return "UNKNOWN_SUBJECT"
     
     def get_doctor_name(self, obj):
-        """✅ CORREGIDO: Obtiene el nombre completo del doctor directamente del modelo."""
         if obj.doctor:
             return obj.doctor.full_name
         return None
     
     def validate(self, data):
-        """
-        Validación adicional: Asegurar que el doctor existe y tiene institución.
-        """
         doctor = data.get('doctor')
         if not doctor:
             raise serializers.ValidationError({"doctor": "El campo 'doctor' es requerido."})
         
-        # Derivar institución del doctor si no está presente
         if 'institution' not in data or not data['institution']:
             data['institution'] = doctor.institution
+        
+        return data
+    
+    def to_representation(self, instance):
+        """
+        ✅ FIX: Incluir charge_order manualmente en la respuesta.
+        El serializer anidado no lo retornaba automáticamente.
+        """
+        data = super().to_representation(instance)
+        
+        # Incluir charge_order si existe
+        try:
+            charge_order = instance.charge_orders.first()
+            if charge_order:
+                data['charge_order'] = ChargeOrderSerializer(charge_order).data
+            else:
+                data['charge_order'] = None
+        except Exception:
+            data['charge_order'] = None
         
         return data
     
@@ -1704,28 +1705,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
         """
         Creación Élite de Appointment con ChargeOrder automático.
         """
-        # ✅ DEBUG TEMPORAL
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"🔍 AppointmentSerializer.create() llamado")
-        logger.info(f"🔍 validated_data keys: {list(validated_data.keys())}")
-        logger.info(f"🔍 services: {validated_data.get('services', 'NO ENCONTRADO')}")
-        
-        # Extraer servicios y pago inicial
         services_data = validated_data.pop('services', [])
         initial_payment = validated_data.pop('initial_payment', None)
         
-        logger.info(f"🔍 services_data extraído: {services_data}")
-        
-        # 1. Crear el Appointment
-        # NOTA: appointment_date es DateField, enviado como YYYY-MM-DD
         if validated_data.get('status') == 'tentative':
             validated_data['tentative_date'] = validated_data.get('appointment_date')
-            validated_data['tentative_time'] = validated_data.get('tentative_time')  # ✅ FIX: Asignar hora tentativa
+            validated_data['tentative_time'] = validated_data.get('tentative_time')
             
         appointment = Appointment.objects.create(**validated_data)
         
-        # 2. Crear ChargeOrder automáticamente
         charge_order = ChargeOrder.objects.create(
             appointment=appointment,
             patient=appointment.patient,
@@ -1739,39 +1727,30 @@ class AppointmentSerializer(serializers.ModelSerializer):
             tentative_time=appointment.tentative_time,
         )
         
-        # 3. Crear ChargeItems directamente desde los datos recibidos
         total_amount = Decimal('0.00')
         for service in services_data:
             doctor_service_id = service.get('doctor_service_id')
             qty = service.get('qty', 1)
             
-            # ✅ DEBUG
-            logger.info(f"🔍 Procesando servicio: id={doctor_service_id}, qty={qty}, type_id={type(doctor_service_id)}")
-            
             if doctor_service_id:
                 doctor_service = None
                 try:
-                    # Convertir a integer por seguridad
                     service_id_int = int(doctor_service_id)
                     doctor_service = DoctorService.objects.filter(
                         id=service_id_int,
                         is_active=True
                     ).first()
-                    logger.info(f"🔍 DoctorService encontrado: {doctor_service}")
-                except Exception as e:
-                    logger.error(f"🔍 Error buscando DoctorService: {e}")
+                except Exception:
                     pass
                 
                 if doctor_service:
                     code = doctor_service.code
                     description = doctor_service.name
                     unit_price = doctor_service.price_usd
-                    logger.info(f"🔍 Servicio encontrado: {code} - {description} - ${unit_price}")
                 else:
                     code = service.get('code', f'SVC-{doctor_service_id}')
                     description = service.get('description', f'Servicio {doctor_service_id}')
                     unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
-                    logger.info(f"🔍 Servicio NO encontrado, usando fallback: {code} - {description}")
                 
                 item = ChargeItem.objects.create(
                     order=charge_order,
@@ -1781,20 +1760,14 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     qty=Decimal(str(qty)),
                     unit_price=unit_price,
                 )
-                logger.info(f"🔍 ChargeItem creado: id={item.id}, subtotal={item.subtotal}")
                 total_amount += item.subtotal
         
-        logger.info(f"🔍 Total ChargeItems: {total_amount}")
-        
-        # Recalcular totales del ChargeOrder
         charge_order.recalc_totals()
         charge_order.save(update_fields=['total', 'balance_due', 'status'])
         
-        # ✅ FIX: Actualizar expected_amount en Appointment
         appointment.expected_amount = charge_order.total
         appointment.save(update_fields=['expected_amount'])
         
-        # 4. [OPCIONAL] Procesar pago inicial
         if initial_payment and total_amount > 0:
             payment_amount = Decimal(str(initial_payment.get('amount', 0)))
             if payment_amount > 0:
@@ -1807,29 +1780,20 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     reference_number=initial_payment.get('reference_number', f"PRE-{charge_order.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"),
                     status='confirmed',
                 )
-                # Recalcular después del pago
                 charge_order.recalc_totals()
                 charge_order.save(update_fields=['total', 'balance_due', 'status'])
         
         return appointment
     
     def update(self, instance, validated_data):
-        """
-        Actualización Élite de Appointment.
-        Maneja la actualización de campos básicos y la sincronización de servicios.
-        """
-        # Extraer servicios y pago inicial
         services_data = validated_data.pop('services', None)
         initial_payment = validated_data.pop('initial_payment', None)
         
-        # 1. Actualizar campos básicos del Appointment
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         
-        # 2. Sincronizar servicios si se proporcionan
         if services_data is not None:
-            # Obtener o crear ChargeOrder
             charge_order = ChargeOrder.objects.filter(
                 appointment=instance
             ).exclude(status='void').order_by('-issued_at').first()
@@ -1846,10 +1810,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     balance_due=Decimal('0.00'),
                 )
             
-            # Eliminar items existentes
             ChargeItem.objects.filter(order=charge_order).delete()
             
-            # Crear nuevos items
             total_amount = Decimal('0.00')
             for service in services_data:
                 doctor_service_id = service.get('doctor_service_id')
@@ -1883,11 +1845,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     )
                     total_amount += item.subtotal
             
-            # Recalcular totales del ChargeOrder
             charge_order.recalc_totals()
             charge_order.save(update_fields=['total', 'balance_due', 'status'])
             
-            # Actualizar expected_amount en Appointment
             instance.expected_amount = charge_order.total
             instance.save(update_fields=['expected_amount'])
         
