@@ -373,21 +373,21 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         """
         Creación segura: Fuerza el paciente logueado y deriva la institución del doctor.
         """
-        # 1. Forzar el paciente del usuario autenticado
         patient_profile = self.request.user.patient_profile
         patient = patient_profile.patient
         
-        # 2. Obtener datos validados y limpiar campo paciente si existe
-        validated_data = serializer.validated_data
-        validated_data.pop('patient', None)  # Evita duplicados o manipulación
+        # Derivar institución del doctor
+        doctor = serializer.validated_data.get('doctor')
+        institution = serializer.validated_data.get('institution')
+        if doctor and not institution:
+            institution = doctor.institution
         
-        # 3. Derivar institución del doctor si no está presente
-        doctor = validated_data.get('doctor')
-        if doctor and 'institution' not in validated_data:
-            validated_data['institution'] = doctor.institution
-        
-        # 4. Crear la cita con el paciente forzado
-        serializer.save(patient=patient, **validated_data)
+        # Guardar con el serializer (NO pasar **validated_data)
+        # El serializer.create() ya maneja la lógica de services y charge_order
+        serializer.save(
+            patient=patient,
+            institution=institution,
+        )
 
 
 class MedicalDocumentViewSet(viewsets.ModelViewSet):
