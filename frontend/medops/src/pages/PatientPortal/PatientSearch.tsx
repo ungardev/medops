@@ -24,7 +24,8 @@ export default function PatientSearch() {
   const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
   const [showServiceDetail, setShowServiceDetail] = useState(false);
   
-  const currentPatientId = localStorage.getItem('patient_id') ? Number(localStorage.getItem('patient_id')) : 1;
+  // ✅ CORREGIDO: null en lugar de 1 para evitar datos de otro paciente
+  const currentPatientId = localStorage.getItem('patient_id') ? Number(localStorage.getItem('patient_id')) : null;
   
   const [filterType, setFilterType] = useState<"all" | "doctors" | "services">("all");
   
@@ -75,7 +76,7 @@ export default function PatientSearch() {
       ...service,
       doctor_name: service.doctor?.full_name || '',
       doctor: service.doctor?.id || 0,
-      institution: service.institution || 0,
+      institution: service.institution || 0,  // Ahora el backend retornará este campo
       category: service.category || 0,
       category_name: service.category_name || '',
       is_visible_global: true,
@@ -85,12 +86,11 @@ export default function PatientSearch() {
       description: service.description || '',
     };
     setSelectedService(compatibleService);
-    setShowServiceDetail(true); // Abrir modal de detalles primero
+    setShowServiceDetail(true);
   };
   
   return (
     <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* PageHeader como en PatientServices.tsx */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
@@ -295,10 +295,10 @@ export default function PatientSearch() {
         </div>
       </div>
       
-      {/* Modal de Service Detail (Intermedio) */}
+      {/* ✅ CORREGIDO: Modal de Service Detail con scroll */}
       {showServiceDetail && selectedService && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="w-full max-w-lg my-auto">
             <ServiceDetail
               service={selectedService}
               onClose={() => {
@@ -307,17 +307,15 @@ export default function PatientSearch() {
               }}
               onBuy={() => {
                 setShowServiceDetail(false);
-                // El modal de ServicePurchaseFlow se renderiza automáticamente 
-                // gracias a la condición !showServiceDetail && selectedService
               }}
             />
           </div>
         </div>
       )}
-      {/* Modal de Compra de Servicio (Flujo Final) */}
-      {!showServiceDetail && selectedService && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-md">
+      {/* ✅ CORREGIDO: Modal de Compra con scroll y guardia de patientId */}
+      {!showServiceDetail && selectedService && currentPatientId && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="w-full max-w-md my-auto">
             <ServicePurchaseFlow
               service={selectedService}
               patientId={currentPatientId}
@@ -326,6 +324,21 @@ export default function PatientSearch() {
               }}
               onCancel={() => setSelectedService(null)}
             />
+          </div>
+        </div>
+      )}
+      {/* ✅ NUEVO: Error si no hay patientId */}
+      {!showServiceDetail && selectedService && !currentPatientId && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#111] border border-white/10 rounded-sm p-8 text-center max-w-md my-auto">
+            <p className="text-red-400 text-sm mb-4">Error: No se pudo identificar al paciente.</p>
+            <p className="text-white/50 text-xs mb-4">Por favor, inicia sesión nuevamente.</p>
+            <button
+              onClick={() => setSelectedService(null)}
+              className="px-4 py-2 bg-white/10 text-white text-[10px] uppercase rounded-sm"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}

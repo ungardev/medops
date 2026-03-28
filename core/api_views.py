@@ -6606,6 +6606,7 @@ def patient_search_services(request):
                     'id': service.doctor.id,
                     'full_name': service.doctor.full_name
                 } if service.doctor else None,
+                'institution': service.institution.id if service.institution else None,  # ← NUEVO
                 'institution_name': institution_name,
                 'price_usd': price,
                 'duration_minutes': service.duration_minutes,

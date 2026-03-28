@@ -39,7 +39,6 @@ export default function PatientServices() {
   const [showServiceDetail, setShowServiceDetail] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  // ✅ CORREGIDO: null en lugar de 1 para evitar datos de otro paciente
   const currentPatientId = localStorage.getItem('patient_id') 
     ? Number(localStorage.getItem('patient_id')) 
     : null;
@@ -380,10 +379,10 @@ export default function PatientServices() {
         </Tab>
       </Tabs>
       
-      {/* Modal de Service Detail (Intermedio) */}
+      {/* ✅ CORREGIDO: Modal de Service Detail con scroll */}
       {showServiceDetail && selectedService && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="w-full max-w-lg my-auto">
             <ServiceDetail
               service={selectedService}
               onClose={() => {
@@ -397,10 +396,10 @@ export default function PatientServices() {
           </div>
         </div>
       )}
-      {/* ✅ CORREGIDO: Modal de Compra con guardia de patientId */}
+      {/* ✅ CORREGIDO: Modal de Compra con scroll y guardia de patientId */}
       {!showServiceDetail && selectedService && currentPatientId && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-md">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="w-full max-w-md my-auto">
             <ServicePurchaseFlow
               service={selectedService}
               patientId={currentPatientId}
@@ -414,8 +413,8 @@ export default function PatientServices() {
       )}
       {/* ✅ NUEVO: Error si no hay patientId */}
       {!showServiceDetail && selectedService && !currentPatientId && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111] border border-white/10 rounded-sm p-8 text-center max-w-md">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#111] border border-white/10 rounded-sm p-8 text-center max-w-md my-auto">
             <p className="text-red-400 text-sm mb-4">Error: No se pudo identificar al paciente.</p>
             <p className="text-white/50 text-xs mb-4">Por favor, inicia sesión nuevamente.</p>
             <button
