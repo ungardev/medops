@@ -5898,6 +5898,9 @@ def patient_charge_order_detail(request, order_id):
                     'status_display': payment.get_status_display(),
                     'reference_number': payment.reference_number,
                     'received_at': payment.received_at.strftime('%Y-%m-%d %H:%M') if payment.received_at else None,
+                    'verification_type': payment.verification_type or 'manual',
+                    'verified_at': payment.verified_at.strftime('%Y-%m-%d %H:%M') if payment.verified_at else None,
+                    'verification_notes': payment.verification_notes or '',
                 }
                 for payment in order.payments.all()
             ],
@@ -5990,21 +5993,25 @@ def patient_register_payment(request, order_id):
         # ✅ CORRECCIÓN: Usar campos válidos del modelo Payment
         # Crear el pago
         with transaction.atomic():
+            screenshot_file = request.FILES.get('screenshot')
+            
+            # Crear Payment
             payment = Payment.objects.create(
                 institution=order.institution,
                 appointment=order.appointment,
                 charge_order=order,
                 doctor=order.doctor,
+                patient=patient,  # ✅ AHORA FUNCIONARÁ
                 amount=amount_usd,
                 amount_ves=amount_bs,
                 exchange_rate_bcv=bcv_rate,
-                currency='VES',
                 method='transfer',
-                status=payment_status,
+                status='pending',
                 reference_number=reference,
                 bank_reference=bank_code,
-                verification_notes=f"Pago Móvil: Tel {phone}, Cédula {national_id}",
+                verification_notes=f"Pago Movil: Tel {phone}, Cedula {national_id}",
                 verification_type=verification_type,
+                screenshot=screenshot_file,  # ← NUEVO: Guardar captura del paciente
             )
             
             # Actualizar método de pago del paciente
@@ -6182,30 +6189,35 @@ def get_pending_payments(request):
             
             results.append({
                 'id': payment.id,
-                'amount': float(payment.amount) if payment.amount else None,
-                'amount_ves': float(payment.amount_ves) if payment.amount_ves else None,
-                'exchange_rate_bcv': float(payment.exchange_rate_bcv) if payment.exchange_rate_bcv else None,
-                'amount_bs': amount_bs,
+                'amount': float(payment.amount),
+                'amount_ves': float(payment.amount_ves) if payment.amount_ves else 0,
+                'exchange_rate_bcv': float(payment.exchange_rate_bcv) if payment.exchange_rate_bcv else 0,
+                'amount_bs': float(payment.amount_ves) if payment.amount_ves else float(payment.amount),
                 'method': payment.method,
+                'method_display': payment.get_method_display() if hasattr(payment, 'get_method_display') else payment.method,
                 'reference_number': payment.reference_number,
                 'bank_reference': payment.bank_reference,
                 'status': payment.status,
+                'verification_type': payment.verification_type or 'manual',
+                'verification_notes': payment.verification_notes or '',
+                'screenshot': request.build_absolute_uri(payment.screenshot.url) if payment.screenshot else None,
                 'created_at': payment.created_at.isoformat() if payment.created_at else None,
                 'patient': {
-                    'id': patient.id,
+                    'id': patient.id if patient else None,
                     'full_name': patient.full_name if patient else None,
                     'national_id': patient.national_id if patient else None,
                     'phone_number': patient.phone_number if patient else None,
-                } if patient else None,
+                },
                 'charge_order': {
-                    'id': charge_order.id,
-                    'total': float(charge_order.total) if charge_order.total else None,
-                    'balance_due': float(charge_order.balance_due) if charge_order.balance_due else None,
-                } if charge_order else None,
+                    'id': charge_order.id if charge_order else None,
+                    'total': float(charge_order.total) if charge_order else 0,
+                    'balance_due': float(charge_order.balance_due) if charge_order else 0,
+                },
                 'appointment': {
-                    'id': appointment.id,
-                    'appointment_date': appointment.appointment_date.isoformat() if appointment else None,
-                } if appointment else None,
+                    'id': appointment.id if appointment else None,
+                    'appointment_date': appointment.appointment_date.isoformat() if appointment and appointment.appointment_date else None,
+                    'status': appointment.status if appointment else None,
+                },
             })
         
         return Response({

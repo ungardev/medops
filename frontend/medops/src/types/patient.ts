@@ -163,15 +163,18 @@ export interface ChargeOrderItem {
 
 export interface PatientPayment {
   id: number;
-  amount: number;                    // USD original
-  amount_ves?: number;               // 🆕 Bs del día del pago
-  exchange_rate_bcv?: number;        // 🆕 BCV del día del pago
+  amount: number;
+  amount_ves?: number;
+  exchange_rate_bcv?: number;
   method: string;
   method_display?: string;
   status: string;
   status_display?: string;
   reference_number: string | null;
   received_at: string | null;
+  verification_type?: 'automatic' | 'manual';
+  verified_at?: string | null;
+  verification_notes?: string;
 }
 
 

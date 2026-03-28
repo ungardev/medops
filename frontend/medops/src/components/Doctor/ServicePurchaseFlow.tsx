@@ -342,7 +342,7 @@ const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> =
         Cerrar
       </button>
       <a
-        href={`/patient/charge-orders/${chargeOrder?.id}/pay`}
+        href={`/patient/payments/${chargeOrder?.id}`}
         className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2 text-center"
       >
         Ir a Pagar <ArrowRightIcon className="w-4 h-4" />

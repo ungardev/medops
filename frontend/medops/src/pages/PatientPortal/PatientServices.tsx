@@ -23,9 +23,7 @@ import {
 } from "lucide-react";
 import { DoctorService, RecommendedService } from "@/api/patient/client";
 import { ServicePurchaseFlow } from "@/components/Doctor/ServicePurchaseFlow";
-// Importar nuevo componente ServiceDetail
 import { ServiceDetail } from "@/components/Common/ServiceDetail";
-// Definición de categorías completas de MEDOPZ
 const CATEGORIES = [
   "Consulta Medica",
   "Laboratorio y Diagnostico",
@@ -37,18 +35,14 @@ const CATEGORIES = [
 export default function PatientServices() {
   const [activeTab, setActiveTab] = useState<"history" | "catalog" | "recommended">("catalog");
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
-  
-  // Estados para modales
   const [selectedService, setSelectedService] = useState<DoctorService | null>(null);
   const [showServiceDetail, setShowServiceDetail] = useState(false);
-  
-  // Estados para filtros
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  // ✅ CORREGIDO: null en lugar de 1 para evitar datos de otro paciente
   const currentPatientId = localStorage.getItem('patient_id') 
     ? Number(localStorage.getItem('patient_id')) 
-    : 1;
-  
+    : null;
   const { data: historyData, isLoading: historyLoading } = usePatientServicesHistory();
   const { data: catalogData, isLoading: catalogLoading } = usePatientServicesCatalog();
   const { data: recommendedData, isLoading: recommendedLoading } = usePatientServicesRecommended();
@@ -82,7 +76,7 @@ export default function PatientServices() {
       cancellation_window: 24,
     };
     setSelectedService(doctorService);
-    setShowServiceDetail(true); // Abrir modal de detalles
+    setShowServiceDetail(true);
   };
   let services: DoctorService[] = [];
   if (catalogData) {
@@ -130,7 +124,6 @@ export default function PatientServices() {
         
         <Tab id="catalog" label={<><ListIcon className="w-4 h-4" /> Catálogo</>}>
           <div className="flex gap-4 mt-6">
-            {/* Sidebar de Categorías */}
             <div className="w-48 flex-shrink-0">
               <div className="bg-black/30 border border-white/20 rounded-sm p-3 sticky top-4">
                 <p className="text-[11px] font-black text-white/80 uppercase tracking-widest mb-3">
@@ -173,9 +166,7 @@ export default function PatientServices() {
               </div>
             </div>
             
-            {/* Área Principal del Catálogo */}
             <div className="flex-1">
-              {/* Buscador */}
               <div className="mb-4 relative">
                 <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70" />
                 <input
@@ -195,7 +186,6 @@ export default function PatientServices() {
                 )}
               </div>
               
-              {/* Estado y Resultados */}
               <div className="flex items-center justify-between mb-3">
                 <p className="text-[11px] text-white/70">
                   {filteredServices.length} servicios encontrados
@@ -213,7 +203,6 @@ export default function PatientServices() {
                   </button>
                 )}
               </div>
-              {/* Grid de Servicios o Estado Vacío */}
               {filteredServices.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredServices.map((service) => (
@@ -225,7 +214,6 @@ export default function PatientServices() {
                         setShowServiceDetail(true);
                       }}
                     >
-                      {/* Header: Categoría y Duración */}
                       <div className="flex justify-between items-start mb-3">
                         <span className="text-[9px] font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">
                           {service.category_name || 'SERVICIO'}
@@ -235,21 +223,17 @@ export default function PatientServices() {
                           {service.duration_minutes ? `${service.duration_minutes} min` : 'N/A'}
                         </span>
                       </div>
-                      {/* Nombre del Servicio (Prioridad 1) */}
                       <h4 className="text-[14px] font-black text-white uppercase tracking-tight mb-3 line-clamp-2">
                         {service.name || 'Servicio sin nombre'}
                       </h4>
-                      {/* Doctor (Prioridad 2) */}
                       <div className="flex items-center gap-2 text-[12px] text-white/80 mb-2">
                         <UserIcon className="w-4 h-4" />
                         <span>Dr. {service.doctor_name || 'Médico no especificado'}</span>
                       </div>
-                      {/* Institución (Prioridad 3) */}
                       <div className="flex items-center gap-2 text-[11px] text-white/70 mb-3">
                         <Building2Icon className="w-4 h-4" />
                         <span>{service.institution_name || 'Institución no especificada'}</span>
                       </div>
-                      {/* Precio y Código (Prioridad 4 y 5) */}
                       <div className="flex justify-between items-center pt-3 border-t border-white/10">
                         <span className="text-[9px] font-mono text-blue-400 bg-blue-400/10 px-1.5 py-0.5 rounded">
                           {service.code}
@@ -262,7 +246,6 @@ export default function PatientServices() {
                   ))}
                 </div>
               ) : (
-                /* Estado Vacío */
                 <div className="flex flex-col items-center justify-center py-16 bg-black/30 border border-dashed border-white/20 rounded-sm">
                   <div className="bg-white/10 p-4 rounded-full mb-4">
                     <ListIcon className="w-6 h-6 text-white/50" />
@@ -409,15 +392,13 @@ export default function PatientServices() {
               }}
               onBuy={() => {
                 setShowServiceDetail(false);
-                // El modal de ServicePurchaseFlow se renderiza automáticamente 
-                // gracias a la condición !showServiceDetail && selectedService
               }}
             />
           </div>
         </div>
       )}
-      {/* Modal de Compra de Servicio (Flujo Final) */}
-      {!showServiceDetail && selectedService && (
+      {/* ✅ CORREGIDO: Modal de Compra con guardia de patientId */}
+      {!showServiceDetail && selectedService && currentPatientId && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
             <ServicePurchaseFlow
@@ -428,6 +409,21 @@ export default function PatientServices() {
               }}
               onCancel={() => setSelectedService(null)}
             />
+          </div>
+        </div>
+      )}
+      {/* ✅ NUEVO: Error si no hay patientId */}
+      {!showServiceDetail && selectedService && !currentPatientId && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111] border border-white/10 rounded-sm p-8 text-center max-w-md">
+            <p className="text-red-400 text-sm mb-4">Error: No se pudo identificar al paciente.</p>
+            <p className="text-white/50 text-xs mb-4">Por favor, inicia sesión nuevamente.</p>
+            <button
+              onClick={() => setSelectedService(null)}
+              className="px-4 py-2 bg-white/10 text-white text-[10px] uppercase rounded-sm"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       )}

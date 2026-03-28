@@ -2426,38 +2426,61 @@ def set_active_institution(institution_id: int, doctor: DoctorOperator) -> Insti
 
 class PaymentOCRService:
     """
-    Procesa imágenes de pagos y extrae datos automáticamente
-    Versión 3.0 con fixes críticos
+    Procesa imágenes de pagos móviles venezolanos y extrae datos automáticamente.
+    Versión 5.0 - FASE 4: Múltiples estrategias + Hora + Receptor + Validación.
+    
+    Soporta: 31 bancos venezolanos + variaciones OCR comunes.
+    Campos extraídos: banco, referencia, monto, teléfono, cédula, fecha, hora, receptor.
+    Estrategias: 3 preprocesamientos × 3 configuraciones Tesseract = 9 intentos.
     """
     
-    # PATRONES DE BANCOS VENEZOLANOS
+    # === PATRONES DE BANCOS VENEZOLANOS (31 bancos + variaciones OCR) ===
     BANCO_PATTERNS = [
-        (r'mercantil', 'mercantil'),
-        (r'banesco', 'banesco'),
-        (r'provincial', 'provincial'),
-        (r'venezuela', 'venezuela'),
-        (r'bicentenario', 'bicentenario'),
-        (r'caron[ií]', 'caroni'),
-        (r'exterior', 'exterior'),
-        (r'tesoro', 'tesoro'),
-        (r'occidente', 'occidente'),
-        (r'soberano', 'soberano'),
-        (r'plaza', 'plaza'),
-        (r'bangente', 'bangente'),
-        (r'agricola', 'agricola'),
-        (r'bancrecer', 'bancrecer'),
-        (r'mi\s*banco', 'mibanco'),
-        (r'100%\s*banco', 'cienporciento'),
-        (r'delsur', 'delsur'),
-        (r'nacional\s*de\s*credito', 'nacional'),
-        (r'banfanb', 'banfanb'),
-        (r'caribe', 'caribe'),
-        (r'city\spartner', 'citypartner'),
+        # Top 5 bancos más usados
+        (r'm[e3]rc[a4]nt[i1]l', '0105'),
+        (r'ban[e3]sc[o0]', '0134'),
+        (r'(?:bdv|banco\s*de\s*v[e3]n[e3]z[uú][e3]l[a4])', '0102'),
+        (r'(?:bbva|pr[o0]v[i1]nc[i1]al)', '0108'),
+        (r'bancam[i1]ga', '0172'),
+        
+        # Bancos medianos
+        (r'bancar[i1]b[e3]', '0114'),
+        (r'[e3]xt[e3]ri[o0]r', '0115'),
+        (r'car[o0]n[i1]', '0128'),
+        (r's[o0]f[i1]tasa', '0137'),
+        (r'plaza', '0138'),
+        (r'bang[e3]nt[e3]', '0146'),
+        (r'f[o0]nd[o0]\s*com[uú]n', '0151'),
+        (r'100\s*%\s*banco', '0156'),
+        (r'd[e3]lsur', '0157'),
+        (r't[e3]s[o0]r[o0]', '0163'),
+        (r'bancr[e3]c[e3]r', '0168'),
+        (r'r\s*4\s*banco', '0169'),
+        (r'banco\s*activo', '0171'),
+        (r'[i1]nt[e3]rnacional\s*d[e3]\s*d[e3]sarr[o0]ll[o0]', '0173'),
+        (r'banpl[uú]s', '0174'),
+        (r'd[i1]g[i1]tal.*trabajad[o0]r[e3]s', '0175'),
+        (r'banfanb', '0177'),
+        (r'n\s*58', '0178'),
+        (r'nacional\s*d[e3]\s*cr[eé]d[i1]t[o0]', '0191'),
+        (r'v[e3]n[e3]z[o0]lano\s*d[e3]\s*cr[eé]d[i1]t[o0]', '0104'),
+        
+        # Bancos adicionales
+        (r'b[i1]c[e3]nt[e3]nario', '0116'),
+        (r'[o0]cc[i1]d[e3]nt[e3]', '0100'),
+        (r's[o0]b[e3]ran[o0]', '0100'),
+        (r'agr[i1]c[o0]la', '0100'),
+        (r'm[i1]\s*banco', '0100'),
+        (r'c[i1]ty\s*partn[e3]r', '0100'),
     ]
     
     @classmethod
     def extract_data(cls, image) -> Dict[str, Any]:
-        """Extrae datos de pago de una imagen"""
+        """
+        Extrae datos de pago con múltiples estrategias de preprocesamiento.
+        Intenta 3 configuraciones × 3 estrategias = 9 combinaciones.
+        Toma el resultado con mayor confianza.
+        """
         try:
             try:
                 import pytesseract
@@ -2474,22 +2497,63 @@ class PaymentOCRService:
             if img.mode != 'RGB':
                 img = img.convert('RGB')
             
-            # Preprocesamiento de imagen
-            img = cls.preprocess_image(img)
+            # Configuraciones de Tesseract
+            configs = [
+                r'--oem 3 --psm 6',   # Bloque uniforme (mejor para apps)
+                r'--oem 3 --psm 4',   # Columna de texto
+                r'--oem 3 --psm 3',   # Página completa
+            ]
             
-            # OCR - extraer texto
-            text = pytesseract.image_to_string(img, lang='spa+eng')
-            logger.info(f"OCR extrajo {len(text)} caracteres")
+            # Estrategias de preprocesamiento
+            strategies = [
+                ('binarization', cls.preprocess_binarization),
+                ('high_contrast', cls.preprocess_high_contrast),
+                ('inverted', cls.preprocess_inverted),
+            ]
             
-            # Parsear datos
-            data = cls._parse_payment_text(text)
+            best_result = None
+            best_confidence = 0.0
             
-            return {
-                'success': True,
-                'data': data,
-                'raw_text': text,
-                'confianza': cls._calculate_confidence(data)
-            }
+            for strategy_name, preprocess_fn in strategies:
+                try:
+                    processed_img = preprocess_fn(img.copy())
+                    
+                    for config in configs:
+                        text = pytesseract.image_to_string(
+                            processed_img, 
+                            lang='spa+eng', 
+                            config=config
+                        )
+                        text = cls._normalize_ocr_text(text)
+                        data = cls._parse_payment_text(text)
+                        confidence = cls._calculate_confidence(data)
+                        
+                        if confidence > best_confidence:
+                            best_confidence = confidence
+                            best_result = {
+                                'success': True,
+                                'data': data,
+                                'raw_text': text[:500],
+                                'confianza': confidence,
+                                'strategy': strategy_name,
+                            }
+                        
+                        # Si ya tenemos 95%+ de confianza, no seguir
+                        if confidence >= 0.95:
+                            break
+                    
+                    if best_confidence >= 0.95:
+                        break
+                        
+                except Exception as e:
+                    logger.warning(f"Estrategia {strategy_name} falló: {e}")
+                    continue
+            
+            if best_result:
+                return best_result
+            
+            # Fallback: estrategia básica
+            return cls._extract_basic(img)
             
         except Exception as e:
             logger.error(f"Error en OCR: {str(e)}")
@@ -2498,33 +2562,150 @@ class PaymentOCRService:
                 'error': str(e)
             }
     
+    # === ESTRATEGIAS DE PREPROCESAMIENTO ===
+    
     @classmethod
-    def preprocess_image(cls, img):
-        """Preprocesa imagen para mejor OCR"""
+    def preprocess_binarization(cls, img):
+        """Estrategia 1: Binarización adaptativa (mejor para mayoría de capturas)"""
         try:
+            from PIL import ImageEnhance, ImageFilter, ImageOps, Image
+            import numpy as np
+            
+            max_dimension = 1200
+            if max(img.size) > max_dimension:
+                ratio = max_dimension / max(img.size)
+                new_size = (int(img.width * ratio), int(img.height * ratio))
+                img = img.resize(new_size, Image.LANCZOS)
+            
+            img_gray = img.convert('L')
+            img_array = np.array(img_gray)
+            threshold = max(128, np.mean(img_array) * 0.7)
+            img_binary = img_gray.point(lambda x: 255 if x > threshold else 0)
+            img_clean = img_binary.filter(ImageFilter.MedianFilter(size=3))
+            img_sharp = img_clean.filter(ImageFilter.SHARPEN)
+            
+            img_array_final = np.array(img_sharp)
+            if np.mean(img_array_final) < 128:
+                img_sharp = ImageOps.invert(img_sharp)
+            
+            return img_sharp.convert('RGB')
+        except Exception as e:
+            logger.warning(f"Binarización falló: {e}")
+            return img.convert('RGB')
+    
+    @classmethod
+    def preprocess_high_contrast(cls, img):
+        """Estrategia 2: Alto contraste (mejor para capturas oscuras con texto claro)"""
+        try:
+            from PIL import ImageEnhance, ImageFilter, Image
+            
+            max_dimension = 1200
+            if max(img.size) > max_dimension:
+                ratio = max_dimension / max(img.size)
+                new_size = (int(img.width * ratio), int(img.height * ratio))
+                img = img.resize(new_size, Image.LANCZOS)
+            
+            img_gray = img.convert('L')
+            enhancer = ImageEnhance.Contrast(img_gray)
+            img_contrast = enhancer.enhance(3.0)
+            img_sharp = img_contrast.filter(ImageFilter.SHARPEN)
+            img_sharp = img_sharp.filter(ImageFilter.SHARPEN)
+            
+            return img_sharp.convert('RGB')
+        except Exception as e:
+            logger.warning(f"Alto contraste falló: {e}")
+            return img.convert('RGB')
+    
+    @classmethod
+    def preprocess_inverted(cls, img):
+        """Estrategia 3: Fondo invertido (mejor para apps con texto blanco sobre fondo oscuro)"""
+        try:
+            from PIL import ImageFilter, ImageOps, Image
+            import numpy as np
+            
+            max_dimension = 1200
+            if max(img.size) > max_dimension:
+                ratio = max_dimension / max(img.size)
+                new_size = (int(img.width * ratio), int(img.height * ratio))
+                img = img.resize(new_size, Image.LANCZOS)
+            
+            img_gray = img.convert('L')
+            img_inverted = ImageOps.invert(img_gray)
+            img_array = np.array(img_inverted)
+            threshold = np.mean(img_array) * 0.8
+            img_binary = img_inverted.point(lambda x: 255 if x > threshold else 0)
+            img_clean = img_binary.filter(ImageFilter.MedianFilter(size=3))
+            
+            return img_clean.convert('RGB')
+        except Exception as e:
+            logger.warning(f"Inversión falló: {e}")
+            return img.convert('RGB')
+    
+    @classmethod
+    def _extract_basic(cls, img):
+        """Fallback: preprocesamiento básico original"""
+        try:
+            import pytesseract
             from PIL import ImageEnhance, ImageFilter
+            
             img_gray = img.convert('L')
             enhancer = ImageEnhance.Contrast(img_gray)
             img_gray = enhancer.enhance(2.0)
             img_gray = img_gray.filter(ImageFilter.SHARPEN)
-            img = img_gray.convert('RGB')
+            img_rgb = img_gray.convert('RGB')
+            
+            text = pytesseract.image_to_string(img_rgb, lang='spa+eng', config=r'--oem 3 --psm 6')
+            text = cls._normalize_ocr_text(text)
+            data = cls._parse_payment_text(text)
+            
+            return {
+                'success': True,
+                'data': data,
+                'raw_text': text[:500],
+                'confianza': cls._calculate_confidence(data),
+                'strategy': 'basic_fallback',
+            }
         except Exception as e:
-            logger.warning(f"Preprocesamiento falló: {e}")
-        return img
+            return {'success': False, 'error': str(e)}
+    
+    # === NORMALIZACIÓN DE TEXTO OCR ===
+    
+    @classmethod
+    def _normalize_ocr_text(cls, text: str) -> str:
+        """Normaliza errores comunes de OCR en capturas bancarias."""
+        import re
+        
+        # Reemplazar O entre dígitos → 0
+        text = re.sub(r'(?<=\d)O(?=\d)', '0', text)
+        text = re.sub(r'(?<=\d)o(?=\d)', '0', text)
+        
+        # Reemplazar I o l entre dígitos → 1
+        text = re.sub(r'(?<=\d)[Il](?=\d)', '1', text)
+        
+        # Reemplazar S entre dígitos → 5
+        text = re.sub(r'(?<=\d)S(?=\d)', '5', text)
+        text = re.sub(r'(?<=\d)s(?=\d)', '5', text)
+        
+        # Reemplazar B entre dígitos → 8
+        text = re.sub(r'(?<=\d)B(?=\d)', '8', text)
+        
+        return text
+    
+    # === EXTRACCIÓN DE CAMPOS ===
     
     @classmethod
     def _parse_payment_text(cls, text: str) -> Dict[str, Any]:
-        """Parsea el texto extraído"""
+        """Parsea el texto OCR y extrae todos los campos de pago (8 campos)."""
         text_upper = text.upper()
         
-        # ✅ ORDEN IMPORTANTE: Referencia primero (15-20 dígitos)
         referencia = cls._extract_referencia(text)
-        
         banco = cls._extract_banco(text_upper)
         monto = cls._extract_monto(text, exclude_ref=referencia)
         telefono = cls._extract_telefono(text)
         cedula = cls._extract_national_id(text)
         fecha = cls._extract_fecha(text)
+        hora = cls._extract_hora(text)
+        receptor = cls._extract_receptor(text)
         
         return {
             'banco': banco,
@@ -2532,140 +2713,228 @@ class PaymentOCRService:
             'referencia': referencia,
             'telefono': telefono,
             'cedula': cedula,
-            'fecha': fecha
+            'fecha': fecha,
+            'hora': hora,
+            'receptor': receptor,
         }
     
     @classmethod
     def _extract_banco(cls, text: str) -> Optional[str]:
-        """Extrae el nombre del banco"""
-        for pattern, banco in cls.BANCO_PATTERNS:
+        """Extrae el código del banco desde el texto OCR."""
+        for pattern, bank_code in cls.BANCO_PATTERNS:
             if re.search(pattern, text, re.IGNORECASE):
-                return banco
+                return bank_code
         return None
     
     @classmethod
     def _extract_referencia(cls, text: str) -> Optional[str]:
-        """Extrae referencia - 15-20 dígitos"""
+        """Extrae número de referencia (6-20 dígitos)."""
         patterns = [
-            r'[Rr][Ee][Ff][Ee]?[Rr][Ee][Nn][Cc][Ii][Aa][\s:]*(\d{15,20})',
-            r'[Rr][Ee][Ff][\s:]*(\d{15,20})',
-            r'[Rr]eferencia[:\s]*(\d{15,20})',
-            r'[Cc][Oo][Dd][Ii][Gg][Oo][\s:]*(\d{15,20})',
-            r'\b(\d{15,20})\b',
+            r'[Rr]eferencia[:\s]*(\d{6,20})',
+            r'[Rr][Ee][Ff][\s.:]*(\d{6,20})',
+            r'[Cc][óo]digo[:\s]*(\d{6,20})',
+            r'[Nn][úu]mero\s*de\s*[Oo]peraci[oó]n[:\s]*(\d{6,20})',
+            r'[Nn]ro?\s*[Oo]p[:\s]*(\d{6,20})',
+            r'[Cc]ontrol[:\s]*(\d{6,20})',
+            r'[Pp]ago\s*[Mm][óo]vil.*?(\d{6,20})',
+            r'[Tt]ransferencia.*?(\d{12,20})',
+            r'\b(\d{8,20})\b',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, text)
             if match:
-                ref = re.sub(r'[\s-]', '', match.group(1))
-                if len(ref) >= 15:
+                ref = re.sub(r'[\s\-]', '', match.group(1))
+                if 6 <= len(ref) <= 20:
                     return ref
         return None
     
     @classmethod
     def _extract_monto(cls, text: str, exclude_ref: Optional[str] = None) -> Optional[str]:
-        """Extrae monto - 3-10 dígitos (evitar confusión con referencia)"""
+        """Extrae monto con soporte para formato venezolano (1.234.567,89)."""
         patterns = [
-            r'[Bb][Ss]\.?\s*[Ss]?\s*([\d.,]+)',
-            r'[Bb]ol[ií]?vares?\s*([\d.,]+)',
+            r'[Bb][Ss]\.?\s*([\d]{1,3}(?:\.[\d]{3})*(?:,[\d]{2})?)',
+            r'[Bb][Ss]\.?\s*([\d]+)',
             r'[Mm]onto[:\s]*[Bb][Ss]?\s*([\d.,]+)',
             r'[Tt]otal[:\s]*[Bb][Ss]?\s*([\d.,]+)',
-            r'([\d]{3,10})(?:\.\d{2})?(?!\d)',
+            r'([\d]{1,3}(?:\.[\d]{3})+(?:,[\d]{2})?)\s*[Bb][Ss]',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, text, re.MULTILINE | re.IGNORECASE)
             if match:
                 monto_str = match.group(1)
-                monto_str = monto_str.replace('.', '').replace(',', '.')
                 
-                # Excluir si es la referencia
+                if ',' in monto_str and '.' in monto_str:
+                    monto_str = monto_str.replace('.', '').replace(',', '.')
+                elif '.' in monto_str and monto_str.count('.') == 1:
+                    parts = monto_str.split('.')
+                    if len(parts[1]) != 2:
+                        monto_str = monto_str.replace('.', '')
+                elif ',' in monto_str:
+                    monto_str = monto_str.replace(',', '.')
+                
                 if exclude_ref and monto_str == exclude_ref:
                     continue
                 
                 try:
                     valor = float(monto_str)
-                    if 100 <= valor <= 100000000000:  # Rango válido para Bs
-                        return str(int(valor))
-                except:
+                    if 100 <= valor <= 100000000000:
+                        if valor == int(valor):
+                            return str(int(valor))
+                        return str(valor)
+                except (ValueError, OverflowError):
                     pass
         return None
     
     @classmethod
     def _extract_telefono(cls, text: str) -> Optional[str]:
-        """Extrae teléfono - Formato Venezuela 4-7"""
+        """Extrae teléfono en formato venezolano."""
         patterns = [
             r'(04\d{2}[-\s]?\d{7})',
-            r'(0412\d{7})',
             r'(04\d{9})',
-            r'(\+58\d{10})',
-            r'(\(\d{4}\)\s*\d{7})',
+            r'(\+58[\s-]?4\d{2}[\s-]?\d{3}[\s-]?\d{4})',
+            r'(04\d{2}\s\d{3}\s\d{4})',
+            r'(\(04\d{2}\)\s*\d{7})',
+            r'[Tt]el[eé]fono[:\s]*(04\d{9})',
+            r'[Cc]uenta[:\s]*(04\d{9})',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, text)
             if match:
                 telefono = re.sub(r'[^\d]', '', match.group(1))
-                if len(telefono) == 11:
-                    # Formato 4-7: 0412-1234567
+                if len(telefono) == 11 and telefono.startswith('04'):
+                    return f"{telefono[:4]}-{telefono[4:]}"
+                elif len(telefono) == 13 and telefono.startswith('58'):
+                    telefono = '0' + telefono[2:]
                     return f"{telefono[:4]}-{telefono[4:]}"
         return None
     
     @classmethod
     def _extract_national_id(cls, text: str) -> Optional[str]:
-        """Extrae cédula - Formato V-12345678"""
+        """Extrae cédula/RIF en formato venezolano."""
         patterns = [
-            r'[VEJPG]\s*[-]?\s*(\d{5,9})',
-            r'C[Éé]dula[:\s]*([VEJPG][-\s]?\d+)',
-            r'C[ÍI]d[:\s]*([VEJPG][-\s]?\d+)',
-            r'C[Éé]d\.?\s*[ÍI]d\.?\s*[:\s]*([VEJPG][-\s]?\d+)',
-            r'[Cc][Éé][Dd][ÚU][Ll][Aa]\s*[Ii][Dd][Eé][Nn][Tt][Ii][Dd][Aa][Dd]\s*[:\s]*([VEJPG][-\s]?\d+)',
-            r'\bV-(\d{5,9})\b',
-            r'\bE-(\d{5,9})\b',
-            r'\bJ-(\d{5,9})\b',
+            r'[Cc][ée]dula\s*(?:de\s*[Ii]dentidad)?[:\s]*([VEJPG])\s*[-\s]*(\d{5,9})',
+            r'[Cc][Ii]\.?\s*[Ii][Dd]\.?\s*[:\s]*([VEJPG])\s*[-\s]*(\d{5,9})',
+            r'[Rr][Ii][Ff]\.?\s*[:\s]*([VEJPG])\s*[-\s]*(\d{5,9})',
+            r'\b([VEJPG])\s*-\s*(\d{6,9})\b',
+            r'\b([VEJPG])(\d{7,9})\b',
         ]
         
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                cedula = match.group(1)
-                cedula = re.sub(r'[^\d]', '', cedula)
-                if 5 <= len(cedula) <= 9:
-                    return f"V-{cedula}"
+                tipo = match.group(1).upper()
+                numero = re.sub(r'[^\d]', '', match.group(2))
+                if 5 <= len(numero) <= 12:
+                    return f"{tipo}-{numero}"
         return None
     
     @classmethod
     def _extract_fecha(cls, text: str) -> Optional[str]:
-        """Extrae fecha"""
+        """Extrae fecha de la transacción."""
+        from datetime import datetime
+        
         patterns = [
-            r'(\d{2}/\d{2}/\d{4})',
-            r'(\d{2}-\d{2}-\d{4})',
-            r'(\d{2}\.\d{2}\.\d{4})',
-            r'(\d{1,2}\s+de\s+\w+\s+de\s+\d{4})',
-            r'(\d{4}-\d{2}-\d{2})',
+            (r'\b(\d{2}/\d{2}/\d{4})\b', '%d/%m/%Y'),
+            (r'\b(\d{2}-\d{2}-\d{4})\b', '%d-%m-%Y'),
+            (r'\b(\d{2}\.\d{2}\.\d{4})\b', '%d.%m.%Y'),
+            (r'\b(\d{4}-\d{2}-\d{2})\b', '%Y-%m-%d'),
+            (r'\b(\d{2}/\d{2}/\d{4})\s+\d{2}:\d{2}\b', '%d/%m/%Y'),
         ]
         
-        for pattern in patterns:
+        for pattern, fmt in patterns:
             match = re.search(pattern, text)
             if match:
                 fecha_str = match.group(1)
                 try:
+                    fecha = datetime.strptime(fecha_str, fmt)
+                    return fecha.strftime('%Y-%m-%d')
+                except ValueError:
+                    continue
+        return None
+    
+    @classmethod
+    def _extract_hora(cls, text: str) -> Optional[str]:
+        """
+        NUEVO: Extrae hora de la transacción.
+        
+        Formatos: HH:MM AM/PM, HH:MM:SS AM/PM, HH:MM (24h)
+        """
+        patterns = [
+            (r'\b(\d{1,2}:\d{2}\s*[AaPp][Mm])\b', '%I:%M %p'),
+            (r'\b(\d{1,2}:\d{2}:\d{2}\s*[AaPp][Mm])\b', '%I:%M:%S %p'),
+            (r'\b(\d{2}:\d{2})\b', '%H:%M'),
+            (r'\b(\d{2}:\d{2}:\d{2})\b', '%H:%M:%S'),
+        ]
+        
+        for pattern, fmt in patterns:
+            match = re.search(pattern, text)
+            if match:
+                hora_str = match.group(1).strip()
+                try:
                     from datetime import datetime
-                    for fmt in ['%d/%m/%Y', '%d-%m-%Y', '%d.%m.%Y']:
-                        try:
-                            fecha = datetime.strptime(fecha_str, fmt)
-                            return fecha.strftime('%Y-%m-%d')
-                        except:
-                            pass
-                except:
-                    pass
-                return fecha_str
+                    hora = datetime.strptime(hora_str.upper(), fmt)
+                    return hora.strftime('%H:%M')
+                except ValueError:
+                    continue
+        return None
+    
+    @classmethod
+    def _extract_receptor(cls, text: str) -> Optional[str]:
+        """
+        NUEVO: Extrae el nombre del receptor del pago.
+        
+        En capturas de pago móvil, el receptor es la persona o empresa
+        que recibe el dinero.
+        """
+        patterns = [
+            r'[Bb]eneficiario[:\s]*([A-ZÁÉÍÓÚÑa-záéíóúñ\s]{3,40})',
+            r'[Rr]ecibe[:\s]*([A-ZÁÉÍÓÚÑa-záéíóúñ\s]{3,40})',
+            r'[Rr]eceptor[:\s]*([A-ZÁÉÍÓÚÑa-záéíóúñ\s]{3,40})',
+            r'[Dd]estinatario[:\s]*([A-ZÁÉÍÓÚÑa-záéíóúñ\s]{3,40})',
+            r'[VEJPG]-\d{6,9}\s*\n?\s*([A-ZÁÉÍÓÚÑ\s]{3,40})',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE | re.MULTILINE)
+            if match:
+                nombre = match.group(1).strip()
+                nombre = re.sub(r'^[\d\s]+|[\d\s]+$', '', nombre).strip()
+                if len(nombre) >= 3:
+                    return nombre.title()
         return None
     
     @classmethod
     def _calculate_confidence(cls, data: Dict[str, Any]) -> float:
-        """Calcula nivel de confianza"""
-        fields_found = sum([
-            1 for v in data.values() if v is not None and v != ''
-        ])
-        return round(fields_found / 6, 2)  # 6 campos ahora
+        """
+        Calcula nivel de confianza ponderado (8 campos).
+        
+        Pesos basados en importancia para verificación de pago:
+        - referencia: 0.25 (identificador único de la transacción)
+        - monto: 0.20 (cantidad transferida)
+        - banco: 0.15 (app bancaria usada)
+        - telefono: 0.10 (contacto del receptor)
+        - cedula: 0.10 (identidad del receptor)
+        - fecha: 0.08 (cuándo fue el pago)
+        - hora: 0.07 (a qué hora)
+        - receptor: 0.05 (nombre del receptor)
+        """
+        weights = {
+            'referencia': 0.25,
+            'monto': 0.20,
+            'banco': 0.15,
+            'telefono': 0.10,
+            'cedula': 0.10,
+            'fecha': 0.08,
+            'hora': 0.07,
+            'receptor': 0.05,
+        }
+        
+        confidence = 0.0
+        for field, weight in weights.items():
+            if data.get(field) is not None and data[field] != '':
+                confidence += weight
+        
+        return round(confidence, 2)

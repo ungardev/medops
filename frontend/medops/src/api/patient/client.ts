@@ -29,8 +29,8 @@ export interface Doctor {
   email: string;
   phone: string;
   services?: DoctorService[];
-  bio?: string;        // <--- AGREGADO: Biografía corta del doctor
-  photo_url?: string;  // <--- AGREGADO: URL de foto de perfil
+  bio?: string;
+  photo_url?: string;
 }
 export interface ServiceCategory {
   id: number;
@@ -43,9 +43,9 @@ export interface DoctorService {
   code: string;
   name: string;
   description?: string;
-  doctor: number; // ID del doctor
-  doctor_name: string; // Nombre del doctor (requerido)
-  institution: number; // ID de la institución
+  doctor: number;
+  doctor_name: string;
+  institution: number;
   institution_name?: string;
   category: number;
   category_name?: string;
@@ -67,7 +67,6 @@ export interface DoctorSearchResponse {
 export interface ServiceCatalogResponse {
   count: number;
   results: DoctorService[];
-  // Mantener compatibilidad con estructura antigua
   services?: DoctorService[];
   specialties?: string[];
   total_services?: number;
@@ -106,7 +105,7 @@ export interface ServiceCatalogItem {
   last_used?: string;
 }
 export interface ServiceCatalogResponseLegacy {
-  services: DoctorService[]; // ✅ Cambiar de ServiceCatalogItem[] a DoctorService[]
+  services: DoctorService[];
   specialties: string[];
   total_services: number;
 }
@@ -129,10 +128,9 @@ export interface RecommendedService {
 }
 export interface ServicesRecommendedResponse {
   recommended_doctors: RecommendedDoctor[];
-  recommended_services: RecommendedService[];  // ✅ NUEVO
+  recommended_services: RecommendedService[];
   based_on: string;
 }
-// Interfaces para búsqueda (compatibilidad)
 export interface DoctorSearchResult {
   id: number;
   full_name: string;
@@ -143,7 +141,7 @@ export interface DoctorSearchResult {
   is_verified: boolean;
 }
 // ============================================
-// NUEVO: INTERFACES PARA BÚSQUEDA DE SERVICIOS (ACTUALIZADA)
+// INTERFACES PARA BÚSQUEDA DE SERVICIOS
 // ============================================
 export interface ServiceSearchResult {
   id: number;
@@ -159,7 +157,6 @@ export interface ServiceSearchResult {
   duration_minutes: number;
   times_used?: number;
   is_active?: boolean;
-  // Otros campos opcionales según necesidad
   category?: number;
   category_name?: string;
   institution?: number;
@@ -169,14 +166,14 @@ export interface ServiceSearchResponse {
   results: ServiceSearchResult[];
 }
 // ============================================
-// NUEVO: INTERFACES PARA COMPRAS DIRECTAS (CORREGIDO)
+// INTERFACES PARA COMPRAS DIRECTAS
 // ============================================
 export interface PurchaseServiceRequest {
-  patient_id: number;      // CORREGIDO: snake_case
-  doctor_service_id: number; // CORREGIDO: snake_case y nombre específico
-  institution_id: number;   // NUEVO: ID de la institución
-  tentative_date: string;   // NUEVO: Fecha tentativa (YYYY-MM-DD)
-  tentative_time: string;   // NUEVO: Hora tentativa (HH:MM)
+  patient_id: number;
+  doctor_service_id: number;
+  institution_id: number;
+  tentative_date: string;
+  tentative_time: string;
   qty: number;
 }
 export interface PurchaseServiceResponse {
@@ -188,10 +185,9 @@ export interface PurchaseServiceResponse {
   balance_due: number;
   status: string;
   issued_at?: string;
-  // Campos adicionales según la estructura real del backend
 }
 // ============================================
-// NUEVO: INTERFAZ PARA DISPONIBILIDAD
+// INTERFAZ PARA DISPONIBILIDAD
 // ============================================
 export interface AvailabilitySlot {
   start: string;
@@ -241,7 +237,7 @@ export const patientAuth = {
     patientApi.post('/patient-auth/logout/'),
 };
 // ============================================
-// PATIENT CLIENT ENDPOINTS (EXISTENTES)
+// PATIENT CLIENT ENDPOINTS
 // ============================================
 export const patientClient = {
   // Dashboard y Perfil
@@ -300,6 +296,18 @@ export const patientClient = {
     );
   },
   
+  // === OCR DE COMPROBANTE DE PAGO ===
+  processOCR: async (image: File) => {
+    const formData = new FormData();
+    formData.append('image', image);
+    
+    return patientApi.post(
+      '/payments/ocr/',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+  },
+  
   // === SERVICIOS (Historial y Catálogo) ===
   getServicesHistory: () =>
     patientApi.get<ServiceHistoryResponse>('/patient/services/history/'),
@@ -320,6 +328,7 @@ export const patientClient = {
     patientApi.get<ServiceSearchResponse>(
       `/patient-search/services/?q=${encodeURIComponent(query)}`
     ),
+  
   // === DISPONIBILIDAD DE SERVICIOS ===
   getAvailability: (serviceId: number, institutionId: number, date: string) =>
     patientApi.get<ServiceAvailabilityResponse>(
@@ -327,21 +336,18 @@ export const patientClient = {
     ),
 };
 // ============================================
-// NUEVOS CLIENTES PARA FASE 2 (DOCTORES Y SERVICIOS)
+// CLIENTES PARA DOCTORES Y SERVICIOS
 // ============================================
 export const doctorClient = {
-  // Obtener directorio de doctores (listado)
   getDoctors: (params?: { specialty?: number; institution?: number }) => {
     const queryString = params 
       ? '?' + new URLSearchParams(params as any).toString()
       : '';
     return patientApi.get<DoctorSearchResponse>(`/patient/doctors/${queryString}`);
   },
-  // Obtener perfil de un doctor específico
   getDoctorProfile: (doctorId: number) => {
     return patientApi.get<Doctor>(`/patient/doctor-profile/${doctorId}/`);
   },
-  // Obtener servicios de un doctor específico
   getDoctorServices: (doctorId: number) => {
     return patientApi.get<DoctorService[]>(
       `/patient/doctor-profile/${doctorId}/services/`
@@ -349,24 +355,21 @@ export const doctorClient = {
   },
 };
 export const serviceClient = {
-  // Obtener catálogo global de servicios (con info del doctor)
   getServices: (params?: { category?: number; doctor?: number }) => {
     const queryString = params 
       ? '?' + new URLSearchParams(params as any).toString()
       : '';
     return patientApi.get<ServiceCatalogResponse>(`/patient/services/${queryString}`);
   },
-  // Obtener categorías de servicios
   getCategories: () => {
     return patientApi.get<ServiceCategory[]>('/patient/service-categories/');
   },
 };
 // ============================================
-// NUEVO: CLIENTE PARA OPERACIONES DE COBRO DIRECTO (CORREGIDO)
+// CLIENTE PARA OPERACIONES DE COBRO DIRECTO
 // ============================================
 export const chargeClient = {
   purchaseServiceDirect: (data: PurchaseServiceRequest) => {
-    // Envía los datos en snake_case como espera el backend
     return patientApi.post<PurchaseServiceResponse>('/charges/purchase-service/', data);
   }
 };
