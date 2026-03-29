@@ -1,13 +1,13 @@
 // src/pages/Services/ServiceCatalogPage.tsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PageHeader from "@/components/Common/PageHeader";
 import { useServiceCategories, useCreateServiceCategory, useUpdateServiceCategory, useDeleteServiceCategory } from "@/hooks/services/useServiceCategories";
 import { useDoctorServices, useCreateDoctorService, useUpdateDoctorService, useDeleteDoctorService } from "@/hooks/services/useDoctorServices";
 import type { ServiceCategory, DoctorService, ServiceCategoryInput, DoctorServiceInput } from "@/types/services";
 import { useNotify } from "@/hooks/useNotify";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
-import { useInstitutions } from "@/hooks/settings/useInstitutions"; // NUEVO: Importar hook de instituciones
+import { useInstitutions } from "@/hooks/settings/useInstitutions";
 import {
   PlusIcon,
   PencilSquareIcon,
@@ -25,12 +25,10 @@ export default function ServiceCatalogPage() {
   const { data: doctorConfig, isLoading: loadingDoctor } = useDoctorConfig();
   const doctorId = doctorConfig?.id ?? null;
   
-  // NUEVO: Hook de instituciones
   const { institutions, activeInstitution } = useInstitutions();
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   
-  // Hooks actualizados
   const { data: categories = [], isLoading: loadingCategories } = useServiceCategories();
   const { data: services = [], isLoading: loadingServices } = useDoctorServices(activeCategory, searchQuery);
   
@@ -42,24 +40,21 @@ export default function ServiceCatalogPage() {
   const updateService = useUpdateDoctorService();
   const deleteService = useDeleteDoctorService();
   
-  // Modal states
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<ServiceCategory | null>(null);
   const [editingService, setEditingService] = useState<DoctorService | null>(null);
   
-  // Form states
   const [categoryForm, setCategoryForm] = useState<ServiceCategoryInput>({
     name: "",
     description: "",
     is_active: true,
   });
   
-  // Inicializar serviceForm con institución activa
   const [serviceForm, setServiceForm] = useState<DoctorServiceInput>({
     doctor: doctorId,
     category: null,
-    institution: activeInstitution?.id || null, // ASIGNAR INSTITUCIÓN ACTIVA
+    institution: activeInstitution?.id || null,
     code: "",
     name: "",
     description: "",
@@ -74,7 +69,6 @@ export default function ServiceCatalogPage() {
       setServiceForm(prev => ({ ...prev, doctor: doctorId }));
     }
   }, [doctorId]);
-  // Actualizar serviceForm si activeInstitution cambia
   useEffect(() => {
     if (activeInstitution?.id) {
       setServiceForm(prev => ({ ...prev, institution: activeInstitution.id }));
@@ -131,7 +125,7 @@ export default function ServiceCatalogPage() {
       setServiceForm({
         doctor: doctorId,
         category: activeCategory,
-        institution: activeInstitution?.id || null, // Usar institución activa
+        institution: activeInstitution?.id || null,
         code: "",
         name: "",
         description: "",
@@ -193,16 +187,18 @@ export default function ServiceCatalogPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleOpenServiceModal()}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-[9px] font-black uppercase tracking-widest transition-all"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-500/20 transition-all"
             >
-              <PlusIcon className="w-4 h-4" /> Nuevo_Servicio
+              <PlusIcon className="w-4 h-4" />
+              Nuevo Servicio
             </button>
-            <button 
-              onClick={() => navigate('/doctor/manage-services')}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase tracking-widest transition-all"
+            <Link
+              to="/doctor/manage-services"
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-amber-500/20 transition-all"
             >
-              <EyeIcon className="w-4 h-4" /> Gestionar_Solicitudes
-            </button>
+              <EyeIcon className="w-4 h-4" />
+              Gestionar Solicitudes
+            </Link>
           </div>
         }
       />
@@ -256,7 +252,7 @@ export default function ServiceCatalogPage() {
           </p>
           <button
             onClick={() => handleOpenServiceModal()}
-            className="mt-4 px-4 py-2 bg-emerald-600/20 text-emerald-400 text-[9px] font-black uppercase tracking-widest border border-emerald-500/30 hover:bg-emerald-600/30 transition-all"
+            className="mt-4 px-4 py-2 bg-emerald-500/10 text-emerald-400 text-[9px] font-black uppercase tracking-widest border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
           >
             Agregar Primer Servicio
           </button>
@@ -280,7 +276,6 @@ export default function ServiceCatalogPage() {
                     </span>
                   )}
                 </div>
-                {/* Botones de acción: Detener propagación para no navegar */}
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
                     onClick={(e) => { e.stopPropagation(); handleOpenServiceModal(service); }}
@@ -331,8 +326,8 @@ export default function ServiceCatalogPage() {
       
       {/* MODAL CATEGORÍA */}
       {showCategoryModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md my-auto">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h3 className="text-[11px] font-black uppercase tracking-widest text-white">
                 {editingCategory ? "Editar_Categoría" : "Nueva_Categoría"}
@@ -391,8 +386,8 @@ export default function ServiceCatalogPage() {
       
       {/* MODAL SERVICIO */}
       {showServiceModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between p-4 border-b border-white/10 sticky top-0 bg-[#0a0a0b]">
               <h3 className="text-[11px] font-black uppercase tracking-widest text-white">
                 {editingService ? "Editar_Servicio" : "Nuevo_Servicio"}
@@ -427,7 +422,6 @@ export default function ServiceCatalogPage() {
                 </div>
               </div>
               
-              {/* NUEVO: Selector de Institución */}
               <div>
                 <label className="text-[8px] font-black uppercase tracking-widest text-white/40 block mb-1">Institución</label>
                 <select
