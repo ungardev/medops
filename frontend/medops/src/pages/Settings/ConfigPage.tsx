@@ -7,6 +7,7 @@ import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import EditInstitutionModal from "@/components/Settings/EditInstitutionModal";
 import DoctorBankConfig from "@/components/Settings/DoctorBankConfig";
+import DoctorWhatsAppConfig from "@/components/Settings/DoctorWhatsAppConfig";
 import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
 import { api } from "@/lib/apiClient";
 import type { Specialty } from "@/types/config";
@@ -14,19 +15,10 @@ import {
   FingerPrintIcon,
   ShieldCheckIcon,
   EyeIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
   BuildingOfficeIcon,
   PencilSquareIcon,
   KeyIcon
 } from "@heroicons/react/24/outline";
-type WhatsAppForm = {
-  whatsappEnabled: boolean;
-  whatsappBusinessNumber: string;
-  whatsappBusinessId: string;
-  whatsappAccessToken: string;
-  reminderHoursBefore: number;
-};
 export default function ConfigPage() {
   const navigate = useNavigate();
   
@@ -46,7 +38,6 @@ export default function ConfigPage() {
   const [editingInstitution, setEditingInstitution] = useState<any>(null);
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   
   const [doctorForm, setDoctorForm] = useState({
     full_name: "",
@@ -56,17 +47,20 @@ export default function ConfigPage() {
     email: "",
     phone: "",
     bio: "",
-    photo_url: "",
-    specialties: [] as Specialty[],
     signature: null as File | null,
+    photo: null as File | null,
+    specialties: [] as Specialty[],
   });
   
-  const [whatsAppForm, setWhatsAppForm] = useState<WhatsAppForm>({
-    whatsappEnabled: false,
-    whatsappBusinessNumber: '',
-    whatsappBusinessId: '',
-    whatsappAccessToken: '',
-    reminderHoursBefore: 24,
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  
+  const [whatsAppConfig, setWhatsAppConfig] = useState({
+    whatsapp_enabled: false,
+    whatsapp_business_number: '',
+    whatsapp_business_id: '',
+    whatsapp_access_token: '',
+    reminder_hours_before: 24,
   });
   
   const bankData = {
@@ -76,6 +70,7 @@ export default function ConfigPage() {
     bank_account: (doc as any)?.bank_account || "",
   };
   
+  // ✅ Inicializar formulario desde doc
   useEffect(() => {
     if (!doc || specialties.length === 0 || initialized) return;
     
@@ -90,36 +85,103 @@ export default function ConfigPage() {
       email: doc.email || "",
       phone: doc.phone || "",
       bio: doc.bio || "",
-      photo_url: doc.photo_url || "",
-      specialties: matched,
       signature: null,
+      photo: null,
+      specialties: matched,
     });
     
+    // ✅ CORREGIDO: Manejar signature que puede ser string o File
+    if (doc.signature && typeof doc.signature === 'string') {
+      const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+      const sigUrl = doc.signature.startsWith('http') ? doc.signature : `${baseUrl}${doc.signature.startsWith('/') ? '' : '/'}${doc.signature}`;
+      setSignaturePreview(sigUrl);
+    }
+    
+    // ✅ CORREGIDO: Manejar photo que puede ser string o File
+    const docPhoto = (doc as any).photo;
+    if (docPhoto && typeof docPhoto === 'string') {
+      const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+      const photoUrl = docPhoto.startsWith('http') ? docPhoto : `${baseUrl}${docPhoto.startsWith('/') ? '' : '/'}${docPhoto}`;
+      setPhotoPreview(photoUrl);
+    }
+    
     if (doc.whatsapp_enabled !== undefined) {
-      setWhatsAppForm({
-        whatsappEnabled: doc.whatsapp_enabled || false,
-        whatsappBusinessNumber: doc.whatsapp_business_number || '',
-        whatsappBusinessId: doc.whatsapp_business_id || '',
-        whatsappAccessToken: doc.whatsapp_access_token || '',
-        reminderHoursBefore: doc.reminder_hours_before || 24,
+      setWhatsAppConfig({
+        whatsapp_enabled: doc.whatsapp_enabled || false,
+        whatsapp_business_number: doc.whatsapp_business_number || '',
+        whatsapp_business_id: doc.whatsapp_business_id || '',
+        whatsapp_access_token: doc.whatsapp_access_token || '',
+        reminder_hours_before: doc.reminder_hours_before || 24,
       });
     }
     
     setInitialized(true);
   }, [doc, specialties, initialized]);
   
-  const handleSaveBankData = async (bankData: { bank_name: string; bank_rif: string; bank_phone: string; bank_account: string }) => {
+  const handleSaveBankData = async (bankData: any) => {
     await updateDoctor(bankData as any);
   };
   
+  const handleSaveWhatsApp = async (whatsAppData: any) => {
+    await updateDoctor(whatsAppData as any);
+  };
+  
   const handleSaveDoctor = async () => {
-    const payload = { 
-      ...doctorForm, 
-      specialty_ids: doctorForm.specialties.map(s => s.id),
-      ...whatsAppForm
-    };
-    await updateDoctor(payload);
+    const formData = new FormData();
+    
+    formData.append('full_name', doctorForm.full_name);
+    formData.append('gender', doctorForm.gender);
+    formData.append('colegiado_id', doctorForm.colegiado_id);
+    formData.append('license', doctorForm.license);
+    formData.append('email', doctorForm.email || '');
+    formData.append('phone', doctorForm.phone || '');
+    formData.append('bio', doctorForm.bio || '');
+    
+    doctorForm.specialties.forEach(s => {
+      formData.append('specialty_ids', String(s.id));
+    });
+    
+    if (doctorForm.signature instanceof File) {
+      formData.append('signature', doctorForm.signature);
+    }
+    if (doctorForm.photo instanceof File) {
+      formData.append('photo', doctorForm.photo);
+    }
+    
+    formData.append('whatsapp_enabled', String(whatsAppConfig.whatsapp_enabled));
+    formData.append('whatsapp_business_number', whatsAppConfig.whatsapp_business_number);
+    formData.append('whatsapp_business_id', whatsAppConfig.whatsapp_business_id);
+    formData.append('whatsapp_access_token', whatsAppConfig.whatsapp_access_token);
+    formData.append('reminder_hours_before', String(whatsAppConfig.reminder_hours_before));
+    
+    await updateDoctor(formData as any);
     setShowDoctorModal(false);
+  };
+  
+  const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      setDoctorForm({ ...doctorForm, signature: file });
+      setSignaturePreview(URL.createObjectURL(file));
+    }
+  };
+  
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      const file = e.target.files[0];
+      setDoctorForm({ ...doctorForm, photo: file });
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+  
+  const handleRemoveSignature = () => {
+    setDoctorForm({ ...doctorForm, signature: null });
+    setSignaturePreview(null);
+  };
+  
+  const handleRemovePhoto = () => {
+    setDoctorForm({ ...doctorForm, photo: null });
+    setPhotoPreview(null);
   };
   
   const handleCreateInstitution = () => {
@@ -163,7 +225,6 @@ export default function ConfigPage() {
           </div>
           
           <div className="bg-[#080808] border border-white/10 p-8 rounded-sm shadow-2xl relative overflow-hidden">
-            {/* ✅ NUEVO: Icono de lápiz en la esquina superior derecha */}
             <div className="absolute top-4 right-4">
               <button 
                 onClick={() => setShowDoctorModal(true)}
@@ -197,9 +258,7 @@ export default function ConfigPage() {
               
               <div className="pt-4 border-t border-white/5">
                 <button 
-                  onClick={() => {
-                    if (doc?.id) navigate(`/doctor-profile/${doc.id}`);
-                  }}
+                  onClick={() => { if (doc?.id) navigate(`/doctor-profile/${doc.id}`); }}
                   disabled={!doc?.id}
                   className={`w-full flex items-center justify-center gap-3 py-4 border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/50 hover:text-emerald-500 transition-all rounded-sm ${!doc?.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
@@ -208,7 +267,6 @@ export default function ConfigPage() {
                 </button>
               </div>
               
-              {/* Especialidades */}
               <div className="space-y-4 border-y border-white/5 py-6">
                 <div className="flex justify-between items-start text-[10px] uppercase">
                   <span className="text-white/30 font-bold tracking-widest font-mono">Deploy_Specialties:</span>
@@ -222,13 +280,21 @@ export default function ConfigPage() {
                 </div>
               </div>
               
-              {/* Componente de datos bancarios */}
               <DoctorBankConfig 
                 bankName={bankData.bank_name}
                 bankRif={bankData.bank_rif}
                 bankPhone={bankData.bank_phone}
                 bankAccount={bankData.bank_account}
                 onUpdate={handleSaveBankData}
+              />
+              
+              <DoctorWhatsAppConfig
+                whatsappEnabled={whatsAppConfig.whatsapp_enabled}
+                whatsappBusinessNumber={whatsAppConfig.whatsapp_business_number}
+                whatsappBusinessId={whatsAppConfig.whatsapp_business_id}
+                whatsappAccessToken={whatsAppConfig.whatsapp_access_token}
+                reminderHoursBefore={whatsAppConfig.reminder_hours_before}
+                onUpdate={handleSaveWhatsApp}
               />
             </div>
           </div>
@@ -294,6 +360,7 @@ export default function ConfigPage() {
               <button onClick={() => setShowDoctorModal(false)} className="text-white/50 hover:text-white">X</button>
             </div>
             <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="p-6 space-y-6">
+              
               <div className="grid grid-cols-4 gap-4">
                 <div className="col-span-1">
                   <label className={labelStyles}>Title</label>
@@ -338,15 +405,53 @@ export default function ConfigPage() {
                     rows={3}
                   />
                 </div>
+                
                 <div>
-                  <label className={labelStyles}>Profile_Photo_URL</label>
-                  <input 
-                    type="text"
-                    className={inputStyles} 
-                    value={doctorForm.photo_url || ""} 
-                    onChange={(e) => setDoctorForm({...doctorForm, photo_url: e.target.value})}
-                    placeholder="https://ejemplo.com/foto.jpg"
-                  />
+                  <label className={labelStyles}>Profile_Photo</label>
+                  <div className="flex items-center gap-4">
+                    {photoPreview && (
+                      <div className="relative">
+                        <img src={photoPreview} alt="Foto" className="w-16 h-16 rounded-sm object-cover border border-white/10" />
+                        <button
+                          type="button"
+                          onClick={handleRemovePhoto}
+                          className="absolute -top-1 -right-1 bg-red-500/80 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    <label className="cursor-pointer flex-1">
+                      <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                      <div className="w-full bg-black/40 border border-dashed border-white/10 p-4 text-center text-[10px] text-white/40 hover:text-white/60 hover:border-white/20 transition-all rounded-sm">
+                        {photoPreview ? 'Cambiar foto' : 'Subir foto de perfil'}
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className={labelStyles}>Digital_Signature</label>
+                  <div className="flex items-center gap-4">
+                    {signaturePreview && (
+                      <div className="relative">
+                        <img src={signaturePreview} alt="Firma" className="w-32 h-16 object-contain border border-white/10 bg-white/5 rounded-sm" />
+                        <button
+                          type="button"
+                          onClick={handleRemoveSignature}
+                          className="absolute -top-1 -right-1 bg-red-500/80 text-white rounded-full w-4 h-4 flex items-center justify-center text-[8px]"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+                    <label className="cursor-pointer flex-1">
+                      <input type="file" accept="image/*" onChange={handleSignatureUpload} className="hidden" />
+                      <div className="w-full bg-black/40 border border-dashed border-white/10 p-4 text-center text-[10px] text-white/40 hover:text-white/60 hover:border-white/20 transition-all rounded-sm">
+                        {signaturePreview ? 'Cambiar firma' : 'Subir firma digitalizada'}
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
               

@@ -1894,11 +1894,11 @@ class DoctorOperator(models.Model):
         null=True, 
         help_text="Biografía corta del doctor para el perfil público"
     )
-    photo_url = models.CharField(
-        max_length=500, 
+    photo = models.ImageField(
+        upload_to="doctor_photos/", 
         blank=True, 
-        null=True, 
-        help_text="URL de foto de perfil del doctor"
+        null=True,
+        help_text="Foto de perfil del doctor"
     )
     
     
