@@ -5895,6 +5895,10 @@ def patient_charge_order_detail(request, order_id):
             'doctor': {
                 'id': order.doctor.id if order.doctor else None,
                 'name': order.doctor.full_name if order.doctor else None,
+                'bank_name': getattr(order.doctor.payment_config, 'bank_name', None) if order.doctor else None,
+                'bank_rif': getattr(order.doctor.payment_config, 'bank_rif', None) if order.doctor else None,
+                'bank_phone': getattr(order.doctor.payment_config, 'bank_phone', None) if order.doctor else None,
+                'bank_account': getattr(order.doctor.payment_config, 'bank_account', None) if order.doctor else None,
             } if order.doctor else None,
             'appointment': {
                 'id': order.appointment.id,
@@ -6039,17 +6043,22 @@ def patient_register_payment(request, order_id):
                 appointment=order.appointment,
                 charge_order=order,
                 doctor=order.doctor,
-                patient=patient,  # ✅ AHORA FUNCIONARÁ
+                patient=patient,
                 amount=amount_usd,
                 amount_ves=amount_bs,
                 exchange_rate_bcv=bcv_rate,
-                method='transfer',
+                method='pago_movil',
                 status='pending',
                 reference_number=reference,
                 bank_reference=bank_code,
-                verification_notes=f"Pago Movil: Tel {phone}, Cedula {national_id}",
+                verification_notes=f"Pago Movil registrado por {patient.full_name}",
                 verification_type=verification_type,
-                screenshot=screenshot_file,  # ← NUEVO: Guardar captura del paciente
+                screenshot=screenshot_file,
+                # ✅ NUEVO: Datos estructurados del emisor
+                sender_phone=phone,
+                sender_national_id=national_id,
+                sender_bank_code=bank_code,
+                ocr_data=request.data.get('ocr_data'),
             )
             
             # Actualizar método de pago del paciente

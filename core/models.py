@@ -1204,6 +1204,33 @@ class Payment(models.Model):
         verbose_name="Captura de pago"
     )
     
+    sender_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Teléfono del emisor"
+    )
+    
+    sender_national_id = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        verbose_name="Cédula del emisor"
+    )
+    
+    sender_bank_code = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        verbose_name="Código banco del emisor"
+    )
+    
+    ocr_data = models.JSONField(
+        blank=True,
+        null=True,
+        verbose_name="Datos extraídos por OCR"
+    )
+    
     patient = models.ForeignKey(
         'Patient',
         on_delete=models.CASCADE,
