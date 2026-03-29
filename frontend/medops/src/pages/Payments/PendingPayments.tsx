@@ -137,7 +137,7 @@ export default function PendingPayments() {
                     {payment.reference_number}
                   </td>
                   <td className="p-4">
-                    {(payment as any).screenshot ? (
+                    {(payment as any)?.screenshot ? (
                       <button 
                         onClick={() => openImageModal((payment as any).screenshot)}
                         className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-[10px]"
@@ -204,7 +204,7 @@ export default function PendingPayments() {
           </p>
           
           {/* Mostrar captura si existe */}
-          {(selectedPayment as any).screenshot && (
+          {(selectedPayment as any)?.screenshot && (
             <div className="mb-4">
               <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
               <img 
@@ -261,7 +261,7 @@ export default function PendingPayments() {
           </p>
           
           {/* Mostrar captura si existe */}
-          {(selectedPayment as any).screenshot && (
+          {(selectedPayment as any)?.screenshot && (
             <div className="mb-4">
               <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
               <img 
