@@ -4,34 +4,27 @@ import PageHeader from "@/components/Common/PageHeader";
 import { useAppointmentsPending } from "@/hooks/appointments/useAppointmentsPending";
 import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
 import SimpleCalendar from "@/components/Common/SimpleCalendar";
-import { Loader2, CheckCircleIcon, XCircleIcon, CalendarIcon, UserIcon } from "lucide-react";
+import { Loader2, CheckCircleIcon, XCircleIcon, CalendarIcon, UserIcon, CreditCardIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 export default function ManageServicesPage() {
-  // 1. Obtener citas pendientes
   const { data: appointments, isLoading, error } = useAppointmentsPending();
-  
-  // 2. Hook para actualizar estado
   const updateStatus = useUpdateAppointmentStatus();
   
-  // 3. Estado para modal
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [confirmDate, setConfirmDate] = useState<Date | null>(null);
   const [confirmTime, setConfirmTime] = useState<string>("");
-  // 4. Manejar confirmación
   const handleConfirm = async () => {
     if (!selectedAppointment || !confirmDate) return;
     
     try {
-      // Formatear fecha a YYYY-MM-DD
       const dateStr = confirmDate.toISOString().split('T')[0];
       
       await updateStatus.mutateAsync({
         id: selectedAppointment.id,
         status: "arrived",
         appointment_date: dateStr,
-        // Asumiendo que la API acepta estos campos
       });
       
-      // Cerrar modal y limpiar
       setSelectedAppointment(null);
       setConfirmDate(null);
       setConfirmTime("");
@@ -48,6 +41,17 @@ export default function ManageServicesPage() {
           { label: "Gestionar Servicios", active: true }
         ]}
       />
+      
+      {/* ✅ NUEVO: Botón para verificación de pagos pendientes */}
+      <div className="flex justify-end">
+        <Link
+          to="/payments/pending"
+          className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-amber-500/20 transition-all"
+        >
+          <CreditCardIcon className="w-4 h-4" />
+          Verificar Pagos Pendientes
+        </Link>
+      </div>
       {/* Tabla de Solicitudes Pendientes */}
       <div className="bg-black/30 border border-white/10 rounded-sm overflow-hidden">
         <div className="p-4 border-b border-white/10 flex justify-between items-center">
@@ -101,9 +105,8 @@ export default function ManageServicesPage() {
       </div>
       {/* Modal de Confirmación */}
       {selectedAppointment && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg rounded-sm shadow-2xl">
-            {/* Header */}
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg rounded-sm shadow-2xl my-auto">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h3 className="text-white font-bold">Confirmar Servicio #{selectedAppointment.id}</h3>
               <button 
@@ -113,7 +116,6 @@ export default function ManageServicesPage() {
                 <XCircleIcon className="w-6 h-6" />
               </button>
             </div>
-            {/* Contenido */}
             <div className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -131,22 +133,20 @@ export default function ManageServicesPage() {
                   <SimpleCalendar
                     selectedDate={confirmDate}
                     onDateSelect={setConfirmDate}
-                    serviceSchedules={[]} // Opcional: Podrías pasar horarios específicos aquí
+                    serviceSchedules={[]}
                   />
                 </div>
               </div>
-              {/* Opcional: Selector de hora si es necesario */}
               <div>
-                 <p className="text-white/50 text-xs mb-2">Hora (Opcional)</p>
-                 <input 
-                   type="time" 
-                   value={confirmTime}
-                   onChange={(e) => setConfirmTime(e.target.value)}
-                   className="w-full bg-black/40 border border-white/10 p-2 text-white rounded"
-                 />
+                <p className="text-white/50 text-xs mb-2">Hora (Opcional)</p>
+                <input 
+                  type="time" 
+                  value={confirmTime}
+                  onChange={(e) => setConfirmTime(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 p-2 text-white rounded"
+                />
               </div>
             </div>
-            {/* Footer */}
             <div className="flex gap-2 p-4 border-t border-white/10 bg-black/20">
               <button
                 onClick={() => setSelectedAppointment(null)}

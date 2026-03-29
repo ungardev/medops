@@ -31,8 +31,12 @@ type DoctorForm = {
   email: string;
   phone: string;
   signature?: string | File | null;
-  bio?: string;        
-  photo_url?: string;  
+  bio?: string;
+  photo_url?: string;
+  bank_name?: string;
+  bank_rif?: string;
+  bank_phone?: string;
+  bank_account?: string;
 };
 type WhatsAppForm = {
   whatsappEnabled: boolean;
@@ -63,13 +67,16 @@ export default function ConfigPage() {
   const [initialized, setInitialized] = useState(false);
   const [signaturePreview, setSignaturePreview] = useState<string | File | null>(null);
   
-  // ✅ NUEVO: Estado para WhatsApp colapsado
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   
   const [docForm, setDocForm] = useState<DoctorForm>({
     full_name: "", gender: "M", colegiado_id: "", specialties: [], license: "", email: "", phone: "", signature: null,
-    bio: "",         
-    photo_url: "",   
+    bio: "",
+    photo_url: "",
+    bank_name: "",
+    bank_rif: "",
+    bank_phone: "",
+    bank_account: "",
   });
   
   const [whatsAppForm, setWhatsAppForm] = useState<WhatsAppForm>({
@@ -96,8 +103,12 @@ export default function ConfigPage() {
       email: doc.email || "",
       phone: doc.phone || "",
       signature: doc.signature || null,
-      bio: doc.bio || "",         
-      photo_url: doc.photo_url || "",   
+      bio: doc.bio || "",
+      photo_url: doc.photo_url || "",
+      bank_name: (doc as any).bank_name || "",
+      bank_rif: (doc as any).bank_rif || "",
+      bank_phone: (doc as any).bank_phone || "",
+      bank_account: (doc as any).bank_account || "",
     });
     
     if (doc.whatsapp_enabled !== undefined) {
@@ -175,7 +186,6 @@ export default function ConfigPage() {
     setEditingDoctor(false);
   };
   
-  // Estilos oscuros (Tema MEDOPZ)
   const labelStyles = `text-[9px] font-black uppercase tracking-[0.25em] text-white/30 mb-2 block`;
   const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-emerald-500/50 transition-all`;
   
@@ -187,7 +197,6 @@ export default function ConfigPage() {
           { label: "MEDOPZ", path: "/" },
           { label: "CONFIGURATION", active: true }
         ]}
-        // ✅ ELIMINADO: Icono de terminal del header
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-start">
@@ -201,7 +210,6 @@ export default function ConfigPage() {
           <div className="bg-[#080808] border border-white/10 p-8 rounded-sm shadow-2xl relative overflow-hidden">
             {!editingDoctor ? (
               <div className="space-y-8">
-                {/* Información Básica */}
                 <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-emerald-500/[0.03] border border-emerald-500/20 flex items-center justify-center rounded-sm">
                     <FingerPrintIcon className="w-8 h-8 text-emerald-500/30" />
@@ -219,7 +227,7 @@ export default function ConfigPage() {
                     )}
                   </div>
                 </div>
-                {/* Botón "Ver Perfil Público" - CORREGIDO: Verificación de doc.id */}
+                
                 <div className="pt-4 border-t border-white/5">
                   <button 
                     onClick={() => {
@@ -240,7 +248,6 @@ export default function ConfigPage() {
                   </p>
                 </div>
                 
-                {/* Especialidades */}
                 <div className="space-y-4 border-y border-white/5 py-6">
                   <div className="flex justify-between items-start text-[10px] uppercase">
                     <span className="text-white/30 font-bold tracking-widest font-mono">Deploy_Specialties:</span>
@@ -253,7 +260,39 @@ export default function ConfigPage() {
                     </div>
                   </div>
                 </div>
-                {/* WhatsApp (Colapsable) */}
+                {/* ✅ NUEVO: Datos bancarios en modo vista */}
+                {(docForm.bank_name || docForm.bank_rif || docForm.bank_phone) && (
+                  <div className="space-y-3 border-y border-white/5 py-6">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/30 font-mono">Payment_Config:</p>
+                    <div className="grid grid-cols-2 gap-3 text-[10px]">
+                      {docForm.bank_name && (
+                        <div>
+                          <span className="text-white/30">Banco:</span>
+                          <span className="text-white/80 font-bold ml-2">{docForm.bank_name}</span>
+                        </div>
+                      )}
+                      {docForm.bank_rif && (
+                        <div>
+                          <span className="text-white/30">Cédula:</span>
+                          <span className="text-white/80 font-bold font-mono ml-2">{docForm.bank_rif}</span>
+                        </div>
+                      )}
+                      {docForm.bank_phone && (
+                        <div>
+                          <span className="text-white/30">Teléfono:</span>
+                          <span className="text-white/80 font-bold font-mono ml-2">{docForm.bank_phone}</span>
+                        </div>
+                      )}
+                      {docForm.bank_account && (
+                        <div>
+                          <span className="text-white/30">Cuenta:</span>
+                          <span className="text-white/80 font-bold font-mono ml-2">{docForm.bank_account}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 <div className="border border-white/10 rounded-sm overflow-hidden">
                   <button 
                     onClick={() => setIsWhatsAppOpen(!isWhatsAppOpen)}
@@ -315,7 +354,6 @@ export default function ConfigPage() {
                     </div>
                   )}
                 </div>
-                {/* Botón Editar */}
                 <button 
                   onClick={() => setEditingDoctor(true)} 
                   className="w-full flex items-center justify-center gap-3 py-4 border border-emerald-500/10 bg-emerald-500/[0.02] hover:bg-emerald-500/[0.06] text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/50 hover:text-emerald-500 transition-all rounded-sm"
@@ -324,7 +362,6 @@ export default function ConfigPage() {
                 </button>
               </div>
             ) : (
-              /* FORMULARIO DE EDICIÓN */
               <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="space-y-6">
                  <div className="grid grid-cols-4 gap-4">
                     <div className="col-span-1">
@@ -385,7 +422,60 @@ export default function ConfigPage() {
                     <input type="file" onChange={handleSignatureUpload} className="w-full text-[10px] text-white/20 file:bg-white/10 file:border-none file:text-white/60 file:px-4 file:py-2 file:text-[9px] file:font-black file:uppercase file:rounded-sm file:mr-4 file:hover:bg-white file:hover:text-black transition-all" />
                   </div>
                   
-                  {/* WhatsApp Section (En formulario de edición) */}
+                  {/* ✅ NUEVO: Sección de Datos Bancarios */}
+                  <div className="pt-6 border-t border-white/10">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-4 flex items-center gap-2">
+                      <BuildingOfficeIcon className="w-4 h-4" />
+                      Datos Bancarios (Para recibir pagos)
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelStyles}>Banco</label>
+                        <select
+                          className={inputStyles}
+                          value={docForm.bank_name || ""}
+                          onChange={(e) => setDocForm({...docForm, bank_name: e.target.value})}
+                        >
+                          <option value="">Seleccionar banco</option>
+                          <option value="Banco Mercantil">Banco Mercantil</option>
+                          <option value="Banesco">Banesco</option>
+                          <option value="Banco de Venezuela">Banco de Venezuela</option>
+                          <option value="BBVA Provincial">BBVA Provincial</option>
+                          <option value="Bancamiga">Bancamiga</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className={labelStyles}>Cédula/RIF</label>
+                        <input
+                          className={inputStyles}
+                          value={docForm.bank_rif || ""}
+                          onChange={(e) => setDocForm({...docForm, bank_rif: e.target.value})}
+                          placeholder="V-12345678"
+                        />
+                      </div>
+                      <div>
+                        <label className={labelStyles}>Teléfono Pago Móvil</label>
+                        <input
+                          className={inputStyles}
+                          value={docForm.bank_phone || ""}
+                          onChange={(e) => setDocForm({...docForm, bank_phone: e.target.value})}
+                          placeholder="04121234567"
+                        />
+                      </div>
+                      <div>
+                        <label className={labelStyles}>Número de Cuenta</label>
+                        <input
+                          className={inputStyles}
+                          value={docForm.bank_account || ""}
+                          onChange={(e) => setDocForm({...docForm, bank_account: e.target.value})}
+                          placeholder="0105-XXXX-XXXX-XXXX"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* WhatsApp Section */}
                   <div className="pt-6 border-t border-white/10">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40 mb-4 flex items-center gap-2">
                       <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2325D366'%3E%3Cpath d='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z'/%3E%3C/svg%3E" className="w-4 h-4" alt="WhatsApp" />
@@ -464,6 +554,7 @@ export default function ConfigPage() {
             )}
           </div>
         </section>
+        
         {/* SECCIÓN 2: INSTITUCIONES */}
         <section className="space-y-4">
           <div className="flex items-center justify-between px-1 border-l-2 border-emerald-500/50 ml-1">
@@ -488,7 +579,6 @@ export default function ConfigPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {/* Institución Activa */}
                 {activeInstitution && (
                   <div className="relative group">
                     <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-500 rounded-sm" />
@@ -508,7 +598,6 @@ export default function ConfigPage() {
                     </div>
                   </div>
                 )}
-                {/* Otras Instituciones */}
                 {institutions.filter(inst => inst.id !== activeInstitution?.id).map((inst) => (
                   <div key={inst.id} className="bg-[#080808] border border-white/10 rounded-sm p-4 group hover:border-white/20 transition-colors">
                      <div className="flex items-center justify-between">

@@ -63,6 +63,9 @@ export default function PatientChargeOrderDetail() {
   
   const hasPendingPayments = order?.payments?.some((p: any) => p.status === 'pending') ?? false;
   
+  // ✅ NUEVO: Obtener datos bancarios del doctor desde el backend
+  const doctorData = order?.doctor as any;
+  
   useEffect(() => {
     if (showModal && paymentMethod) {
       setFormData(prev => ({
@@ -359,6 +362,62 @@ export default function PatientChargeOrderDetail() {
         </div>
         
         <div className="lg:col-span-4 space-y-8">
+          {/* ✅ NUEVO: Sección de datos del receptor para pagar */}
+          {doctorData && order.status !== 'paid' && (
+            <section className="p-6 bg-emerald-500/[0.03] border border-emerald-500/20 space-y-4 rounded-sm">
+              <h3 className="text-[9px] font-black tracking-[0.2em] uppercase text-emerald-400/80">Pagar a</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/50 text-[10px]">Nombre</span>
+                  <span className="text-white text-[11px] font-bold">{doctorData.name}</span>
+                </div>
+                {doctorData.bank_name && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/50 text-[10px]">Banco</span>
+                    <span className="text-white text-[11px] font-bold">{doctorData.bank_name}</span>
+                  </div>
+                )}
+                {doctorData.bank_rif && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/50 text-[10px]">Cédula/RIF</span>
+                    <span className="text-white text-[11px] font-bold font-mono">{doctorData.bank_rif}</span>
+                  </div>
+                )}
+                {doctorData.bank_phone && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/50 text-[10px]">Teléfono</span>
+                    <span className="text-white text-[11px] font-bold font-mono">{doctorData.bank_phone}</span>
+                  </div>
+                )}
+                {doctorData.bank_account && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/50 text-[10px]">Cuenta</span>
+                    <span className="text-white text-[11px] font-bold font-mono">{doctorData.bank_account}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center pt-2 border-t border-emerald-500/20">
+                  <span className="text-white/50 text-[10px]">Monto a pagar</span>
+                  <span className="text-emerald-400 text-[14px] font-bold">Bs {balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  const data = [
+                    `Pagar a: ${doctorData.name}`,
+                    doctorData.bank_name ? `Banco: ${doctorData.bank_name}` : '',
+                    doctorData.bank_rif ? `Cédula: ${doctorData.bank_rif}` : '',
+                    doctorData.bank_phone ? `Teléfono: ${doctorData.bank_phone}` : '',
+                    `Monto: Bs ${balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}`
+                  ].filter(Boolean).join('\n');
+                  navigator.clipboard.writeText(data);
+                }}
+                className="w-full py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-500/20 transition-all"
+              >
+                Copiar Datos para Pagar
+              </button>
+            </section>
+          )}
+          
           {order.status !== 'paid' && order.status !== 'void' && order.status !== 'waived' && (
             <section className="p-6 bg-white/[0.02] border border-white/5 space-y-4 rounded-sm">
               <h3 className="text-[9px] font-black tracking-[0.2em] uppercase text-white/40">Operaciones</h3>
@@ -381,8 +440,8 @@ export default function PatientChargeOrderDetail() {
       </div>
       
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#111] border border-white/10 rounded-sm w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-[#111] border border-white/10 rounded-sm w-full max-w-md max-h-[90vh] overflow-y-auto my-auto">
             <div className="flex items-center justify-between p-4 border-b border-white/5">
               <h3 className="text-[12px] font-black uppercase tracking-wider">Registrar Pago - Orden #{order.id}</h3>
               <button onClick={handleCloseModal} className="text-white/40 hover:text-white">
