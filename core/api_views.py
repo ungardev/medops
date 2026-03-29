@@ -5895,10 +5895,10 @@ def patient_charge_order_detail(request, order_id):
             'doctor': {
                 'id': order.doctor.id if order.doctor else None,
                 'name': order.doctor.full_name if order.doctor else None,
-                'bank_name': getattr(order.doctor.payment_config, 'bank_name', None) if order.doctor else None,
-                'bank_rif': getattr(order.doctor.payment_config, 'bank_rif', None) if order.doctor else None,
-                'bank_phone': getattr(order.doctor.payment_config, 'bank_phone', None) if order.doctor else None,
-                'bank_account': getattr(order.doctor.payment_config, 'bank_account', None) if order.doctor else None,
+                'bank_name': getattr(getattr(order.doctor, 'payment_config', None), 'bank_name', None),
+                'bank_rif': getattr(getattr(order.doctor, 'payment_config', None), 'bank_rif', None),
+                'bank_phone': getattr(getattr(order.doctor, 'payment_config', None), 'bank_phone', None),
+                'bank_account': getattr(getattr(order.doctor, 'payment_config', None), 'bank_account', None),
             } if order.doctor else None,
             'appointment': {
                 'id': order.appointment.id,
