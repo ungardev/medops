@@ -1114,6 +1114,7 @@ def search(request):
 
 # Citas y Sala de Espera
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])  # ← AGREGAR ESTA LÍNEA
 def appointments_pending_api(request):
     """
     Obtiene TODAS las citas pendientes/programadas de la institución.
@@ -1124,8 +1125,11 @@ def appointments_pending_api(request):
         # Institución desde header o perfil del doctor
         institution_id = (
             request.headers.get('X-Institution-ID') or 
-            request.user.doctor_profile.institution_id
+            getattr(request.user.doctor_profile, 'institution_id', None)
         )
+        
+        if not institution_id:
+            return Response({"error": "No se pudo determinar la institución"}, status=400)
         
         # Query: todas las citas no completadas/canceladas
         appointments = Appointment.objects.filter(
