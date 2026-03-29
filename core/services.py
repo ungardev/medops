@@ -2157,14 +2157,13 @@ def update_doctor_config(
     Actualiza la configuración del médico operador.
     Soporta FormData (con signature) o JSON.
     Maneja relaciones M2M (specialties, institutions).
+    Maneja campos bancarios (DoctorPaymentConfig separado).
     """
     # ✅ CORREGIDO: Obtener el doctor por user si existe, o crear uno nuevo
     try:
-        # Intentar obtener el doctor asociado al usuario
         if user and hasattr(user, 'doctor_profile'):
             doctor_obj = user.doctor_profile
         else:
-            # ✅ Si no hay usuario asociado, buscar por colegiado_id o crear nuevo
             colegiado_id = data.get('colegiado_id')
             if colegiado_id:
                 doctor_obj = DoctorOperator.objects.filter(colegiado_id=colegiado_id).first()
@@ -2175,7 +2174,6 @@ def update_doctor_config(
                         gender="M"
                     )
             else:
-                # ✅ Último recurso: obtener el primero o crear
                 doctor_obj = DoctorOperator.objects.first()
                 if not doctor_obj:
                     doctor_obj = DoctorOperator.objects.create(
@@ -2194,14 +2192,12 @@ def update_doctor_config(
     specialty_ids = data.getlist("specialty_ids") if hasattr(data, 'getlist') else data.get("specialty_ids")
     
     if specialty_ids is not None:
-        # Convertir strings a integers
         if isinstance(specialty_ids, list):
             try:
                 ids = [int(sid) for sid in specialty_ids if sid]
             except (ValueError, TypeError):
                 ids = []
         elif isinstance(specialty_ids, str):
-            # Caso: único valor como string
             try:
                 ids = [int(specialty_ids)] if specialty_ids else []
             except ValueError:
@@ -2209,22 +2205,36 @@ def update_doctor_config(
         else:
             ids = []
         
-        # ✅ Solo actualizar si hay IDs válidos
         if ids:
             doctor_obj.specialties.set(ids)
         else:
-            # Para borrar todas las especialidades
             doctor_obj.specialties.clear()
     
-    # Actualización de campos básicos (excluir specialty_ids)
+    # ✅ NUEVO: Manejar campos bancarios (DoctorPaymentConfig)
+    bank_fields = ['bank_name', 'bank_rif', 'bank_phone', 'bank_account']
+    bank_data = {k: v for k, v in data.items() if k in bank_fields}
+    
+    if bank_data:
+        from .models import DoctorPaymentConfig
+        payment_config, created = DoctorPaymentConfig.objects.get_or_create(
+            doctor=doctor_obj,
+            defaults=bank_data
+        )
+        if not created:
+            for key, value in bank_data.items():
+                setattr(payment_config, key, value)
+            payment_config.save()
+    
+    # Actualización de campos básicos del DoctorOperator (excluir bank_* y specialty_ids)
+    excluded_fields = ['specialty_ids', 'bank_name', 'bank_rif', 'bank_phone', 'bank_account']
     for key, value in data.items():
-        if key == "specialty_ids":
-            continue  # ✅ Ya manejado arriba
+        if key in excluded_fields:
+            continue
         if hasattr(doctor_obj, key) and key not in ['specialties', 'institutions']:
             try:
                 setattr(doctor_obj, key, value)
             except Exception:
-                pass  # Ignorar errores en campos protegidos
+                pass
     
     # Procesar archivos (signature)
     if files:
@@ -2239,7 +2249,6 @@ def update_doctor_config(
     try:
         doctor_obj.save()
     except Exception as e:
-        # Loguear el error pero no fallar
         logger.error(f"Error guardando DoctorOperator: {e}")
     
     # Log de auditoría
