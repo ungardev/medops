@@ -7,6 +7,7 @@ import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import { useSpecialtyChoices } from "@/hooks/settings/useSpecialtyChoices";
 import EditInstitutionModal from "@/components/Settings/EditInstitutionModal";
 import DoctorBankConfig from "@/components/Settings/DoctorBankConfig";
+import SpecialtyComboboxElegante from "@/components/Consultation/SpecialtyComboboxElegante";
 import { api } from "@/lib/apiClient";
 import type { Specialty } from "@/types/config";
 import { 
@@ -15,7 +16,9 @@ import {
   EyeIcon,
   ChevronDownIcon,
   ChevronRightIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  PencilSquareIcon,
+  KeyIcon
 } from "@heroicons/react/24/outline";
 type WhatsAppForm = {
   whatsappEnabled: boolean;
@@ -65,7 +68,7 @@ export default function ConfigPage() {
     whatsappAccessToken: '',
     reminderHoursBefore: 24,
   });
-  // ✅ Extraer datos bancarios del doctor
+  
   const bankData = {
     bank_name: (doc as any)?.bank_name || "",
     bank_rif: (doc as any)?.bank_rif || "",
@@ -104,10 +107,11 @@ export default function ConfigPage() {
     
     setInitialized(true);
   }, [doc, specialties, initialized]);
-  // ✅ Handler para guardar datos bancarios
+  
   const handleSaveBankData = async (bankData: { bank_name: string; bank_rif: string; bank_phone: string; bank_account: string }) => {
-    await updateDoctor(bankData as any);  // ✅ FIX: as any para campos que no están en DoctorConfig
+    await updateDoctor(bankData as any);
   };
+  
   const handleSaveDoctor = async () => {
     const payload = { 
       ...doctorForm, 
@@ -159,6 +163,17 @@ export default function ConfigPage() {
           </div>
           
           <div className="bg-[#080808] border border-white/10 p-8 rounded-sm shadow-2xl relative overflow-hidden">
+            {/* ✅ NUEVO: Icono de lápiz en la esquina superior derecha */}
+            <div className="absolute top-4 right-4">
+              <button 
+                onClick={() => setShowDoctorModal(true)}
+                className="p-2 text-white/40 hover:text-emerald-400 transition-colors"
+                title="Editar perfil"
+              >
+                <PencilSquareIcon className="w-4 h-4" />
+              </button>
+            </div>
+            
             <div className="space-y-8">
               <div className="flex items-center gap-6">
                 <div className="w-20 h-20 bg-emerald-500/[0.03] border border-emerald-500/20 flex items-center justify-center rounded-sm">
@@ -207,7 +222,7 @@ export default function ConfigPage() {
                 </div>
               </div>
               
-              {/* ✅ Componente de datos bancarios */}
+              {/* Componente de datos bancarios */}
               <DoctorBankConfig 
                 bankName={bankData.bank_name}
                 bankRif={bankData.bank_rif}
@@ -215,14 +230,6 @@ export default function ConfigPage() {
                 bankAccount={bankData.bank_account}
                 onUpdate={handleSaveBankData}
               />
-              
-              {/* ✅ Botón Editar Perfil */}
-              <button 
-                onClick={() => setShowDoctorModal(true)}
-                className="w-full py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-500/20 transition-all"
-              >
-                Editar Perfil del Doctor
-              </button>
             </div>
           </div>
         </section>
@@ -278,7 +285,7 @@ export default function ConfigPage() {
         </section>
       </div>
       
-      {/* Modal de edición del doctor */}
+      {/* ✅ CORREGIDO: Modal de edición del doctor CON FORMULARIO COMPLETO */}
       {showDoctorModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg rounded-sm shadow-2xl my-auto">
@@ -286,15 +293,70 @@ export default function ConfigPage() {
               <h3 className="text-white font-bold">Editar Perfil del Doctor</h3>
               <button onClick={() => setShowDoctorModal(false)} className="text-white/50 hover:text-white">X</button>
             </div>
-            <div className="p-6 space-y-6">
-              {/* ... formulario de edición del doctor ... */}
-              <button 
-                onClick={handleSaveDoctor}
-                className="w-full py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-500/20 transition-all"
-              >
-                Guardar Cambios
-              </button>
-            </div>
+            <form onSubmit={async (e) => { e.preventDefault(); await handleSaveDoctor(); }} className="p-6 space-y-6">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="col-span-1">
+                  <label className={labelStyles}>Title</label>
+                  <select 
+                    className={inputStyles} 
+                    value={doctorForm.gender} 
+                    onChange={(e) => setDoctorForm({...doctorForm, gender: e.target.value as any})}
+                  >
+                    <option value="M">Dr.</option>
+                    <option value="F">Dra.</option>
+                    <option value="O">Mod.</option>
+                  </select>
+                </div>
+                <div className="col-span-3">
+                  <label className={labelStyles}>Full_System_Name</label>
+                  <input className={inputStyles} value={doctorForm.full_name} onChange={(e) => setDoctorForm({...doctorForm, full_name: e.target.value})} />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-6">
+                <div><label className={labelStyles}>License_UID</label><input className={inputStyles} value={doctorForm.license} onChange={(e) => setDoctorForm({...doctorForm, license: e.target.value})} /></div>
+                <div><label className={labelStyles}>Board_ID</label><input className={inputStyles} value={doctorForm.colegiado_id} onChange={(e) => setDoctorForm({...doctorForm, colegiado_id: e.target.value})} /></div>
+              </div>
+              
+              <div className="z-20 relative">
+                <label className={labelStyles}>Clinical_Specialties_Array</label>
+                <SpecialtyComboboxElegante
+                  value={doctorForm.specialties}
+                  onChange={(next) => setDoctorForm({ ...doctorForm, specialties: next })}
+                  options={specialties}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6">
+                <div>
+                  <label className={labelStyles}>Public_Biography</label>
+                  <textarea 
+                    className={inputStyles} 
+                    value={doctorForm.bio || ""} 
+                    onChange={(e) => setDoctorForm({...doctorForm, bio: e.target.value})}
+                    placeholder="Biografía corta para tu perfil público..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <label className={labelStyles}>Profile_Photo_URL</label>
+                  <input 
+                    type="text"
+                    className={inputStyles} 
+                    value={doctorForm.photo_url || ""} 
+                    onChange={(e) => setDoctorForm({...doctorForm, photo_url: e.target.value})}
+                    placeholder="https://ejemplo.com/foto.jpg"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex gap-4 pt-4">
+                <button type="submit" className="flex-1 bg-emerald-600 text-white text-[10px] font-black px-6 py-4 uppercase tracking-[0.3em] hover:bg-emerald-500 transition-all rounded-sm">
+                  <KeyIcon className="w-4 h-4 inline mr-2" /> Guardar Cambios
+                </button>
+                <button type="button" onClick={() => setShowDoctorModal(false)} className="px-6 text-[10px] font-black uppercase text-white/20 hover:text-white">Cancelar</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
