@@ -63,7 +63,7 @@ from .models import (
     MedicalTest, MedicalReferral, Specialty, DocumentCategory, DocumentSource, 
     PersonalHistory, FamilyHistory, Surgery, Habit, Vaccine, VaccinationSchedule, 
     PatientVaccination, Allergy, MedicalHistory, ClinicalAlert, Country, State, 
-    Municipality, City, Parish, Neighborhood, VitalSigns, ClinicalNote
+    Municipality, City, Parish, Neighborhood, VitalSigns, ClinicalNote, DoctorPaymentConfig
 )
 
 # 7. Serializadores Locales
@@ -2263,6 +2263,19 @@ def update_doctor_config(
         )
     except Exception:
         pass
+    
+    # Agregar datos bancarios desde DoctorPaymentConfig
+    try:
+        payment_config = doctor_obj.payment_config
+        data['bank_name'] = payment_config.bank_name or ""
+        data['bank_rif'] = payment_config.bank_rif or ""
+        data['bank_phone'] = payment_config.bank_phone or ""
+        data['bank_account'] = payment_config.bank_account or ""
+    except Exception:
+        data['bank_name'] = ""
+        data['bank_rif'] = ""
+        data['bank_phone'] = ""
+        data['bank_account'] = ""
     
     return doctor_obj
 

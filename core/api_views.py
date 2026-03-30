@@ -2504,7 +2504,8 @@ def doctor_operator_settings_api(request):
         data = request.data
         files = request.FILES
         doctor = services.update_doctor_config(data, request.user, files)
-        return Response(DoctorOperatorSerializer(doctor).data)
+        data = services.get_doctor_config(request)
+        return Response(data)
 
 
 @api_view(['GET'])
