@@ -17,8 +17,10 @@ import {
   EyeIcon,
   BuildingOfficeIcon,
   PencilSquareIcon,
-  KeyIcon
+  KeyIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
+import ConfirmGenericModal from "@/components/Common/ConfirmGenericModal";
 export default function ConfigPage() {
   const navigate = useNavigate();
   
@@ -38,6 +40,7 @@ export default function ConfigPage() {
   const [editingInstitution, setEditingInstitution] = useState<any>(null);
   const [showDoctorModal, setShowDoctorModal] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [deletingInstitution, setDeletingInstitution] = useState<any>(null);
   
   const [doctorForm, setDoctorForm] = useState({
     full_name: "",
@@ -192,11 +195,8 @@ export default function ConfigPage() {
     setEditingInstitution(institution);
     setIsInstModalOpen(true);
   };
-  const handleDeleteInstitution = async (id: number | undefined) => {
-    if (id === undefined) return;
-    if (confirm("¿Estás seguro de que quieres eliminar esta institución?")) {
-      await deleteInstitution(id);
-    }
+  const handleDeleteInstitution = (institution: any) => {
+    setDeletingInstitution(institution);
   };
   const handleSelectInstitution = async (id: number | undefined) => {
     if (id === undefined) return;
@@ -328,8 +328,20 @@ export default function ConfigPage() {
                   <div className="relative group">
                     <div className="absolute -left-1 top-0 bottom-0 w-1 bg-emerald-500 rounded-sm" />
                     <div className="bg-[#080808] border-2 border-emerald-500/30 rounded-sm p-4 shadow-2xl">
-                      <p className="font-bold text-white">{activeInstitution.name || "UNNAMED_ENTITY"}</p>
-                      <p className="text-[9px] text-white/40 mt-1">ID Fiscal: {activeInstitution.tax_id || "N/A"}</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-bold text-white">{activeInstitution.name || "UNNAMED_ENTITY"}</p>
+                          <p className="text-[9px] text-white/40 mt-1">ID Fiscal: {activeInstitution.tax_id || "N/A"}</p>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleEditInstitution(activeInstitution)} className="p-1 text-white/40 hover:text-emerald-400" title="Editar">
+                            <PencilSquareIcon className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDeleteInstitution(activeInstitution)} className="p-1 text-white/40 hover:text-red-400" title="Eliminar">
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -337,10 +349,14 @@ export default function ConfigPage() {
                   <div key={inst.id} className="bg-[#080808] border border-white/10 rounded-sm p-4 group hover:border-white/20 transition-colors">
                     <div className="flex items-center justify-between">
                       <span className="font-medium text-white/80">{inst.name || "Institución"}</span>
-                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         <button onClick={() => handleSelectInstitution(inst.id)} className="text-[9px] text-emerald-500 hover:underline mr-2">Activar</button>
-                        <button onClick={() => handleEditInstitution(inst)} className="p-1 text-white/40 hover:text-blue-400">✏️</button>
-                        <button onClick={() => handleDeleteInstitution(inst.id)} className="p-1 text-white/40 hover:text-red-400">🗑️</button>
+                        <button onClick={() => handleEditInstitution(inst)} className="p-1 text-white/40 hover:text-emerald-400" title="Editar">
+                          <PencilSquareIcon className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteInstitution(inst)} className="p-1 text-white/40 hover:text-red-400" title="Eliminar">
+                          <TrashIcon className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -465,6 +481,22 @@ export default function ConfigPage() {
           </div>
         </div>
       )}
+      
+      <ConfirmGenericModal
+        open={!!deletingInstitution}
+        title={`Eliminar "${deletingInstitution?.name || ''}"`}
+        message="¿Estás seguro de que deseas eliminar esta institución? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        isDestructive={true}
+        onConfirm={async () => {
+          if (deletingInstitution?.id) {
+            await deleteInstitution(deletingInstitution.id);
+            setDeletingInstitution(null);
+          }
+        }}
+        onCancel={() => setDeletingInstitution(null)}
+      />
       
       <EditInstitutionModal 
         open={isInstModalOpen} 
