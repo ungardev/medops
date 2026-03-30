@@ -35,7 +35,13 @@ export function useDoctorConfig() {
       console.log("PATCH DOCTOR CONFIG >>>", newSettings);
       const formData = new FormData();
       // Mapeo inteligente de campos
-      const fields = ['full_name', 'colegiado_id', 'license', 'email', 'phone', 'gender'];
+      const fields = [
+        'full_name', 'colegiado_id', 'license', 'email', 'phone', 'gender',
+        'bank_name', 'bank_rif', 'bank_phone', 'bank_account',
+        'whatsapp_enabled', 'whatsapp_business_number', 'whatsapp_business_id', 
+        'whatsapp_access_token', 'reminder_hours_before',
+        'bio',
+      ];
       fields.forEach(field => {
         const val = newSettings[field as keyof DoctorConfig];
         if (val !== undefined && val !== null) formData.append(field, String(val));
