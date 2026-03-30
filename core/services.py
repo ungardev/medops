@@ -2145,6 +2145,19 @@ def get_doctor_config(request: Optional[HttpRequest] = None) -> Optional[Dict[st
     else:
         data['active_institution'] = None
     
+    # Agregar datos bancarios desde DoctorPaymentConfig
+    try:
+        payment_config = doctor.payment_config
+        data['bank_name'] = payment_config.bank_name or ""
+        data['bank_rif'] = payment_config.bank_rif or ""
+        data['bank_phone'] = payment_config.bank_phone or ""
+        data['bank_account'] = payment_config.bank_account or ""
+    except Exception:
+        data['bank_name'] = ""
+        data['bank_rif'] = ""
+        data['bank_phone'] = ""
+        data['bank_account'] = ""
+    
     return data
 
 
