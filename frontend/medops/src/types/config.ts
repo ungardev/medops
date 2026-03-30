@@ -97,4 +97,11 @@ export interface DoctorConfig {
   whatsapp_business_id?: string;
   whatsapp_access_token?: string;
   reminder_hours_before?: number;
+  // =====================================================
+  // 🔹 Datos Bancarios (DoctorPaymentConfig)
+  // =====================================================
+  bank_name?: string;
+  bank_rif?: string;
+  bank_phone?: string;
+  bank_account?: string;
 }
