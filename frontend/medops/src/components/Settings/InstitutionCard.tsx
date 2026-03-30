@@ -10,7 +10,7 @@ import {
 interface InstitutionCardProps {
   name: string;
   taxId: string;
-  institution?: any; // ✅ NUEVO: recibe el objeto institution completo
+  institution?: any;
   address: string;
   neighborhoodName?: string; 
   isActive: boolean;
@@ -29,19 +29,18 @@ export const InstitutionCard = ({
   onSelect,
   onDelete
 }: InstitutionCardProps) => {
-  // ✅ FIX: Usar la misma lógica que ActiveInstitutionCard - acceder directamente a institution?.logo
   const hasLogo = institution?.logo && typeof institution.logo === 'string';
   
   return (
     <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
       
-      {/* Iconos de acción en esquina superior derecha */}
-      <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+      {/* ✅ CORREGIDO: Iconos de acción más visibles */}
+      <div className="absolute top-3 right-3 flex items-center gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
         {onEdit && (
           <button 
             onClick={onEdit}
-            className="p-1.5 text-white/30 hover:text-white hover:bg-white/10 rounded-sm transition-all"
-            title="Edit"
+            className="p-2 text-white/50 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-sm transition-all"
+            title="Editar institución"
           >
             <PencilIcon className="w-4 h-4" />
           </button>
@@ -49,19 +48,17 @@ export const InstitutionCard = ({
         {onDelete && (
           <button 
             onClick={onDelete}
-            className="p-1.5 text-red-500/30 hover:text-red-500 hover:bg-red-500/10 rounded-sm transition-all"
-            title="Delete"
+            className="p-2 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-sm transition-all"
+            title="Eliminar institución"
           >
             <TrashIcon className="w-4 h-4" />
           </button>
         )}
       </div>
       
-      {/* Indicador de Estado */}
       <div className="absolute top-0 right-0 w-1 h-full" />
       
       <div className="flex gap-6">
-        {/* Logo Slot - fondo blanco para visibilidad del logo */}
         <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
           {hasLogo ? (
             <img 
@@ -77,7 +74,6 @@ export const InstitutionCard = ({
           )}
         </div>
         
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h4 className="text-sm font-black text-white uppercase truncate tracking-widest">{name}</h4>
@@ -105,14 +101,12 @@ export const InstitutionCard = ({
         </div>
       </div>
       
-      {/* Footer del Card */}
       <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-2 text-white/20">
           <MapPinIcon className="w-3 h-3" />
           <span className="text-[9px] font-mono truncate max-w-[200px]">{address}</span>
         </div>
         
-        {/* Botón Set_Active simplificado */}
         {onSelect && !isActive && (
           <button 
             onClick={onSelect}

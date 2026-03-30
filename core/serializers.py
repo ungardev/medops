@@ -2234,7 +2234,7 @@ class DoctorOperatorSerializer(serializers.ModelSerializer):
             "formal_title",
             "services",
             "bio",
-            "photo_url",
+            "photo",
         ]
     
     def to_representation(self, instance):
