@@ -2119,40 +2119,41 @@ def update_institution_settings_ext(
 def get_doctor_config(request: Optional[HttpRequest] = None) -> Optional[Dict[str, Any]]:
     """
     Obtiene la configuración del médico operador autenticado.
-    
-    Args:
-        request: Objeto HttpRequest (opcional, para obtener el usuario autenticado)
-    
-    Returns:
-        Dict con la configuración del doctor, o None si no existe médico configurado.
     """
-    # Si hay request, obtener el doctor_profile del usuario autenticado
-    if request and request.user.is_authenticated:
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    # DIAGNOSTICO: Log de autenticación
+    is_auth = request and request.user and request.user.is_authenticated
+    logger.info(f"[GET_DOCTOR_CONFIG] is_authenticated={is_auth}, user={request.user if request else None}")
+    
+    if is_auth and request:
         doctor = getattr(request.user, 'doctor_profile', None)
+        logger.info(f"[GET_DOCTOR_CONFIG] doctor from user.doctor_profile: id={doctor.id if doctor else None}")
         if not doctor:
             return None
     else:
-        # Fallback: usar el primer doctor (para desarrollo/legacy)
         doctor = DoctorOperator.objects.first()
+        logger.info(f"[GET_DOCTOR_CONFIG] doctor from fallback first(): id={doctor.id if doctor else None}")
         if not doctor:
             return None
     
     data = cast(Dict[str, Any], DoctorOperatorSerializer(doctor).data)
     
-    # Agregar active_institution si existe
     if doctor.active_institution:
         data['active_institution'] = InstitutionSettingsSerializer(doctor.active_institution).data
     else:
         data['active_institution'] = None
     
-    # Agregar datos bancarios desde DoctorPaymentConfig
     try:
         payment_config = doctor.payment_config
+        logger.info(f"[GET_DOCTOR_CONFIG] payment_config found: bank_name={payment_config.bank_name}")
         data['bank_name'] = payment_config.bank_name or ""
         data['bank_rif'] = payment_config.bank_rif or ""
         data['bank_phone'] = payment_config.bank_phone or ""
         data['bank_account'] = payment_config.bank_account or ""
-    except Exception:
+    except Exception as e:
+        logger.warning(f"[GET_DOCTOR_CONFIG] payment_config NOT found: {e}")
         data['bank_name'] = ""
         data['bank_rif'] = ""
         data['bank_phone'] = ""
