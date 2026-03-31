@@ -389,12 +389,6 @@ export default function PatientChargeOrderDetail() {
                     <span className="text-white text-[11px] font-bold font-mono">{doctorData.bank_phone}</span>
                   </div>
                 )}
-                {doctorData.bank_account && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/50 text-[10px]">Cuenta</span>
-                    <span className="text-white text-[11px] font-bold font-mono">{doctorData.bank_account}</span>
-                  </div>
-                )}
                 <div className="flex justify-between items-center pt-2 border-t border-emerald-500/20">
                   <span className="text-white/50 text-[10px]">Monto a pagar</span>
                   <span className="text-emerald-400 text-[14px] font-bold">Bs {balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</span>
