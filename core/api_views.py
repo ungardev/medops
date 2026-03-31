@@ -5998,18 +5998,19 @@ def patient_register_payment(request, order_id):
         if not all([bank_code, phone, national_id, reference, amount_bs]):
             return Response({'error': 'Faltan datos requeridos'}, status=400)
         
-        # Calcular monto mínimo con BCV
+        # ✅ FIX: Calcular monto mínimo con Decimal para precisión
         from .services import get_bcv_rate
         bcv_rate = get_bcv_rate()
-        bcv_rate_float = float(bcv_rate) if bcv_rate else 1.0
-        usd_total = float(order.balance_due)
-        min_amount_bs = usd_total * bcv_rate_float
+        bcv_rate_decimal = Decimal(str(bcv_rate)) if bcv_rate else Decimal('1.0')
+        usd_total = Decimal(str(order.balance_due))
+        min_amount_bs = float(round(usd_total * bcv_rate_decimal, 2))
+        amount_bs_float = float(amount_bs)
         
-        # Validar que el monto sea igual o mayor al mínimo
-        if float(amount_bs) < min_amount_bs:
+        # Validar que el monto sea igual o mayor al mínimo (redondear a 2 decimales)
+        if round(amount_bs_float, 2) < round(min_amount_bs, 2):
             return Response({
                 'error': f'El monto debe ser igual o mayor a Bs {min_amount_bs:,.2f}',
-                'min_amount_required': round(min_amount_bs, 2),
+                'min_amount_required': min_amount_bs,
             }, status=400)
         
         # ✅ VERIFICAR TIPO DE VERIFICACIÓN
@@ -6030,8 +6031,8 @@ def patient_register_payment(request, order_id):
             verification_type = 'manual'
             payment_status = 'pending'
         
-        # Calcular monto en USD
-        amount_usd = amount_bs / Decimal(str(bcv_rate_float)) if bcv_rate else amount_bs
+        # ✅ FIX: Calcular monto en USD usando bcv_rate_decimal
+        amount_usd = amount_bs / bcv_rate_decimal if bcv_rate else amount_bs
         
         # ✅ CORRECCIÓN: Usar campos válidos del modelo Payment
         # Crear el pago
