@@ -129,7 +129,11 @@ export default function RegisterPaymentModal({
           }
         }
         if (data.monto) {
-          const cleanMonto = data.monto.replace(/[.,]/g, '');
+          // ✅ FIX: Convertir formato venezolano (23.693,51) a americano (23693.51)
+          let cleanMonto = data.monto;
+          if (cleanMonto.includes(',')) {
+            cleanMonto = cleanMonto.replace(/\./g, '').replace(',', '.');
+          }
           setFormData(prev => ({ ...prev, amount_bs: cleanMonto }));
         }
         if (data.referencia) {
@@ -158,10 +162,15 @@ export default function RegisterPaymentModal({
       return;
     }
     
-    const amountBs = parseFloat(formData.amount_bs.replace(/,/g, '.'));
-    const minRequired = order?.min_amount_bs || 0;
+    // ✅ FIX: Soportar formato venezolano (23.693,51) y americano (23693.51)
+    let cleanAmount = formData.amount_bs;
+    if (cleanAmount.includes(',')) {
+      cleanAmount = cleanAmount.replace(/\./g, '').replace(',', '.');
+    }
+    const amountBs = Math.round(parseFloat(cleanAmount) * 100) / 100;
+    const minRequired = Math.round((order?.min_amount_bs || 0) * 100) / 100;
     
-    if (amountBs < minRequired) {
+    if (isNaN(amountBs) || amountBs < minRequired) {
       setFormError(`El monto debe ser igual o mayor a Bs ${minRequired.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`);
       return;
     }
@@ -397,15 +406,19 @@ export default function RegisterPaymentModal({
           
           <div>
             <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-              Monto (Bs) - Mínimo: Bs {order.min_amount_bs?.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
+              Monto (Bs) - Mínimo: Bs {order.min_amount_bs?.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </label>
             <input
-              type="number"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={formData.amount_bs}
-              onChange={(e) => setFormData({ ...formData, amount_bs: e.target.value })}
+              onChange={(e) => {
+                // ✅ FIX: Permitir solo números, punto y coma
+                const value = e.target.value.replace(/[^0-9.,]/g, '');
+                setFormData({ ...formData, amount_bs: value });
+              }}
               className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
-              placeholder="0.00"
+              placeholder="23.693,51 o 23693.51"
               required
             />
           </div>
