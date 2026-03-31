@@ -1,5 +1,5 @@
 // src/components/Settings/DoctorBankConfig.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { VENEZUELAN_BANKS } from "@/constants/banks";
 import { BuildingOfficeIcon } from "@heroicons/react/24/outline";
 interface DoctorBankConfigProps {
@@ -19,6 +19,15 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
     bank_phone: bankPhone || "",
     bank_account: bankAccount || "",
   });
+  // ✅ FIX CRÍTICO: Sincronizar props con estado local cuando cambien (por ejemplo, después de que la API responda)
+  useEffect(() => {
+    setForm({
+      bank_name: bankName || "",
+      bank_rif: bankRif || "",
+      bank_phone: bankPhone || "",
+      bank_account: bankAccount || "",
+    });
+  }, [bankName, bankRif, bankPhone, bankAccount]);
   // ✅ Calcular completitud
   const filledFields = [form.bank_name, form.bank_rif, form.bank_phone, form.bank_account].filter(Boolean).length;
   const totalFields = 4;
