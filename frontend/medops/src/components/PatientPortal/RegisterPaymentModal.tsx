@@ -162,18 +162,22 @@ export default function RegisterPaymentModal({
       return;
     }
     
-    // ✅ FIX: Soportar formato venezolano (23.693,51) y americano (23693.51)
+    // ✅ FIX: Convertir formato venezolano y comparar en centavos (enteros)
     let cleanAmount = formData.amount_bs;
     if (cleanAmount.includes(',')) {
       cleanAmount = cleanAmount.replace(/\./g, '').replace(',', '.');
     }
-    const amountBs = Math.round(parseFloat(cleanAmount) * 100) / 100;
-    const minRequired = Math.round((order?.min_amount_bs || 0) * 100) / 100;
+    const amountCentavos = Math.round(parseFloat(cleanAmount) * 100);
+    const minCentavos = Math.round((order?.min_amount_bs || 0) * 100);
     
-    if (isNaN(amountBs) || amountBs < minRequired) {
-      setFormError(`El monto debe ser igual o mayor a Bs ${minRequired.toLocaleString('es-VE', { minimumFractionDigits: 2 })}`);
+    if (isNaN(amountCentavos) || amountCentavos < minCentavos) {
+      const minDisplay = (order?.min_amount_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+      setFormError(`El monto debe ser igual o mayor a Bs ${minDisplay}`);
       return;
     }
+    
+    // ✅ Convertir a float para envío al backend
+    const amountBs = amountCentavos / 100;
     
     try {
       await registerPayment.mutateAsync({
