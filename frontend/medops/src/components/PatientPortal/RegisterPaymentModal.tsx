@@ -162,22 +162,25 @@ export default function RegisterPaymentModal({
       return;
     }
     
-    // ✅ FIX: Convertir formato venezolano y comparar en centavos (enteros)
+    // ✅ FIX: Convertir formato venezolano y redondear a 2 decimales exactos
     let cleanAmount = formData.amount_bs;
     if (cleanAmount.includes(',')) {
       cleanAmount = cleanAmount.replace(/\./g, '').replace(',', '.');
     }
-    const amountCentavos = Math.round(parseFloat(cleanAmount) * 100);
-    const minCentavos = Math.round((order?.min_amount_bs || 0) * 100);
+    const amountParsed = parseFloat(cleanAmount);
+    const minParsed = parseFloat((order?.min_amount_bs || 0).toFixed(2));
+    const amountRounded = parseFloat(amountParsed.toFixed(2));
     
-    if (isNaN(amountCentavos) || amountCentavos < minCentavos) {
-      const minDisplay = (order?.min_amount_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2 });
+    console.log("VALIDACION MONTO:", { amountParsed, amountRounded, minParsed, minOriginal: order?.min_amount_bs });
+    
+    if (isNaN(amountRounded) || amountRounded < minParsed) {
+      const minDisplay = minParsed.toLocaleString('es-VE', { minimumFractionDigits: 2 });
       setFormError(`El monto debe ser igual o mayor a Bs ${minDisplay}`);
       return;
     }
     
-    // ✅ Convertir a float para envío al backend
-    const amountBs = amountCentavos / 100;
+    // ✅ Redondear a 2 decimales para envío al backend
+    const amountBs = amountRounded;
     
     try {
       await registerPayment.mutateAsync({
@@ -410,7 +413,7 @@ export default function RegisterPaymentModal({
           
           <div>
             <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-              Monto (Bs) - Mínimo: Bs {order.min_amount_bs?.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              Monto (Bs) - Mínimo: Bs {(order.min_amount_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </label>
             <input
               type="text"
