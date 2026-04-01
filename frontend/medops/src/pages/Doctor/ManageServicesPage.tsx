@@ -20,6 +20,14 @@ import {
   ArrowPathIcon
 } from "@heroicons/react/24/outline";
 import type { PendingPayment } from "@/types/payments";
+// ✅ URL base del API para imágenes
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000';
+// ✅ Helper para obtener URL completa de imagen
+const getFullImageUrl = (url: string | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+};
 // ✅ MOTIVOS PREDEFINIDOS DE RECHAZO
 const REJECTION_REASONS = [
   { id: "wrong_amount", label: "Monto incorrecto - El monto no coincide con el esperado" },
@@ -271,7 +279,7 @@ export default function ManageServicesPage() {
                 
                 {payment.screenshot && (
                   <button 
-                    onClick={() => openImageModal(payment.screenshot!)}
+                    onClick={() => openImageModal(getFullImageUrl(payment.screenshot!))}
                     className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-[9px] font-bold uppercase tracking-wider"
                   >
                     <PhotoIcon className="w-4 h-4" />
@@ -411,10 +419,10 @@ export default function ManageServicesPage() {
             <div className="mb-4">
               <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
               <img 
-                src={selectedPayment.screenshot} 
+                src={getFullImageUrl(selectedPayment.screenshot)} 
                 alt="Captura de pago" 
                 className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
-                onClick={() => openImageModal(selectedPayment.screenshot!)}
+                onClick={() => openImageModal(getFullImageUrl(selectedPayment.screenshot!))}
               />
             </div>
           )}
@@ -528,10 +536,10 @@ export default function ManageServicesPage() {
             <div className="mb-4">
               <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
               <img 
-                src={selectedPayment.screenshot} 
+                src={getFullImageUrl(selectedPayment.screenshot)} 
                 alt="Captura de pago" 
                 className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
-                onClick={() => openImageModal(selectedPayment.screenshot!)}
+                onClick={() => openImageModal(getFullImageUrl(selectedPayment.screenshot!))}
               />
             </div>
           )}
