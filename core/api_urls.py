@@ -437,6 +437,7 @@ urlpatterns = [
     path('patient-search/services/', patient_search_services, name='patient-search-services'),
     path('auth/verify/', verify_token, name='verify_token'),
     path('patient/auth/verify/', verify_patient_token, name='verify-patient-token'),
+    path('charge-orders/create-from-service/', api_views.create_charge_order_from_service, name='create-charge-order-from-service'),
 ]
 # --- Documentación OpenAPI ---
 urlpatterns += [

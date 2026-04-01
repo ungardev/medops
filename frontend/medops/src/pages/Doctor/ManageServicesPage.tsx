@@ -47,7 +47,6 @@ export default function ManageServicesPage() {
   
   // ✅ Estados - Pagos
   const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showConfirmAndScheduleModal, setShowConfirmAndScheduleModal] = useState(false);
   const [verificationNotes, setVerificationNotes] = useState("");
@@ -72,20 +71,6 @@ export default function ManageServicesPage() {
   // HANDLERS - PAGOS
   // ════════════════════════════════════════════════════════════
   
-  const handleConfirmPayment = async () => {
-    if (!selectedPayment) return;
-    try {
-      await verifyMutation.mutateAsync({
-        paymentId: selectedPayment.id,
-        data: { action: "confirm", notes: verificationNotes }
-      });
-      setToast({ message: "Pago confirmado exitosamente", type: "success" });
-      handleCloseConfirmModal();
-    } catch (err: any) {
-      setToast({ message: err.message || "Error al confirmar pago", type: "error" });
-    }
-  };
-  
   const handleConfirmAndSchedule = async () => {
     if (!selectedPayment || !confirmAndScheduleDate) return;
     try {
@@ -95,15 +80,34 @@ export default function ManageServicesPage() {
         data: { action: "confirm", notes: verificationNotes }
       });
       
-      // 2. Confirmar la cita asociada
-      const appointmentId = (selectedPayment as any).appointment;
-      if (appointmentId) {
-        const dateStr = confirmAndScheduleDate.toISOString().split('T')[0];
-        await updateStatus.mutateAsync({
-          id: appointmentId,
-          status: "arrived",
+      // 2. Crear la Appointment con la fecha confirmada
+      const dateStr = confirmAndScheduleDate.toISOString().split('T')[0];
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch('/api/appointments/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,
+        },
+        body: JSON.stringify({
+          patient: selectedPayment.patient.id,
+          doctor: (selectedPayment as any).charge_order?.doctor || (selectedPayment as any).doctor,
+          institution: (selectedPayment as any).charge_order?.institution || (selectedPayment as any).institution,
           appointment_date: dateStr,
-        });
+          tentative_date: dateStr,
+          status: 'pending',
+          appointment_type: 'general',
+          services: [{ 
+            doctor_service_id: (selectedPayment as any).charge_order?.items?.[0]?.doctor_service?.id || (selectedPayment as any).doctor_service,
+            qty: 1 
+          }]
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear la cita');
       }
       
       setToast({ message: "Pago confirmado y cita agendada exitosamente", type: "success" });
@@ -138,12 +142,6 @@ export default function ManageServicesPage() {
     } catch (err: any) {
       setToast({ message: err.message || "Error al rechazar pago", type: "error" });
     }
-  };
-  
-  const handleCloseConfirmModal = () => {
-    setShowConfirmModal(false);
-    setSelectedPayment(null);
-    setVerificationNotes("");
   };
   
   const handleCloseRejectModal = () => {
@@ -279,14 +277,7 @@ export default function ManageServicesPage() {
                 
                 {payment.screenshot && (
                   <button 
-                    onClick={() => {
-                      console.log("SCREENSHOT DEBUG:", {
-                        raw: payment.screenshot,
-                        full: getFullImageUrl(payment.screenshot!),
-                        apiBase: API_BASE_URL
-                      });
-                      openImageModal(getFullImageUrl(payment.screenshot!));
-                    }}
+                    onClick={() => openImageModal(getFullImageUrl(payment.screenshot!))}
                     className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-[9px] font-bold uppercase tracking-wider"
                   >
                     <PhotoIcon className="w-4 h-4" />
@@ -298,21 +289,11 @@ export default function ManageServicesPage() {
                   <button
                     onClick={() => {
                       setSelectedPayment(payment);
-                      setShowConfirmModal(true);
+                      setShowConfirmAndScheduleModal(true);
                     }}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-500/20 transition-all"
                   >
                     <CheckCircleIcon className="w-4 h-4" />
-                    Confirmar
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedPayment(payment);
-                      setShowConfirmAndScheduleModal(true);
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase tracking-wider rounded-sm hover:bg-blue-500/20 transition-all"
-                  >
-                    <CalendarIcon className="w-4 h-4" />
                     Confirmar y Agendar
                   </button>
                   <button
@@ -408,63 +389,6 @@ export default function ManageServicesPage() {
       {/* MODALS                                                     */}
       {/* ════════════════════════════════════════════════════════ */}
       
-      {/* Modal: Confirmar Pago */}
-      <EliteModal
-        open={showConfirmModal}
-        onClose={handleCloseConfirmModal}
-        title="CONFIRMAR_PAGO"
-        maxWidth="max-w-md"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-white/60">
-            ¿Confirmar el pago de <span className="text-emerald-400 font-bold">
-              Bs {selectedPayment ? Number(selectedPayment.amount_ves || 0).toLocaleString('es-VE') : 0}
-            </span> del paciente <span className="text-white font-bold">{selectedPayment?.patient.full_name}</span>?
-          </p>
-          
-          {selectedPayment?.screenshot && (
-            <div className="mb-4">
-              <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
-              <img 
-                src={getFullImageUrl(selectedPayment.screenshot)} 
-                alt="Captura de pago" 
-                className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
-                onClick={() => openImageModal(getFullImageUrl(selectedPayment.screenshot!))}
-              />
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-              Notas (opcional)
-            </label>
-            <textarea
-              value={verificationNotes}
-              onChange={(e) => setVerificationNotes(e.target.value)}
-              className="w-full px-4 py-2 bg-black/40 border border-white/10 rounded-sm text-white text-xs"
-              placeholder="Agregar notas de verificación..."
-              rows={2}
-            />
-          </div>
-          
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleCloseConfirmModal}
-              className="flex-1 px-4 py-2 border border-white/20 text-white/60 text-xs font-bold uppercase rounded-sm hover:bg-white/5"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirmPayment}
-              disabled={verifyMutation.isPending}
-              className="flex-1 px-4 py-2 bg-emerald-500 text-black text-xs font-bold uppercase rounded-sm hover:bg-emerald-400 disabled:opacity-50"
-            >
-              {verifyMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Confirmar"}
-            </button>
-          </div>
-        </div>
-      </EliteModal>
-      
       {/* Modal: Confirmar Pago Y Agendar */}
       <EliteModal
         open={showConfirmAndScheduleModal}
@@ -478,6 +402,18 @@ export default function ManageServicesPage() {
               Bs {selectedPayment ? Number(selectedPayment.amount_ves || 0).toLocaleString('es-VE') : 0}
             </span> del paciente <span className="text-white font-bold">{selectedPayment?.patient.full_name}</span> y agendar la cita.
           </p>
+          
+          {selectedPayment?.screenshot && (
+            <div className="mb-4">
+              <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
+              <img 
+                src={getFullImageUrl(selectedPayment.screenshot)} 
+                alt="Captura de pago" 
+                className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
+                onClick={() => openImageModal(getFullImageUrl(selectedPayment.screenshot!))}
+              />
+            </div>
+          )}
           
           <div>
             <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
@@ -515,7 +451,7 @@ export default function ManageServicesPage() {
             <button
               onClick={handleConfirmAndSchedule}
               disabled={!confirmAndScheduleDate || verifyMutation.isPending || updateStatus.isPending}
-              className="flex-1 px-4 py-2 bg-blue-500 text-white text-xs font-bold uppercase rounded-sm hover:bg-blue-400 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-emerald-500 text-black text-xs font-bold uppercase rounded-sm hover:bg-emerald-400 disabled:opacity-50"
             >
               {(verifyMutation.isPending || updateStatus.isPending) 
                 ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> 

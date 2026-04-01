@@ -7524,3 +7524,83 @@ def verify_patient_token(request):
             'email': email,
         }
     })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_charge_order_from_service(request):
+    """
+    POST /api/charge-orders/create-from-service/
+    Crea solo un ChargeOrder sin crear Appointment.
+    El Appointment se crea cuando el doctor confirma el pago.
+    """
+    from decimal import Decimal
+    from .models import DoctorService, ChargeOrder, ChargeItem, Patient
+    from .serializers import ChargeOrderSerializer
+    
+    try:
+        patient_id = request.data.get('patient_id')
+        doctor_service_id = request.data.get('doctor_service_id')
+        institution_id = request.data.get('institution_id')
+        tentative_date = request.data.get('tentative_date')
+        tentative_time = request.data.get('tentative_time')
+        
+        if not all([patient_id, doctor_service_id, institution_id]):
+            return Response(
+                {'error': 'Faltan datos requeridos: patient_id, doctor_service_id, institution_id'}, 
+                status=400
+            )
+        
+        # Obtener objetos
+        try:
+            patient = Patient.objects.get(id=patient_id)
+            doctor_service = DoctorService.objects.get(id=doctor_service_id, is_active=True)
+        except (Patient.DoesNotExist, DoctorService.DoesNotExist) as e:
+            return Response({'error': str(e)}, status=404)
+        
+        # Obtener doctor e institución del servicio
+        doctor = doctor_service.doctor
+        institution = doctor_service.institution
+        
+        # Crear ChargeOrder sin Appointment
+        charge_order = ChargeOrder.objects.create(
+            patient=patient,
+            doctor=doctor,
+            institution=institution,
+            currency="USD",
+            status="open",
+            total=Decimal('0.00'),
+            balance_due=Decimal('0.00'),
+            tentative_date=tentative_date,
+            tentative_time=tentative_time,
+        )
+        
+        # Crear ChargeItem
+        ChargeItem.objects.create(
+            order=charge_order,
+            doctor_service=doctor_service,
+            code=doctor_service.code,
+            description=doctor_service.name,
+            qty=Decimal('1'),
+            unit_price=doctor_service.price_usd,
+        )
+        
+        # Recalcular totales
+        charge_order.recalc_totals()
+        charge_order.save(update_fields=['total', 'balance_due', 'status'])
+        
+        return Response({
+            'id': charge_order.id,
+            'patient': patient.id,
+            'doctor': doctor.id,
+            'institution': institution.id,
+            'total': str(charge_order.total),
+            'balance_due': str(charge_order.balance_due),
+            'status': charge_order.status,
+            'tentative_date': tentative_date,
+            'tentative_time': tentative_time,
+            'message': 'ChargeOrder creado exitosamente'
+        }, status=201)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

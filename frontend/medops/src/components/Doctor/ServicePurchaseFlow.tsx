@@ -1,8 +1,6 @@
 // src/components/Doctor/ServicePurchaseFlow.tsx
 import React, { useState, useMemo } from 'react';
 import type { DoctorService, AvailabilitySlot } from '@/api/patient/client';
-import { createAppointment } from '@/api/appointments';
-import type { AppointmentInput } from '@/types/appointments';
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import SimpleCalendar from "@/components/Common/SimpleCalendar";
 import { 
@@ -14,6 +12,8 @@ import {
   AlertTriangle, 
   ClockIcon 
 } from 'lucide-react';
+// ✅ ELIMINADO: import { createAppointment } from '@/api/appointments';
+// ✅ ELIMINADO: import type { AppointmentInput } from '@/types/appointments';
 // Tipos de estado del flujo
 type PurchaseStep = 'confirm-date' | 'confirm-final' | 'processing' | 'success' | 'error';
 interface ServicePurchaseFlowProps {
@@ -75,37 +75,40 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     return slots;
   }, [selectedDate, filteredSchedules]);
   
-  // Función handlePurchase modificada para crear una Appointment
+  // ✅ NUEVO: Función handlePurchase modificada para crear solo ChargeOrder
   const handlePurchase = async () => {
     setStep('processing');
     setError(null);
     
     try {
-      const appointmentData: AppointmentInput = {
-        patient: patientId,
-        doctor: service.doctor,
-        institution: service.institution,
-        doctor_service: service.id,
-        appointment_date: selectedDate,
-        tentative_date: selectedDate,
-        tentative_time: selectedTime,
-        status: 'tentative',
-        appointment_type: 'general',
-        services: [{ doctor_service_id: service.id, qty: 1 }]
-      };
+      const token = localStorage.getItem('patient_drf_token') || localStorage.getItem('patient_access_token');
       
-      const response = await createAppointment(appointmentData);
-      const chargeOrderData = response.charge_order;
+      const response = await fetch('/api/charge-orders/create-from-service/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Token ${token}`,
+        },
+        body: JSON.stringify({
+          patient_id: patientId,
+          doctor_service_id: service.id,
+          institution_id: service.institution,
+          tentative_date: selectedDate,
+          tentative_time: selectedTime,
+        }),
+      });
       
-      if (!chargeOrderData) {
-         throw new Error("No se generó la orden de cobro automáticamente");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al crear la orden de cobro');
       }
       
+      const chargeOrderData = await response.json();
       setChargeOrder(chargeOrderData);
       setStep('success');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Purchase error:", err);
-      setError("Error al procesar la compra. Intenta nuevamente.");
+      setError(err.message || "Error al procesar la compra. Intenta nuevamente.");
       setStep('error');
     }
   };
