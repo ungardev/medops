@@ -22,7 +22,7 @@ services:
     networks:
       - medops_net
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/medops/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./staticfiles:/app/staticfiles
       - ./media:/app/media:ro
 
