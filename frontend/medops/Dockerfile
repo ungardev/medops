@@ -6,6 +6,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# ✅ Pass environment variables to Vite build
+ARG VITE_API_URL=http://localhost:8080/api
+ARG VITE_DEV_TOKEN
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_DEV_TOKEN=$VITE_DEV_TOKEN
+
 # Copiar código fuente y compilar
 COPY . .
 RUN npm run build
