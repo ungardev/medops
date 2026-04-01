@@ -7,6 +7,9 @@ services:
   frontend:
     build:
       context: ./frontend/medops
+      args:
+        - VITE_API_URL=http://localhost:8080/api
+        - VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
     image: medops_frontend:latest
     ports:
       - "8080:80"
