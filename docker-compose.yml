@@ -13,7 +13,7 @@ services:
     env_file:
       - .env.production
     environment:
-      - VITE_API_URL=http://localhost:8000/api
+      - VITE_API_URL=http://localhost:8080/api
       - VITE_DEV_TOKEN=${VITE_DEV_TOKEN}
       - NODE_ENV=production
       - VITE_MEDOPS_ENV=production
