@@ -279,7 +279,14 @@ export default function ManageServicesPage() {
                 
                 {payment.screenshot && (
                   <button 
-                    onClick={() => openImageModal(getFullImageUrl(payment.screenshot!))}
+                    onClick={() => {
+                      console.log("SCREENSHOT DEBUG:", {
+                        raw: payment.screenshot,
+                        full: getFullImageUrl(payment.screenshot!),
+                        apiBase: API_BASE_URL
+                      });
+                      openImageModal(getFullImageUrl(payment.screenshot!));
+                    }}
                     className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-[9px] font-bold uppercase tracking-wider"
                   >
                     <PhotoIcon className="w-4 h-4" />
