@@ -6556,7 +6556,7 @@ def patient_search_doctors(request):
                 'email': doc.email,
                 'phone': doc.phone,
                 'bio': doc.bio,
-                'photo_url': doc.photo_url,
+                'photo_url': doc.photo.url if doc.photo else None,
             })
         
         return Response({
