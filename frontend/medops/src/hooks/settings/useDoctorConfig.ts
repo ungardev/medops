@@ -50,6 +50,10 @@ export function useDoctorConfig() {
       if (newSettings.signature instanceof File) {
         formData.append("signature", newSettings.signature);
       }
+      // ✅ Foto de perfil
+      if (newSettings.photo instanceof File) {
+        formData.append("photo", newSettings.photo);
+      }
       // ✅ Specialty IDs (Manejo de arrays en FormData)
       if (Array.isArray(newSettings.specialty_ids)) {
         if (newSettings.specialty_ids.length === 0) {

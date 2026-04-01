@@ -130,34 +130,23 @@ export default function ConfigPage() {
   };
   
   const handleSaveDoctor = async () => {
-    const formData = new FormData();
-    
-    formData.append('full_name', doctorForm.full_name);
-    formData.append('gender', doctorForm.gender);
-    formData.append('colegiado_id', doctorForm.colegiado_id);
-    formData.append('license', doctorForm.license);
-    formData.append('email', doctorForm.email || '');
-    formData.append('phone', doctorForm.phone || '');
-    formData.append('bio', doctorForm.bio || '');
-    
-    doctorForm.specialties.forEach(s => {
-      formData.append('specialty_ids', String(s.id));
-    });
-    
-    if (doctorForm.signature instanceof File) {
-      formData.append('signature', doctorForm.signature);
-    }
-    if (doctorForm.photo instanceof File) {
-      formData.append('photo', doctorForm.photo);
-    }
-    
-    formData.append('whatsapp_enabled', String(whatsAppConfig.whatsapp_enabled));
-    formData.append('whatsapp_business_number', whatsAppConfig.whatsapp_business_number);
-    formData.append('whatsapp_business_id', whatsAppConfig.whatsapp_business_id);
-    formData.append('whatsapp_access_token', whatsAppConfig.whatsapp_access_token);
-    formData.append('reminder_hours_before', String(whatsAppConfig.reminder_hours_before));
-    
-    await updateDoctor(formData as any);
+    await updateDoctor({
+      full_name: doctorForm.full_name,
+      gender: doctorForm.gender,
+      colegiado_id: doctorForm.colegiado_id,
+      license: doctorForm.license,
+      email: doctorForm.email || '',
+      phone: doctorForm.phone || '',
+      bio: doctorForm.bio || '',
+      specialty_ids: doctorForm.specialties.map(s => s.id),
+      signature: doctorForm.signature instanceof File ? doctorForm.signature : undefined,
+      photo: doctorForm.photo instanceof File ? doctorForm.photo : undefined,
+      whatsapp_enabled: whatsAppConfig.whatsapp_enabled,
+      whatsapp_business_number: whatsAppConfig.whatsapp_business_number,
+      whatsapp_business_id: whatsAppConfig.whatsapp_business_id,
+      whatsapp_access_token: whatsAppConfig.whatsapp_access_token,
+      reminder_hours_before: whatsAppConfig.reminder_hours_before,
+    } as any);
     setShowDoctorModal(false);
   };
   

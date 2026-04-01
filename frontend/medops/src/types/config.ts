@@ -89,6 +89,7 @@ export interface DoctorConfig {
   // 🆕 AGREGADO: Campos de perfil público
   bio?: string;          // Biografía corta del doctor
   photo_url?: string;    // URL de foto de perfil
+  photo?: string | File | null;  // Foto de perfil (para upload)
   // =====================================================
   // 🔹 WhatsApp Business Integration
   // =====================================================
