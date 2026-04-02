@@ -336,11 +336,26 @@ export interface PendingPayment {
   screenshot?: string;
   charge_order: {
     id: number;
+    doctor: {
+      id: number;
+      full_name: string;
+    } | null;
+    institution: {
+      id: number;
+      name: string;
+    } | null;
     patient: {
       id: number;
       full_name: string;
       national_id: string;
     };
+    items: Array<{
+      id: number;
+      doctor_service: {
+        id: number;
+        name: string;
+      } | null;
+    }>;
     total: number;
     balance_due: number;
   };

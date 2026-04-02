@@ -6269,6 +6269,16 @@ def get_pending_payments(request):
                     },
                     'total': float(charge_order.total) if charge_order else 0,
                     'balance_due': float(charge_order.balance_due) if charge_order else 0,
+                    'items': [
+                        {
+                            'id': item.id,
+                            'doctor_service': {
+                                'id': item.doctor_service.id if item.doctor_service else None,
+                                'name': item.doctor_service.name if item.doctor_service else None,
+                            }
+                        }
+                        for item in charge_order.items.all()
+                    ] if charge_order else [],
                 },
                 'appointment': {
                     'id': appointment.id if appointment else None,

@@ -53,13 +53,29 @@ export default function ManageServicesPage() {
   const handleConfirmAndSchedule = async () => {
     if (!selectedPayment || !confirmAndScheduleDate) return;
     try {
+      // 1. Confirmar el pago
       await verifyMutation.mutateAsync({
         paymentId: selectedPayment.id,
         data: { action: "confirm", notes: verificationNotes }
       });
       
+      // 2. Preparar datos para crear la cita - SOLO IDs
       const dateStr = confirmAndScheduleDate.toISOString().split('T')[0];
       const token = localStorage.getItem('authToken');
+      
+      // Extraer SOLO los IDs (no objetos)
+      const doctorId = (selectedPayment as any).charge_order?.doctor?.id;
+      const institutionId = (selectedPayment as any).charge_order?.institution?.id;
+      const doctorServiceId = (selectedPayment as any).charge_order?.items?.[0]?.doctor_service?.id;
+      
+      console.log('[handleConfirmAndSchedule] Doctor ID:', doctorId);
+      console.log('[handleConfirmAndSchedule] Institution ID:', institutionId);
+      console.log('[handleConfirmAndSchedule] DoctorService ID:', doctorServiceId);
+      console.log('[handleConfirmAndSchedule] selectedPayment:', selectedPayment);
+      
+      if (!doctorId || !institutionId) {
+        throw new Error('Faltan datos del doctor o institución. Recarga la página e intenta de nuevo.');
+      }
       
       const response = await fetch('/api/appointments/', {
         method: 'POST',
@@ -69,21 +85,22 @@ export default function ManageServicesPage() {
         },
         body: JSON.stringify({
           patient: selectedPayment.patient.id,
-          doctor: (selectedPayment as any).charge_order?.doctor || (selectedPayment as any).doctor,
-          institution: (selectedPayment as any).charge_order?.institution || (selectedPayment as any).institution,
+          doctor: doctorId,
+          institution: institutionId,
           appointment_date: dateStr,
           tentative_date: dateStr,
           status: 'pending',
           appointment_type: 'general',
-          services: [{ 
-            doctor_service_id: (selectedPayment as any).charge_order?.items?.[0]?.doctor_service?.id || (selectedPayment as any).doctor_service,
+          services: doctorServiceId ? [{ 
+            doctor_service_id: doctorServiceId,
             qty: 1 
-          }]
+          }] : []
         }),
       });
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('[handleConfirmAndSchedule] Error response:', errorData);
         throw new Error(errorData.error || 'Error al crear la cita');
       }
       
@@ -91,6 +108,7 @@ export default function ManageServicesPage() {
       handleCloseConfirmAndScheduleModal();
       refetchAppointments();
     } catch (err: any) {
+      console.error('[handleConfirmAndSchedule] Error:', err);
       setToast({ message: err.message || "Error al confirmar pago y agendar", type: "error" });
     }
   };
