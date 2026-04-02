@@ -46,13 +46,14 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   const availableSlots = useMemo(() => {
     if (!selectedDate) return [];
     
-    // CORRECCIÓN: Forzar interpretación UTC de la fecha seleccionada
+    // ✅ FIX: Convertir fecha a día de la semana con convención Python (0=Lunes)
     const selectedDateObj = new Date(selectedDate + 'T00:00:00Z');
-    const dayOfWeek = selectedDateObj.getUTCDay(); // Usar getUTCDay para consistencia
-    
+    const jsDayOfWeek = selectedDateObj.getUTCDay(); // 0=Dom (JavaScript)
+    // Convertir a convención Python: 0=Lun, 1=Mar, ..., 6=Dom
+    const pythonDayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1;
     // Filtrar horarios del servicio para el día de la semana seleccionado
     const serviceSchedulesForService = filteredSchedules.filter(
-      (schedule: any) => schedule.day_of_week === dayOfWeek
+      (schedule: any) => schedule.day_of_week === pythonDayOfWeek
     );
     
     const slots: { time: string; label: string }[] = [];
