@@ -6,8 +6,8 @@ import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppoin
 import { usePendingPayments } from "@/hooks/payments/usePendingPayments";
 import { useVerifyPayment } from "@/hooks/payments/useVerifyPayment";
 import SimpleCalendar from "@/components/Common/SimpleCalendar";
-import EliteModal from "@/components/Common/EliteModal";
 import Toast from "@/components/Common/Toast";
+import VerifyPaymentModal from "@/components/Doctor/VerifyPaymentModal";
 import { Loader2 } from "lucide-react";
 import { 
   BanknotesIcon,
@@ -15,37 +15,22 @@ import {
   XCircleIcon,
   PhotoIcon,
   UserIcon,
-  CreditCardIcon,
-  CalendarIcon,
-  ArrowPathIcon
+  CalendarIcon
 } from "@heroicons/react/24/outline";
 import type { PendingPayment } from "@/types/payments";
-// ✅ URL base del API para imágenes
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000';
-// ✅ Helper para obtener URL completa de imagen
 const getFullImageUrl = (url: string | undefined): string => {
   if (!url) return '';
   if (url.startsWith('http')) return url;
   return `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
-// ✅ MOTIVOS PREDEFINIDOS DE RECHAZO
-const REJECTION_REASONS = [
-  { id: "wrong_amount", label: "Monto incorrecto - El monto no coincide con el esperado" },
-  { id: "unreadable", label: "Captura ilegible - Favor subir una más clara" },
-  { id: "invalid_ref", label: "Referencia no válida - Número de referencia incorrecto" },
-  { id: "wrong_bank", label: "Banco destino incorrecto" },
-  { id: "other", label: "Otro motivo" },
-];
 export default function ManageServicesPage() {
-  // ✅ Hooks de pagos
   const { data: payments, isLoading: paymentsLoading } = usePendingPayments();
   const verifyMutation = useVerifyPayment();
   
-  // ✅ Hooks de citas
   const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = useAppointmentsPending();
   const updateStatus = useUpdateAppointmentStatus();
   
-  // ✅ Estados - Pagos
   const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showConfirmAndScheduleModal, setShowConfirmAndScheduleModal] = useState(false);
@@ -55,32 +40,24 @@ export default function ManageServicesPage() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
-  // ✅ Estados - Citas
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [confirmDate, setConfirmDate] = useState<Date | null>(null);
   const [confirmTime, setConfirmTime] = useState<string>("");
   
-  // ✅ Estados - Confirmar pago Y agendar
   const [confirmAndScheduleDate, setConfirmAndScheduleDate] = useState<Date | null>(null);
   
   const pendingPayments = payments ?? [];
   const pendingAppointments = appointments ?? [];
   const isLoading = paymentsLoading || appointmentsLoading;
   
-  // ════════════════════════════════════════════════════════════
-  // HANDLERS - PAGOS
-  // ════════════════════════════════════════════════════════════
-  
   const handleConfirmAndSchedule = async () => {
     if (!selectedPayment || !confirmAndScheduleDate) return;
     try {
-      // 1. Confirmar el pago
       await verifyMutation.mutateAsync({
         paymentId: selectedPayment.id,
         data: { action: "confirm", notes: verificationNotes }
       });
       
-      // 2. Crear la Appointment con la fecha confirmada
       const dateStr = confirmAndScheduleDate.toISOString().split('T')[0];
       const token = localStorage.getItem('authToken');
       
@@ -118,32 +95,6 @@ export default function ManageServicesPage() {
     }
   };
   
-  const handleRejectPayment = async () => {
-    if (!selectedPayment) return;
-    
-    // Construir notas con motivo predefinido + notas personalizadas
-    const reasonLabel = REJECTION_REASONS.find(r => r.id === selectedReason)?.label || "";
-    const fullNotes = selectedReason === "other" 
-      ? verificationNotes 
-      : `${reasonLabel}${verificationNotes ? ` - ${verificationNotes}` : ""}`;
-    
-    if (!fullNotes.trim()) {
-      setToast({ message: "Debes seleccionar o escribir un motivo de rechazo", type: "error" });
-      return;
-    }
-    
-    try {
-      await verifyMutation.mutateAsync({
-        paymentId: selectedPayment.id,
-        data: { action: "reject", notes: fullNotes }
-      });
-      setToast({ message: "Pago rechazado", type: "success" });
-      handleCloseRejectModal();
-    } catch (err: any) {
-      setToast({ message: err.message || "Error al rechazar pago", type: "error" });
-    }
-  };
-  
   const handleCloseRejectModal = () => {
     setShowRejectModal(false);
     setSelectedPayment(null);
@@ -162,10 +113,6 @@ export default function ManageServicesPage() {
     setSelectedImage(imageUrl);
     setShowImageModal(true);
   };
-  
-  // ════════════════════════════════════════════════════════════
-  // HANDLERS - CITAS
-  // ════════════════════════════════════════════════════════════
   
   const handleConfirmAppointment = async () => {
     if (!selectedAppointment || !confirmDate) return;
@@ -213,9 +160,6 @@ export default function ManageServicesPage() {
         ]}
       />
       
-      {/* ════════════════════════════════════════════════════════ */}
-      {/* SECCIÓN 1: PAGOS PENDIENTES DE VERIFICACIÓN               */}
-      {/* ════════════════════════════════════════════════════════ */}
       <section className="space-y-4">
         <div className="flex items-center gap-3 px-1 border-l-2 border-amber-500/50 ml-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/80">
@@ -313,9 +257,6 @@ export default function ManageServicesPage() {
         )}
       </section>
       
-      {/* ════════════════════════════════════════════════════════ */}
-      {/* SECCIÓN 2: CITAS PENDIENTES DE CONFIRMACIÓN               */}
-      {/* ════════════════════════════════════════════════════════ */}
       <section className="space-y-4">
         <div className="flex items-center gap-3 px-1 border-l-2 border-blue-500/50 ml-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400/80">
@@ -385,186 +326,53 @@ export default function ManageServicesPage() {
         )}
       </section>
       
-      {/* ════════════════════════════════════════════════════════ */}
-      {/* MODALS                                                     */}
-      {/* ════════════════════════════════════════════════════════ */}
-      
-      {/* Modal: Confirmar Pago Y Agendar */}
-      <EliteModal
-        open={showConfirmAndScheduleModal}
-        onClose={handleCloseConfirmAndScheduleModal}
-        title="CONFIRMAR_PAGO_Y_AGENDAR"
-        maxWidth="max-w-lg"
-      >
-        <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
-          <p className="text-sm text-white/60">
-            Confirmar el pago de <span className="text-emerald-400 font-bold">
-              Bs {selectedPayment ? Number(selectedPayment.amount_ves || 0).toLocaleString('es-VE') : 0}
-            </span> del paciente <span className="text-white font-bold">{selectedPayment?.patient.full_name}</span> y agendar la cita.
-          </p>
-          
-          {selectedPayment?.screenshot && (
-            <div className="mb-4">
-              <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
-              <img 
-                src={getFullImageUrl(selectedPayment.screenshot)} 
-                alt="Captura de pago" 
-                className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
-                onClick={() => openImageModal(getFullImageUrl(selectedPayment.screenshot!))}
-              />
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-              Seleccionar Fecha Definitiva
-            </label>
-            <div className="bg-black/20 p-2 rounded border border-white/10">
-              <SimpleCalendar
-                selectedDate={confirmAndScheduleDate}
-                onDateSelect={setConfirmAndScheduleDate}
-                serviceSchedules={[]}
-              />
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-              Notas (opcional)
-            </label>
-            <textarea
-              value={verificationNotes}
-              onChange={(e) => setVerificationNotes(e.target.value)}
-              className="w-full px-4 py-2 bg-black/40 border border-white/10 rounded-sm text-white text-xs"
-              placeholder="Agregar notas..."
-              rows={2}
-            />
-          </div>
-          
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleCloseConfirmAndScheduleModal}
-              className="flex-1 px-4 py-2 border border-white/20 text-white/60 text-xs font-bold uppercase rounded-sm hover:bg-white/5"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirmAndSchedule}
-              disabled={!confirmAndScheduleDate || verifyMutation.isPending || updateStatus.isPending}
-              className="flex-1 px-4 py-2 bg-emerald-500 text-black text-xs font-bold uppercase rounded-sm hover:bg-emerald-400 disabled:opacity-50"
-            >
-              {(verifyMutation.isPending || updateStatus.isPending) 
-                ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> 
-                : "Confirmar y Agendar"}
-            </button>
-          </div>
-        </div>
-      </EliteModal>
-      
-      {/* Modal: Rechazar Pago */}
-      <EliteModal
-        open={showRejectModal}
-        onClose={handleCloseRejectModal}
-        title="RECHAZAR_PAGO"
-        maxWidth="max-w-md"
-      >
-        <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
-          <p className="text-sm text-white/60">
-            ¿Rechazar el pago de <span className="text-red-400 font-bold">
-              Bs {selectedPayment ? Number(selectedPayment.amount_ves || 0).toLocaleString('es-VE') : 0}
-            </span> del paciente <span className="text-white font-bold">{selectedPayment?.patient.full_name}</span>?
-          </p>
-          
-          {selectedPayment?.screenshot && (
-            <div className="mb-4">
-              <p className="text-[10px] text-white/40 uppercase mb-2">Captura adjunta:</p>
-              <img 
-                src={getFullImageUrl(selectedPayment.screenshot)} 
-                alt="Captura de pago" 
-                className="max-h-40 rounded-sm border border-white/10 cursor-pointer hover:opacity-80"
-                onClick={() => openImageModal(getFullImageUrl(selectedPayment.screenshot!))}
-              />
-            </div>
-          )}
-          
-          <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-              Motivo del rechazo
-            </label>
-            <div className="space-y-2">
-              {REJECTION_REASONS.map((reason) => (
-                <label 
-                  key={reason.id}
-                  className={`flex items-center gap-3 p-3 rounded-sm cursor-pointer transition-colors ${
-                    selectedReason === reason.id 
-                      ? 'bg-red-500/10 border border-red-500/30' 
-                      : 'bg-black/20 border border-white/5 hover:border-white/10'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="rejection_reason"
-                    value={reason.id}
-                    checked={selectedReason === reason.id}
-                    onChange={() => setSelectedReason(reason.id)}
-                    className="accent-red-500"
-                  />
-                  <span className={`text-[10px] ${selectedReason === reason.id ? 'text-red-400 font-bold' : 'text-white/60'}`}>
-                    {reason.label}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-          
-          {selectedReason === "other" && (
-            <div>
-              <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-                Especificar motivo
-              </label>
-              <textarea
-                value={verificationNotes}
-                onChange={(e) => setVerificationNotes(e.target.value)}
-                className="w-full px-4 py-2 bg-black/40 border border-white/10 rounded-sm text-white text-xs"
-                placeholder="Escribe el motivo del rechazo..."
-                rows={3}
-                required
-              />
-            </div>
-          )}
-          
-          {selectedReason && selectedReason !== "other" && (
-            <div>
-              <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
-                Notas adicionales (opcional)
-              </label>
-              <textarea
-                value={verificationNotes}
-                onChange={(e) => setVerificationNotes(e.target.value)}
-                className="w-full px-4 py-2 bg-black/40 border border-white/10 rounded-sm text-white text-xs"
-                placeholder="Información adicional..."
-                rows={2}
-              />
-            </div>
-          )}
-          
-          <div className="flex gap-3 pt-2">
-            <button
-              onClick={handleCloseRejectModal}
-              className="flex-1 px-4 py-2 border border-white/20 text-white/60 text-xs font-bold uppercase rounded-sm hover:bg-white/5"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleRejectPayment}
-              disabled={verifyMutation.isPending || !selectedReason}
-              className="flex-1 px-4 py-2 bg-red-500 text-white text-xs font-bold uppercase rounded-sm hover:bg-red-400 disabled:opacity-50"
-            >
-              {verifyMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Rechazar Pago"}
-            </button>
-          </div>
-        </div>
-      </EliteModal>
+      {/* Modales de Verificación */}
+      <VerifyPaymentModal
+        showConfirmAndScheduleModal={showConfirmAndScheduleModal}
+        selectedPayment={selectedPayment}
+        confirmAndScheduleDate={confirmAndScheduleDate}
+        setConfirmAndScheduleDate={setConfirmAndScheduleDate}
+        verificationNotes={verificationNotes}
+        setVerificationNotes={setVerificationNotes}
+        onConfirmAndSchedule={handleConfirmAndSchedule}
+        onCloseConfirmAndSchedule={handleCloseConfirmAndScheduleModal}
+        isConfirming={verifyMutation.isPending || updateStatus.isPending}
+        openImageModal={openImageModal}
+        
+        showRejectModal={showRejectModal}
+        selectedReason={selectedReason}
+        setSelectedReason={setSelectedReason}
+        onRejectPayment={async () => {
+          if (!selectedPayment) return;
+          const REJECTION_REASONS = [
+            { id: "wrong_amount", label: "Monto incorrecto" },
+            { id: "unreadable", label: "Captura ilegible" },
+            { id: "invalid_ref", label: "Referencia no válida" },
+            { id: "wrong_bank", label: "Banco incorrecto" },
+            { id: "other", label: "Otro" },
+          ];
+          const reasonLabel = REJECTION_REASONS.find(r => r.id === selectedReason)?.label || "";
+          const fullNotes = selectedReason === "other" 
+            ? verificationNotes 
+            : `${reasonLabel}${verificationNotes ? ` - ${verificationNotes}` : ""}`;
+          if (!fullNotes.trim()) {
+            setToast({ message: "Selecciona un motivo", type: "error" });
+            return;
+          }
+          try {
+            await verifyMutation.mutateAsync({
+              paymentId: selectedPayment.id,
+              data: { action: "reject", notes: fullNotes }
+            });
+            setToast({ message: "Pago rechazado", type: "success" });
+            handleCloseRejectModal();
+          } catch (err: any) {
+            setToast({ message: err.message || "Error al rechazar", type: "error" });
+          }
+        }}
+        onCloseReject={handleCloseRejectModal}
+        isRejecting={verifyMutation.isPending}
+      />
       
       {/* Modal: Confirmar Cita */}
       {selectedAppointment && (
@@ -621,22 +429,20 @@ export default function ManageServicesPage() {
       )}
       
       {/* Modal: Ver Captura */}
-      <EliteModal
-        open={showImageModal}
-        onClose={() => setShowImageModal(false)}
-        title="CAPTURA_DE_PAGO"
-        maxWidth="max-w-3xl"
-      >
-        <div className="flex justify-center">
-          {selectedImage && (
+      {showImageModal && selectedImage && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4" onClick={() => setShowImageModal(false)}>
+          <div className="relative max-w-4xl max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowImageModal(false)} className="absolute -top-10 right-0 text-white/60 hover:text-white">
+              <XCircleIcon className="w-8 h-8" />
+            </button>
             <img 
               src={selectedImage} 
               alt="Captura de pago" 
-              className="max-w-full max-h-[70vh] object-contain rounded-sm"
+              className="max-w-full max-h-[80vh] object-contain rounded-sm"
             />
-          )}
+          </div>
         </div>
-      </EliteModal>
+      )}
       
       {toast && (
         <Toast 
