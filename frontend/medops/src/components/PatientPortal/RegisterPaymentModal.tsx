@@ -425,7 +425,7 @@ export default function RegisterPaymentModal({
                 setFormData({ ...formData, amount_bs: value });
               }}
               className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
-              placeholder="23.693,51 o 23693.51"
+              placeholder={`${(order.min_amount_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} o ${order.min_amount_bs || 0}`}
               required
             />
           </div>
