@@ -11,7 +11,9 @@ import {
   ArrowRightIcon,
   PlusIcon,
   FunnelIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline';
 interface ServiceItemsListProps {
   items: OperationalItem[];
@@ -39,6 +41,9 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
 }) => {
   const { statusStyles, getStatusStyle } = useAppointmentStatusStyles();
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [showAvailability, setShowAvailability] = useState(false);
+  
+  // ✅ Filtrar items
   const filteredItems = useMemo(() => {
     let result = items;
     
@@ -52,11 +57,50 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
       );
     }
     
-    return result;
-  }, [items, selectedServiceId, statusFilter]);
-  // ✅ CAMBIO: Función auxiliar mejorada para extraer datos de múltiples rutas
+    // ✅ Ocultar disponibilidad por defecto
+    if (!showAvailability) {
+      result = result.filter(item => item.type !== 'availability');
+    }
+    
+    // ✅ Limitar a 50 items máximo
+    return result.slice(0, 50);
+  }, [items, selectedServiceId, statusFilter, showAvailability]);
+  
+  // ✅ Contadores
+  const appointmentCount = useMemo(() => {
+    let result = items;
+    if (selectedServiceId) {
+      result = result.filter(item => item.serviceId === selectedServiceId);
+    }
+    return result.filter(i => i.type === 'appointment').length;
+  }, [items, selectedServiceId]);
+  
+  const availabilityCount = useMemo(() => {
+    let result = items;
+    if (selectedServiceId) {
+      result = result.filter(item => item.serviceId === selectedServiceId);
+    }
+    return result.filter(i => i.type === 'availability').length;
+  }, [items, selectedServiceId]);
+  
+  // ✅ Agrupar disponibilidad por servicio
+  const groupedAvailability = useMemo(() => {
+    if (!showAvailability) return {};
+    
+    const groups: Record<string, OperationalItem[]> = {};
+    filteredItems
+      .filter(item => item.type === 'availability')
+      .forEach(item => {
+        const key = item.serviceName || 'Otros';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+      });
+    
+    return groups;
+  }, [filteredItems, showAvailability]);
+  
+  // ✅ Función auxiliar para extraer datos de citas
   const extractAppointmentData = (item: OperationalItem) => {
-    // 1. Intentar extraer de metadata.appointment (si existe)
     if (item.metadata?.appointment) {
       const appointment = item.metadata.appointment as Appointment;
       return {
@@ -68,7 +112,6 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
       };
     }
     
-    // 2. Intentar extraer del item directamente (soportando camelCase y snake_case)
     const patientName = item.patientName || (item as any).patient_name;
     const doctorName = item.doctorName || (item as any).doctor_name;
     
@@ -80,17 +123,20 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
       rawAppointment: null
     };
   };
+  
   const selectedServiceName = useMemo(() => {
     if (!selectedServiceId) return 'Todos los Servicios';
     const service = services.find(s => s.id === selectedServiceId);
     return service?.name || 'Servicio Desconocido';
   }, [selectedServiceId, services]);
+  
   const handleStatusChange = (appointment: Appointment) => {
     if (onStatusChange) {
       const newStatus = appointment.status === 'pending' ? 'completed' : 'pending';
       onStatusChange(appointment.id, newStatus as AppointmentStatus);
     }
   };
+  
   const handleItemClick = (item: OperationalItem) => {
     if (onItemClick) onItemClick(item);
     
@@ -100,9 +146,10 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
       onAppointmentClick(appointment);
     }
   };
+  
   return (
     <div className="flex flex-col h-full">
-      {/* Header con Selector de Servicio */}
+      {/* ✅ Header con Selector de Servicio y Toggle */}
       <div className="flex items-center justify-between mb-3 p-2 bg-[#111] border border-white/10 rounded-sm">
         <div className="flex items-center gap-2">
           <FunnelIcon className="w-4 h-4 text-white/40" />
@@ -111,50 +158,74 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
           </span>
         </div>
         
-        <div className="relative">
+        <div className="flex items-center gap-3">
+          {/* ✅ Toggle de disponibilidad */}
           <button
-            onClick={() => setShowServiceDropdown(!showServiceDropdown)}
-            className="flex items-center gap-2 px-3 py-1.5 bg-[#0a0a0b] border border-white/10 rounded text-xs text-white hover:border-white/30 transition-all"
+            onClick={() => setShowAvailability(!showAvailability)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm text-[9px] font-bold uppercase tracking-wider transition-all ${
+              showAvailability 
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                : 'bg-white/5 text-white/40 border border-white/10 hover:text-white/60'
+            }`}
           >
-            <BuildingOfficeIcon className="w-3.5 h-3.5 text-white/40" />
-            <span className="truncate max-w-[150px]">{selectedServiceName}</span>
+            {showAvailability ? (
+              <EyeSlashIcon className="w-3.5 h-3.5" />
+            ) : (
+              <EyeIcon className="w-3.5 h-3.5" />
+            )}
+            {showAvailability ? 'Ocultar' : 'Slots'}
           </button>
           
-          {showServiceDropdown && (
-            <div className="absolute right-0 top-full mt-1 w-64 bg-[#1a1a1a] border border-white/10 rounded shadow-lg z-50 max-h-60 overflow-y-auto">
-              <button
-                onClick={() => { onServiceChange(null); setShowServiceDropdown(false); }}
-                className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors ${
-                  !selectedServiceId ? 'bg-white/10 text-white' : 'text-white/60'
-                }`}
-              >
-                Todos los Servicios
-              </button>
-              {services.map(service => (
+          {/* Selector de servicio */}
+          <div className="relative">
+            <button
+              onClick={() => setShowServiceDropdown(!showServiceDropdown)}
+              className="flex items-center gap-2 px-3 py-1.5 bg-[#0a0a0b] border border-white/10 rounded text-xs text-white hover:border-white/30 transition-all"
+            >
+              <BuildingOfficeIcon className="w-3.5 h-3.5 text-white/40" />
+              <span className="truncate max-w-[150px]">{selectedServiceName}</span>
+            </button>
+            
+            {showServiceDropdown && (
+              <div className="absolute right-0 top-full mt-1 w-64 bg-[#1a1a1a] border border-white/10 rounded shadow-lg z-50 max-h-60 overflow-y-auto">
                 <button
-                  key={service.id}
-                  onClick={() => { onServiceChange(service.id); setShowServiceDropdown(false); }}
+                  onClick={() => { onServiceChange(null); setShowServiceDropdown(false); }}
                   className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors ${
-                    selectedServiceId === service.id ? 'bg-white/10 text-white' : 'text-white/60'
+                    !selectedServiceId ? 'bg-white/10 text-white' : 'text-white/60'
                   }`}
                 >
-                  {service.name}
+                  Todos los Servicios
                 </button>
-              ))}
-            </div>
-          )}
+                {services.map(service => (
+                  <button
+                    key={service.id}
+                    onClick={() => { onServiceChange(service.id); setShowServiceDropdown(false); }}
+                    className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors ${
+                      selectedServiceId === service.id ? 'bg-white/10 text-white' : 'text-white/60'
+                    }`}
+                  >
+                    {service.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
-      {/* Lista de Items */}
+      {/* ✅ Lista de Items */}
       <div className="flex-1 overflow-y-auto space-y-[2px]">
         {filteredItems.length === 0 ? (
           <div className="text-center py-8 text-white/40 text-xs">
-            No hay items para este servicio
+            {!showAvailability 
+              ? 'No hay citas para este servicio. Haz clic en "Slots" para ver disponibilidad.'
+              : 'No hay items para este servicio'
+            }
           </div>
         ) : (
-          filteredItems.map((item) => {
-            if (item.type === 'appointment') {
+          <>
+            {/* ✅ Citas primero */}
+            {filteredItems.filter(i => i.type === 'appointment').map((item) => {
               const data = extractAppointmentData(item);
               const style = getStatusStyle(data.status as AppointmentStatus);
               
@@ -229,107 +300,67 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                   </div>
                 </div>
               );
-            }
+            })}
             
-            // Renderizado para disponibilidades
-            if (item.type === 'availability') {
-              return (
-                <div
-                  key={`${item.type}-${item.id}`}
-                  onClick={() => handleItemClick(item)}
-                  className="bg-[#0a0a0b] border border-white/5 hover:border-emerald-500/30 rounded-sm p-2 cursor-pointer transition-all hover:bg-[#111] group"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-1 h-8 rounded-full bg-emerald-500/70" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-medium text-emerald-300 truncate">
-                            {item.serviceName || 'Servicio'}
-                          </span>
-                          <span className="text-[9px] text-white/40 font-mono">
-                            {item.time}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[9px] text-emerald-400/60">
-                            Disponible
-                          </span>
+            {/* ✅ Disponibilidad agrupada por servicio (solo si showAvailability) */}
+            {showAvailability && Object.entries(groupedAvailability).map(([serviceName, slots]) => (
+              <div key={serviceName} className="mt-3">
+                <div className="text-[9px] font-bold text-emerald-400/60 uppercase tracking-wider mb-2 px-1">
+                  {serviceName} ({slots.length} slots)
+                </div>
+                {slots.slice(0, 10).map((item) => (
+                  <div
+                    key={`${item.type}-${item.id}`}
+                    onClick={() => handleItemClick(item)}
+                    className="bg-[#0a0a0b] border border-white/5 hover:border-emerald-500/30 rounded-sm p-2 cursor-pointer transition-all hover:bg-[#111] group mb-[2px]"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-1 h-8 rounded-full bg-emerald-500/70" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-medium text-emerald-300 truncate">
+                              {item.time || 'Sin hora'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[9px] text-emerald-400/60">
+                              Disponible
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleItemClick(item); }}
-                        className="p-1.5 text-white/40 hover:text-emerald-400 hover:bg-white/5 rounded transition-all"
-                        title="Agendar"
-                      >
-                        <PlusIcon className="w-3.5 h-3.5" />
-                      </button>
-                      {onDelete && (
+                      
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
-                          onClick={(e) => { e.stopPropagation(); onDelete(item); }}
-                          className="p-1.5 text-white/40 hover:text-red-400 hover:bg-white/5 rounded transition-all"
-                          title="Eliminar"
+                          onClick={(e) => { e.stopPropagation(); handleItemClick(item); }}
+                          className="p-1.5 text-white/40 hover:text-emerald-400 hover:bg-white/5 rounded transition-all"
+                          title="Agendar"
                         >
-                          <XCircleIcon className="w-3.5 h-3.5" />
+                          <PlusIcon className="w-3.5 h-3.5" />
                         </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-            
-            // Renderizado para otros tipos (bloqueos, etc.)
-            return (
-              <div
-                key={`${item.type}-${item.id}`}
-                onClick={() => handleItemClick(item)}
-                className="bg-[#0a0a0b] border border-white/5 hover:border-red-500/30 rounded-sm p-2 cursor-pointer transition-all hover:bg-[#111] group"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="w-1 h-8 rounded-full bg-red-500/70" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-medium text-red-300 truncate">
-                          {item.title || 'Bloqueo'}
-                        </span>
-                        <span className="text-[9px] text-white/40 font-mono">
-                          {item.time}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-red-400/60">
-                          No disponible
-                        </span>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {onDelete && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(item); }}
-                        className="p-1.5 text-white/40 hover:text-red-400 hover:bg-white/5 rounded transition-all"
-                        title="Eliminar"
-                      >
-                        <XCircleIcon className="w-3.5 h-3.5" />
-                      </button>
-                    )}
+                ))}
+                {slots.length > 10 && (
+                  <div className="text-[8px] text-white/30 text-center py-1">
+                    +{slots.length - 10} más slots disponibles
                   </div>
-                </div>
+                )}
               </div>
-            );
-          })
+            ))}
+          </>
         )}
       </div>
       
-      {/* Footer con estadísticas */}
+      {/* ✅ Footer con estadísticas */}
       <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center text-[9px] text-white/40">
-        <span>{filteredItems.length} items mostrados</span>
+        <span>
+          {appointmentCount} citas
+          {showAvailability && ` | ${availabilityCount} slots`}
+          {filteredItems.length >= 50 && ' (máx 50)'}
+        </span>
         <span>{selectedServiceName}</span>
       </div>
     </div>
