@@ -39,8 +39,10 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
   
   // Verificar si un día es laboral
   const isWorkingDay = (date: Date) => {
-    const dayOfWeek = date.getDay();
-    return serviceSchedules.some(schedule => schedule.day_of_week === dayOfWeek);
+      const jsDayOfWeek = date.getDay(); // 0=Dom (JavaScript)
+      // Convertir a convención Python: 0=Lun, 1=Mar, ..., 6=Dom
+      const pythonDayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1;
+      return serviceSchedules.some(schedule => schedule.day_of_week === pythonDayOfWeek);
   };
   // CORRECCIÓN: Normalizar fecha seleccionada a string UTC (YYYY-MM-DD) para comparación segura
   const selectedDateStr = selectedDate 
