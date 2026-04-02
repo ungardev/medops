@@ -396,7 +396,7 @@ export default function ManageServicesPage() {
         title="CONFIRMAR_PAGO_Y_AGENDAR"
         maxWidth="max-w-lg"
       >
-        <div className="space-y-4">
+        <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
           <p className="text-sm text-white/60">
             Confirmar el pago de <span className="text-emerald-400 font-bold">
               Bs {selectedPayment ? Number(selectedPayment.amount_ves || 0).toLocaleString('es-VE') : 0}
@@ -468,7 +468,7 @@ export default function ManageServicesPage() {
         title="RECHAZAR_PAGO"
         maxWidth="max-w-md"
       >
-        <div className="space-y-4">
+        <div className="max-h-[70vh] overflow-y-auto pr-2 space-y-4">
           <p className="text-sm text-white/60">
             ¿Rechazar el pago de <span className="text-red-400 font-bold">
               Bs {selectedPayment ? Number(selectedPayment.amount_ves || 0).toLocaleString('es-VE') : 0}
@@ -569,7 +569,7 @@ export default function ManageServicesPage() {
       {/* Modal: Confirmar Cita */}
       {selectedAppointment && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg rounded-sm shadow-2xl my-auto">
+          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg rounded-sm shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h3 className="text-white font-bold">Confirmar Cita #{selectedAppointment.id}</h3>
               <button onClick={() => setSelectedAppointment(null)} className="text-white/50 hover:text-white">
