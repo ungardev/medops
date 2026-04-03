@@ -410,32 +410,50 @@ export default function WaitingRoom() {
              ) : (
                <div className="divide-y divide-[var(--palantir-border)]/30">
                  {filteredPendingEntries.map((appt) => (
-                    <div key={appt.id} className="px-4 py-3 flex justify-between items-center group hover:bg-white/[0.01]">
-                      <div className="flex flex-col min-w-0">
-                        <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
-                        <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
-                            {services.find(s => s.id === appt.doctor_service)?.name || 'General'}
+                    <div key={appt.id} className="px-4 py-4 flex justify-between items-center group border-b border-white/5 hover:bg-white/5">
+                      <div className="flex flex-col min-w-0 space-y-1">
+                        <p className="text-sm font-semibold text-white">{appt.patient?.full_name || 'Paciente desconocido'}</p>
+                        <div className="flex flex-wrap gap-3 text-xs text-white/70">
+                          <span className="flex items-center gap-1">
+                            <BuildingOfficeIcon className="h-3 w-3 text-blue-400" />
+                            <span>{services.find(s => s.id === appt.doctor_service)?.name || 'General'}</span>
                           </span>
                           {appt.time && (
-                            <span className="text-[8px] font-mono text-[var(--palantir-muted)]">🕐 {appt.time}</span>
+                            <span className="flex items-center gap-1">
+                              <ClockIcon className="h-3 w-3 text-blue-400" />
+                              <span>{appt.time}</span>
+                            </span>
                           )}
                         </div>
-                        <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
+                        <div className="flex flex-wrap gap-2 mt-1 text-xs">
+                          <span className="flex items-center gap-1 text-[var(--palantir-muted)]">
+                            <span className="font-mono">REF:</span> 
+                            <span className="font-mono text-white/80">{appt.id.toString().slice(-6)}</span>
+                          </span>
+                          {appt.charge_order && (
+                            <>
+                              {appt.charge_order?.balance_due === 0 && appt.charge_order?.total > 0 && (
+                                <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-500/20 text-emerald-400 rounded">
+                                  PAGADO
+                                </span>
+                              )}
+                              {appt.charge_order?.balance_due > 0 && (
+                                <span className="px-2 py-0.5 text-xs font-semibold bg-amber-500/20 text-amber-400 rounded">
+                                  PENDIENTE
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-2">
                         <button 
                           onClick={() => handleCheckIn(appt)} 
-                          className="p-1 text-emerald-500 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-sm"
+                          className="flex items-center gap-2 px-3 py-2 text-sm font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-md hover:bg-emerald-500/20 transition-all"
                         >
-                          <PlayIcon className="w-4 h-4 fill-current" />
+                          <PlayIcon className="h-4 w-4" />
+                          Registrar Llegada
                         </button>
-                        {/* Pago confirmado badge */}
-                        {appt.charge_order?.balance_due === 0 && appt.charge_order?.total > 0 && (
-                          <span className="text-[8px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
-                            PAGADO
-                          </span>
-                        )}
                       </div>
                     </div>
                   ))}
