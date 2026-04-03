@@ -311,10 +311,10 @@ export default function ManageServicesPage() {
                   </div>
                   <div className="text-right">
                     <p className="text-blue-400 text-[11px] font-bold font-mono">
-                      ${apt.expected_amount} USD
+                      ${parseFloat(apt.expected_amount || 0).toFixed(2)} USD
                     </p>
                     <p className="text-white/30 text-[8px]">
-                      {apt.appointment_date || "Sin fecha"}
+                      {apt.appointment_date ? `${apt.appointment_date} ${apt.appointment_time || ''}`.trim() : "Sin fecha"}
                     </p>
                   </div>
                 </div>
@@ -323,9 +323,16 @@ export default function ManageServicesPage() {
                   <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded ${
                     apt.financial_status === 'confirmed' 
                       ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                      : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      : apt.financial_status === 'pending' && (apt.charge_order?.balance_due ?? 0) > 0
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
                   }`}>
-                    {apt.financial_status === 'confirmed' ? 'PAGO CONFIRMADO' : 'PENDIENTE PAGO'}
+                    {apt.financial_status === 'confirmed' 
+                      ? 'PAGO CONFIRMADO' 
+                      : (apt.charge_order?.balance_due ?? 0) > 0
+                        ? 'PENDIENTE PAGO'
+                        : 'PAGADO'
+                    }
                   </span>
                 </div>
                 
