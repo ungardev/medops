@@ -46,24 +46,30 @@ export default function ManageServicesPage() {
   
   const [confirmAndScheduleDate, setConfirmAndScheduleDate] = useState<Date | null>(null);
   
-  const pendingPayments = payments ?? [];
-  const pendingAppointments = appointments ?? [];
+  // ✅ FILTRO CORREGIDO: Excluir pagos confirmados
+  const pendingPayments = (payments ?? []).filter(p => p.status !== 'confirmed');
+  
+  // ✅ FILTRO CORREGIDO: Usar apt.payments (NO apt.charge_order)
+  const pendingAppointments = (appointments ?? []).filter(apt => {
+    const hasConfirmedPayment = (apt.payments ?? []).some((p: any) => p.status === 'confirmed');
+    const expectedAmt = parseFloat(String(apt.expected_amount || '0'));
+    const hasPayments = (apt.payments ?? []).length > 0;
+    return !hasConfirmedPayment && (expectedAmt > 0 || !hasPayments);
+  });
+  
   const isLoading = paymentsLoading || appointmentsLoading;
   
   const handleConfirmAndSchedule = async () => {
     if (!selectedPayment || !confirmAndScheduleDate) return;
     try {
-      // 1. Confirmar el pago
       await verifyMutation.mutateAsync({
         paymentId: selectedPayment.id,
         data: { action: "confirm", notes: verificationNotes }
       });
       
-      // 2. Preparar datos para crear la cita - SOLO IDs
       const dateStr = confirmAndScheduleDate.toISOString().split('T')[0];
       const token = localStorage.getItem('authToken');
       
-      // Extraer SOLO los IDs (no objetos)
       const doctorId = (selectedPayment as any).charge_order?.doctor?.id;
       const institutionId = (selectedPayment as any).charge_order?.institution?.id;
       const doctorServiceId = (selectedPayment as any).charge_order?.items?.[0]?.doctor_service?.id;
@@ -71,7 +77,6 @@ export default function ManageServicesPage() {
       console.log('[handleConfirmAndSchedule] Doctor ID:', doctorId);
       console.log('[handleConfirmAndSchedule] Institution ID:', institutionId);
       console.log('[handleConfirmAndSchedule] DoctorService ID:', doctorServiceId);
-      console.log('[handleConfirmAndSchedule] selectedPayment:', selectedPayment);
       
       if (!doctorId || !institutionId) {
         throw new Error('Faltan datos del doctor o institución. Recarga la página e intenta de nuevo.');
@@ -178,6 +183,7 @@ export default function ManageServicesPage() {
         ]}
       />
       
+      {/* ✅ SECCIÓN: PAGOS PENDIENTES DE VERIFICACIÓN */}
       <section className="space-y-4">
         <div className="flex items-center gap-3 px-1 border-l-2 border-amber-500/50 ml-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-400/80">
@@ -275,6 +281,7 @@ export default function ManageServicesPage() {
         )}
       </section>
       
+      {/* ✅ SECCIÓN: CITAS PENDIENTES DE CONFIRMACIÓN - FILTRO CORREGIDO */}
       <section className="space-y-4">
         <div className="flex items-center gap-3 px-1 border-l-2 border-blue-500/50 ml-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400/80">
@@ -294,59 +301,58 @@ export default function ManageServicesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {pendingAppointments.map((apt: any) => (
-              <div 
-                key={apt.id} 
-                className="bg-[#080808] border border-white/10 rounded-sm p-4 space-y-3 hover:border-blue-500/30 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-sm flex items-center justify-center">
-                      <UserIcon className="w-5 h-5 text-blue-400/60" />
+            {pendingAppointments.map((apt: any) => {
+              const expectedAmt = parseFloat(String(apt.expected_amount || '0'));
+              const hasConfirmedPayment = (apt.payments ?? []).some((p: any) => p.status === 'confirmed');
+              const isPaid = expectedAmt === 0 || hasConfirmedPayment;
+              
+              return (
+                <div 
+                  key={apt.id} 
+                  className="bg-[#080808] border border-white/10 rounded-sm p-4 space-y-3 hover:border-blue-500/30 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-sm flex items-center justify-center">
+                        <UserIcon className="w-5 h-5 text-blue-400/60" />
+                      </div>
+                      <div>
+                        <p className="text-white text-[11px] font-bold">{apt.patient?.full_name || "Paciente"}</p>
+                        <p className="text-white/40 text-[9px] font-mono">ID: {apt.id}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-white text-[11px] font-bold">{apt.patient?.full_name || "Paciente"}</p>
-                      <p className="text-white/40 text-[9px] font-mono">ID: {apt.id}</p>
+                    <div className="text-right">
+                      <p className="text-blue-400 text-[11px] font-bold font-mono">
+                        ${expectedAmt.toFixed(2)} USD
+                      </p>
+                      <p className="text-white/30 text-[8px]">
+                        {apt.appointment_date || "Sin fecha"}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-blue-400 text-[11px] font-bold font-mono">
-                      ${parseFloat(apt.expected_amount || 0).toFixed(2)} USD
-                    </p>
-                    <p className="text-white/30 text-[8px]">
-                      {apt.appointment_date ? `${apt.appointment_date} ${apt.appointment_time || ''}`.trim() : "Sin fecha"}
-                    </p>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded ${
+                      isPaid
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    }`}>
+                      {isPaid ? 'PAGADO' : 'PENDIENTE PAGO'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2 border-t border-white/5">
+                    <button
+                      onClick={() => setSelectedAppointment(apt)}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase tracking-wider rounded-sm hover:bg-blue-500/20 transition-all"
+                    >
+                      <CheckCircleIcon className="w-4 h-4" />
+                      Confirmar Cita
+                    </button>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded ${
-                    apt.financial_status === 'confirmed' 
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                      : apt.financial_status === 'pending' && (apt.charge_order?.balance_due ?? 0) > 0
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                  }`}>
-                    {apt.financial_status === 'confirmed' 
-                      ? 'PAGO CONFIRMADO' 
-                      : (apt.charge_order?.balance_due ?? 0) > 0
-                        ? 'PENDIENTE PAGO'
-                        : 'PAGADO'
-                    }
-                  </span>
-                </div>
-                
-                <div className="flex gap-2 pt-2 border-t border-white/5">
-                  <button
-                    onClick={() => setSelectedAppointment(apt)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase tracking-wider rounded-sm hover:bg-blue-500/20 transition-all"
-                  >
-                    <CheckCircleIcon className="w-4 h-4" />
-                    Confirmar Cita
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -417,7 +423,7 @@ export default function ManageServicesPage() {
                 </div>
                 <div>
                   <p className="text-white/50 text-xs">Monto</p>
-                  <p className="text-emerald-400 font-medium">${selectedAppointment.expected_amount}</p>
+                  <p className="text-emerald-400 font-medium">${parseFloat(String(selectedAppointment.expected_amount || 0)).toFixed(2)}</p>
                 </div>
               </div>
               <div>
