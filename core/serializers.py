@@ -1704,86 +1704,128 @@ class AppointmentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Creación Élite de Appointment con ChargeOrder automático.
+        ✅ MEJORADO: Busca automáticamente el ChargeOrder existente con pagos confirmados.
         """
+        from .models import Payment
+        
         services_data = validated_data.pop('services', [])
         initial_payment = validated_data.pop('initial_payment', None)
+        
+        # ✅ NUEVO: Extraer charge_order_id si se pasa explícitamente
+        existing_charge_order_id = validated_data.pop('charge_order_id', None)
         
         if validated_data.get('status') in ['tentative', 'pending']:
             if not validated_data.get('tentative_date'):
                 validated_data['tentative_date'] = validated_data.get('appointment_date')
             if not validated_data.get('tentative_time'):
                 validated_data['tentative_time'] = validated_data.get('tentative_time')
-            
+        
+        # Crear la cita primero
         appointment = Appointment.objects.create(**validated_data)
         
-        charge_order = ChargeOrder.objects.create(
-            appointment=appointment,
-            patient=appointment.patient,
-            doctor=appointment.doctor,
-            institution=appointment.institution,
-            currency="USD",
-            status="open",
-            total=Decimal('0.00'),
-            balance_due=Decimal('0.00'),
-            tentative_date=appointment.tentative_date,
-            tentative_time=appointment.tentative_time,
-        )
+        # ✅ LÓGICA MEJORADA: Buscar ChargeOrder existente con pagos confirmados
+        charge_order = None
         
-        total_amount = Decimal('0.00')
-        for service in services_data:
-            doctor_service_id = service.get('doctor_service_id')
-            qty = service.get('qty', 1)
+        # 1. Si se pasa charge_order_id explícitamente, usarlo
+        if existing_charge_order_id:
+            try:
+                charge_order = ChargeOrder.objects.get(id=existing_charge_order_id)
+            except ChargeOrder.DoesNotExist:
+                pass
+        
+        # 2. Si no se encontró, buscar el ChargeOrder con pagos confirmados del paciente
+        if not charge_order:
+            # Buscar pagos confirmados del paciente en la misma institución
+            confirmed_payments = Payment.objects.filter(
+                patient=appointment.patient,
+                institution=appointment.institution,
+                status='confirmed'
+            ).select_related('charge_order')
             
-            if doctor_service_id:
-                doctor_service = None
-                try:
-                    service_id_int = int(doctor_service_id)
-                    doctor_service = DoctorService.objects.filter(
-                        id=service_id_int,
-                        is_active=True
-                    ).first()
-                except Exception:
-                    pass
+            # Obtener el ChargeOrder del último pago confirmado
+            latest_payment = confirmed_payments.order_by('-created_at').first()
+            if latest_payment and latest_payment.charge_order:
+                charge_order = latest_payment.charge_order
+        
+        # 3. Si se encontró un ChargeOrder existente, vincularlo
+        if charge_order:
+            # Actualizar el ChargeOrder existente para apuntar a esta cita
+            charge_order.appointment = appointment
+            charge_order.save(update_fields=['appointment'])
+            
+            # Actualizar el expected_amount de la cita
+            appointment.expected_amount = charge_order.total
+            appointment.save(update_fields=['expected_amount'])
+        else:
+            # 4. Si no existe ChargeOrder, crear uno nuevo (comportamiento original)
+            charge_order = ChargeOrder.objects.create(
+                appointment=appointment,
+                patient=appointment.patient,
+                doctor=appointment.doctor,
+                institution=appointment.institution,
+                currency="USD",
+                status="open",
+                total=Decimal('0.00'),
+                balance_due=Decimal('0.00'),
+                tentative_date=appointment.tentative_date,
+                tentative_time=appointment.tentative_time,
+            )
+            
+            total_amount = Decimal('0.00')
+            for service in services_data:
+                doctor_service_id = service.get('doctor_service_id')
+                qty = service.get('qty', 1)
                 
-                if doctor_service:
-                    code = doctor_service.code
-                    description = doctor_service.name
-                    unit_price = doctor_service.price_usd
-                else:
-                    code = service.get('code', f'SVC-{doctor_service_id}')
-                    description = service.get('description', f'Servicio {doctor_service_id}')
-                    unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
-                
-                item = ChargeItem.objects.create(
-                    order=charge_order,
-                    doctor_service=doctor_service,
-                    code=code,
-                    description=description,
-                    qty=Decimal(str(qty)),
-                    unit_price=unit_price,
-                )
-                total_amount += item.subtotal
-        
-        charge_order.recalc_totals()
-        charge_order.save(update_fields=['total', 'balance_due', 'status'])
-        
-        appointment.expected_amount = charge_order.total
-        appointment.save(update_fields=['expected_amount'])
-        
-        if initial_payment and total_amount > 0:
-            payment_amount = Decimal(str(initial_payment.get('amount', 0)))
-            if payment_amount > 0:
-                payment = Payment.objects.create(
-                    institution=appointment.institution,
-                    appointment=appointment,
-                    charge_order=charge_order,
-                    amount=payment_amount,
-                    method=initial_payment.get('method', 'cash'),
-                    reference_number=initial_payment.get('reference_number', f"PRE-{charge_order.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"),
-                    status='confirmed',
-                )
-                charge_order.recalc_totals()
-                charge_order.save(update_fields=['total', 'balance_due', 'status'])
+                if doctor_service_id:
+                    doctor_service = None
+                    try:
+                        service_id_int = int(doctor_service_id)
+                        doctor_service = DoctorService.objects.filter(
+                            id=service_id_int,
+                            is_active=True
+                        ).first()
+                    except Exception:
+                        pass
+                    
+                    if doctor_service:
+                        code = doctor_service.code
+                        description = doctor_service.name
+                        unit_price = doctor_service.price_usd
+                    else:
+                        code = service.get('code', f'SVC-{doctor_service_id}')
+                        description = service.get('description', f'Servicio {doctor_service_id}')
+                        unit_price = Decimal(str(service.get('unit_price', service.get('price_usd', service.get('price', 0)))))
+                    
+                    item = ChargeItem.objects.create(
+                        order=charge_order,
+                        doctor_service=doctor_service,
+                        code=code,
+                        description=description,
+                        qty=Decimal(str(qty)),
+                        unit_price=unit_price,
+                    )
+                    total_amount += item.subtotal
+            
+            charge_order.recalc_totals()
+            charge_order.save(update_fields=['total', 'balance_due', 'status'])
+            
+            appointment.expected_amount = charge_order.total
+            appointment.save(update_fields=['expected_amount'])
+            
+            if initial_payment and total_amount > 0:
+                payment_amount = Decimal(str(initial_payment.get('amount', 0)))
+                if payment_amount > 0:
+                    payment = Payment.objects.create(
+                        institution=appointment.institution,
+                        appointment=appointment,
+                        charge_order=charge_order,
+                        amount=payment_amount,
+                        method=initial_payment.get('method', 'cash'),
+                        reference_number=initial_payment.get('reference_number', f"PRE-{charge_order.id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"),
+                        status='confirmed',
+                    )
+                    charge_order.recalc_totals()
+                    charge_order.save(update_fields=['total', 'balance_due', 'status'])
         
         return appointment
     
