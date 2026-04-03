@@ -6991,8 +6991,8 @@ class ConfirmAppointmentView(APIView):
             return Response({"error": "Cita no encontrada"}, status=404)
         
         # Validar que la cita esté en estado tentative
-        if appointment.status != 'tentative':
-            return Response({"error": "Esta cita no está en estado tentative"}, status=400)
+        if appointment.status not in ['tentative', 'pending']:
+            return Response({"error": "Esta cita no está en estado tentative o pending"}, status=400)
         
         # Actualizar estado de la Appointment a 'pending' (confirmada por el doctor, pendiente de consulta)
         # NOTA: 'confirmed' no existe en Appointment.STATUS_CHOICES
