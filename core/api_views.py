@@ -7000,7 +7000,8 @@ class ConfirmAppointmentView(APIView):
         appointment.status = 'pending'
         appointment.confirmed_at = timezone.now()
         # La fecha definitiva es la que el paciente seleccionó (tentative_date)
-        appointment.appointment_date = appointment.tentative_date
+        if not appointment.appointment_date and appointment.tentative_date:
+            appointment.appointment_date = appointment.tentative_date
         appointment.save(update_fields=['status', 'confirmed_at', 'appointment_date'])
         
         # ChargeOrder: NO cambiar su status directamente

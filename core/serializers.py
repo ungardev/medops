@@ -1708,9 +1708,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
         services_data = validated_data.pop('services', [])
         initial_payment = validated_data.pop('initial_payment', None)
         
-        if validated_data.get('status') == 'tentative':
-            validated_data['tentative_date'] = validated_data.get('appointment_date')
-            validated_data['tentative_time'] = validated_data.get('tentative_time')
+        if validated_data.get('status') in ['tentative', 'pending']:
+            if not validated_data.get('tentative_date'):
+                validated_data['tentative_date'] = validated_data.get('appointment_date')
+            if not validated_data.get('tentative_time'):
+                validated_data['tentative_time'] = validated_data.get('tentative_time')
             
         appointment = Appointment.objects.create(**validated_data)
         
