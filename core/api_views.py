@@ -371,10 +371,22 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """
-        Creación segura: Fuerza el paciente logueado y deriva la institución del doctor.
+        Creación segura: Soporta tanto pacientes como doctores.
+        - Si es doctor: usa el paciente que viene en los datos
+        - Si es paciente: fuerza su propio perfil de paciente
         """
-        patient_profile = self.request.user.patient_profile
-        patient = patient_profile.patient
+        user = self.request.user
+        
+        # Si es doctor, usar el paciente que viene en los datos
+        if hasattr(user, 'doctor_profile'):
+            patient = serializer.validated_data.get('patient')
+            if not patient:
+                raise serializers.ValidationError({"patient": "El campo 'patient' es requerido."})
+        # Si es paciente, forzar su propio paciente
+        elif hasattr(user, 'patient_profile'):
+            patient = user.patient_profile.patient
+        else:
+            raise serializers.ValidationError("Usuario no tiene perfil de paciente o doctor")
         
         # Derivar institución del doctor
         doctor = serializer.validated_data.get('doctor')
