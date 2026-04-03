@@ -188,14 +188,17 @@ export default function WaitingRoom() {
     }
   };
   
-  const handleCheckIn = async (appt: any) => {
+  const handleCheckIn = async (appointment: Appointment) => {
     const institutionIdToSend = selectedInstitutionId ?? activeInstitution?.id ?? null;
     
-    const patientId = appt.patientId ?? appt.patient?.id ?? appt.metadata?.patient?.id;
-    const appointmentId = typeof appt.id === 'number' ? appt.id : undefined;
+    // CORRECCIÓN: Manejar tanto objeto paciente como ID directo
+    const patientId = appointment.patient && typeof appointment.patient === 'object' 
+      ? appointment.patient.id 
+      : appointment.patient;
+    const appointmentId = appointment.id;
     
     if (!patientId) {
-      console.error('[handleCheckIn] patientId no encontrado:', appt);
+      console.error('[handleCheckIn] patientId no encontrado:', appointment);
       setToast({ message: "El ID del paciente es requerido", type: "error" });
       return;
     }
@@ -210,7 +213,7 @@ export default function WaitingRoom() {
         patient_id: patientId,
         appointment_id: appointmentId,
         institution_id: institutionIdToSend,
-        service_id: appt.serviceId ?? null
+        service_id: null
       });
       
       queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] });
@@ -409,19 +412,19 @@ export default function WaitingRoom() {
                </div>
              ) : (
                <div className="divide-y divide-[var(--palantir-border)]/30">
-                 {filteredPendingEntries.map((appt) => (
+                  {filteredPendingEntries.map((appt) => (
                     <div key={appt.id} className="px-4 py-4 flex justify-between items-center group border-b border-white/5 hover:bg-white/5">
                       <div className="flex flex-col min-w-0 space-y-1">
-                        <p className="text-sm font-semibold text-white">{appt.patient?.full_name || 'Paciente desconocido'}</p>
+                        <p className="text-sm font-semibold text-white">{appt.patient_name || 'Paciente desconocido'}</p>
                         <div className="flex flex-wrap gap-3 text-xs text-white/70">
                           <span className="flex items-center gap-1">
                             <BuildingOfficeIcon className="h-3 w-3 text-blue-400" />
                             <span>{services.find(s => s.id === appt.doctor_service)?.name || 'General'}</span>
                           </span>
-                          {appt.time && (
+                          {appt.tentative_time && (
                             <span className="flex items-center gap-1">
                               <ClockIcon className="h-3 w-3 text-blue-400" />
-                              <span>{appt.time}</span>
+                              <span>{appt.tentative_time}</span>
                             </span>
                           )}
                         </div>
