@@ -23,6 +23,8 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
             WaitingRoomEntry.objects.get_or_create(
                 appointment=instance,
                 patient=instance.patient,
+                institution=instance.institution,
+                doctor=instance.doctor,
                 defaults={
                     "status": "pending",
                     "priority": "scheduled",
