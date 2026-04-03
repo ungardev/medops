@@ -42,19 +42,15 @@ export default function ManageServicesPage() {
   
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [confirmDate, setConfirmDate] = useState<Date | null>(null);
-  const [confirmTime, setConfirmTime] = useState<string>("");
   
   const [confirmAndScheduleDate, setConfirmAndScheduleDate] = useState<Date | null>(null);
   
-  // ✅ FILTRO CORREGIDO: Excluir pagos confirmados
+  // ✅ FILTRO: Excluir pagos confirmados
   const pendingPayments = (payments ?? []).filter(p => p.status !== 'confirmed');
   
-  // ✅ FILTRO CORREGIDO: Usar apt.payments (NO apt.charge_order)
+  // ✅ FILTRO: Mostrar appointments pendientes (pending o tentative)
   const pendingAppointments = (appointments ?? []).filter(apt => {
-    const hasConfirmedPayment = (apt.payments ?? []).some((p: any) => p.status === 'confirmed');
-    const expectedAmt = parseFloat(String(apt.expected_amount || '0'));
-    const hasPayments = (apt.payments ?? []).length > 0;
-    return !hasConfirmedPayment && (expectedAmt > 0 || !hasPayments);
+    return apt.status === 'pending' || apt.status === 'tentative';
   });
   
   const isLoading = paymentsLoading || appointmentsLoading;
@@ -138,18 +134,16 @@ export default function ManageServicesPage() {
   };
   
   const handleConfirmAppointment = async () => {
-    if (!selectedAppointment || !confirmDate) return;
+    if (!selectedAppointment) return;
     try {
-      const dateStr = confirmDate.toISOString().split('T')[0];
       await updateStatus.mutateAsync({
         id: selectedAppointment.id,
         status: "arrived",
-        appointment_date: dateStr,
+        appointment_date: selectedAppointment.appointment_date,
       });
       setToast({ message: "Cita confirmada exitosamente", type: "success" });
       setSelectedAppointment(null);
       setConfirmDate(null);
-      setConfirmTime("");
     } catch (err) {
       setToast({ message: "Error al confirmar cita", type: "error" });
     }
@@ -281,7 +275,7 @@ export default function ManageServicesPage() {
         )}
       </section>
       
-      {/* ✅ SECCIÓN: CITAS PENDIENTES DE CONFIRMACIÓN - FILTRO CORREGIDO */}
+      {/* ✅ SECCIÓN: CITAS PENDIENTES DE CONFIRMACIÓN */}
       <section className="space-y-4">
         <div className="flex items-center gap-3 px-1 border-l-2 border-blue-500/50 ml-1">
           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400/80">
@@ -304,7 +298,7 @@ export default function ManageServicesPage() {
             {pendingAppointments.map((apt: any) => {
               const expectedAmt = parseFloat(String(apt.expected_amount || '0'));
               const hasConfirmedPayment = (apt.payments ?? []).some((p: any) => p.status === 'confirmed');
-              const isPaid = expectedAmt === 0 || hasConfirmedPayment;
+              const isPaid = hasConfirmedPayment;
               
               return (
                 <div 
@@ -337,7 +331,7 @@ export default function ManageServicesPage() {
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                         : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
                     }`}>
-                      {isPaid ? 'PAGADO' : 'PENDIENTE PAGO'}
+                      {isPaid ? 'PAGO VERIFICADO' : 'VERIFICANDO PAGO'}
                     </span>
                   </div>
                   
@@ -405,54 +399,44 @@ export default function ManageServicesPage() {
         isRejecting={verifyMutation.isPending}
       />
       
-      {/* Modal: Confirmar Cita */}
+      {/* ✅ Modal: Confirmar Cita - SIN CALENDARIO (solo confirmación) */}
       {selectedAppointment && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-lg rounded-sm shadow-2xl my-auto max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md rounded-sm shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-white/10">
               <h3 className="text-white font-bold">Confirmar Cita #{selectedAppointment.id}</h3>
               <button onClick={() => setSelectedAppointment(null)} className="text-white/50 hover:text-white">
                 <XCircleIcon className="w-6 h-6" />
               </button>
             </div>
-            <div className="p-6 space-y-6">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="p-6 space-y-4">
+              <div className="space-y-3">
                 <div>
-                  <p className="text-white/50 text-xs">Paciente</p>
-                  <p className="text-white font-medium">{selectedAppointment.patient?.full_name}</p>
+                  <p className="text-white/50 text-[10px] uppercase tracking-wider">Paciente</p>
+                  <p className="text-white font-medium text-sm">{selectedAppointment.patient?.full_name}</p>
                 </div>
                 <div>
-                  <p className="text-white/50 text-xs">Monto</p>
-                  <p className="text-emerald-400 font-medium">${parseFloat(String(selectedAppointment.expected_amount || 0)).toFixed(2)}</p>
+                  <p className="text-white/50 text-[10px] uppercase tracking-wider">Monto</p>
+                  <p className="text-emerald-400 font-medium text-sm">${parseFloat(String(selectedAppointment.expected_amount || 0)).toFixed(2)} USD</p>
+                </div>
+                <div>
+                  <p className="text-white/50 text-[10px] uppercase tracking-wider">Fecha Agendada</p>
+                  <p className="text-blue-400 font-medium text-sm">{selectedAppointment.appointment_date || "Sin asignar"}</p>
                 </div>
               </div>
-              <div>
-                <p className="text-white/50 text-xs mb-2">Seleccionar Fecha Definitiva</p>
-                <div className="bg-black/20 p-2 rounded border border-white/10">
-                  <SimpleCalendar
-                    selectedDate={confirmDate}
-                    onDateSelect={setConfirmDate}
-                    serviceSchedules={[]}
-                  />
-                </div>
-              </div>
-              <div>
-                <p className="text-white/50 text-xs mb-2">Hora (Opcional)</p>
-                <input 
-                  type="time" 
-                  value={confirmTime}
-                  onChange={(e) => setConfirmTime(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 p-2 text-white rounded"
-                />
+              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-sm">
+                <p className="text-blue-400/80 text-[10px] font-mono uppercase tracking-wider">
+                  ¿Confirmar inicio de consulta para este paciente?
+                </p>
               </div>
             </div>
             <div className="flex gap-2 p-4 border-t border-white/10 bg-black/20">
-              <button onClick={() => setSelectedAppointment(null)} className="flex-1 py-2 bg-white/10 text-white text-xs font-bold uppercase hover:bg-white/20">
+              <button onClick={() => setSelectedAppointment(null)} className="flex-1 py-2.5 bg-white/10 text-white text-[10px] font-bold uppercase hover:bg-white/20 rounded-sm">
                 Cancelar
               </button>
-              <button onClick={handleConfirmAppointment} disabled={!confirmDate || updateStatus.isPending} className="flex-1 py-2 bg-blue-500 text-white text-xs font-bold uppercase hover:bg-blue-400 disabled:opacity-50 flex justify-center items-center gap-2">
+              <button onClick={handleConfirmAppointment} disabled={updateStatus.isPending} className="flex-1 py-2.5 bg-blue-500 text-white text-[10px] font-bold uppercase hover:bg-blue-400 disabled:opacity-50 flex justify-center items-center gap-2 rounded-sm">
                 {updateStatus.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircleIcon className="w-4 h-4" />}
-                Confirmar Cita
+                Confirmar
               </button>
             </div>
           </div>
