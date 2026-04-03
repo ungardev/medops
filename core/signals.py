@@ -6,6 +6,7 @@ from .models import Appointment, Payment, Patient, WaitingRoomEntry
 from core.utils.events import log_event
 import logging
 logger = logging.getLogger("audit")
+
 # --- Appointment ---
 @receiver(post_save, sender=Appointment)
 def appointment_created_or_updated(sender, instance, created, **kwargs):

@@ -188,24 +188,32 @@ export default function WaitingRoom() {
     }
   };
   
-  const handleCheckIn = async (appointment: Appointment) => {
-    // ⚠️ CORRECCIÓN DE TIPO: Asegurar que institution_id sea number | null
+  const handleCheckIn = async (appt: any) => {
     const institutionIdToSend = selectedInstitutionId ?? activeInstitution?.id ?? null;
+    
+    const patientId = appt.patientId ?? appt.patient?.id ?? appt.metadata?.patient?.id;
+    const appointmentId = typeof appt.id === 'number' ? appt.id : undefined;
+    
+    if (!patientId) {
+      console.error('[handleCheckIn] patientId no encontrado:', appt);
+      setToast({ message: "El ID del paciente es requerido", type: "error" });
+      return;
+    }
     
     if (!institutionIdToSend) {
       setToast({ message: "No se puede registrar llegada sin institución activa", type: "error" });
       return;
     }
+    
     try {
       await registerArrival.mutateAsync({
-        patient_id: appointment.patient.id,
-        appointment_id: appointment.id,
-        institution_id: institutionIdToSend
+        patient_id: patientId,
+        appointment_id: appointmentId,
+        institution_id: institutionIdToSend,
+        service_id: appt.serviceId ?? null
       });
       
-      // Invalidar caché operativa
       queryClient.invalidateQueries({ queryKey: ['operationalHub', selectedInstitutionId] });
-      
       setToast({ message: "Llegada registrada exitosamente", type: "success" });
     } catch (error) {
       console.error("Error checking in:", error);
@@ -402,24 +410,35 @@ export default function WaitingRoom() {
              ) : (
                <div className="divide-y divide-[var(--palantir-border)]/30">
                  {filteredPendingEntries.map((appt) => (
-                   <div key={appt.id} className="px-4 py-3 flex justify-between items-center group hover:bg-white/[0.01]">
-                     <div className="flex flex-col min-w-0">
-                       <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
-                       <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
-                         {services.find(s => s.id === appt.doctor_service)?.name || 'General'}
-                       </span>
-                       <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
-                     </div>
-                     <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-                       <button 
-                         onClick={() => handleCheckIn(appt)} 
-                         className="p-1 text-emerald-500 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-sm"
-                       >
-                         <PlayIcon className="w-4 h-4 fill-current" />
-                       </button>
-                     </div>
-                   </div>
-                 ))}
+                    <div key={appt.id} className="px-4 py-3 flex justify-between items-center group hover:bg-white/[0.01]">
+                      <div className="flex flex-col min-w-0">
+                        <p className="text-xs font-bold text-white uppercase truncate max-w-[140px]">{appt.patient.full_name}</p>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[8px] font-mono text-blue-400/80 uppercase truncate">
+                            {services.find(s => s.id === appt.doctor_service)?.name || 'General'}
+                          </span>
+                          {appt.time && (
+                            <span className="text-[8px] font-mono text-[var(--palantir-muted)]">🕐 {appt.time}</span>
+                          )}
+                        </div>
+                        <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase">REF_{appt.id.toString().slice(-6)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => handleCheckIn(appt)} 
+                          className="p-1 text-emerald-500 hover:bg-emerald-500/10 border border-emerald-500/20 rounded-sm"
+                        >
+                          <PlayIcon className="w-4 h-4 fill-current" />
+                        </button>
+                        {/* Pago confirmado badge */}
+                        {appt.charge_order?.balance_due === 0 && appt.charge_order?.total > 0 && (
+                          <span className="text-[8px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
+                            PAGADO
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                </div>
              )}
            </div>
