@@ -1,11 +1,8 @@
 // src/pages/Doctor/ManageServicesPage.tsx
 import React, { useState } from "react";
 import PageHeader from "@/components/Common/PageHeader";
-import { useAppointmentsPending } from "@/hooks/appointments/useAppointmentsPending";
-import { useUpdateAppointmentStatus } from "@/hooks/appointments/useUpdateAppointmentStatus";
 import { usePendingPayments } from "@/hooks/payments/usePendingPayments";
 import { useVerifyPayment } from "@/hooks/payments/useVerifyPayment";
-import SimpleCalendar from "@/components/Common/SimpleCalendar";
 import Toast from "@/components/Common/Toast";
 import VerifyPaymentModal from "@/components/Doctor/VerifyPaymentModal";
 import { Loader2 } from "lucide-react";
@@ -14,8 +11,7 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   PhotoIcon,
-  UserIcon,
-  CalendarIcon
+  UserIcon
 } from "@heroicons/react/24/outline";
 import type { PendingPayment } from "@/types/payments";
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8000';
@@ -28,9 +24,6 @@ export default function ManageServicesPage() {
   const { data: payments, isLoading: paymentsLoading } = usePendingPayments();
   const verifyMutation = useVerifyPayment();
   
-  const { data: appointments, isLoading: appointmentsLoading, refetch: refetchAppointments } = useAppointmentsPending();
-  const updateStatus = useUpdateAppointmentStatus();
-  
   const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showConfirmAndScheduleModal, setShowConfirmAndScheduleModal] = useState(false);
@@ -40,20 +33,11 @@ export default function ManageServicesPage() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
-  const [confirmDate, setConfirmDate] = useState<Date | null>(null);
-  
   const [confirmAndScheduleDate, setConfirmAndScheduleDate] = useState<Date | null>(null);
   
-  // ✅ FILTRO: Excluir pagos confirmados
   const pendingPayments = (payments ?? []).filter(p => p.status !== 'confirmed');
   
-  // ✅ FILTRO: Mostrar appointments pendientes (pending o tentative)
-  const pendingAppointments = (appointments ?? []).filter(apt => {
-    return apt.status === 'pending' || apt.status === 'tentative';
-  });
-  
-  const isLoading = paymentsLoading || appointmentsLoading;
+  const isLoading = paymentsLoading;
   
   const handleConfirmAndSchedule = async () => {
     if (!selectedPayment || !confirmAndScheduleDate) return;
@@ -69,10 +53,6 @@ export default function ManageServicesPage() {
       const doctorId = (selectedPayment as any).charge_order?.doctor?.id;
       const institutionId = (selectedPayment as any).charge_order?.institution?.id;
       const doctorServiceId = (selectedPayment as any).charge_order?.items?.[0]?.doctor_service?.id;
-      
-      console.log('[handleConfirmAndSchedule] Doctor ID:', doctorId);
-      console.log('[handleConfirmAndSchedule] Institution ID:', institutionId);
-      console.log('[handleConfirmAndSchedule] DoctorService ID:', doctorServiceId);
       
       if (!doctorId || !institutionId) {
         throw new Error('Faltan datos del doctor o institución. Recarga la página e intenta de nuevo.');
@@ -101,15 +81,12 @@ export default function ManageServicesPage() {
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('[handleConfirmAndSchedule] Error response:', errorData);
         throw new Error(errorData.error || 'Error al crear la cita');
       }
       
       setToast({ message: "Pago confirmado y cita agendada exitosamente", type: "success" });
       handleCloseConfirmAndScheduleModal();
-      refetchAppointments();
     } catch (err: any) {
-      console.error('[handleConfirmAndSchedule] Error:', err);
       setToast({ message: err.message || "Error al confirmar pago y agendar", type: "error" });
     }
   };
@@ -133,22 +110,6 @@ export default function ManageServicesPage() {
     setShowImageModal(true);
   };
   
-  const handleConfirmAppointment = async () => {
-    if (!selectedAppointment) return;
-    try {
-      await updateStatus.mutateAsync({
-        id: selectedAppointment.id,
-        status: "arrived",
-        appointment_date: selectedAppointment.appointment_date,
-      });
-      setToast({ message: "Cita confirmada exitosamente", type: "success" });
-      setSelectedAppointment(null);
-      setConfirmDate(null);
-    } catch (err) {
-      setToast({ message: "Error al confirmar cita", type: "error" });
-    }
-  };
-  
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
@@ -168,11 +129,6 @@ export default function ManageServicesPage() {
             label: "PAGOS PENDIENTES", 
             value: pendingPayments.length.toString(), 
             color: "text-amber-500"
-          },
-          { 
-            label: "CITAS PENDIENTES", 
-            value: pendingAppointments.length.toString(), 
-            color: "text-blue-500"
           },
         ]}
       />
@@ -275,83 +231,7 @@ export default function ManageServicesPage() {
         )}
       </section>
       
-      {/* ✅ SECCIÓN: CITAS PENDIENTES DE CONFIRMACIÓN */}
-      <section className="space-y-4">
-        <div className="flex items-center gap-3 px-1 border-l-2 border-blue-500/50 ml-1">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-400/80">
-            Citas Pendientes de Confirmación
-          </h3>
-          <span className="text-[9px] font-mono text-white/40">
-            {pendingAppointments.length} pendientes
-          </span>
-        </div>
-        
-        {pendingAppointments.length === 0 ? (
-          <div className="p-8 text-center bg-white/[0.02] border border-white/5 rounded-sm">
-            <CalendarIcon className="w-8 h-8 mx-auto text-white/20 mb-2" />
-            <p className="text-white/30 text-[10px] font-mono uppercase tracking-wider">
-              No hay citas pendientes de confirmación
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {pendingAppointments.map((apt: any) => {
-              const expectedAmt = parseFloat(String(apt.expected_amount || '0'));
-              const hasConfirmedPayment = (apt.payments ?? []).some((p: any) => p.status === 'confirmed');
-              const isPaid = hasConfirmedPayment;
-              
-              return (
-                <div 
-                  key={apt.id} 
-                  className="bg-[#080808] border border-white/10 rounded-sm p-4 space-y-3 hover:border-blue-500/30 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-500/10 border border-blue-500/20 rounded-sm flex items-center justify-center">
-                        <UserIcon className="w-5 h-5 text-blue-400/60" />
-                      </div>
-                      <div>
-                        <p className="text-white text-[11px] font-bold">{apt.patient?.full_name || "Paciente"}</p>
-                        <p className="text-white/40 text-[9px] font-mono">ID: {apt.id}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-blue-400 text-[11px] font-bold font-mono">
-                        ${expectedAmt.toFixed(2)} USD
-                      </p>
-                      <p className="text-white/30 text-[8px]">
-                        {apt.appointment_date || "Sin fecha"}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 text-[8px] font-black uppercase rounded ${
-                      isPaid
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    }`}>
-                      {isPaid ? 'PAGO VERIFICADO' : 'VERIFICANDO PAGO'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex gap-2 pt-2 border-t border-white/5">
-                    <button
-                      onClick={() => setSelectedAppointment(apt)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[9px] font-bold uppercase tracking-wider rounded-sm hover:bg-blue-500/20 transition-all"
-                    >
-                      <CheckCircleIcon className="w-4 h-4" />
-                      Confirmar Cita
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-      
-      {/* Modales de Verificación */}
+      {/* Modales */}
       <VerifyPaymentModal
         showConfirmAndScheduleModal={showConfirmAndScheduleModal}
         selectedPayment={selectedPayment}
@@ -361,7 +241,7 @@ export default function ManageServicesPage() {
         setVerificationNotes={setVerificationNotes}
         onConfirmAndSchedule={handleConfirmAndSchedule}
         onCloseConfirmAndSchedule={handleCloseConfirmAndScheduleModal}
-        isConfirming={verifyMutation.isPending || updateStatus.isPending}
+        isConfirming={verifyMutation.isPending}
         openImageModal={openImageModal}
         
         showRejectModal={showRejectModal}
@@ -398,50 +278,6 @@ export default function ManageServicesPage() {
         onCloseReject={handleCloseRejectModal}
         isRejecting={verifyMutation.isPending}
       />
-      
-      {/* ✅ Modal: Confirmar Cita - SIN CALENDARIO (solo confirmación) */}
-      {selectedAppointment && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md rounded-sm shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-white/10">
-              <h3 className="text-white font-bold">Confirmar Cita #{selectedAppointment.id}</h3>
-              <button onClick={() => setSelectedAppointment(null)} className="text-white/50 hover:text-white">
-                <XCircleIcon className="w-6 h-6" />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-white/50 text-[10px] uppercase tracking-wider">Paciente</p>
-                  <p className="text-white font-medium text-sm">{selectedAppointment.patient?.full_name}</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-[10px] uppercase tracking-wider">Monto</p>
-                  <p className="text-emerald-400 font-medium text-sm">${parseFloat(String(selectedAppointment.expected_amount || 0)).toFixed(2)} USD</p>
-                </div>
-                <div>
-                  <p className="text-white/50 text-[10px] uppercase tracking-wider">Fecha Agendada</p>
-                  <p className="text-blue-400 font-medium text-sm">{selectedAppointment.appointment_date || "Sin asignar"}</p>
-                </div>
-              </div>
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-sm">
-                <p className="text-blue-400/80 text-[10px] font-mono uppercase tracking-wider">
-                  ¿Confirmar inicio de consulta para este paciente?
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2 p-4 border-t border-white/10 bg-black/20">
-              <button onClick={() => setSelectedAppointment(null)} className="flex-1 py-2.5 bg-white/10 text-white text-[10px] font-bold uppercase hover:bg-white/20 rounded-sm">
-                Cancelar
-              </button>
-              <button onClick={handleConfirmAppointment} disabled={updateStatus.isPending} className="flex-1 py-2.5 bg-blue-500 text-white text-[10px] font-bold uppercase hover:bg-blue-400 disabled:opacity-50 flex justify-center items-center gap-2 rounded-sm">
-                {updateStatus.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircleIcon className="w-4 h-4" />}
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* Modal: Ver Captura */}
       {showImageModal && selectedImage && (
