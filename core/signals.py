@@ -10,7 +10,6 @@ logger = logging.getLogger("audit")
 @receiver(post_save, sender=Appointment)
 def appointment_created_or_updated(sender, instance, created, **kwargs):
     if created:
-        # ✅ AGREGAR notify=True para notificaciones
         log_event(
             "Appointment", 
             instance.id, 
@@ -24,7 +23,6 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
                 appointment=instance,
                 patient=instance.patient,
                 institution=instance.institution,
-                doctor=instance.doctor,
                 defaults={
                     "status": "pending",
                     "priority": "scheduled",
@@ -32,7 +30,6 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
             )
             logger.info(f"WaitingRoomEntry creado automáticamente (pending/scheduled) para Appointment {instance.id}")
     else:
-        # ✅ AGREGAR notify=True para notificaciones
         log_event(
             "Appointment", 
             instance.id, 
