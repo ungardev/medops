@@ -115,13 +115,13 @@ export default function Sidebar({
         {effectiveCollapsed && (
             <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="mx-auto mt-2 p-2 text-white/30 hover:text-white transition-all hidden lg:block rounded-lg border border-white/10 bg-white/5 hover:bg-white/10"
+                className="mx-auto mt-3 p-2 text-white/30 hover:text-white transition-all hidden lg:block rounded-lg border border-white/10 bg-white/5 hover:bg-white/10"
             >
                 <ChevronRight size={16} />
             </button>
         )}
         {!effectiveCollapsed && (
-          <div className="flex items-center gap-2 mb-3 px-3">
+          <div className="flex items-center gap-2 mb-3 px-3 mt-1">
             <div className="h-[1px] w-4 bg-white/15"></div>
             <div className="text-[9px] font-medium text-white/40 uppercase tracking-wider">
               Menú
@@ -129,7 +129,7 @@ export default function Sidebar({
           </div>
         )}
         <nav className="flex-1">
-          <ul className="flex flex-col space-y-0.5">
+          <ul className={`flex flex-col ${effectiveCollapsed ? "pt-2" : ""} space-y-0.5`}>
             {navItems.map(({ path, label, icon: Icon }) => {
               const isActive = location.pathname === path;
               return (
@@ -147,7 +147,7 @@ export default function Sidebar({
                   >
                     <Icon 
                       size={18} 
-                      className={`shrink-0 transition-all duration-200 ${isActive ? "text-emerald-400" : "group-hover:text-white/80"}`} 
+                      className={`shrink-0 transition-all duration-200 ${isActive ? "text-white" : "group-hover:text-white/80"}`} 
                       strokeWidth={isActive ? 2 : 1.5} 
                     />
                     

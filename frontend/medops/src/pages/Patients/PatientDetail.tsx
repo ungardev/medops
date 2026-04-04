@@ -3,7 +3,6 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { usePatient } from "../../hooks/patients/usePatient";
 import { useConsultationsByPatient } from "../../hooks/patients/useConsultationsByPatient";
 import { Tabs, Tab } from "../../components/ui/Tabs";
-// Componentes de Pestañas
 import PatientInfoTab from "../../components/Patients/PatientInfoTab";
 import PatientConsultationsTab from "../../components/Patients/PatientConsultationsTab";
 import PatientDocumentsTab from "../../components/Patients/PatientDocumentsTab";
@@ -12,10 +11,8 @@ import PatientPendingAppointmentsTab from "../../components/Patients/PatientPend
 import PatientEventsTab from "../../components/Patients/PatientEventsTab";
 import VaccinationTab from "../../components/Patients/VaccinationTab";
 import SurgeriesTab from "../../components/Patients/SurgeriesTab";
-// Componentes de Common
 import PageHeader from "../../components/Common/PageHeader";
 import InvitePatientModal from "../../components/Patients/InvitePatientModal";
-// Iconos
 import { 
   IdentificationIcon, 
   HeartIcon, 
@@ -27,7 +24,6 @@ import {
 import { Plus } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { apiFetch } from "../../api/client";
-// Opciones de tipos de sangre
 const BLOOD_TYPE_OPTIONS = [
   { value: "A+", label: "A+" },
   { value: "A-", label: "A-" },
@@ -54,7 +50,6 @@ function normalizeTab(id?: string): string {
   if (!id) return "info";
   return map[id.toLowerCase()] ?? id;
 }
-// Interfaces
 interface VitalSignsData {
   id: number;
   weight?: string | null;
@@ -91,19 +86,15 @@ export default function PatientDetail() {
   
   const [currentTab, setCurrentTab] = useState(() => normalizeTab(searchParams.get("tab") ?? "info"));
   
-  // Estado para blood type
   const [editableBloodType, setEditableBloodType] = useState<string>("");
   const [isUpdatingBloodType, setIsUpdatingBloodType] = useState(false);
   
-  // Estado para portal
   const [portalStatus, setPortalStatus] = useState<PortalStatus>({ has_invitation: false, has_portal_access: false });
   const [showInviteModal, setShowInviteModal] = useState(false);
   
-  // Obtener appointments completados
   const { data: completedConsultations } = useConsultationsByPatient(patientId);
   const appointmentsList: AppointmentWithVitals[] = completedConsultations?.list ?? [];
   
-  // Cargar estado del portal
   useEffect(() => {
     const checkPortalStatus = async () => {
       try {
@@ -121,14 +112,12 @@ export default function PatientDetail() {
     checkPortalStatus();
   }, [patientId]);
   
-  // Sync blood_type
   useEffect(() => {
     if (patient?.blood_type) {
       setEditableBloodType(patient.blood_type);
     }
   }, [patient?.blood_type]);
   
-  // Obtener biometrics
   const latestBiometrics = useMemo(() => {
     if (!appointmentsList || appointmentsList.length === 0) {
       return { weight: null, height: null };
@@ -158,7 +147,6 @@ export default function PatientDetail() {
     return { weight: null, height: null };
   }, [appointmentsList]);
   
-  // Guardar blood_type
   const handleBloodTypeSave = async (newBloodType: string) => {
     if (!patientId) return;
     
@@ -177,7 +165,6 @@ export default function PatientDetail() {
     }
   };
   
-  // Recargar estado del portal desde endpoint después de invitar
   const handleInviteSuccess = async () => {
     try {
       const data = await apiFetch<InvitationStatusResponse>(
@@ -209,16 +196,16 @@ export default function PatientDetail() {
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-500">Syncing_Subject_Data...</p>
+        <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-[11px] text-emerald-400">Cargando datos del paciente...</p>
       </div>
     </div>
   );
   
   if (error || !patient) return (
     <div className="p-8">
-      <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-sm">
-        <p className="text-[10px] font-mono text-red-500 uppercase">Error_Data_Link_Broken</p>
+      <div className="bg-red-500/10 border border-red-500/25 p-4 rounded-lg">
+        <p className="text-[11px] text-red-400">Error al cargar los datos del paciente</p>
       </div>
     </div>
   );
@@ -235,73 +222,66 @@ export default function PatientDetail() {
   };
   
   const patientAge = patient.age ?? calculateAge(patient.birthdate);
-  const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} KG` : "--";
-  const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
-  const bloodTypeDisplay = editableBloodType || "--";
-  const ageDisplay = patientAge ? `${patientAge} YRS` : "--";
+  const weightDisplay = latestBiometrics.weight ? `${latestBiometrics.weight} kg` : "—";
+  const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} cm` : "—";
+  const bloodTypeDisplay = editableBloodType || "—";
+  const ageDisplay = patientAge ? `${patientAge} años` : "—";
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* Page Header */}
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
-          { label: "PATIENTS", path: "/patients" },
-          { label: `SUBJECT_ID_${patient.id.toString().padStart(2, '0')}`, active: true }
+          { label: "Pacientes", path: "/patients" },
+          { label: patient.full_name, active: true }
         ]}
         stats={[
           { 
-            label: "RECORD_STATE", 
-            value: patient.active ? "ACTIVE" : "INACTIVE",
-            color: patient.active ? "text-emerald-500" : "text-red-500"
+            label: "Estado", 
+            value: patient.active ? "Activo" : "Inactivo",
+            color: patient.active ? "text-emerald-400" : "text-red-400"
           },
           { 
-            label: "BIOMETRIC_AGE", 
+            label: "Edad", 
             value: ageDisplay,
-            color: ageDisplay !== "--" ? "text-purple-400" : "text-white/30"
+            color: ageDisplay !== "—" ? "text-white" : "text-white/30"
           },
           { 
-            label: "MASS_INDEX", 
+            label: "Peso", 
             value: weightDisplay,
-            color: weightDisplay !== "--" ? "text-orange-400" : "text-white/30"
+            color: weightDisplay !== "—" ? "text-white" : "text-white/30"
           },
           { 
-            label: "HEIGHT_INDEX", 
+            label: "Talla", 
             value: heightDisplay,
-            color: heightDisplay !== "--" ? "text-cyan-400" : "text-white/30"
+            color: heightDisplay !== "—" ? "text-white" : "text-white/30"
           }
         ]}
         actions={
           <div className="flex items-center gap-3">
-            {/* ============================================================ */}
-            {/* FIX: Mostrar badge SÍ tiene acceso, SIEMPRE mostrar botón para invitar */}
-            {/* ============================================================ */}
             {portalStatus.has_portal_access ? (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-sm">
-                <span className="text-[9px] font-bold text-emerald-400 uppercase">MEDOPZ Patient</span>
+              <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/15 border border-emerald-500/25 rounded-lg">
+                <span className="text-[10px] font-medium text-emerald-400">Portal Activo</span>
               </div>
             ) : (
               <>
-                {/* Badge de invitación pendiente (informativo) */}
                 {portalStatus.has_invitation && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-sm">
-                    <span className="text-[9px] font-bold text-amber-400 uppercase">Invitación Pendiente</span>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/15 border border-amber-500/25 rounded-lg">
+                    <span className="text-[10px] font-medium text-amber-400">Invitación Pendiente</span>
                   </div>
                 )}
                 
-                {/* BOTÓN: Siempre visible si NO tiene acceso al portal */}
                 <button 
                   onClick={() => setShowInviteModal(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 border border-blue-500/40 rounded-sm transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-400 rounded-lg transition-colors"
                 >
-                  <Plus size={14} className="text-white" />
-                  <span className="text-[9px] font-bold text-white uppercase">
+                  <Plus size={14} />
+                  <span className="text-[10px] font-medium">
                     {portalStatus.has_invitation ? 'Re-enviar Invitación' : 'Invitar al Portal'}
                   </span>
                 </button>
               </>
             )}
             
-            {/* Blood Type Selector */}
             <div className="flex items-center gap-2">
               <BeakerIcon className="w-4 h-4 text-red-400" />
               <select
@@ -311,9 +291,9 @@ export default function PatientDetail() {
                   handleBloodTypeSave(e.target.value);
                 }}
                 disabled={isUpdatingBloodType}
-                className="bg-black/40 border border-red-500/30 text-red-400 text-[10px] font-bold uppercase px-3 py-2 rounded-sm focus:outline-none focus:border-red-500/50"
+                className="bg-white/5 border border-red-500/25 text-red-400 text-[11px] font-medium px-3 py-2 rounded-lg focus:outline-none focus:border-red-500/50"
               >
-                <option value="">SELECT</option>
+                <option value="">Tipo</option>
                 {BLOOD_TYPE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -323,69 +303,61 @@ export default function PatientDetail() {
               )}
             </div>
             
-            <div className="flex flex-col items-end px-3 border-r border-white/10">
-                <span className="text-[8px] font-mono text-white/30 uppercase tracking-tighter">Blood_Group</span>
-                <span className="text-xs font-black text-red-500">{bloodTypeDisplay}</span>
-            </div>
-            
-            <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
-               <UserIcon className="w-5 h-5 text-blue-500" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/15 bg-white/5">
+               <UserIcon className="w-5 h-5 text-blue-400" />
             </div>
           </div>
         }
       />
       
-      {/* Metadata Bar */}
-      <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest">
-        <span className="flex items-center gap-2.5">
-          <IdentificationIcon className="w-4 h-4 text-blue-500/40" />
-          <span className="text-white/10">DNI:</span> 
-          <span className="text-white/80 font-bold">{patient.national_id || "NOT_ASSIGNED"}</span>
+      <div className="flex flex-wrap items-center gap-6 px-5 py-3 bg-white/5 border border-white/15 rounded-lg text-[11px] text-white/50">
+        <span className="flex items-center gap-2">
+          <IdentificationIcon className="w-4 h-4 text-blue-400/50" />
+          <span className="text-white/30">Cédula:</span> 
+          <span className="text-white/70 font-medium">{patient.national_id || "—"}</span>
         </span>
-        <span className="flex items-center gap-2.5">
-          <HeartIcon className="w-4 h-4 text-red-500/30" />
-          <span className="text-white/10">DOB:</span> 
-          <span className="text-white/80 font-bold">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}</span>
+        <span className="flex items-center gap-2">
+          <HeartIcon className="w-4 h-4 text-red-400/50" />
+          <span className="text-white/30">Fecha Nac.:</span> 
+          <span className="text-white/70 font-medium">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : '—'}</span>
         </span>
         {patient.birth_country && (
-          <span className="flex items-center gap-2.5">
-            <GlobeAltIcon className="w-4 h-4 text-emerald-500/30" />
-            <span className="text-white/10">ORIGIN:</span> 
-            <span className="text-white/80 font-bold">{patient.birth_country}</span>
+          <span className="flex items-center gap-2">
+            <GlobeAltIcon className="w-4 h-4 text-emerald-400/50" />
+            <span className="text-white/30">Origen:</span> 
+            <span className="text-white/70 font-medium">{patient.birth_country}</span>
           </span>
         )}
       </div>
       
-      {/* Tabs */}
-      <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
+      <div className="border border-white/15 rounded-lg overflow-hidden">
         <Tabs value={currentTab} onChange={setTab} layout="horizontal">
-          <Tab id="info" label="Identity_Core">
+          <Tab id="info" label="Información">
             <PatientInfoTab patientId={patientId} />
           </Tab>
-          <Tab id="consultas" label="Clinical_Ledger">
+          <Tab id="consultas" label="Consultas">
             <PatientConsultationsTab patient={patient} />
           </Tab>
-          <Tab id="documentos" label="Archive_Vault">
+          <Tab id="documentos" label="Documentos">
             <PatientDocumentsTab patient={patient} />
           </Tab>
-          <Tab id="vacunacion" label="Immunology">
+          <Tab id="vacunacion" label="Vacunación">
             <VaccinationTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
-          <Tab id="cirugias" label="Surgical_Ops">
+          <Tab id="cirugias" label="Cirugías">
             <SurgeriesTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
-          <Tab id="citas" label="Logistics_Schedule">
+          <Tab id="citas" label="Citas">
             <PatientPendingAppointmentsTab patient={patient} />
           </Tab>
-          <Tab id="pagos" label="Financial_Flow">
+          <Tab id="pagos" label="Pagos">
             <PatientPaymentsTab patient={patient} />
           </Tab>
-          <Tab id="eventos" label="Audit_Log">
+          <Tab id="eventos" label="Eventos">
             <PatientEventsTab patient={patient} />
           </Tab>
         </Tabs>
       </div>
-      {/* Modal de Invitación */}
       <InvitePatientModal
         isOpen={showInviteModal}
         onClose={() => setShowInviteModal(false)}

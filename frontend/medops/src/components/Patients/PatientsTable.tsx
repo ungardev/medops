@@ -15,44 +15,43 @@ export default function PatientsTable({
   
   const getHeaderWidth = (header: string) => {
     const h = header.toUpperCase();
-    if (h.includes("UID")) return "w-[100px] lg:w-[120px]";
-    if (h.includes("IDENTITY")) return "min-w-[200px] lg:min-w-[280px]";
-    if (h.includes("NATIONAL")) return "hidden md:table-cell w-[140px] lg:w-[160px]";
-    if (h.includes("STATUS")) return "hidden lg:table-cell w-[130px]";
-    if (h.includes("GENDER")) return "hidden md:table-cell w-[100px] lg:w-[130px]";
-    if (h.includes("COMM")) return "hidden lg:table-cell max-w-[180px] lg:max-w-[220px]";
-    if (h.includes("ACTIONS")) return "w-[80px] lg:w-[110px] text-right";
+    if (h.includes("ID")) return "w-[80px]";
+    if (h.includes("NOMBRE")) return "min-w-[200px] lg:min-w-[280px]";
+    if (h.includes("CÉDULA")) return "hidden md:table-cell w-[140px] lg:w-[160px]";
+    if (h.includes("GÉNERO")) return "hidden md:table-cell w-[100px] lg:w-[130px]";
+    if (h.includes("CONTACTO")) return "hidden lg:table-cell max-w-[180px] lg:max-w-[220px]";
+    if (h.includes("ACCIONES")) return "w-[80px] lg:w-[110px] text-right";
     return "";
   };
   return (
-    <div className="w-full overflow-hidden border border-[var(--palantir-border)] bg-[var(--palantir-surface)] shadow-2xl">
+    <div className="w-full overflow-hidden border border-white/15 bg-white/5">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse table-fixed lg:table-auto">
           <thead>
-            <tr className="bg-[var(--palantir-bg)] border-b border-[var(--palantir-border)]">
+            <tr className="bg-white/5 border-b border-white/15">
               {headers.map((h, idx) => (
                 <th
                   key={idx}
-                  className={`px-3 py-3 lg:px-4 lg:py-3 text-[9px] lg:text-[10px] font-black text-[var(--palantir-muted)] uppercase tracking-[0.2em] ${getHeaderWidth(h)}`}
+                  className={`px-4 py-3 text-[10px] font-medium text-white/50 uppercase tracking-wider ${getHeaderWidth(h)}`}
                 >
-                  {h.replace(/ /g, "_")}
+                  {h}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--palantir-border)]/30">
+          <tbody className="divide-y divide-white/5">
             {isLoading ? (
               <tr>
                 <td colSpan={headers.length} className="px-4 py-12 text-center">
-                  <span className="text-[10px] font-mono text-[var(--palantir-active)] animate-pulse uppercase tracking-widest">
-                    Executing_Data_Fetch...
+                  <span className="text-[11px] text-white/40 animate-pulse">
+                    Cargando datos...
                   </span>
                 </td>
               </tr>
             ) : isError ? (
               <tr>
-                <td colSpan={headers.length} className="px-4 py-12 text-center text-red-500 text-[10px] font-black uppercase">
-                  Data_Stream_Error_Critical
+                <td colSpan={headers.length} className="px-4 py-12 text-center text-red-400 text-[11px] font-medium">
+                  Error al cargar los datos
                 </td>
               </tr>
             ) : (

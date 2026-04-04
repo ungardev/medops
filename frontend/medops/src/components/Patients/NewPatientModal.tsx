@@ -46,89 +46,91 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
       },
     });
   };
-  const inputClass = "w-full bg-black/40 border border-white/20 rounded-sm px-4 py-3 text-[13px] text-white font-mono focus:outline-none focus:border-emerald-500/50 transition-all";
-  const labelStyles = "text-[11px] font-bold text-white/70 uppercase tracking-[0.1em] mb-2 block";
-  const sectionStyles = "bg-white/[0.02] border border-white/10 rounded-sm p-5 space-y-4";
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelStyles = "text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1.5 block";
+  const sectionStyles = "bg-white/5 border border-white/10 rounded-lg p-5 space-y-4";
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-[#0a0a0b] border border-white/10 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 sticky top-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-lg">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 border border-emerald-400/30">
+            <div className="p-2 bg-emerald-500/15 border border-emerald-500/25 rounded-lg">
               <Save className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-[12px] font-bold uppercase tracking-widest text-white">
-                NEW_SUBJECT
+              <h3 className="text-[12px] font-semibold text-white">
+                Registrar Nuevo Paciente
               </h3>
-              <p className="text-[10px] font-mono text-white/50 uppercase">Patient Registry</p>
+              <p className="text-[10px] text-white/50 mt-0.5">Complete los datos del paciente</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1">
+          <button onClick={onClose} className="text-white/50 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-        {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
           <div className={sectionStyles}>
+            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Nombre Completo</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelStyles}>Primary Name *</label>
+                <label className={labelStyles}>Nombre *</label>
                 <input 
                   {...register("first_name", { required: true })} 
                   className={inputClass} 
-                  placeholder="Name_Alpha" 
+                  placeholder="Primer nombre" 
                 />
               </div>
               <div>
-                <label className={labelStyles}>Middle Name</label>
-                <input {...register("middle_name")} className={inputClass} placeholder="Name_Bravo" />
+                <label className={labelStyles}>Segundo Nombre</label>
+                <input {...register("middle_name")} className={inputClass} placeholder="Segundo nombre" />
               </div>
               <div>
-                <label className={labelStyles}>Surname A *</label>
+                <label className={labelStyles}>Apellido *</label>
                 <input 
                   {...register("last_name", { required: true })} 
                   className={inputClass} 
-                  placeholder="Surname_Alpha" 
+                  placeholder="Primer apellido" 
                 />
               </div>
               <div>
-                <label className={labelStyles}>Surname B</label>
-                <input {...register("second_last_name")} className={inputClass} placeholder="Surname_Bravo" />
+                <label className={labelStyles}>Segundo Apellido</label>
+                <input {...register("second_last_name")} className={inputClass} placeholder="Segundo apellido" />
               </div>
             </div>
           </div>
           <div className={sectionStyles}>
+            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Identificación</h4>
             <div>
-              <label className={labelStyles}>National ID *</label>
-              <input {...register("national_id", { required: true })} className={inputClass} placeholder="XX.XXX.XXX" />
+              <label className={labelStyles}>Cédula de Identidad *</label>
+              <input {...register("national_id", { required: true })} className={inputClass} placeholder="Ej: V-12345678" />
             </div>
           </div>
           <div className={sectionStyles}>
+            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Contacto</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={labelStyles}>Phone Number</label>
-                <input {...register("phone_number")} className={inputClass} placeholder="+00 000-0000" />
+                <label className={labelStyles}>Teléfono</label>
+                <input {...register("phone_number")} className={inputClass} placeholder="+58 412-1234567" />
               </div>
               <div>
-                <label className={labelStyles}>Email</label>
-                <input {...register("email")} className={inputClass} placeholder="SUBJECT@NETWORK.OPS" />
+                <label className={labelStyles}>Correo Electrónico</label>
+                <input {...register("email")} className={inputClass} placeholder="correo@ejemplo.com" />
               </div>
             </div>
           </div>
           <div className={sectionStyles}>
+            <h4 className="text-[11px] font-medium text-white/70 uppercase tracking-wider mb-3">Información Adicional</h4>
             <div>
-              <label className={labelStyles}>Biological Sex</label>
+              <label className={labelStyles}>Género</label>
               <select {...register("gender")} className={inputClass}>
-                <option value="">SELECT_OPTION</option>
-                <option value="M">MASCULINO</option>
-                <option value="F">FEMENINO</option>
-                <option value="Other">OTHER</option>
-                <option value="Unknown">UNKNOWN</option>
+                <option value="">Seleccionar</option>
+                <option value="M">Masculino</option>
+                <option value="F">Femenino</option>
+                <option value="Other">Otro</option>
+                <option value="Unknown">Desconocido</option>
               </select>
             </div>
           </div>
@@ -137,24 +139,24 @@ const NewPatientModal: React.FC<Props> = ({ open, onClose, onCreated, onPatientC
             <button
               type="button"
               onClick={onClose}
-              className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors"
+              className="px-5 py-2.5 text-[11px] font-medium text-white/60 hover:text-white transition-colors rounded-lg hover:bg-white/5"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
               disabled={createPatient.isPending}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-sm text-[11px] font-bold uppercase tracking-widest text-white bg-emerald-500/20 border border-white/20 hover:brightness-110 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
             >
               {createPatient.isPending ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  Syncing...
+                  Guardando...
                 </>
               ) : (
                 <>
                   <Save size={16} />
-                  Commit Record
+                  Guardar Paciente
                 </>
               )}
             </button>
