@@ -48,28 +48,26 @@ export default function Login() {
     }
   };
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-[#0a0c10]">
-      {/* Columna Izquierda: Formulario */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#0a0c10] min-h-screen">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-black">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 min-h-screen">
         <div className="w-full max-w-md animate-in fade-in duration-500">
-          {/* Logo pequeño */}
           <img
             src="/medopz_logo_blanco_solo.svg"
             alt="MedOpz Logo"
-            className="h-12 w-12 mb-8 opacity-80"
+            className="h-12 w-12 mb-8 opacity-60"
           />
           
           <div className="mb-8">
-            <h2 className="text-2xl font-bold tracking-tight text-white mb-1">
+            <h2 className="text-2xl font-semibold text-white/90 mb-1">
               Control de Acceso
             </h2>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-white/40">
               Introduce tus credenciales operativas.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 group-focus-within:text-white transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-white/50 transition-colors">
                 <User size={18} />
               </div>
               <input
@@ -79,11 +77,11 @@ export default function Login() {
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-gray-500/20 focus:border-gray-500 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 transition-all"
               />
             </div>
             <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500 group-focus-within:text-white transition-colors">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/20 group-focus-within:text-white/50 transition-colors">
                 <Lock size={18} />
               </div>
               <input
@@ -93,7 +91,7 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
                 required
-                className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-gray-500/20 focus:border-gray-500 transition-all"
+                className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/15 rounded-lg text-sm text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 transition-all"
               />
             </div>
             {error && (
@@ -104,7 +102,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-8 bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-3 rounded-lg text-sm font-bold tracking-widest uppercase transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full mt-8 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 py-3 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
@@ -117,22 +115,17 @@ export default function Login() {
             </button>
           </form>
           <div className="mt-8 flex items-center justify-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-            <span className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em]">Secure_Terminal_Active</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50"></div>
+            <span className="text-[10px] text-white/30">Sistema seguro</span>
           </div>
-          {/* Footer */}
-          <footer className="mt-12 text-[10px] text-gray-600 uppercase tracking-[0.3em] text-center">
-            © 2026 MedOpz Clinical OS // v1.2.0-Stable
-          </footer>
         </div>
       </div>
-      {/* Columna Derecha: Visual */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#111827] to-[#0a0c10] items-center justify-center relative min-h-screen">
-        {/* Logo grande centrado con efecto de brillo sutil */}
+      
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-white/5 to-black items-center justify-center relative min-h-screen">
         <img
           src="/medopz_logo_blanco_solo.svg"
           alt="MedOpz Logo"
-          className="h-40 w-40 opacity-60 drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+          className="h-40 w-40 opacity-20"
         />
       </div>
     </div>
