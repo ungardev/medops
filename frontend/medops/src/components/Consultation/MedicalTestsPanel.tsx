@@ -48,7 +48,7 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
       setUrgency("routine");
       setStatus("pending");
     } catch (err: any) {
-      console.error("❌ Error:", err.message);
+      console.error("Error:", err.message);
     }
   };
   const getUrgencyColor = (urg: string) => {
@@ -60,45 +60,43 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
     }
   };
   return (
-    <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden">
-      {/* HEADER TÉCNICO */}
-      <div className="bg-white/5 px-4 py-3 border-b border-[var(--palantir-border)] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <BeakerIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-            Diagnostic_Orders_Queue
+    <div className="border border-white/15 bg-white/5 rounded-lg overflow-hidden">
+      <div className="bg-white/5 px-5 py-3 border-b border-white/15 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <BeakerIcon className="w-5 h-5 text-emerald-400" />
+          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+            Órdenes de Exámenes Diagnósticos
           </span>
         </div>
-        <span className="text-[9px] font-mono text-[var(--palantir-muted)]">
-          COUNT: {tests.length}
+        <span className="text-[10px] text-white/50">
+          Total: {tests.length}
         </span>
       </div>
-      <div className="p-4 space-y-4">
-        {/* LISTA DE EXÁMENES */}
-        <div className="space-y-2">
+      <div className="p-5 space-y-4">
+        <div className="space-y-3">
           {isLoading ? (
-            <div className="text-[10px] font-mono text-[var(--palantir-muted)] animate-pulse">FETCHING_TEST_DATA...</div>
+            <div className="text-[11px] text-white/50 animate-pulse">Cargando exámenes...</div>
           ) : tests.length === 0 ? (
-            <div className="text-[10px] font-mono text-[var(--palantir-muted)] opacity-50 italic">NO_ACTIVE_ORDERS_RECORDED</div>
+            <div className="text-[11px] text-white/50 italic">No hay exámenes registrados</div>
           ) : (
             tests.map((t: any) => (
-              <div key={t.id} className="group flex items-center justify-between p-2 border border-white/5 bg-white/[0.02] hover:border-[var(--palantir-active)]/30 transition-all">
-                <div className="flex flex-col gap-0.5">
+              <div key={t.id} className="group flex items-center justify-between p-4 border border-white/15 bg-white/5 hover:border-white/25 transition-all rounded-lg">
+                <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2">
-                    <span className={`w-1.5 h-1.5 rounded-full ${getUrgencyColor(t.urgency)}`} />
-                    <span className="text-[11px] font-bold text-[var(--palantir-text)] uppercase">{t.test_type_display || t.test_type}</span>
-                    <span className="text-[8px] font-black px-1 bg-white/10 text-[var(--palantir-muted)] rounded-sm">
+                    <span className={`w-2 h-2 rounded-full ${getUrgencyColor(t.urgency)}`} />
+                    <span className="text-[12px] font-medium text-white uppercase">{t.test_type_display || t.test_type}</span>
+                    <span className="text-[9px] font-medium px-2 py-0.5 bg-white/10 text-white/60 rounded">
                       {t.status.toUpperCase()}
                     </span>
                   </div>
-                  <div className="text-[10px] font-mono text-[var(--palantir-muted)] pl-3.5">
-                    {t.description || "NO_DESCRIPTION_PROVIDED"}
+                  <div className="text-[10px] text-white/50 pl-4">
+                    {t.description || "Sin descripción"}
                   </div>
                 </div>
                 {!readOnly && (
                   <button 
                     onClick={() => deleteTest({ id: t.id, appointment: appointmentId })}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-[var(--palantir-muted)] hover:text-red-400 transition-all"
+                    className="opacity-0 group-hover:opacity-100 p-2 text-white/50 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
                   >
                     <TrashIcon className="w-4 h-4" />
                   </button>
@@ -107,21 +105,18 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
             ))
           )}
         </div>
-        {/* FORMULARIO DE ENTRADA */}
         {!readOnly && (
-          <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Selector de Tipo */}
-              <div className="space-y-1">
-                <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Select_Procedure</label>
+          <div className="mt-6 pt-6 border-t border-white/15 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Tipo de Examen</label>
                 <select
                   value={testType}
                   onChange={(e) => setTestType(e.target.value)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none rounded-lg"
                 >
-                  <option value="">-- SELECT_TEST --</option>
+                  <option value="">-- Seleccionar examen --</option>
                   
-                  {/* HEMATOLOGÍA */}
                   <optgroup label="🔬 Hematología">
                     <option value="hemogram">Hemograma Completo</option>
                     <option value="hemoglobin">Hemoglobina / Hematocrito</option>
@@ -132,7 +127,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="peripheral-smear">Frotis de Sangre Periférica</option>
                     <option value="bone_marrow">Aspirado de Médula Ósea</option>
                   </optgroup>
-                  {/* BIOQUÍMICA */}
                   <optgroup label="🧪 Bioquímica">
                     <option value="glucose">Glucemia</option>
                     <option value="glucose_2h">Glucemia Post-Prandial (2h)</option>
@@ -156,7 +150,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="bilirubin">Bilirrubinas</option>
                     <option value="creatinine_clearance">Depuración de Creatinina</option>
                   </optgroup>
-                  {/* UROANÁLISIS */}
                   <optgroup label="🚽 Uroanálisis">
                     <option value="urinalysis">Uroanálisis Completo</option>
                     <option value="urine_culture">Urocultivo</option>
@@ -164,7 +157,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="urine_protein">Proteinuria 24h</option>
                     <option value="urine_microalbumin">Microalbuminuria</option>
                   </optgroup>
-                  {/* HECES */}
                   <optgroup label="💩 Heces">
                     <option value="stool_routine">Examen de Heces</option>
                     <option value="stool_occult">Sangre Oculta en Heces</option>
@@ -172,7 +164,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="stool_culture">Coprocultivo</option>
                     <option value="stool_elisa">Antígeno en Heces (ELISA)</option>
                   </optgroup>
-                  {/* MICROBIOLOGÍA */}
                   <optgroup label="🦠 Microbiología">
                     <option value="blood_culture">Hemocultivo</option>
                     <option value="wound_culture">Cultivo de Herida</option>
@@ -190,7 +181,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="fungus_culture">Cultivo de Hongos</option>
                     <option value="mycobacteria">Micobacterias (BK)</option>
                   </optgroup>
-                  {/* INMUNOLOGÍA */}
                   <optgroup label="🛡️ Inmunología">
                     <option value="hiv_test">Prueba VIH (ELISA/Rápida)</option>
                     <option value="hepatitis_panel">Panel Hepatitis (A/B/C)</option>
@@ -203,7 +193,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="immunoglobulins">Inmunoglobulinas (IgG/IgA/IgM)</option>
                     <option value="complement">Complemento (C3/C4)</option>
                   </optgroup>
-                  {/* HORMONAS */}
                   <optgroup label="📊 Hormonas">
                     <option value="cortisol">Cortisol</option>
                     <option value="acth">ACTH</option>
@@ -217,7 +206,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="insulin">Insulina</option>
                     <option value="peptide_c">Péptido C</option>
                   </optgroup>
-                  {/* RAYOS X */}
                   <optgroup label="☢️ Rayos X">
                     <option value="xray_chest">Radiografía de Tórax</option>
                     <option value="xray_abdomen">Radiografía de Abdomen</option>
@@ -232,7 +220,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="xray_dental">Radiografía Dental</option>
                     <option value="xray_contrast">Radiografía con Contraste</option>
                   </optgroup>
-                  {/* ECOGRAFÍA */}
                   <optgroup label="🔊 Ecografía">
                     <option value="ultrasound_abdo">Ecografía Abdominal</option>
                     <option value="ultrasound_pelvic">Ecografía Pélvica</option>
@@ -246,7 +233,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="ultrasound_soft_tissue">Ecografía de Partes Blandas</option>
                     <option value="ultrasound_joint">Ecografía Articular</option>
                   </optgroup>
-                  {/* TOMOGRAFÍA */}
                   <optgroup label="🖥️ Tomografía (TC)">
                     <option value="ct_head">TC de Cráneo</option>
                     <option value="ct_brain_angio">TC Cerebral con Angio</option>
@@ -259,7 +245,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="ct_cardiac">TC Cardíaca</option>
                     <option value="ct_angio">TC Angiografía</option>
                   </optgroup>
-                  {/* RESONANCIA */}
                   <optgroup label="🧲 Resonancia (RM)">
                     <option value="mri_brain">RM Cerebral</option>
                     <option value="mri_spine">RM de Columna</option>
@@ -271,7 +256,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="mri_prostate">RM Prostática</option>
                     <option value="mri_breast">RM Mamaria</option>
                   </optgroup>
-                  {/* IMAGEN OTROS */}
                   <optgroup label="📸 Imagen Otros">
                     <option value="mammography">Mamografía</option>
                     <option value="mammography_3d">Tomosíntesis Mamaria</option>
@@ -287,7 +271,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="lung_scan">Gammagrafía Pulmonar</option>
                     <option value="renal_scan">Gammagrafía Renal</option>
                   </optgroup>
-                  {/* CARDIOLOGÍA */}
                   <optgroup label="❤️ Cardiología">
                     <option value="ecg_12lead">ECG 12 Derivaciones</option>
                     <option value="ecg_holter">Holter 24h</option>
@@ -300,7 +283,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="tilt_test">Prueba de Mesa Inclinada</option>
                     <option value="abi">Índice Tobillo-Brazo</option>
                   </optgroup>
-                  {/* NEUMOLOGÍA */}
                   <optgroup label="🫁 Neumología">
                     <option value="spirometry">Espirometría</option>
                     <option value="spirometry_post">Espirometría Post-Broncodilatador</option>
@@ -310,7 +292,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="capnography">Capnografía</option>
                     <option value="diffusion_capacity">Capacidad de Difusión</option>
                   </optgroup>
-                  {/* NEUROLOGÍA */}
                   <optgroup label="🧠 Neurología">
                     <option value="eeg">Electroencefalograma</option>
                     <option value="eeg_video">Video-EEG</option>
@@ -321,7 +302,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="baep">Potenciales Evocados Auditivos</option>
                     <option value="sep">Potenciales Evocados Somatosensoriales</option>
                   </optgroup>
-                  {/* ENDOSCOPIA */}
                   <optgroup label="🔍 Endoscopía">
                     <option value="endoscopy_ugi">Endoscopía Alta (EGD)</option>
                     <option value="colonoscopy">Colonoscopía</option>
@@ -336,7 +316,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="laparoscopy">Laparoscopía Diagnóstica</option>
                     <option value="arthroscopy">Artroscopía</option>
                   </optgroup>
-                  {/* OFTALMOLOGÍA */}
                   <optgroup label="👁️ Oftalmología">
                     <option value="visual_acuity">Agudeza Visual</option>
                     <option value="tonometry">Tonometría</option>
@@ -350,7 +329,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="biometry">Biometría Ocular</option>
                     <option value="color_vision">Test de Visión de Colores</option>
                   </optgroup>
-                  {/* OTORRINOLARINGOLOGÍA */}
                   <optgroup label="👂 Otorrinolaringología">
                     <option value="audiometry">Audiometría</option>
                     <option value="audiometry_speech">Audiometría con Logoaudiometría</option>
@@ -361,7 +339,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="laryngoscopy">Laringoscopía</option>
                     <option value="vestibular_test">Pruebas Vestibulares</option>
                   </optgroup>
-                  {/* GINECO-OBSTETRICIA */}
                   <optgroup label="🤰 Gineco-Obstetricia">
                     <option value="papanicolaou">Papanicolaou</option>
                     <option value="colposcopy">Colposcopía</option>
@@ -372,7 +349,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="biophysical_profile">Perfil Biofísico Fetal</option>
                     <option value="semen_analysis">Espermatograma</option>
                   </optgroup>
-                  {/* PROCEDIMIENTOS ESPECIALES */}
                   <optgroup label="🔬 Procedimientos Especiales">
                     <option value="biopsy">Biopsia</option>
                     <option value="biopsy_skin">Biopsia de Piel</option>
@@ -388,7 +364,6 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="arthrocentesis">Artrocentesis</option>
                     <option value="bonemarrow_biopsy">Biopsia de Médula Ósea</option>
                   </optgroup>
-                  {/* GENÉTICA */}
                   <optgroup label="🧬 Genética">
                     <option value="genetic_test">Prueba Genética</option>
                     <option value="karyotype">Cariotipo</option>
@@ -398,14 +373,12 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                     <option value="paternity_test">Prueba de Paternidad</option>
                     <option value="pharmacogenomics">Farmacogenómica</option>
                   </optgroup>
-                  {/* TOXICOLOGÍA */}
                   <optgroup label="⚠️ Toxicología">
                     <option value="drug_screen">Tamizaje de Drogas</option>
                     <option value="alcohol_test">Prueba de Alcohol</option>
                     <option value="heavy_metals">Metales Pesados</option>
                     <option value="therapeutic_drug">Monitoreo de Fármacos</option>
                   </optgroup>
-                  {/* OTROS */}
                   <optgroup label="📋 Otros">
                     <option value="pregnancy_test">Prueba de Embarazo</option>
                     <option value="sweat_test">Test del Sudor</option>
@@ -416,13 +389,12 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                   </optgroup>
                 </select>
               </div>
-              {/* Selector de Urgencia */}
-              <div className="space-y-1">
-                <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Priority_Level</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Nivel de Prioridad</label>
                 <select
                   value={urgency}
                   onChange={(e) => setUrgency(e.target.value as any)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none rounded-lg"
                 >
                   <option value="routine">Rutina</option>
                   <option value="priority">Prioridad</option>
@@ -431,33 +403,31 @@ export default function MedicalTestsPanel({ appointmentId, diagnosisId, readOnly
                 </select>
               </div>
             </div>
-            {/* Notas del Examen */}
-            <div className="space-y-1">
-              <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Procedure_Directives</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Instrucciones del Procedimiento</label>
               <textarea
-                placeholder="ADD_SPECIFIC_INSTRUCTIONS_FOR_LAB_PERSONNEL..."
+                placeholder="Agregar instrucciones específicas para el personal de laboratorio..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantantir-active)] outline-none min-h-[60px] resize-none"
+                className="w-full bg-white/5 border border-white/15 p-3 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none min-h-[60px] resize-none rounded-lg"
               />
             </div>
             <button
               onClick={handleAdd}
               disabled={!testType}
-              className="flex items-center gap-2 bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] border border-[var(--palantir-active)]/30 px-4 py-2 text-[9px] font-black uppercase tracking-widest hover:bg-[var(--palantir-active)] hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
             >
-              <PlusIcon className="w-3.5 h-3.5" />
-              Initialize_Order
+              <PlusIcon className="w-5 h-5" />
+              Iniciar Orden
             </button>
           </div>
         )}
       </div>
-      {/* FOOTER METADATA */}
-      <div className="bg-black/20 px-4 py-2 border-t border-[var(--palantir-border)] flex justify-between">
+      <div className="bg-black/20 px-5 py-3 border-t border-white/10 flex justify-between">
         <div className="flex items-center gap-2">
-          <ExclamationTriangleIcon className="w-3 h-3 text-orange-400" />
-          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
-            Orders are synced with hospital laboratory information system (LIS)
+          <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
+          <span className="text-[9px] text-white/50 uppercase">
+            Las órdenes se sincronizan con el sistema de información del laboratorio (LIS)
           </span>
         </div>
       </div>

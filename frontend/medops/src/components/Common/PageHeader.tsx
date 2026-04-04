@@ -37,96 +37,81 @@ const PageHeader: React.FC<PageHeaderProps> = ({
     return () => clearInterval(timer);
   }, []);
   return (
-    <section className="relative flex flex-col gap-6 mb-4 group animate-in fade-in slide-in-from-top-1 duration-700 select-none">
+    <section className="relative flex flex-col gap-5 mb-6 animate-in fade-in slide-in-from-top-1 duration-500">
       
-      {/* 1. TOP BAR: Breadcrumbs (Elite Navigation) & System Clock */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-2">
-        <div className="flex items-center gap-4">
-          <div className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-40"></span>
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]"></span>
-          </div>
-          <nav className="flex" aria-label="Breadcrumb">
-            <ol role="list" className="flex items-center space-x-2">
-              <li>
-                <div>
-                  <Link to={homePath} className="text-white/50 hover:text-white transition-colors">
-                    <HomeIcon className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
-                    <span className="sr-only">Home</span>
-                  </Link>
-                </div>
-              </li>
-              
-              {breadcrumbs ? (
-                breadcrumbs.map((item, idx) => (
-                  <li key={idx}>
-                    <div className="flex items-center">
-                      <ChevronRightIcon
-                        className="h-4 w-4 flex-shrink-0 text-white/40"
-                        aria-hidden="true"
-                      />
-                      {item.path ? (
-                        <Link
-                          to={item.path}
-                          className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 hover:text-white transition-all duration-300"
-                        >
-                          {item.label}
-                        </Link>
-                      ) : (
-                        <span
-                          className={`ml-2 text-[10px] font-black uppercase tracking-[0.2em] ${
-                            item.active
-                              ? "text-white/90 drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]"
-                              : "text-white/60"
-                          }`}
-                          aria-current={item.active ? "page" : undefined}
-                        >
-                          {item.label}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                ))
-              ) : (
-                <li>
+      {/* Breadcrumbs y Reloj */}
+      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <nav className="flex" aria-label="Breadcrumb">
+          <ol role="list" className="flex items-center space-x-2">
+            <li>
+              <Link to={homePath} className="text-white/50 hover:text-white transition-colors">
+                <HomeIcon className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">Inicio</span>
+              </Link>
+            </li>
+            
+            {breadcrumbs ? (
+              breadcrumbs.map((item, idx) => (
+                <li key={idx}>
                   <div className="flex items-center">
-                    <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/40" aria-hidden="true" />
-                    <h2 className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/80 leading-none">
-                      {breadcrumb}
-                    </h2>
+                    <ChevronRightIcon
+                      className="h-4 w-4 flex-shrink-0 text-white/30"
+                      aria-hidden="true"
+                    />
+                    {item.path ? (
+                      <Link
+                        to={item.path}
+                        className="ml-2 text-[12px] font-medium text-white/60 hover:text-white transition-colors"
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <span
+                        className={`ml-2 text-[12px] font-semibold ${
+                          item.active ? "text-white" : "text-white/60"
+                        }`}
+                        aria-current={item.active ? "page" : undefined}
+                      >
+                        {item.label}
+                      </span>
+                    )}
                   </div>
                 </li>
-              )}
-            </ol>
-          </nav>
-        </div>
+              ))
+            ) : (
+              <li>
+                <div className="flex items-center">
+                  <ChevronRightIcon className="h-4 w-4 flex-shrink-0 text-white/30" aria-hidden="true" />
+                  <h2 className="ml-2 text-[12px] font-semibold text-white/80">
+                    {breadcrumb}
+                  </h2>
+                </div>
+              </li>
+            )}
+          </ol>
+        </nav>
         
-        {/* Sistema de Reloj con mayor tamaño y legibilidad */}
-        <div className="hidden sm:flex items-center gap-6 font-mono text-[11px] tracking-[0.15em]">
-          <span className="text-white/50 uppercase tracking-[0.3em] font-semibold">System_Clock</span>
-          
-          <span className="text-white font-bold tabular-nums bg-white/10 px-3 py-1 rounded-sm border border-white/15 shadow-lg">
-            {now.format("HH:mm:ss").toUpperCase()} 
-            <span className="text-white/50 ml-1">{now.format("ZZ")}</span>
-          </span>
+        <div className="hidden sm:flex items-center gap-3 text-[12px] text-white/50">
+          <span className="font-medium">{now.format("HH:mm:ss")}</span>
+          <span className="text-white/30">•</span>
+          <span>{now.format("DD MMM YYYY")}</span>
         </div>
       </div>
       
-      {/* 2. OPERATIONAL CORE: Stats & Actions (Layout simplificado) */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      {/* Stats y Acciones */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         
-        {/* Statistics Section */}
         {stats && stats.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-0 border border-white/5 bg-black/20 backdrop-blur-md rounded-sm overflow-hidden shadow-xl">
+          <div className="flex flex-wrap items-center gap-4">
             {stats.map((stat, i) => (
               <div
                 key={i}
-                className="flex flex-col px-6 py-2.5 min-w-[130px] relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] transition-all group/stat"
+                className="flex flex-col px-4 py-2 min-w-[120px] hover:bg-white/5 rounded-lg transition-colors"
               >
-                <span className="text-[9px] font-black uppercase tracking-[0.25em] text-white/40 group-hover/stat:text-white/60 transition-colors">
+                <span className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
                   {stat.label}
                 </span>
-                <div className={`text-[12px] font-mono font-black tracking-[0.1em] mt-0.5 ${stat.color || "text-white"} drop-shadow-[0_0_8px_rgba(255,255,255,0.1)]`}>
+                <div className={`text-[16px] font-semibold mt-0.5 ${stat.color || "text-white"}`}>
                   {stat.value}
                 </div>
               </div>
@@ -136,18 +121,17 @@ const PageHeader: React.FC<PageHeaderProps> = ({
           <div className="flex-1" />
         )}
         
-        {/* Control Interface: Actions & Children (Buttons suben aquí) */}
         {(actions || children) && (
-          <div className="flex items-center gap-4 self-start lg:self-center p-1.5 bg-black/40 border border-white/5 rounded-sm backdrop-blur-xl shadow-2xl">
+          <div className="flex items-center gap-3 self-start lg:self-center">
             {children && (
-              <div className="flex items-center gap-3 px-2">
+              <div className="flex items-center gap-2">
                 {children}
               </div>
             )}
             
             {actions && (
               <>
-                {children && <div className="w-[1px] h-6 bg-white/10 mx-1" />}
+                {children && <div className="w-[1px] h-6 bg-white/10" />}
                 <div className="flex items-center gap-2">
                   {actions}
                 </div>
@@ -155,12 +139,6 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             )}
           </div>
         )}
-      </div>
-      
-      {/* Decorative Tactical Baseline */}
-      <div className="absolute -bottom-6 left-0 w-full flex items-center gap-3 opacity-20 pointer-events-none">
-        <div className="h-[1px] flex-1 bg-gradient-to-r from-white/40 to-transparent" />
-        <div className="text-[7px] font-mono text-white/40 tracking-[0.8em] uppercase">Medopz_Protocol_Terminal</div>
       </div>
     </section>
   );

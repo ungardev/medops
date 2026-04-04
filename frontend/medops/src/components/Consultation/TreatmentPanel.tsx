@@ -78,51 +78,47 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
   };
   const handleDelete = (id: number) => {
     if (!deleteTreatment) return;
-    if (window.confirm("Confirm_Delete_Treatment?")) {
+    if (window.confirm("¿Confirmar eliminación del tratamiento?")) {
       deleteTreatment(id);
     }
   };
   return (
-    <div className="space-y-8">
-      {/* HEADER SECTION */}
-      <div className="flex items-center gap-2 mb-6">
-        <ClipboardDocumentListIcon className="w-5 h-5 text-[var(--palantir-active)]" />
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-          Clinical_Intervention_Matrix
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-4">
+        <ClipboardDocumentListIcon className="w-5 h-5 text-emerald-400" />
+        <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+          Matriz de Intervención Clínica
         </span>
       </div>
-      {/* RENDER DIAGNOSES AND THEIR TREATMENTS */}
       <div className="space-y-6">
         {diagnoses.length === 0 ? (
-          <div className="p-8 border border-dashed border-[var(--palantir-border)] text-center opacity-40">
-            <span className="text-[10px] font-mono uppercase italic">Awaiting_Diagnosis_Input...</span>
+          <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-lg">
+            <span className="text-[11px] text-white/60">Esperando diagnóstico...</span>
           </div>
         ) : (
           diagnoses.map((d) => {
             const diagnosisTreatments = treatments?.filter((t) => t.diagnosis === d.id) || [];
             return (
               <div key={d.id} className="space-y-3">
-                {/* DIAGNOSIS HEADER */}
-                <div className="flex items-start gap-3 pb-3 border-b border-white/5">
-                  <div className="flex-shrink-0 w-8 h-8 bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm flex items-center justify-center">
-                    <TagIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+                <div className="flex items-start gap-3 pb-3 border-b border-white/15">
+                  <div className="flex-shrink-0 w-9 h-9 bg-emerald-500/10 border border-emerald-500/25 rounded-lg flex items-center justify-center">
+                    <TagIcon className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div className="flex-grow">
-                    <p className="text-[11px] font-black uppercase tracking-wider text-[var(--palantir-text)]">
+                    <p className="text-[12px] font-bold uppercase tracking-wider text-white">
                       {d.icd_code} {d.title}
                     </p>
-                    <p className="text-[9px] font-mono text-[var(--palantir-muted)] mt-0.5 uppercase">
+                    <p className="text-[10px] text-white/50 mt-0.5">
                       {d.type} • {d.status}
                     </p>
                   </div>
-                  <span className="text-[9px] font-mono text-[var(--palantir-muted)]">
-                    {diagnosisTreatments.length} TX
+                  <span className="text-[10px] text-white/50">
+                    {diagnosisTreatments.length} tratamiento{diagnosisTreatments.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                {/* TREATMENTS GRID */}
                 {diagnosisTreatments.length === 0 ? (
-                  <div className="pl-11 opacity-30">
-                    <span className="text-[9px] font-mono uppercase italic">No_Treatments_Assigned</span>
+                  <div className="pl-11 opacity-40">
+                    <span className="text-[10px] text-white/50 italic">Sin tratamientos asignados</span>
                   </div>
                 ) : (
                   <div className="pl-11 grid grid-cols-1 gap-3">
@@ -142,29 +138,27 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
           })
         )}
       </div>
-      {/* ADD TREATMENT FORM */}
       {!readOnly && (
-        <div className="mt-8 pt-6 border-t border-[var(--palantir-border)]">
+        <div className="mt-8 pt-6 border-t border-white/15">
           <div className="flex items-center gap-2 mb-4">
-            <PlusIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-            <span className="text-[9px] font-black uppercase tracking-wider text-[var(--palantir-active)]">
-              Assign_New_Treatment
+            <PlusIcon className="w-5 h-5 text-emerald-400" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">
+              Asignar Nuevo Tratamiento
             </span>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              {/* DIAGNOSIS SELECT */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
-                  Target_Diagnosis
+                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                  Diagnóstico Objetivo
                 </label>
                 <select
                   value={diagnosisId}
                   onChange={(e) => setDiagnosisId(Number(e.target.value))}
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
                   required
                 >
-                  <option value="">SELECT_DIAGNOSIS</option>
+                  <option value="">Seleccionar diagnóstico</option>
                   {diagnoses.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.icd_code} - {d.title}
@@ -172,84 +166,80 @@ const TreatmentPanel: React.FC<TreatmentPanelProps> = ({
                   ))}
                 </select>
               </div>
-              {/* TREATMENT TYPE */}
               <div>
-                <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
-                  Treatment_Class
+                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                  Tipo de Tratamiento
                 </label>
                 <select
                   value={treatmentType}
                   onChange={(e) => setTreatmentType(e.target.value as any)}
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
                 >
-                  <option value="pharmacological">PHARMACOLOGICAL</option>
-                  <option value="surgical">SURGICAL</option>
-                  <option value="rehabilitation">REHABILITATION</option>
-                  <option value="lifestyle">LIFESTYLE</option>
-                  <option value="other">OTHER</option>
+                  <option value="pharmacological">Farmacológico</option>
+                  <option value="surgical">Quirúrgico</option>
+                  <option value="rehabilitation">Rehabilitación</option>
+                  <option value="lifestyle">Estilo de Vida</option>
+                  <option value="other">Otro</option>
                 </select>
               </div>
-              {/* STATUS */}
               <div>
-                <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
-                  Status_Flag
+                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                  Estado
                 </label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value as any)}
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
                 >
-                  <option value="active">ACTIVE</option>
-                  <option value="completed">COMPLETED</option>
-                  <option value="cancelled">CANCELLED</option>
+                  <option value="active">Activo</option>
+                  <option value="completed">Completado</option>
+                  <option value="cancelled">Cancelado</option>
                 </select>
               </div>
-              {/* FIXED DATE INPUTS: Proper styling for dark mode date picker */}
               <div>
-                <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
-                  Init_Date
+                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                  Fecha de Inicio
                 </label>
                 <div className="relative">
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)] [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
-                  End_Date
+                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                  Fecha de Fin
                 </label>
                 <div className="relative">
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-gray-900 border border-[var(--palantir-border)] p-2 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)] [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
               </div>
-              {/* PLAN TEXTAREA */}
               <div className="col-span-2">
-                <label className="block text-[9px] font-mono uppercase text-[var(--palantir-muted)] mb-1">
-                  Treatment_Protocol
+                <label className="block text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1">
+                  Protocolo de Tratamiento
                 </label>
                 <textarea
                   value={plan}
                   onChange={(e) => setPlan(e.target.value)}
-                  placeholder="Enter treatment protocol..."
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] p-3 text-[10px] font-mono outline-none focus:border-[var(--palantir-active)] min-h-[80px] text-[var(--palantir-text)]"
+                  placeholder="Describir el protocolo de tratamiento..."
+                  className="w-full bg-white/5 border border-white/15 p-3 text-[12px] outline-none focus:border-emerald-500/50 min-h-[80px] rounded-lg"
                   required
                 />
               </div>
             </div>
             <button
               type="submit"
-              className="w-full bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 text-[var(--palantir-active)] py-2 text-[9px] font-black uppercase tracking-widest hover:bg-[var(--palantir-active)]/20 transition-all"
+              className="w-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 py-3 text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all rounded-lg"
             >
-              Initialize_Treatment
+              Iniciar Tratamiento
             </button>
           </form>
         </div>

@@ -25,15 +25,15 @@ import {
   ExclamationTriangleIcon
 } from "@heroicons/react/24/outline";
 const URGENCY_CONFIG = {
-  routine: { label: "RUTINA", color: "text-slate-400", bgColor: "bg-slate-400/10", borderColor: "border-slate-400/30" },
-  urgent: { label: "URGENTE", color: "text-amber-400", bgColor: "bg-amber-400/10", borderColor: "border-amber-400/30" },
-  stat: { label: "STAT", color: "text-red-400", bgColor: "bg-red-400/10", borderColor: "border-red-400/30" },
+  routine: { label: "RUTINA", color: "text-slate-400", bgColor: "bg-slate-500/15", borderColor: "border-slate-500/25" },
+  urgent: { label: "URGENTE", color: "text-amber-400", bgColor: "bg-amber-500/15", borderColor: "border-amber-500/25" },
+  stat: { label: "STAT", color: "text-red-400", bgColor: "bg-red-500/15", borderColor: "border-red-500/25" },
 };
 const STATUS_CONFIG = {
-  issued: { label: "EMITIDA", color: "text-blue-400", bgColor: "bg-blue-400/10", borderColor: "border-blue-400/30" },
-  accepted: { label: "ACEPTADA", color: "text-emerald-400", bgColor: "bg-emerald-400/10", borderColor: "border-emerald-400/30" },
-  rejected: { label: "RECHAZADA", color: "text-red-400", bgColor: "bg-red-400/10", borderColor: "border-red-400/30" },
-  completed: { label: "COMPLETADA", color: "text-purple-400", bgColor: "bg-purple-400/10", borderColor: "border-purple-400/30" },
+  issued: { label: "EMITIDA", color: "text-blue-400", bgColor: "bg-blue-500/15", borderColor: "border-blue-500/25" },
+  accepted: { label: "ACEPTADA", color: "text-emerald-400", bgColor: "bg-emerald-500/15", borderColor: "border-emerald-500/25" },
+  rejected: { label: "RECHAZADA", color: "text-red-400", bgColor: "bg-red-500/15", borderColor: "border-red-500/25" },
+  completed: { label: "COMPLETADA", color: "text-purple-400", bgColor: "bg-purple-500/15", borderColor: "border-purple-500/25" },
 };
 export interface MedicalReferralsPanelProps {
   appointmentId: number;
@@ -112,24 +112,22 @@ export default function MedicalReferralsPanel({
     return r.referred_to || r.referred_to_external || "Sin destino especificado";
   };
   return (
-    <div className="border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden">
-      {/* HEADER */}
-      <div className="bg-white/5 px-4 py-3 border-b border-[var(--palantir-border)] flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ArrowTopRightOnSquareIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-            External_Referral_Protocol
+    <div className="border border-white/15 bg-white/5 rounded-lg overflow-hidden">
+      <div className="bg-white/5 px-5 py-3 border-b border-white/15 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <ArrowTopRightOnSquareIcon className="w-5 h-5 text-emerald-400" />
+          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+            Protocolo de Referencia Externa
           </span>
         </div>
-        {isLoading && <span className="text-[8px] animate-pulse font-mono text-[var(--palantir-active)]">SYNCING_DATA...</span>}
+        {isLoading && <span className="text-[9px] animate-pulse text-emerald-400">Sincronizando...</span>}
       </div>
       
-      <div className="p-4 space-y-4">
-        {/* LISTA DE REFERENCIAS */}
+      <div className="p-5 space-y-4">
         <div className="space-y-3">
           {referrals.length === 0 ? (
-            <div className="text-[10px] font-mono text-[var(--palantir-muted)] opacity-50 italic py-2">
-              NO_OUTGOING_REFERRALS_REGISTERED
+            <div className="text-[11px] text-white/50 italic py-2">
+              No hay referencias registradas
             </div>
           ) : (
             referrals.map((r) => {
@@ -137,104 +135,101 @@ export default function MedicalReferralsPanel({
               const statusConfig = STATUS_CONFIG[r.status] || STATUS_CONFIG.issued;
               
               return (
-                <div key={r.id} className="border border-white/5 bg-white/[0.02] p-3 rounded-sm space-y-3">
+                <div key={r.id} className="border border-white/15 bg-white/5 p-4 rounded-lg space-y-3">
                   {editingReferral?.id === r.id ? (
                     <div className="space-y-3 animate-in fade-in duration-200">
                       <input
                         type="text"
                         value={editingReferral.referred_to_external || ""}
                         onChange={(e) => setEditingReferral({ ...editingReferral, referred_to_external: e.target.value })}
-                        className="w-full bg-black/60 border border-[var(--palantir-active)]/50 p-2 text-[10px] font-mono text-white outline-none"
+                        className="w-full bg-white/5 border border-emerald-500/30 p-3 text-[12px] text-white outline-none focus:border-emerald-500/50 rounded-lg"
                         placeholder="Destino de la referencia..."
                       />
                       <textarea
                         value={editingReferral.reason || ""}
                         onChange={(e) => setEditingReferral({ ...editingReferral, reason: e.target.value })}
-                        className="w-full bg-black/60 border border-[var(--palantir-active)]/50 p-2 text-[10px] font-mono text-white min-h-[60px] outline-none"
+                        className="w-full bg-white/5 border border-emerald-500/30 p-3 text-[12px] text-white min-h-[60px] outline-none focus:border-emerald-500/50 rounded-lg"
                         placeholder="Motivo clínico..."
                       />
                       <div className="flex gap-2">
-                        <button onClick={handleUpdate} className="flex items-center gap-1 bg-[var(--palantir-active)] text-white px-3 py-1 text-[9px] font-black uppercase">
-                          <CheckIcon className="w-3 h-3" /> Guardar
+                        <button onClick={handleUpdate} className="flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-4 py-2 text-[10px] font-bold uppercase rounded-lg">
+                          <CheckIcon className="w-4 h-4" /> Guardar
                         </button>
-                        <button onClick={() => setEditingReferral(null)} className="flex items-center gap-1 bg-white/10 text-white px-3 py-1 text-[9px] font-black uppercase">
-                          <XMarkIcon className="w-3 h-3" /> Cancelar
+                        <button onClick={() => setEditingReferral(null)} className="flex items-center gap-1.5 bg-white/5 text-white/60 px-4 py-2 text-[10px] font-bold uppercase rounded-lg hover:bg-white/10">
+                          <XMarkIcon className="w-4 h-4" /> Cancelar
                         </button>
                       </div>
                     </div>
                   ) : (
                     <>
-                      {/* DESTINATARIO Y RAZÓN */}
                       <div className="flex justify-between items-start">
                         <div className="flex flex-col">
-                          <span className="text-[11px] font-bold text-[var(--palantir-text)] uppercase tracking-tight">
+                          <span className="text-[12px] font-medium text-white uppercase">
                             → {getReferredToDisplay(r)}
                           </span>
                           {r.reason && (
-                            <span className="text-[10px] font-mono text-[var(--palantir-muted)] leading-relaxed mt-1">
+                            <span className="text-[11px] text-white/60 leading-relaxed mt-1">
                               {r.reason}
                             </span>
                           )}
                           {r.clinical_summary && (
-                            <span className="text-[9px] font-mono text-white/40 leading-relaxed mt-1 italic">
+                            <span className="text-[10px] text-white/40 leading-relaxed mt-1 italic">
                               {r.clinical_summary}
                             </span>
                           )}
                         </div>
                         {!readOnly && (
                           <div className="flex gap-1">
-                            <button onClick={() => setEditingReferral(r)} className="p-1 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] transition-colors">
-                              <PencilSquareIcon className="w-3.5 h-3.5" />
+                            <button onClick={() => setEditingReferral(r)} className="p-2 text-white/50 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors">
+                              <PencilSquareIcon className="w-4 h-4" />
                             </button>
-                            <button onClick={() => deleteReferral({ id: r.id, appointment: appointmentId })} className="p-1 text-[var(--palantir-muted)] hover:text-red-400 transition-colors">
-                              <TrashIcon className="w-3.5 h-3.5" />
+                            <button onClick={() => deleteReferral({ id: r.id, appointment: appointmentId })} className="p-2 text-white/50 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors">
+                              <TrashIcon className="w-4 h-4" />
                             </button>
                           </div>
                         )}
                       </div>
                       
-                      {/* METADATA: Doctor emisor e Institución */}
                       {(r.doctor || r.institution) && (
-                        <div className="flex items-center gap-3 text-xs font-mono text-[var(--palantir-muted)] mt-1 border-t border-white/5 pt-2">
+                        <div className="flex items-center gap-3 text-[10px] text-white/60 mt-1 border-t border-white/10 pt-2">
                           {r.doctor && (
                             <div className="flex items-center gap-1">
-                              <UserGroupIcon className="w-3.5 h-3.5" />
+                              <UserGroupIcon className="w-4 h-4" />
                               <span>{r.doctor.full_name}</span>
                               {r.doctor.is_verified && (
-                                <ShieldCheckIcon className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />
+                                <ShieldCheckIcon className="w-4 h-4 inline ml-1 text-emerald-500" />
                               )}
                             </div>
                           )}
                           {r.doctor && r.institution && <span className="text-white/20">•</span>}
                           {r.institution && (
                             <div className="flex items-center gap-1">
-                              <BuildingOfficeIcon className="w-3.5 h-3.5" />
+                              <BuildingOfficeIcon className="w-4 h-4" />
                               <span>{r.institution.name}</span>
                             </div>
                           )}
                         </div>
                       )}
                       
-                      {/* ESPECIALIDADES Y BADGES */}
-                      <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5 items-center">
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-white/10 items-center">
                         {r.specialties?.map(s => (
-                          <span key={s.id} className="flex items-center gap-1 text-[8px] font-black bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/20 uppercase">
-                            <TagIcon className="w-2.5 h-2.5" /> {s.name}
+                          <span key={s.id} className="flex items-center gap-1 text-[9px] font-medium bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/25 uppercase">
+                            <TagIcon className="w-3 h-3" /> {s.name}
                           </span>
                         ))}
                         
-                        <span className={`flex items-center gap-1 text-[8px] font-black ${urgencyConfig.bgColor} ${urgencyConfig.color} ${urgencyConfig.borderColor} border px-1.5 py-0.5 rounded uppercase`}>
-                          {r.urgency === "stat" && <ExclamationTriangleIcon className="w-2.5 h-2.5" />}
-                          {r.urgency === "urgent" && <ClockIcon className="w-2.5 h-2.5" />}
+                        <span className={`flex items-center gap-1 text-[9px] font-medium ${urgencyConfig.bgColor} ${urgencyConfig.color} ${urgencyConfig.borderColor} border px-2 py-0.5 rounded uppercase`}>
+                          {r.urgency === "stat" && <ExclamationTriangleIcon className="w-3.5 h-3.5" />}
+                          {r.urgency === "urgent" && <ClockIcon className="w-3.5 h-3.5" />}
                           {urgencyConfig.label}
                         </span>
                         
-                        <span className={`text-[8px] font-mono ${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor} border px-1.5 py-0.5 rounded uppercase`}>
+                        <span className={`text-[9px] font-medium ${statusConfig.bgColor} ${statusConfig.color} ${statusConfig.borderColor} border px-2 py-0.5 rounded uppercase`}>
                           {statusConfig.label}
                         </span>
                         
                         {r.is_internal && (
-                          <span className="text-[7px] font-mono text-purple-400 bg-purple-400/10 border border-purple-400/20 px-1.5 py-0.5 rounded uppercase">
+                          <span className="text-[9px] font-medium text-purple-400 bg-purple-500/15 border border-purple-500/25 px-2 py-0.5 rounded uppercase">
                             INTERNA
                           </span>
                         )}
@@ -247,19 +242,17 @@ export default function MedicalReferralsPanel({
           )}
         </div>
         
-        {/* FORMULARIO DE NUEVA REFERENCIA */}
         {!readOnly && (
-          <div className="mt-6 pt-6 border-t border-white/10 space-y-4">
-            {/* SELECTOR DE DIAGNÓSTICO */}
+          <div className="mt-6 pt-6 border-t border-white/15 space-y-4">
             {diagnoses.length > 0 && (
-              <div className="space-y-1">
-                <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">
-                  Related_Diagnosis_(Recommended)
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">
+                  Diagnóstico Relacionado (Recomendado)
                 </label>
                 <select 
                   value={selectedDiagnosisId || ""} 
                   onChange={(e) => setSelectedDiagnosisId(Number(e.target.value) || null)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[10px] font-mono text-[var(--palantir-text)] outline-none focus:border-[var(--palantir-active)]"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 outline-none focus:border-emerald-500/50 rounded-lg"
                 >
                   <option value="">Sin diagnóstico específico</option>
                   {diagnoses.map((d) => (
@@ -272,18 +265,18 @@ export default function MedicalReferralsPanel({
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Target_Facility_Specialist</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Especialista o Centro Destino</label>
                 <input
                   type="text"
-                  placeholder="E.G. CLINICAL_ONCOLOGY_UNIT"
+                  placeholder="Ej: Unidad de Oncología Clínica"
                   value={referredToExternal}
                   onChange={(e) => setReferredToExternal(e.target.value)}
-                  className="w-full bg-black/40 border border-[var(--palantir-border)] p-2.5 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none"
+                  className="w-full bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none rounded-lg"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Referral_Specialties</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Especialidades</label>
                 <SpecialtyComboboxElegante
                   value={selectedSpecialties}
                   onChange={setSelectedSpecialties}
@@ -292,23 +285,23 @@ export default function MedicalReferralsPanel({
               </div>
             </div>
             
-            <div className="space-y-1">
-              <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Clinical_Justification</label>
+            <div className="space-y-2">
+              <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Justificación Clínica</label>
               <textarea
-                placeholder="DESCRIBE_MOTIVATION_FOR_INTERCONSULTATION..."
+                placeholder="Describir la motivación para la interconsulta..."
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                className="w-full bg-black/40 border border-[var(--palantir-border)] p-3 text-[10px] font-mono text-[var(--palantir-text)] focus:border-[var(--palantir-active)] outline-none min-h-[70px] resize-none"
+                className="w-full bg-white/5 border border-white/15 p-3 text-[12px] text-white/80 focus:border-emerald-500/50 outline-none min-h-[70px] resize-none rounded-lg"
               />
             </div>
             
             <div className="flex flex-wrap gap-4 items-end justify-between">
-              <div className="space-y-1">
-                <label className="text-[8px] font-black text-[var(--palantir-muted)] uppercase tracking-widest">Urgency_Level</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Nivel de Urgencia</label>
                 <select 
                   value={urgency} 
                   onChange={(e) => setUrgency(e.target.value as any)} 
-                  className="bg-black/40 border border-[var(--palantir-border)] p-2 text-[10px] font-mono text-[var(--palantir-text)] outline-none focus:border-[var(--palantir-active)]"
+                  className="bg-white/5 border border-white/15 p-2.5 text-[12px] text-white/80 outline-none focus:border-emerald-500/50 rounded-lg"
                 >
                   <option value="routine">Rutina</option>
                   <option value="urgent">Urgente</option>
@@ -319,20 +312,20 @@ export default function MedicalReferralsPanel({
               <button
                 onClick={handleAdd}
                 disabled={!referredToExternal}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 border border-[var(--palantir-active)] text-[var(--palantir-active)] px-5 py-2.5 text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 px-5 py-2.5 text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
               >
-                <PlusIcon className="w-3.5 h-3.5" />
-                Initialize_Referral
+                <PlusIcon className="w-5 h-5" />
+                Iniciar Referencia
               </button>
             </div>
           </div>
         )}
       </div>
       
-      <div className="bg-black/20 px-4 py-2 border-t border-[var(--palantir-border)] flex items-center gap-2">
-        <ShieldCheckIcon className="w-3 h-3 text-[var(--palantir-active)]" />
-        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
-          Referral encrypted and logged for inter-institutional transfer
+      <div className="bg-black/20 px-5 py-3 border-t border-white/10 flex items-center gap-2">
+        <ShieldCheckIcon className="w-4 h-4 text-emerald-400" />
+        <span className="text-[9px] text-white/50 uppercase">
+          Referencia encriptada y registrada para transferencia interinstitucional
         </span>
       </div>
     </div>
