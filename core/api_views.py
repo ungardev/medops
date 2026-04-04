@@ -7404,18 +7404,17 @@ class OperationalHubView(APIView):
             return []
     
     def _get_pending_entries(self, institution_id, today):
-        """Obtiene citas pendientes del día actual."""
+        """Obtiene citas pendientes desde hoy en adelante."""
         try:
             from core.serializers import AppointmentSerializer
             
             pending_entries = Appointment.objects.filter(
                 institution_id=institution_id,
                 status__in=['pending', 'tentative', 'confirmed'],
-                appointment_date=today
+                appointment_date__gte=today,  # ✅ Hoy y fechas futuras
             ).select_related('patient', 'doctor', 'institution', 'doctor_service')
             
-            logger.info(f"[_get_pending_entries] institution_id={institution_id}, today={today}")
-            logger.info(f"[_get_pending_entries] Found {pending_entries.count()} pending entries")
+            logger.info(f"[_get_pending_entries] institution_id={institution_id}, today={today}, found {pending_entries.count()} pending entries")
             
             return AppointmentSerializer(pending_entries, many=True).data
             

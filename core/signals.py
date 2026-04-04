@@ -19,7 +19,7 @@ def appointment_created_or_updated(sender, instance, created, **kwargs):
             notify=True
         )
         logger.info(f"Appointment {instance.id} created")
-        if instance.status == "pending" and instance.appointment_date == timezone.localdate():
+        if instance.status == "pending":  # ✅ Sin filtro de fecha
             WaitingRoomEntry.objects.get_or_create(
                 appointment=instance,
                 patient=instance.patient,

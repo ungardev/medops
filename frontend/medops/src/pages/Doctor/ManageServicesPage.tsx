@@ -47,7 +47,10 @@ export default function ManageServicesPage() {
         data: { action: "confirm", notes: verificationNotes }
       });
       
-      const dateStr = confirmAndScheduleDate.toISOString().split('T')[0];
+      const year = confirmAndScheduleDate.getFullYear();
+      const month = String(confirmAndScheduleDate.getMonth() + 1).padStart(2, '0');
+      const day = String(confirmAndScheduleDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       const token = localStorage.getItem('authToken');
       
       const doctorId = (selectedPayment as any).charge_order?.doctor?.id;

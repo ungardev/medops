@@ -31,7 +31,7 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
     
     // Días del mes
     for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(year, month, i));
+      days.push(new Date(Date.UTC(year, month, i)));
     }
     
     return days;
