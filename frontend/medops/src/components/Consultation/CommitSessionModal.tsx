@@ -57,119 +57,108 @@ export default function CommitSessionModal({
   const isPaid = billingPending <= 0;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
       <div 
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={() => !isPending && onClose()}
       />
       
-      {/* Modal */}
-      <div className="relative w-full max-w-lg bg-[#0a0a0a] border border-white/10 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--palantir-active)]">
-            Confirm_Session_Termination
+      <div className="relative w-full max-w-lg bg-[#1a1a1b] border border-white/15 rounded-lg shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-5 border-b border-white/15">
+          <h2 className="text-[12px] font-semibold text-white">
+            Confirmar Finalización de Sesión
           </h2>
           <button
             onClick={onClose}
             disabled={isPending}
-            className="p-1 hover:bg-white/10 transition-colors disabled:opacity-50"
+            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
           >
-            <XMarkIcon className="w-4 h-4" />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
-        {/* Session Info */}
-        <div className="p-4 border-b border-white/5 bg-white/[0.02]">
-          <div className="grid grid-cols-2 gap-4 text-[10px] font-mono">
+        <div className="p-5 border-b border-white/10 bg-white/5">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <span className="text-[var(--palantir-muted)] uppercase">Session_ID</span>
-              <p className="text-white font-bold">SESS-{sessionId.toString().padStart(4, '0')}</p>
+              <span className="text-[10px] font-medium text-white/50 uppercase">ID Sesión</span>
+              <p className="text-[12px] font-semibold text-white">#{sessionId.toString().padStart(4, '0')}</p>
             </div>
             <div>
-              <span className="text-[var(--palantir-muted)] uppercase">Patient</span>
-              <p className="text-white font-bold truncate">{patientName}</p>
+              <span className="text-[10px] font-medium text-white/50 uppercase">Paciente</span>
+              <p className="text-[12px] font-semibold text-white truncate">{patientName}</p>
             </div>
             <div className="col-span-2">
-              <span className="text-[var(--palantir-muted)] uppercase">Duration</span>
-              <p className="text-emerald-400 font-bold flex items-center gap-2">
-                <ClockIcon className="w-3 h-3" />
+              <span className="text-[10px] font-medium text-white/50 uppercase">Duración</span>
+              <p className="text-[12px] font-semibold text-emerald-400 flex items-center gap-2">
+                <ClockIcon className="w-4 h-4" />
                 <SessionTimer startTime={startedAt} />
               </p>
             </div>
           </div>
         </div>
-        {/* Session Summary */}
-        <div className="p-4 space-y-3">
-          <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
-            Session_Summary
+        <div className="p-5 space-y-4">
+          <h3 className="text-[10px] font-medium text-white/50 uppercase tracking-wider">
+            Resumen de Sesión
           </h3>
           
-          <div className="grid grid-cols-2 gap-2">
-            {/* Diagnoses */}
-            <div className="p-3 bg-white/[0.03] border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <BeakerIcon className="w-3 h-3 text-blue-400" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Diagnoses</span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <BeakerIcon className="w-4 h-4 text-blue-400" />
+                <span className="text-[10px] font-medium text-white/60">Diagnósticos</span>
               </div>
-              <p className="text-lg font-black text-blue-400">{diagnosesCount}</p>
+              <p className="text-xl font-semibold text-blue-400">{diagnosesCount}</p>
             </div>
-            {/* Treatments */}
-            <div className="p-3 bg-white/[0.03] border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <DocumentTextIcon className="w-3 h-3 text-purple-400" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Treatments</span>
+            <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <DocumentTextIcon className="w-4 h-4 text-purple-400" />
+                <span className="text-[10px] font-medium text-white/60">Tratamientos</span>
               </div>
-              <p className="text-lg font-black text-purple-400">{treatmentsCount}</p>
+              <p className="text-xl font-semibold text-purple-400">{treatmentsCount}</p>
             </div>
-            {/* Billing */}
-            <div className="p-3 bg-white/[0.03] border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <CurrencyDollarIcon className="w-3 h-3 text-amber-400" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Billing</span>
+            <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <CurrencyDollarIcon className="w-4 h-4 text-amber-400" />
+                <span className="text-[10px] font-medium text-white/60">Facturación</span>
               </div>
-              <p className="text-lg font-black text-amber-400">${billingTotal.toFixed(2)}</p>
-              <p className={`text-[9px] font-mono ${isPaid ? 'text-emerald-400' : 'text-red-400'}`}>
-                {isPaid ? 'PAID' : `$${billingPending.toFixed(2)} pending`}
+              <p className="text-xl font-semibold text-amber-400">${billingTotal.toFixed(2)}</p>
+              <p className={`text-[10px] font-medium mt-0.5 ${isPaid ? 'text-emerald-400' : 'text-red-400'}`}>
+                {isPaid ? 'Pagado' : `$${billingPending.toFixed(2)} pendiente`}
               </p>
             </div>
-            {/* Documents */}
-            <div className="p-3 bg-white/[0.03] border border-white/5">
-              <div className="flex items-center gap-2 mb-1">
-                <DocumentTextIcon className="w-3 h-3 text-emerald-400" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">Documents</span>
+            <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <DocumentTextIcon className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-medium text-white/60">Documentos</span>
               </div>
-              <p className="text-lg font-black text-emerald-400">{documentsCount}</p>
+              <p className="text-xl font-semibold text-emerald-400">{documentsCount}</p>
             </div>
           </div>
-          {/* Warning */}
-          <div className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20">
-            <CheckCircleIcon className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-            <p className="text-[9px] font-mono text-amber-300/80">
-              This action will mark the session as <span className="font-bold">COMPLETED</span> and cannot be undone.
+          <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+            <CheckCircleIcon className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-[11px] text-amber-300/80 leading-relaxed">
+              Esta acción marcará la sesión como <span className="font-semibold">completada</span> y no se puede deshacer.
             </p>
           </div>
         </div>
-        {/* Actions */}
-        <div className="flex gap-2 p-4 border-t border-white/10 bg-white/[0.02]">
+        <div className="flex gap-3 p-5 border-t border-white/10 bg-white/5">
           <button
             onClick={onClose}
             disabled={isPending}
-            className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest border border-white/20 text-white hover:bg-white/5 transition-all disabled:opacity-50"
+            className="flex-1 py-2.5 text-[11px] font-medium border border-white/15 text-white/70 hover:bg-white/5 transition-all disabled:opacity-50 rounded-lg"
           >
-            Cancel
+            Cancelar
           </button>
           <button
             onClick={onConfirm}
             disabled={isPending}
-            className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-500 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 text-[11px] font-medium bg-blue-500 text-white hover:bg-blue-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg"
           >
             {isPending ? (
               <>
-                <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Finalizing...
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Finalizando...
               </>
             ) : (
-              "Commit_Session"
+              "Completar Sesión"
             )}
           </button>
         </div>

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/context/AuthContext"; // Cambiado de useAuthToken
+import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/hooks/dashboard/useNotifications";
 import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import moment from "moment";
@@ -21,10 +21,10 @@ interface HeaderProps {
   setMobileOpen: (value: boolean) => void;
 }
 function notificationIcon(category: string) {
-  if (category?.includes("appointment")) return <UserCheck className="w-3 h-3" />;
-  if (category?.includes("payment")) return <DollarSign className="w-3 h-3" />;
-  if (category?.includes("report")) return <FileText className="w-3 h-3" />;
-  return <Activity className="w-3 h-3" />;
+  if (category?.includes("appointment")) return <UserCheck className="w-4 h-4" />;
+  if (category?.includes("payment")) return <DollarSign className="w-4 h-4" />;
+  if (category?.includes("report")) return <FileText className="w-4 h-4" />;
+  return <Activity className="w-4 h-4" />;
 }
 const getInitials = (fullName: string): string => {
   if (!fullName) return '??';
@@ -34,14 +34,14 @@ const getInitials = (fullName: string): string => {
   return (first + last).toUpperCase();
 };
 const getGenderPrefix = (gender?: string): string => {
-  return gender === 'F' ? 'DRA.' : 'DR.';
+  return gender === 'F' ? 'Dra.' : 'Dr.';
 };
 const getPrimarySpecialty = (specialties?: any[]): string => {
   return specialties?.[0]?.name || 'Médico';
 };
 export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   const navigate = useNavigate();
-  const { logout, user } = useAuth(); // Usar AuthContext
+  const { logout, user } = useAuth();
   
   const { data: rawData, isLoading } = useNotifications();
   const notifications = Array.isArray(rawData) ? rawData : (rawData as any)?.results || [];
@@ -112,140 +112,131 @@ export default function InstitutionalHeader({ setMobileOpen }: HeaderProps) {
   };
   
   const handleLogout = () => {
-    logout(); // Usar logout del contexto
+    logout();
   };
   
   return (
-    <div className="w-full flex items-center justify-between h-full bg-black/40 px-4 lg:px-6 border-b border-white/[0.05] shadow-2xl relative z-[110]">
-      <div className="flex items-center gap-2 lg:gap-6 flex-1 min-w-0">
-        <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 text-white hover:text-white transition-colors shrink-0">
+    <div className="w-full flex items-center justify-between h-full bg-white/5 px-4 lg:px-6 border-b border-white/10 relative z-[110]">
+      <div className="flex items-center gap-3 lg:gap-6 flex-1 min-w-0">
+        <button onClick={() => setMobileOpen(true)} className="lg:hidden p-2 text-white/60 hover:text-white transition-colors shrink-0">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
         
-        {/* Formulario de búsqueda responsivo */}
         <form onSubmit={handleSearchSubmit} className="relative w-full max-w-lg group flex items-center min-w-0">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="w-3.5 h-3.5 text-white group-focus-within:text-[var(--palantir-active)] transition-colors hidden sm:flex" />
+            <Search className="w-4 h-4 text-white/40 group-focus-within:text-emerald-400 transition-colors hidden sm:flex" />
           </div>
           <input
             ref={searchInputRef}
             type="text"
-            placeholder="BUSCAR_PACIENTE... (CTRL+K)"
+            placeholder="Buscar paciente... (Ctrl+K)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-9 sm:pl-10 pr-10 lg:pr-20 py-1.5 bg-white/[0.04] border border-white/10 rounded-sm text-[10px] text-white font-mono tracking-wider focus:outline-none focus:border-[var(--palantir-active)]/40 focus:bg-white/[0.06] transition-all placeholder:text-white/60 min-w-0"
+            className="w-full pl-9 sm:pl-10 pr-10 lg:pr-24 py-2 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all placeholder:text-white/30 min-w-0"
           />
           
-          {/* Botón buscar visible en mobile */}
           <button 
             type="submit"
-            className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2 p-1 text-white hover:text-white"
+            className="sm:hidden absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-white/50 hover:text-white"
           >
             <Search className="w-4 h-4" />
           </button>
           
-          {/* Badge Secure_Node oculto en mobile */}
           <div className="absolute inset-y-0 right-3 hidden lg:flex items-center">
-            <span className="text-[8px] font-black text-white/80 border border-white/5 px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">Secure_Node</span>
+            <span className="text-[9px] font-medium text-white/40 border border-white/10 px-2 py-0.5 rounded-md">Búsqueda Global</span>
           </div>
         </form>
       </div>
       
       <div className="flex items-center gap-2 lg:gap-3 shrink-0">
-        {/* Notificaciones */}
         <div className="relative" ref={notifRef}>
           <button 
             onClick={() => setShowNotifications(!showNotifications)} 
-            className={`p-2 rounded-sm transition-all border relative ${showNotifications ? "bg-[var(--palantir-active)]/10 border-[var(--palantir-active)]/30 text-[var(--palantir-active)]" : "text-white hover:text-white border-transparent hover:bg-white/5"}`}
+            className={`p-2 rounded-lg transition-all border relative ${showNotifications ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400" : "text-white/60 hover:text-white border-transparent hover:bg-white/5"}`}
           >
-            <Bell size={15} strokeWidth={2.5} />
+            <Bell size={18} strokeWidth={2} />
             {notifications.length > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--palantir-active)] rounded-full animate-pulse shadow-[0_0_8px_var(--palantir-active)]"></span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span>
             )}
           </button>
           
           {showNotifications && (
-            <div className="absolute right-0 mt-3 w-80 bg-[#0c0e12] border border-white/10 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,1)] z-[120] overflow-hidden animate-in fade-in slide-in-from-top-2">
-              <div className="px-4 py-2 bg-white/[0.03] border-b border-white/5 flex justify-between items-center">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Feed_Monitor</span>
-                <span className="text-[7px] text-emerald-400 font-black px-1.5 py-0.5 bg-emerald-500/5 border border-emerald-500/20 rounded-sm tracking-tighter">UPLINK_LIVE</span>
+            <div className="absolute right-0 mt-2 w-80 bg-[#1a1a1b] border border-white/15 rounded-lg shadow-2xl z-[120] overflow-hidden animate-in fade-in slide-in-from-top-2">
+              <div className="px-4 py-3 bg-white/5 border-b border-white/15 flex justify-between items-center">
+                <span className="text-[11px] font-semibold text-white">Notificaciones</span>
+                <span className="text-[9px] text-emerald-400 font-medium px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-md">
+                  {notifications.length} nueva{notifications.length !== 1 ? 's' : ''}
+                </span>
               </div>
               
-              <ul className="max-h-[350px] overflow-y-auto divide-y divide-white/[0.03] custom-scrollbar">
+              <ul className="max-h-[350px] overflow-y-auto divide-y divide-white/5">
                 {isLoading ? (
-                  <li className="p-10 text-center text-[9px] font-mono text-white/40 uppercase animate-pulse">Synchronizing_Stream...</li>
+                  <li className="p-10 text-center text-[10px] text-white/40 animate-pulse">Cargando notificaciones...</li>
                 ) : notifications.length === 0 ? (
-                  <li className="p-10 text-center text-[9px] font-mono text-white/40 uppercase">Empty_Log_Buffer</li>
+                  <li className="p-10 text-center text-[10px] text-white/40">Sin notificaciones</li>
                 ) : (
                   notifications.map((n: any) => (
                     <li 
                       key={n.id} 
                       onClick={() => handleNotificationClick(n)}
-                      className="hover:bg-white/[0.02] p-4 transition-colors group/item cursor-pointer"
+                      className="hover:bg-white/5 p-4 transition-colors group/item cursor-pointer"
                     >
                       <div className="flex gap-3">
-                        <div className="mt-0.5 p-1 bg-white/[0.03] rounded-sm text-[var(--palantir-active)] opacity-80 group-hover/item:opacity-100 transition-opacity">
+                        <div className="mt-0.5 p-1.5 bg-white/5 rounded-md text-emerald-400 opacity-80 group-hover/item:opacity-100 transition-opacity">
                           {notificationIcon(n.category)}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start">
-                            <span className="text-[10px] font-black text-white uppercase tracking-tight group-hover/item:text-[var(--palantir-active)] transition-colors">{n.title}</span>
-                            <span className="text-[8px] font-mono text-white/40 ml-2 shrink-0">[{moment(n.timestamp).fromNow(true)}]</span>
+                            <span className="text-[11px] font-medium text-white/80 group-hover/item:text-emerald-400 transition-colors">{n.title}</span>
+                            <span className="text-[9px] text-white/40 ml-2 shrink-0">{moment(n.timestamp).fromNow()}</span>
                           </div>
-                          <p className="text-[10px] text-white/70 leading-tight mt-1 line-clamp-2 italic">{n.description}</p>
+                          <p className="text-[10px] text-white/50 leading-relaxed mt-1 line-clamp-2">{n.description}</p>
                         </div>
                       </div>
                     </li>
                   ))
                 )}
               </ul>
-              <div className="p-2 border-t border-white/5 bg-white/[0.01] text-center">
-                  <button className="text-[8px] font-black text-white/50 hover:text-white uppercase tracking-widest transition-colors">Clear_Buffer</button>
-              </div>
             </div>
           )}
         </div>
         
-        <div className="h-4 w-[1px] bg-white/10 mx-1 hidden sm:block"></div>
+        <div className="h-5 w-[1px] bg-white/10 mx-1 hidden sm:block"></div>
         
-        {/* User Menu */}
         <div className="relative" ref={userMenuRef}>
-          <button onClick={() => setMenuOpen(!menuOpen)} className={`flex items-center gap-2 lg:gap-3 p-1 pl-2 pr-2 lg:pr-3 rounded-sm transition-all border ${menuOpen ? 'bg-white/5 border-white/20' : 'border-transparent hover:bg-white/5'}`}>
+          <button onClick={() => setMenuOpen(!menuOpen)} className={`flex items-center gap-2 lg:gap-3 p-1.5 pl-2 pr-2 lg:pr-3 rounded-lg transition-all border ${menuOpen ? 'bg-white/5 border-white/20' : 'border-transparent hover:bg-white/5'}`}>
             <div className="relative">
-              <div className="w-7 h-7 bg-white/5 rounded-sm flex items-center justify-center border border-white/10">
+              <div className="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center border border-white/15">
                 {doctorLoading ? (
-                  <UserCircle size={18} className="text-white" />
+                  <UserCircle size={20} className="text-white/60" />
                 ) : (
-                  <span className="text-[10px] font-black text-white tracking-[0.1em]">
+                  <span className="text-[11px] font-semibold text-white">
                     {getInitials(doctor?.full_name || '')}
                   </span>
                 )}
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#0c0e12] shadow-[0_0_5px_rgba(16,185,129,0.5)]"></span>
+              <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full border-2 border-[#0a0a0b]"></span>
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-[9px] font-black text-white uppercase tracking-[0.15em]">
-                {getGenderPrefix(doctor?.gender)} {getInitials(doctor?.full_name || '')}
+              <p className="text-[10px] font-semibold text-white">
+                {getGenderPrefix(doctor?.gender)} {doctor?.full_name?.split(' ')[0] || 'Doctor'}
               </p>
-              <p className="text-[7px] text-[var(--palantir-active)] font-black uppercase tracking-tighter opacity-80">
+              <p className="text-[9px] text-white/50">
                 {getPrimarySpecialty(doctor?.specialties)}
               </p>
             </div>
           </button>
           
           {menuOpen && (
-            <div className="absolute right-0 mt-3 w-52 bg-[#0c0e12] border border-white/10 rounded-sm shadow-[0_20px_50px_rgba(0,0,0,1)] z-[120] p-1.5 animate-in fade-in zoom-in-95">
-              <div className="px-3 py-2 mb-1 border-b border-white/5">
-                <p className="text-[7px] font-mono text-white/50 uppercase tracking-widest">Access_Node: 127.0.0.1</p>
-              </div>
-              <button onClick={() => { navigate("/settings/config"); setMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2 text-[9px] text-white hover:text-white hover:bg-white/5 rounded-sm transition-all font-black uppercase tracking-widest group">
-                <Settings size={12} className="group-hover:rotate-45 transition-transform" /> Config_Sys
+            <div className="absolute right-0 mt-2 w-52 bg-[#1a1a1b] border border-white/15 rounded-lg shadow-2xl z-[120] p-1.5 animate-in fade-in zoom-in-95">
+              <button onClick={() => { navigate("/settings/config"); setMenuOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-all font-medium group">
+                <Settings size={16} className="group-hover:rotate-45 transition-transform" /> Configuración
               </button>
-              <div className="h-[1px] bg-white/5 my-1 mx-2"></div>
-              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-[9px] text-red-500/70 hover:bg-red-500/10 rounded-sm transition-all font-black uppercase tracking-widest">
-                <LogOut size={12} /> Terminate_Session
+              <div className="h-[1px] bg-white/10 my-1 mx-2"></div>
+              <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2.5 text-[11px] text-red-400/70 hover:bg-red-500/10 rounded-lg transition-all font-medium">
+                <LogOut size={16} /> Cerrar Sesión
               </button>
             </div>
           )}

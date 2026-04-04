@@ -1,20 +1,17 @@
 // src/components/Common/ButtonGroup.tsx
 import React from "react";
-
 interface SegmentedItem {
   label: string;
   value: string;
 }
-
 interface ButtonGroupProps {
   items: SegmentedItem[];
   selected: string;
   onSelect: (value: string) => void;
 }
-
 export default function ButtonGroup({ items, selected, onSelect }: ButtonGroupProps) {
   return (
-    <div className="inline-flex bg-black/40 p-1 rounded-sm border border-white/5 backdrop-blur-md">
+    <div className="inline-flex bg-white/5 p-1 rounded-lg border border-white/15">
       {items.map((item) => {
         const isActive = selected === item.value;
         return (
@@ -22,17 +19,13 @@ export default function ButtonGroup({ items, selected, onSelect }: ButtonGroupPr
             key={item.value}
             onClick={() => onSelect(item.value)}
             className={`
-              relative px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300
+              relative px-4 py-1.5 text-[11px] font-medium transition-all duration-200 rounded-md
               ${isActive
-                ? "bg-white/15 text-white border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.1)] rounded-[2px]"
-                : "text-white/30 hover:text-white/60 hover:bg-white/5 border border-transparent"}
+                ? "bg-white/15 text-white shadow-sm"
+                : "text-white/50 hover:text-white/80 hover:bg-white/5"}
             `}
           >
             {item.label}
-            {/* Indicador inferior táctico */}
-            {isActive && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full shadow-[0_0_5px_white]" />
-            )}
           </button>
         );
       })}
