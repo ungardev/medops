@@ -19,7 +19,6 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
   const { data: settings, updateInstitution, isUpdating } = useInstitutionSettings();
   const { createNeighborhood, useCountries, useStates, useMunicipalities, useParishes, useNeighborhoods } = useLocationData();
   
-  // ✅ FIX: Usar institution prop si está disponible, si no usar settings
   const dataSource = institution || settings;
   
   const [formData, setFormData] = useState({
@@ -36,7 +35,6 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
     logo: null as File | null
   });
   
-  // ✅ FIX: Usar logo directamente como InstitutionCard - sin procesamiento de URL
   const logoPreview = dataSource?.logo && typeof dataSource.logo === 'string' 
     ? dataSource.logo 
     : null;
@@ -52,12 +50,6 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
   const municipalities = municipalitiesResult.data || [];
   const parishes = parishesResult.data || [];
   const neighborhoods = neighborhoodsResult.data || [];
-  
-  const isLoadingCountries = countriesResult.isLoading;
-  const isLoadingStates = statesResult.isLoading;
-  const isLoadingMunis = municipalitiesResult.isLoading;
-  const loadingParishes = parishesResult.isLoading;
-  const loadingHoods = neighborhoodsResult.isLoading;
   
   const isLoadingAny = Boolean(
     countriesResult.isLoading || 
@@ -118,7 +110,7 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
     e.preventDefault();
     
     if (!formData.countryId || !formData.stateId || !formData.municipalityId || !formData.parishId || !formData.neighborhoodName.trim()) {
-      console.error("Missing required fields");
+      console.error("Faltan campos requeridos");
       return;
     }
     
@@ -133,70 +125,65 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
       }
       
       await updateInstitution({
-        name: formData.name.toUpperCase(),
+        name: formData.name,
         phone: formData.phone,
-        tax_id: formData.tax_id.toUpperCase(),
-        address: formData.address.toUpperCase(),
+        tax_id: formData.tax_id,
+        address: formData.address,
         neighborhood: finalNeighborhoodId,
         logo: formData.logo
       });
       
       onClose();
-      setTimeout(() => window.location.reload(), 600);
     } catch (err) {
-      console.error("CRITICAL_SYNC_ERROR:", err);
+      console.error("Error al actualizar institución:", err);
     }
   };
-  const inputStyles = "w-full bg-black/40 border border-white/20 rounded-sm px-4 py-3 text-[13px] text-white font-mono focus:outline-none focus:border-emerald-500/50 transition-all";
-  const labelStyles = "text-[11px] font-bold text-white/70 uppercase tracking-[0.1em] mb-2 block";
-  const sectionStyles = "bg-white/[0.02] border border-white/10 rounded-sm p-5 space-y-4";
+  const inputStyles = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelStyles = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
+  const sectionStyles = "bg-white/5 border border-white/15 rounded-lg p-5 space-y-4";
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-[#0a0a0b] border border-white/10 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 sticky top-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 border border-emerald-400/30">
-              <GlobeAltIcon className="h-4 w-4 text-emerald-400" />
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <GlobeAltIcon className="h-5 w-5 text-emerald-400" />
             </div>
             <div>
-              <h3 className="text-[12px] font-bold uppercase tracking-widest text-white">
-                INSTITUTION_PROFILE_EDITOR
+              <h3 className="text-[12px] font-semibold text-white">
+                Editar Institución
               </h3>
-              <p className="text-[10px] font-mono text-white/50 uppercase">Identity Vault Configuration</p>
+              <p className="text-[10px] text-white/40 mt-0.5">Actualizar datos de la institución</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1">
+          <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
-        {/* Content */}
         <div className="p-6 space-y-5">
           {isLoadingAny && (
-            <div className="px-4 py-3 bg-blue-500/10 border border-blue-500/30 flex items-center gap-3 rounded-sm">
-              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent animate-spin"></div>
-              <span className="text-[10px] font-mono text-blue-500">
+            <div className="px-4 py-3 bg-blue-500/10 border border-blue-500/20 flex items-center gap-3 rounded-lg">
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-[11px] text-blue-400/80">
                 Cargando datos geográficos...
               </span>
             </div>
           )}
           
-          {/* Logo Section - ✅ FIX: Usar logo directamente como InstitutionCard */}
           <div className={sectionStyles}>
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-3 mb-4">
               <GlobeAltIcon className="w-5 h-5 text-emerald-400" />
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-emerald-400">
-                INSTITUTION_LOGO
+              <h3 className="text-[11px] font-medium text-emerald-400/80">
+                Logo de la Institución
               </h3>
             </div>
             
             <div className="flex flex-col items-center gap-4">
-              {/* Contenedor con fondo blanco - USAR logoPreview DIRECTAMENTE */}
-              <div className="relative group w-32 h-32 border border-gray-200 bg-white p-1 overflow-hidden">
+              <div className="relative group w-32 h-32 border border-white/15 bg-white/5 p-2 overflow-hidden rounded-lg">
                 {logoPreview ? (
                   <img 
                     src={logoPreview}
@@ -207,42 +194,41 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                    <BuildingOfficeIcon className="w-12 h-12 text-gray-300" />
+                  <div className="w-full h-full flex items-center justify-center bg-white/5">
+                    <BuildingOfficeIcon className="w-12 h-12 text-white/20" />
                   </div>
                 )}
-                <label className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-emerald-400/50">
-                  <span className="text-[9px] font-black uppercase text-white">UPDATE</span>
+                <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer border-2 border-dashed border-emerald-500/30 rounded-lg">
+                  <span className="text-[10px] font-medium text-white/80">Cambiar</span>
                   <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
                 </label>
               </div>
               <div className="text-center">
-                <p className="text-[8px] font-mono text-white/50 uppercase">CURRENT_ID: {dataSource?.id || 'UNKNOWN'}</p>
+                <p className="text-[9px] text-white/30">ID: {dataSource?.id || 'N/A'}</p>
               </div>
             </div>
           </div>
-          {/* Identity Section */}
           <div className={sectionStyles}>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">
-                IDENTITY_PROTOCOL
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+              <h3 className="text-[11px] font-medium text-blue-400/80">
+                Datos de Identidad
               </h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className={labelStyles}>Center Name</label>
+                <label className={labelStyles}>Nombre del Centro</label>
                 <input 
                   type="text"
                   value={formData.name}
-                  onChange={e => setFormData({...formData, name: e.target.value.toUpperCase()})}
+                  onChange={e => setFormData({...formData, name: e.target.value})}
                   className={inputStyles}
                   required
                 />
               </div>
               <div>
-                <label className={labelStyles}>Phone</label>
+                <label className={labelStyles}>Teléfono</label>
                 <input 
                   type="text"
                   value={formData.phone}
@@ -251,78 +237,77 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
                 />
               </div>
               <div className="md:col-span-2">
-                <label className={labelStyles}>Fiscal ID (RIF)</label>
+                <label className={labelStyles}>RIF</label>
                 <input 
                   type="text"
                   value={formData.tax_id}
-                  onChange={e => setFormData({...formData, tax_id: e.target.value.toUpperCase()})}
-                  className={`${inputStyles} font-bold tracking-widest text-emerald-400`}
+                  onChange={e => setFormData({...formData, tax_id: e.target.value})}
+                  className={`${inputStyles} font-medium`}
                 />
               </div>
             </div>
           </div>
-          {/* Geographic Section */}
           <div className={sectionStyles}>
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-1.5 h-1.5 bg-purple-400 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
-              <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-purple-400">
-                GEOGRAPHIC_HIERARCHY
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-1.5 h-1.5 bg-purple-400 rounded-full" />
+              <h3 className="text-[11px] font-medium text-purple-400/80">
+                Ubicación Geográfica
               </h3>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <FieldSelect
-                  label="Country"
+                  label="País"
                   value={formData.countryId}
                   options={countries}
                   onChange={handleCountryChange}
                   disabled={false}
-                  loading={isLoadingCountries}
+                  loading={countriesResult.isLoading}
                 />
               </div>
               
               <div>
                 <FieldSelect
-                  label="State"
+                  label="Estado"
                   value={formData.stateId}
                   options={states}
                   onChange={handleStateChange}
                   disabled={!formData.countryId}
-                  loading={isLoadingStates}
+                  loading={statesResult.isLoading}
                 />
               </div>
               
               <div>
                 <FieldSelect
-                  label="Municipality"
+                  label="Municipio"
                   value={formData.municipalityId}
                   options={municipalities}
                   onChange={handleMunicipalityChange}
                   disabled={!formData.stateId}
-                  loading={isLoadingMunis}
+                  loading={municipalitiesResult.isLoading}
                 />
               </div>
               
               <div>
                 <FieldSelect
-                  label="Parish"
+                  label="Parroquia"
                   value={formData.parishId}
                   options={parishes}
                   onChange={handleParishChange}
                   disabled={!formData.municipalityId}
-                  loading={loadingParishes}
+                  loading={parishesResult.isLoading}
                 />
               </div>
               
-              <div className={(!formData.parishId || loadingHoods) ? 'opacity-30' : 'opacity-100'}>
-                <label className={labelStyles}>Neighborhood</label>
+              <div className={(!formData.parishId || neighborhoodsResult.isLoading) ? 'opacity-40' : 'opacity-100'}>
+                <label className={labelStyles}>Urbanización</label>
                 <input
                   list="neighborhood-options"
                   value={formData.neighborhoodName}
-                  disabled={!formData.parishId || loadingHoods}
+                  disabled={!formData.parishId || neighborhoodsResult.isLoading}
                   onChange={(e) => handleNeighborhoodChange(e.target.value)}
-                  placeholder={!formData.parishId ? "--" : "-- SELECT --"}
+                  placeholder={!formData.parishId ? "—" : "Seleccionar..."}
                   className={inputStyles}
                 />
                 <datalist id="neighborhood-options">
@@ -333,57 +318,55 @@ export default function EditInstitutionModal({ open, onClose, institution }: Pro
               </div>
             </div>
           </div>
-          {/* Address Section */}
           <div className={sectionStyles}>
-            <label className={labelStyles}>Address</label>
+            <label className={labelStyles}>Dirección</label>
             <textarea 
               value={formData.address}
-              onChange={e => setFormData({...formData, address: e.target.value.toUpperCase()})}
+              onChange={e => setFormData({...formData, address: e.target.value})}
               rows={3}
               className={`${inputStyles} h-20 resize-none`}
             />
           </div>
         </div>
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-4 px-6 py-4 border-t border-white/10 bg-black/40">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 border-t border-white/15 bg-white/5">
           <div className="flex items-center gap-3">
             <div className={`w-2 h-2 rounded-full ${
               formData.countryId && formData.stateId && formData.municipalityId && 
               formData.parishId && formData.neighborhoodName 
-                ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' 
-                : 'bg-amber-500 animate-pulse'
+                ? 'bg-emerald-400' 
+                : 'bg-amber-400 animate-pulse'
             }`} />
-            <span className="text-[8px] font-mono font-bold text-white/30 uppercase tracking-widest">
+            <span className="text-[9px] text-white/30">
               {formData.countryId && formData.stateId && formData.municipalityId && 
                formData.parishId && formData.neighborhoodName 
-                ? 'GEO_CHAIN_STABLE' 
-                : 'GEO_CHAIN_BROKEN'}
+                ? 'Ubicación completa' 
+                : 'Ubicación incompleta'}
             </span>
           </div>
           
-          <div className="flex gap-4">
+          <div className="flex gap-3">
             <button 
               type="button" 
               onClick={onClose} 
-              className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors"
+              className="px-5 py-2.5 text-[11px] font-medium text-white/40 hover:text-white/70 transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button 
               onClick={handleSubmit}
               disabled={isUpdating || !formData.countryId || !formData.stateId || 
                        !formData.municipalityId || !formData.parishId || !formData.neighborhoodName.trim()}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-sm text-[11px] font-bold uppercase tracking-widest text-white bg-emerald-500/20 border border-white/20 hover:brightness-110 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all disabled:opacity-50"
             >
               {isUpdating ? (
                 <>
                   <ArrowPathIcon className="w-4 h-4 animate-spin" />
-                  Syncing...
+                  Guardando...
                 </>
               ) : (
                 <>
                   <ShieldCheckIcon className="w-4 h-4" />
-                  Save Changes
+                  Guardar Cambios
                 </>
               )}
             </button>

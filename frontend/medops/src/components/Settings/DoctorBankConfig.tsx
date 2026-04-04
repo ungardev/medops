@@ -9,8 +9,6 @@ interface DoctorBankConfigProps {
   bankAccount: string;
   onUpdate: (data: { bank_name: string; bank_rif: string; bank_phone: string; bank_account: string }) => void;
 }
-const labelStyles = `text-[9px] font-black uppercase tracking-[0.25em] text-white/30 mb-2 block`;
-const inputStyles = `w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-emerald-500/50 transition-all`;
 export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAccount, onUpdate }: DoctorBankConfigProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [form, setForm] = useState({
@@ -19,7 +17,6 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
     bank_phone: bankPhone || "",
     bank_account: bankAccount || "",
   });
-  // ✅ FIX CRÍTICO: Sincronizar props con estado local cuando cambien (por ejemplo, después de que la API responda)
   useEffect(() => {
     setForm({
       bank_name: bankName || "",
@@ -28,7 +25,6 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
       bank_account: bankAccount || "",
     });
   }, [bankName, bankRif, bankPhone, bankAccount]);
-  // ✅ Calcular completitud
   const filledFields = [form.bank_name, form.bank_rif, form.bank_phone, form.bank_account].filter(Boolean).length;
   const totalFields = 4;
   const isComplete = filledFields === totalFields;
@@ -36,22 +32,24 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
     await onUpdate(form);
     setIsEditing(false);
   };
+  const labelStyles = `text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block`;
+  const inputStyles = `w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30`;
   if (!isEditing) {
     return (
-      <div className="bg-[#080808] border border-white/10 p-6 rounded-sm space-y-4">
+      <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <BuildingOfficeIcon className="w-4 h-4 text-white/40" />
-            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+            <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
+            <h4 className="text-[11px] font-medium text-white/60">
               Datos Bancarios
             </h4>
           </div>
-          <div className={`px-2 py-0.5 rounded text-[8px] font-bold ${
+          <div className={`px-2 py-0.5 rounded-md text-[9px] font-medium ${
             isComplete 
-              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-              : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
           }`}>
-            {isComplete ? 'COMPLETO' : `${filledFields}/${totalFields}`}
+            {isComplete ? 'Completo' : `${filledFields}/${totalFields}`}
           </div>
         </div>
         
@@ -59,55 +57,54 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
           <div className="grid grid-cols-2 gap-3 text-[10px]">
             <div>
               <span className="text-white/30">Banco:</span>
-              <span className="text-white/80 font-bold ml-2">{form.bank_name}</span>
+              <span className="text-white/70 font-medium ml-2">{form.bank_name}</span>
             </div>
             {form.bank_rif && (
               <div>
                 <span className="text-white/30">Cédula:</span>
-                <span className="text-white/80 font-bold font-mono ml-2">{form.bank_rif}</span>
+                <span className="text-white/70 font-medium font-mono ml-2">{form.bank_rif}</span>
               </div>
             )}
             {form.bank_phone && (
               <div>
                 <span className="text-white/30">Teléfono:</span>
-                <span className="text-white/80 font-bold font-mono ml-2">{form.bank_phone}</span>
+                <span className="text-white/70 font-medium font-mono ml-2">{form.bank_phone}</span>
               </div>
             )}
             {form.bank_account && (
               <div>
                 <span className="text-white/30">Cuenta:</span>
-                <span className="text-white/80 font-bold font-mono ml-2">{form.bank_account}</span>
+                <span className="text-white/70 font-medium font-mono ml-2">{form.bank_account}</span>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-[10px] text-white/30 font-mono">
+          <p className="text-[10px] text-white/30">
             No configurado. Los pacientes no podrán ver tus datos de pago.
           </p>
         )}
         
         <button 
           onClick={() => setIsEditing(true)}
-          className="w-full py-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-amber-500/20 transition-all"
+          className="w-full py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium hover:bg-amber-500/15 transition-all rounded-lg"
         >
           {form.bank_name ? 'Editar Datos Bancarios' : 'Configurar Datos Bancarios'}
         </button>
       </div>
     );
   }
-  // Modo edición
   return (
-    <div className="bg-[#080808] border border-white/10 p-6 rounded-sm space-y-4">
+    <div className="bg-white/5 border border-white/15 p-5 rounded-lg space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BuildingOfficeIcon className="w-4 h-4 text-white/40" />
-          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+          <BuildingOfficeIcon className="w-4 h-4 text-white/30" />
+          <h4 className="text-[11px] font-medium text-white/60">
             Editar Datos Bancarios
           </h4>
         </div>
         <button 
           onClick={() => setIsEditing(false)}
-          className="text-white/40 hover:text-white text-[9px]"
+          className="text-white/40 hover:text-white/70 text-[10px] transition-colors"
         >
           Cancelar
         </button>
@@ -158,7 +155,7 @@ export default function DoctorBankConfig({ bankName, bankRif, bankPhone, bankAcc
       
       <button 
         onClick={handleSave}
-        className="w-full py-3 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-amber-500/20 transition-all"
+        className="w-full py-2.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-medium hover:bg-amber-500/15 transition-all rounded-lg"
       >
         Guardar Datos Bancarios
       </button>

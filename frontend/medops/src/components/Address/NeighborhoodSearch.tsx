@@ -1,36 +1,26 @@
 // src/components/Address/NeighborhoodSearch.tsx
 import React, { useState, useEffect } from "react";
 import { MagnifyingGlassIcon, MapPinIcon, XMarkIcon } from "@heroicons/react/24/outline";
-
 interface NeighborhoodSearchProps {
-  value: number | null; // El ID del neighborhood seleccionado
+  value: number | null;
   onSelect: (neighborhood: any) => void;
   placeholder?: string;
 }
-
 export default function NeighborhoodSearch({ value, onSelect, placeholder }: NeighborhoodSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedName, setSelectedName] = useState("");
-
   const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-  // ✅ Efecto para limpiar o establecer el nombre si el valor cambia externamente
   useEffect(() => {
     if (!value) {
       setSelectedName("");
     }
-    // Si el valor existe pero no tenemos nombre (ej. carga inicial), 
-    // podrías hacer una petición al endpoint de detalle, 
-    // pero usualmente el 'initialData' del modal ya trae el objeto completo.
   }, [value]);
-
-  // Lógica de búsqueda con debounce
   useEffect(() => {
     const search = async () => {
-      if (query.length < 2) { // Bajado a 2 para mejor UX
+      if (query.length < 2) {
         setResults([]);
         return;
       }
@@ -48,37 +38,32 @@ export default function NeighborhoodSearch({ value, onSelect, placeholder }: Nei
           setResults(data);
         }
       } catch (error) {
-        console.error("SEARCH_ERROR", error);
+        console.error("Error en búsqueda:", error);
       } finally {
         setLoading(false);
       }
     };
-
     const timer = setTimeout(search, 300);
     return () => clearTimeout(timer);
   }, [query, API_BASE]);
-
   const handleSelect = (item: any) => {
-    // Guardamos un nombre legible para el input
     setSelectedName(`${item.name} (${item.parish_name})`);
-    onSelect(item); // Pasamos el objeto completo al padre
+    onSelect(item);
     setShowDropdown(false);
     setQuery("");
   };
-
   const clearSelection = () => {
     setSelectedName("");
     setQuery("");
     onSelect({ id: null });
   };
-
   return (
     <div className="relative">
       <div className="relative">
         <input
           type="text"
-          className="w-full bg-black/60 border border-white/10 rounded-sm px-10 py-3 text-[11px] font-mono text-white focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/20"
-          placeholder={selectedName || placeholder || "TYPE_SECTOR_OR_PARISH..."}
+          className="w-full bg-white/5 border border-white/15 rounded-lg px-10 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
+          placeholder={selectedName || placeholder || "Buscar sector o parroquia..."}
           value={query}
           autoComplete="off"
           onChange={(e) => {
@@ -91,26 +76,23 @@ export default function NeighborhoodSearch({ value, onSelect, placeholder }: Nei
         
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
           {loading && (
-            <div className="w-3 h-3 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
+            <div className="w-3 h-3 border-2 border-emerald-400/20 border-t-emerald-400 rounded-full animate-spin" />
           )}
           {(selectedName || query) && !loading && (
             <button 
               onClick={clearSelection}
-              className="text-white/20 hover:text-white transition-colors"
+              className="text-white/20 hover:text-white/50 transition-colors"
             >
               <XMarkIcon className="w-4 h-4" />
             </button>
           )}
         </div>
       </div>
-
-      {/* Dropdown de resultados */}
       {showDropdown && results.length > 0 && (
         <>
-          {/* Overlay para cerrar al hacer click fuera */}
           <div className="fixed inset-0 z-[55]" onClick={() => setShowDropdown(false)} />
           
-          <div className="absolute z-[60] w-full mt-1 bg-[#0A0A0A] border border-white/10 shadow-2xl max-h-60 overflow-y-auto scrollbar-hide">
+          <div className="absolute z-[60] w-full mt-1 bg-[#1a1a1b] border border-white/15 shadow-2xl max-h-60 overflow-y-auto rounded-lg">
             {results.map((item) => (
               <button
                 key={item.id}
@@ -119,12 +101,12 @@ export default function NeighborhoodSearch({ value, onSelect, placeholder }: Nei
                 className="w-full text-left px-4 py-3 hover:bg-emerald-500/10 border-b border-white/5 last:border-none transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <MapPinIcon className="w-3 h-3 text-white/20 group-hover:text-emerald-500" />
+                  <MapPinIcon className="w-3.5 h-3.5 text-white/20 group-hover:text-emerald-400" />
                   <div>
-                    <p className="text-[10px] font-black text-white uppercase tracking-tighter">
+                    <p className="text-[11px] font-medium text-white/80">
                       {item.name}
                     </p>
-                    <p className="text-[8px] font-mono text-white/40 uppercase">
+                    <p className="text-[9px] text-white/30">
                       {item.parish_name} / {item.municipality_name} / {item.state_name}
                     </p>
                   </div>
