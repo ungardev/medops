@@ -40,7 +40,7 @@ export function Tabs({
               className={`
                 relative px-5 py-3 text-[11px] font-medium transition-all duration-200
                 ${isActive 
-                  ? "text-emerald-400 border-b-2 border-emerald-400"
+                  ? "text-white border-b-2 border-white"
                   : "text-white/50 hover:text-white/80 hover:bg-white/5"}
               `}
             >

@@ -15,7 +15,6 @@ export default function VaccinationMatrixUniversal({ schedule, vaccinations, onR
   const scheduleData: VaccinationSchedule[] = Array.isArray(schedule) 
     ? schedule 
     : (schedule as any)?.results ?? [];
-  // 19 vacunas del esquema SVPP Venezuela (32 dosis totales)
   const vaccineList = [
     { code: "BCG", name: "Anti tuberculosis" },
     { code: "HB", name: "Anti Hepatitis B" },
@@ -41,12 +40,12 @@ export default function VaccinationMatrixUniversal({ schedule, vaccinations, onR
     <div className="overflow-x-auto custom-scrollbar">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="bg-[var(--palantir-surface)]/50">
-            <th className="sticky left-0 z-20 bg-[var(--palantir-surface)] px-4 py-3 border-r border-b border-[var(--palantir-border)] text-left text-[9px] font-black text-[var(--palantir-muted)] uppercase tracking-[0.2em] min-w-[140px]">
-              VACCINE_TYPE
+          <tr className="bg-white/5">
+            <th className="sticky left-0 z-20 bg-white/5 px-4 py-3 border-r border-b border-white/15 text-left text-[10px] font-medium text-white/50 uppercase tracking-wider min-w-[140px]">
+              Vacuna
             </th>
             {AGE_GROUPS.map((age) => (
-              <th key={age} className="px-2 py-3 border-b border-r border-[var(--palantir-border)] text-center text-[9px] font-mono text-[var(--palantir-muted)] uppercase min-w-[50px]">
+              <th key={age} className="px-2 py-3 border-b border-r border-white/10 text-center text-[9px] font-medium text-white/40 min-w-[50px]">
                 {age}
               </th>
             ))}
@@ -58,12 +57,12 @@ export default function VaccinationMatrixUniversal({ schedule, vaccinations, onR
               key={v.code} 
               onMouseEnter={() => setHoveredRow(v.code)}
               onMouseLeave={() => setHoveredRow(null)}
-              className={`${hoveredRow === v.code ? 'bg-[var(--palantir-active)]/5' : ''} transition-colors`}
+              className={`${hoveredRow === v.code ? 'bg-white/5' : ''} transition-colors`}
             >
-              <td className="sticky left-0 z-20 bg-[var(--palantir-surface)] px-4 py-2 border-r border-b border-[var(--palantir-border)]">
+              <td className="sticky left-0 z-20 bg-white/5 px-4 py-3 border-r border-b border-white/15">
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black text-[var(--palantir-text)] uppercase">{v.code}</span>
-                  <span className="text-[8px] text-[var(--palantir-muted)] uppercase truncate max-w-[120px]">{v.name}</span>
+                  <span className="text-[11px] font-semibold text-white/80">{v.code}</span>
+                  <span className="text-[9px] text-white/40 truncate max-w-[120px]">{v.name}</span>
                 </div>
               </td>
               
@@ -76,22 +75,23 @@ export default function VaccinationMatrixUniversal({ schedule, vaccinations, onR
                   app.vaccine_detail.code === v.code && 
                   app.dose_number === dose?.dose_number
                 );
-                let statusColor = "bg-transparent";
+                
+                let cellClass = "bg-transparent text-transparent";
                 if (applied) {
-                  statusColor = "bg-emerald-500/20 text-emerald-500 shadow-[inset_0_0_10px_rgba(16,185,129,0.1)]";
+                  cellClass = "bg-emerald-500/15 text-emerald-400";
                 } else if (dose) {
-                  statusColor = "bg-yellow-400/10 text-yellow-500/80";
+                  cellClass = "bg-amber-500/10 text-amber-400/60";
                 }
+                
                 return (
                   <td
                     key={`${v.code}-${age}`}
                     onClick={() => onRegisterDose?.(dose || createVirtualDose(v, age))}
-                    className={`group relative px-2 py-3 border-r border-b border-[var(--palantir-border)] text-center cursor-pointer transition-all hover:z-10 ${statusColor}`}
+                    className={`group relative px-2 py-3 border-r border-b border-white/10 text-center cursor-pointer transition-all hover:z-10 hover:bg-white/5 ${cellClass}`}
                   >
-                    <span className="text-[10px] font-mono font-bold">
+                    <span className="text-[11px] font-medium">
                       {applied ? "✓" : dose ? dose.dose_number : ""}
                     </span>
-                    <div className="absolute inset-0 border-2 border-[var(--palantir-active)] opacity-0 group-hover:opacity-100 pointer-events-none" />
                   </td>
                 );
               })}

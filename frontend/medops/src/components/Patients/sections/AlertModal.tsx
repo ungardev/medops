@@ -13,128 +13,116 @@ export default function AlertModal({ open, onClose, onSave, initial }: Props) {
     type: initial?.type ?? "warning",
     message: initial?.message ?? "",
   });
-  // Sistema dinámico de iconos por tipo de alerta
   const getAlertIcon = (type: "danger" | "warning" | "info") => {
     switch (type) {
       case "danger":
-        return { icon: ExclamationTriangleIcon, color: "text-red-500", bgColor: "bg-red-500/10" };
+        return { icon: ExclamationTriangleIcon, color: "text-red-400", bgColor: "bg-red-500/10" };
       case "warning":
-        return { icon: ExclamationTriangleIcon, color: "text-amber-500", bgColor: "bg-amber-500/10" };
+        return { icon: ExclamationTriangleIcon, color: "text-amber-400", bgColor: "bg-amber-500/10" };
       case "info":
-        return { icon: InformationCircleIcon, color: "text-blue-500", bgColor: "bg-blue-500/10" };
+        return { icon: InformationCircleIcon, color: "text-blue-400", bgColor: "bg-blue-500/10" };
       default:
-        return { icon: InformationCircleIcon, color: "text-blue-500", bgColor: "bg-blue-500/10" };
+        return { icon: InformationCircleIcon, color: "text-blue-400", bgColor: "bg-blue-500/10" };
     }
   };
-  // Sincronizar estado cuando se edita una alerta existente
   useEffect(() => {
     if (initial) {
       setForm({ type: initial.type, message: initial.message });
     }
   }, [initial]);
-  // Preservar soporte para tecla Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
         onClose();
       }
     };
-    
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
   const handleSave = () => {
-    if (form.message.trim() === "") return; // Evitar guardar mensaje vacío
+    if (form.message.trim() === "") return;
     onSave(form);
   };
-  // Constantes de estilos Elite
-  const inputStyles = "w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-white/30 transition-all";
-  const labelStyles = "text-[9px] font-black text-white/30 uppercase tracking-[0.1em] mb-2 block";
-  const sectionStyles = "bg-[#0a0a0a] border border-white/10 rounded-sm p-4 space-y-4";
   const alertConfig = getAlertIcon(form.type);
   const DynamicIcon = alertConfig.icon;
+  const typeLabels: Record<string, string> = {
+    danger: "Peligro",
+    warning: "Advertencia",
+    info: "Información",
+  };
   return (
     <EliteModal
       open={open}
       onClose={onClose}
-      title="PATIENT_ALERT_PROTOCOL"
-      subtitle="MEDICAL_NOTIFICATION_SYSTEM"
+      title={initial ? "Editar Alerta" : "Nueva Alerta"}
+      subtitle="Agregar alerta clínica al perfil del paciente"
       maxWidth="max-w-md"
-      showDotIndicator={true}
     >
-      <div className="space-y-6">
-        {/* Header dinámico con icono por tipo */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className={`p-2 ${alertConfig.bgColor} rounded-lg ${alertConfig.color}`}>
-            <DynamicIcon className="w-5 h-5" />
+      <div className="space-y-5">
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 ${alertConfig.bgColor} rounded-lg`}>
+            <DynamicIcon className={`w-5 h-5 ${alertConfig.color}`} />
           </div>
-          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
-            ALERT_TYPE_CLASSIFICATION
-          </h3>
-        </div>
-        {/* Formulario de Alerta */}
-        <div className={sectionStyles}>
           <div>
-            <label className={labelStyles}>ALERT_TYPE_CLASSIFICATION</label>
+            <h3 className="text-[12px] font-semibold text-white">
+              Tipo de Alerta
+            </h3>
+            <p className="text-[10px] text-white/40 mt-0.5">Seleccione la severidad de la alerta</p>
+          </div>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-lg p-5 space-y-4">
+          <div>
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">Severidad</label>
             <select
               value={form.type}
               onChange={(e) => setForm({ ...form, type: e.target.value as any })}
-              className={inputStyles}
+              className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all"
             >
-              <option value="danger">DANGER_PROTOCOL</option>
-              <option value="warning">WARNING_PROTOCOL</option>
-              <option value="info">INFORMATION_PROTOCOL</option>
+              <option value="danger">Peligro</option>
+              <option value="warning">Advertencia</option>
+              <option value="info">Información</option>
             </select>
           </div>
           <div>
-            <label className={labelStyles}>ALERT_MESSAGE_CONTENT</label>
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">Mensaje</label>
             <textarea
-              className={`${inputStyles} min-h-[120px] resize-none`}
+              className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all min-h-[120px] resize-none placeholder:text-white/30"
               rows={4}
               value={form.message}
               onChange={(e) => setForm({ ...form, message: e.target.value })}
-              placeholder="ENTER_ALERT_MESSAGE_HERE..."
+              placeholder="Describa la alerta clínica..."
             />
           </div>
         </div>
-        {/* Alert Status Display */}
-        <div className={sectionStyles}>
-          <div className="flex items-center gap-3 mb-4">
+        <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
             <div className={`w-1.5 h-1.5 rounded-full ${alertConfig.color}`} />
-            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
-              ALERT_STATUS_MONITOR
-            </h3>
+            <span className="text-[10px] font-medium text-white/50">Vista previa</span>
           </div>
-          <div className="bg-black/60 border border-white/10 rounded-sm p-4">
-            <p className="text-[10px] font-mono text-white/80">
-              TYPE: <span className={`${alertConfig.color} font-bold`}>{form.type.toUpperCase()}</span>
-            </p>
-            <p className="text-[10px] font-mono text-white/60 mt-1">
-              MESSAGE_LENGTH: {form.message.length} characters
-            </p>
-          </div>
+          <p className={`text-[11px] ${alertConfig.color} leading-relaxed`}>
+            {form.message || "Escriba el mensaje de la alerta..."}
+          </p>
         </div>
       </div>
-      {/* Elite Action Buttons */}
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
         <button
           onClick={onClose}
-          className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors font-mono"
+          className="px-5 py-2.5 text-[11px] font-medium text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5"
         >
-          ABORT_OPERATION
+          Cancelar
         </button>
         <button
           onClick={handleSave}
-          className={`flex items-center gap-2 px-6 py-3 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm transition-all font-mono ${
+          className={`flex items-center gap-2 px-6 py-2.5 text-white text-[11px] font-medium rounded-lg transition-all ${
             form.type === "danger" 
-              ? "bg-red-600 hover:bg-red-500" 
+              ? "bg-red-500/15 hover:bg-red-500/25 border border-red-500/25" 
               : form.type === "warning"
-              ? "bg-amber-600 hover:bg-amber-500"
-              : "bg-blue-600 hover:bg-blue-500"
+              ? "bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/25"
+              : "bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25"
           }`}
         >
           <DynamicIcon className="w-4 h-4" />
-          {initial ? "UPDATE_ALERT_RECORD" : "CREATE_ALERT_ENTRY"}
+          {initial ? "Actualizar" : "Crear Alerta"}
         </button>
       </div>
     </EliteModal>

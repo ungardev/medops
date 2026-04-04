@@ -51,34 +51,33 @@ export default function InvitePatientModal({
     setTimeout(() => setCopied(false), 2000);
   };
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative bg-[#11141a] border border-slate-800 rounded-xl p-6 w-full max-w-md shadow-2xl">
+      <div className="relative bg-[#1a1a1b] border border-white/15 rounded-lg p-6 w-full max-w-md shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white"
+          className="absolute top-4 right-4 text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center">
-            <UserPlus className="w-5 h-5 text-blue-400" />
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-center">
+            <UserPlus className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white uppercase">Invitar al Portal</h3>
-            <p className="text-xs text-slate-400">MEDOPZ Patient</p>
+            <h3 className="text-[12px] font-semibold text-white">Invitar al Portal</h3>
+            <p className="text-[10px] text-white/40 mt-0.5">{patientName}</p>
           </div>
         </div>
-        <p className="text-sm text-slate-300 mb-6">
-          Generar invitación para <span className="text-white font-bold">{patientName}</span> 
-          {' '}al Portal del Paciente MEDOPZ.
+        <p className="text-[11px] text-white/50 mb-5 leading-relaxed">
+          Generar invitación para que <span className="text-white/70 font-medium">{patientName}</span> acceda al Portal del Paciente MEDOPZ.
         </p>
         {!inviteLink ? (
           <button
             onClick={handleInvite}
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 py-3 rounded-lg text-[11px] font-medium flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
           >
             {isLoading ? (
               <>Generando invitación...</>
@@ -92,10 +91,10 @@ export default function InvitePatientModal({
         ) : (
           <div className="space-y-4">
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-              <p className="text-emerald-400 text-sm font-bold uppercase">
-                ✓ Invitación creada
+              <p className="text-emerald-400 text-[11px] font-medium">
+                ✓ Invitación creada exitosamente
               </p>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-[10px] text-white/40 mt-1">
                 Comparte este enlace con el paciente
               </p>
             </div>
@@ -104,16 +103,16 @@ export default function InvitePatientModal({
                 type="text"
                 value={window.location.origin + inviteLink}
                 readOnly
-                className="flex-1 px-3 py-2 bg-black/40 border border-slate-700 rounded text-xs text-slate-300"
+                className="flex-1 px-3 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[11px] text-white/60 focus:outline-none"
               />
               <button
                 onClick={copyToClipboard}
-                className="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded text-white"
+                className="px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/15 rounded-lg text-white/60 hover:text-white transition-all"
               >
                 {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
               </button>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-[10px] text-white/30">
               El paciente deberá pagar $5 USD para activar su cuenta.
             </p>
           </div>

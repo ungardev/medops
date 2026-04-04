@@ -14,45 +14,33 @@ import {
 type BackgroundType = "personal" | "family" | "genetic" | "allergy" | "habit";
 interface ClinicalBackgroundForm {
   type: BackgroundType;
-  // COMMON
   notes?: string;
-  // PERSONAL
   personalType?: string;
   condition?: string;
   date?: string;
-  // FAMILY
   relation?: string;
   age_at_diagnosis?: number | null;
-  // GENETIC
   name?: string;
-  // ALLERGY
   allergen?: string;
   severity?: string;
   source?: string;
-  // HABIT
   habitType?: string;
-  // Tabaco
   smokes_currently?: string;
   tobacco_type?: string;
   smoking_frequency?: string;
   cigarettes_per_day?: number | null;
   smoking_start_age?: number | null;
-  // Alcohol
   drinks_alcohol?: string;
   alcohol_frequency?: string;
   alcohol_quantity?: string;
   binge_frequency?: string;
-  // Actividad Física
   exercise_frequency?: string;
   exercise_intensity?: string;
   activity_description?: string;
-  // Dieta
   diet_type?: string;
   diet_restrictions?: string;
-  // Sueño
   sleep_hours?: number | null;
   sleep_quality?: string;
-  // Drogas
   uses_drugs?: string;
   drug_description?: string;
   drug_frequency?: string;
@@ -64,115 +52,83 @@ interface Props {
   initial?: ClinicalBackgroundForm;
   type: BackgroundType;
 }
-const typeConfig: Record<BackgroundType, { label: string; icon: any; color: string; technicalLabel: string }> = {
-  personal: { 
-    label: "SUBJECT_PERSONAL_HISTORY", 
-    icon: ClipboardList, 
-    color: "text-blue-400",
-    technicalLabel: "PERSONAL_MEDICAL_PROTOCOL"
-  },
-  family: { 
-    label: "LINEAGE_FAMILY_HISTORY", 
-    icon: Users, 
-    color: "text-purple-400",
-    technicalLabel: "FAMILY_MEDICAL_REGISTRY"
-  },
-  genetic: { 
-    label: "GENOMIC_PREDISPOSITIONS", 
-    icon: Dna, 
-    color: "text-emerald-400",
-    technicalLabel: "GENETIC_PREDISPOSITION_SYSTEM"
-  },
-  allergy: { 
-    label: "IMMUNOLOGICAL_SENSITIVITY", 
-    icon: AlertTriangle, 
-    color: "text-orange-400",
-    technicalLabel: "ALLERGY_RESPONSE_PROTOCOL"
-  },
-  habit: { 
-    label: "LIFESTYLE_HABITS", 
-    icon: Activity, 
-    color: "text-cyan-400",
-    technicalLabel: "LIFESTYLE_BEHAVIOR_TRACKER"
-  },
+const typeConfig: Record<BackgroundType, { label: string; icon: any; color: string }> = {
+  personal: { label: "Antecedentes Personales", icon: ClipboardList, color: "text-blue-400" },
+  family: { label: "Antecedentes Familiares", icon: Users, color: "text-purple-400" },
+  genetic: { label: "Predisposiciones Genéticas", icon: Dna, color: "text-emerald-400" },
+  allergy: { label: "Alergias", icon: AlertTriangle, color: "text-orange-400" },
+  habit: { label: "Hábitos y Estilo de Vida", icon: Activity, color: "text-cyan-400" },
 };
-// === OPCIONES CERRADAS ===
-// Personal History Types
 const personalHistoryChoices = [
-  { value: "patologico", label: "PATOLOGICO" },
-  { value: "no_patologico", label: "NO_PATOLOGICO" },
-  { value: "quirurgico", label: "QUIRURGICO" },
-  { value: "traumatico", label: "TRAUMATICO" },
-  { value: "alergico", label: "ALERGICO" },
-  { value: "toxico", label: "TOXICO" },
-  { value: "gineco_obstetrico", label: "GINECO_OBSTETRICO" },
+  { value: "patologico", label: "Patológico" },
+  { value: "no_patologico", label: "No Patológico" },
+  { value: "quirurgico", label: "Quirúrgico" },
+  { value: "traumatico", label: "Traumático" },
+  { value: "alergico", label: "Alérgico" },
+  { value: "toxico", label: "Tóxico" },
+  { value: "gineco_obstetrico", label: "Gineco-Obstétrico" },
 ];
-// ✅ FAMILY - Relationship cerrado (primera y segunda línea)
 const relationshipChoices = [
-  { value: "mother", label: "MADRE" },
-  { value: "father", label: "PADRE" },
-  { value: "sibling", label: "HERMANO/A" },
-  { value: "child", label: "HIJO/A" },
-  { value: "maternal_grandmother", label: "ABUELA_MATERNA" },
-  { value: "maternal_grandfather", label: "ABUELO_MATERNO" },
-  { value: "paternal_grandmother", label: "ABUELA_PATENA" },
-  { value: "paternal_grandfather", label: "ABUELO_PATENO" },
-  { value: "uncle", label: "TIO/A" },
-  { value: "aunt", label: "TIA" },
-  { value: "cousin", label: "PRIMO/A" },
-  { value: "nephew", label: "SOBRINO/A" },
-  { value: "niece", label: "SOBRINA/A" },
+  { value: "mother", label: "Madre" },
+  { value: "father", label: "Padre" },
+  { value: "sibling", label: "Hermano/a" },
+  { value: "child", label: "Hijo/a" },
+  { value: "maternal_grandmother", label: "Abuela materna" },
+  { value: "maternal_grandfather", label: "Abuelo materno" },
+  { value: "paternal_grandmother", label: "Abuela paterna" },
+  { value: "paternal_grandfather", label: "Abuelo paterno" },
+  { value: "uncle", label: "Tío/a" },
+  { value: "aunt", label: "Tía" },
+  { value: "cousin", label: "Primo/a" },
+  { value: "nephew", label: "Sobrino/a" },
+  { value: "niece", label: "Sobrina" },
 ];
-// Allergy
 const allergySeverityChoices = [
-  { value: "leve", label: "LEVE" },
-  { value: "moderada", label: "MODERADA" },
-  { value: "grave", label: "GRAVE" },
-  { value: "anafilactica", label: "ANAFILACTICA" },
+  { value: "leve", label: "Leve" },
+  { value: "moderada", label: "Moderada" },
+  { value: "grave", label: "Grave" },
+  { value: "anafilactica", label: "Anafiláctica" },
 ];
 const allergySourceChoices = [
-  { value: "historia_clinica", label: "HISTORIA_CLINICA" },
-  { value: "prueba_cutanea", label: "PRUEBA_CUTANEA" },
-  { value: "prueba_sanguinea", label: "PRUEBA_SANGUINEA" },
-  { value: "autorreporte", label: "AUTORREPORTE" },
+  { value: "historia_clinica", label: "Historia Clínica" },
+  { value: "prueba_cutanea", label: "Prueba Cutánea" },
+  { value: "prueba_sanguinea", label: "Prueba Sanguínea" },
+  { value: "autorreporte", label: "Autorreporte" },
 ];
-// ✅ HABIT TYPES
 const habitTypes = [
-  { value: "tabaco", label: "TABACO" },
-  { value: "alcohol", label: "ALCOHOL" },
-  { value: "actividad_fisica", label: "ACTIVIDAD_FISICA" },
-  { value: "dieta", label: "DIETA" },
-  { value: "sueno", label: "SUENO" },
-  { value: "drogas", label: "DROGAS" },
+  { value: "tabaco", label: "Tabaco" },
+  { value: "alcohol", label: "Alcohol" },
+  { value: "actividad_fisica", label: "Actividad Física" },
+  { value: "dieta", label: "Dieta" },
+  { value: "sueno", label: "Sueño" },
+  { value: "drogas", label: "Drogas" },
 ];
-// === TABACO ===
 const smokingStatusChoices = [
-  { value: "yes", label: "SI_FUMA" },
-  { value: "no", label: "NO_FUMA" },
-  { value: "former", label: "EX_FUMADOR" },
+  { value: "yes", label: "Fuma" },
+  { value: "no", label: "No fuma" },
+  { value: "former", label: "Ex fumador" },
 ];
 const tobaccoTypeChoices = [
-  { value: "cigarettes", label: "CIGARRILLOS" },
-  { value: "pipe", label: "PIPA" },
-  { value: "electronic", label: "ELECTRONICO" },
-  { value: "other", label: "OTROS" },
+  { value: "cigarettes", label: "Cigarrillos" },
+  { value: "pipe", label: "Pipa" },
+  { value: "electronic", label: "Electrónico" },
+  { value: "other", label: "Otros" },
 ];
 const frequencyLevelsChoices = [
-  { value: "daily", label: "DIARIO" },
-  { value: "weekly", label: "SEMANAL" },
-  { value: "occasional", label: "OCASIONAL" },
+  { value: "daily", label: "Diario" },
+  { value: "weekly", label: "Semanal" },
+  { value: "occasional", label: "Ocasional" },
 ];
-// === ALCOHOL ===
 const alcoholStatusChoices = [
-  { value: "yes", label: "SI_CONSUME" },
-  { value: "no", label: "NO_CONSUME" },
+  { value: "yes", label: "Consume" },
+  { value: "no", label: "No consume" },
 ];
 const alcoholFrequencyChoices = [
-  { value: "never", label: "NUNCA" },
-  { value: "monthly_or_less", label: "MENSUAL_O_MENOS" },
-  { value: "2_4_month", label: "2-4_VECES_MES" },
-  { value: "2_3_week", label: "2-3_VECES_SEMANA" },
-  { value: "4_plus_week", label: "4+_VECES_SEMANA" },
+  { value: "never", label: "Nunca" },
+  { value: "monthly_or_less", label: "Mensual o menos" },
+  { value: "2_4_month", label: "2-4 veces al mes" },
+  { value: "2_3_week", label: "2-3 veces por semana" },
+  { value: "4_plus_week", label: "4+ veces por semana" },
 ];
 const alcoholQuantityChoices = [
   { value: "1_2", label: "1-2" },
@@ -182,61 +138,52 @@ const alcoholQuantityChoices = [
   { value: "10_plus", label: "10+" },
 ];
 const bingeFrequencyChoices = [
-  { value: "never", label: "NUNCA" },
-  { value: "less_monthly", label: "MENOS_MENSUAL" },
-  { value: "monthly", label: "MENSUAL" },
-  { value: "weekly", label: "SEMANAL" },
-  { value: "daily", label: "DIARIO" },
+  { value: "never", label: "Nunca" },
+  { value: "less_monthly", label: "Menos de mensual" },
+  { value: "monthly", label: "Mensual" },
+  { value: "weekly", label: "Semanal" },
+  { value: "daily", label: "Diario" },
 ];
-// === ACTIVIDAD FÍSICA ===
 const exerciseFrequencyChoices = [
-  { value: "sedentary", label: "SEDENTARIO" },
-  { value: "1_2_week", label: "1-2_VECES_SEMANA" },
-  { value: "3_4_week", label: "3-4_VECES_SEMANA" },
-  { value: "5_plus_week", label: "5+_VECES_SEMANA" },
+  { value: "sedentary", label: "Sedentario" },
+  { value: "1_2_week", label: "1-2 veces/semana" },
+  { value: "3_4_week", label: "3-4 veces/semana" },
+  { value: "5_plus_week", label: "5+ veces/semana" },
 ];
 const exerciseIntensityChoices = [
-  { value: "light", label: "LEVE" },
-  { value: "moderate", label: "MODERADA" },
-  { value: "intense", label: "INTENSA" },
+  { value: "light", label: "Leve" },
+  { value: "moderate", label: "Moderada" },
+  { value: "intense", label: "Intensa" },
 ];
-// === DIETA ===
 const dietTypeChoices = [
-  { value: "omnivore", label: "OMNIVORA" },
-  { value: "vegetarian", label: "VEGETARIANA" },
-  { value: "vegan", label: "VEGANA" },
-  { value: "mediterranean", label: "MEDITERRANEA" },
-  { value: "other", label: "OTRA" },
+  { value: "omnivore", label: "Omnívora" },
+  { value: "vegetarian", label: "Vegetariana" },
+  { value: "vegan", label: "Vegana" },
+  { value: "mediterranean", label: "Mediterránea" },
+  { value: "other", label: "Otra" },
 ];
-// === SUEÑO ===
 const sleepQualityChoices = [
-  { value: "good", label: "BUENA" },
-  { value: "fair", label: "REGULAR" },
-  { value: "poor", label: "MALA" },
+  { value: "good", label: "Buena" },
+  { value: "fair", label: "Regular" },
+  { value: "poor", label: "Mala" },
 ];
-// === DROGAS ===
 const drugsStatusChoices = [
-  { value: "yes", label: "SI" },
-  { value: "no", label: "NO" },
+  { value: "yes", label: "Sí" },
+  { value: "no", label: "No" },
 ];
 export default function ClinicalBackgroundModal({ open, onClose, onSave, initial, type }: Props) {
   const [form, setForm] = useState<ClinicalBackgroundForm>({
     type,
     notes: "",
-    // PERSONAL
     personalType: "patologico",
     condition: "",
     date: new Date().toISOString().slice(0, 10),
-    // FAMILY
     relation: "",
     age_at_diagnosis: null,
-    // GENETIC
     name: "",
-    // ALLERGY
     allergen: "",
     severity: "",
     source: "",
-    // HABIT
     habitType: "tabaco",
     smokes_currently: "no",
     tobacco_type: "",
@@ -267,20 +214,15 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
       setForm({
         type,
         notes: initial?.notes || "",
-        // PERSONAL
         personalType: initial?.personalType || "patologico",
         condition: initial?.condition || "",
         date: initial?.date || new Date().toISOString().slice(0, 10),
-        // FAMILY
         relation: initial?.relation || "",
         age_at_diagnosis: initial?.age_at_diagnosis ?? null,
-        // GENETIC
         name: initial?.name || "",
-        // ALLERGY
         allergen: initial?.allergen || initial?.name || "",
         severity: initial?.severity || "",
         source: initial?.source || "",
-        // HABIT
         habitType: initial?.habitType || "tabaco",
         smokes_currently: initial?.smokes_currently || "no",
         tobacco_type: initial?.tobacco_type || "",
@@ -353,7 +295,6 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
         notes: form.notes 
       };
     } else if (type === "habit") {
-      // Construir payload según tipo de hábito
       payload = { 
         type: form.habitType,
         notes: form.notes 
@@ -390,332 +331,310 @@ export default function ClinicalBackgroundModal({ open, onClose, onSave, initial
     onSave(payload);
     onClose();
   };
-  const inputStyles = "w-full bg-black/40 border border-white/20 rounded-sm px-4 py-3 text-[13px] text-white font-mono focus:outline-none focus:border-emerald-500/50 transition-all";
-  const labelStyles = "text-[11px] font-bold text-white/70 uppercase tracking-[0.1em] mb-2 block";
-  const sectionStyles = "bg-white/[0.02] border border-white/10 rounded-sm p-5 space-y-4";
-  const grid2Cols = "grid grid-cols-2 gap-4";
-  const grid3Cols = "grid grid-cols-3 gap-4";
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelClass = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
+  const sectionClass = "bg-white/5 border border-white/10 rounded-lg p-5 space-y-4";
   if (!open) return null;
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-[#0a0a0b] border border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-black/40 sticky top-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-lg">
           <div className="flex items-center gap-3">
-            <div className={`p-2 ${activeConfig.color.replace('text', 'bg').replace('-400', '-500/20')} border ${activeConfig.color.replace('text', 'border').replace('-400', '-400/30')}`}>
+            <div className={`p-2 bg-white/5 border border-white/10 rounded-lg`}>
               <activeConfig.icon className={`h-4 w-4 ${activeConfig.color}`} />
             </div>
             <div>
-              <h3 className="text-[12px] font-bold uppercase tracking-widest text-white">
-                {initial ? "EDIT_REGISTRY" : "NEW_ENTRY"}
+              <h3 className="text-[12px] font-semibold text-white">
+                {initial ? "Editar Registro" : "Nuevo Registro"}
               </h3>
-              <p className="text-[10px] font-mono text-white/50 uppercase">{activeConfig.label}</p>
+              <p className="text-[10px] text-white/40 mt-0.5">{activeConfig.label}</p>
             </div>
           </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white p-1">
+          <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
-        {/* Content */}
         <div className="p-6 space-y-5">
-          
-          {/* === PERSONAL HISTORY === */}
           {type === "personal" && (
-            <>
-              <div className={sectionStyles}>
+            <div className={sectionClass}>
+              <div>
+                <label className={labelClass}>Tipo</label>
+                <select className={inputClass} value={form.personalType} onChange={(e) => setField("personalType", e.target.value)}>
+                  {personalHistoryChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Condición</label>
+                <input className={inputClass} value={form.condition} onChange={(e) => setField("condition", e.target.value)} placeholder="Ej: Hipertensión, Diabetes..." />
+              </div>
+              <div>
+                <label className={labelClass}>Fecha</label>
+                <input type="date" style={{colorScheme: 'dark'}} className={inputClass} value={form.date} onChange={(e) => setField("date", e.target.value)} />
+              </div>
+            </div>
+          )}
+          {type === "family" && (
+            <div className={sectionClass}>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelStyles}>Type</label>
-                  <select className={inputStyles} value={form.personalType} onChange={(e) => setField("personalType", e.target.value)}>
-                    {personalHistoryChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
+                  <label className={labelClass}>Parentesco</label>
+                  <select className={inputClass} value={form.relation} onChange={(e) => setField("relation", e.target.value)}>
+                    <option value="">Seleccionar...</option>
+                    {relationshipChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label className={labelStyles}>Condition</label>
-                  <input className={inputStyles} value={form.condition} onChange={(e) => setField("condition", e.target.value)} placeholder="HIPERTENSION, DIABETES, ETC..." />
-                </div>
-                <div>
-                  <label className={labelStyles}>Date</label>
-                  <input type="date" style={{colorScheme: 'dark'}} className={inputStyles} value={form.date} onChange={(e) => setField("date", e.target.value)} />
-                </div>
-              </div>
-            </>
-          )}
-          {/* === FAMILY HISTORY === */}
-          {type === "family" && (
-            <>
-              <div className={sectionStyles}>
-                <div className={grid2Cols}>
-                  <div>
-                    <label className={labelStyles}>Relationship</label>
-                    <select className={inputStyles} value={form.relation} onChange={(e) => setField("relation", e.target.value)}>
-                      <option value="">SELECT...</option>
-                      {relationshipChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelStyles}>Age at Diagnosis</label>
-                    <input 
-                      type="number" 
-                      className={inputStyles} 
-                      value={form.age_at_diagnosis || ""} 
-                      onChange={(e) => setField("age_at_diagnosis", e.target.value ? parseInt(e.target.value) : null)} 
-                      placeholder="EDAD"
-                      min="0"
-                      max="120"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className={labelStyles}>Condition</label>
-                  <input className={inputStyles} value={form.condition} onChange={(e) => setField("condition", e.target.value)} placeholder="DIABETES, CANCER, CARDIOPATIA..." />
+                  <label className={labelClass}>Edad al diagnóstico</label>
+                  <input 
+                    type="number" 
+                    className={inputClass} 
+                    value={form.age_at_diagnosis || ""} 
+                    onChange={(e) => setField("age_at_diagnosis", e.target.value ? parseInt(e.target.value) : null)} 
+                    placeholder="Edad"
+                    min="0"
+                    max="120"
+                  />
                 </div>
               </div>
-            </>
-          )}
-          {/* === GENETIC PREDISPOSITION === */}
-          {type === "genetic" && (
-            <div className={sectionStyles}>
               <div>
-                <label className={labelStyles}>
-                  Predisposition {loadingOptions && <Loader2 size={14} className="inline animate-spin ml-2" />}
+                <label className={labelClass}>Condición</label>
+                <input className={inputClass} value={form.condition} onChange={(e) => setField("condition", e.target.value)} placeholder="Ej: Diabetes, Cáncer..." />
+              </div>
+            </div>
+          )}
+          {type === "genetic" && (
+            <div className={sectionClass}>
+              <div>
+                <label className={labelClass}>
+                  Predisposición {loadingOptions && <Loader2 size={14} className="inline animate-spin ml-2" />}
                 </label>
-                <select className={inputStyles} value={form.name} onChange={(e) => setField("name", e.target.value)} disabled={loadingOptions}>
-                  <option value="">SELECT...</option>
+                <select className={inputClass} value={form.name} onChange={(e) => setField("name", e.target.value)} disabled={loadingOptions}>
+                  <option value="">Seleccionar...</option>
                   {options.map((opt) => (<option key={opt.id} value={opt.name}>{opt.name}</option>))}
                 </select>
               </div>
             </div>
           )}
-          {/* === ALLERGY / IMMUNOLOGICAL === */}
           {type === "allergy" && (
-            <div className={sectionStyles}>
+            <div className={sectionClass}>
               <div>
-                <label className={labelStyles}>Allergen</label>
-                <input className={inputStyles} value={form.allergen} onChange={(e) => setField("allergen", e.target.value)} placeholder="MEDICAMENTO, ALIMENTO, AMBIENTAL" />
+                <label className={labelClass}>Alérgeno</label>
+                <input className={inputClass} value={form.allergen} onChange={(e) => setField("allergen", e.target.value)} placeholder="Ej: Medicamento, alimento..." />
               </div>
-              <div className={grid2Cols}>
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelStyles}>Severity</label>
-                  <select className={inputStyles} value={form.severity} onChange={(e) => setField("severity", e.target.value)}>
-                    <option value="">SELECT...</option>
+                  <label className={labelClass}>Severidad</label>
+                  <select className={inputClass} value={form.severity} onChange={(e) => setField("severity", e.target.value)}>
+                    <option value="">Seleccionar...</option>
                     {allergySeverityChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                   </select>
                 </div>
                 <div>
-                  <label className={labelStyles}>Source</label>
-                  <select className={inputStyles} value={form.source} onChange={(e) => setField("source", e.target.value)}>
-                    <option value="">SELECT...</option>
+                  <label className={labelClass}>Fuente</label>
+                  <select className={inputClass} value={form.source} onChange={(e) => setField("source", e.target.value)}>
+                    <option value="">Seleccionar...</option>
                     {allergySourceChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                   </select>
                 </div>
               </div>
             </div>
           )}
-          {/* === LIFESTYLE / HABITS === */}
           {type === "habit" && (
             <>
-              <div className={sectionStyles}>
+              <div className={sectionClass}>
                 <div>
-                  <label className={labelStyles}>Habit_Type</label>
-                  <select className={inputStyles} value={form.habitType} onChange={(e) => setField("habitType", e.target.value)}>
+                  <label className={labelClass}>Tipo de hábito</label>
+                  <select className={inputClass} value={form.habitType} onChange={(e) => setField("habitType", e.target.value)}>
                     {habitTypes.map((h) => (<option key={h.value} value={h.value}>{h.label}</option>))}
                   </select>
                 </div>
               </div>
-              {/* === TABACO === */}
               {form.habitType === "tabaco" && (
-                <div className={sectionStyles}>
-                  <div className={grid2Cols}>
+                <div className={sectionClass}>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelStyles}>Status</label>
-                      <select className={inputStyles} value={form.smokes_currently} onChange={(e) => setField("smokes_currently", e.target.value)}>
+                      <label className={labelClass}>Estado</label>
+                      <select className={inputClass} value={form.smokes_currently} onChange={(e) => setField("smokes_currently", e.target.value)}>
                         {smokingStatusChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                     <div>
-                      <label className={labelStyles}>Type</label>
-                      <select className={inputStyles} value={form.tobacco_type} onChange={(e) => setField("tobacco_type", e.target.value)}>
-                        <option value="">SELECT...</option>
+                      <label className={labelClass}>Tipo</label>
+                      <select className={inputClass} value={form.tobacco_type} onChange={(e) => setField("tobacco_type", e.target.value)}>
+                        <option value="">Seleccionar...</option>
                         {tobaccoTypeChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                   </div>
-                  <div className={grid2Cols}>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelStyles}>Frequency</label>
-                      <select className={inputStyles} value={form.smoking_frequency} onChange={(e) => setField("smoking_frequency", e.target.value)}>
-                        <option value="">SELECT...</option>
+                      <label className={labelClass}>Frecuencia</label>
+                      <select className={inputClass} value={form.smoking_frequency} onChange={(e) => setField("smoking_frequency", e.target.value)}>
+                        <option value="">Seleccionar...</option>
                         {frequencyLevelsChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                     <div>
-                      <label className={labelStyles}>Quantity (per day)</label>
+                      <label className={labelClass}>Cantidad (por día)</label>
                       <input 
                         type="number" 
-                        className={inputStyles} 
+                        className={inputClass} 
                         value={form.cigarettes_per_day || ""} 
                         onChange={(e) => setField("cigarettes_per_day", e.target.value ? parseInt(e.target.value) : null)}
-                        placeholder="# CIGARROS"
+                        placeholder="#"
                         min="0"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className={labelStyles}>Start Age</label>
+                    <label className={labelClass}>Edad de inicio</label>
                     <input 
                       type="number" 
-                      className={inputStyles} 
+                      className={inputClass} 
                       value={form.smoking_start_age || ""} 
                       onChange={(e) => setField("smoking_start_age", e.target.value ? parseInt(e.target.value) : null)}
-                      placeholder="EDAD DE INICIO"
+                      placeholder="Edad"
                       min="0"
                       max="100"
                     />
                   </div>
                 </div>
               )}
-              {/* === ALCOHOL === */}
               {form.habitType === "alcohol" && (
-                <div className={sectionStyles}>
+                <div className={sectionClass}>
                   <div>
-                    <label className={labelStyles}>Status</label>
-                    <select className={inputStyles} value={form.drinks_alcohol} onChange={(e) => setField("drinks_alcohol", e.target.value)}>
+                    <label className={labelClass}>Estado</label>
+                    <select className={inputClass} value={form.drinks_alcohol} onChange={(e) => setField("drinks_alcohol", e.target.value)}>
                       {alcoholStatusChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                     </select>
                   </div>
-                  <div className={grid2Cols}>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelStyles}>Frequency</label>
-                      <select className={inputStyles} value={form.alcohol_frequency} onChange={(e) => setField("alcohol_frequency", e.target.value)}>
-                        <option value="">SELECT...</option>
+                      <label className={labelClass}>Frecuencia</label>
+                      <select className={inputClass} value={form.alcohol_frequency} onChange={(e) => setField("alcohol_frequency", e.target.value)}>
+                        <option value="">Seleccionar...</option>
                         {alcoholFrequencyChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                     <div>
-                      <label className={labelStyles}>Quantity (per occasion)</label>
-                      <select className={inputStyles} value={form.alcohol_quantity} onChange={(e) => setField("alcohol_quantity", e.target.value)}>
-                        <option value="">SELECT...</option>
+                      <label className={labelClass}>Cantidad (por ocasión)</label>
+                      <select className={inputClass} value={form.alcohol_quantity} onChange={(e) => setField("alcohol_quantity", e.target.value)}>
+                        <option value="">Seleccionar...</option>
                         {alcoholQuantityChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                   </div>
                   <div>
-                    <label className={labelStyles}>Binge Frequency</label>
-                    <select className={inputStyles} value={form.binge_frequency} onChange={(e) => setField("binge_frequency", e.target.value)}>
-                      <option value="">SELECT...</option>
+                    <label className={labelClass}>Frecuencia de consumo excesivo</label>
+                    <select className={inputClass} value={form.binge_frequency} onChange={(e) => setField("binge_frequency", e.target.value)}>
+                      <option value="">Seleccionar...</option>
                       {bingeFrequencyChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                     </select>
                   </div>
                 </div>
               )}
-              {/* === ACTIVIDAD FÍSICA === */}
               {form.habitType === "actividad_fisica" && (
-                <div className={sectionStyles}>
-                  <div className={grid2Cols}>
+                <div className={sectionClass}>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelStyles}>Frequency</label>
-                      <select className={inputStyles} value={form.exercise_frequency} onChange={(e) => setField("exercise_frequency", e.target.value)}>
-                        <option value="">SELECT...</option>
+                      <label className={labelClass}>Frecuencia</label>
+                      <select className={inputClass} value={form.exercise_frequency} onChange={(e) => setField("exercise_frequency", e.target.value)}>
+                        <option value="">Seleccionar...</option>
                         {exerciseFrequencyChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                     <div>
-                      <label className={labelStyles}>Intensity</label>
-                      <select className={inputStyles} value={form.exercise_intensity} onChange={(e) => setField("exercise_intensity", e.target.value)}>
-                        <option value="">SELECT...</option>
+                      <label className={labelClass}>Intensidad</label>
+                      <select className={inputClass} value={form.exercise_intensity} onChange={(e) => setField("exercise_intensity", e.target.value)}>
+                        <option value="">Seleccionar...</option>
                         {exerciseIntensityChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                   </div>
                   <div>
-                    <label className={labelStyles}>Activity Description</label>
-                    <input className={inputStyles} value={form.activity_description} onChange={(e) => setField("activity_description", e.target.value)} placeholder="CAMINAR, GIMNASIO, DEPORTES, LABORAL..." />
+                    <label className={labelClass}>Descripción de la actividad</label>
+                    <input className={inputClass} value={form.activity_description} onChange={(e) => setField("activity_description", e.target.value)} placeholder="Ej: Caminar, gimnasio, deportes..." />
                   </div>
                 </div>
               )}
-              {/* === DIETA === */}
               {form.habitType === "dieta" && (
-                <div className={sectionStyles}>
+                <div className={sectionClass}>
                   <div>
-                    <label className={labelStyles}>Diet Type</label>
-                    <select className={inputStyles} value={form.diet_type} onChange={(e) => setField("diet_type", e.target.value)}>
-                      <option value="">SELECT...</option>
+                    <label className={labelClass}>Tipo de dieta</label>
+                    <select className={inputClass} value={form.diet_type} onChange={(e) => setField("diet_type", e.target.value)}>
+                      <option value="">Seleccionar...</option>
                       {dietTypeChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                     </select>
                   </div>
                   <div>
-                    <label className={labelStyles}>Restrictions</label>
-                    <textarea className={`${inputStyles} min-h-[80px] resize-none`} value={form.diet_restrictions} onChange={(e) => setField("diet_restrictions", e.target.value)} placeholder="RENAL, DIABETICA, CELIACA, ETC..." />
+                    <label className={labelClass}>Restricciones</label>
+                    <textarea className={`${inputClass} min-h-[80px] resize-none`} value={form.diet_restrictions} onChange={(e) => setField("diet_restrictions", e.target.value)} placeholder="Ej: Renal, diabética, celíaca..." />
                   </div>
                 </div>
               )}
-              {/* === SUEÑO === */}
               {form.habitType === "sueno" && (
-                <div className={sectionStyles}>
-                  <div className={grid2Cols}>
+                <div className={sectionClass}>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelStyles}>Hours per Night</label>
+                      <label className={labelClass}>Horas por noche</label>
                       <input 
                         type="number" 
                         step="0.5"
-                        className={inputStyles} 
+                        className={inputClass} 
                         value={form.sleep_hours || ""} 
                         onChange={(e) => setField("sleep_hours", e.target.value ? parseFloat(e.target.value) : null)}
-                        placeholder="HORAS"
+                        placeholder="Horas"
                         min="0"
                         max="24"
                       />
                     </div>
                     <div>
-                      <label className={labelStyles}>Quality</label>
-                      <select className={inputStyles} value={form.sleep_quality} onChange={(e) => setField("sleep_quality", e.target.value)}>
-                        <option value="">SELECT...</option>
+                      <label className={labelClass}>Calidad</label>
+                      <select className={inputClass} value={form.sleep_quality} onChange={(e) => setField("sleep_quality", e.target.value)}>
+                        <option value="">Seleccionar...</option>
                         {sleepQualityChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                       </select>
                     </div>
                   </div>
                 </div>
               )}
-              {/* === DROGAS === */}
               {form.habitType === "drogas" && (
-                <div className={sectionStyles}>
+                <div className={sectionClass}>
                   <div>
-                    <label className={labelStyles}>Status</label>
-                    <select className={inputStyles} value={form.uses_drugs} onChange={(e) => setField("uses_drugs", e.target.value)}>
+                    <label className={labelClass}>Estado</label>
+                    <select className={inputClass} value={form.uses_drugs} onChange={(e) => setField("uses_drugs", e.target.value)}>
                       {drugsStatusChoices.map((c) => (<option key={c.value} value={c.value}>{c.label}</option>))}
                     </select>
                   </div>
-                  <div className={grid2Cols}>
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelStyles}>Drug Type</label>
-                      <input className={inputStyles} value={form.drug_description} onChange={(e) => setField("drug_description", e.target.value)} placeholder="TIPO_DE_DROGA" />
+                      <label className={labelClass}>Tipo de sustancia</label>
+                      <input className={inputClass} value={form.drug_description} onChange={(e) => setField("drug_description", e.target.value)} placeholder="Tipo" />
                     </div>
                     <div>
-                      <label className={labelStyles}>Frequency</label>
-                      <input className={inputStyles} value={form.drug_frequency} onChange={(e) => setField("drug_frequency", e.target.value)} placeholder="FRECUENCIA" />
+                      <label className={labelClass}>Frecuencia</label>
+                      <input className={inputClass} value={form.drug_frequency} onChange={(e) => setField("drug_frequency", e.target.value)} placeholder="Frecuencia" />
                     </div>
                   </div>
                 </div>
               )}
             </>
           )}
-          {/* Clinical Notes (común para todos) */}
-          <div className={`${sectionStyles} border-t border-white/20 pt-5`}>
-            <label className={labelStyles}>Clinical_Notes</label>
-            <textarea className={`${inputStyles} min-h-[100px] resize-none bg-black/60`} value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="OBSERVATIONS..." />
+          <div className={`${sectionClass} border-t border-white/10 pt-5`}>
+            <label className={labelClass}>Notas Clínicas</label>
+            <textarea className={`${inputClass} min-h-[100px] resize-none`} value={form.notes} onChange={(e) => setField("notes", e.target.value)} placeholder="Observaciones adicionales..." />
           </div>
         </div>
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/10 bg-black/40">
-          <button onClick={onClose} className="px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">
-            Cancel
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/15 bg-white/5 rounded-b-lg">
+          <button onClick={onClose} className="px-5 py-2.5 text-[11px] font-medium text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5">
+            Cancelar
           </button>
-          <button onClick={handleSave} className={`flex items-center gap-2 px-6 py-2.5 rounded-sm text-[11px] font-bold uppercase tracking-widest text-white transition-all ${activeConfig.color.replace('text', 'bg').replace('-400', '-500/20')} border border-white/20 hover:brightness-110`}>
+          <button onClick={handleSave} className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all">
             <Save size={16} />
-            {initial ? "UPDATE" : "CREATE"}
+            {initial ? "Actualizar" : "Guardar"}
           </button>
         </div>
       </div>

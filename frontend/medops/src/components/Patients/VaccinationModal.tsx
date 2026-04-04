@@ -5,7 +5,6 @@ import {
   CheckIcon,
   XMarkIcon
 } from "@heroicons/react/24/outline";
-import EliteModal from "../Common/EliteModal";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -22,7 +21,6 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
     lot: "",
     center: "",
   });
-  // Preservar soporte para tecla Escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) {
@@ -33,7 +31,6 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
   }, [open, onClose]);
-  // Sincronizar formulario con datos iniciales
   useEffect(() => {
     if (open && initial) {
       setForm({
@@ -44,7 +41,6 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
           center: initial.center || "",
         });
     } else if (open && !initial) {
-      // Reset formulario para nueva vacunación
       setForm({
         vaccine: "",
         vaccine_detail: null,
@@ -69,108 +65,104 @@ export default function VaccinationModal({ open, onClose, onSave, initial, vacci
     };
     onSave(payload);
   };
-  // Constantes de estilos Elite
-  const inputStyles = "w-full bg-black/40 border border-white/10 rounded-sm px-4 py-3 text-sm text-white font-mono focus:outline-none focus:border-white/30 transition-all";
-  const labelStyles = "text-[9px] font-black text-white/30 uppercase tracking-[0.1em] mb-2 block";
-  const sectionStyles = "bg-[#0a0a0a] border border-white/10 rounded-sm p-4 space-y-4";
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelClass = "text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block";
+  const sectionClass = "bg-white/5 border border-white/10 rounded-lg p-5 space-y-4";
+  if (!open) return null;
   return (
-    <EliteModal
-      open={open}
-      onClose={onClose}
-      title="VACCINATION_REGISTRY_PROTOCOL"
-      subtitle={initial ? "UPDATE_EXISTING_RECORD" : "INITIALIZE_NEW_VACCINATION"}
-      maxWidth="max-w-xl"
-      showDotIndicator={true}
-    >
-      <div className="space-y-6">
-        {/* Header con icono */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400">
-            <BeakerIcon className="w-5 h-5" />
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div 
+        className="bg-[#1a1a1b] border border-white/15 w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-lg">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <BeakerIcon className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="text-[12px] font-semibold text-white">
+                {initial ? "Editar Vacuna" : "Registrar Vacuna"}
+              </h3>
+              <p className="text-[10px] text-white/40 mt-0.5">Datos de vacunación</p>
+            </div>
           </div>
-          <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">
-            VACCINATION_ADMINISTRATION_DATA
-          </h3>
+          <button onClick={onClose} className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+            <XMarkIcon className="w-5 h-5" />
+          </button>
         </div>
-        {/* Formulario de Vacunación */}
-        <div className={sectionStyles}>
-          <div>
-            <label className={labelStyles}>VACCINE_IDENTIFIER</label>
-            <select
-              value={form.vaccine}
-              onChange={(e) => setForm({ ...form, vaccine: e.target.value })}
-              className={inputStyles}
-            >
-              <option value="">SELECT_VACCINE...</option>
-              {vaccines.map((v: any) => (
-                <option key={v.id} value={v.id}>
-                  {v.name} ({v.code})
-                </option>
-              ))}
-            </select>
+        <div className="p-6 space-y-5">
+          <div className={sectionClass}>
+            <div>
+              <label className={labelClass}>Vacuna</label>
+              <select
+                value={form.vaccine}
+                onChange={(e) => setForm({ ...form, vaccine: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">Seleccionar vacuna...</option>
+                {vaccines.map((v: any) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} ({v.code})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Fecha de aplicación</label>
+              <input
+                type="date"
+                value={form.date_administered}
+                onChange={(e) => setForm({ ...form, date_administered: e.target.value })}
+                className={inputClass}
+                style={{ colorScheme: 'dark' }}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Número de lote</label>
+              <input
+                type="text"
+                value={form.lot}
+                onChange={(e) => setForm({ ...form, lot: e.target.value })}
+                placeholder="Código del lote"
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Centro de aplicación</label>
+              <input
+                type="text"
+                value={form.center}
+                onChange={(e) => setForm({ ...form, center: e.target.value })}
+                placeholder="Nombre del centro"
+                className={inputClass}
+              />
+            </div>
           </div>
-          <div>
-            <label className={labelStyles}>ADMINISTRATION_DATE</label>
-            <input
-              type="date"
-              value={form.date_administered}
-              onChange={(e) => setForm({ ...form, date_administered: e.target.value })}
-              className={inputStyles}
-              style={{ colorScheme: 'dark' }}
-            />
-          </div>
-          <div>
-            <label className={labelStyles}>BATCH_NUMBER</label>
-            <input
-              type="text"
-              value={form.lot}
-              onChange={(e) => setForm({ ...form, lot: e.target.value })}
-              placeholder="BATCH_CODE_IDENTIFIER"
-              className={inputStyles}
-            />
-          </div>
-          <div>
-            <label className={labelStyles}>ADMINISTRATION_CENTER</label>
-            <input
-              type="text"
-              value={form.center}
-              onChange={(e) => setForm({ ...form, center: e.target.value })}
-              placeholder="CENTER_NAME_OR_CODE"
-              className={inputStyles}
-            />
+          <div className="bg-white/5 border border-white/10 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+              <span className="text-[10px] font-medium text-white/50">Paciente</span>
+            </div>
+            <p className="text-[11px] text-white/60">ID: #{patientId}</p>
           </div>
         </div>
-        {/* Patient Information Display */}
-        <div className={sectionStyles}>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
-            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400">
-              PATIENT_SUBJECT_IDENTIFIER
-            </h3>
-          </div>
-          <div className="bg-black/60 border border-white/10 rounded-sm p-4">
-            <p className="text-[10px] font-mono text-white/80">
-              PATIENT_ID: {patientId}
-            </p>
-          </div>
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/15 bg-white/5 rounded-b-lg">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 text-[11px] font-medium text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-[11px] font-medium text-white bg-emerald-500/15 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all"
+          >
+            <CheckIcon className="w-4 h-4" />
+            {initial ? "Actualizar" : "Guardar"}
+          </button>
         </div>
       </div>
-      {/* Elite Action Buttons */}
-      <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-xs font-bold uppercase tracking-widest text-white/40 hover:text-white transition-colors font-mono"
-        >
-          ABORT_OPERATION
-        </button>
-        <button
-          onClick={handleSubmit}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest rounded-sm hover:bg-blue-400 transition-all font-mono"
-        >
-          <CheckIcon className="w-4 h-4" />
-          {initial ? "UPDATE_VACCINATION_RECORD" : "CREATE_VACCINATION_ENTRY"}
-        </button>
-      </div>
-    </EliteModal>
+    </div>
   );
 }

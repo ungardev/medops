@@ -47,10 +47,10 @@ interface Props {
   readOnly?: boolean;
 }
 const backgroundLabels: Record<BackgroundType, string> = {
-  personal: "SUBJECT_PERSONAL_HISTORY",
-  family: "LINEAGE_FAMILY_HISTORY",
-  genetic: "GENOMIC_PREDISPOSITIONS",
-  habit: "LIFESTYLE_HABITS",
+  personal: "Antecedentes Personales",
+  family: "Antecedentes Familiares",
+  genetic: "Predisposiciones Genéticas",
+  habit: "Hábitos y Estilo de Vida",
 };
 const backgroundIcons: Record<string, React.ElementType> = {
   personal: UserIcon,
@@ -81,7 +81,7 @@ export default function ClinicalProfileSection({
     if (grouped[item.type]) grouped[item.type].push(item);
   });
   const handleDelete = async (item: any, type: string) => {
-    if (!confirm("CONFIRM_DATA_PURGE: Are you sure?")) return;
+    if (!confirm("¿Estás seguro de eliminar este registro?")) return;
     try {
       let endpoint = "";
       if (type === "habit") endpoint = `patients/${patientId}/habits/${item.id}/`;
@@ -92,7 +92,7 @@ export default function ClinicalProfileSection({
       await apiFetch(endpoint, { method: "DELETE" });
       onRefresh?.();
     } catch (err) {
-      console.error("ERRO_DELETING_RECORD:", err);
+      console.error("Error al eliminar registro:", err);
     }
   };
   const handleSave = async (type: ModalType, payload: any) => {
@@ -114,7 +114,7 @@ export default function ClinicalProfileSection({
       setModalOpen(false);
       onRefresh?.();
     } catch (err) {
-      console.error("ERROR_SAVING_RECORD:", err);
+      console.error("Error al guardar registro:", err);
     }
   };
   const renderSection = (type: ModalType, title: string, items: any[], Icon: any) => {
@@ -123,50 +123,56 @@ export default function ClinicalProfileSection({
       <div className={`border-b border-white/10 last:border-0 transition-all ${isExpanded ? 'bg-white/[0.02]' : ''}`}>
         <button
           onClick={() => setExpanded(isExpanded ? null : type)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/[0.03] transition-colors group"
+          className="w-full flex items-center justify-between px-5 py-4 hover:bg-white/[0.03] transition-colors group"
         >
-          <div className="flex items-center gap-4">
-            <Icon className={`w-4 h-4 ${isExpanded ? 'text-emerald-400' : 'text-white/40'}`} />
-            <span className={`text-[11px] font-bold tracking-[0.15em] uppercase ${isExpanded ? 'text-white' : 'text-white/50'}`}>
+          <div className="flex items-center gap-3">
+            <Icon className={`w-5 h-5 ${isExpanded ? 'text-emerald-400' : 'text-white/30'}`} />
+            <span className={`text-[11px] font-medium ${isExpanded ? 'text-white/80' : 'text-white/40'}`}>
               {title}
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-[10px] font-mono text-white/40">
-              {items.length.toString().padStart(2, '0')}
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-white/30">
+              {items.length}
             </span>
-            <ChevronDownIcon className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-emerald-400' : 'text-white/40'}`} />
+            <ChevronDownIcon className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-emerald-400' : 'text-white/30'}`} />
           </div>
         </button>
         {isExpanded && (
-          <div className="px-6 pb-6 pt-2 animate-in fade-in slide-in-from-top-2">
+          <div className="px-5 pb-5 pt-2 animate-in fade-in slide-in-from-top-2">
             <div className="space-y-3">
               {items.length === 0 ? (
-                <div className="text-[11px] font-mono text-white/30 py-4 border border-dashed border-white/10 rounded-sm text-center">
-                  NO_RECORDS_FOUND_FOR_{type.toUpperCase()}
+                <div className="text-[11px] text-white/30 py-4 border border-dashed border-white/10 rounded-lg text-center">
+                  Sin registros
                 </div>
               ) : (
                 items.map((item) => (
-                  <div key={item.id} className="group flex items-center justify-between p-4 border border-white/10 bg-white/[0.02] hover:border-emerald-500/30 transition-all rounded-sm">
+                  <div key={item.id} className="group flex items-center justify-between p-4 border border-white/10 bg-white/5 hover:border-white/20 transition-all rounded-lg">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-3">
-                        <span className="text-[13px] font-bold text-white uppercase tracking-tight">
+                        <span className="text-[12px] font-medium text-white">
                           {item.condition || item.name || item.type}
                         </span>
                         {item.severity && (
-                          <span className="text-[9px] px-2 py-0.5 border border-red-500/30 text-red-400 font-bold rounded-full uppercase">
+                          <span className={`text-[9px] px-2 py-0.5 border rounded-full font-medium ${
+                            item.severity.toLowerCase().includes('grave') || item.severity.toLowerCase().includes('anafil')
+                              ? 'border-red-500/25 text-red-400 bg-red-500/10'
+                              : item.severity.toLowerCase().includes('moder')
+                              ? 'border-amber-500/25 text-amber-400 bg-amber-500/10'
+                              : 'border-white/15 text-white/50 bg-white/5'
+                          }`}>
                             {item.severity}
                           </span>
                         )}
                         {item.status && (
-                          <span className="text-[9px] font-mono text-white/40 uppercase italic">
+                          <span className="text-[9px] text-white/30 italic">
                             [{item.status}]
                           </span>
                         )}
                       </div>
                       {(item.notes || item.description) && (
-                        <p className="text-[11px] text-white/50 font-mono leading-relaxed max-w-xl">
-                          {">"} {item.notes || item.description}
+                        <p className="text-[10px] text-white/40 leading-relaxed max-w-xl">
+                          {item.notes || item.description}
                         </p>
                       )}
                     </div>
@@ -175,13 +181,13 @@ export default function ClinicalProfileSection({
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
                           onClick={() => { setModalType(type); setModalInitial(item); setModalOpen(true); }}
-                          className="p-2 text-white/40 hover:text-emerald-400 transition-colors"
+                          className="p-2 text-white/30 hover:text-emerald-400 transition-colors rounded-lg hover:bg-white/5"
                         >
                           <PencilIcon className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDelete(item, type)}
-                          className="p-2 text-white/40 hover:text-red-400 transition-colors"
+                          className="p-2 text-white/30 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10"
                         >
                           <TrashIcon className="w-4 h-4" />
                         </button>
@@ -194,10 +200,12 @@ export default function ClinicalProfileSection({
               {!readOnly && (
                 <button
                   onClick={() => { setModalType(type); setModalInitial(undefined); setModalOpen(true); }}
-                  className="w-full py-3 border border-dashed border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group flex justify-center items-center gap-2 rounded-sm"
+                  className="w-full py-3 border border-dashed border-white/10 hover:border-emerald-500/30 hover:bg-emerald-500/5 transition-all group flex justify-center items-center gap-2 rounded-lg"
                 >
-                  <PlusIcon className="w-4 h-4 text-white/40 group-hover:text-emerald-400" />
-                  <span className="text-[10px] font-bold text-white/40 group-hover:text-emerald-400 uppercase">Add_Entry</span>
+                  <PlusIcon className="w-4 h-4 text-white/30 group-hover:text-emerald-400" />
+                  <span className="text-[10px] font-medium text-white/30 group-hover:text-emerald-400">
+                    Agregar registro
+                  </span>
                 </button>
               )}
             </div>
@@ -207,18 +215,18 @@ export default function ClinicalProfileSection({
     );
   };
   return (
-    <div className="bg-white/[0.02] border border-white/10 rounded-sm overflow-hidden">
-      <div className="bg-white/5 px-6 py-3 border-b border-white/10">
-        <span className="text-[11px] font-bold uppercase tracking-widest text-white flex items-center gap-2">
-          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-          Clinical_Bio_Profile
+    <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+      <div className="bg-white/5 px-5 py-3 border-b border-white/15">
+        <span className="text-[11px] font-medium text-white/70 flex items-center gap-2">
+          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+          Perfil Clínico
         </span>
       </div>
       <div className="flex flex-col">
         {renderSection("personal", backgroundLabels.personal, grouped.personal, backgroundIcons.personal)}
         {renderSection("family", backgroundLabels.family, grouped.family, backgroundIcons.family)}
         {renderSection("genetic", backgroundLabels.genetic, grouped.genetic, backgroundIcons.genetic)}
-        {renderSection("allergy", "IMMUNOLOGICAL_SENSITIVITY", allergies, backgroundIcons.allergy)}
+        {renderSection("allergy", "Alergias", allergies, backgroundIcons.allergy)}
         {renderSection("habit", backgroundLabels.habit, habits, backgroundIcons.habit)}
       </div>
       
