@@ -7414,6 +7414,9 @@ class OperationalHubView(APIView):
                 appointment_date=today
             ).select_related('patient', 'doctor', 'institution', 'doctor_service')
             
+            logger.info(f"[_get_pending_entries] institution_id={institution_id}, today={today}")
+            logger.info(f"[_get_pending_entries] Found {pending_entries.count()} pending entries")
+            
             return AppointmentSerializer(pending_entries, many=True).data
             
         except Exception as e:

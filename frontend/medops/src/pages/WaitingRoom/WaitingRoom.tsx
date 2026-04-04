@@ -137,9 +137,9 @@ export default function WaitingRoom() {
   });
   
   const filteredPendingEntries = pendingEntries.filter(appt => {
-    const matchesInstitution = !selectedInstitutionId || appt.institution === selectedInstitutionId;
+    const apptInstitutionId = typeof appt.institution === 'object' ? appt.institution?.id : appt.institution;
+    const matchesInstitution = !selectedInstitutionId || apptInstitutionId === selectedInstitutionId;
     
-    // ⚠️ CORRECCIÓN: Para appointments, el serviceId suele estar en doctor_service o doctor_service.id
     const serviceId = appt.doctor_service || appt.doctor_service?.id; 
     const service = services.find(s => s.id === serviceId);
     const categoryId = service?.category_id;
