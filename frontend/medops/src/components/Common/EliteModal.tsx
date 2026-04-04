@@ -9,6 +9,7 @@ interface EliteModalProps {
   subtitle?: string;
   maxWidth?: string;
   children: React.ReactNode;
+  showDotIndicator?: boolean;
 }
 const EliteModal: React.FC<EliteModalProps> = ({ 
   open, 
@@ -17,6 +18,7 @@ const EliteModal: React.FC<EliteModalProps> = ({
   subtitle,
   maxWidth = "max-w-lg", 
   children,
+  showDotIndicator,
 }) => {
   if (!open) return null;
   
@@ -27,15 +29,20 @@ const EliteModal: React.FC<EliteModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-4 border-b border-white/10 bg-white/5 flex justify-between items-center">
-          <div>
-            <h2 className="text-[12px] font-semibold text-white/80">
-              {title}
-            </h2>
-            {subtitle && (
-              <p className="text-[10px] text-white/50 mt-0.5">
-                {subtitle}
-              </p>
+          <div className="flex items-center gap-3">
+            {showDotIndicator && (
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
             )}
+            <div>
+              <h2 className="text-[12px] font-semibold text-white/80">
+                {title}
+              </h2>
+              {subtitle && (
+                <p className="text-[10px] text-white/50 mt-0.5">
+                  {subtitle}
+                </p>
+              )}
+            </div>
           </div>
           <button onClick={onClose} className="text-white/50 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-lg">
             <XMarkIcon className="w-5 h-5" />
