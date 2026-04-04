@@ -12,9 +12,6 @@ import {
   AlertTriangle, 
   ClockIcon 
 } from 'lucide-react';
-// ✅ ELIMINADO: import { createAppointment } from '@/api/appointments';
-// ✅ ELIMINADO: import type { AppointmentInput } from '@/types/appointments';
-// Tipos de estado del flujo
 type PurchaseStep = 'confirm-date' | 'confirm-final' | 'processing' | 'success' | 'error';
 interface ServicePurchaseFlowProps {
   service: DoctorService;
@@ -32,26 +29,19 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [chargeOrder, setChargeOrder] = useState<any | null>(null);
   
-  // Estado para fecha/hora seleccionada
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [selectedTime, setSelectedTime] = useState<string>('');
   
-  // Obtener horarios del servicio (para el calendario visual)
   const { data: serviceSchedules = [] } = useAllServiceSchedules(service.institution);
   
-  // Filtrar horarios para el servicio específico actual
   const filteredSchedules = serviceSchedules.filter((schedule: any) => schedule.service === service.id);
   
-  // GENERAR SLOTS LOCALES BASADOS EN HORARIOS RECURRENTES
   const availableSlots = useMemo(() => {
     if (!selectedDate) return [];
     
-    // ✅ FIX: Convertir fecha a día de la semana con convención Python (0=Lunes)
-    const selectedDateObj = new Date(selectedDate + 'T00:00:00Z');
-    const jsDayOfWeek = selectedDateObj.getUTCDay(); // 0=Dom (JavaScript)
-    // Convertir a convención Python: 0=Lun, 1=Mar, ..., 6=Dom
+    const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+    const jsDayOfWeek = selectedDateObj.getDay();
     const pythonDayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1;
-    // Filtrar horarios del servicio para el día de la semana seleccionado
     const serviceSchedulesForService = filteredSchedules.filter(
       (schedule: any) => schedule.day_of_week === pythonDayOfWeek
     );
@@ -60,7 +50,7 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     serviceSchedulesForService.forEach((schedule: any) => {
       const startTime = new Date(`2000-01-01T${schedule.start_time}`);
       const endTime = new Date(`2000-01-01T${schedule.end_time}`);
-      const slotDuration = schedule.slot_duration || 30; // Default 30 min
+      const slotDuration = schedule.slot_duration || 30;
       
       let currentTime = startTime;
       while (currentTime < endTime) {
@@ -76,7 +66,6 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     return slots;
   }, [selectedDate, filteredSchedules]);
   
-  // ✅ NUEVO: Función handlePurchase modificada para crear solo ChargeOrder
   const handlePurchase = async () => {
     setStep('processing');
     setError(null);
@@ -117,7 +106,6 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
     setStep('confirm-date');
     setError(null);
   };
-  // Renderizado condicional según el estado
   switch (step) {
     case 'processing':
       return <ProcessingView />;
@@ -166,7 +154,6 @@ export const ServicePurchaseFlow: React.FC<ServicePurchaseFlowProps> = ({
               />;
   }
 };
-// Vista de Selección de Fecha y Hora (Paso 1 - Ahora Calendario Simplificado)
 const ConfirmDateView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -180,29 +167,24 @@ const ConfirmDateView: React.FC<{
   schedules: any[];
 }> = ({ service, selectedDate, setSelectedDate, selectedTime, setSelectedTime, availableSlots, onProceed, onBack, onCancel, schedules }) => {
   
-  // CORRECCIÓN: Convertir string (UTC) a Date para el calendario
-  // Añadimos 'T00:00:00Z' para forzar la interpretación en UTC
-  const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00Z') : null;
+  const selectedDateObj = selectedDate ? new Date(selectedDate + 'T00:00:00') : null;
   
-  // CORRECCIÓN: Manejador de selección de fecha que normaliza a UTC
   const handleDateSelect = (date: Date | null) => {
     if (date) {
-      // Convertir a string YYYY-MM-DD usando UTC
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
       setSelectedDate(`${year}-${month}-${day}`);
     } else {
       setSelectedDate('');
     }
-    setSelectedTime(''); // Reset time when date changes
+    setSelectedTime('');
   };
   
   return (
     <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
       <h3 className="text-white font-bold text-lg mb-4">Seleccionar Fecha y Hora</h3>
       
-      {/* Contenedor del Calendario Simplificado */}
       <div className="mb-6">
         <SimpleCalendar
           selectedDate={selectedDateObj}
@@ -211,7 +193,6 @@ const ConfirmDateView: React.FC<{
         />
       </div>
       
-      {/* Selección de Hora (si hay slots disponibles) */}
       {availableSlots.length > 0 && (
         <div className="mb-4">
           <label className="text-white/70 text-sm block mb-2">Horarios Disponibles</label>
@@ -233,14 +214,12 @@ const ConfirmDateView: React.FC<{
         </div>
       )}
       
-      {/* Mensaje informativo si no hay slots */}
       {availableSlots.length === 0 && selectedDate && (
         <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-sm text-yellow-200 text-sm text-center">
           No hay horarios específicos para este día. La hora será confirmada por el doctor.
         </div>
       )}
       
-      {/* Botones de acción */}
       <div className="flex gap-3">
         <button
           onClick={onBack}
@@ -260,7 +239,6 @@ const ConfirmDateView: React.FC<{
     </div>
   );
 };
-// Vista de Confirmación Final (Paso 2) - Sin cambios
 const ConfirmFinalView: React.FC<{
   service: DoctorService;
   selectedDate: string;
@@ -312,7 +290,6 @@ const ConfirmFinalView: React.FC<{
     </div>
   </div>
 );
-// Vista de Procesamiento - Sin cambios
 const ProcessingView: React.FC = () => (
   <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
     <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
@@ -320,7 +297,6 @@ const ProcessingView: React.FC = () => (
     <p className="text-white/50 text-xs mt-2">Por favor espera</p>
   </div>
 );
-// Vista de Éxito - Sin cambios
 const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> = ({
   chargeOrder,
   onCancel
@@ -354,7 +330,6 @@ const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> =
     </div>
   </div>
 );
-// Vista de Error - Sin cambios
 const ErrorView: React.FC<{
   error: string | null;
   onRetry: () => void;
