@@ -1305,7 +1305,7 @@ def register_arrival(request):
                 'doctor': request.user.doctor_profile if hasattr(request.user, 'doctor_profile') else None,
                 'institution': institution,
                 'appointment_date': timezone.now().date(),
-                'status': 'arrived',  # ⚠️ CORRECCIÓN: Estado 'arrived' inmediatamente para walk-in
+                'status': 'arrived',
                 'arrival_time': timezone.now(),
                 'appointment_type': 'walkin',
                 'notes': 'Llegada Walk-in registrada manualmente',
@@ -1324,16 +1324,23 @@ def register_arrival(request):
             
             appointment = Appointment.objects.create(**appointment_data)
         
-        # Crear la entrada en la sala de espera asociada a la Appointment
-        # ⚠️ CORRECCIÓN: Asegurar que el estado sea 'waiting' para que aparezca en la cola
-        entry = WaitingRoomEntry.objects.create(
+        # ✅ CORRECCIÓN: Usar get_or_create en lugar de create para evitar duplicados
+        entry, created = WaitingRoomEntry.objects.get_or_create(
             patient=patient,
             institution=institution,
             appointment=appointment,
-            status='waiting',
-            source_type='walkin' if not appointment_id else 'scheduled',
-            arrival_time=timezone.now(),
+            defaults={
+                'status': 'waiting',
+                'source_type': 'walkin' if not appointment_id else 'scheduled',
+                'arrival_time': timezone.now(),
+            }
         )
+        
+        # Si ya existía, actualizar su estado
+        if not created:
+            entry.status = 'waiting'
+            entry.arrival_time = timezone.now()
+            entry.save(update_fields=['status', 'arrival_time'])
         
         serializer = WaitingRoomEntrySerializer(entry)
         return Response(serializer.data, status=201)
