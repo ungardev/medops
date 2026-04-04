@@ -13,10 +13,8 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // Días de la semana
   const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   
-  // Generar días del mes
   const getDaysInMonth = () => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
@@ -24,38 +22,38 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
     const lastDay = new Date(year, month + 1, 0);
     const days = [];
     
-    // Días vacíos al inicio
     for (let i = 0; i < firstDay.getDay(); i++) {
       days.push(null);
     }
     
-    // Días del mes
     for (let i = 1; i <= lastDay.getDate(); i++) {
-      days.push(new Date(Date.UTC(year, month, i)));
+      days.push(new Date(year, month, i));
     }
     
     return days;
   };
   
-  // Verificar si un día es laboral
   const isWorkingDay = (date: Date) => {
-      const jsDayOfWeek = date.getDay(); // 0=Dom (JavaScript)
-      // Convertir a convención Python: 0=Lun, 1=Mar, ..., 6=Dom
-      const pythonDayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1;
-      return serviceSchedules.some(schedule => schedule.day_of_week === pythonDayOfWeek);
+    const jsDayOfWeek = date.getDay();
+    const pythonDayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1;
+    return serviceSchedules.some(schedule => schedule.day_of_week === pythonDayOfWeek);
   };
-  // CORRECCIÓN: Normalizar fecha seleccionada a string UTC (YYYY-MM-DD) para comparación segura
+  
   const selectedDateStr = selectedDate 
-    ? new Date(selectedDate.getTime() + selectedDate.getTimezoneOffset() * 60000).toISOString().split('T')[0]
+    ? `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
     : null;
+  
   const days = getDaysInMonth();
   
   return (
     <div className="bg-black/30 p-4 rounded-sm border border-white/10">
-      {/* Controles de mes */}
       <div className="flex justify-between items-center mb-4">
         <button 
-          onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() - 1)))}
+          onClick={() => {
+            const newDate = new Date(currentMonth);
+            newDate.setMonth(newDate.getMonth() - 1);
+            setCurrentMonth(newDate);
+          }}
           className="p-2 hover:bg-white/10 rounded-full"
         >
           <ChevronLeft className="w-5 h-5 text-white/70" />
@@ -64,14 +62,17 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
           {currentMonth.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
         </span>
         <button 
-          onClick={() => setCurrentMonth(new Date(currentMonth.setMonth(currentMonth.getMonth() + 1)))}
+          onClick={() => {
+            const newDate = new Date(currentMonth);
+            newDate.setMonth(newDate.getMonth() + 1);
+            setCurrentMonth(newDate);
+          }}
           className="p-2 hover:bg-white/10 rounded-full"
         >
           <ChevronRight className="w-5 h-5 text-white/70" />
         </button>
       </div>
       
-      {/* Grid de días */}
       <div className="grid grid-cols-7 gap-1 mb-2">
         {weekDays.map(day => (
           <div key={day} className="text-center text-white/50 text-xs py-2 font-medium">
@@ -82,12 +83,14 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
       
       <div className="grid grid-cols-7 gap-1">
         {days.map((date, index) => {
-          // CORRECCIÓN: Comparar usando strings UTC normalizados
-          const currentDayStr = date ? date.toISOString().split('T')[0] : null;
+          const currentDayStr = date 
+            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+            : null;
           const isSelected = currentDayStr && selectedDateStr && currentDayStr === selectedDateStr;
           
           const isWorking = date && isWorkingDay(date);
-          const isToday = date && date.toDateString() === new Date().toDateString();
+          const today = new Date();
+          const isToday = date && date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
           
           return (
             <button
@@ -102,7 +105,6 @@ const SimpleCalendar: React.FC<SimpleCalendarProps> = ({
               `}
             >
               {date ? date.getDate() : ''}
-              {/* Indicador de día laboral */}
               {date && isWorking && (
                 <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-400 rounded-full"></span>
               )}
