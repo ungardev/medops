@@ -43,7 +43,6 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showAvailability, setShowAvailability] = useState(false);
   
-  // ✅ Filtrar items
   const filteredItems = useMemo(() => {
     let result = items;
     
@@ -57,16 +56,13 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
       );
     }
     
-    // ✅ Ocultar disponibilidad por defecto
     if (!showAvailability) {
       result = result.filter(item => item.type !== 'availability');
     }
     
-    // ✅ Limitar a 50 items máximo
     return result.slice(0, 50);
   }, [items, selectedServiceId, statusFilter, showAvailability]);
   
-  // ✅ Contadores
   const appointmentCount = useMemo(() => {
     let result = items;
     if (selectedServiceId) {
@@ -83,7 +79,6 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
     return result.filter(i => i.type === 'availability').length;
   }, [items, selectedServiceId]);
   
-  // ✅ Agrupar disponibilidad por servicio
   const groupedAvailability = useMemo(() => {
     if (!showAvailability) return {};
     
@@ -99,7 +94,6 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
     return groups;
   }, [filteredItems, showAvailability]);
   
-  // ✅ Función auxiliar para extraer datos de citas
   const extractAppointmentData = (item: OperationalItem) => {
     if (item.metadata?.appointment) {
       const appointment = item.metadata.appointment as Appointment;
@@ -149,23 +143,21 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
   
   return (
     <div className="flex flex-col h-full">
-      {/* ✅ Header con Selector de Servicio y Toggle */}
-      <div className="flex items-center justify-between mb-3 p-2 bg-[#111] border border-white/10 rounded-sm">
+      <div className="flex items-center justify-between mb-3 p-3 bg-white/5 border border-white/15 rounded-lg">
         <div className="flex items-center gap-2">
-          <FunnelIcon className="w-4 h-4 text-white/40" />
-          <span className="text-[10px] text-white/60 uppercase tracking-wider">
-            FILTRAR POR SERVICIO
+          <FunnelIcon className="w-4 h-4 text-white/30" />
+          <span className="text-[10px] text-white/50 uppercase tracking-wider">
+            Filtrar
           </span>
         </div>
         
-        <div className="flex items-center gap-3">
-          {/* ✅ Toggle de disponibilidad */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAvailability(!showAvailability)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-sm text-[9px] font-bold uppercase tracking-wider transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-medium uppercase tracking-wider transition-all ${
               showAvailability 
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
-                : 'bg-white/5 text-white/40 border border-white/10 hover:text-white/60'
+                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' 
+                : 'bg-white/5 text-white/30 border border-white/10 hover:text-white/50'
             }`}
           >
             {showAvailability ? (
@@ -176,21 +168,20 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
             {showAvailability ? 'Ocultar' : 'Slots'}
           </button>
           
-          {/* Selector de servicio */}
           <div className="relative">
             <button
               onClick={() => setShowServiceDropdown(!showServiceDropdown)}
-              className="flex items-center gap-2 px-3 py-1.5 bg-[#0a0a0b] border border-white/10 rounded text-xs text-white hover:border-white/30 transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/15 rounded-lg text-[11px] text-white/70 hover:border-white/25 transition-all"
             >
-              <BuildingOfficeIcon className="w-3.5 h-3.5 text-white/40" />
+              <BuildingOfficeIcon className="w-3.5 h-3.5 text-white/30" />
               <span className="truncate max-w-[150px]">{selectedServiceName}</span>
             </button>
             
             {showServiceDropdown && (
-              <div className="absolute right-0 top-full mt-1 w-64 bg-[#1a1a1a] border border-white/10 rounded shadow-lg z-50 max-h-60 overflow-y-auto">
+              <div className="absolute right-0 top-full mt-1 w-64 bg-[#1a1a1b] border border-white/15 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
                 <button
                   onClick={() => { onServiceChange(null); setShowServiceDropdown(false); }}
-                  className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors ${
+                  className={`w-full px-3 py-2 text-left text-[11px] hover:bg-white/5 transition-colors ${
                     !selectedServiceId ? 'bg-white/10 text-white' : 'text-white/60'
                   }`}
                 >
@@ -200,7 +191,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                   <button
                     key={service.id}
                     onClick={() => { onServiceChange(service.id); setShowServiceDropdown(false); }}
-                    className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors ${
+                    className={`w-full px-3 py-2 text-left text-[11px] hover:bg-white/5 transition-colors ${
                       selectedServiceId === service.id ? 'bg-white/10 text-white' : 'text-white/60'
                     }`}
                   >
@@ -213,18 +204,16 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
         </div>
       </div>
       
-      {/* ✅ Lista de Items */}
-      <div className="flex-1 overflow-y-auto space-y-[2px]">
+      <div className="flex-1 overflow-y-auto space-y-2">
         {filteredItems.length === 0 ? (
-          <div className="text-center py-8 text-white/40 text-xs">
+          <div className="text-center py-8 text-white/30 text-[11px]">
             {!showAvailability 
-              ? 'No hay citas para este servicio. Haz clic en "Slots" para ver disponibilidad.'
+              ? 'No hay citas para este servicio.'
               : 'No hay items para este servicio'
             }
           </div>
         ) : (
           <>
-            {/* ✅ Citas primero */}
             {filteredItems.filter(i => i.type === 'appointment').map((item) => {
               const data = extractAppointmentData(item);
               const style = getStatusStyle(data.status as AppointmentStatus);
@@ -233,17 +222,17 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                 <div
                   key={`${item.type}-${item.id}`}
                   onClick={() => handleItemClick(item)}
-                  className="bg-[#0a0a0b] border border-white/5 hover:border-white/15 rounded-sm p-2 cursor-pointer transition-all hover:bg-[#111] group"
+                  className="bg-white/5 border border-white/10 hover:border-white/20 rounded-lg p-3 cursor-pointer transition-all hover:bg-white/10 group"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`w-1 h-8 rounded-full ${style.dot}`} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-medium text-white truncate">
+                          <span className="text-[11px] font-medium text-white/80 truncate">
                             {data.patientName}
                           </span>
-                          <span className="text-[9px] text-white/40 font-mono">
+                          <span className="text-[9px] text-white/30">
                             {new Date(data.date).toLocaleDateString('es-ES', {
                               day: '2-digit',
                               month: '2-digit'
@@ -254,7 +243,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                           <span className="text-[9px] text-white/30 truncate">
                             {data.doctorName}
                           </span>
-                          <span className={`text-[8px] px-1 rounded ${style.bg} ${style.text}`}>
+                          <span className={`text-[8px] px-1.5 py-0.5 rounded-md ${style.bg} ${style.text}`}>
                             {style.label}
                           </span>
                         </div>
@@ -265,7 +254,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                       {onEdit && data.rawAppointment && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onEdit(data.rawAppointment); }}
-                          className="p-1.5 text-white/40 hover:text-blue-400 hover:bg-white/5 rounded transition-all"
+                          className="p-1.5 text-white/30 hover:text-blue-400 hover:bg-white/5 rounded-lg transition-all"
                           title="Editar"
                         >
                           <PencilSquareIcon className="w-3.5 h-3.5" />
@@ -277,7 +266,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                             e.stopPropagation(); 
                             handleStatusChange(data.rawAppointment);
                           }}
-                          className="p-1.5 text-white/40 hover:text-green-400 hover:bg-white/5 rounded transition-all"
+                          className="p-1.5 text-white/30 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-all"
                           title={data.rawAppointment.status === 'pending' ? 'Completar' : 'Reabrir'}
                         >
                           {data.rawAppointment.status === 'pending' ? (
@@ -290,7 +279,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                       {onDelete && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onDelete(item); }}
-                          className="p-1.5 text-white/40 hover:text-red-400 hover:bg-white/5 rounded transition-all"
+                          className="p-1.5 text-white/30 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all"
                           title="Eliminar"
                         >
                           <XCircleIcon className="w-3.5 h-3.5" />
@@ -302,29 +291,28 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
               );
             })}
             
-            {/* ✅ Disponibilidad agrupada por servicio (solo si showAvailability) */}
             {showAvailability && Object.entries(groupedAvailability).map(([serviceName, slots]) => (
-              <div key={serviceName} className="mt-3">
-                <div className="text-[9px] font-bold text-emerald-400/60 uppercase tracking-wider mb-2 px-1">
+              <div key={serviceName} className="mt-4">
+                <div className="text-[9px] font-medium text-emerald-400/50 uppercase tracking-wider mb-2 px-1">
                   {serviceName} ({slots.length} slots)
                 </div>
                 {slots.slice(0, 10).map((item) => (
                   <div
                     key={`${item.type}-${item.id}`}
                     onClick={() => handleItemClick(item)}
-                    className="bg-[#0a0a0b] border border-white/5 hover:border-emerald-500/30 rounded-sm p-2 cursor-pointer transition-all hover:bg-[#111] group mb-[2px]"
+                    className="bg-white/5 border border-white/10 hover:border-emerald-500/20 rounded-lg p-3 cursor-pointer transition-all hover:bg-white/10 group mb-2"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-1 h-8 rounded-full bg-emerald-500/70" />
+                        <div className="w-1 h-8 rounded-full bg-emerald-500/50" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-[10px] font-medium text-emerald-300 truncate">
+                            <span className="text-[11px] font-medium text-emerald-400/70 truncate">
                               {item.time || 'Sin hora'}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[9px] text-emerald-400/60">
+                            <span className="text-[9px] text-emerald-400/40">
                               Disponible
                             </span>
                           </div>
@@ -334,7 +322,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => { e.stopPropagation(); handleItemClick(item); }}
-                          className="p-1.5 text-white/40 hover:text-emerald-400 hover:bg-white/5 rounded transition-all"
+                          className="p-1.5 text-white/30 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-all"
                           title="Agendar"
                         >
                           <PlusIcon className="w-3.5 h-3.5" />
@@ -344,7 +332,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
                   </div>
                 ))}
                 {slots.length > 10 && (
-                  <div className="text-[8px] text-white/30 text-center py-1">
+                  <div className="text-[8px] text-white/20 text-center py-1">
                     +{slots.length - 10} más slots disponibles
                   </div>
                 )}
@@ -354,8 +342,7 @@ const ServiceItemsList: React.FC<ServiceItemsListProps> = ({
         )}
       </div>
       
-      {/* ✅ Footer con estadísticas */}
-      <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center text-[9px] text-white/40">
+      <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center text-[9px] text-white/30">
         <span>
           {appointmentCount} citas
           {showAvailability && ` | ${availabilityCount} slots`}
