@@ -73,7 +73,6 @@ export default function RegisterPaymentModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formError, setFormError] = useState("");
   
-  // ✅ Pre-llenar con datos del paciente desde PatientSettings
   useEffect(() => {
     if (paymentMethod) {
       setFormData(prev => ({
@@ -129,7 +128,6 @@ export default function RegisterPaymentModal({
           }
         }
         if (data.monto) {
-          // ✅ FIX: Convertir formato venezolano (23.693,51) a americano (23693.51)
           let cleanMonto = data.monto;
           if (cleanMonto.includes(',')) {
             cleanMonto = cleanMonto.replace(/\./g, '').replace(',', '.');
@@ -162,7 +160,6 @@ export default function RegisterPaymentModal({
       return;
     }
     
-    // ✅ FIX: Convertir formato venezolano y redondear a 2 decimales exactos
     let cleanAmount = formData.amount_bs;
     if (cleanAmount.includes(',')) {
       cleanAmount = cleanAmount.replace(/\./g, '').replace(',', '.');
@@ -171,15 +168,12 @@ export default function RegisterPaymentModal({
     const minParsed = parseFloat((order?.min_amount_bs || 0).toFixed(2));
     const amountRounded = parseFloat(amountParsed.toFixed(2));
     
-    console.log("VALIDACION MONTO:", { amountParsed, amountRounded, minParsed, minOriginal: order?.min_amount_bs });
-    
     if (isNaN(amountRounded) || amountRounded < minParsed) {
       const minDisplay = minParsed.toLocaleString('es-VE', { minimumFractionDigits: 2 });
       setFormError(`El monto debe ser igual o mayor a Bs ${minDisplay}`);
       return;
     }
     
-    // ✅ Redondear a 2 decimales para envío al backend
     const amountBs = amountRounded;
     
     try {
@@ -203,41 +197,40 @@ export default function RegisterPaymentModal({
   };
   
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-[#111] border border-white/10 rounded-sm w-full max-w-md max-h-[90vh] overflow-y-auto my-auto">
-        <div className="flex items-center justify-between p-4 border-b border-white/5">
-          <h3 className="text-[12px] font-black uppercase tracking-wider">Registrar Pago - Orden #{orderId}</h3>
-          <button onClick={onClose} className="text-white/40 hover:text-white">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#1a1a1b] border border-white/15 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15">
+          <h3 className="text-[12px] font-medium text-white/80">Registrar Pago - Orden #{orderId}</h3>
+          <button onClick={onClose} className="text-white/30 hover:text-white/60 p-1.5 hover:bg-white/5 rounded-lg transition-colors">
             <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
         
-        <form onSubmit={handleSubmitPayment} className="p-4 space-y-4">
-          {/* ✅ Resumen de "Pagar a" dentro del modal */}
-          <div className="p-4 bg-emerald-500/[0.03] border border-emerald-500/20 rounded-sm space-y-2">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400/80 mb-2">Pagar a</p>
+        <form onSubmit={handleSubmitPayment} className="p-6 space-y-4">
+          <div className="p-5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg space-y-3">
+            <p className="text-[9px] font-medium text-emerald-400/70 mb-2">Pagar a</p>
             <div className="space-y-1">
               {doctorData.bank_name && (
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-white/50">Banco</span>
-                  <span className="text-white font-bold">{doctorData.bank_name}</span>
+                  <span className="text-white/40">Banco</span>
+                  <span className="text-white/70 font-medium">{doctorData.bank_name}</span>
                 </div>
               )}
               {doctorData.bank_rif && (
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-white/50">Cédula</span>
-                  <span className="text-white font-bold font-mono">{doctorData.bank_rif}</span>
+                  <span className="text-white/40">Cédula</span>
+                  <span className="text-white/70 font-medium font-mono">{doctorData.bank_rif}</span>
                 </div>
               )}
               {doctorData.bank_phone && (
                 <div className="flex justify-between text-[10px]">
-                  <span className="text-white/50">Teléfono</span>
-                  <span className="text-white font-bold font-mono">{doctorData.bank_phone}</span>
+                  <span className="text-white/40">Teléfono</span>
+                  <span className="text-white/70 font-medium font-mono">{doctorData.bank_phone}</span>
                 </div>
               )}
               <div className="flex justify-between text-[11px] pt-2 border-t border-emerald-500/20">
-                <span className="text-white/50">Monto</span>
-                <span className="text-emerald-400 font-bold">Bs {balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</span>
+                <span className="text-white/40">Monto</span>
+                <span className="text-emerald-400 font-medium">Bs {balance.toLocaleString('es-VE', { minimumFractionDigits: 0 })}</span>
               </div>
             </div>
             <button
@@ -251,24 +244,23 @@ export default function RegisterPaymentModal({
                 ].filter(Boolean).join('\n');
                 navigator.clipboard.writeText(data);
               }}
-              className="w-full py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9px] font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-500/20 transition-all"
+              className="w-full py-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium rounded-lg hover:bg-emerald-500/15 transition-all"
             >
               Copiar Datos del Receptor
             </button>
           </div>
           
           {formError && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-sm text-red-400 text-[10px]">
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-[10px]">
               {formError}
             </div>
           )}
           
-          {/* ✅ Upload de captura */}
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
+            <label className="block text-[10px] font-medium text-white/40 mb-2">
               Captura de pago
             </label>
-            <div className="border-2 border-dashed border-white/20 rounded-sm p-4 text-center hover:border-white/40 transition-colors">
+            <div className="border-2 border-dashed border-white/15 rounded-lg p-4 text-center hover:border-white/25 transition-colors">
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg"
@@ -278,11 +270,11 @@ export default function RegisterPaymentModal({
                 ref={fileInputRef}
               />
               <label htmlFor="screenshot-upload" className="cursor-pointer">
-                <PhotoIcon className="w-8 h-8 mx-auto text-white/30 mb-2" />
-                <p className="text-[10px] text-white/50">
+                <PhotoIcon className="w-8 h-8 mx-auto text-white/20 mb-2" />
+                <p className="text-[10px] text-white/40">
                   {screenshot ? screenshot.name : "Subir captura de pantalla"}
                 </p>
-                <p className="text-[8px] text-white/30 mt-1">
+                <p className="text-[8px] text-white/20 mt-1">
                   PNG o JPG hasta 2MB
                 </p>
               </label>
@@ -293,7 +285,7 @@ export default function RegisterPaymentModal({
                 <img 
                   src={screenshotPreview} 
                   alt="Preview" 
-                  className="h-32 w-full object-contain rounded-sm border border-white/10"
+                  className="h-32 w-full object-contain rounded-lg border border-white/15"
                 />
                 <button
                   type="button"
@@ -302,7 +294,7 @@ export default function RegisterPaymentModal({
                     setScreenshotPreview(null);
                     setOcrResult(null);
                   }}
-                  className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full p-1 hover:bg-red-500"
+                  className="absolute top-2 right-2 bg-red-500/80 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors"
                 >
                   <XMarkIcon className="w-3 h-3" />
                 </button>
@@ -311,7 +303,7 @@ export default function RegisterPaymentModal({
                   type="button"
                   onClick={handleOCR}
                   disabled={isOCRLoading}
-                  className="absolute bottom-1 right-1 flex items-center gap-1 px-2 py-1 bg-purple-500/80 text-white text-[8px] font-bold uppercase rounded-sm hover:bg-purple-500 disabled:opacity-50"
+                  className="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 bg-purple-500/80 text-white text-[8px] font-medium rounded-lg hover:bg-purple-500 disabled:opacity-50 transition-colors"
                 >
                   {isOCRLoading ? (
                     <ArrowPathIcon className="w-3 h-3 animate-spin" />
@@ -324,18 +316,18 @@ export default function RegisterPaymentModal({
             )}
             
             {ocrResult && (
-              <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-sm">
+              <div className="mt-3 p-3 bg-purple-500/5 border border-purple-500/20 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] font-bold text-purple-300 uppercase">
+                  <span className="text-[9px] font-medium text-purple-400/80">
                     OCR Resultado
                     {ocrResult.strategy && (
-                      <span className="ml-1 text-purple-400/60">({ocrResult.strategy})</span>
+                      <span className="ml-1 text-purple-400/50">({ocrResult.strategy})</span>
                     )}
                   </span>
                   {ocrResult.confianza && (
                     <span className={`text-[8px] ${
-                      ocrResult.confianza >= 0.8 ? 'text-emerald-400' : 
-                      ocrResult.confianza >= 0.5 ? 'text-amber-400' : 'text-red-400'
+                      ocrResult.confianza >= 0.8 ? 'text-emerald-400/80' : 
+                      ocrResult.confianza >= 0.5 ? 'text-amber-400/80' : 'text-red-400/80'
                     }`}>
                       Confianza: {Math.round(ocrResult.confianza * 100)}%
                     </span>
@@ -343,29 +335,28 @@ export default function RegisterPaymentModal({
                 </div>
                 {ocrResult.success ? (
                   <div className="grid grid-cols-2 gap-1">
-                    {ocrResult.data?.banco && <p className="text-[8px] text-white/60">Banco: {ocrResult.data.banco}</p>}
-                    {ocrResult.data?.monto && <p className="text-[8px] text-white/60">Monto: Bs {ocrResult.data.monto}</p>}
-                    {ocrResult.data?.referencia && <p className="text-[8px] text-white/60">Ref: {ocrResult.data.referencia}</p>}
-                    {ocrResult.data?.telefono && <p className="text-[8px] text-white/60">Tel: {ocrResult.data.telefono}</p>}
-                    {ocrResult.data?.cedula && <p className="text-[8px] text-white/60">CI: {ocrResult.data.cedula}</p>}
-                    {ocrResult.data?.fecha && <p className="text-[8px] text-white/60">Fecha: {ocrResult.data.fecha}</p>}
-                    {ocrResult.data?.hora && <p className="text-[8px] text-white/60">Hora: {ocrResult.data.hora}</p>}
-                    {ocrResult.data?.receptor && <p className="text-[8px] text-white/60 col-span-2">Receptor: {ocrResult.data.receptor}</p>}
+                    {ocrResult.data?.banco && <p className="text-[8px] text-white/40">Banco: {ocrResult.data.banco}</p>}
+                    {ocrResult.data?.monto && <p className="text-[8px] text-white/40">Monto: Bs {ocrResult.data.monto}</p>}
+                    {ocrResult.data?.referencia && <p className="text-[8px] text-white/40">Ref: {ocrResult.data.referencia}</p>}
+                    {ocrResult.data?.telefono && <p className="text-[8px] text-white/40">Tel: {ocrResult.data.telefono}</p>}
+                    {ocrResult.data?.cedula && <p className="text-[8px] text-white/40">CI: {ocrResult.data.cedula}</p>}
+                    {ocrResult.data?.fecha && <p className="text-[8px] text-white/40">Fecha: {ocrResult.data.fecha}</p>}
+                    {ocrResult.data?.hora && <p className="text-[8px] text-white/40">Hora: {ocrResult.data.hora}</p>}
+                    {ocrResult.data?.receptor && <p className="text-[8px] text-white/40 col-span-2">Receptor: {ocrResult.data.receptor}</p>}
                   </div>
                 ) : (
-                  <p className="text-[8px] text-red-400">{ocrResult.error}</p>
+                  <p className="text-[8px] text-red-400/80">{ocrResult.error}</p>
                 )}
               </div>
             )}
           </div>
           
-          {/* ✅ Formulario del emisor (paciente) */}
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Tu Banco (Emisor)</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Tu Banco (Emisor)</label>
             <select
               value={formData.bank_code}
               onChange={(e) => setFormData({ ...formData, bank_code: e.target.value })}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50"
               required
             >
               <option value="">Seleccionar banco</option>
@@ -376,43 +367,43 @@ export default function RegisterPaymentModal({
           </div>
           
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Tu Teléfono (Emisor)</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Tu Teléfono (Emisor)</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
               placeholder="04121234567"
               required
             />
           </div>
           
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Tu Cédula (Emisor)</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Tu Cédula (Emisor)</label>
             <input
               type="text"
               value={formData.national_id}
               onChange={(e) => setFormData({ ...formData, national_id: e.target.value })}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
               placeholder="V-12345678"
               required
             />
           </div>
           
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Referencia</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Referencia</label>
             <input
               type="text"
               value={formData.reference}
               onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
               placeholder="Número de referencia"
               required
             />
           </div>
           
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">
               Monto (Bs) - Mínimo: Bs {(order.min_amount_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </label>
             <input
@@ -420,11 +411,10 @@ export default function RegisterPaymentModal({
               inputMode="decimal"
               value={formData.amount_bs}
               onChange={(e) => {
-                // ✅ FIX: Permitir solo números, punto y coma
                 const value = e.target.value.replace(/[^0-9.,]/g, '');
                 setFormData({ ...formData, amount_bs: value });
               }}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
               placeholder={`${(order.min_amount_bs || 0).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} o ${order.min_amount_bs || 0}`}
               required
             />
@@ -434,14 +424,14 @@ export default function RegisterPaymentModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-2.5 border border-white/20 text-white/60 text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-white/5"
+              className="flex-1 px-6 py-2.5 border border-white/15 text-white/50 text-[10px] font-medium rounded-lg hover:bg-white/5 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={registerPayment.isPending}
-              className="flex-1 px-6 py-2.5 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-400 disabled:opacity-50"
+              className="flex-1 px-6 py-2.5 bg-emerald-500/15 text-emerald-400 text-[10px] font-medium rounded-lg hover:bg-emerald-500/25 disabled:opacity-50 transition-all border border-emerald-500/25"
             >
               {registerPayment.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Registrar Pago"}
             </button>

@@ -90,8 +90,8 @@ export default function SearchPage() {
           { label: "Búsqueda", active: true }
         ]}
         stats={[
-          { label: "Término", value: query || "—", color: "text-white/60" },
-          { label: "Resultados", value: totalResults.toString(), color: "text-white/60" }
+          { label: "Término", value: query || "—", color: "text-white/50" },
+          { label: "Resultados", value: totalResults.toString(), color: "text-white/50" }
         ]}
       />
       
