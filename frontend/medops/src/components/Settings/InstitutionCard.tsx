@@ -32,14 +32,13 @@ export const InstitutionCard = ({
   const hasLogo = institution?.logo && typeof institution.logo === 'string';
   
   return (
-    <div className="group relative bg-[#0A0A0A] border border-white/5 p-6 hover:border-emerald-500/30 transition-all duration-500 shadow-xl">
+    <div className="group relative bg-white/5 border border-white/15 p-6 hover:border-white/25 transition-all duration-300 shadow-sm rounded-lg">
       
-      {/* ✅ CORREGIDO: Iconos de acción más visibles */}
       <div className="absolute top-3 right-3 flex items-center gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
         {onEdit && (
           <button 
             onClick={onEdit}
-            className="p-2 text-white/50 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-sm transition-all"
+            className="p-2 text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
             title="Editar institución"
           >
             <PencilIcon className="w-4 h-4" />
@@ -48,7 +47,7 @@ export const InstitutionCard = ({
         {onDelete && (
           <button 
             onClick={onDelete}
-            className="p-2 text-red-500/50 hover:text-red-500 hover:bg-red-500/10 rounded-sm transition-all"
+            className="p-2 text-white/30 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
             title="Eliminar institución"
           >
             <TrashIcon className="w-4 h-4" />
@@ -56,10 +55,12 @@ export const InstitutionCard = ({
         )}
       </div>
       
-      <div className="absolute top-0 right-0 w-1 h-full" />
+      {isActive && (
+        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-400 rounded-l-lg" />
+      )}
       
-      <div className="flex gap-6">
-        <div className="w-20 h-20 bg-white border border-gray-200 flex items-center justify-center p-2 shrink-0 overflow-hidden">
+      <div className="flex gap-5">
+        <div className="w-20 h-20 bg-white/5 border border-white/15 flex items-center justify-center p-2 shrink-0 overflow-hidden rounded-lg">
           {hasLogo ? (
             <img 
               src={institution.logo}
@@ -70,30 +71,30 @@ export const InstitutionCard = ({
               }}
             />
           ) : (
-            <BuildingOfficeIcon className="w-8 h-8 text-gray-300" />
+            <BuildingOfficeIcon className="w-8 h-8 text-white/20" />
           )}
         </div>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-sm font-black text-white uppercase truncate tracking-widest">{name}</h4>
-            {isActive && <CheckBadgeIcon className="w-4 h-4 text-emerald-500/50" />}
+          <div className="flex items-center gap-2 mb-3">
+            <h4 className="text-sm font-medium text-white/90 truncate">{name}</h4>
+            {isActive && <CheckBadgeIcon className="w-4 h-4 text-emerald-400/60" />}
           </div>
           
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div>
-              <span className="text-[8px] font-mono text-white/20 uppercase tracking-tighter">Fiscal_UID:</span>
-              <p className="text-[10px] font-mono text-white/60">{taxId || "PENDING_REGISTRATION"}</p>
+              <span className="text-[9px] text-white/30 uppercase">RIF:</span>
+              <p className="text-[10px] text-white/50">{taxId || "N/A"}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <span className="text-[8px] font-mono text-white/20 uppercase">Vector_Node:</span>
-                <p className="text-[9px] text-emerald-500/60 font-bold truncate">[{neighborhoodName}]</p>
+                <span className="text-[9px] text-white/30 uppercase">Ubicación:</span>
+                <p className="text-[10px] text-emerald-400/70 truncate">[{neighborhoodName}]</p>
               </div>
               <div>
-                <span className="text-[8px] font-mono text-white/20 uppercase">Identity_Status:</span>
-                <p className="text-[9px] font-black">
-                  {isActive ? 'OPERATIONAL' : 'DEACTIVATED'}
+                <span className="text-[9px] text-white/30 uppercase">Estado:</span>
+                <p className="text-[10px] font-medium">
+                  {isActive ? 'Activa' : 'Desactivada'}
                 </p>
               </div>
             </div>
@@ -101,18 +102,18 @@ export const InstitutionCard = ({
         </div>
       </div>
       
-      <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between">
+      <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-2 text-white/20">
-          <MapPinIcon className="w-3 h-3" />
-          <span className="text-[9px] font-mono truncate max-w-[200px]">{address}</span>
+          <MapPinIcon className="w-3.5 h-3.5" />
+          <span className="text-[9px] truncate max-w-[200px]">{address}</span>
         </div>
         
         {onSelect && !isActive && (
           <button 
             onClick={onSelect}
-            className="text-[9px] font-black uppercase text-emerald-500/50 hover:text-emerald-500 transition-colors tracking-widest"
+            className="text-[10px] font-medium text-emerald-400/60 hover:text-emerald-400 transition-colors"
           >
-            Set_Active
+            Activar
           </button>
         )}
       </div>
