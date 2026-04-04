@@ -63,9 +63,6 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
         plan: plan.trim()
       };
       
-      console.log("[ClinicalNotePanel] Saving note:", noteData);
-      console.log("[ClinicalNotePanel] clinicalNote exists:", !!clinicalNote);
-      
       if (clinicalNote) {
         await updateNote.mutateAsync(noteData);
       } else {
@@ -76,8 +73,7 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error: any) {
-      console.error("Failed to save note:", error);
-      setSaveError(error?.response?.data?.error || error?.message || "Failed to save note");
+      setSaveError(error?.response?.data?.error || error?.message || "Error al guardar la nota");
     }
   };
   
@@ -110,8 +106,9 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   
   const isSaving = updateNote.isPending || createNote.isPending;
   
-  const labelStyles = "text-[9px] font-bold text-white/50 uppercase tracking-wider mb-2 block";
-  const inputStyles = "w-full h-24 p-3 bg-black/40 border border-white/10 text-white text-[11px] font-mono placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 rounded-sm transition-all resize-none";
+  const labelStyles = "text-[12px] font-bold text-white/80 uppercase tracking-wider mb-2 block";
+  const sublabelStyles = "text-[10px] font-medium text-white/60 uppercase tracking-wider mb-1 block";
+  const inputStyles = "w-full min-h-[100px] p-3 bg-white/5 border border-white/15 text-white text-[13px] placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 rounded-lg transition-all resize-none";
   
   if (isLoading) {
     return (
@@ -122,164 +119,168 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
   }
   
   return (
-    <div className="border border-white/10 rounded-sm">
-      {/* HEADER */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white/[0.02] border-b border-white/10">
+    <div className="border border-white/15 rounded-lg">
+      <div className="flex items-center justify-between px-5 py-3 bg-white/5 border-b border-white/15">
         <div className="flex items-center gap-3">
-          <DocumentTextIcon className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-[10px] font-bold uppercase tracking-wider text-white">
-            CLINICAL_NOTES
+          <DocumentTextIcon className="w-5 h-5 text-emerald-400" />
+          <h3 className="text-[12px] font-bold uppercase tracking-wider text-white">
+            Nota Clínica
           </h3>
           {clinicalNote?.is_locked && (
-            <LockClosedIcon className="w-3 h-3 text-red-500 animate-pulse" />
+            <LockClosedIcon className="w-4 h-4 text-red-400 animate-pulse" />
           )}
           {saveSuccess && (
-            <span className="text-[10px] text-green-400 font-bold">✓ SAVED</span>
+            <span className="text-[11px] text-emerald-400 font-bold">✓ Guardado</span>
           )}
         </div>
         
         <div className="flex items-center gap-2">
-          {/* LOCK/UNLOCK BUTTONS */}
           {!readOnly && clinicalNote && (
             clinicalNote.is_locked ? (
               <button 
                 onClick={handleUnlock} 
                 disabled={unlockNote.isPending}
-                className="p-1.5 text-white/40 hover:text-green-400 disabled:opacity-50"
-                title="Unlock note"
+                className="p-2 text-white/50 hover:text-emerald-400 disabled:opacity-50 rounded-lg hover:bg-white/5 transition-colors"
+                title="Desbloquear nota"
               >
-                <LockOpenIcon className="w-4 h-4" />
+                <LockOpenIcon className="w-5 h-5" />
               </button>
             ) : (
               <button 
                 onClick={handleLock} 
                 disabled={lockNote.isPending}
-                className="p-1.5 text-white/40 hover:text-red-400 disabled:opacity-50"
-                title="Lock note"
+                className="p-2 text-white/50 hover:text-red-400 disabled:opacity-50 rounded-lg hover:bg-white/5 transition-colors"
+                title="Bloquear nota"
               >
-                <LockClosedIcon className="w-4 h-4" />
+                <LockClosedIcon className="w-5 h-5" />
               </button>
             )
           )}
           
-          {/* EDIT/SAVE/CANCEL BUTTONS */}
           {!readOnly && !clinicalNote?.is_locked && (
             isEditing ? (
               <div className="flex items-center gap-1">
                 <button 
                   onClick={handleSave} 
                   disabled={isSaving}
-                  className={`p-1.5 rounded transition-colors ${
+                  className={`p-2 rounded-lg transition-colors ${
                     isSaving 
                       ? 'text-white/20 cursor-not-allowed' 
-                      : 'text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10'
+                      : 'text-white/50 hover:text-emerald-400 hover:bg-emerald-500/10'
                   }`}
-                  title="Save"
+                  title="Guardar"
                 >
-                  <CheckCircleIcon className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />
+                  <CheckCircleIcon className={`w-5 h-5 ${isSaving ? 'animate-pulse' : ''}`} />
                 </button>
                 <button 
                   onClick={handleCancel} 
                   disabled={isSaving}
-                  className="p-1.5 text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                  title="Cancel"
+                  className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  title="Cancelar"
                 >
-                  <XCircleIcon className="w-4 h-4" />
+                  <XCircleIcon className="w-5 h-5" />
                 </button>
               </div>
             ) : (
               <button 
                 onClick={() => setIsEditing(true)} 
-                className="p-1.5 text-white/40 hover:text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
-                title="Edit"
+                className="p-2 text-white/50 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors"
+                title="Editar"
               >
-                <PencilSquareIcon className="w-4 h-4" />
+                <PencilSquareIcon className="w-5 h-5" />
               </button>
             )
           )}
           
-          {/* VIEW MODE BUTTON */}
           {readOnly && clinicalNote && (
-            <button className="p-1.5 text-white/40 hover:text-blue-400" title="View">
-              <EyeIcon className="w-4 h-4" />
+            <button className="p-2 text-white/50 hover:text-blue-400 rounded-lg hover:bg-white/5 transition-colors" title="Ver">
+              <EyeIcon className="w-5 h-5" />
             </button>
           )}
         </div>
       </div>
       
-      {/* ERROR MESSAGE */}
       {saveError && (
-        <div className="px-4 py-2 bg-red-500/20 border-b border-red-500/30">
-          <span className="text-[10px] text-red-400">{saveError}</span>
+        <div className="px-5 py-3 bg-red-500/15 border-b border-red-500/30">
+          <span className="text-[11px] text-red-400">{saveError}</span>
         </div>
       )}
       
-      {/* CONTENT */}
-      <div className="p-4">
+      <div className="p-5">
         {isEditing && !clinicalNote?.is_locked && !readOnly ? (
-          <div className="space-y-4">
-            {/* EXPLORATION */}
+          <div className="space-y-5">
             <div>
-              <label className={labelStyles}>EXPLORATION</label>
-              <div className="grid grid-cols-2 gap-3">
-                <textarea 
-                  value={subjective} 
-                  onChange={(e) => setSubjective(e.target.value)} 
-                  className={inputStyles} 
-                  placeholder="Symptoms..." 
-                />
-                <textarea 
-                  value={objective} 
-                  onChange={(e) => setObjective(e.target.value)} 
-                  className={inputStyles} 
-                  placeholder="Findings..." 
-                />
+              <label className={labelStyles}>Exploración</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className={sublabelStyles}>Subjetivo (Síntomas)</span>
+                  <textarea 
+                    value={subjective} 
+                    onChange={(e) => setSubjective(e.target.value)} 
+                    className={inputStyles} 
+                    placeholder="Descripción de los síntomas del paciente..." 
+                  />
+                </div>
+                <div>
+                  <span className={sublabelStyles}>Objetivo (Hallazgos)</span>
+                  <textarea 
+                    value={objective} 
+                    onChange={(e) => setObjective(e.target.value)} 
+                    className={inputStyles} 
+                    placeholder="Hallazgos del examen físico..." 
+                  />
+                </div>
               </div>
             </div>
-            {/* EVALUATION */}
             <div>
-              <label className={labelStyles}>EVALUATION</label>
-              <div className="grid grid-cols-2 gap-3">
-                <textarea 
-                  value={analysis} 
-                  onChange={(e) => setAnalysis(e.target.value)} 
-                  className={inputStyles} 
-                  placeholder="Analysis..." 
-                />
-                <textarea 
-                  value={plan} 
-                  onChange={(e) => setPlan(e.target.value)} 
-                  className={inputStyles} 
-                  placeholder="Plan..." 
-                />
+              <label className={labelStyles}>Evaluación</label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className={sublabelStyles}>Análisis</span>
+                  <textarea 
+                    value={analysis} 
+                    onChange={(e) => setAnalysis(e.target.value)} 
+                    className={inputStyles} 
+                    placeholder="Interpretación clínica..." 
+                  />
+                </div>
+                <div>
+                  <span className={sublabelStyles}>Plan</span>
+                  <textarea 
+                    value={plan} 
+                    onChange={(e) => setPlan(e.target.value)} 
+                    className={inputStyles} 
+                    placeholder="Plan de tratamiento..." 
+                  />
+                </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-5">
             <div>
-              <span className="text-[9px] font-bold text-emerald-400 uppercase">EXPLORATION</span>
-              <div className="mt-1 grid grid-cols-2 gap-3 text-[11px]">
-                <div>
-                  <span className="text-white/30 text-[8px] block">SUBJECTIVE</span>
-                  <span className="text-white">{subjective || '—'}</span>
+              <span className="text-[12px] font-bold text-emerald-400 uppercase tracking-wider">Exploración</span>
+              <div className="mt-2 grid grid-cols-2 gap-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <span className={sublabelStyles}>Subjetivo</span>
+                  <p className="text-[13px] text-white leading-relaxed">{subjective || '—'}</p>
                 </div>
-                <div>
-                  <span className="text-white/30 text-[8px] block">OBJECTIVE</span>
-                  <span className="text-white">{objective || '—'}</span>
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <span className={sublabelStyles}>Objetivo</span>
+                  <p className="text-[13px] text-white leading-relaxed">{objective || '—'}</p>
                 </div>
               </div>
             </div>
             <div>
-              <span className="text-[9px] font-bold text-blue-400 uppercase">EVALUATION</span>
-              <div className="mt-1 grid grid-cols-2 gap-3 text-[11px]">
-                <div>
-                  <span className="text-white/30 text-[8px] block">ANALYSIS</span>
-                  <span className="text-white">{analysis || '—'}</span>
+              <span className="text-[12px] font-bold text-blue-400 uppercase tracking-wider">Evaluación</span>
+              <div className="mt-2 grid grid-cols-2 gap-4">
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <span className={sublabelStyles}>Análisis</span>
+                  <p className="text-[13px] text-white leading-relaxed">{analysis || '—'}</p>
                 </div>
-                <div>
-                  <span className="text-white/30 text-[8px] block">PLAN</span>
-                  <span className="text-white">{plan || '—'}</span>
+                <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                  <span className={sublabelStyles}>Plan</span>
+                  <p className="text-[13px] text-white leading-relaxed">{plan || '—'}</p>
                 </div>
               </div>
             </div>
@@ -287,15 +288,14 @@ export default function ClinicalNotePanel({ appointmentId, readOnly = false }: P
         )}
       </div>
       
-      {/* FOOTER */}
       {clinicalNote && (
-        <div className="flex items-center justify-between px-4 py-2 border-t border-white/5 text-[8px] text-white/30">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-white/10 text-[10px] text-white/60">
           <div className="flex items-center gap-2">
-            <ClockIcon className="w-3 h-3" />
-            <span>{clinicalNote.updated_at ? new Date(clinicalNote.updated_at).toLocaleString('es-VE') : 'NEVER'}</span>
+            <ClockIcon className="w-4 h-4" />
+            <span>{clinicalNote.updated_at ? new Date(clinicalNote.updated_at).toLocaleString('es-VE') : 'Nunca'}</span>
           </div>
           {clinicalNote.is_locked && (
-            <span className="text-red-400 font-bold">SECURED</span>
+            <span className="text-red-400 font-bold">BLOQUEADA</span>
           )}
         </div>
       )}

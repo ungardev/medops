@@ -24,7 +24,6 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
   const deleteVitalSigns = useDeleteVitalSigns(appointmentId);
   
   const [form, setForm] = useState<Partial<VitalSigns>>({});
-  // Sincronizar formulario con datos existentes
   useEffect(() => {
     if (vitalSigns) {
       setForm({
@@ -39,23 +38,20 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
       });
     }
   }, [vitalSigns]);
-  // Cálculo automático de BMI
   const calculateBMI = (weight?: number, height?: number): number | undefined => {
     if (!weight || !height) return undefined;
     const heightInMeters = height / 100;
     return weight / (heightInMeters * heightInMeters);
   };
-  // Semáforos de alerta clínica
   const getBPStatus = (systolic?: number, diastolic?: number): "normal" | "warning" | "critical" => {
     if (!systolic || !diastolic) return "normal";
     if (systolic >= 180 || diastolic >= 120) return "critical";
     if (systolic >= 140 || diastolic >= 90) return "warning";
     return "normal";
   };
-  // ✅ CORREGIDO: Agregar estado "hypothermia" para temperatura baja < 35°C
   const getTempStatus = (temp?: number): "normal" | "hypothermia" | "fever" | "critical" => {
     if (!temp) return "normal";
-    if (temp < 35) return "hypothermia"; // 🆕 Hipotermia: temperatura corporal baja
+    if (temp < 35) return "hypothermia";
     if (temp >= 39) return "critical";
     if (temp >= 37.5) return "fever";
     return "normal";
@@ -93,24 +89,21 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
   const oxygenStatus = getOxygenStatus(form.oxygen_saturation);
   return (
     <div className="space-y-6">
-      {/* Header Técnico */}
       <div className="flex items-center gap-3 px-1">
-        <HeartIcon className="w-4 h-4 text-red-500" />
-        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-red-400">
-          Vital_Signs_Monitoring
+        <HeartIcon className="w-5 h-5 text-red-400" />
+        <h3 className="text-[12px] font-bold uppercase tracking-wider text-red-400">
+          Vital Signs Monitoring
         </h3>
         {vitalSigns?.updated_at && (
-          <span className="text-[7px] font-mono text-white/30 ml-auto">
-            Last_Update: {new Date(vitalSigns.updated_at).toLocaleTimeString()}
+          <span className="text-[10px] text-white/50 ml-auto">
+            Última actualización: {new Date(vitalSigns.updated_at).toLocaleTimeString()}
           </span>
         )}
       </div>
-      {/* Métricas Primarias */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {/* Weight */}
-        <div className="bg-black/40 border border-white/10 rounded-sm p-3 group hover:bg-white/5 transition-colors">
-          <label className="text-[8px] font-mono text-white/60 uppercase flex justify-between mb-2">
-            <span>Weight (kg)</span>
+        <div className="bg-white/5 border border-white/15 rounded-lg p-4 hover:bg-white/10 transition-colors">
+          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+            <span>Peso (kg)</span>
             <span className="opacity-0 group-hover:opacity-100 transition-opacity">●</span>
           </label>
           <input
@@ -119,15 +112,14 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.weight || ""}
             onChange={(e) => handleChange("weight", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[14px] font-mono outline-none placeholder:text-white/20"
+            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
             placeholder="0.0"
           />
         </div>
         
-        {/* Height */}
-        <div className="bg-black/40 border border-white/10 rounded-sm p-3 group hover:bg-white/5 transition-colors">
-          <label className="text-[8px] font-mono text-white/60 uppercase flex justify-between mb-2">
-            <span>Height (cm)</span>
+        <div className="bg-white/5 border border-white/15 rounded-lg p-4 hover:bg-white/10 transition-colors">
+          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+            <span>Talla (cm)</span>
             <span className="opacity-0 group-hover:opacity-100 transition-opacity">●</span>
           </label>
           <input
@@ -135,51 +127,49 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.height || ""}
             onChange={(e) => handleChange("height", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[14px] font-mono outline-none placeholder:text-white/20"
+            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
             placeholder="0"
           />
         </div>
         
-        {/* BMI (Calculado) */}
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-sm p-3">
-          <label className="text-[8px] font-mono text-blue-400 uppercase flex justify-between mb-2">
-            <span>BMI</span>
+        <div className="bg-blue-500/10 border border-blue-500/25 rounded-lg p-4">
+          <label className="text-[11px] font-medium text-blue-300 uppercase flex justify-between mb-2">
+            <span>IMC</span>
             <div className="flex items-center gap-1">
-              <CalculatorIcon className="w-3 h-3 text-blue-400/50" />
-              <span className="text-blue-400/50">AUTO</span>
+              <CalculatorIcon className="w-4 h-4 text-blue-400/60" />
+              <span className="text-blue-400/60">AUTO</span>
             </div>
           </label>
-          <div className="text-lg font-mono text-blue-300 tabular-nums">
+          <div className="text-xl font-mono text-blue-300 tabular-nums">
             {bmi?.toFixed(1) || "--"}
           </div>
           {bmi && (
-            <div className="text-[7px] font-mono text-blue-400/70 mt-1">
-              {bmi < 18.5 ? "UNDERWEIGHT" : bmi < 25 ? "NORMAL" : bmi < 30 ? "OVERWEIGHT" : "OBESE"}
+            <div className="text-[10px] font-medium text-blue-300/80 mt-1">
+              {bmi < 18.5 ? "BAJO PESO" : bmi < 25 ? "NORMAL" : bmi < 30 ? "SOBREPESO" : "OBESIDAD"}
             </div>
           )}
         </div>
         
-        {/* ✅ Temperature con Semáforo - CORREGIDO con Hipotermia */}
-        <div className={`border rounded-sm p-3 transition-colors ${
+        <div className={`border rounded-lg p-4 transition-colors ${
           tempStatus === 'critical' ? 'bg-red-500/10 border-red-500/30' :
           tempStatus === 'fever' ? 'bg-yellow-500/10 border-yellow-500/30' :
-          tempStatus === 'hypothermia' ? 'bg-cyan-500/10 border-cyan-500/30' : // 🆕 Color azul para hipotermia
-          'bg-black/40 border-white/10'
+          tempStatus === 'hypothermia' ? 'bg-cyan-500/10 border-cyan-500/30' :
+          'bg-white/5 border-white/15'
         }`}>
-          <label className="text-[8px] font-mono uppercase flex justify-between mb-2">
+          <label className="text-[11px] font-medium uppercase flex justify-between mb-2">
             <span className={
               tempStatus === 'critical' ? 'text-red-400' :
               tempStatus === 'fever' ? 'text-yellow-400' :
-              tempStatus === 'hypothermia' ? 'text-cyan-400' : // 🆕 Texto cyan para hipotermia
-              'text-white/60'
+              tempStatus === 'hypothermia' ? 'text-cyan-400' :
+              'text-white/80'
             }>
-              Temperature (°C)
+              Temperatura (°C)
             </span>
             <div className="flex items-center gap-1">
-              {tempStatus === 'critical' && <ExclamationTriangleIcon className="w-3 h-3 text-red-400" />}
-              {tempStatus === 'fever' && <ExclamationTriangleIcon className="w-3 h-3 text-yellow-400" />}
-              {tempStatus === 'hypothermia' && <ExclamationTriangleIcon className="w-3 h-3 text-cyan-400" />}
-              {tempStatus === 'normal' && <CheckCircleIcon className="w-3 h-3 text-emerald-400" />}
+              {tempStatus === 'critical' && <ExclamationTriangleIcon className="w-4 h-4 text-red-400" />}
+              {tempStatus === 'fever' && <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" />}
+              {tempStatus === 'hypothermia' && <ExclamationTriangleIcon className="w-4 h-4 text-cyan-400" />}
+              {tempStatus === 'normal' && <CheckCircleIcon className="w-4 h-4 text-emerald-400" />}
             </div>
           </label>
           <input
@@ -188,121 +178,113 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.temperature || ""}
             onChange={(e) => handleChange("temperature", e.target.value)}
             disabled={readOnly}
-            className={`w-full bg-transparent text-[14px] font-mono outline-none placeholder:text-white/20 ${
+            className={`w-full bg-transparent text-[15px] font-mono outline-none placeholder:text-white/30 ${
               tempStatus === 'critical' ? 'text-red-400' :
               tempStatus === 'fever' ? 'text-yellow-400' :
-              tempStatus === 'hypothermia' ? 'text-cyan-400' : // 🆕 Texto cyan para hipotermia
+              tempStatus === 'hypothermia' ? 'text-cyan-400' :
               'text-white'
             }`}
             placeholder="36.5"
           />
-          {/* 🆕 Badge de estado para hipotermia */}
           {tempStatus === 'hypothermia' && (
-            <div className="text-[7px] font-mono text-cyan-400 mt-1 uppercase">
-              HYPOTHERMIA
+            <div className="text-[10px] font-medium text-cyan-400 mt-1 uppercase">
+              HIPOTERMIA
             </div>
           )}
         </div>
       </div>
-      {/* Blood Pressure con Semáforo */}
-      <div className={`border rounded-sm p-4 transition-colors ${
+      <div className={`border rounded-lg p-5 transition-colors ${
         bpStatus === 'critical' ? 'bg-red-500/10 border-red-500/30' :
         bpStatus === 'warning' ? 'bg-yellow-500/10 border-yellow-500/30' :
-        'bg-black/40 border-white/10'
+        'bg-white/5 border-white/15'
       }`}>
-        <label className="text-[8px] font-mono uppercase flex justify-between mb-3">
+        <label className="text-[11px] font-medium uppercase flex justify-between mb-3">
           <span className={
             bpStatus === 'critical' ? 'text-red-400' :
             bpStatus === 'warning' ? 'text-yellow-400' :
-            'text-white/60'
+            'text-white/80'
           }>
-            Blood Pressure (mmHg)
+            Presión Arterial (mmHg)
           </span>
-          <div className="flex items-center gap-1">
-            {bpStatus === 'critical' && <ExclamationTriangleIcon className="w-3 h-3 text-red-400" />}
-            {bpStatus === 'warning' && <ExclamationTriangleIcon className="w-3 h-3 text-yellow-400" />}
-            {bpStatus === 'normal' && <CheckCircleIcon className="w-3 h-3 text-emerald-400" />}
-            <span className="text-[7px] font-mono text-white/40 uppercase">
-              {bpStatus.toUpperCase()}
+          <div className="flex items-center gap-2">
+            {bpStatus === 'critical' && <ExclamationTriangleIcon className="w-4 h-4 text-red-400" />}
+            {bpStatus === 'warning' && <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" />}
+            {bpStatus === 'normal' && <CheckCircleIcon className="w-4 h-4 text-emerald-400" />}
+            <span className="text-[10px] font-medium text-white/60 uppercase">
+              {bpStatus === 'normal' ? 'NORMAL' : bpStatus === 'warning' ? 'ELEVADA' : 'CRÍTICA'}
             </span>
           </div>
         </label>
-        <div className="flex gap-3 items-center">
+        <div className="flex gap-4 items-center">
           <div className="flex-1">
-            <label className="text-[7px] font-mono text-white/40 uppercase mb-1">Systolic</label>
+            <label className="text-[10px] font-medium text-white/60 uppercase mb-1">Sistólica</label>
             <input
               type="number"
               value={form.bp_systolic || ""}
               onChange={(e) => handleChange("bp_systolic", e.target.value)}
               disabled={readOnly}
-              className="w-full bg-transparent text-white text-[16px] font-mono outline-none placeholder:text-white/20"
+              className="w-full bg-transparent text-white text-[18px] font-mono outline-none placeholder:text-white/30"
               placeholder="120"
             />
           </div>
-          <span className="text-white/40 text-xl font-mono self-center">/</span>
+          <span className="text-white/50 text-2xl font-mono self-center">/</span>
           <div className="flex-1">
-            <label className="text-[7px] font-mono text-white/40 uppercase mb-1">Diastolic</label>
+            <label className="text-[10px] font-medium text-white/60 uppercase mb-1">Diastólica</label>
             <input
               type="number"
               value={form.bp_diastolic || ""}
               onChange={(e) => handleChange("bp_diastolic", e.target.value)}
               disabled={readOnly}
-              className="w-full bg-transparent text-white text-[16px] font-mono outline-none placeholder:text-white/20"
+              className="w-full bg-transparent text-white text-[18px] font-mono outline-none placeholder:text-white/30"
               placeholder="80"
             />
           </div>
         </div>
       </div>
-      {/* Signos Vitales Adicionales */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Heart Rate */}
-        <div className="bg-black/40 border border-white/10 rounded-sm p-3">
-          <label className="text-[8px] font-mono text-white/60 uppercase flex justify-between mb-2">
-            <span>Heart Rate (bpm)</span>
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity">●</span>
+        <div className="bg-white/5 border border-white/15 rounded-lg p-4">
+          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+            <span>Frec. Cardíaca (bpm)</span>
           </label>
           <input
             type="number"
             value={form.heart_rate || ""}
             onChange={(e) => handleChange("heart_rate", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[14px] font-mono outline-none placeholder:text-white/20"
+            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
             placeholder="72"
           />
         </div>
-        {/* Respiratory Rate */}
-        <div className="bg-black/40 border border-white/10 rounded-sm p-3">
-          <label className="text-[8px] font-mono text-white/60 uppercase flex justify-between mb-2">
-            <span>Resp. Rate (/min)</span>
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity">●</span>
+        <div className="bg-white/5 border border-white/15 rounded-lg p-4">
+          <label className="text-[11px] font-medium text-white/80 uppercase flex justify-between mb-2">
+            <span>Frec. Respiratoria (/min)</span>
           </label>
           <input
             type="number"
             value={form.respiratory_rate || ""}
             onChange={(e) => handleChange("respiratory_rate", e.target.value)}
             disabled={readOnly}
-            className="w-full bg-transparent text-white text-[14px] font-mono outline-none placeholder:text-white/20"
+            className="w-full bg-transparent text-white text-[15px] font-mono outline-none placeholder:text-white/30"
             placeholder="16"
           />
         </div>
-        {/* Oxygen Saturation con Semáforo */}
-        <div className={`border rounded-sm p-3 transition-colors ${
+        <div className={`border rounded-lg p-4 transition-colors ${
           oxygenStatus === 'critical' ? 'bg-red-500/10 border-red-500/30' :
           oxygenStatus === 'warning' ? 'bg-yellow-500/10 border-yellow-500/30' :
-          'bg-black/40 border-white/10'
+          'bg-white/5 border-white/15'
         }`}>
-          <label className="text-[8px] font-mono uppercase flex justify-between mb-2">
+          <label className="text-[11px] font-medium uppercase flex justify-between mb-2">
             <span className={
               oxygenStatus === 'critical' ? 'text-red-400' :
               oxygenStatus === 'warning' ? 'text-yellow-400' :
-              'text-white/60'
+              'text-white/80'
             }>
-              O₂ Saturation (%)
+              Saturación O₂ (%)
             </span>
             <div className="flex items-center gap-1">
-              {oxygenStatus === 'critical' && <ExclamationTriangleIcon className="w-3 h-3 text-red-400" />}
-              {oxygenStatus === 'warning' && <ExclamationTriangleIcon className="w-3 h-3 text-yellow-400" />}
-              {oxygenStatus === 'normal' && <CheckCircleIcon className="w-3 h-3 text-emerald-400" />}
+              {oxygenStatus === 'critical' && <ExclamationTriangleIcon className="w-4 h-4 text-red-400" />}
+              {oxygenStatus === 'warning' && <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" />}
+              {oxygenStatus === 'normal' && <CheckCircleIcon className="w-4 h-4 text-emerald-400" />}
             </div>
           </label>
           <input
@@ -310,7 +292,7 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
             value={form.oxygen_saturation || ""}
             onChange={(e) => handleChange("oxygen_saturation", e.target.value)}
             disabled={readOnly}
-            className={`w-full bg-transparent text-[14px] font-mono outline-none placeholder:text-white/20 ${
+            className={`w-full bg-transparent text-[15px] font-mono outline-none placeholder:text-white/30 ${
               oxygenStatus === 'critical' ? 'text-red-400' :
               oxygenStatus === 'warning' ? 'text-yellow-400' :
               'text-white'
@@ -319,32 +301,31 @@ export default function VitalSignsPanel({ appointmentId, readOnly = false }: Pro
           />
         </div>
       </div>
-      {/* Actions */}
       {!readOnly && (
-        <div className="flex justify-between items-center pt-4 border-t border-white/10">
+        <div className="flex justify-between items-center pt-4 border-t border-white/15">
           <div className="flex gap-2">
             <button
               onClick={handleSave}
               disabled={createVitalSigns.isPending || updateVitalSigns.isPending}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 border border-red-500/25 text-red-400 text-[11px] font-bold uppercase tracking-wider hover:bg-red-500/20 transition-all disabled:opacity-50 rounded-lg"
             >
               <HeartIcon className="w-4 h-4" />
-              {vitalSigns?.id ? "Update_Vitals" : "Record_Vitals"}
+              {vitalSigns?.id ? "Actualizar" : "Registrar"}
             </button>
             
             {vitalSigns?.id && (
               <button
                 onClick={handleDelete}
                 disabled={deleteVitalSigns.isPending}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white/60 text-[10px] font-mono uppercase tracking-widest hover:bg-white/10 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-white/5 border border-white/15 text-white/70 text-[11px] font-medium uppercase tracking-wider hover:bg-white/10 transition-all disabled:opacity-50 rounded-lg"
               >
                 <ExclamationTriangleIcon className="w-4 h-4" />
-                Delete
+                Eliminar
               </button>
             )}
           </div>
-          <div className="text-[7px] font-mono text-white/30">
-            {vitalSigns?.id ? `ID: ${vitalSigns.id}` : "New_Record"}
+          <div className="text-[10px] text-white/50">
+            {vitalSigns?.id ? `ID: ${vitalSigns.id}` : "Nuevo registro"}
           </div>
         </div>
       )}

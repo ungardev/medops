@@ -39,13 +39,13 @@ export default function ConsultationWorkflow({
   const [activeTab, setActiveTab] = useState("vital-signs");
   
   const tabIcons = {
-    "vital-signs": <HeartIcon className="w-4 h-4" />,
-    "clinical-note": <DocumentTextIcon className="w-4 h-4" />,
-    diagnosis: <BeakerIcon className="w-4 h-4" />,
-    treatment: <ClipboardDocumentCheckIcon className="w-4 h-4" />,
-    prescription: <PencilSquareIcon className="w-4 h-4" />,
-    tests: <QueueListIcon className="w-4 h-4" />,
-    referrals: <ArrowRightCircleIcon className="w-4 h-4" />,
+    "vital-signs": <HeartIcon className="w-5 h-5" />,
+    "clinical-note": <DocumentTextIcon className="w-5 h-5" />,
+    diagnosis: <BeakerIcon className="w-5 h-5" />,
+    treatment: <ClipboardDocumentCheckIcon className="w-5 h-5" />,
+    prescription: <PencilSquareIcon className="w-5 h-5" />,
+    tests: <QueueListIcon className="w-5 h-5" />,
+    referrals: <ArrowRightCircleIcon className="w-5 h-5" />,
   };
   const handleCreateTreatment = async (data: {
     appointment: number;
@@ -80,13 +80,13 @@ export default function ConsultationWorkflow({
   return (
     <div className="w-full space-y-6">
       {readOnly && (
-        <div className="bg-red-500/5 border border-red-500/10 rounded-lg p-4">
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
           <div className="flex items-center gap-3">
             <BuildingOfficeIcon className="w-5 h-5 text-red-400" />
             <div>
-              <h4 className="text-sm font-semibold text-red-300">Read-Only Mode</h4>
-              <p className="text-xs text-red-400/80">
-                Cross-institution access detected. You can only view this consultation.
+              <h4 className="text-[12px] font-bold text-red-400">Solo Lectura</h4>
+              <p className="text-[11px] text-red-400/80">
+                Acceso desde otra institución. Solo puedes ver esta consulta.
               </p>
             </div>
           </div>
@@ -101,7 +101,7 @@ export default function ConsultationWorkflow({
       >
         <Tab 
           id="vital-signs" 
-          label={<span className="flex items-center gap-2">{tabIcons["vital-signs"]} Vital Signs</span>}
+          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons["vital-signs"]} Signos Vitales</span>}
         >
           <div className="w-full">
             <VitalSignsPanel appointmentId={appointmentId} readOnly={readOnly} />
@@ -110,7 +110,7 @@ export default function ConsultationWorkflow({
         
         <Tab 
           id="clinical-note" 
-          label={<span className="flex items-center gap-2">{tabIcons["clinical-note"]} Clinical Note</span>}
+          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons["clinical-note"]} Nota Clínica</span>}
         >
           <div className="w-full">
             <ClinicalNotePanel appointmentId={appointmentId} readOnly={readOnly} />
@@ -119,7 +119,7 @@ export default function ConsultationWorkflow({
         
         <Tab 
           id="diagnosis" 
-          label={<span className="flex items-center gap-2">{tabIcons.diagnosis} Diagnosis</span>}
+          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.diagnosis} Diagnóstico</span>}
         >
           <div className="w-full">
             <DiagnosisPanel 
@@ -132,7 +132,7 @@ export default function ConsultationWorkflow({
         
         <Tab 
           id="treatment" 
-          label={<span className="flex items-center gap-2">{tabIcons.treatment} Treatment</span>}
+          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.treatment} Tratamiento</span>}
         >
           <div className="w-full">
             <TreatmentPanel 
@@ -147,7 +147,7 @@ export default function ConsultationWorkflow({
         
         <Tab 
           id="prescription" 
-          label={<span className="flex items-center gap-2">{tabIcons.prescription} Prescription</span>}
+          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.prescription} Receta</span>}
         >
           <div className="w-full">
             <PrescriptionPanel 
@@ -161,7 +161,7 @@ export default function ConsultationWorkflow({
         
         <Tab 
           id="tests" 
-          label={<span className="flex items-center gap-2">{tabIcons.tests} Tests</span>}
+          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.tests} Exámenes</span>}
         >
           <div className="w-full">
             <MedicalTestsPanel appointmentId={appointmentId} readOnly={readOnly} />
@@ -170,7 +170,7 @@ export default function ConsultationWorkflow({
         
         <Tab 
           id="referrals" 
-          label={<span className="flex items-center gap-2">{tabIcons.referrals} Referrals</span>}
+          label={<span className="flex items-center gap-2 text-[12px] font-medium">{tabIcons.referrals} Referencias</span>}
         >
           <div className="w-full">
             <MedicalReferralsPanel 
