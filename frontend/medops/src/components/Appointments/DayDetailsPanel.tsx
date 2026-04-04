@@ -6,7 +6,7 @@ import { ChevronRightIcon, ClockIcon } from '@heroicons/react/24/outline';
 interface DayDetailsPanelProps {
   day: Date;
   items: OperationalItem[];
-  onItemClick: (item: OperationalItem) => void; // ✅ CAMBIO: onSlotClick → onItemClick
+  onItemClick: (item: OperationalItem) => void;
 }
 const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({ day, items, onItemClick }) => {
   const groupedItems = useMemo(() => {
@@ -19,42 +19,42 @@ const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({ day, items, onItemCli
     return groups;
   }, [items]);
   return (
-    <div className="bg-[#0a0a0b] border border-white/10 rounded-sm h-full flex flex-col">
-      <div className="flex items-center justify-between p-3 bg-[#111] border-b border-white/10">
+    <div className="bg-white/5 border border-white/15 rounded-lg h-full flex flex-col">
+      <div className="flex items-center justify-between p-4 bg-white/5 border-b border-white/15">
         <div>
-          <h3 className="text-sm font-semibold text-white">
+          <h3 className="text-[12px] font-semibold text-white capitalize">
             {day.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
           </h3>
-          <p className="text-xs text-white/40">
+          <p className="text-[10px] text-white/40 mt-0.5">
             {items.length} items • {Object.keys(groupedItems).length} servicios
           </p>
         </div>
-        <ClockIcon className="w-4 h-4 text-white/40" />
+        <ClockIcon className="w-4 h-4 text-white/30" />
       </div>
       
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {Object.entries(groupedItems).map(([serviceName, slots]) => (
           <Disclosure key={serviceName} defaultOpen>
             {({ open }) => (
-              <div className="bg-[#111] border border-white/10 rounded-sm overflow-hidden">
-                <Disclosure.Button className="w-full flex items-center justify-between p-2 hover:bg-white/5 transition-colors">
+              <div className="bg-white/5 border border-white/10 rounded-lg overflow-hidden">
+                <Disclosure.Button className="w-full flex items-center justify-between p-3 hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-2">
-                    <ChevronRightIcon className={`w-3 h-3 text-white/40 transition-transform ${open ? 'rotate-90' : ''}`} />
-                    <span className="text-xs font-medium text-white">{serviceName}</span>
+                    <ChevronRightIcon className={`w-3.5 h-3.5 text-white/30 transition-transform ${open ? 'rotate-90' : ''}`} />
+                    <span className="text-[11px] font-medium text-white/70">{serviceName}</span>
                   </div>
-                  <span className="text-xs text-white/40">{slots.length} items</span>
+                  <span className="text-[9px] text-white/30">{slots.length} items</span>
                 </Disclosure.Button>
-                <Disclosure.Panel className="p-2 pt-0">
-                  <div className="grid grid-cols-4 gap-1">
+                <Disclosure.Panel className="p-3 pt-0">
+                  <div className="grid grid-cols-4 gap-1.5">
                     {slots.map(slot => (
                       <button
                         key={slot.id}
                         onClick={() => onItemClick(slot)}
                         className={`
-                          text-[10px] py-1 px-1 rounded transition-colors truncate
+                          text-[10px] py-1.5 px-1 rounded-md transition-colors truncate
                           ${slot.type === 'availability' 
-                            ? 'bg-emerald-900/30 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-800/40' 
-                            : 'bg-blue-900/30 border border-blue-500/30 text-blue-300 hover:bg-blue-800/40'
+                            ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400/70 hover:bg-emerald-500/15' 
+                            : 'bg-blue-500/10 border border-blue-500/20 text-blue-400/70 hover:bg-blue-500/15'
                           }
                         `}
                       >
@@ -69,7 +69,7 @@ const DayDetailsPanel: React.FC<DayDetailsPanelProps> = ({ day, items, onItemCli
         ))}
         
         {items.length === 0 && (
-          <div className="text-center py-8 text-white/40 text-xs">
+          <div className="text-center py-8 text-white/30 text-[11px]">
             No hay items para este día
           </div>
         )}
