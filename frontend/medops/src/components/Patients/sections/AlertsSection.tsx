@@ -48,8 +48,8 @@ export default function AlertsSection({
         type: "danger",
         message: (
           <div className="flex flex-col gap-1">
-            <span className="font-black">CRITICAL_ALLERGIES_DETECTED:</span>
-            <span className="opacity-80 uppercase">{allergies.map((a) => a.name).join(", ")}</span>
+            <span className="font-semibold">Alergias críticas detectadas:</span>
+            <span className="opacity-80">{allergies.map((a) => a.name).join(", ")}</span>
           </div>
         ),
       });
@@ -60,8 +60,8 @@ export default function AlertsSection({
         type: "warning",
         message: (
           <div className="flex flex-col gap-1">
-            <span className="font-black">RELEVANT_MEDICAL_HISTORY:</span>
-            <span className="opacity-80 uppercase">{medicalHistory.map((a) => a.condition).join(", ")}</span>
+            <span className="font-semibold">Antecedentes médicos relevantes:</span>
+            <span className="opacity-80">{medicalHistory.map((a) => a.condition).join(", ")}</span>
           </div>
         ),
       });
@@ -72,8 +72,8 @@ export default function AlertsSection({
         type: "warning",
         message: (
           <div className="flex flex-col gap-1">
-            <span className="font-black">LIFESTYLE_RISK_FACTORS:</span>
-            <span className="opacity-80 uppercase">{riskyHabits.map((h) => h.type).join(", ")}</span>
+            <span className="font-semibold">Factores de riesgo:</span>
+            <span className="opacity-80">{riskyHabits.map((h) => h.type === 'smoking' ? 'Tabaquismo' : h.type === 'alcohol' ? 'Alcohol' : 'Drogas').join(", ")}</span>
           </div>
         ),
       });
@@ -84,8 +84,8 @@ export default function AlertsSection({
         type: "warning",
         message: (
           <div className="flex flex-col gap-1">
-            <span className="font-black">POST_SURGICAL_MONITORING:</span>
-            <span className="opacity-80 uppercase">{recentSurgeries.map((s) => s.name).join(", ")}</span>
+            <span className="font-semibold">Seguimiento post-quirúrgico:</span>
+            <span className="opacity-80">{recentSurgeries.map((s) => s.name).join(", ")}</span>
           </div>
         ),
       });
@@ -98,8 +98,8 @@ export default function AlertsSection({
         type: "info",
         message: (
           <div className="flex flex-col gap-1">
-            <span className="font-black">IMMUNIZATION_PROTOCOL_INCOMPLETE:</span>
-            <span className="opacity-80 uppercase">{missing.length} FAILED_OR_PENDING_DOSES</span>
+            <span className="font-semibold">Esquema de vacunación incompleto:</span>
+            <span className="opacity-80">{missing.length} dosis pendiente{missing.length > 1 ? 's' : ''}</span>
           </div>
         ),
       });
@@ -110,32 +110,32 @@ export default function AlertsSection({
   const allAlerts = [...autoAlerts, ...manualAlerts];
   const alertStyles: Record<AlertType, { bg: string; text: string; border: string; icon: any }> = {
     danger: { 
-      bg: "bg-red-500/5", border: "border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]", 
-      text: "text-red-500", icon: ExclamationTriangleIcon 
+      bg: "bg-red-500/10", border: "border-red-500/20", 
+      text: "text-red-400", icon: ExclamationTriangleIcon 
     },
     warning: { 
-      bg: "bg-orange-500/5", border: "border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.1)]", 
-      text: "text-orange-500", icon: BoltIcon 
+      bg: "bg-amber-500/10", border: "border-amber-500/20", 
+      text: "text-amber-400", icon: BoltIcon 
     },
     info: { 
-      bg: "bg-blue-500/5", border: "border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.1)]", 
+      bg: "bg-blue-500/10", border: "border-blue-500/20", 
       text: "text-blue-400", icon: InformationCircleIcon 
     },
   };
   return (
-    <div className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm overflow-hidden">
-      <div className="bg-[var(--palantir-border)]/20 px-4 py-3 flex justify-between items-center border-b border-[var(--palantir-border)]">
-        <div className="flex items-center gap-2">
-          <ExclamationTriangleIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-          <span className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest">
-            Clinical_Risk_Signals
+    <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+      <div className="bg-white/5 px-5 py-3 flex justify-between items-center border-b border-white/15">
+        <div className="flex items-center gap-3">
+          <ExclamationTriangleIcon className="w-5 h-5 text-amber-400" />
+          <span className="text-[11px] font-medium text-white/70">
+            Alertas Clínicas
           </span>
         </div>
         
         {!readOnly && (
           <button
             onClick={() => { setEditing(null); setModalOpen(true); }}
-            className="p-1 hover:bg-white/5 rounded-sm transition-colors text-[var(--palantir-active)]"
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors text-emerald-400"
           >
             <PlusIcon className="w-5 h-5" />
           </button>
@@ -144,8 +144,8 @@ export default function AlertsSection({
       
       <div className="p-5">
         {allAlerts.length === 0 ? (
-          <div className="py-8 text-center border border-dashed border-[var(--palantir-border)] rounded-sm">
-            <span className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">Status: Zero_Alerts_Logged</span>
+          <div className="py-8 text-center border border-dashed border-white/15 rounded-lg">
+            <span className="text-[11px] text-white/40">Sin alertas registradas</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -159,32 +159,32 @@ export default function AlertsSection({
               return (
                 <div 
                   key={key}
-                  className={`${style.bg} ${style.border} border p-4 rounded-sm flex items-start gap-4 transition-all hover:brightness-125`}
+                  className={`${style.bg} ${style.border} border p-4 rounded-lg flex items-start gap-4 transition-all`}
                 >
                   <Icon className={`w-5 h-5 mt-0.5 ${style.text}`} />
                   
                   <div className="flex-1">
-                    <div className={`text-[11px] font-mono leading-relaxed ${style.text}`}>
+                    <div className={`text-[11px] leading-relaxed ${style.text}`}>
                       {alert.message}
                     </div>                     
-                    <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-2">
-                      <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
-                        Origin: {isManual ? `STAFF_ID_${(alert as any).created_by || 'USR'}` : 'SYSTEM_AUTO_GEN'}
+                    <div className="mt-3 flex items-center justify-between border-t border-white/10 pt-2">
+                      <span className="text-[8px] text-white/30">
+                        {isManual ? 'Agregado por personal' : 'Generado automáticamente'}
                       </span>
                         
                       {!readOnly && isManual && (
                         <div className="flex gap-3">
                           <button 
                             onClick={() => { setEditing(alert as ManualAlert); setModalOpen(true); }}
-                            className="text-[9px] font-mono text-[var(--palantir-active)] hover:underline uppercase"
+                            className="text-[9px] text-emerald-400 hover:underline"
                           >
-                            [Override]
+                            Editar
                           </button>
                           <button 
                             onClick={() => remove.mutate((alert as ManualAlert).id)}
-                            className="text-[9px] font-mono text-red-500/60 hover:text-red-500 uppercase"
+                            className="text-[9px] text-red-400/60 hover:text-red-400"
                           >
-                            [Purge]
+                            Eliminar
                           </button>
                         </div>
                       )}

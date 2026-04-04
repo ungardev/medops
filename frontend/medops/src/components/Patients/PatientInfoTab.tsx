@@ -11,7 +11,7 @@ import DemographicsSection from "./sections/DemographicsSection";
 import AlertsSection from "./sections/AlertsSection";
 import ClinicalProfileSection from "./sections/ClinicalProfileSection";
 import { useVaccinations } from "../../hooks/patients/useVaccinations";
-import CollapsibleSection from "../../components/Common/CollapsibleSection"; // NUEVO: Importar componente colapsable
+import CollapsibleSection from "../../components/Common/CollapsibleSection";
 interface PatientInfoTabProps {
   patientId: number;
   readOnly?: boolean;
@@ -26,7 +26,7 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
     apiFetch(`patients/${patientId}/profile/`)
       .then((data) => setProfile(data))
       .catch((err) => {
-        console.error("Error reloading clinical profile:", err);
+        console.error("Error al recargar perfil clínico:", err);
         setProfile(null);
       })
       .finally(() => setLoading(false));
@@ -39,11 +39,11 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
   if (loading && !profile) {
     return (
       <div className="space-y-6 animate-pulse">
-        <div className="flex items-center gap-4 border-b border-[var(--palantir-border)] pb-4">
-          <div className="w-12 h-12 bg-white/5 rounded-sm" />
+        <div className="flex items-center gap-4 border-b border-white/15 pb-4">
+          <div className="w-12 h-12 bg-white/5 rounded-lg" />
           <div className="space-y-2">
-            <div className="h-3 w-48 bg-white/5 rounded-sm" />
-            <div className="h-2 w-32 bg-white/5 rounded-sm" />
+            <div className="h-3 w-48 bg-white/5 rounded" />
+            <div className="h-2 w-32 bg-white/5 rounded" />
           </div>
         </div>
       </div>
@@ -52,24 +52,23 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
   
   if (!loading && !profile) {
     return (
-      <div className="py-8 border border-red-900/30 bg-red-950/5 flex flex-col items-center text-center rounded-sm">
-        <ExclamationTriangleIcon className="w-10 h-10 text-red-500 mb-4" />
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-red-500">
-          DATA_FETCH_ERROR
+      <div className="py-8 border border-red-500/20 bg-red-500/5 flex flex-col items-center text-center rounded-lg">
+        <ExclamationTriangleIcon className="w-10 h-10 text-red-400 mb-4" />
+        <h3 className="text-[11px] font-semibold text-red-400">
+          Error al cargar datos
         </h3>
-        <p className="text-[9px] font-mono text-red-400/80">Unable to load profile data. The application is still functional.</p>
+        <p className="text-[10px] text-red-400/70 mt-1">No se pudo cargar el perfil del paciente. La aplicación sigue funcionando.</p>
       </div>
     );
   }
   
   return (
-    <div className="space-y-12">
+    <div className="space-y-8">
       
-      {/* SECCIÓN 1: DEMOGRÁFICOS - Ahora colapsable */}
       <CollapsibleSection
-        title="Subject_Identity_Core"
-        icon={<UserCircleIcon className="w-4 h-4" />}
-        color="var(--palantir-active)"
+        title="Información Personal"
+        icon={<UserCircleIcon className="w-5 h-5" />}
+        color="emerald-400"
         defaultExpanded={true}
       >
         <DemographicsSection 
@@ -79,11 +78,10 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
         />
       </CollapsibleSection>
       
-      {/* SECCIÓN 2: ALERTAS - Ahora colapsable */}
       <CollapsibleSection
-        title="Critical_Risk_Assessment"
-        icon={<ShieldCheckIcon className="w-4 h-4" />}
-        color="red-500"
+        title="Alertas y Riesgos"
+        icon={<ShieldCheckIcon className="w-5 h-5" />}
+        color="red-400"
         defaultExpanded={false}
       >
         <AlertsSection
@@ -98,10 +96,9 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
         />
       </CollapsibleSection>
       
-      {/* SECCIÓN 3: PERFIL CLÍNICO - Ahora colapsable */}
       <CollapsibleSection
-        title="Historical_Clinical_Database"
-        icon={<CpuChipIcon className="w-4 h-4" />}
+        title="Historial Clínico"
+        icon={<CpuChipIcon className="w-5 h-5" />}
         color="blue-400"
         defaultExpanded={false}
       >
@@ -115,24 +112,23 @@ export default function PatientInfoTab({ patientId, readOnly = false }: PatientI
         />
       </CollapsibleSection>
       
-      {/* FOOTER DE ESTADO (sin cambios) */}
-      <div className="pt-6 border-t border-[var(--palantir-border)] flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-[8px] font-mono text-[var(--palantir-active)] uppercase">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            Sync_Active
+      <div className="pt-4 border-t border-white/10 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 text-[9px] text-emerald-400">
+            <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            Sincronizado
           </span>
-          <span className="text-[8px] font-mono text-[var(--palantir-muted)]">
-            LAST_UPDATE: {new Date().toLocaleString("es-VE")}
+          <span className="text-[9px] text-white/40">
+            Última actualización: {new Date().toLocaleString("es-VE")}
           </span>
         </div>
         
-        <div className="flex items-center gap-2">
-          <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">
-            READ_ONLY_MODE
-          </span>
-          <div className={`w-2 h-2 rounded-full ${readOnly ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-        </div>
+        {readOnly && (
+          <div className="flex items-center gap-2">
+            <span className="text-[9px] text-white/40">Solo lectura</span>
+            <div className="w-2 h-2 rounded-full bg-amber-400" />
+          </div>
+        )}
       </div>
     </div>
   );

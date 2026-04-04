@@ -25,10 +25,7 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
     setLocalError(null);
     if (editingItem && editingItem.id > 0) {
       update.mutate(
-        { 
-          ...payload, 
-          id: editingItem.id 
-        },
+        { ...payload, id: editingItem.id },
         {
           onSuccess: () => {
             vaccQuery.refetch();
@@ -36,7 +33,7 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
             setModalOpen(false);
             setEditingItem(null);
           },
-          onError: () => setLocalError("PROTOCOL_ERROR: UPDATE_FAILED")
+          onError: () => setLocalError("Error al actualizar la vacuna")
         }
       );
     } else {
@@ -47,7 +44,7 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
           setModalOpen(false);
           setEditingItem(null);
         },
-        onError: () => setLocalError("PROTOCOL_ERROR: CREATION_FAILED")
+        onError: () => setLocalError("Error al registrar la vacuna")
       });
     }
   };
@@ -78,39 +75,37 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
   };
   return (
     <div className="space-y-6">
-      {/* Header Estilizado */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[var(--palantir-surface)]/20 p-4 border border-[var(--palantir-border)] rounded-sm">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/5 p-5 border border-white/15 rounded-lg">
         <div className="flex items-center gap-4">
-          <div className="p-2 bg-[var(--palantir-active)]/10 border border-[var(--palantir-active)]/30 rounded-sm">
-            <BeakerIcon className="w-6 h-6 text-[var(--palantir-active)]" />
+          <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            <BeakerIcon className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-[12px] font-black text-[var(--palantir-text)] uppercase tracking-[0.2em]">
-              IMMUNIZATION_PROTOCOL_SVPP
+            <h2 className="text-[12px] font-semibold text-white">
+              Esquema de Vacunación
             </h2>
-            <p className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase mt-0.5">
-              Status: {applied.length >= schema.length ? "PROTOCOL_COMPLETE" : "SYNCING_CLINICAL_DATA"}
+            <p className="text-[10px] text-white/40 mt-0.5">
+              {applied.length >= schema.length ? "Esquema completo" : `${applied.length} de ${schema.length} dosis aplicadas`}
             </p>
           </div>
         </div>
         
         <div className="flex gap-4">
           <div className="flex flex-col items-end">
-            <span className="text-[14px] font-mono font-bold text-[var(--palantir-text)]">{applied.length}</span>
-            <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase">Applied_Doses</span>
+            <span className="text-[16px] font-semibold text-white">{applied.length}</span>
+            <span className="text-[9px] text-white/40">Dosis aplicadas</span>
           </div>
         </div>
       </div>
       {localError && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-500 text-[10px] font-mono uppercase">
+        <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] rounded-lg">
           {localError}
         </div>
       )}
-      {/* Matrix Container */}
-      <div className="relative bg-[var(--palantir-bg)] border border-[var(--palantir-border)] rounded-sm overflow-hidden">
+      <div className="relative bg-white/5 border border-white/15 rounded-lg overflow-hidden">
         {isSaving && (
-          <div className="absolute inset-0 bg-[var(--palantir-bg)]/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <span className="text-[10px] font-mono uppercase tracking-[0.3em] animate-pulse">Writing_Data...</span>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+            <span className="text-[11px] text-white/60 animate-pulse">Guardando...</span>
           </div>
         )}
         
@@ -120,20 +115,18 @@ export default function VaccinationTab({ patientId, onRefresh, readOnly = false 
           onRegisterDose={readOnly ? undefined : handleRegisterDose}
         />
       </div>
-      {/* Legend & Footer */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 px-2">
         <div className="flex flex-wrap gap-6">
-          <LegendItem color="bg-yellow-400/20 border-yellow-400/40" label="Recommended_Dose" />
-          <LegendItem color="bg-emerald-500/30 border-emerald-500/50" label="Validated_Immunity" />
-          <LegendItem color="bg-[var(--palantir-surface)] border-[var(--palantir-border)]" label="Not_Applicable" />
+          <LegendItem color="bg-yellow-400/20 border-yellow-400/40" label="Dosis recomendada" />
+          <LegendItem color="bg-emerald-500/30 border-emerald-500/50" label="Inmunidad validada" />
+          <LegendItem color="bg-white/5 border-white/15" label="No aplica" />
         </div>
         
-        <div className="flex items-center gap-2 text-[9px] font-mono text-[var(--palantir-muted)] uppercase">
-          <InformationCircleIcon className="w-3 h-3" />
-          Data based on Venezuelan Society of Childcare and Pediatrics (SVPP)
+        <div className="flex items-center gap-2 text-[9px] text-white/40">
+          <InformationCircleIcon className="w-4 h-4" />
+          Basado en la Sociedad Venezolana de Puericultura y Pediatría (SVPP)
         </div>
       </div>
-      {/* ✅ Modal oculto en modo solo lectura */}
       {!readOnly && (
         <VaccinationModal
           open={modalOpen}
@@ -154,7 +147,7 @@ function LegendItem({ color, label }: { color: string, label: string }) {
   return (
     <div className="flex items-center gap-2">
       <div className={`w-3 h-3 rounded-full ${color} border`} />
-      <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-wider">{label}</span>
+      <span className="text-[9px] text-white/40">{label}</span>
     </div>
   );
 }

@@ -12,10 +12,6 @@ interface TabsProps {
   className?: string;
   layout?: "vertical" | "horizontal";
 }
-/**
- * Componente Tab: Actúa principalmente como un contenedor de datos
- * para que el componente Tabs pueda extraer las props.
- */
 export function Tab({ children }: TabProps) {
   return <>{children}</>;
 }
@@ -27,17 +23,13 @@ export function Tabs({
   layout = "vertical",
 }: TabsProps) {
   
-  // ✅ FIX: Usamos React.Children.toArray para manejar los hijos de forma segura.
-  // Esto evita errores cuando hay un solo hijo o cuando React Fast Refresh 
-  // envuelve los componentes en proxies durante el desarrollo.
   const tabs = React.Children.toArray(children).filter((child) => {
     return isValidElement(child);
   }) as ReactElement<TabProps>[];
   return (
     <div className={className ?? "space-y-4"}>
       
-      {/* 🛠️ NAVIGATION HEADER */}
-      <div className="flex flex-wrap gap-1 border-b border-white/20 pb-0 overflow-x-auto scrollbar-hide bg-black/30">
+      <div className="flex flex-wrap gap-0 border-b border-white/15 pb-0 overflow-x-auto scrollbar-hide">
         {tabs.map((tab) => {
           const isActive = value === tab.props.id;
           return (
@@ -46,26 +38,19 @@ export function Tabs({
               type="button"
               onClick={() => onChange(tab.props.id)}
               className={`
-                relative px-5 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-200
+                relative px-5 py-3 text-[11px] font-medium transition-all duration-200
                 ${isActive 
-                  ? "text-white bg-white/10"  // Activo: blanco puro, fondo sutil
-                  : "text-white/80 hover:text-white hover:bg-white/5"}  // Inactivo: MÁS VISIBLE (80%), hover blanco
+                  ? "text-emerald-400 border-b-2 border-emerald-400"
+                  : "text-white/50 hover:text-white/80 hover:bg-white/5"}
               `}
             >
-              {/* Contenedor flexible para alinear iconos y texto */}
               <div className="flex items-center justify-center gap-2">
                 {tab.props.label}
               </div>
-              
-              {/* 💡 Active Indicator Line - Neutro, sin azul */}
-              {isActive && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-white/50" />
-              )}
             </button>
           );
         })}
       </div>
-      {/* 🧊 CONTENT DISPLAY - CORREGIDO PARA SOLUCIONAR PROBLEMA CRÍTICO */}
       <div className={layout === "vertical" ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "space-y-4"}>
         {tabs.map((tab) =>
           tab.props.id === value ? (
@@ -75,7 +60,7 @@ export function Tabs({
                 layout === "vertical" ? "" : "w-full"
               }`}
             >
-              <div className="bg-black/50 border border-white/20 rounded-sm p-4 sm:p-6 shadow-2xl">
+              <div className="bg-white/5 border border-white/15 rounded-lg p-5 sm:p-6">
                 {tab.props.children}
               </div>
             </div>

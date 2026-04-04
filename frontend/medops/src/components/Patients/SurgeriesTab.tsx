@@ -42,7 +42,7 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
         onRefresh?.();
         setModalOpen(false);
       },
-      onError: () => setLocalError("PROTOCOL_ERROR: SURGERY_SYNC_FAILED")
+      onError: () => setLocalError("Error al guardar la cirugía")
     });
   };
   const handleDelete = (id: number) => {
@@ -55,98 +55,96 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
   };
   if (query.isLoading) return (
     <div className="flex items-center justify-center p-8">
-      <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
     </div>
   );
   if (query.isError) return (
-    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-sm">
-      <p className="text-[10px] font-mono text-red-500 uppercase">Error: Failed to load surgical records</p>
+    <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+      <p className="text-[11px] text-red-400">Error al cargar el historial quirúrgico</p>
     </div>
   );
   const surgeries = query.data || [];
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-[10px] font-mono font-black text-[var(--palantir-text)] uppercase tracking-widest">
-          Surgical Operations Log
+        <h2 className="text-[12px] font-semibold text-white">
+          Historial Quirúrgico
         </h2>
         
-        {/* ✅ Botón oculto en modo solo lectura */}
         {!readOnly && (
           <button
             onClick={handleCreate}
             disabled={isSaving}
-            className="flex items-center gap-2 px-4 py-2 bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-black text-[10px] font-bold uppercase tracking-widest rounded-sm disabled:opacity-50 hover:shadow-lg transition-all"
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg disabled:opacity-50 transition-all"
           >
             <PlusIcon className="w-4 h-4" />
-            New Record
+            Nueva Cirugía
           </button>
         )}
       </div>
       {localError && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-sm">
-          <p className="text-[9px] font-mono text-red-500 uppercase">{localError}</p>
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <p className="text-[11px] text-red-400">{localError}</p>
         </div>
       )}
       {surgeries.length === 0 ? (
-        <div className="text-center py-12 border border-dashed border-[var(--palantir-border)] rounded-sm">
-          <ScissorsIcon className="w-12 h-12 mx-auto text-[var(--palantir-muted)]/30 mb-4" />
-          <p className="text-[10px] font-mono text-[var(--palantir-muted)] uppercase">No surgical records found</p>
-          <p className="text-[8px] font-mono text-[var(--palantir-muted)]/60 mt-1">Add the first surgery to begin tracking</p>
+        <div className="text-center py-12 border border-dashed border-white/15 rounded-lg">
+          <ScissorsIcon className="w-12 h-12 mx-auto text-white/15 mb-4" />
+          <p className="text-[11px] text-white/40">No hay registros quirúrgicos</p>
+          <p className="text-[9px] text-white/30 mt-1">Agrega la primera cirugía para comenzar el registro</p>
         </div>
       ) : (
         <div className="grid gap-3">
           {surgeries.map((surgery: Surgery) => (
             <div
               key={surgery.id}
-              className="bg-[var(--palantir-surface)]/20 border border-[var(--palantir-border)] rounded-sm p-4 hover:shadow-[0_0_10px_rgba(0,0,0,0.3)] transition-all"
+              className="bg-white/5 border border-white/15 rounded-lg p-5 hover:border-white/25 transition-all"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <h3 className="text-sm font-bold text-[var(--palantir-text)] uppercase tracking-tight mb-2">
-                    {surgery.name || "Unnamed Procedure"}
+                  <h3 className="text-[12px] font-medium text-white mb-2">
+                    {surgery.name || "Procedimiento sin nombre"}
                   </h3>
-                  <div className="space-y-1 text-[9px] font-mono text-[var(--palantir-muted)] uppercase">
+                  <div className="space-y-1.5 text-[10px] text-white/50">
                     <div className="flex items-center gap-2">
-                      <BuildingOfficeIcon className="w-3 h-3" />
-                      <span>{surgery.hospital || "Hospital not specified"}</span>
+                      <BuildingOfficeIcon className="w-4 h-4" />
+                      <span>{surgery.hospital || "Hospital no especificado"}</span>
                     </div>
                     {surgery.date && (
                       <div className="flex items-center gap-2">
-                        <CalendarIcon className="w-3 h-3" />
-                        <span>{new Date(surgery.date).toLocaleDateString()}</span>
+                        <CalendarIcon className="w-4 h-4" />
+                        <span>{new Date(surgery.date).toLocaleDateString("es-VE")}</span>
                       </div>
                     )}
                     {surgery.doctor && (
                       <div className="flex items-center gap-2">
-                        <UserCircleIcon className="w-3 h-3" />
+                        <UserCircleIcon className="w-4 h-4" />
                         <span>Dr. {surgery.doctor}</span>
                       </div>
                     )}
                   </div>
                   {surgery.description && (
-                    <p className="text-[10px] font-mono text-[var(--palantir-text)] mt-2 leading-relaxed">
+                    <p className="text-[11px] text-white/60 mt-3 leading-relaxed">
                       {surgery.description}
                     </p>
                   )}
                 </div>
                 
-                {/* ✅ Botones de acción ocultos en modo solo lectura */}
                 {!readOnly && (
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => handleEdit(surgery)}
                       disabled={isSaving}
-                      className="p-1 text-[var(--palantir-active)] hover:bg-white/5 rounded-sm transition-colors disabled:opacity-50"
-                      title="Edit"
+                      className="p-2 text-white/50 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
+                      title="Editar"
                     >
                       <PencilSquareIcon className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(surgery.id)}
                       disabled={isSaving}
-                      className="p-1 text-red-500 hover:bg-red-500/10 rounded-sm transition-colors disabled:opacity-50"
-                      title="Delete"
+                      className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                      title="Eliminar"
                     >
                       <TrashIcon className="w-4 h-4" />
                     </button>
@@ -157,7 +155,6 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
           ))}
         </div>
       )}
-      {/* ✅ Modal oculto en modo solo lectura */}
       {!readOnly && (
         <SurgeriesModal
           open={modalOpen}

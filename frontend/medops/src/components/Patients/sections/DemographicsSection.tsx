@@ -18,12 +18,12 @@ interface DemographicsSectionProps {
   readOnly?: boolean;
 }
 const FITZPATRICK_OPTIONS = [
-  { value: "I", label: "TIPO I - Muy clara" },
-  { value: "II", label: "TIPO II - Clara" },
-  { value: "III", label: "TIPO III - Intermedia" },
-  { value: "IV", label: "TIPO IV - Mate" },
-  { value: "V", label: "TIPO V - Morena" },
-  { value: "VI", label: "TIPO VI - Negra" },
+  { value: "I", label: "Tipo I - Muy clara" },
+  { value: "II", label: "Tipo II - Clara" },
+  { value: "III", label: "Tipo III - Intermedia" },
+  { value: "IV", label: "Tipo IV - Mate" },
+  { value: "V", label: "Tipo V - Morena" },
+  { value: "VI", label: "Tipo VI - Negra" },
 ];
 export default function DemographicsSection({ patient, onRefresh, readOnly = false }: DemographicsSectionProps) {
   const [editing, setEditing] = useState(false);
@@ -137,7 +137,7 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
           setErrors({});
           onRefresh(); 
         },
-        onError: () => setErrors({ general: "ERR_SYNC_FAILED" })
+        onError: () => setErrors({ general: "Error al guardar los cambios" })
       });
     } catch (err) {
       setErrors({ general: "Error al guardar" });
@@ -201,180 +201,183 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
   
   const isDisabled = !editing || readOnly;
   
+  const inputClass = "w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2.5 text-[12px] text-white/80 disabled:opacity-40 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30";
+  const labelClass = "block text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5";
+  
   return (
-    <div className="bg-white/[0.05] border border-white/20 rounded-sm overflow-hidden">
-      <div className="bg-white/10 px-4 py-2.5 flex justify-between items-center border-b border-white/20">
-        <div className="flex items-center gap-2">
-          <UserCircleIcon className="w-4 h-4 text-white/60" />
-          <span className="text-[10px] font-mono font-bold text-white/80 uppercase tracking-widest">Subject_Identity_Core</span>
+    <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+      <div className="bg-white/5 px-5 py-3 flex justify-between items-center border-b border-white/15">
+        <div className="flex items-center gap-3">
+          <UserCircleIcon className="w-5 h-5 text-white/40" />
+          <span className="text-[11px] font-medium text-white/70">Datos Personales</span>
         </div>
         
         {readOnly ? (
-          <div className="text-[10px] font-mono text-white/40 uppercase">[ SOLO LECTURA ]</div>
+          <div className="text-[10px] text-white/30">Solo lectura</div>
         ) : editing ? (
-          <div className="flex gap-3">
-            <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-[10px] font-mono text-white/50 hover:text-white uppercase">[ CANCELAR ]</button>
-            <button onClick={handleSave} disabled={isLoadingAny} className="flex items-center gap-1.5 px-4 py-1.5 bg-white/20 hover:bg-white/30 text-white text-[10px] font-bold rounded-sm border border-white/30 disabled:opacity-50">
+          <div className="flex gap-2">
+            <button onClick={() => setEditing(false)} className="px-3 py-1.5 text-[10px] text-white/50 hover:text-white transition-colors rounded-lg hover:bg-white/5">Cancelar</button>
+            <button onClick={handleSave} disabled={isLoadingAny} className="flex items-center gap-1.5 px-4 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[10px] font-medium rounded-lg disabled:opacity-50 transition-all">
               <CheckIcon className="w-3.5 h-3.5" /> 
-              {isLoadingAny ? 'CARGANDO...' : 'GUARDAR'}
+              {isLoadingAny ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
         ) : (
-          <button onClick={() => setEditing(true)} disabled={isLoadingAny} className="flex items-center gap-1.5 px-4 py-1.5 bg-white/10 border border-white/20 text-[10px] font-mono text-white/70 hover:text-white disabled:opacity-50">
+          <button onClick={() => setEditing(true)} disabled={isLoadingAny} className="flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/15 text-[10px] text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-50 rounded-lg transition-all">
             <PencilSquareIcon className="w-3.5 h-3.5" /> 
-            MODIFICAR
+            Editar
           </button>
         )}
       </div>
       
       {errors.general && (
-        <div className="px-5 py-2 bg-red-500/20 border-b border-red-500/40 flex items-center gap-2">
+        <div className="px-5 py-3 bg-red-500/10 border-b border-red-500/20 flex items-center gap-2">
           <ExclamationCircleIcon className="w-4 h-4 text-red-400" />
-          <span className="text-[11px] font-mono text-red-400">{errors.general}</span>
+          <span className="text-[11px] text-red-400">{errors.general}</span>
         </div>
       )}
       
       {isLoadingAny && (
-        <div className="px-5 py-2 bg-blue-500/20 border-b border-blue-500/40 flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent animate-spin"></div>
-          <span className="text-[11px] font-mono text-blue-400">Cargando datos...</span>
+        <div className="px-5 py-3 bg-blue-500/10 border-b border-blue-500/20 flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-[11px] text-blue-400">Cargando datos de ubicación...</span>
         </div>
       )}
       
-      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-6 grid grid-cols-12 gap-x-4 gap-y-5">
+      <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="p-5 grid grid-cols-12 gap-x-4 gap-y-5">
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Identity_ID</label>
-          <input type="text" value={form.national_id} onChange={(e) => setForm({...form, national_id: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Cédula</label>
+          <input type="text" value={form.national_id} onChange={(e) => setForm({...form, national_id: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">First_Name</label>
-          <input type="text" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Primer Nombre</label>
+          <input type="text" value={form.first_name} onChange={(e) => setForm({...form, first_name: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Middle_Name</label>
-          <input type="text" value={form.middle_name} onChange={(e) => setForm({...form, middle_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Segundo Nombre</label>
+          <input type="text" value={form.middle_name} onChange={(e) => setForm({...form, middle_name: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Last_Name</label>
-          <input type="text" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Primer Apellido</label>
+          <input type="text" value={form.last_name} onChange={(e) => setForm({...form, last_name: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Second_Last_Name</label>
-          <input type="text" value={form.second_last_name} onChange={(e) => setForm({...form, second_last_name: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Segundo Apellido</label>
+          <input type="text" value={form.second_last_name} onChange={(e) => setForm({...form, second_last_name: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Birth_Date</label>
-          <input type="date" value={form.birthdate} onChange={(e) => setForm({...form, birthdate: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" style={{colorScheme: 'dark'}} />
+          <label className={labelClass}>Fecha de Nacimiento</label>
+          <input type="date" value={form.birthdate} onChange={(e) => setForm({...form, birthdate: e.target.value})} disabled={isDisabled} className={inputClass} style={{colorScheme: 'dark'}} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Gender</label>
+          <label className={labelClass}>Género</label>
           <select 
             value={form.gender} 
             onChange={(e) => setForm({...form, gender: e.target.value as any})}
             disabled={isDisabled}
-            className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40"
+            className={inputClass}
           >
-            <option value="">NO_DATA</option>
-            <option value="M">MASCULINO</option>
-            <option value="F">FEMENINO</option>
-            <option value="Other">OTHER</option>
-            <option value="Unknown">UNKNOWN</option>
+            <option value="">Seleccionar</option>
+            <option value="M">Masculino</option>
+            <option value="F">Femenino</option>
+            <option value="Other">Otro</option>
+            <option value="Unknown">Desconocido</option>
           </select>
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Email_Address</label>
-          <input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Correo Electrónico</label>
+          <input type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Contact_Line</label>
-          <input type="text" value={form.contact_info} onChange={(e) => setForm({...form, contact_info: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Teléfono</label>
+          <input type="text" value={form.contact_info} onChange={(e) => setForm({...form, contact_info: e.target.value})} disabled={isDisabled} className={inputClass} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Tattoo</label>
+          <label className={labelClass}>Tatuajes</label>
           <select 
             value={form.tattoo === null ? "" : form.tattoo.toString()} 
             onChange={(e) => setForm({...form, tattoo: e.target.value === "" ? null : e.target.value === "true"})} 
             disabled={isDisabled}
-            className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40"
+            className={inputClass}
           >
-            <option value="">NO_DATA</option>
-            <option value="true">SÍ</option>
-            <option value="false">NO</option>
+            <option value="">Seleccionar</option>
+            <option value="true">Sí</option>
+            <option value="false">No</option>
           </select>
         </div>
         
         <div className="col-span-12 md:col-span-4">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Profession</label>
+          <label className={labelClass}>Profesión</label>
           <input 
             type="text" 
             value={form.profession} 
             onChange={(e) => setForm({...form, profession: e.target.value})} 
             disabled={isDisabled} 
             placeholder="Profesión u ocupación..."
-            className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" 
+            className={inputClass} 
           />
         </div>
         
         <div className="col-span-12 md:col-span-3">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Skin (Fitzpatrick)</label>
+          <label className={labelClass}>Tipo de Piel (Fitzpatrick)</label>
           <select 
             value={form.skin_type} 
             onChange={(e) => setForm({...form, skin_type: e.target.value as any})} 
             disabled={isDisabled}
-            className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40"
+            className={inputClass}
           >
-            <option value="">NO_DATA</option>
+            <option value="">Seleccionar</option>
             {FITZPATRICK_OPTIONS.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
         </div>
         
-        <div className="col-span-12 flex items-center gap-3 pt-4 opacity-60">
+        <div className="col-span-12 flex items-center gap-3 pt-4 opacity-50">
           <MapPinIcon className="w-4 h-4" />
-          <span className="text-[9px] font-mono uppercase tracking-[0.3em]">GEOGRAPHIC_LOCATION_DATA</span>
-          <div className="flex-1 h-[1px] bg-white/30" />
+          <span className="text-[9px] font-medium uppercase tracking-wider">Ubicación Geográfica</span>
+          <div className="flex-1 h-[1px] bg-white/10" />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="Country" value={form.country_id} options={countries} onChange={handleCountryChange} disabled={isDisabled} loading={countriesResult.isLoading} />
+          <FieldSelect label="País" value={form.country_id} options={countries} onChange={handleCountryChange} disabled={isDisabled} loading={countriesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="State" value={form.state_id} options={states} onChange={handleStateChange} disabled={isDisabled || !form.country_id} loading={statesResult.isLoading} />
+          <FieldSelect label="Estado" value={form.state_id} options={states} onChange={handleStateChange} disabled={isDisabled || !form.country_id} loading={statesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="Municipality" value={form.municipality_id} options={municipalities} onChange={handleMunicipalityChange} disabled={isDisabled || !form.state_id} loading={municipalitiesResult.isLoading} />
+          <FieldSelect label="Municipio" value={form.municipality_id} options={municipalities} onChange={handleMunicipalityChange} disabled={isDisabled || !form.state_id} loading={municipalitiesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-2">
-          <FieldSelect label="Parish" value={form.parish_id} options={parishes} onChange={handleParishChange} disabled={isDisabled || !form.municipality_id} loading={parishesResult.isLoading} />
+          <FieldSelect label="Parroquia" value={form.parish_id} options={parishes} onChange={handleParishChange} disabled={isDisabled || !form.municipality_id} loading={parishesResult.isLoading} />
         </div>
         
         <div className="col-span-12 md:col-span-4">
           <div className={`flex flex-col gap-1.5 ${(!form.parish_id || neighborhoodsResult.isLoading) ? 'opacity-40' : ''}`}>
-            <label className="text-[10px] font-bold text-white/60 uppercase tracking-[0.2em] flex justify-between px-1">
-              <span>Neighborhood / sector</span>
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider flex justify-between px-1">
+              <span>Urbanización / Sector</span>
               {neighborhoodsResult.isLoading && <CpuChipIcon className="w-3 h-3 animate-spin" />}
             </label>
             <div className="relative">
-              <input list="neighborhood-options" value={form.neighborhood_name} disabled={!form.parish_id || isDisabled} onChange={(e) => handleNeighborhoodChange(e.target.value)} placeholder={!form.parish_id ? "-- LOCKED --" : "-- TYPE_OR_SELECT --"} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+              <input list="neighborhood-options" value={form.neighborhood_name} disabled={!form.parish_id || isDisabled} onChange={(e) => handleNeighborhoodChange(e.target.value)} placeholder={!form.parish_id ? "Seleccione una parroquia" : "Escriba o seleccione..."} className={inputClass} />
               <datalist id="neighborhood-options">
                 {neighborhoods.map((n) => <option key={n.id} value={n.name} />)}
               </datalist>
               {form.neighborhood_name && !form.neighborhood_id && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                  <span className="text-[8px] font-bold text-emerald-400 uppercase animate-pulse">New_Entry</span>
+                  <span className="text-[8px] font-medium text-emerald-400 animate-pulse">Nuevo</span>
                 </div>
               )}
             </div>
@@ -382,8 +385,8 @@ export default function DemographicsSection({ patient, onRefresh, readOnly = fal
         </div>
         
         <div className="col-span-12">
-          <label className="block text-[11px] font-bold text-white/60 uppercase mb-1.5">Full_Address_Details</label>
-          <textarea rows={3} value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} disabled={isDisabled} className="w-full bg-white/10 border border-white/30 rounded-sm px-3 py-2.5 text-[13px] font-mono text-white disabled:opacity-40" />
+          <label className={labelClass}>Dirección Completa</label>
+          <textarea rows={3} value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} disabled={isDisabled} className={`${inputClass} resize-none`} />
         </div>
       </form>
     </div>

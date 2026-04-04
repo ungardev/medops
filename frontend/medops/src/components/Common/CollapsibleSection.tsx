@@ -1,8 +1,9 @@
+// src/components/Common/CollapsibleSection.tsx
 import React, { useState, ReactNode } from "react";
 import { ChevronDownIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 interface CollapsibleSectionProps {
   title: string;
-  icon: ReactNode; // Cambiado a ReactNode
+  icon: ReactNode;
   color: string;
   children: ReactNode;
   defaultExpanded?: boolean;
@@ -17,58 +18,44 @@ export default function CollapsibleSection({
   className = "",
 }: CollapsibleSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-  // Determinar el color CSS variable o color directo
-  const getColorStyle = () => {
-    if (color.startsWith("var(")) {
-      return { color: `var(--palantir-active)` };
-    }
-    return { color: color };
+  const colorClasses: Record<string, string> = {
+    "emerald-400": "text-emerald-400 bg-emerald-400/10",
+    "red-400": "text-red-400 bg-red-400/10",
+    "blue-400": "text-blue-400 bg-blue-400/10",
   };
+  const colorClass = colorClasses[color] || "text-white/60 bg-white/5";
   return (
     <section className={`relative ${className}`}>
-      {/* Línea decorativa lateral (solo en expanded) */}
       {isExpanded && (
         <div 
-          className="absolute -left-4 top-0 h-full w-0.5 hidden lg:block" 
-          style={{ backgroundColor: color.startsWith("var(") ? `var(--palantir-active)` : color }}
+          className="absolute -left-4 top-0 h-full w-0.5 hidden lg:block rounded-full opacity-30" 
+          style={{ backgroundColor: color.includes("emerald") ? "#34d399" : color.includes("red") ? "#f87171" : color.includes("blue") ? "#60a5fa" : "#fff" }}
         />
       )}
-      {/* Header colapsable */}
       <div 
         className="flex items-center gap-3 mb-4 cursor-pointer group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {/* Contenedor del ícono */}
-        <div 
-          className={`p-1.5 rounded-sm transition-colors ${
-            color.startsWith("var(") ? `bg-[var(--palantir-active)]/10` : `bg-${color}/10`
-          }`}
-          style={color.startsWith("var(") ? undefined : { backgroundColor: `${color}15` }}
-        >
-          {/* Renderizar ícono directamente sin cloneElement */}
-          <div className={`w-4 h-4 ${color.startsWith("var(") ? 'text-[var(--palantir-active)]' : ''}`} style={getColorStyle()}>
+        <div className={`p-2 rounded-lg transition-colors ${colorClass}`}>
+          <div className="w-5 h-5">
             {icon}
           </div>
         </div>
         
-        <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-          color.startsWith("var(") ? 'text-[var(--palantir-active)]' : `text-[${color}]`
-        }`}>
+        <span className={`text-[12px] font-semibold ${color.includes("emerald") ? "text-emerald-400" : color.includes("red") ? "text-red-400" : color.includes("blue") ? "text-blue-400" : "text-white/70"}`}>
           {title}
         </span>
         
-        <div className="flex-1 h-[1px] bg-gradient-to-r from-[var(--palantir-border)] to-transparent" />
+        <div className="flex-1 h-[1px] bg-gradient-to-r from-white/10 to-transparent" />
         
-        {/* Indicador de expansión */}
-        <div className={`p-1 rounded-sm transition-colors ${isExpanded ? 'bg-white/5' : 'group-hover:bg-white/5'}`}>
+        <div className={`p-1.5 rounded-lg transition-colors ${isExpanded ? 'bg-white/5' : 'group-hover:bg-white/5'}`}>
           {isExpanded ? (
-            <ChevronDownIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
+            <ChevronDownIcon className="w-4 h-4 text-white/40" />
           ) : (
-            <ChevronRightIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
+            <ChevronRightIcon className="w-4 h-4 text-white/40" />
           )}
         </div>
       </div>
-      {/* Contenido colapsable */}
       {isExpanded && (
         <div className="pl-2 lg:pl-4 animate-in fade-in slide-in-from-top-2">
           {children}
