@@ -42,27 +42,26 @@ export default function ReportExport({ filters, data }: Props) {
           credentials: "include",
         }
       );
-      if (!response.ok) throw new Error("EXPORT_PROTOCOL_FAILURE");
+      if (!response.ok) throw new Error("Error al exportar");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download =
         format === ExportFormat.PDF
-          ? `REP_SYS_${Date.now()}.pdf`
-          : `REP_SYS_${Date.now()}.xlsx`;
+          ? `reporte_${Date.now()}.pdf`
+          : `reporte_${Date.now()}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Critical Export Error:", error);
-      alert("ERROR: System_failed_to_package_report");
+      console.error("Error al exportar:", error);
+      alert("Error al generar el reporte");
     } finally {
       setIsExporting(null);
     }
   };
-  // ✅ HANDLER CSV (sin backend, genera directamente en frontend)
   const handleExportCSV = () => {
     if (data.length === 0) {
       alert("No hay datos para exportar");
@@ -86,67 +85,63 @@ export default function ReportExport({ filters, data }: Props) {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `REP_SYS_${Date.now()}.csv`;
+    link.download = `reporte_${Date.now()}.csv`;
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
   };
   const buttonBase = `
-    relative flex items-center justify-center gap-3 px-6 py-2.5 
-    text-[10px] font-black uppercase tracking-[0.2em] transition-all 
-    disabled:opacity-40 disabled:cursor-not-allowed border rounded-sm
+    relative flex items-center justify-center gap-2 px-4 py-2 
+    text-[10px] font-medium transition-all 
+    disabled:opacity-40 disabled:cursor-not-allowed border rounded-lg
   `;
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+    <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
       
-      {/* 🔴 PROTOCOLO PDF */}
       <button
         disabled={!!isExporting || data.length === 0}
         onClick={() => handleExport(ExportFormat.PDF)}
         className={`${buttonBase} w-full sm:w-auto
           bg-red-500/10 border-red-500/20 text-red-400
-          hover:bg-red-500/20 hover:border-red-500/40`}
+          hover:bg-red-500/15 hover:border-red-500/25`}
       >
         {isExporting === ExportFormat.PDF ? (
           <ArrowPathIcon className="w-4 h-4 animate-spin" />
         ) : (
           <DocumentArrowDownIcon className="w-4 h-4" />
         )}
-        {isExporting === ExportFormat.PDF ? "Packaging_PDF..." : "Export_PDF"}
+        {isExporting === ExportFormat.PDF ? "Generando PDF..." : "Exportar PDF"}
       </button>
-      {/* 🟢 PROTOCOLO EXCEL */}
       <button
         disabled={!!isExporting || data.length === 0}
         onClick={() => handleExport(ExportFormat.EXCEL)}
         className={`${buttonBase} w-full sm:w-auto
           bg-emerald-500/10 border-emerald-500/20 text-emerald-400
-          hover:bg-emerald-500/20 hover:border-emerald-500/40`}
+          hover:bg-emerald-500/15 hover:border-emerald-500/25`}
       >
         {isExporting === ExportFormat.EXCEL ? (
           <ArrowPathIcon className="w-4 h-4 animate-spin" />
         ) : (
           <TableCellsIcon className="w-4 h-4" />
         )}
-        {isExporting === ExportFormat.EXCEL ? "Compiling_XLSX..." : "Export_Excel"}
+        {isExporting === ExportFormat.EXCEL ? "Generando Excel..." : "Exportar Excel"}
       </button>
-      {/* 🟡 PROTOCOLO CSV */}
       <button
         disabled={data.length === 0}
         onClick={handleExportCSV}
         className={`${buttonBase} w-full sm:w-auto
           bg-blue-500/10 border-blue-500/20 text-blue-400
-          hover:bg-blue-500/20 hover:border-blue-500/40`}
+          hover:bg-blue-500/15 hover:border-blue-500/25`}
       >
         <DocumentTextIcon className="w-4 h-4" />
-        Export_CSV
+        Exportar CSV
       </button>
-      {/* 🧩 DATA COUNTER SUTIL */}
-      <div className="hidden lg:block ml-4 pl-4 border-l border-white/10">
-        <span className="text-[8px] font-mono text-[var(--palantir-muted)] uppercase tracking-widest block">
-          Buffer_Status
+      <div className="hidden lg:block ml-2 pl-3 border-l border-white/10">
+        <span className="text-[8px] text-white/30 block">
+          Registros
         </span>
-        <span className="text-[10px] font-mono text-white/60">
-          {data.length.toString().padStart(3, '0')} ROWS_READ
+        <span className="text-[10px] text-white/50">
+          {data.length}
         </span>
       </div>
     </div>
