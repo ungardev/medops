@@ -18,7 +18,6 @@ interface PatientSidebarProps {
   mobileOpen: boolean;
   setMobileOpen: (value: boolean) => void;
 }
-// Orden igual al Doctor Portal (sin "Buscar")
 const navItems = [
   { path: "/patient", label: "Dashboard", icon: LayoutDashboard },
   { path: "/patient/queue", label: "Sala de Espera", icon: Clock },
@@ -37,13 +36,8 @@ export default function PatientSidebar({
   const location = useLocation();
   const effectiveCollapsed = mobileOpen ? false : collapsed;
   
-  const itemBase = "group relative flex items-center px-4 py-3 transition-all duration-300 ease-out mb-1.5 overflow-hidden";
-  const itemActive = "bg-white/[0.08] text-white shadow-[inset_0_0_12px_rgba(255,255,255,0.02)]";
-  const itemIdle = "text-white hover:text-white hover:bg-white/[0.04]";
-  
   return (
     <div className="flex flex-col h-full pt-4 pb-6 px-3">
-      {/* LOGO AREA */}
       <div className="flex flex-col mb-6">
         <div className={`flex relative ${
           mobileOpen 
@@ -54,7 +48,7 @@ export default function PatientSidebar({
           {mobileOpen && (
             <button
               onClick={() => setMobileOpen(false)}
-              className="absolute -top-3 -right-1 p-2 text-white/20 hover:text-white transition-colors"
+              className="absolute -top-3 -right-1 p-2 text-white/20 hover:text-white/60 transition-colors"
             >
               <X size={24} />
             </button>
@@ -62,17 +56,17 @@ export default function PatientSidebar({
           
           <Link 
             to="/patient" 
-            className={`flex items-center transition-all duration-500 hover:opacity-100 ${
+            className={`flex items-center transition-all duration-300 hover:opacity-100 ${
               mobileOpen ? "flex-col gap-1" : "gap-3"
-            } ${location.pathname === "/patient" ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+            } ${location.pathname === "/patient" ? "opacity-100" : "opacity-60 hover:opacity-90"}`}
           >
             <img
               src="/medopz_logo_blanco_solo.svg"
               alt="Logo"
-              className={`transition-all duration-500 drop-shadow-[0_0_25px_rgba(255,255,255,0.18)] ${
+              className={`transition-all duration-300 ${
                 mobileOpen 
-                ? "h-28 w-28" 
-                : effectiveCollapsed ? "h-10 w-10" : "h-9 w-9"
+                ? "h-24 w-24" 
+                : effectiveCollapsed ? "h-9 w-9" : "h-8 w-8"
               }`}
             />
             
@@ -80,10 +74,10 @@ export default function PatientSidebar({
               <img
                 src="/medopz_fuente_blanco.svg"
                 alt="Medopz"
-                className={`object-contain transition-all duration-500 ${
+                className={`object-contain transition-all duration-300 ${
                   mobileOpen 
-                  ? "h-[22px] w-auto -mt-2 -ml-1 opacity-95"
-                  : "h-4 w-auto"
+                  ? "h-[18px] w-auto -mt-1 -ml-1 opacity-80"
+                  : "h-3.5 w-auto"
                 }`}
               />
             )}
@@ -92,7 +86,7 @@ export default function PatientSidebar({
           {!effectiveCollapsed && !mobileOpen && (
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="p-1.5 text-white/20 hover:text-white transition-all hidden lg:block rounded-md border border-transparent hover:border-white/10 hover:bg-white/5"
+              className="p-1.5 text-white/20 hover:text-white/60 transition-all hidden lg:block rounded-lg hover:bg-white/5"
             >
               <ChevronLeft size={16} />
             </button>
@@ -102,26 +96,24 @@ export default function PatientSidebar({
         {effectiveCollapsed && (
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="mx-auto mt-2 p-2 text-white/20 hover:text-white transition-all hidden lg:block rounded-md border border-white/5 bg-white/5 hover:bg-white/10"
+            className="mx-auto mt-2 p-2 text-white/20 hover:text-white/60 transition-all hidden lg:block rounded-lg hover:bg-white/5"
           >
             <ChevronRight size={16} />
           </button>
         )}
       </div>
       
-      {/* MENU LABEL */}
       {!effectiveCollapsed && (
         <div className="flex items-center gap-2 mb-4 px-4">
-          <div className="h-[1px] w-4 bg-white/20"></div>
-          <div className="text-[9px] font-black text-white/40 uppercase tracking-[0.4em]">
-            Menu
+          <div className="h-[1px] w-4 bg-white/10"></div>
+          <div className="text-[9px] font-medium text-white/30 uppercase tracking-wider">
+            Menú
           </div>
         </div>
       )}
       
-      {/* NAVIGATION */}
       <nav className="flex-1">
-        <ul className="flex flex-col space-y-1">
+        <ul className="flex flex-col space-y-0.5">
           {navItems.map(({ path, label, icon: Icon }) => {
             const isActive = location.pathname === path;
             return (
@@ -129,20 +121,29 @@ export default function PatientSidebar({
                 <Link
                   to={path}
                   onClick={() => mobileOpen && setMobileOpen(false)}
-                  className={`${itemBase} rounded-sm ${effectiveCollapsed ? "justify-center" : ""} ${isActive ? itemActive : itemIdle}`}
+                  className={`group relative flex items-center px-3 py-2.5 transition-all duration-200 mb-0.5 overflow-hidden rounded-lg ${
+                    effectiveCollapsed ? "justify-center" : ""
+                  } ${
+                    isActive 
+                      ? "bg-white/10 text-white/90" 
+                      : "text-white/50 hover:text-white/70 hover:bg-white/5"
+                  }`}
                 >
                   <Icon 
-                    size={19} 
-                    className={`shrink-0 transition-all duration-300 ${isActive ? "text-white" : "group-hover:text-white"}`} 
-                    strokeWidth={isActive ? 2.5 : 1.5} 
+                    size={18} 
+                    className={`shrink-0 transition-all duration-200 ${
+                      isActive ? "text-emerald-400" : "group-hover:text-white/70"
+                    }`} 
+                    strokeWidth={isActive ? 2 : 1.5} 
                   />
                   
                   {!effectiveCollapsed && (
-                    <span className={`ml-4 text-[13px] tracking-wide font-bold uppercase ${isActive ? "text-white" : "text-white group-hover:text-white"}`}>
+                    <span className={`ml-3 text-[12px] tracking-wide font-medium ${
+                      isActive ? "text-white/90" : "text-white/50 group-hover:text-white/70"
+                    }`}>
                       {label}
                     </span>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/[0.03] to-transparent translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-500" />
                 </Link>
               </li>
             );
@@ -150,16 +151,15 @@ export default function PatientSidebar({
         </ul>
       </nav>
       
-      {/* FOOTER */}
-      <div className="mt-auto pt-6 border-t border-white/5">
+      <div className="mt-auto pt-6 border-t border-white/10">
         {!effectiveCollapsed ? (
           <div className="flex items-center gap-2 px-4">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
-            <span className="text-[8px] font-mono text-white/40 uppercase tracking-[0.25em]">Patient</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50"></div>
+            <span className="text-[8px] text-white/30 uppercase tracking-wider">Paciente</span>
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]"></div>
+            <div className="w-2 h-2 rounded-full bg-emerald-400/50"></div>
           </div>
         )}
       </div>
