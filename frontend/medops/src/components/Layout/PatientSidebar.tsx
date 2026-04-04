@@ -125,21 +125,21 @@ export default function PatientSidebar({
                     effectiveCollapsed ? "justify-center" : ""
                   } ${
                     isActive 
-                      ? "bg-white/10 text-white/90" 
+                      ? "bg-white/10 text-white" 
                       : "text-white/50 hover:text-white/70 hover:bg-white/5"
                   }`}
                 >
                   <Icon 
                     size={18} 
                     className={`shrink-0 transition-all duration-200 ${
-                      isActive ? "text-emerald-400" : "group-hover:text-white/70"
+                      isActive ? "text-white" : "group-hover:text-white/70"
                     }`} 
                     strokeWidth={isActive ? 2 : 1.5} 
                   />
                   
                   {!effectiveCollapsed && (
                     <span className={`ml-3 text-[12px] tracking-wide font-medium ${
-                      isActive ? "text-white/90" : "text-white/50 group-hover:text-white/70"
+                      isActive ? "text-white" : "text-white/50 group-hover:text-white/70"
                     }`}>
                       {label}
                     </span>
@@ -154,12 +154,12 @@ export default function PatientSidebar({
       <div className="mt-auto pt-6 border-t border-white/10">
         {!effectiveCollapsed ? (
           <div className="flex items-center gap-2 px-4">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400/50"></div>
+            <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
             <span className="text-[8px] text-white/30 uppercase tracking-wider">Paciente</span>
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="w-2 h-2 rounded-full bg-emerald-400/50"></div>
+            <div className="w-2 h-2 rounded-full bg-white/40"></div>
           </div>
         )}
       </div>

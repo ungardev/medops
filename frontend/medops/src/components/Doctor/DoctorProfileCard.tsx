@@ -14,74 +14,69 @@ export const DoctorProfileCard: React.FC<DoctorProfileCardProps> = ({
 }) => {
   const isPreview = mode === 'preview';
   return (
-    <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6 w-full max-w-md">
-      {/* Header con Foto y Nombre */}
+    <div className="bg-white/5 border border-white/15 rounded-lg p-6 w-full max-w-md">
       <div className="flex items-start gap-4 mb-6">
-        <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0">
           {doctor.photo_url ? (
             <img src={doctor.photo_url} alt={doctor.full_name} className="w-full h-full object-cover" />
           ) : (
-            <UserIcon className="w-10 h-10 text-white/50" />
+            <UserIcon className="w-10 h-10 text-white/30" />
           )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-white font-bold text-lg truncate">{doctor.full_name}</h3>
+            <h3 className="text-white/80 font-medium text-lg truncate">{doctor.full_name}</h3>
             {doctor.is_verified && (
-              <CheckCircleIcon className="w-5 h-5 text-emerald-400 flex-shrink-0" title="Médico Verificado" />
+              <CheckCircleIcon className="w-5 h-5 text-emerald-400/70 flex-shrink-0" title="Médico Verificado" />
             )}
           </div>
-          <p className="text-white/60 text-sm mb-2">
+          <p className="text-white/40 text-sm mb-2">
             {doctor.specialties?.map(s => s.name).join(', ')}
           </p>
-          <div className="flex items-center gap-2 text-white/40 text-xs">
+          <div className="flex items-center gap-2 text-white/30 text-xs">
             <BuildingOfficeIcon className="w-3 h-3" />
             <span>{doctor.institutions?.[0]?.name || 'Institución no especificada'}</span>
           </div>
         </div>
       </div>
-      {/* Biografía */}
       {doctor.bio && (
         <div className="mb-6">
-          <h4 className="text-white/80 text-xs font-mono uppercase tracking-wider mb-2">Biografía</h4>
-          <p className="text-white/70 text-sm leading-relaxed">{doctor.bio}</p>
+          <h4 className="text-white/40 text-xs font-medium mb-2">Biografía</h4>
+          <p className="text-white/50 text-sm leading-relaxed">{doctor.bio}</p>
         </div>
       )}
-      {/* Datos de Contacto (Solo en modo vista) */}
       {!isPreview && (
         <div className="mb-6 pt-4 border-t border-white/10">
-          <h4 className="text-white/80 text-xs font-mono uppercase tracking-wider mb-3">Datos de Contacto</h4>
+          <h4 className="text-white/40 text-xs font-medium mb-3">Datos de Contacto</h4>
           <div className="space-y-2 text-sm">
             {doctor.email && (
-              <div className="flex items-center gap-2 text-white/60">
-                <span className="text-white/40">Email:</span>
+              <div className="flex items-center gap-2 text-white/50">
+                <span className="text-white/30">Email:</span>
                 <span>{doctor.email}</span>
               </div>
             )}
             {doctor.phone && (
-              <div className="flex items-center gap-2 text-white/60">
-                <span className="text-white/40">Teléfono:</span>
+              <div className="flex items-center gap-2 text-white/50">
+                <span className="text-white/30">Teléfono:</span>
                 <span>{doctor.phone}</span>
               </div>
             )}
           </div>
         </div>
       )}
-      {/* Acciones */}
       {!isPreview && onPurchase && (
         <div className="mt-6">
           <button
-            onClick={() => onPurchase(0)} // Placeholder, se manejará en la página
-            className="w-full py-3 bg-white text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/90 transition-colors"
+            onClick={() => onPurchase(0)}
+            className="w-full py-2.5 bg-white/5 text-white/60 text-[10px] font-medium rounded-lg hover:bg-white/10 transition-colors"
           >
             Ver Servicios y Comprar
           </button>
         </div>
       )}
-      {/* Indicador de Previsualización */}
       {isPreview && (
         <div className="mt-4 text-center">
-          <span className="text-white/30 text-xs font-mono">
+          <span className="text-white/20 text-xs">
             MODO PREVISUALIZACIÓN
           </span>
         </div>
