@@ -7088,7 +7088,7 @@ class OperationalHubView(APIView):
             logger.info(f"[OperationalHubView] Timeline items: {len(timeline)}")
             
             # 4. Obtener datos para WaitingRoom (día actual)
-            today = timezone.now().date()
+            today = timezone.localtime(timezone.now()).date()
             live_queue = self._get_live_queue(institution_id)
             pending_entries = self._get_pending_entries(institution_id, today)
             
