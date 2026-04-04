@@ -16,7 +16,6 @@ import {
   DocumentTextIcon,
   CircleStackIcon
 } from "@heroicons/react/24/outline";
-// Mapeo de frecuencias a nombres legibles
 const FREQUENCY_LABELS: Record<string, string> = {
   "once_daily": "1 vez al día",
   "bid": "2 veces al día",
@@ -35,7 +34,6 @@ const FREQUENCY_LABELS: Record<string, string> = {
   "pc": "Después de comidas",
   "achs": "Antes de comidas y al acostarse",
 };
-// Mapeo de vías a nombres legibles
 const ROUTE_LABELS: Record<string, string> = {
   "oral": "Oral",
   "iv": "Intravenosa (IV)",
@@ -133,21 +131,19 @@ export default function PrescriptionBadge({
   };
   
   return (
-    <div className="group border border-[var(--palantir-border)] bg-white/5 rounded-sm overflow-hidden transition-all hover:border-[var(--palantir-active)]/40">
-      {/* HEADER: Medication Name & Source Badge */}
-      <div className="flex items-center justify-between bg-white/5 px-3 py-2 border-b border-[var(--palantir-border)]">
+    <div className="group border border-white/15 bg-white/5 rounded-lg overflow-hidden transition-all hover:border-white/25">
+      <div className="flex items-center justify-between bg-white/5 px-4 py-3 border-b border-white/15">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <BeakerIcon className="w-3.5 h-3.5 text-[var(--palantir-active)] flex-shrink-0" />
-          <span className="text-[10px] font-black uppercase tracking-wider text-[var(--palantir-text)] truncate">
-            {isEditing ? "Editing_Entry" : medication}
+          <BeakerIcon className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <span className="text-[12px] font-medium text-white truncate">
+            {isEditing ? "Editando..." : medication}
           </span>
-          {/* Badge de fuente del medicamento */}
           {isFromCatalog ? (
-            <span className="flex-shrink-0 text-[7px] font-black bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] px-1.5 py-0.5 rounded border border-[var(--palantir-active)]/30">
-              INHRR
+            <span className="flex-shrink-0 text-[9px] font-bold bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/25">
+              CATÁLOGO
             </span>
           ) : (
-            <span className="flex-shrink-0 text-[7px] font-black bg-orange-500/10 text-orange-400 px-1.5 py-0.5 rounded border border-orange-500/20">
+            <span className="flex-shrink-0 text-[9px] font-bold bg-orange-500/15 text-orange-400 px-2 py-0.5 rounded border border-orange-500/25">
               MANUAL
             </span>
           )}
@@ -155,20 +151,19 @@ export default function PrescriptionBadge({
         
         {!isEditing && (
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={() => setIsEditing(true)} className="p-1 text-[var(--palantir-muted)] hover:text-[var(--palantir-active)]">
-              <PencilSquareIcon className="w-3.5 h-3.5" />
+            <button onClick={() => setIsEditing(true)} className="p-2 text-white/50 hover:text-emerald-400 rounded-lg hover:bg-white/5 transition-colors">
+              <PencilSquareIcon className="w-4 h-4" />
             </button>
-            <button onClick={() => onDelete?.(id)} className="p-1 text-[var(--palantir-muted)] hover:text-red-400">
-              <TrashIcon className="w-3.5 h-3.5" />
+            <button onClick={() => onDelete?.(id)} className="p-2 text-white/50 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors">
+              <TrashIcon className="w-4 h-4" />
             </button>
           </div>
         )}
       </div>
-      {/* Metadata del medicamento del catálogo */}
       {!isEditing && medicationCatalog && (
-        <div className="px-3 py-1.5 bg-black/20 border-b border-white/5">
-          <div className="flex items-center gap-2 text-[9px] font-mono text-[var(--palantir-muted)]">
-            <CircleStackIcon className="w-3 h-3 text-[var(--palantir-active)]" />
+        <div className="px-4 py-2 bg-black/20 border-b border-white/10">
+          <div className="flex items-center gap-2 text-[10px] text-white/60">
+            <CircleStackIcon className="w-4 h-4 text-emerald-400" />
             <span>
               {medicationCatalog.presentation && `${medicationCatalog.presentation}`}
               {medicationCatalog.concentration && ` • ${medicationCatalog.concentration}`}
@@ -177,52 +172,49 @@ export default function PrescriptionBadge({
           </div>
         </div>
       )}
-      {/* SECCIÓN DE METADATA - Doctor e Institución */}
       {!isEditing && (doctor || institution || issuedAt) && (
-        <div className="flex flex-wrap items-center gap-3 text-[9px] font-mono text-[var(--palantir-muted)] px-3 py-2 border-b border-white/5">
+        <div className="flex flex-wrap items-center gap-3 text-[10px] text-white/60 px-4 py-2 border-b border-white/10">
           {doctor && (
             <div className="flex items-center gap-1">
-              <UserGroupIcon className="w-3.5 h-3.5" />
+              <UserGroupIcon className="w-4 h-4" />
               <span>{doctor.full_name}</span>
               {doctor.is_verified && (
-                <ShieldCheckIcon className="w-3.5 h-3.5 inline ml-1 text-emerald-500" />
+                <ShieldCheckIcon className="w-4 h-4 inline ml-1 text-emerald-500" />
               )}
             </div>
           )}
           {institution && (
             <div className="flex items-center gap-1">
-              <BuildingOfficeIcon className="w-3.5 h-3.5" />
+              <BuildingOfficeIcon className="w-4 h-4" />
               <span>{institution.name}</span>
             </div>
           )}
           {issuedAt && (
             <div className="flex items-center gap-1 ml-auto">
-              <CalendarIcon className="w-3.5 h-3.5" />
+              <CalendarIcon className="w-4 h-4" />
               <span>{formatDate(issuedAt)}</span>
             </div>
           )}
         </div>
       )}
-      <div className="p-3">
+      <div className="p-4">
         {isEditing ? (
           <div className="space-y-4 animate-in fade-in duration-200">
-            {/* Input Nombre */}
             <input
               type="text"
               value={editedMedication}
               onChange={(e) => setEditedMedication(e.target.value)}
-              className="w-full bg-black/40 border border-[var(--palantir-border)] px-2 py-1.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)]"
+              className="w-full bg-white/5 border border-white/15 px-3 py-2 text-[11px] outline-none focus:border-emerald-500/50 rounded-lg"
             />
-            {/* Editor de Componentes */}
             <div className="space-y-2">
-              <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)]">Composition</label>
+              <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">Composición</label>
               {editedComponents.length === 0 ? (
-                <div className="text-[9px] font-mono text-[var(--palantir-muted)] italic">
-                  No components defined
+                <div className="text-[10px] text-white/50 italic">
+                  Sin componentes definidos
                 </div>
               ) : (
                 editedComponents.map((comp, index) => (
-                  <div key={index} className="flex gap-1">
+                  <div key={index} className="flex gap-2">
                     <input
                       type="text"
                       value={comp.substance}
@@ -231,8 +223,8 @@ export default function PrescriptionBadge({
                         newComps[index].substance = e.target.value;
                         setEditedComponents(newComps);
                       }}
-                      className="flex-1 bg-black/20 border border-white/5 px-2 py-1 text-[10px] font-mono outline-none"
-                      placeholder="Substance"
+                      className="flex-1 bg-white/5 border border-white/10 px-3 py-1.5 text-[10px] outline-none rounded-lg"
+                      placeholder="Sustancia"
                     />
                     <input
                       type="text"
@@ -242,14 +234,14 @@ export default function PrescriptionBadge({
                         newComps[index].dosage = e.target.value;
                         setEditedComponents(newComps);
                       }}
-                      className="w-12 bg-black/20 border border-white/5 px-2 text-center text-[10px] font-mono outline-none"
-                      placeholder="Dose"
+                      className="w-16 bg-white/5 border border-white/10 px-3 py-1.5 text-center text-[10px] outline-none rounded-lg"
+                      placeholder="Dosis"
                     />
                     <button 
                       onClick={() => setEditedComponents(editedComponents.filter((_, i) => i !== index))}
-                      className="text-red-400/50 hover:text-red-400 px-1"
+                      className="text-red-400/60 hover:text-red-400 px-2"
                     >
-                      <XMarkIcon className="w-3 h-3" />
+                      <XMarkIcon className="w-4 h-4" />
                     </button>
                   </div>
                 ))
@@ -257,82 +249,77 @@ export default function PrescriptionBadge({
               <button
                 type="button"
                 onClick={() => setEditedComponents([...editedComponents, { substance: "", dosage: "", unit: "mg" }])}
-                className="text-[8px] font-black uppercase text-[var(--palantir-active)]"
+                className="text-[10px] font-medium text-emerald-400 hover:opacity-80 uppercase"
               >
-                + Add_Substance
+                + Agregar sustancia
               </button>
             </div>
-            {/* Footer de Edición */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-white/5">
-              <button onClick={() => setIsEditing(false)} className="text-[9px] font-black uppercase text-[var(--palantir-muted)] hover:text-white transition-colors">
-                Cancel
+            <div className="flex justify-end gap-2 pt-3 border-t border-white/10">
+              <button onClick={() => setIsEditing(false)} className="text-[10px] font-medium text-white/60 hover:text-white transition-colors px-3 py-1.5">
+                Cancelar
               </button>
-              <button onClick={handleSave} className="bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] border border-[var(--palantir-active)]/30 px-2 py-1 text-[9px] font-black uppercase hover:bg-[var(--palantir-active)] hover:text-white transition-all">
-                Commit_Changes
+              <button onClick={handleSave} className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 px-4 py-1.5 text-[10px] font-bold uppercase hover:bg-emerald-500/25 transition-all rounded-lg">
+                Guardar Cambios
               </button>
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            {/* Componentes */}
+          <div className="space-y-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className={`${components.length > 0 ? 'col-span-2' : 'col-span-4'}`}>
                 {components.length > 0 ? (
                   <>
-                    <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)] tracking-widest block mb-1">Components</span>
-                    <div className="space-y-0.5">
+                    <span className="text-[10px] font-medium text-white/60 uppercase tracking-wider block mb-2">Componentes</span>
+                    <div className="space-y-1">
                       {components.map((c, i) => (
-                        <div key={i} className="flex items-center gap-2 text-[10px] font-mono">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--palantir-active)]/40" />
-                          <span className="text-[var(--palantir-text)] opacity-90">{c.substance}</span>
-                          <span className="text-[var(--palantir-active)] font-bold">{c.dosage}{c.unit}</span>
+                        <div key={i} className="flex items-center gap-2 text-[11px]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/50" />
+                          <span className="text-white/80">{c.substance}</span>
+                          <span className="text-emerald-400 font-medium">{c.dosage}{c.unit}</span>
                         </div>
                       ))}
                     </div>
                   </>
                 ) : (
-                  <span className="text-[9px] font-mono text-[var(--palantir-muted)] italic">
-                    No composition details
+                  <span className="text-[10px] text-white/50 italic">
+                    Sin detalles de composición
                   </span>
                 )}
               </div>
               
-              {/* Info Técnica Grid */}
               <div className="space-y-1">
-                <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)] flex items-center gap-1">
-                  <ClockIcon className="w-2.5 h-2.5" /> Frequency
+                <span className="text-[10px] font-medium text-white/60 flex items-center gap-1">
+                  <ClockIcon className="w-3.5 h-3.5" /> Frecuencia
                 </span>
-                <span className="text-[10px] font-mono text-[var(--palantir-text)]">
+                <span className="text-[11px] text-white/80">
                   {FREQUENCY_LABELS[frequency] || frequency}
                 </span>
               </div>
               <div className="space-y-1">
-                <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)] flex items-center gap-1">
-                  <ArrowsRightLeftIcon className="w-2.5 h-2.5" /> Route
+                <span className="text-[10px] font-medium text-white/60 flex items-center gap-1">
+                  <ArrowsRightLeftIcon className="w-3.5 h-3.5" /> Vía
                 </span>
-                <span className="text-[10px] font-mono text-[var(--palantir-text)]">
+                <span className="text-[11px] text-white/80">
                   {ROUTE_LABELS[route] || route}
                 </span>
               </div>
             </div>
-            {/* Indicaciones adicionales */}
             {indications && (
-              <div className="pt-2 border-t border-white/5">
+              <div className="pt-3 border-t border-white/10">
                 <div className="flex items-start gap-2">
-                  <DocumentTextIcon className="w-3.5 h-3.5 text-[var(--palantir-muted)] mt-0.5 flex-shrink-0" />
+                  <DocumentTextIcon className="w-4 h-4 text-white/50 mt-0.5 flex-shrink-0" />
                   <div>
-                    <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)] block mb-0.5">Indications</span>
-                    <span className="text-[10px] font-mono text-[var(--palantir-text)]">{indications}</span>
+                    <span className="text-[10px] font-medium text-white/60 block mb-1">Indicaciones</span>
+                    <span className="text-[11px] text-white/80">{indications}</span>
                   </div>
                 </div>
               </div>
             )}
-            {/* Duración */}
             {duration && (
-              <div className="pt-2 border-t border-white/5 flex items-center gap-2">
-                <CalendarIcon className="w-3 h-3 text-[var(--palantir-muted)]" />
-                <span className="text-[9px] font-mono text-[var(--palantir-muted)] uppercase tracking-tighter">
-                  Duration: <span className="text-[var(--palantir-text)] font-bold">{duration}</span>
+              <div className="pt-3 border-t border-white/10 flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-white/50" />
+                <span className="text-[10px] text-white/60 uppercase tracking-wider">
+                  Duración: <span className="text-white font-medium">{duration}</span>
                 </span>
               </div>
             )}

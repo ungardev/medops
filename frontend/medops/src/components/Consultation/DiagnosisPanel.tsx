@@ -87,22 +87,21 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
   };
   return (
     <div className="space-y-6">
-      {/* 01. ACTIVE DIAGNOSES LIST */}
       <div className="space-y-3">
-        <div className="flex items-center gap-2 mb-4">
-          <BeakerIcon className="w-5 h-5 text-[var(--palantir-active)]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-            Clinical_Active_Diagnoses
+        <div className="flex items-center gap-3 mb-4">
+          <BeakerIcon className="w-5 h-5 text-red-400" />
+          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+            Diagnósticos Activos
           </span>
-          <span className="ml-auto text-[9px] font-mono text-[var(--palantir-muted)]">
-            {diagnoses.length} REGISTRADO{S(diagnoses.length)}
+          <span className="ml-auto text-[10px] text-white/50">
+            {diagnoses.length} registrado{diagnoses.length !== 1 ? 's' : ''}
           </span>
         </div>
         
-        <div className="grid gap-2">
+        <div className="grid gap-3">
           {diagnoses.length === 0 ? (
-            <div className="p-8 border border-dashed border-[var(--palantir-border)] text-center opacity-40">
-              <span className="text-[10px] font-mono uppercase">No_Data_Recorded</span>
+            <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-lg">
+              <span className="text-[11px] text-white/60">No hay diagnósticos registrados</span>
             </div>
           ) : (
             diagnoses.map((d) => (
@@ -123,16 +122,15 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
           )}
         </div>
       </div>
-      {/* 02. ICD-11 SEARCH INTERFACE */}
       {!readOnly && (
-        <div className="pt-6 border-t border-[var(--palantir-border)] space-y-4">
+        <div className="pt-6 border-t border-white/15 space-y-4">
           <div className="relative group">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-              <MagnifyingGlassIcon className={`w-4 h-4 transition-colors ${isLoading ? 'animate-pulse text-[var(--palantir-active)]' : 'text-[var(--palantir-muted)]'}`} />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
+              <MagnifyingGlassIcon className={`w-5 h-5 transition-colors ${isLoading ? 'animate-pulse text-emerald-400' : 'text-white/50'}`} />
             </div>
             <input
               type="text"
-              placeholder="BUSCAR EN ICD-11..."
+              placeholder="Buscar en CIE-11..."
               value={query}
               onChange={(e) => { 
                 setQuery(e.target.value); 
@@ -146,13 +144,12 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                 else if (e.key === "Enter" && highlightIndex >= 0) { e.preventDefault(); handleSelect(results[highlightIndex]); }
               }}
               onFocus={() => query.length > 0 && setShowResults(true)}
-              className="w-full bg-black/40 border border-[var(--palantir-border)] pl-10 pr-4 py-3 text-[11px] font-mono uppercase tracking-wider focus:border-[var(--palantir-active)] outline-none transition-all"
+              className="w-full bg-white/5 border border-white/15 pl-12 pr-4 py-3 text-[12px] focus:border-emerald-500/50 outline-none transition-all rounded-lg placeholder:text-white/30"
             />
           </div>
-          {/* SEARCH RESULTS DROPDOWN */}
           {showResults && results.length > 0 && (
             <div 
-              className="border border-[var(--palantir-border)] bg-[#0a0a0a] shadow-2xl max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--palantir-border)]"
+              className="border border-white/15 bg-[#0a0a0b] shadow-2xl max-h-64 overflow-y-auto rounded-lg"
               onMouseDown={(e) => e.preventDefault()}
             >
               {results.map((r, idx) => (
@@ -160,45 +157,41 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                   key={r.icd_code}
                   ref={(el) => { itemRefs.current[idx] = el; }}
                   className={`cursor-pointer p-3 border-b border-white/5 flex items-start gap-3 transition-colors ${
-                    idx === highlightIndex ? "bg-[var(--palantir-active)]/20 border-l-4 border-l-[var(--palantir-active)]" : "hover:bg-white/5"
+                    idx === highlightIndex ? "bg-emerald-500/15 border-l-4 border-l-emerald-500" : "hover:bg-white/5"
                   }`}
                   onMouseEnter={() => setHighlightIndex(idx)}
                   onClick={() => handleSelect(r)}
                 >
-                  <span className="text-[10px] font-black font-mono text-[var(--palantir-active)] shrink-0">{r.icd_code}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-tight text-[var(--palantir-text)] leading-tight">{r.title}</span>
+                  <span className="text-[11px] font-bold text-emerald-400 shrink-0">{r.icd_code}</span>
+                  <span className="text-[11px] text-white/80 leading-tight">{r.title}</span>
                 </div>
               ))}
             </div>
           )}
-          {/* SELECTION WORK AREA */}
           {!showResults && selectedDiagnosis && (
-            <div className="bg-[var(--palantir-active)]/5 border border-[var(--palantir-active)]/30 p-4 space-y-4 animate-in fade-in zoom-in-95 duration-200">
-              {/* Header con código ICD */}
-              <div className="flex items-center justify-between pb-3 border-b border-[var(--palantir-active)]/20">
+            <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 rounded-lg">
+              <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
                 <div className="flex items-center gap-2">
-                  <HashtagIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-                  <span className="text-[11px] font-black uppercase tracking-widest text-[var(--palantir-active)]">
+                  <HashtagIcon className="w-5 h-5 text-emerald-400" />
+                  <span className="text-[12px] font-bold uppercase tracking-wider text-emerald-400">
                     {selectedDiagnosis.icd_code}
                   </span>
                 </div>
-                <span className="text-[9px] font-mono text-[var(--palantir-muted)]">
+                <span className="text-[10px] text-white/60">
                   {selectedDiagnosis.title}
                 </span>
               </div>
               
-              {/* Grid de configuración clínica */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* TIPO DE DIAGNÓSTICO */}
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] tracking-wider flex items-center gap-1">
-                    <ClipboardDocumentListIcon className="w-3 h-3" />
-                    Type_Classification
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
+                    <ClipboardDocumentListIcon className="w-4 h-4" />
+                    Tipo de Diagnóstico
                   </label>
                   <select
                     value={type}
                     onChange={(e) => setType(e.target.value as DiagnosisType)}
-                    className="w-full bg-black/60 border border-[var(--palantir-border)] p-2 text-[10px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
                   >
                     {TYPE_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -207,16 +200,15 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                     ))}
                   </select>
                 </div>
-                {/* ESTADO DEL DIAGNÓSTICO */}
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] tracking-wider flex items-center gap-1">
-                    <CheckCircleIcon className="w-3 h-3" />
-                    Decree_Status
+                <div className="space-y-2">
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
+                    <CheckCircleIcon className="w-4 h-4" />
+                    Estado
                   </label>
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value as DiagnosisStatus)}
-                    className="w-full bg-black/60 border border-[var(--palantir-border)] p-2 text-[10px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                    className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
                   >
                     {STATUS_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -226,25 +218,23 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
                   </select>
                 </div>
               </div>
-              {/* DESCRIPCIÓN / NOTAS */}
               <div className="relative">
-                <ChatBubbleBottomCenterTextIcon className="absolute left-3 top-3 w-4 h-4 text-[var(--palantir-muted)]" />
+                <ChatBubbleBottomCenterTextIcon className="absolute left-4 top-3 w-5 h-5 text-white/40" />
                 <textarea
-                  placeholder="AGREGAR ESPECIFICACIONES CLÍNICAS, JUSTIFICACIÓN O NOTAS..."
+                  placeholder="Especificaciones clínicas, justificación o notas..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full bg-black/60 border border-[var(--palantir-border)] pl-10 p-3 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none min-h-[80px]"
+                  className="w-full bg-white/5 border border-white/15 pl-12 p-3 text-[12px] focus:border-emerald-500/50 outline-none min-h-[80px] rounded-lg placeholder:text-white/30"
                 />
               </div>
-              {/* BOTÓN CON FONDO OSCURO Y TEXTO VISIBLE */}
               <button
                 onClick={handleSave}
                 disabled={isCreating}
-                className="w-full bg-gray-900 hover:bg-gray-800 border border-[var(--palantir-active)] text-[var(--palantir-active)] py-3 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
               >
                 <PlusCircleIcon className="w-5 h-5" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-                  {isCreating ? "REGISTRANDO..." : "CONFIRMAR_DIAGNÓSTICO"}
+                <span className="text-[11px] font-bold uppercase tracking-wider">
+                  {isCreating ? "Registrando..." : "Confirmar Diagnóstico"}
                 </span>
               </button>
             </div>
@@ -254,7 +244,4 @@ const DiagnosisPanel: React.FC<DiagnosisPanelProps> = ({ diagnoses = [], readOnl
     </div>
   );
 };
-function S(n: number): string {
-  return n === 1 ? "" : "S";
-}
 export default DiagnosisPanel;

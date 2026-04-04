@@ -73,7 +73,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   readOnly,
   onAdd,
 }) => {
-  // Estados del formulario
   const [diagnosisId, setDiagnosisId] = useState<number | "">("");
   const [medicationCatalogId, setMedicationCatalogId] = useState<number | undefined>(undefined);
   const [medicationText, setMedicationText] = useState<string | undefined>(undefined);
@@ -84,14 +83,12 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
   const [indications, setIndications] = useState("");
   const [components, setComponents] = useState<PrescriptionComponent[]>([]);
   
-  // UI States
   const [isAdvancedMode, setIsAdvancedMode] = useState(false);
   const [isAutofilled, setIsAutofilled] = useState(false);
   
   const { mutate: updatePrescription } = useUpdatePrescription();
   const { mutate: deletePrescription } = useDeletePrescription();
   const { addRecent } = useRecentMedications();
-  // Mapa de rutas del backend a frontend
   const routeMapping: Record<string, string> = {
     'oral': 'oral',
     'intravenous': 'iv',
@@ -105,7 +102,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     'otic': 'topical',
     'nasal': 'topical',
   };
-  // Auto-fill cuando se selecciona del catálogo
   const handleMedicationChange = useCallback((data: { 
     catalogId?: number; 
     text?: string;
@@ -118,7 +114,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
       setSelectedMedication(data.medication);
       addRecent(data.medication);
       
-      // Auto-fill route si viene del catálogo
       if (data.medication.route && data.medication.route !== 'other') {
         const mappedRoute = routeMapping[data.medication.route];
         if (mappedRoute) {
@@ -126,7 +121,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
         }
       }
       
-      // Auto-fill componentes si hay generic_name
       if (data.medication.generic_name && !isAdvancedMode) {
         setComponents([
           {
@@ -166,7 +160,6 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     
     onAdd?.(payload);
     
-    // Reset form
     setDiagnosisId("");
     setMedicationCatalogId(undefined);
     setMedicationText(undefined);
@@ -182,47 +175,44 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
     setDuration(`${days} días`);
   };
   return (
-    <div className="space-y-8">
-      {/* HEADER SECTION */}
-      <div className="flex items-center justify-between mb-6 border-b border-[var(--palantir-border)] pb-4">
-        <div className="flex items-center gap-2">
-          <BeakerIcon className="w-5 h-5 text-[var(--palantir-active)]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-text)]">
-            Pharmacological_Orders
+    <div className="space-y-6">
+      <div className="flex items-center justify-between mb-4 border-b border-white/15 pb-4">
+        <div className="flex items-center gap-3">
+          <BeakerIcon className="w-5 h-5 text-emerald-400" />
+          <span className="text-[12px] font-bold uppercase tracking-wider text-white">
+            Órdenes Farmacológicas
           </span>
         </div>
         {selectedMedication?.source === 'INHRR' && (
-          <span className="text-[8px] font-black bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] px-2 py-1 rounded border border-[var(--palantir-active)]/30 flex items-center gap-1">
-            <FlaskIcon className="w-3 h-3" />
-            CATÁLOGO INHRR OFICIAL
+          <span className="text-[9px] font-bold bg-emerald-500/15 text-emerald-400 px-3 py-1 rounded-lg border border-emerald-500/25 flex items-center gap-1">
+            <FlaskIcon className="w-4 h-4" />
+            CATÁLOGO INHRR
           </span>
         )}
       </div>
-      {/* RENDER DIAGNOSES AND THEIR PRESCRIPTIONS */}
       <div className="space-y-6">
         {diagnoses.length === 0 ? (
-          <div className="p-8 border border-dashed border-[var(--palantir-border)] text-center opacity-40">
-            <span className="text-[10px] font-mono uppercase italic">Awaiting_Prescription_Data...</span>
+          <div className="p-8 border border-dashed border-white/15 text-center opacity-50 rounded-lg">
+            <span className="text-[11px] text-white/60">Esperando datos de prescripción...</span>
           </div>
         ) : (
           diagnoses.map((d) => (
-            <div key={d.id} className="border-l border-[var(--palantir-border)] pl-4 space-y-3">
+            <div key={d.id} className="border-l-2 border-white/15 pl-4 space-y-3">
               <div className="flex items-center gap-3">
-                <span className="bg-[var(--palantir-active)]/10 text-[var(--palantir-active)] px-2 py-0.5 rounded text-[9px] font-black font-mono border border-[var(--palantir-active)]/20">
+                <span className="bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/25">
                   {d.icd_code}
                 </span>
-                <h4 className="text-[11px] font-bold uppercase tracking-tight text-[var(--palantir-text)] opacity-80">
-                  {d.title || d.description || "Untitled_Condition"}
+                <h4 className="text-[12px] font-medium text-white/80">
+                  {d.title || d.description || "Sin título"}
                 </h4>
               </div>
-              <div className="grid gap-2 ml-4">
+              <div className="grid gap-3 ml-2">
                 {d.prescriptions && d.prescriptions.length > 0 ? (
                   d.prescriptions.map((p: Prescription) => (
                     <PrescriptionBadge
                       key={p.id}
                       id={p.id}
                       medication={p.medication_catalog?.name || p.medication_text || "—"}
-                      // ✅ NUEVAS PROPS para mostrar metadata completa
                       medicationCatalog={p.medication_catalog ? {
                         name: p.medication_catalog.name,
                         presentation: p.medication_catalog.presentation,
@@ -253,8 +243,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     />
                   ))
                 ) : (
-                  <span className="text-[9px] font-mono uppercase text-[var(--palantir-muted)] italic pl-2">
-                    // No_Active_Prescriptions
+                  <span className="text-[10px] text-white/50 italic pl-2">
+                    Sin prescripciones activas
                   </span>
                 )}
               </div>
@@ -262,62 +252,58 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
           ))
         )}
       </div>
-      {/* NEW PRESCRIPTION FORM */}
       {!readOnly && diagnoses.length > 0 && appointmentId && (
-        <div className="mt-10 pt-6">
-          <form onSubmit={handleSubmit} className="bg-white/5 border border-[var(--palantir-border)] p-5 space-y-5 rounded-sm shadow-xl">
+        <div className="mt-8 pt-6 border-t border-white/15">
+          <form onSubmit={handleSubmit} className="bg-white/5 border border-white/15 p-5 space-y-5 rounded-lg">
             
-            {/* FORM HEADER */}
-            <div className="flex items-center justify-between mb-2 border-b border-white/5 pb-3">
+            <div className="flex items-center justify-between mb-2 border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <ClipboardDocumentCheckIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-                <span className="text-[9px] font-black uppercase tracking-widest">New_Prescription_Draft</span>
+                <ClipboardDocumentCheckIcon className="w-5 h-5 text-emerald-400" />
+                <span className="text-[11px] font-bold uppercase tracking-wider">Nueva Prescripción</span>
               </div>
               
-              {/* Mode Toggle */}
               <button
                 type="button"
                 onClick={() => setIsAdvancedMode(!isAdvancedMode)}
-                className="flex items-center gap-1 text-[8px] font-black text-[var(--palantir-muted)] hover:text-[var(--palantir-active)] uppercase transition-all"
+                className="flex items-center gap-1 text-[10px] font-medium text-white/60 hover:text-emerald-400 uppercase transition-all"
               >
                 {isAdvancedMode ? (
                   <>
-                    <BoltIcon className="w-3 h-3" /> Modo Rápido
+                    <BoltIcon className="w-4 h-4" /> Modo Rápido
                   </>
                 ) : (
                   <>
-                    <PencilSquareIcon className="w-3 h-3" /> Modo Avanzado
+                    <PencilSquareIcon className="w-4 h-4" /> Modo Avanzado
                   </>
                 )}
               </button>
             </div>
-            {/* Diagnosis & Medication Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">
-                  Condition_Reference
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1">
+                  Diagnóstico
                 </label>
                 <select
                   value={diagnosisId}
                   onChange={(e) => setDiagnosisId(Number(e.target.value))}
                   required
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none appearance-none text-[var(--palantir-text)]"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] focus:border-emerald-500/50 outline-none appearance-none rounded-lg"
                 >
-                  <option value="">SELECT_DIAGNOSIS</option>
+                  <option value="">Seleccionar diagnóstico</option>
                   {diagnoses.map((d) => (
-                    <option key={d.id} value={d.id} className="bg-gray-900">
+                    <option key={d.id} value={d.id}>
                       [{d.icd_code}] {d.title || d.description}
                     </option>
                   ))}
                 </select>
               </div>
               
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
-                  Agent_Selector
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                  Medicamento
                   {isAutofilled && (
-                    <span className="text-[7px] text-green-400 animate-pulse flex items-center gap-0.5">
-                      <SparklesIcon className="w-3 h-3" /> Auto-filled
+                    <span className="text-[9px] text-emerald-400 animate-pulse flex items-center gap-0.5">
+                      <SparklesIcon className="w-3 h-3" /> Auto-completado
                     </span>
                   )}
                 </label>
@@ -328,161 +314,153 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                 />
               </div>
             </div>
-            {/* Medication Info Display (if selected from catalog) */}
             {selectedMedication && (
-              <div className="bg-[var(--palantir-active)]/5 border border-[var(--palantir-active)]/20 rounded p-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center justify-between">
-                  <span className="text-[8px] font-bold text-[var(--palantir-active)] uppercase tracking-wider">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
                     Información del Catálogo
                   </span>
                   <div className="flex gap-1">
                     {selectedMedication.is_controlled && (
-                      <span className="text-[7px] font-black bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded">
+                      <span className="text-[8px] font-bold bg-red-500/15 text-red-400 px-2 py-0.5 rounded border border-red-500/25">
                         CONTROLADO
                       </span>
                     )}
                     {selectedMedication.source === 'INHRR' && (
-                      <span className="text-[7px] font-black bg-[var(--palantir-active)]/20 text-[var(--palantir-active)] px-1.5 py-0.5 rounded">
-                        INHRR OFICIAL
+                      <span className="text-[8px] font-bold bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/25">
+                        INHRR
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[11px]">
                   {selectedMedication.generic_name && (
                     <div>
-                      <span className="text-[var(--palantir-muted)]">Principio activo:</span>
+                      <span className="text-white/50">Principio activo:</span>
                       <span className="text-white ml-1">{selectedMedication.generic_name}</span>
                     </div>
                   )}
                   {selectedMedication.concentration && (
                     <div>
-                      <span className="text-[var(--palantir-muted)]">Concentración:</span>
+                      <span className="text-white/50">Concentración:</span>
                       <span className="text-white ml-1">{selectedMedication.concentration}</span>
                     </div>
                   )}
                   <div>
-                    <span className="text-[var(--palantir-muted)]">Presentación:</span>
+                    <span className="text-white/50">Presentación:</span>
                     <span className="text-white ml-1">{selectedMedication.presentation_display}</span>
                   </div>
                   <div>
-                    <span className="text-[var(--palantir-muted)]">Vía:</span>
+                    <span className="text-white/50">Vía:</span>
                     <span className="text-white ml-1">{selectedMedication.route_display}</span>
                   </div>
                 </div>
               </div>
             )}
-            {/* Quick Duration Buttons */}
             <div className="flex items-center gap-2">
-              <span className="text-[8px] font-black uppercase text-[var(--palantir-muted)]">Rápido:</span>
+              <span className="text-[10px] font-medium text-white/60">Duración rápida:</span>
               {[7, 10, 14, 30].map(days => (
                 <button
                   key={days}
                   type="button"
                   onClick={() => getQuickDuration(days)}
-                  className="px-2 py-1 text-[9px] bg-white/5 hover:bg-[var(--palantir-active)]/20 border border-white/10 hover:border-[var(--palantir-active)]/30 rounded transition-colors"
+                  className="px-3 py-1.5 text-[10px] bg-white/5 hover:bg-emerald-500/15 border border-white/15 hover:border-emerald-500/30 rounded-lg transition-colors"
                 >
                   {days} días
                 </button>
               ))}
             </div>
-            {/* Dosage Parameters Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
-                  <DocumentTextIcon className="w-3 h-3" /> Time_Duration
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                  <DocumentTextIcon className="w-4 h-4" /> Duración
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. 7_DAYS"
+                  placeholder="Ej: 7 días"
                   value={duration}
                   onChange={(e) => setDuration(e.target.value)}
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] outline-none focus:border-emerald-500/50 rounded-lg"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
-                  <ClockIcon className="w-3 h-3" /> Frequency_Interval
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                  <ClockIcon className="w-4 h-4" /> Frecuencia
                 </label>
                 <select
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as any)}
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] focus:border-emerald-500/50 outline-none rounded-lg"
                 >
                   {frequencyOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-gray-900">
-                      {opt.label.toUpperCase()}
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
               </div>
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1 flex items-center gap-1">
-                  <ArrowsRightLeftIcon className="w-3 h-3" /> Admin_Route
+              <div className="space-y-2">
+                <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1 flex items-center gap-1">
+                  <ArrowsRightLeftIcon className="w-4 h-4" /> Vía
                 </label>
                 <select
                   value={route}
                   onChange={(e) => setRoute(e.target.value as any)}
-                  className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono focus:border-[var(--palantir-active)] outline-none text-[var(--palantir-text)]"
+                  className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] focus:border-emerald-500/50 outline-none rounded-lg"
                 >
                   {routeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value} className="bg-gray-900">
-                      {opt.label.toUpperCase()}
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
                     </option>
                   ))}
                 </select>
               </div>
             </div>
-            {/* ADVANCED MODE: Components & Indications */}
             {isAdvancedMode && (
-              <div className="space-y-4 border-t border-white/5 pt-4 animate-in slide-in-from-top-2 duration-300">
-                
-                {/* Components Section */}
-                <div className="space-y-2">
+              <div className="space-y-4 border-t border-white/10 pt-4 animate-in slide-in-from-top-2 duration-300">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">
-                      Molecular_Components
+                    <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1">
+                      Componentes
                     </label>
                     <button
                       type="button"
                       onClick={() => setComponents([...components, { substance: "", dosage: "", unit: "mg" }])}
-                      className="flex items-center gap-1 text-[9px] font-black text-[var(--palantir-active)] hover:opacity-80 uppercase transition-all"
+                      className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 hover:opacity-80 uppercase transition-all"
                     >
-                      <PlusIcon className="w-3 h-3" /> Add_Component
+                      <PlusIcon className="w-4 h-4" /> Agregar componente
                     </button>
                   </div>
                   
                   <div className="space-y-2">
                     {components.length === 0 && (
-                      <div className="text-center py-4 bg-black/10 border border-dashed border-white/5 rounded">
-                        <span className="text-[8px] font-mono uppercase text-[var(--palantir-muted)]">
-                          No_Components_Defined
-                        </span>
+                      <div className="text-center py-4 bg-white/5 border border-dashed border-white/10 rounded-lg">
+                        <span className="text-[10px] text-white/50">Sin componentes definidos</span>
                       </div>
                     )}
                     {components.map((comp, index) => (
-                      <div key={index} className="flex gap-2 items-center bg-black/20 p-2 border border-white/5 animate-in slide-in-from-left-2 duration-200">
+                      <div key={index} className="flex gap-2 items-center bg-white/5 p-3 border border-white/10 rounded-lg animate-in slide-in-from-left-2 duration-200">
                         <input
                           type="text"
-                          placeholder="SUBSTANCE"
+                          placeholder="Sustancia"
                           value={comp.substance}
                           onChange={(e) => {
                             const newComps = [...components];
                             newComps[index].substance = e.target.value;
                             setComponents(newComps);
                           }}
-                          className="flex-1 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)]"
+                          className="flex-1 bg-transparent border-b border-white/15 px-2 py-1.5 text-[11px] outline-none focus:border-emerald-500/50"
                         />
                         <input
                           type="text"
-                          placeholder="VAL"
+                          placeholder="Dosis"
                           value={comp.dosage}
                           onChange={(e) => {
                             const newComps = [...components];
                             newComps[index].dosage = e.target.value;
                             setComponents(newComps);
                           }}
-                          className="w-16 bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-center text-[var(--palantir-text)]"
+                          className="w-16 bg-transparent border-b border-white/15 px-2 py-1.5 text-[11px] outline-none focus:border-emerald-500/50 text-center"
                         />
                         <select
                           value={comp.unit}
@@ -491,15 +469,15 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                             newComps[index].unit = e.target.value as any;
                             setComponents(newComps);
                           }}
-                          className="bg-transparent border-b border-[var(--palantir-border)] px-2 py-1 text-[11px] font-mono outline-none text-[var(--palantir-text)]"
+                          className="bg-transparent border-b border-white/15 px-2 py-1.5 text-[11px] outline-none"
                         >
-                          <option value="mg" className="bg-gray-900">mg</option>
-                          <option value="ml" className="bg-gray-900">ml</option>
-                          <option value="g" className="bg-gray-900">g</option>
-                          <option value="tablet" className="bg-gray-900">tab</option>
-                          <option value="capsule" className="bg-gray-900">cap</option>
-                          <option value="drop" className="bg-gray-900">gtt</option>
-                          <option value="unit" className="bg-gray-900">UI</option>
+                          <option value="mg">mg</option>
+                          <option value="ml">ml</option>
+                          <option value="g">g</option>
+                          <option value="tablet">tab</option>
+                          <option value="capsule">cap</option>
+                          <option value="drop">gtt</option>
+                          <option value="unit">UI</option>
                         </select>
                         <button 
                           type="button" 
@@ -512,9 +490,8 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     ))}
                   </div>
                 </div>
-                {/* Indications */}
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-[var(--palantir-muted)] ml-1">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider ml-1">
                     Indicaciones / Notas
                   </label>
                   <textarea
@@ -522,19 +499,18 @@ const PrescriptionPanel: React.FC<PrescriptionPanelProps> = ({
                     onChange={(e) => setIndications(e.target.value)}
                     placeholder="Indicaciones específicas para el paciente..."
                     rows={2}
-                    className="w-full bg-gray-900 border border-[var(--palantir-border)] px-4 py-2.5 text-[11px] font-mono outline-none focus:border-[var(--palantir-active)] text-[var(--palantir-text)] resize-none"
+                    className="w-full bg-white/5 border border-white/15 px-4 py-2.5 text-[12px] outline-none focus:border-emerald-500/50 resize-none rounded-lg"
                   />
                 </div>
               </div>
             )}
-            {/* SUBMIT BUTTON */}
             <button
               type="submit"
-              className="w-full bg-gray-900 hover:bg-gray-800 border border-[var(--palantir-active)] text-[var(--palantir-active)] py-4 flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-lg"
+              className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-3 flex items-center justify-center gap-2 transition-all active:scale-[0.98] rounded-lg"
             >
               <PlusIcon className="w-5 h-5" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">
-                Generate_Medical_Prescription
+              <span className="text-[11px] font-bold uppercase tracking-wider">
+                Generar Prescripción Médica
               </span>
             </button>
           </form>
