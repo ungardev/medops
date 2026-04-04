@@ -182,8 +182,8 @@ const ConfirmDateView: React.FC<{
   };
   
   return (
-    <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
-      <h3 className="text-white font-bold text-lg mb-4">Seleccionar Fecha y Hora</h3>
+    <div className="bg-white/5 border border-white/15 rounded-lg p-6">
+      <h3 className="text-white/80 font-medium text-lg mb-4">Seleccionar Fecha y Hora</h3>
       
       <div className="mb-6">
         <SimpleCalendar
@@ -195,16 +195,16 @@ const ConfirmDateView: React.FC<{
       
       {availableSlots.length > 0 && (
         <div className="mb-4">
-          <label className="text-white/70 text-sm block mb-2">Horarios Disponibles</label>
+          <label className="text-white/50 text-sm block mb-2">Horarios Disponibles</label>
           <div className="grid grid-cols-3 gap-2">
             {availableSlots.map((slot, index) => (
               <button
                 key={index}
                 onClick={() => setSelectedTime(slot.time)}
-                className={`py-2 px-3 rounded-sm text-xs font-mono transition-all ${
+                className={`py-2 px-3 rounded-lg text-xs transition-all ${
                   selectedTime === slot.time
-                    ? 'bg-emerald-500 text-black'
-                    : 'bg-white/5 text-white hover:bg-white/10'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+                    : 'bg-white/5 text-white/60 hover:bg-white/10 border border-white/10'
                 }`}
               >
                 {slot.time}
@@ -215,7 +215,7 @@ const ConfirmDateView: React.FC<{
       )}
       
       {availableSlots.length === 0 && selectedDate && (
-        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-sm text-yellow-200 text-sm text-center">
+        <div className="mb-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg text-amber-400/70 text-sm text-center">
           No hay horarios específicos para este día. La hora será confirmada por el doctor.
         </div>
       )}
@@ -223,14 +223,14 @@ const ConfirmDateView: React.FC<{
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
+          className="flex-1 py-2.5 bg-white/5 text-white/60 text-[10px] font-medium rounded-lg hover:bg-white/10 transition-all"
         >
           Volver
         </button>
         <button
           onClick={onProceed}
           disabled={!selectedDate}
-          className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-1 py-2.5 bg-emerald-500/15 text-emerald-400 text-[10px] font-medium rounded-lg hover:bg-emerald-500/25 disabled:opacity-50 flex items-center justify-center gap-2 transition-all border border-emerald-500/25"
         >
           <ClockIcon className="w-4 h-4" />
           Confirmar Horario
@@ -247,42 +247,42 @@ const ConfirmFinalView: React.FC<{
   onBack: () => void;
   onCancel: () => void;
 }> = ({ service, selectedDate, selectedTime, onConfirm, onBack, onCancel }) => (
-  <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
-    <div className="flex items-center gap-3 mb-4 text-amber-400">
+  <div className="bg-white/5 border border-white/15 rounded-lg p-6">
+    <div className="flex items-center gap-3 mb-4 text-amber-400/70">
       <AlertTriangle className="w-8 h-8" />
-      <h3 className="text-white font-bold text-lg">Confirmar Compra</h3>
+      <h3 className="text-white/80 font-medium text-lg">Confirmar Compra</h3>
     </div>
     
-    <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-sm">
-      <p className="text-amber-200 text-sm">
+    <div className="mb-6 p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+      <p className="text-amber-400/80 text-sm">
         ¿Estás seguro de que deseas solicitar el servicio <strong>{service.name}</strong> por <strong>$ {service.price_usd?.toLocaleString('en-US', { minimumFractionDigits: 2 })}</strong>?
       </p>
-      <div className="mt-3 text-white/80 text-sm space-y-1">
+      <div className="mt-3 text-white/60 text-sm space-y-1">
         <div className="flex justify-between">
-            <span className="text-white/50">Institución:</span>
+            <span className="text-white/40">Institución:</span>
             <span>{service.institution_name || 'N/A'}</span>
         </div>
         <div className="flex justify-between">
-            <span className="text-white/50">Fecha:</span>
+            <span className="text-white/40">Fecha:</span>
             <span>{selectedDate}</span>
         </div>
         <div className="flex justify-between">
-            <span className="text-white/50">Hora:</span>
+            <span className="text-white/40">Hora:</span>
             <span>{selectedTime || 'Por confirmar'}</span>
         </div>
-        <p className="text-white/50 text-xs mt-2">Nota: Esta es una fecha tentativa. El doctor la confirmará pronto.</p>
+        <p className="text-white/30 text-xs mt-2">Nota: Esta es una fecha tentativa. El doctor la confirmará pronto.</p>
       </div>
     </div>
     <div className="flex gap-3">
       <button
         onClick={onBack}
-        className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
+        className="flex-1 py-2.5 bg-white/5 text-white/60 text-[10px] font-medium rounded-lg hover:bg-white/10 transition-all"
       >
         Atrás
       </button>
       <button
         onClick={onConfirm}
-        className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2"
+        className="flex-1 py-2.5 bg-emerald-500/15 text-emerald-400 text-[10px] font-medium rounded-lg hover:bg-emerald-500/25 flex items-center justify-center gap-2 transition-all border border-emerald-500/25"
       >
         <CreditCardIcon className="w-4 h-4" />
         Confirmar Compra
@@ -291,39 +291,39 @@ const ConfirmFinalView: React.FC<{
   </div>
 );
 const ProcessingView: React.FC = () => (
-  <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
-    <Loader2 className="w-12 h-12 text-emerald-500 animate-spin mb-4" />
-    <p className="text-white/80 text-sm font-mono">PROCESANDO SOLICITUD...</p>
-    <p className="text-white/50 text-xs mt-2">Por favor espera</p>
+  <div className="bg-white/5 border border-white/15 rounded-lg p-8 flex flex-col items-center justify-center min-h-[200px]">
+    <Loader2 className="w-12 h-12 text-emerald-400/60 animate-spin mb-4" />
+    <p className="text-white/60 text-sm">Procesando solicitud...</p>
+    <p className="text-white/30 text-xs mt-2">Por favor espera</p>
   </div>
 );
 const SuccessView: React.FC<{ chargeOrder: any | null; onCancel: () => void }> = ({
   chargeOrder,
   onCancel
 }) => (
-  <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-8 flex flex-col items-center justify-center min-h-[200px]">
-    <CheckCircleIcon className="w-16 h-16 text-emerald-500 mb-4" />
-    <h4 className="text-white font-bold text-lg mb-2">¡Solicitud Recibida!</h4>
-    <p className="text-white/70 text-sm mb-4">
+  <div className="bg-white/5 border border-white/15 rounded-lg p-8 flex flex-col items-center justify-center min-h-[200px]">
+    <CheckCircleIcon className="w-16 h-16 text-emerald-400 mb-4" />
+    <h4 className="text-white/80 font-medium text-lg mb-2">¡Solicitud Recibida!</h4>
+    <p className="text-white/50 text-sm mb-4">
       Tu solicitud de servicio ha sido registrada correctamente.
     </p>
-    <div className="bg-[#1a1a1b] border border-white/10 rounded-sm p-4 mb-4 w-full">
-      <p className="text-white/50 text-xs mb-1">Número de Orden</p>
-      <p className="text-white font-mono text-lg"># {chargeOrder?.id}</p>
+    <div className="bg-black/20 border border-white/10 rounded-lg p-4 mb-4 w-full">
+      <p className="text-white/30 text-xs mb-1">Número de Orden</p>
+      <p className="text-white/80 font-medium text-lg"># {chargeOrder?.id}</p>
     </div>
-    <p className="text-white/50 text-xs mb-6 text-center">
+    <p className="text-white/30 text-xs mb-6 text-center">
       Procede a cancelar el monto correspondiente para agendar tu cita.
     </p>
     <div className="flex gap-3 w-full">
       <button
         onClick={onCancel}
-        className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
+        className="flex-1 py-2.5 bg-white/5 text-white/60 text-[10px] font-medium rounded-lg hover:bg-white/10 transition-all"
       >
         Cerrar
       </button>
       <a
         href={`/patient/payments/${chargeOrder?.id}`}
-        className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2 text-center"
+        className="flex-1 py-2.5 bg-emerald-500/15 text-emerald-400 text-[10px] font-medium rounded-lg hover:bg-emerald-500/25 flex items-center justify-center gap-2 text-center transition-all border border-emerald-500/25"
       >
         Ir a Pagar <ArrowRightIcon className="w-4 h-4" />
       </a>
@@ -335,25 +335,25 @@ const ErrorView: React.FC<{
   onRetry: () => void;
   onCancel: () => void;
 }> = ({ error, onRetry, onCancel }) => (
-  <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
+  <div className="bg-white/5 border border-white/15 rounded-lg p-6">
     <div className="flex items-center gap-3 mb-4">
-      <XCircleIcon className="w-8 h-8 text-red-500" />
-      <h4 className="text-white font-bold text-lg">Error en la Solicitud</h4>
+      <XCircleIcon className="w-8 h-8 text-red-400" />
+      <h4 className="text-white/80 font-medium text-lg">Error en la Solicitud</h4>
     </div>
     
-    <div className="mb-6 p-4 bg-red-900/20 border border-red-800 rounded-sm">
-      <p className="text-red-300 text-sm">{error || 'Error desconocido'}</p>
+    <div className="mb-6 p-4 bg-red-500/5 border border-red-500/20 rounded-lg">
+      <p className="text-red-400/80 text-sm">{error || 'Error desconocido'}</p>
     </div>
     <div className="flex gap-3">
       <button
         onClick={onCancel}
-        className="flex-1 py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/20"
+        className="flex-1 py-2.5 bg-white/5 text-white/60 text-[10px] font-medium rounded-lg hover:bg-white/10 transition-all"
       >
         Cancelar
       </button>
       <button
         onClick={onRetry}
-        className="flex-1 py-3 bg-amber-500 text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-emerald-400 flex items-center justify-center gap-2"
+        className="flex-1 py-2.5 bg-amber-500/10 text-amber-400 text-[10px] font-medium rounded-lg hover:bg-amber-500/15 flex items-center justify-center gap-2 transition-all border border-amber-500/20"
       >
         <Loader2 className="w-4 h-4" />
         Reintentar

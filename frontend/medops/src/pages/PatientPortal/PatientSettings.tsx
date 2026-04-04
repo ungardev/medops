@@ -73,45 +73,44 @@ function PaymentMethodsSection() {
     }
   };
   
-  if (isLoading) return <Loader2 className="w-6 h-6 animate-spin text-white/40" />;
+  if (isLoading) return <Loader2 className="w-6 h-6 animate-spin text-white/30" />;
   
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-bold uppercase tracking-wide">Métodos de Pago</h2>
+      <h2 className="text-lg font-semibold text-white/90">Métodos de Pago</h2>
       
-      {/* Pago Móvil Venezuela */}
-      <div className="p-4 bg-black/20 border border-white/5 rounded-sm">
-        <h3 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-4">Pago Móvil Venezuela</h3>
+      <div className="p-5 bg-white/5 border border-white/15 rounded-lg">
+        <h3 className="text-[10px] font-medium text-white/40 mb-4">Pago Móvil Venezuela</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Teléfono</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Teléfono</label>
             <input
               type="tel"
               value={formData.mobile_phone}
               onChange={(e) => setFormData({ ...formData, mobile_phone: e.target.value })}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
               placeholder="04121234567"
             />
           </div>
           
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Cédula</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Cédula</label>
             <input
               type="text"
               value={formData.mobile_national_id}
               onChange={(e) => setFormData({ ...formData, mobile_national_id: e.target.value })}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
               placeholder="V-12345678"
             />
           </div>
           
           <div className="md:col-span-2">
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Banco Preferido</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Banco Preferido</label>
             <select
               value={formData.preferred_bank}
               onChange={(e) => setFormData({ ...formData, preferred_bank: e.target.value })}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50"
             >
               <option value="">Seleccionar banco</option>
               {VENEZUELAN_BANKS.map(bank => (
@@ -122,26 +121,25 @@ function PaymentMethodsSection() {
         </div>
       </div>
       
-      {/* Crypto (Futuro) */}
-      <div className="p-4 bg-black/20 border border-white/5 rounded-sm opacity-60">
-        <h3 className="text-[10px] font-black uppercase tracking-wider text-white/40 mb-4">Criptomonedas (Próximamente)</h3>
+      <div className="p-5 bg-white/5 border border-white/15 rounded-lg opacity-60">
+        <h3 className="text-[10px] font-medium text-white/40 mb-4">Criptomonedas (Próximamente)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Wallet</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Wallet</label>
             <input
               type="text"
               value={formData.crypto_wallet}
               disabled
-              className="w-full px-4 py-2.5 bg-black/20 border border-white/5 rounded-sm text-white/40"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/30"
               placeholder="Próximamente"
             />
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-white/40 uppercase mb-2">Tipo</label>
+            <label className="block text-[10px] font-medium text-white/40 mb-1.5">Tipo</label>
             <select
               value={formData.crypto_type}
               disabled
-              className="w-full px-4 py-2.5 bg-black/20 border border-white/5 rounded-sm text-white/40"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white/30"
             >
               <option value="">Próximamente</option>
             </select>
@@ -152,12 +150,12 @@ function PaymentMethodsSection() {
       <button 
         onClick={handleSave}
         disabled={updateMutation.isPending}
-        className={`flex items-center gap-2 px-6 py-2.5 bg-white text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/90 ${
+        className={`flex items-center gap-2 px-6 py-2.5 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25 ${
           updateMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
         }`}
       >
         {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <SaveIcon className="w-4 h-4" />}
-        {saved ? "Guardado!" : "Guardar Métodos de Pago"}
+        {saved ? "Guardado" : "Guardar Métodos de Pago"}
       </button>
     </div>
   );
@@ -167,13 +165,11 @@ export default function PatientSettings() {
   const [profileData, setProfileData] = useState<PatientProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   
-  // Form state
   const [formData, setFormData] = useState({
     email: "",
     phone: "",
   });
   
-  // Password confirmation
   const [currentPassword, setCurrentPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   
@@ -195,7 +191,6 @@ export default function PatientSettings() {
     { id: "payment-methods", label: "Métodos de Pago", icon: CreditCard },
   ];
   
-  // Cargar datos del perfil
   useEffect(() => {
     loadProfile();
   }, []);
@@ -274,31 +269,30 @@ export default function PatientSettings() {
         <PageHeader 
           breadcrumbs={[
             { label: "MEDOPZ", path: "/patient" },
-            { label: "CONFIGURACIÓN", active: true }
+            { label: "Configuración", active: true }
           ]}
         />
         <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <Loader2 className="w-8 h-8 text-emerald-400/60 animate-spin" />
         </div>
       </div>
     );
   }
   
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
-          { label: "CONFIGURACIÓN", active: true }
+          { label: "Configuración", active: true }
         ]}
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden">
-            <div className="px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">
+          <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+            <div className="px-5 py-3 border-b border-white/10 bg-white/5">
+              <h3 className="text-[10px] font-medium text-white/40">
                 Ajustes
               </h3>
             </div>
@@ -307,79 +301,74 @@ export default function PatientSettings() {
                 <button
                   key={id}
                   onClick={() => setActiveSection(id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 px-5 py-3 text-left transition-colors ${
                     activeSection === id 
-                      ? "bg-white/[0.08] text-white" 
-                      : "text-white/40 hover:text-white hover:bg-white/[0.04]"
+                      ? "bg-white/10 text-white/90" 
+                      : "text-white/40 hover:text-white/70 hover:bg-white/5"
                   }`}
                 >
                   <Icon size={16} />
-                  <span className="text-[11px] font-bold uppercase tracking-wide">{label}</span>
+                  <span className="text-[11px] font-medium">{label}</span>
                 </button>
               ))}
             </div>
           </div>
         </div>
         
-        {/* Content */}
         <div className="lg:col-span-3">
-          <div className="bg-[#0a0a0b] border border-white/10 rounded-sm p-6">
+          <div className="bg-white/5 border border-white/15 rounded-lg p-6">
             
-            {/* PERFIL */}
             {activeSection === "profile" && (
               <div className="space-y-6">
-                <h2 className="text-lg font-bold uppercase tracking-wide">Información del Perfil</h2>
+                <h2 className="text-lg font-semibold text-white/90">Información del Perfil</h2>
                 
-                {/* Avatar + Nombre */}
-                <div className="flex items-center gap-4 p-4 bg-black/20 border border-white/5 rounded-sm">
-                  <div className="w-14 h-14 rounded-sm bg-gradient-to-br from-blue-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center">
-                    <User className="w-7 h-7 text-white/60" />
+                <div className="flex items-center gap-4 p-5 bg-white/5 border border-white/15 rounded-lg">
+                  <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/15 flex items-center justify-center">
+                    <User className="w-7 h-7 text-white/40" />
                   </div>
                   <div>
-                    <p className="text-sm font-black text-white uppercase">
+                    <p className="text-sm font-medium text-white/90">
                       {profileData?.patient.full_name || "Paciente"}
                     </p>
-                    <p className="text-[10px] text-white/40">
+                    <p className="text-[10px] text-white/30">
                       ID: {profileData?.patient.id}
                     </p>
                   </div>
                 </div>
                 
-                {/* Campos del formulario */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
-                      <Mail className="w-3 h-3" />
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-white/40 mb-1.5">
+                      <Mail className="w-3.5 h-3.5" />
                       Email
                     </label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+                      className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
                     />
-                    <p className="text-[9px] text-white/30 mt-1">Este email se usa para iniciar sesión</p>
+                    <p className="text-[9px] text-white/20 mt-1">Este email se usa para iniciar sesión</p>
                   </div>
                   
                   <div>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
-                      <PhoneIcon className="w-3 h-3" />
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-white/40 mb-1.5">
+                      <PhoneIcon className="w-3.5 h-3.5" />
                       Teléfono
                     </label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-blue-500/50"
+                      className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
                       placeholder="04121234567"
                     />
                   </div>
                 </div>
                 
-                {/* Campo contraseña */}
-                <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-sm">
-                  <label className="flex items-center gap-2 text-[10px] font-bold text-amber-400 uppercase tracking-wider mb-2">
-                    <Lock className="w-3 h-3" />
+                <div className="p-5 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                  <label className="flex items-center gap-2 text-[10px] font-medium text-amber-400/80 mb-1.5">
+                    <Lock className="w-3.5 h-3.5" />
                     Confirmar cambios con tu contraseña
                   </label>
                   <input
@@ -389,19 +378,19 @@ export default function PatientSettings() {
                       setCurrentPassword(e.target.value);
                       setPasswordError("");
                     }}
-                    className="w-full px-4 py-2.5 bg-black/40 border border-amber-500/30 rounded-sm text-white focus:outline-none focus:border-amber-500/50"
+                    className="w-full px-4 py-2.5 bg-white/5 border border-amber-500/20 rounded-lg text-white/80 focus:outline-none focus:border-amber-500/50 placeholder:text-white/20"
                     placeholder="••••••••"
                   />
                   {passwordError && (
                     <p className="flex items-center gap-1 text-[10px] text-red-400 mt-2">
-                      <AlertCircle className="w-3 h-3" />
+                      <AlertCircle className="w-3.5 h-3.5" />
                       {passwordError}
                     </p>
                   )}
                 </div>
                 
                 {saveError && (
-                  <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/30 rounded-sm">
+                  <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                     <AlertCircle className="w-4 h-4 text-red-400" />
                     <p className="text-[10px] text-red-400">{saveError}</p>
                   </div>
@@ -410,7 +399,7 @@ export default function PatientSettings() {
                 <button 
                   onClick={handleSaveProfile}
                   disabled={updateProfileMutation.isPending}
-                  className={`flex items-center gap-2 px-6 py-2.5 bg-white text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/90 transition-all ${
+                  className={`flex items-center gap-2 px-6 py-2.5 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25 ${
                     updateProfileMutation.isPending ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
@@ -419,15 +408,14 @@ export default function PatientSettings() {
                   ) : (
                     <SaveIcon className="w-4 h-4" />
                   )}
-                  {saveSuccess ? "Guardado!" : "Guardar Cambios"}
+                  {saveSuccess ? "Guardado" : "Guardar Cambios"}
                 </button>
               </div>
             )}
             
-            {/* NOTIFICACIONES */}
             {activeSection === "notifications" && (
               <div className="space-y-6">
-                <h2 className="text-lg font-bold uppercase tracking-wide">Notificaciones</h2>
+                <h2 className="text-lg font-semibold text-white/90">Notificaciones</h2>
                 <div className="space-y-4">
                   {[
                     { id: "email", label: "Notificaciones por Email", desc: "Recibe recordatorios de citas por email", key: "email" },
@@ -436,8 +424,8 @@ export default function PatientSettings() {
                   ].map((item) => (
                     <div key={item.id} className="flex items-center justify-between py-3 border-b border-white/5">
                       <div>
-                        <p className="text-sm font-bold uppercase">{item.label}</p>
-                        <p className="text-[10px] text-white/40">{item.desc}</p>
+                        <p className="text-sm font-medium text-white/80">{item.label}</p>
+                        <p className="text-[10px] text-white/30">{item.desc}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input 
@@ -454,74 +442,71 @@ export default function PatientSettings() {
               </div>
             )}
             
-            {/* SEGURIDAD */}
             {activeSection === "security" && (
               <div className="space-y-6">
-                <h2 className="text-lg font-bold uppercase tracking-wide">Seguridad</h2>
+                <h2 className="text-lg font-semibold text-white/90">Seguridad</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
-                      <Lock className="w-3 h-3" />
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-white/40 mb-1.5">
+                      <Lock className="w-3.5 h-3.5" />
                       Contraseña Actual
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-white/30"
+                      className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-white/25 placeholder:text-white/20"
                       placeholder="••••••••"
                     />
                   </div>
                   <div>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
-                      <Lock className="w-3 h-3" />
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-white/40 mb-1.5">
+                      <Lock className="w-3.5 h-3.5" />
                       Nueva Contraseña
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-white/30"
+                      className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-white/25 placeholder:text-white/20"
                       placeholder="••••••••"
                     />
                   </div>
                   <div>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-wider mb-2">
-                      <Lock className="w-3 h-3" />
+                    <label className="flex items-center gap-2 text-[10px] font-medium text-white/40 mb-1.5">
+                      <Lock className="w-3.5 h-3.5" />
                       Confirmar Contraseña
                     </label>
                     <input
                       type="password"
-                      className="w-full px-4 py-2 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-white/30"
+                      className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 focus:outline-none focus:border-white/25 placeholder:text-white/20"
                       placeholder="••••••••"
                     />
                   </div>
                 </div>
-                <button className="px-6 py-2.5 bg-white text-black text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/90">
+                <button className="px-6 py-2.5 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium rounded-lg hover:bg-emerald-500/25 transition-all border border-emerald-500/25">
                   Cambiar Contraseña
                 </button>
               </div>
             )}
             
-            {/* SUSCRIPCIÓN */}
             {activeSection === "subscription" && (
               <div className="space-y-6">
-                <h2 className="text-lg font-bold uppercase tracking-wide">Mi Suscripción</h2>
-                <div className="p-6 bg-gradient-to-r from-emerald-500/10 to-blue-500/10 border border-emerald-500/20 rounded-sm">
+                <h2 className="text-lg font-semibold text-white/90">Mi Suscripción</h2>
+                <div className="p-6 bg-gradient-to-r from-emerald-500/5 to-blue-500/5 border border-emerald-500/20 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">Plan Actual</p>
-                      <p className="text-2xl font-black uppercase mt-1">Free</p>
+                      <p className="text-[10px] text-emerald-400/70 font-medium">Plan Actual</p>
+                      <p className="text-2xl font-semibold text-white/90 mt-1">Free</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[9px] text-white/40">Próxima facturación</p>
-                      <p className="text-sm font-bold">--</p>
+                      <p className="text-[9px] text-white/30">Próxima facturación</p>
+                      <p className="text-sm font-medium text-white/70">--</p>
                     </div>
                   </div>
                 </div>
-                <button className="w-full px-6 py-2.5 border border-white/20 text-white/60 text-[10px] font-black uppercase tracking-wider rounded-sm hover:bg-white/5">
+                <button className="w-full px-6 py-2.5 border border-white/15 text-white/50 text-[11px] font-medium rounded-lg hover:bg-white/5 transition-all">
                   Ver Planes Disponibles
                 </button>
               </div>
             )}
             
-            {/* MÉTODOS DE PAGO - NUEVO TAB */}
             {activeSection === "payment-methods" && <PaymentMethodsSection />}
           </div>
         </div>

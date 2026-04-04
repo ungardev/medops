@@ -34,6 +34,7 @@ function normalizeTab(id?: string): string {
 export default function PatientRecord() {
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: authLoading, patient: authPatient } = usePatientAuth();
+  
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate("/patient/login");
@@ -43,8 +44,8 @@ export default function PatientRecord() {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-500">Verificando Autenticación...</p>
+          <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+          <p className="text-[10px] text-emerald-400/60">Verificando autenticación...</p>
         </div>
       </div>
     );
@@ -52,17 +53,12 @@ export default function PatientRecord() {
   if (!isAuthenticated) {
     return null;
   }
-  // ✅ CORREGIDO: localStorage patient_id tiene PRIORIDAD sobre authPatient.id
-  // authPatient.id es el Django User ID, NO el Patient ID
-  // localStorage patient_id es el Patient ID real guardado durante el login
   const patientId = Number(localStorage.getItem("patient_id")) || authPatient?.id;
   
   if (!patientId) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-red-500">Error: No se encontró ID de paciente</p>
-        </div>
+        <p className="text-[10px] text-red-400">Error: No se encontró ID de paciente</p>
       </div>
     );
   }
@@ -129,16 +125,16 @@ export default function PatientRecord() {
   if (isLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-500">Syncing_Subject_Data...</p>
+        <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+        <p className="text-[10px] text-emerald-400/60">Cargando expediente...</p>
       </div>
     </div>
   );
   
   if (error || !patient) return (
     <div className="p-8">
-      <div className="bg-red-500/10 border border-red-500/30 p-4 rounded-sm">
-        <p className="text-[10px] font-mono text-red-500 uppercase">Error_Data_Link_Broken</p>
+      <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-lg">
+        <p className="text-[10px] text-red-400">Error al cargar los datos del paciente</p>
       </div>
     </div>
   );
@@ -148,78 +144,78 @@ export default function PatientRecord() {
   const heightDisplay = latestBiometrics.height ? `${latestBiometrics.height} CM` : "--";
   
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
-          { label: "MI EXPEDIENTE", active: true }
+          { label: "Mi Expediente", active: true }
         ]}
         stats={[
           { 
-            label: "RECORD_STATE", 
-            value: patient.active ? "ACTIVE" : "INACTIVE",
-            color: patient.active ? "text-emerald-500" : "text-red-500"
+            label: "Estado", 
+            value: patient.active ? "Activo" : "Inactivo",
+            color: patient.active ? "text-emerald-400" : "text-red-400"
           },
           { 
-            label: "BIOMETRIC_AGE", 
-            value: patientAge ? `${patientAge} YRS` : "--",
-            color: "text-purple-400"
+            label: "Edad", 
+            value: patientAge ? `${patientAge} años` : "--",
+            color: "text-white/60"
           },
           { 
-            label: "MASS_INDEX", 
+            label: "Peso", 
             value: weightDisplay,
-            color: weightDisplay !== "--" ? "text-orange-400" : "text-white/30"
+            color: weightDisplay !== "--" ? "text-white/60" : "text-white/20"
           },
           { 
-            label: "HEIGHT_INDEX", 
+            label: "Talla", 
             value: heightDisplay,
-            color: heightDisplay !== "--" ? "text-cyan-400" : "text-white/30"
+            color: heightDisplay !== "--" ? "text-white/60" : "text-white/20"
           }
         ]}
         actions={
-          <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
-            <UserIcon className="w-5 h-5 text-blue-500" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5">
+            <UserIcon className="w-5 h-5 text-white/30" />
           </div>
         }
       />
       
-      <div className="flex flex-wrap items-center gap-8 px-6 py-4 bg-black/40 border border-white/5 rounded-sm text-[10px] font-mono text-white/20 uppercase tracking-widest">
-        <span className="flex items-center gap-2.5">
-          <IdentificationIcon className="w-4 h-4 text-blue-500/40" />
-          <span className="text-white/10">DNI:</span> 
-          <span className="text-white/80 font-bold">{patient.national_id || "NOT_ASSIGNED"}</span>
+      <div className="flex flex-wrap items-center gap-6 px-5 py-3 bg-white/5 border border-white/15 rounded-lg text-[10px] text-white/30">
+        <span className="flex items-center gap-2">
+          <IdentificationIcon className="w-4 h-4 text-blue-400/40" />
+          <span className="text-white/10">Cédula:</span> 
+          <span className="text-white/70 font-medium">{patient.national_id || "—"}</span>
         </span>
-        <span className="flex items-center gap-2.5">
-          <HeartIcon className="w-4 h-4 text-red-500/30" />
-          <span className="text-white/10">DOB:</span> 
-          <span className="text-white/80 font-bold">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : 'NOT_SET'}</span>
+        <span className="flex items-center gap-2">
+          <HeartIcon className="w-4 h-4 text-red-400/30" />
+          <span className="text-white/10">Nacimiento:</span> 
+          <span className="text-white/70 font-medium">{patient.birthdate ? new Date(patient.birthdate).toLocaleDateString("es-VE") : '—'}</span>
         </span>
       </div>
       
-      <div className="border border-white/10 rounded-sm overflow-hidden shadow-2xl">
+      <div className="border border-white/15 rounded-lg overflow-hidden">
         <Tabs value={currentTab} onChange={setTab} layout="horizontal">
-          <Tab id="info" label="Identity_Core">
+          <Tab id="info" label="Información">
             <PatientInfoTab patientId={patientId} readOnly={true} />
           </Tab>
-          <Tab id="consultas" label="Clinical_Ledger">
+          <Tab id="consultas" label="Consultas">
             <PatientConsultationsTab patient={patient} readOnly={true} />
           </Tab>
-          <Tab id="documentos" label="Archive_Vault">
+          <Tab id="documentos" label="Documentos">
             <PatientDocumentsTab patient={patient} />
           </Tab>
-          <Tab id="vacunacion" label="Immunology">
+          <Tab id="vacunacion" label="Vacunación">
             <VaccinationTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
           </Tab>
-          <Tab id="cirugias" label="Surgical_Ops">
+          <Tab id="cirugias" label="Cirugías">
             <SurgeriesTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
           </Tab>
-          <Tab id="citas" label="Logistics_Schedule">
+          <Tab id="citas" label="Citas">
             <PatientPendingAppointmentsTab patient={patient} />
           </Tab>
-          <Tab id="pagos" label="Financial_Flow">
+          <Tab id="pagos" label="Pagos">
             <PatientPaymentsTab patient={patient} />
           </Tab>
-          <Tab id="eventos" label="Audit_Log">
+          <Tab id="eventos" label="Eventos">
             <PatientEventsTab patient={patient} />
           </Tab>
         </Tabs>

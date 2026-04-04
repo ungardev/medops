@@ -45,54 +45,54 @@ export function PatientRegister() {
     }
   };
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
-      <div className="w-full max-w-md p-8 bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-black p-4">
+      <div className="w-full max-w-md p-8 bg-white/5 backdrop-blur-xl rounded-xl border border-white/15">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">MEDOPZ</h1>
-          <p className="text-slate-400">Registro de Paciente</p>
+          <h1 className="text-2xl font-semibold text-white/90 mb-2">MEDOPZ</h1>
+          <p className="text-white/40">Registro de Paciente</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/50 rounded-lg text-red-400 text-sm">
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
               {error}
             </div>
           )}
           {success && (
-            <div className="p-4 bg-green-500/10 border border-green-500/50 rounded-lg text-green-400 text-sm">
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-sm">
               {success}
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-white/50 mb-1.5">
               ID de Paciente
             </label>
             <input
               type="number"
               value={formData.patientId}
               onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
               placeholder="Tu número de paciente"
               required
             />
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-white/30">
               Lo encontrarás en tu factura o registro médico
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-white/50 mb-1.5">
               Email
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
               placeholder="tu@email.com"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-white/50 mb-1.5">
               Contraseña
             </label>
             <div className="relative">
@@ -100,14 +100,14 @@ export function PatientRegister() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50 pr-12"
                 placeholder="Mínimo 8 caracteres"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60"
               >
                 {showPassword ? (
                   <EyeOffIcon className="w-5 h-5" />
@@ -118,14 +118,14 @@ export function PatientRegister() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="block text-sm font-medium text-white/50 mb-1.5">
               Confirmar Contraseña
             </label>
             <input
               type="password"
               value={formData.confirmPassword}
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
               placeholder="Repite tu contraseña"
               required
             />
@@ -133,7 +133,7 @@ export function PatientRegister() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg text-sm font-bold tracking-widest uppercase transition-all shadow-[0_5px_15px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-emerald-500/25"
           >
             {isLoading ? (
               <>
@@ -146,12 +146,12 @@ export function PatientRegister() {
           </button>
         </form>
         <div className="mt-6 text-center">
-          <Link to="/patient/login" className="text-sm text-blue-400 hover:text-blue-300">
+          <Link to="/patient/login" className="text-sm text-emerald-400/70 hover:text-emerald-400">
             ¿Ya tienes cuenta? Inicia sesión
           </Link>
         </div>
-        <div className="mt-4 pt-4 border-t border-slate-700/50 text-center">
-          <Link to="/login" className="text-sm text-slate-400 hover:text-white">
+        <div className="mt-4 pt-4 border-t border-white/10 text-center">
+          <Link to="/login" className="text-sm text-white/30 hover:text-white/60">
             ← Volver al portal médico
           </Link>
         </div>

@@ -43,7 +43,6 @@ export default function PatientActivate() {
       
       if (res.ok) {
         setPatientName(data.patient.full_name);
-        // Guardar token
         localStorage.setItem('patient_access_token', data.token);
         localStorage.setItem('patient_id', data.patient.id);
         localStorage.setItem('userRole', 'patient');
@@ -59,18 +58,18 @@ export default function PatientActivate() {
   };
   if (success) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0c10] text-slate-200 px-4">
-        <div className="max-w-md w-full bg-[#11141a] border border-slate-800 rounded-xl p-8 text-center">
-          <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-8 h-8 text-emerald-500" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white/80 px-4">
+        <div className="max-w-md w-full bg-white/5 border border-white/15 rounded-xl p-8 text-center">
+          <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-8 h-8 text-emerald-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">¡Cuenta Activada!</h1>
-          <p className="text-slate-400 mb-6">
+          <h1 className="text-2xl font-semibold text-white/90 mb-2">¡Cuenta Activada!</h1>
+          <p className="text-white/40 mb-6">
             Bienvenido a MEDOPZ, {patientName}
           </p>
           <Link
             to="/patient"
-            className="inline-block bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-lg text-sm font-bold uppercase"
+            className="inline-block bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 px-6 py-2.5 rounded-lg text-sm font-medium transition-all border border-emerald-500/25"
           >
             Ir al Portal del Paciente
           </Link>
@@ -79,14 +78,14 @@ export default function PatientActivate() {
     );
   }
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0c10] text-slate-200 px-4 font-sans">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white/80 px-4">
       <div className="flex flex-col items-center mb-10">
-        <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" className="h-24 w-24 mb-4" />
-        <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" className="h-7" />
+        <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" className="h-20 w-20 mb-4 opacity-60" />
+        <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" className="h-6 opacity-60" />
       </div>
-      <div className="w-full max-w-md bg-[#11141a] border border-slate-800 rounded-xl p-8">
-        <h1 className="text-xl font-bold text-white mb-2">Activar Cuenta MEDOPZ</h1>
-        <p className="text-sm text-slate-400 mb-6">
+      <div className="w-full max-w-md bg-white/5 border border-white/15 rounded-xl p-8">
+        <h1 className="text-xl font-semibold text-white/90 mb-2">Activar Cuenta MEDOPZ</h1>
+        <p className="text-sm text-white/40 mb-6">
           Crea tu contraseña para acceder al Portal del Paciente.
         </p>
         {error && (
@@ -96,32 +95,32 @@ export default function PatientActivate() {
         )}
         <form onSubmit={handleActivate} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+            <label className="block text-xs font-medium text-white/40 uppercase mb-1.5">
               Nueva Contraseña
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
                 placeholder="Mínimo 8 caracteres"
                 required
               />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-400 uppercase mb-2">
+            <label className="block text-xs font-medium text-white/40 uppercase mb-1.5">
               Confirmar Contraseña
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-sm text-white"
+                className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-white/80 placeholder:text-white/20 focus:outline-none focus:border-emerald-500/50"
                 placeholder="Repite tu contraseña"
                 required
               />
@@ -130,7 +129,7 @@ export default function PatientActivate() {
           <button
             type="submit"
             disabled={isLoading || !token}
-            className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg text-sm font-bold uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full mt-6 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 py-2.5 rounded-lg text-sm font-medium uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 transition-all border border-emerald-500/25"
           >
             {isLoading ? (
               <>
@@ -142,15 +141,12 @@ export default function PatientActivate() {
             )}
           </button>
         </form>
-        <div className="mt-6 pt-6 border-t border-slate-800 text-center">
-          <Link to="/patient/login" className="text-sm text-slate-400 hover:text-white">
+        <div className="mt-6 pt-6 border-t border-white/10 text-center">
+          <Link to="/patient/login" className="text-sm text-white/30 hover:text-white/60">
             ← Volver
           </Link>
         </div>
       </div>
-      <footer className="mt-12 text-[10px] text-slate-600 uppercase tracking-[0.3em]">
-        © 2026 MedOpz Clinical OS
-      </footer>
     </div>
   );
 }

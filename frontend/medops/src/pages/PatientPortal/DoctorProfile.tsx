@@ -13,15 +13,15 @@ export default function DoctorProfile() {
   const { data: doctor, isLoading: doctorLoading } = useDoctor(doctorId);
   const { data: services, isLoading: servicesLoading } = useDoctorServices(doctorId);
   
-  // Estados para modales
   const [selectedService, setSelectedService] = useState<any>(null);
   const [showServiceDetail, setShowServiceDetail] = useState(false);
   
   if (doctorLoading || servicesLoading) {
     return (
       <div className="max-w-[1600px] mx-auto p-4 lg:p-6 min-h-screen flex items-center justify-center">
-        <div className="text-white p-8 bg-black/40 border border-white/10 rounded-lg">
-          Cargando perfil...
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+          <p className="text-[10px] text-emerald-400/60">Cargando perfil...</p>
         </div>
       </div>
     );
@@ -30,8 +30,8 @@ export default function DoctorProfile() {
   if (!doctor) {
     return (
       <div className="max-w-[1600px] mx-auto p-4 lg:p-6 min-h-screen flex items-center justify-center">
-        <div className="text-white p-8 bg-black/40 border border-white/10 rounded-lg">
-          Doctor no encontrado
+        <div className="text-center">
+          <p className="text-white/40">Doctor no encontrado</p>
         </div>
       </div>
     );
@@ -39,27 +39,25 @@ export default function DoctorProfile() {
   
   const currentPatientId = localStorage.getItem('patient_id') ? Number(localStorage.getItem('patient_id')) : 1;
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* PageHeader idéntico a PatientServices.tsx */}
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
           { label: "Perfil del Doctor", active: true }
         ]}
       />
+      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Perfil del Doctor - Columna Izquierda */}
         <div className="lg:col-span-1">
-          <div className="bg-[#0a0a0b] border border-white/10 rounded-lg p-6 shadow-2xl sticky top-4">
+          <div className="bg-white/5 border border-white/15 rounded-lg p-6 sticky top-4">
             <DoctorProfileCard doctor={doctor} mode="view" />
             
-            {/* Biografía Sección */}
             {doctor.bio && (
               <div className="mt-6 pt-6 border-t border-white/10">
-                <h4 className="text-white/80 text-xs font-mono uppercase tracking-wider mb-2">
+                <h4 className="text-white/50 text-[10px] font-medium mb-2">
                   Biografía
                 </h4>
-                <p className="text-white/70 text-sm leading-relaxed">
+                <p className="text-white/60 text-sm leading-relaxed">
                   {doctor.bio}
                 </p>
               </div>
@@ -67,10 +65,9 @@ export default function DoctorProfile() {
           </div>
         </div>
         
-        {/* Servicios - Columna Derecha */}
         <div className="lg:col-span-2">
-          <h2 className="text-white text-xl font-bold mb-6 flex items-center gap-2">
-            <span className="w-1 h-6 bg-emerald-500 rounded-full"></span>
+          <h2 className="text-white/80 text-lg font-semibold mb-6 flex items-center gap-2">
+            <span className="w-1 h-6 bg-emerald-400/60 rounded-full"></span>
             Servicios Disponibles
           </h2>
           
@@ -78,37 +75,36 @@ export default function DoctorProfile() {
             {services?.map((service) => (
               <div 
                 key={service.id} 
-                className="group bg-[#0a0a0b] border border-white/10 rounded-lg p-5 hover:border-emerald-500/50 transition-all duration-300 shadow-lg"
+                className="group bg-white/5 border border-white/15 rounded-lg p-5 hover:bg-white/10 hover:border-white/25 transition-all duration-200"
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="text-white font-bold text-lg group-hover:text-emerald-400 transition-colors">
+                    <h3 className="text-white/80 font-medium text-base group-hover:text-emerald-400 transition-colors">
                       {service.name}
                     </h3>
-                    <p className="text-white/50 text-xs mt-1">
+                    <p className="text-white/30 text-[10px] mt-1">
                       Duración: {service.duration_minutes} min
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-emerald-400 font-mono text-xl font-bold">
+                    <p className="text-emerald-400 font-medium text-lg">
                       ${service.price_usd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
                 
                 {service.description && (
-                  <p className="text-white/60 text-sm mb-4 line-clamp-2">
+                  <p className="text-white/40 text-sm mb-4 line-clamp-2">
                     {service.description}
                   </p>
                 )}
                 
-                {/* Botón que abre ServiceDetail en lugar de ServicePurchaseFlow */}
                 <button
                   onClick={() => {
                     setSelectedService(service);
                     setShowServiceDetail(true);
                   }}
-                  className="w-full py-3 bg-emerald-500 text-black text-xs font-bold uppercase tracking-wider rounded-sm hover:bg-emerald-400 transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-emerald-500/15 text-emerald-400 text-[10px] font-medium rounded-lg hover:bg-emerald-500/25 transition-colors border border-emerald-500/25"
                 >
                   Ver Detalles
                 </button>
@@ -117,16 +113,15 @@ export default function DoctorProfile() {
           </div>
           
           {services?.length === 0 && (
-            <div className="text-center py-12 text-white/50">
+            <div className="text-center py-12 text-white/30">
               No hay servicios disponibles para este médico en este momento.
             </div>
           )}
         </div>
       </div>
       
-      {/* Modal de Service Detail (Intermedio) */}
       {showServiceDetail && selectedService && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-lg">
             <ServiceDetail
               service={selectedService}
@@ -136,17 +131,14 @@ export default function DoctorProfile() {
               }}
               onBuy={() => {
                 setShowServiceDetail(false);
-                // El modal de ServicePurchaseFlow se renderiza automáticamente 
-                // gracias a la condición !showServiceDetail && selectedService
               }}
             />
           </div>
         </div>
       )}
       
-      {/* Modal de Compra de Servicio (Flujo Final) */}
       {!showServiceDetail && selectedService && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="w-full max-w-md">
             <ServicePurchaseFlow
               service={selectedService}

@@ -14,43 +14,43 @@ import {
   ClipboardDocumentIcon
 } from "@heroicons/react/24/outline";
 const renderStatusBadge = (status: string, isPatient: boolean = false) => {
-  const base = "inline-flex items-center justify-center px-2 py-0.5 text-[8px] rounded-sm font-black uppercase tracking-wider border whitespace-nowrap";
+  const base = "inline-flex items-center justify-center px-2.5 py-1 text-[9px] rounded-md font-medium border whitespace-nowrap";
   
   if (isPatient && status === "waiting") {
     return (
-      <span className={`${base} bg-cyan-500/20 text-cyan-400 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.25)] animate-pulse`}>
-        TU TURNO
+      <span className={`${base} bg-cyan-500/10 text-cyan-400 border-cyan-500/20`}>
+        Tu Turno
       </span>
     );
   }
   
   switch (status) {
     case "waiting":
-      return <span className={`${base} bg-amber-500/20 text-amber-400 border-amber-500/40`}>EN_ESPERA</span>;
+      return <span className={`${base} bg-amber-500/10 text-amber-400 border-amber-500/20`}>En Espera</span>;
     case "in_consultation":
-      return <span className={`${base} bg-white/20 text-white border-white/40 animate-pulse`}>EN_CONSULTA</span>;
+      return <span className={`${base} bg-white/10 text-white/80 border-white/20`}>En Consulta</span>;
     case "completed":
-      return <span className={`${base} bg-emerald-500/20 text-emerald-400 border-emerald-500/40`}>ATENDIDO</span>;
+      return <span className={`${base} bg-emerald-500/10 text-emerald-400 border-emerald-500/20`}>Atendido</span>;
     default:
-      return <span className={`${base} bg-white/5 text-white/40 border-white/10`}>{status.toUpperCase()}</span>;
+      return <span className={`${base} bg-white/5 text-white/40 border-white/10`}>{status}</span>;
   }
 };
 const renderWaitTime = (entry: any) => {
   if (entry.status === "completed") {
     return (
-      <div className="flex items-center gap-1 font-mono text-[9px] text-emerald-500/60 uppercase">
-        <CheckCircleIcon className="w-3 h-3" />
-        <span>Sesión_Finalizada</span>
+      <div className="flex items-center gap-1 text-[9px] text-emerald-400/60">
+        <CheckCircleIcon className="w-3.5 h-3.5" />
+        <span>Sesión finalizada</span>
       </div>
     );
   }
   
-  if (!entry.arrival_time) return <span className="text-white/30">--</span>;
+  if (!entry.arrival_time) return <span className="text-white/20">--</span>;
   
   const minutes = Math.floor((Date.now() - new Date(entry.arrival_time).getTime()) / 60000);
   return (
-    <div className="flex items-center gap-1 font-mono text-[10px] text-amber-500/70">
-      <ClockIcon className="w-3 h-3" />
+    <div className="flex items-center gap-1 text-[10px] text-amber-400/50">
+      <ClockIcon className="w-3.5 h-3.5" />
       <span>{minutes < 60 ? `${minutes}m` : `${Math.floor(minutes/60)}h ${minutes%60}m`}</span>
     </div>
   );
@@ -59,7 +59,6 @@ export default function PatientQueue() {
   const navigate = useNavigate();
   const storedPatientId = localStorage.getItem("patient_id");
   
-  // Obtener lista de servicios para mapeo
   const { data: medicalServices, isLoading: servicesLoading } = useMedicalServices();
   
   useEffect(() => {
@@ -82,7 +81,6 @@ export default function PatientQueue() {
   
   const isLoading = false;
   
-  // Función para obtener nombre del servicio
   const getServiceName = (serviceId?: number) => {
     if (!serviceId || !medicalServices) return null;
     const service = medicalServices.find(s => s.id === serviceId);
@@ -91,73 +89,70 @@ export default function PatientQueue() {
   if (isLoading || servicesLoading) return (
     <div className="p-8 flex items-center justify-center min-h-[400px]">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-blue-500">Syncing_Queue_Data...</p>
+        <div className="w-8 h-8 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+        <p className="text-[10px] text-emerald-400/60">Cargando datos de la cola...</p>
       </div>
     </div>
   );
   
   return (
-    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6 bg-black min-h-screen">
-      {/* HEADER */}
+    <div className="max-w-[1600px] mx-auto p-4 lg:p-6 space-y-6">
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/patient" },
-          { label: "SALA DE ESPERA", active: true }
+          { label: "Sala de Espera", active: true }
         ]}
         stats={[
           { 
-            label: "En_Espera", 
+            label: "En Espera", 
             value: waitingCount, 
-            color: "text-amber-500" 
+            color: "text-amber-400" 
           },
           { 
-            label: "En_Consulta", 
+            label: "En Consulta", 
             value: inConsultationCount, 
-            color: "text-white" 
+            color: "text-white/70" 
           },
           { 
             label: "Atendidos", 
             value: completedCount, 
-            color: "text-emerald-500" 
+            color: "text-emerald-400" 
           }
         ]}
         actions={
-          <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-white/10 bg-white/5 shadow-inner">
-            <ClockIcon className="w-5 h-5 text-blue-500" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5">
+            <ClockIcon className="w-5 h-5 text-white/30" />
           </div>
         }
       />
       
-      {/* PACIENTE ACTUAL DESTACADO */}
       {patientEntry && (
-        <div className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/20 rounded-sm p-4">
+        <div className="bg-gradient-to-r from-cyan-500/5 to-blue-500/5 border border-cyan-500/20 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-sm bg-cyan-500/20 flex items-center justify-center">
-                <UserIcon className="w-6 h-6 text-cyan-400" />
+              <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                <UserIcon className="w-6 h-6 text-cyan-400/70" />
               </div>
               <div>
-                <p className="text-[9px] font-mono text-cyan-400 uppercase tracking-wider">Tu Estado</p>
-                <p className="text-lg font-black text-white uppercase">
+                <p className="text-[9px] text-cyan-400/60 mb-0.5">Tu Estado</p>
+                <p className="text-lg font-medium text-white/90">
                   {patientEntry.status === "waiting" && `En Espera - Posición #${patientEntry.order}`}
                   {patientEntry.status === "in_consultation" && "En Consulta"}
                   {patientEntry.status === "completed" && "Atendido"}
                 </p>
-                {/* NUEVO: Mostrar servicio del paciente actual */}
                 {patientEntry.serviceId && (
-                  <div className="flex items-center gap-1.5 text-[9px] font-mono text-cyan-300 mt-1">
-                    <ClipboardDocumentIcon className="w-3 h-3" />
-                    <span>{getServiceName(patientEntry.serviceId) || "Servicio No Identificado"}</span>
+                  <div className="flex items-center gap-1.5 text-[9px] text-cyan-400/70 mt-1">
+                    <ClipboardDocumentIcon className="w-3.5 h-3.5" />
+                    <span>{getServiceName(patientEntry.serviceId) || "Servicio no identificado"}</span>
                   </div>
                 )}
                 {patientEntry.status === "waiting" && patientsAhead > 0 && (
-                  <p className="text-[10px] text-white/60">
+                  <p className="text-[10px] text-white/40 mt-0.5">
                     {patientsAhead} paciente{patientsAhead !== 1 ? 's' : ''} antes que tú
                   </p>
                 )}
                 {patientEntry.status === "waiting" && patientsAhead === 0 && (
-                  <p className="text-[10px] text-cyan-400 font-bold animate-pulse">
+                  <p className="text-[10px] text-cyan-400/80 mt-0.5">
                     ¡Eres el siguiente!
                   </p>
                 )}
@@ -171,29 +166,27 @@ export default function PatientQueue() {
         </div>
       )}
       
-      {/* MENSAJE SI NO ESTÁ EN LA COLA */}
       {!patientEntry && waitingCount > 0 && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-sm p-4">
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <BellAlertIcon className="w-5 h-5 text-amber-400" />
+            <BellAlertIcon className="w-5 h-5 text-amber-400/70" />
             <div>
-              <p className="text-[10px] font-bold text-amber-400 uppercase">No tienes turno activo</p>
-              <p className="text-[9px] text-white/60">Tienes {waitingCount} paciente{waitingCount !== 1 ? 's' : ''} en espera. Tu turno aparecerá cuando el doctor te llame.</p>
+              <p className="text-[10px] font-medium text-amber-400/80">No tienes turno activo</p>
+              <p className="text-[9px] text-white/40">Tienes {waitingCount} paciente{waitingCount !== 1 ? 's' : ''} en espera. Tu turno aparecerá cuando el doctor te llame.</p>
             </div>
           </div>
         </div>
       )}
       
-      {/* LISTA COMPLETA DE LA COLA */}
-      <div className="bg-[#0a0a0b] border border-white/10 rounded-sm overflow-hidden">
-        <div className="px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">
-            Cola_de_Espera_Hoy
+      <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+        <div className="px-5 py-3 border-b border-white/10 bg-white/5">
+          <h3 className="text-[11px] font-medium text-white/60">
+            Cola de Espera
           </h3>
         </div>
         {allEntries.length === 0 ? (
-          <div className="p-20 text-center opacity-30">
-            <p className="text-[11px] font-mono uppercase tracking-widest">No hay pacientes en espera</p>
+          <div className="p-20 text-center">
+            <p className="text-[11px] text-white/20">No hay pacientes en espera</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5">
@@ -204,40 +197,39 @@ export default function PatientQueue() {
               return (
                 <div 
                   key={entry.id}
-                  className={`flex justify-between items-center px-4 py-4 transition-colors ${
+                  className={`flex justify-between items-center px-5 py-4 transition-colors ${
                     isCurrentPatient 
-                      ? "bg-cyan-500/5 border-l-4 border-cyan-500" 
-                      : "hover:bg-white/[0.02] border-l-4 border-transparent"
+                      ? "bg-cyan-500/5 border-l-4 border-cyan-500/30" 
+                      : "hover:bg-white/5 border-l-4 border-transparent"
                   }`}
                 >
                   <div className="flex items-start gap-4 flex-1">
-                    <span className={`font-mono text-xs font-bold ${
-                      isCurrentPatient ? "text-cyan-400" : "text-white/30"
+                    <span className={`font-mono text-xs font-medium ${
+                      isCurrentPatient ? "text-cyan-400/70" : "text-white/20"
                     }`}>
                       {String(index + 1).padStart(2, '0')}.
                     </span>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        <span className={`text-[13px] font-black uppercase ${
-                          isCurrentPatient ? "text-cyan-400" : "text-white"
+                        <span className={`text-[13px] font-medium ${
+                          isCurrentPatient ? "text-cyan-400/90" : "text-white/80"
                         }`}>
                           {entry.patient?.full_name || "Paciente"}
-                          {isCurrentPatient && <span className="text-cyan-400/60 text-[10px] ml-2">(TÚ)</span>}
+                          {isCurrentPatient && <span className="text-cyan-400/50 text-[10px] ml-2">(TÚ)</span>}
                         </span>
                         {renderStatusBadge(entry.status, isCurrentPatient)}
                       </div>
                       
-                      {/* NUEVO: Mostrar servicio */}
                       {serviceName && (
-                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-blue-400/80">
-                          <ClipboardDocumentIcon className="w-3 h-3" />
+                        <div className="flex items-center gap-1.5 text-[9px] text-blue-400/60">
+                          <ClipboardDocumentIcon className="w-3.5 h-3.5" />
                           <span>{serviceName}</span>
                         </div>
                       )}
                       
                       {entry.institution_data && (
-                        <div className="flex items-center gap-1.5 text-[9px] font-mono text-white/60">
-                          <BuildingOfficeIcon className="w-3 h-3 text-blue-500/50" />
+                        <div className="flex items-center gap-1.5 text-[9px] text-white/30">
+                          <BuildingOfficeIcon className="w-3.5 h-3.5" />
                           <span>{entry.institution_data.name}</span>
                         </div>
                       )}
@@ -246,9 +238,8 @@ export default function PatientQueue() {
                     </div>
                   </div>
                   
-                  {/* Indicador de posición del paciente */}
                   {entry.status === "waiting" && !isCurrentPatient && (
-                    <div className="text-[9px] font-mono text-white/30">
+                    <div className="text-[9px] font-mono text-white/20">
                       #{entry.order}
                     </div>
                   )}
