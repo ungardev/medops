@@ -56,17 +56,15 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
     payment_date: new Date().toISOString().split('T')[0],
     notes: ''
   });
-  // Estados para screenshot
+  
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   
-  // Estados para OCR
   const [isOCRLoading, setIsOCRLoading] = useState(false);
   const [ocrResult, setOcrResult] = useState<OCRResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  // Manejar cambio de screenshot
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -84,7 +82,6 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       setOcrResult(null);
     }
   };
-  // Función para ejecutar OCR
   const handleOCR = async () => {
     if (!screenshot) {
       setSubmitError("Primero sube una captura de pago");
@@ -106,11 +103,9 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       const result = await response.json();
       setOcrResult(result);
       if (result.success && result.data) {
-        // Auto-rellenar campos con datos extraídos
         const data = result.data;
         
         if (data.banco) {
-          // Buscar código de banco que coincida
           const bank = VENEZUELAN_BANKS.find(b => 
             b.name.toLowerCase().includes(data.banco!.toLowerCase()) ||
             data.banco!.toLowerCase().includes(b.code.toLowerCase())
@@ -120,7 +115,6 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
           }
         }
         if (data.monto) {
-          // Limpiar monto (quitar puntos, comas)
           const cleanMonto = data.monto.replace(/[.,]/g, '');
           setFormData(prev => ({ ...prev, amount_bs: cleanMonto }));
         }
@@ -140,7 +134,6 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
       setIsOCRLoading(false);
     }
   };
-  // Limpiar screenshot
   const handleClearScreenshot = () => {
     setScreenshot(null);
     setScreenshotPreview(null);
@@ -246,51 +239,46 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
   };
   if (!open) return null;
   return (
-    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#0a0a0b] border border-white/10 w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-[#1a1a1b] border border-white/15 w-full max-w-md max-h-[90vh] overflow-y-auto rounded-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5">
           <div className="flex items-center gap-3">
-            <div className="w-3 h-3 border border-amber-400 border-t-transparent animate-spin" />
-            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-white">
-              Registrar Pago
+            <div className="w-3 h-3 border border-amber-400 border-t-transparent rounded-full animate-spin" />
+            <h2 className="text-[12px] font-semibold text-white">
+              Registrar Pago Manual
             </h2>
           </div>
           <button 
             onClick={handleClose}
-            className="text-white/40 hover:text-white transition-colors"
+            className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors"
           >
-            <XMarkIcon className="w-4 h-4" />
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
-        {/* Warning Banner */}
-        <div className="px-4 py-3 border-b border-white/5 bg-amber-500/5">
+        <div className="px-5 py-3 border-b border-white/10 bg-amber-500/5">
           <div className="flex items-center gap-2">
             <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
-            <span className="text-[9px] font-mono text-amber-300 uppercase tracking-widest">
+            <span className="text-[10px] text-amber-400/80">
               Pendiente de verificación
             </span>
           </div>
         </div>
-        {/* Amount Display */}
-        <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+        <div className="px-6 py-4 border-b border-white/10 bg-white/5">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-white/40">
               Monto a Pagar
             </span>
-            <span className="text-xl font-black text-blue-400">
+            <span className="text-xl font-semibold text-blue-400">
               Bs {expectedAmount.toLocaleString('es-VE', { minimumFractionDigits: 2 })}
             </span>
           </div>
         </div>
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {/* CAPTURA DE PAGO */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
-              📷 Captura de pago
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-2 block">
+              Captura de pago
             </label>
-            <div className="border-2 border-dashed border-white/20 rounded-sm p-4 text-center hover:border-white/40 transition-colors">
+            <div className="border-2 border-dashed border-white/15 rounded-lg p-4 text-center hover:border-white/30 transition-colors">
               <input
                 type="file"
                 accept="image/png,image/jpeg,image/jpg"
@@ -300,84 +288,80 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
                 ref={fileInputRef}
               />
               <label htmlFor="doctor-screenshot-upload" className="cursor-pointer">
-                <PhotoIcon className="w-8 h-8 mx-auto text-white/30 mb-2" />
-                <p className="text-[10px] text-white/50">
+                <PhotoIcon className="w-8 h-8 mx-auto text-white/20 mb-2" />
+                <p className="text-[11px] text-white/40">
                   {screenshot ? screenshot.name : "Subir captura de pantalla"}
                 </p>
-                <p className="text-[8px] text-white/30 mt-1">
+                <p className="text-[9px] text-white/20 mt-1">
                   PNG o JPG hasta 2MB
                 </p>
               </label>
             </div>
             
-            {/* Preview y Botón OCR */}
             {screenshotPreview && (
               <div className="mt-3 relative">
                 <img 
                   src={screenshotPreview} 
                   alt="Preview" 
-                  className="h-32 w-full object-contain rounded-sm border border-white/10"
+                  className="h-32 w-full object-contain rounded-lg border border-white/10"
                 />
                 <button
                   type="button"
                   onClick={handleClearScreenshot}
-                  className="absolute top-1 right-1 bg-red-500/80 text-white rounded-full p-1 hover:bg-red-500"
+                  className="absolute top-2 right-2 bg-red-500/80 text-white rounded-full p-1.5 hover:bg-red-500 transition-colors"
                 >
                   <XMarkIcon className="w-3 h-3" />
                 </button>
                 
-                {/* BOTÓN OCR */}
                 <button
                   type="button"
                   onClick={handleOCR}
                   disabled={isOCRLoading}
-                  className="absolute bottom-1 right-1 flex items-center gap-1 px-2 py-1 bg-purple-500/80 text-white text-[8px] font-bold uppercase rounded-sm hover:bg-purple-500 disabled:opacity-50"
+                  className="absolute bottom-2 right-2 flex items-center gap-1 px-2.5 py-1.5 bg-purple-500/80 text-white text-[9px] font-medium rounded-lg hover:bg-purple-500 disabled:opacity-50 transition-colors"
                 >
                   {isOCRLoading ? (
                     <ArrowPathIcon className="w-3 h-3 animate-spin" />
                   ) : (
                     <SparklesIcon className="w-3 h-3" />
                   )}
-                  {isOCRLoading ? "Procesando..." : "🤖 OCR"}
+                  {isOCRLoading ? "Procesando..." : "OCR"}
                 </button>
               </div>
             )}
             
-            {/* Resultado OCR */}
             {ocrResult && (
-              <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/30 rounded-sm">
+              <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[9px] font-bold text-purple-300 uppercase">
-                    🤖 OCR Resultado
+                  <span className="text-[9px] font-medium text-purple-300">
+                    Resultado OCR
                   </span>
                   {ocrResult.confianza && (
-                    <span className="text-[8px] text-purple-400">
+                    <span className="text-[8px] text-purple-400/60">
                       Confianza: {Math.round(ocrResult.confianza * 100)}%
                     </span>
                   )}
                 </div>
                 {ocrResult.success ? (
                   <div className="space-y-1">
-                    {ocrResult.data?.banco && <p className="text-[8px] text-white/60">Banco: {ocrResult.data.banco}</p>}
-                    {ocrResult.data?.monto && <p className="text-[8px] text-white/60">Monto: Bs {ocrResult.data.monto}</p>}
-                    {ocrResult.data?.referencia && <p className="text-[8px] text-white/60">Referencia: {ocrResult.data.referencia}</p>}
-                    {ocrResult.data?.telefono && <p className="text-[8px] text-white/60">Teléfono: {ocrResult.data.telefono}</p>}
+                    {ocrResult.data?.banco && <p className="text-[9px] text-white/50">Banco: {ocrResult.data.banco}</p>}
+                    {ocrResult.data?.monto && <p className="text-[9px] text-white/50">Monto: Bs {ocrResult.data.monto}</p>}
+                    {ocrResult.data?.referencia && <p className="text-[9px] text-white/50">Referencia: {ocrResult.data.referencia}</p>}
+                    {ocrResult.data?.telefono && <p className="text-[9px] text-white/50">Teléfono: {ocrResult.data.telefono}</p>}
                   </div>
                 ) : (
-                  <p className="text-[8px] text-red-400">{ocrResult.error}</p>
+                  <p className="text-[9px] text-red-400">{ocrResult.error}</p>
                 )}
               </div>
             )}
           </div>
-          {/* Banco */}
           <div>
-            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
               Banco emisor
             </label>
             <select
               value={formData.bank_name}
               onChange={(e) => handleInputChange('bank_name', e.target.value)}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all"
               required
             >
               <option value="">Seleccionar banco</option>
@@ -388,9 +372,8 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               ))}
             </select>
           </div>
-          {/* Teléfono */}
           <div>
-            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
               Teléfono del pagador
             </label>
             <input
@@ -398,13 +381,12 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="04121234567"
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
               required
             />
           </div>
-          {/* Cédula */}
           <div>
-            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
               Cédula del pagador
             </label>
             <input
@@ -412,13 +394,12 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               value={formData.national_id}
               onChange={(e) => handleInputChange('national_id', e.target.value)}
               placeholder="V-12345678"
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
               required
             />
           </div>
-          {/* Referencia */}
           <div>
-            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
               Número de referencia
             </label>
             <input
@@ -426,14 +407,13 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
               value={formData.reference_number}
               onChange={(e) => handleInputChange('reference_number', e.target.value)}
               placeholder="12345678901234567890"
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all placeholder:text-white/30"
               required
             />
           </div>
-          {/* Monto y Fecha */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+              <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
                 Monto (Bs)
               </label>
               <input
@@ -441,50 +421,47 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
                 step="0.01"
                 value={formData.amount_bs}
                 onChange={(e) => handleInputChange('amount_bs', e.target.value)}
-                className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all"
                 required
               />
             </div>
             <div>
-              <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+              <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
                 Fecha de pago
               </label>
               <input
                 type="date"
                 value={formData.payment_date}
                 onChange={(e) => handleInputChange('payment_date', e.target.value)}
-                className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all"
                 style={{colorScheme: 'dark'}}
                 required
               />
             </div>
           </div>
-          {/* Notas */}
           <div>
-            <label className="text-[10px] font-bold text-white/40 uppercase mb-2 block">
+            <label className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-1.5 block">
               Notas adicionales
             </label>
             <textarea
               value={formData.notes}
               onChange={(e) => handleInputChange('notes', e.target.value)}
               rows={2}
-              className="w-full px-4 py-2.5 bg-black/40 border border-white/10 rounded-sm text-white focus:outline-none focus:border-emerald-500/50 resize-none"
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/15 rounded-lg text-[12px] text-white/80 focus:outline-none focus:border-emerald-500/50 transition-all resize-none placeholder:text-white/30"
               placeholder="Notas adicionales..."
             />
           </div>
-          {/* Error */}
           {submitError && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20">
+            <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
               <ExclamationTriangleIcon className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <span className="text-[10px] text-red-300">{submitError}</span>
+              <span className="text-[10px] text-red-400">{submitError}</span>
             </div>
           )}
-          {/* Actions */}
           <div className="flex gap-2 pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex-1 py-3 bg-emerald-500 text-black text-[10px] font-bold uppercase tracking-widest hover:bg-emerald-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 bg-emerald-500/15 text-emerald-400 text-[11px] font-medium hover:bg-emerald-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 rounded-lg border border-emerald-500/25"
             >
               {isSubmitting ? (
                 <>
@@ -501,16 +478,15 @@ const ManualPaymentModal: React.FC<ManualPaymentModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="py-3 px-6 bg-white/5 text-white/50 text-[9px] font-bold uppercase tracking-widest hover:bg-white/10 hover:text-white/80 transition-all"
+              className="py-2.5 px-5 bg-white/5 text-white/50 text-[11px] font-medium hover:bg-white/10 hover:text-white/70 transition-all rounded-lg"
             >
               Cancelar
             </button>
           </div>
         </form>
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-white/5 flex items-center justify-center gap-2">
-          <CreditCardIcon className="w-3 h-3 text-blue-400/40" />
-          <span className="text-[7px] font-mono text-white/30 uppercase tracking-[0.3em]">
+        <div className="px-6 py-3 border-t border-white/10 bg-white/5 flex items-center justify-center gap-2">
+          <CreditCardIcon className="w-4 h-4 text-blue-400/30" />
+          <span className="text-[8px] text-white/20 uppercase tracking-wider">
             Pendiente de verificación
           </span>
         </div>
