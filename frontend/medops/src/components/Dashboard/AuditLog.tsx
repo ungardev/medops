@@ -9,31 +9,31 @@ import { useDoctorConfig } from "@/hooks/settings/useDoctorConfig";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 const severityBadge = (severity?: string | null) => {
-  const base = "inline-flex items-center justify-center px-2 py-1 text-[9px] rounded-sm font-black border whitespace-nowrap uppercase tracking-widest transition-all duration-300";
+  const base = "inline-flex items-center justify-center px-2.5 py-1 text-[9px] rounded-full font-semibold border whitespace-nowrap uppercase tracking-wider";
   switch ((severity || "").toLowerCase()) {
     case "alta":
     case "high":
-      return <span className={`${base} bg-red-500/20 text-red-400 border-red-500/40 shadow-[0_0_10px_rgba(239,68,68,0.2)]`}>CRITICAL</span>;
+      return <span className={`${base} bg-red-500/15 text-red-400 border-red-500/25`}>Crítico</span>;
     case "media":
     case "medium":
-      return <span className={`${base} bg-orange-500/20 text-orange-400 border-orange-500/40`}>WARNING</span>;
+      return <span className={`${base} bg-amber-500/15 text-amber-400 border-amber-500/25`}>Advertencia</span>;
     case "baja":
     case "low":
-      return <span className={`${base} bg-emerald-500/20 text-emerald-400 border-emerald-500/40`}>STABLE</span>;
+      return <span className={`${base} bg-emerald-500/15 text-emerald-400 border-emerald-500/25`}>Estable</span>;
     default:
-      return <span className={`${base} bg-white/5 text-white/40 border-white/10`}>INFO</span>;
+      return <span className={`${base} bg-white/5 text-white/50 border-white/10`}>Info</span>;
   }
 };
 const actionBadge = (action: string) => {
-  const base = "inline-flex items-center justify-center px-2 py-0.5 text-[9px] rounded-sm font-mono font-bold border whitespace-nowrap uppercase tracking-tighter transition-all";
+  const base = "inline-flex items-center justify-center px-2.5 py-1 text-[9px] rounded-full font-medium border whitespace-nowrap uppercase tracking-wider";
   const act = (action || "").toLowerCase();
   if (act.includes("create")) 
-    return <span className={`${base} border-emerald-500/40 text-emerald-400 bg-emerald-500/10`}>OP_CREATE</span>;
+    return <span className={`${base} border-emerald-500/25 text-emerald-400 bg-emerald-500/10`}>Creación</span>;
   if (act.includes("update")) 
-    return <span className={`${base} border-[var(--palantir-active)]/40 text-[var(--palantir-active)] bg-[var(--palantir-active)]/10`}>OP_UPDATE</span>;
+    return <span className={`${base} border-blue-500/25 text-blue-400 bg-blue-500/10`}>Actualización</span>;
   if (act.includes("delete")) 
-    return <span className={`${base} border-red-500/40 text-red-400 bg-red-500/10`}>OP_DELETE</span>;
-  return <span className={`${base} border-white/20 text-white/60 bg-white/5`}>OP_EXEC</span>;
+    return <span className={`${base} border-red-500/25 text-red-400 bg-red-500/10`}>Eliminación</span>;
+  return <span className={`${base} border-white/15 text-white/60 bg-white/5`}>Ejecutado</span>;
 };
 const AuditLog: React.FC = () => {
   const [expanded, setExpanded] = useState(false);
@@ -41,7 +41,6 @@ const AuditLog: React.FC = () => {
   const { data: events, isLoading } = useAuditLogDirect(50);
   const { data: inst } = useInstitutionSettings();
   const { data: doctor } = useDoctorConfig();
-  // ✅ IMPLEMENTACIÓN: Exportar PDF
   const handleExportPDF = () => {
     if (!events || events.length === 0) {
       alert("No hay datos para exportar");
@@ -51,19 +50,17 @@ const AuditLog: React.FC = () => {
     const institutionName = inst?.name || "MEDOPZ";
     const doctorName = doctor?.full_name || "Doctor";
     const currentDate = moment().format("DD/MM/YYYY HH:mm");
-    // Header
     pdfDoc.setFontSize(18);
-    pdfDoc.text("REGISTRO DE AUDITORÍA", 14, 22);
+    pdfDoc.text("Registro de Auditoría", 14, 22);
     
     pdfDoc.setFontSize(10);
     pdfDoc.setTextColor(100);
     pdfDoc.text(`Institución: ${institutionName}`, 14, 32);
     pdfDoc.text(`Doctor: ${doctorName}`, 14, 38);
-    pdfDoc.text(`Fecha de Exportación: ${currentDate}`, 14, 44);
-    // Tabla
+    pdfDoc.text(`Fecha: ${currentDate}`, 14, 44);
     const tableData = events.slice(0, 50).map((entry: EventLogEntry) => [
       moment(entry.timestamp).format("DD/MM/YYYY HH:mm:ss"),
-      entry.actor || "System",
+      entry.actor || "Sistema",
       entry.entity || "N/A",
       entry.action || "N/A",
       entry.severity || "INFO",
@@ -73,20 +70,10 @@ const AuditLog: React.FC = () => {
       startY: 50,
       head: [["Fecha/Hora", "Actor", "Entidad", "Acción", "Severidad", "Descripción"]],
       body: tableData,
-      styles: {
-        fontSize: 8,
-        cellPadding: 2,
-      },
-      headStyles: {
-        fillColor: [40, 40, 40],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245],
-      },
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [40, 40, 40], textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
     });
-    // Footer
     pdfDoc.setFontSize(8);
     pdfDoc.setTextColor(150);
     const pageSize = pdfDoc.internal.pageSize;
@@ -103,7 +90,6 @@ const AuditLog: React.FC = () => {
     pdfDoc.save(`audit_log_${moment().format("YYYYMMDD_HHmmss")}.pdf`);
     setExportOpen(false);
   };
-  // ✅ IMPLEMENTACIÓN: Exportar CSV
   const handleExportCSV = () => {
     if (!events || events.length === 0) {
       alert("No hay datos para exportar");
@@ -130,85 +116,84 @@ const AuditLog: React.FC = () => {
     setExportOpen(false);
   };
   return (
-    <div className="bg-black/40 border border-white/10 rounded-sm relative z-20 backdrop-blur-md overflow-hidden transition-all duration-500">
-      {/* Header Táctico */}
-      <div className="px-5 py-4 bg-white/[0.03] border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="p-2 bg-[var(--palantir-active)]/10 rounded-sm border border-[var(--palantir-active)]/20">
-            <TableCellsIcon className="w-4 h-4 text-[var(--palantir-active)]" />
+    <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden transition-all duration-500">
+      {/* Header */}
+      <div className="px-5 py-4 bg-white/5 border-b border-white/15 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+            <TableCellsIcon className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="flex flex-col">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-white/90">Registro de Auditoría</h3>
+            <h3 className="text-[12px] font-semibold text-white">Registro de Auditoría</h3>
             <div className="flex items-center gap-2 mt-0.5">
-               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_#10b981]" />
-               <span className="text-[8px] font-mono text-white/30 uppercase tracking-widest font-bold">Live_System_Stream</span>
+               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+               <span className="text-[9px] text-white/50 font-medium">Actividad en tiempo real</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-white/10 rounded-sm text-white/60 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all"
+            className="flex items-center gap-2 px-4 py-2 text-[11px] font-medium border border-white/15 rounded-lg text-white/60 hover:text-white hover:bg-white/5 hover:border-white/25 transition-all"
           >
-            {expanded ? "Ocultar Monitor" : "Desplegar Monitor"}
-            {expanded ? <ChevronUpIcon className="w-3 h-3" /> : <ChevronDownIcon className="w-3 h-3" />}
+            {expanded ? "Ocultar" : "Ver Registros"}
+            {expanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
           </button>
-          {/* ✅ FIX: Dropdown con z-index alto y fixed */}
           <div className="relative">
             <button
               onClick={() => setExportOpen(!exportOpen)}
-              className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-[var(--palantir-active)] text-black font-bold hover:brightness-110 transition-all rounded-sm"
+              className="flex items-center gap-2 px-4 py-2 text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all rounded-lg"
             >
-              <ArrowDownTrayIcon className="w-3 h-3 stroke-[3px]" />
+              <ArrowDownTrayIcon className="w-4 h-4" />
               Exportar
             </button>
             
             {exportOpen && (
-              <div className="fixed bg-[#0f1115] border border-white/10 rounded-sm shadow-2xl z-[9999] mt-2 overflow-hidden animate-in fade-in slide-in-from-top-2" style={{ minWidth: "180px" }}>
+              <div className="absolute right-0 mt-2 bg-[#1a1a1b] border border-white/15 rounded-lg shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2" style={{ minWidth: "200px" }}>
                 <button 
                   onClick={handleExportPDF} 
-                  className="w-full text-left px-4 py-3 text-[9px] font-black uppercase text-white/60 hover:bg-[var(--palantir-active)] hover:text-black transition-all block"
+                  className="w-full text-left px-4 py-3 text-[11px] font-medium text-white/70 hover:bg-emerald-500/10 hover:text-emerald-400 transition-all block"
                 >
-                  Generar PDF Operativo
+                  Exportar como PDF
                 </button>
                 <button 
                   onClick={handleExportCSV} 
-                  className="w-full text-left px-4 py-3 text-[9px] font-black uppercase text-white/60 hover:bg-[var(--palantir-active)] hover:text-black border-t border-white/5 transition-all block"
+                  className="w-full text-left px-4 py-3 text-[11px] font-medium text-white/70 hover:bg-emerald-500/10 hover:text-emerald-400 border-t border-white/10 transition-all block"
                 >
-                  Raw Data CSV
+                  Exportar como CSV
                 </button>
               </div>
             )}
           </div>
         </div>
       </div>
-      {/* Tabla con Visualización de Datos */}
+      {/* Tabla */}
       {expanded && (
         <div className="animate-in slide-in-from-top-2 duration-500 overflow-hidden">
           {isLoading ? (
-            <div className="p-12 text-center text-[10px] font-mono text-white/20 animate-pulse uppercase tracking-[0.5em]">Syncing_Database_Logs...</div>
+            <div className="p-12 text-center text-[11px] text-white/40 animate-pulse">Cargando registros...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-white/[0.02]">
-                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/30 border-b border-white/5">Reloj_Sistema</th>
-                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/30 border-b border-white/5">Actor_Principal</th>
-                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/30 border-b border-white/5">Entidad_Objetivo</th>
-                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/30 border-b border-white/5">Protocolo_Acción</th>
-                    <th className="px-6 py-3 text-[9px] font-black uppercase tracking-[0.3em] text-white/30 border-b border-white/5">Status_Net</th>
+                  <tr className="bg-white/5">
+                    <th className="px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-white/50 border-b border-white/10">Fecha/Hora</th>
+                    <th className="px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-white/50 border-b border-white/10">Actor</th>
+                    <th className="px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-white/50 border-b border-white/10">Entidad</th>
+                    <th className="px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-white/50 border-b border-white/10">Acción</th>
+                    <th className="px-6 py-3 text-[10px] font-medium uppercase tracking-wider text-white/50 border-b border-white/10">Severidad</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.03]">
+                <tbody className="divide-y divide-white/5">
                   {(events || []).slice(0, 15).map((entry: EventLogEntry) => (
-                    <tr key={entry.id} className="group hover:bg-[var(--palantir-active)]/[0.04] transition-all duration-200">
-                      <td className="px-6 py-3 text-[10px] font-mono text-white/40 group-hover:text-white/80">
-                        {moment(entry.timestamp).format("HH:mm:ss.SSS")}
+                    <tr key={entry.id} className="group hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-3 text-[11px] text-white/50 group-hover:text-white/70">
+                        {moment(entry.timestamp).format("DD/MM/YYYY HH:mm:ss")}
                       </td>
-                      <td className="px-6 py-3 text-[11px] font-black text-white uppercase tracking-wider">
-                        <span className="bg-white/5 px-2 py-1 rounded-sm border border-white/5">{entry.actor}</span>
+                      <td className="px-6 py-3 text-[11px] font-medium text-white/80">
+                        <span className="bg-white/5 px-2.5 py-1 rounded-md border border-white/10">{entry.actor}</span>
                       </td>
-                      <td className="px-6 py-3 text-[10px] text-white/60 font-bold uppercase group-hover:text-white transition-colors">
+                      <td className="px-6 py-3 text-[11px] text-white/60 font-medium group-hover:text-white/80 transition-colors">
                         {entry.entity}
                       </td>
                       <td className="px-6 py-3">

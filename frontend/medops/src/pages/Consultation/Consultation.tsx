@@ -28,7 +28,7 @@ const SessionTimer = ({ startTime }: { startTime: string | undefined | null }) =
   const [elapsed, setElapsed] = useState("00:00");
   useEffect(() => {
     if (!startTime) {
-      setElapsed("STANDBY");
+      setElapsed("00:00");
       return;
     }
     const calculate = () => {
@@ -47,7 +47,7 @@ const SessionTimer = ({ startTime }: { startTime: string | undefined | null }) =
     const timer = setInterval(() => setElapsed(calculate()), 1000);
     return () => clearInterval(timer);
   }, [startTime]);
-  return <span className="font-mono tabular-nums tracking-widest">{elapsed}</span>;
+  return <span className="tabular-nums">{elapsed}</span>;
 };
 export default function Consultation() {
   const navigate = useNavigate();
@@ -77,15 +77,15 @@ export default function Consultation() {
     if (appointment?.patient?.id) {
       getPatient(appointment.patient.id)
         .then((full) => setPatientProfile(full))
-        .catch((e) => console.error("CRITICAL_PROFILE_LOAD_ERROR:", e));
+        .catch((e) => console.error("Error al cargar perfil del paciente:", e));
     }
   }, [appointment?.patient?.id]);
   if (isLoading) return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--palantir-bg)]">
+    <div className="min-h-screen flex items-center justify-center bg-black">
       <div className="text-center space-y-4">
-        <div className="w-12 h-12 border-4 border-[var(--palantir-active)] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-[var(--palantir-active)] animate-pulse">
-          Initializing_Surgical_Environment...
+        <div className="w-10 h-10 border-3 border-emerald-400 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-[12px] font-medium text-emerald-400 animate-pulse">
+          Cargando consulta...
         </p>
       </div>
     </div>
@@ -136,52 +136,48 @@ export default function Consultation() {
   const billingPending = Number(appointment.balance_due || 0);
   const documentsCount = appointment.documents_count || 0;
   return (
-    <div className="min-h-screen bg-[var(--palantir-bg)] text-[var(--palantir-text)] p-4 space-y-4">
+    <div className="min-h-screen bg-black text-white p-4 space-y-4">
       
-      {/* PageHeader con PatientHeader como children (alineado a la derecha de las stats) */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
-          { label: "CONSULTATION", active: true }
+          { label: "Consulta", active: true }
         ]}
         stats={[
           { 
-            label: "SESSION_NODE", 
-            value: `SESS-${appointment.id.toString().padStart(4, '0')}`,
-            color: "text-blue-500"
+            label: "Sesión", 
+            value: `#${appointment.id.toString().padStart(4, '0')}`,
+            color: "text-blue-400"
           },
           { 
-            label: "ELAPSED_TIME", 
+            label: "Tiempo", 
             value: <SessionTimer startTime={appointment.started_at} />,
-            color: "text-emerald-400 font-bold"
+            color: "text-emerald-400"
           }
         ]}
         children={patient ? <PatientHeader patient={patient} /> : null}
       />
       
-      {/* Alerta Cross-Institution (Discreta) */}
       {isCrossInstitution && (
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-sm p-2 mx-4">
+        <div className="bg-amber-500/10 border border-amber-500/25 rounded-lg p-3 mx-4">
           <div className="flex items-center justify-center gap-2">
-            <ExclamationTriangleIcon className="w-4 h-4 text-yellow-400" />
+            <ExclamationTriangleIcon className="w-4 h-4 text-amber-400" />
             <div className="text-center">
-              <h3 className="text-[10px] font-black text-yellow-300 uppercase tracking-[0.3em]">
-                Cross-Institution Access Detected
+              <h3 className="text-[11px] font-medium text-amber-300">
+                Acceso interinstitucional
               </h3>
-              <p className="text-[8px] font-mono text-yellow-400/70 mt-0.5">
-                {appointment.institution_name || "Unknown Institution"} • READ ONLY
+              <p className="text-[9px] text-amber-400/70 mt-0.5">
+                {appointment.institution_name || "Institución desconocida"} • Solo lectura
               </p>
             </div>
           </div>
         </div>
       )}
       
-      {/* Layout Principal Compacto */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4">
-        {/* Main (Workflow) - Izquierda (9 columnas) */}
         <main className="lg:col-span-9 space-y-4">
-          <div className="bg-black/20 border border-white/10 p-1 relative min-h-[500px] flex flex-col shadow-2xl">
-            <div className="flex-1 bg-black/10 p-4">
+          <div className="bg-white/5 border border-white/15 p-1 relative min-h-[500px] flex flex-col rounded-lg">
+            <div className="flex-1 bg-black/10 p-5 rounded-lg">
               <ConsultationWorkflow
                 diagnoses={appointment.diagnoses}
                 appointmentId={appointment.id}
@@ -190,21 +186,20 @@ export default function Consultation() {
               />
             </div>
             
-            {/* Footer con Botones de Acción */}
-            <footer className="border-t border-white/10 bg-black/40 p-3 flex flex-wrap items-center justify-between gap-2 backdrop-blur-md">
+            <footer className="border-t border-white/10 bg-white/5 p-4 flex flex-wrap items-center justify-between gap-3 rounded-b-lg">
               <div className="flex gap-2">
                 <button
                   onClick={async () => {
-                    if(confirm("Confirm: Abort and Discard Session?")) {
+                    if(confirm("¿Cancelar y descartar la sesión?")) {
                       queryClient.setQueryData(["appointment", "current"], null);
                       await updateStatus.mutateAsync({ id: appointment.id, status: "canceled" });
                       navigate("/waitingroom");
                     }
                   }}
                   disabled={updateStatus.isPending || !isInstitutionMatch}
-                  className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-red-500 hover:bg-red-500/10 border border-red-500/20 transition-all disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 border border-red-500/25 transition-all disabled:opacity-50 rounded-lg"
                 >
-                  <ExclamationTriangleIcon className="w-4 h-4" /> Abort_Mission
+                  <ExclamationTriangleIcon className="w-4 h-4" /> Cancelar Sesión
                 </button>
               </div>
               
@@ -214,46 +209,44 @@ export default function Consultation() {
                     <button
                       disabled={generateDocuments.isPending}
                       onClick={handleGenerateDocuments}
-                      className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all"
+                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 hover:bg-emerald-500/25 transition-all rounded-lg disabled:opacity-50"
                     >
-                      <DocumentTextIcon className="w-4 h-4" /> Batch_Export
+                      <DocumentTextIcon className="w-4 h-4" /> Generar Documentos
                     </button>
                     <button
                       disabled={generateReport.isPending}
                       onClick={handleGenerateReport}
-                      className="flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest border border-blue-500/40 text-blue-400 hover:bg-blue-500 hover:text-white transition-all"
+                      className="flex items-center gap-2 px-4 py-2.5 text-[11px] font-medium bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 transition-all rounded-lg disabled:opacity-50"
                     >
-                      <ShieldCheckIcon className="w-4 h-4" /> Final_Medical_Report
+                      <ShieldCheckIcon className="w-4 h-4" /> Informe Médico
                     </button>
                   </>
                 )}
                 <button
                   onClick={() => setShowCommitModal(true)}
                   disabled={updateStatus.isPending || !isInstitutionMatch}
-                  className="group flex items-center gap-3 px-6 py-2 bg-blue-600 text-white hover:bg-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all"
+                  className="group flex items-center gap-2 px-5 py-2.5 bg-blue-500 text-white hover:bg-blue-400 transition-all rounded-lg disabled:opacity-50"
                 >
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    Commit_Session
+                  <span className="text-[11px] font-semibold">
+                    Completar Sesión
                   </span>
-                  <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
                 </button>
               </div>
             </footer>
           </div>
         </main>
         
-        {/* Aside (Docs/Charges) - Derecha (3 columnas) */}
         <aside className="lg:col-span-3 space-y-4">
-          <CollapsiblePanel title="Clinical_Documents">
+          <CollapsiblePanel title="Documentos Clínicos">
             <DocumentsPanel patientId={appointment.patient.id} appointmentId={appointment.id} />
           </CollapsiblePanel>
-          <CollapsiblePanel title="Financial_Ledger">
+          <CollapsiblePanel title="Facturación">
             <ChargeOrderPanel appointmentId={appointment.id} />
           </CollapsiblePanel>
         </aside>
       </div>
       
-      {/* Commit Session Modal */}
       <CommitSessionModal
         open={showCommitModal}
         onClose={() => setShowCommitModal(false)}

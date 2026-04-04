@@ -1,3 +1,4 @@
+// src/components/Consultation/ChargeOrderPanel.tsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChargeOrder } from "../../types/payments";
@@ -6,7 +7,7 @@ import { apiFetch } from "../../api/client";
 import type { DoctorService } from "../../types/services";
 import ServiceSearchCombobox from "./ServiceSearchCombobox";
 import { useInstitutions } from "../../hooks/settings/useInstitutions";
-import { useQueryClient } from "@tanstack/react-query"; // ✅ NUEVO: Importar useQueryClient
+import { useQueryClient } from "@tanstack/react-query";
 import { 
   ChevronDownIcon, 
   ChevronRightIcon,
@@ -36,10 +37,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [isSavingItems, setIsSavingItems] = useState(false);
   
-  // ✅ NUEVO: Inicializar query client para invalidación de caché
   const queryClient = useQueryClient();
-  
-  // ⚠️ NUEVO: Obtener institución activa
   const { activeInstitution } = useInstitutions();
   
   const { data, isLoading, refetch } = isAppointmentMode(props)
@@ -52,14 +50,12 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     }
     setOrder(data ?? null);
   }, [props, data]);
-  // Validación de servicio activo y visible
   const handleSelectService = (service: DoctorService) => {
     if (!service.is_active || !service.is_visible_global) {
       alert("Este servicio no está disponible para facturación.");
       return;
     }
     
-    // ⚠️ NUEVO: Validar que el servicio pertenezca a la institución activa
     if (activeInstitution && service.institution && service.institution !== activeInstitution.id) {
       alert(`Este servicio no pertenece a la institución activa: ${activeInstitution.name}`);
       return;
@@ -111,26 +107,22 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
       
       setPendingItems([]);
       void refetch();
-      
-      // ✅ FIX CRÍTICO: Invalidar query de la cita para actualizar modal inmediatamente
       queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     } catch (err) {
-      console.error("Save_Items_Fault:", err);
+      console.error("Error al guardar items:", err);
       alert("Error al guardar los items. Por favor, intenta nuevamente.");
     } finally {
       setIsSavingItems(false);
     }
   };
   const handleDeleteItem = async (id: number) => {
-    if (!confirm("Confirmar eliminación del ítem?")) return;
+    if (!confirm("¿Confirmar eliminación del ítem?")) return;
     try {
       await apiFetch(`charge-items/${id}/`, { method: "DELETE" });
       void refetch();
-      
-      // ✅ FIX CRÍTICO: Invalidar query de la cita para actualizar modal inmediatamente
       queryClient.invalidateQueries({ queryKey: ["appointment", "current"] });
     } catch (err) { 
-      console.error("Delete_Fault:", err); 
+      console.error("Error al eliminar:", err); 
       alert("Error al eliminar el item.");
     }
   };
@@ -140,7 +132,7 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
     }
   };
   if (isAppointmentMode(props) && isLoading) return (
-    <div className="animate-pulse h-20 bg-white/5 border border-[var(--palantir-border)]" />
+    <div className="animate-pulse h-24 bg-white/5 border border-white/15 rounded-lg" />
   );
   const hasOrder = !!order;
   const hasBalance = hasOrder && Number(order.balance_due) > 0;
@@ -148,34 +140,34 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
   const hasItems = hasOrder && order.items && order.items.length > 0;
   return (
     <div className="space-y-4">
-      {/* 01. RESUMEN FINANCIERO */}
-      <div className={`relative overflow-hidden border p-3 ${
-        !hasOrder ? 'border-white/10 bg-white/5' :
-        isPaid ? 'border-emerald-500/30 bg-emerald-500/5' : 
-        'border-amber-500/30 bg-amber-500/5'
+      {/* Resumen Financiero */}
+      <div className={`relative overflow-hidden border p-5 rounded-lg ${
+        !hasOrder ? 'border-white/15 bg-white/5' :
+        isPaid ? 'border-emerald-500/25 bg-emerald-500/5' : 
+        'border-amber-500/25 bg-amber-500/5'
       }`}>
-        <div className="flex justify-between items-start mb-2">
-          <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Libro_Financiero</span>
-          <div className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${
+        <div className="flex justify-between items-start mb-3">
+          <span className="text-[10px] font-medium text-white/50 uppercase tracking-wider">Resumen Financiero</span>
+          <div className={`px-3 py-1 rounded-full text-[9px] font-semibold uppercase ${
             !hasOrder ? 'bg-white/10 text-white/60' :
-            isPaid ? 'bg-emerald-500 text-black' : 
-            'bg-amber-500 text-black'
+            isPaid ? 'bg-emerald-500/15 text-emerald-400' : 
+            'bg-amber-500/15 text-amber-400'
           }`}>
-            {!hasOrder ? 'SIN_ORDEN' : order.status}
+            {!hasOrder ? 'Sin Orden' : isPaid ? 'Pagado' : 'Pendiente'}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-[10px] text-[var(--palantir-muted)] font-mono uppercase">Total_Debido</p>
-            <p className="text-lg font-black tracking-tighter">
+            <p className="text-[10px] text-white/50 uppercase">Total</p>
+            <p className="text-xl font-semibold mt-0.5">
               ${hasOrder ? Number(order.total || 0).toFixed(2) : '0.00'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-[var(--palantir-muted)] font-mono uppercase italic">Balance_Rem</p>
-            <p className={`text-lg font-black tracking-tighter ${
-              !hasOrder ? 'text-white/40' :
-              isPaid ? 'text-emerald-500' : 'text-amber-500'
+            <p className="text-[10px] text-white/50 uppercase">Balance Pendiente</p>
+            <p className={`text-xl font-semibold mt-0.5 ${
+              !hasOrder ? 'text-white/30' :
+              isPaid ? 'text-emerald-400' : 'text-amber-400'
             }`}>
               ${hasOrder ? Number(order.balance_due || 0).toFixed(2) : '0.00'}
             </p>
@@ -183,96 +175,93 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
         </div>
       </div>
       
-      {/* 02. SECCIÓN DE ÍTEMS */}
-      <div className="border border-[var(--palantir-border)] bg-black/20 overflow-hidden">
+      {/* Sección de Ítems */}
+      <div className="border border-white/15 bg-white/5 overflow-hidden rounded-lg">
         <button 
           onClick={() => setShowItems(!showItems)}
-          className="w-full flex items-center justify-between p-2 hover:bg-white/5 transition-colors"
+          className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
         >
-          <div className="flex items-center gap-2">
-            <ReceiptPercentIcon className="w-4 h-4 text-[var(--palantir-active)]" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Items_Facturacion</span>
+          <div className="flex items-center gap-3">
+            <ReceiptPercentIcon className="w-5 h-5 text-emerald-400" />
+            <span className="text-[12px] font-semibold text-white">Servicios y Facturación</span>
             {hasItems && (
-              <span className="text-[8px] font-mono text-[var(--palantir-muted)]">({order.items!.length})</span>
+              <span className="text-[10px] text-white/50">({order.items!.length})</span>
             )}
           </div>
-          {showItems ? <ChevronDownIcon className="w-3 h-3" /> : <ChevronRightIcon className="w-3 h-3" />}
+          {showItems ? <ChevronDownIcon className="w-5 h-5 text-white/50" /> : <ChevronRightIcon className="w-5 h-5 text-white/50" />}
         </button>
         
         {showItems && (
-          <div className="p-3 space-y-3 border-t border-[var(--palantir-border)]">
-            {/* ⚠️ NUEVO: Indicador de Institución Activa */}
+          <div className="p-5 space-y-4 border-t border-white/15">
             {activeInstitution && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-500/10 border border-purple-500/20 rounded-sm w-fit">
-                <BuildingOfficeIcon className="w-3 h-3 text-purple-400" />
-                <span className="text-[8px] font-mono text-purple-300 uppercase tracking-[0.2em]">
+              <div className="flex items-center gap-2 px-3 py-2 bg-purple-500/10 border border-purple-500/20 rounded-lg w-fit">
+                <BuildingOfficeIcon className="w-4 h-4 text-purple-400" />
+                <span className="text-[10px] font-medium text-purple-300">
                   {activeInstitution.name}
                 </span>
               </div>
             )}
             {!readOnly && (
               <>
-                {/* BUSCADOR DE CATÁLOGO */}
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-[var(--palantir-muted)]">
-                    Agregar_Servicio_Catalogo
+                  <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider">
+                    Agregar Servicio
                   </label>
                   <ServiceSearchCombobox onSelect={handleSelectService} />
                 </div>
                 
-                {/* ÍTEMS PENDIENTES */}
                 {pendingItems.length > 0 && (
-                  <div className="space-y-2 border border-[var(--palantir-active)]/30 bg-[var(--palantir-active)]/5 p-2">
+                  <div className="space-y-3 border border-emerald-500/25 bg-emerald-500/5 p-4 rounded-lg">
                     <div className="flex justify-between items-center">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-[var(--palantir-active)]">
-                        Items_Pendientes
+                      <span className="text-[10px] font-medium text-emerald-400 uppercase tracking-wider">
+                        Ítems Pendientes
                       </span>
-                      <span className="text-[10px] font-mono font-black">
+                      <span className="text-[12px] font-semibold">
                         Subtotal: ${pendingSubtotal.toFixed(2)}
                       </span>
                     </div>
                     
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                       {pendingItems.map((p) => (
-                        <div key={p.service.id} className="flex items-center justify-between p-2 bg-black/30 border border-white/5 group">
+                        <div key={p.service.id} className="flex items-center justify-between p-3 bg-white/5 border border-white/10 group rounded-lg">
                           <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold truncate uppercase">{p.service.name}</p>
-                            <p className="text-[8px] font-mono text-[var(--palantir-muted)]">
+                            <p className="text-[11px] font-medium truncate">{p.service.name}</p>
+                            <p className="text-[9px] text-white/50 mt-0.5">
                               [{p.service.code}] ${Number(p.service.price_usd).toFixed(2)} c/u
                             </p>
                           </div>
                           
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 bg-black/40 border border-[var(--palantir-border)]">
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-1 bg-white/5 border border-white/15 rounded-lg">
                               <button
                                 type="button"
                                 onClick={() => updatePendingQuantity(p.service.id, -1)}
-                                className="p-1 hover:bg-white/10"
+                                className="p-1.5 hover:bg-white/10 rounded-l-lg"
                               >
-                                <MinusIcon className="w-3 h-3" />
+                                <MinusIcon className="w-3.5 h-3.5" />
                               </button>
-                              <span className="px-2 text-[10px] font-mono font-black min-w-[24px] text-center">
+                              <span className="px-3 text-[11px] font-semibold min-w-[32px] text-center">
                                 {p.quantity}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => updatePendingQuantity(p.service.id, 1)}
-                                className="p-1 hover:bg-white/10"
+                                className="p-1.5 hover:bg-white/10 rounded-r-lg"
                               >
-                                <PlusIcon className="w-3 h-3" />
+                                <PlusIcon className="w-3.5 h-3.5" />
                               </button>
                             </div>
                             
-                            <span className="text-[10px] font-black font-mono w-16 text-right">
+                            <span className="text-[11px] font-semibold w-20 text-right">
                               ${(Number(p.service.price_usd) * p.quantity).toFixed(2)}
                             </span>
                             
                             <button
                               type="button"
                               onClick={() => removePendingItem(p.service.id)}
-                              className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
+                              className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-500/20 rounded-lg transition-all"
                             >
-                              <XMarkIcon className="w-3 h-3 text-red-500" />
+                              <XMarkIcon className="w-4 h-4 text-red-400" />
                             </button>
                           </div>
                         </div>
@@ -282,42 +271,42 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
                       type="button"
                       onClick={handleSavePendingItems}
                       disabled={isSavingItems}
-                      className="w-full bg-[var(--palantir-active)] hover:bg-[var(--palantir-active)]/80 text-black py-2 text-[9px] font-black uppercase tracking-[0.2em] transition-all disabled:opacity-50"
+                      className="w-full bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 py-2.5 text-[11px] font-semibold uppercase tracking-wider transition-all disabled:opacity-50 rounded-lg"
                     >
-                      {isSavingItems ? "Guardando..." : "Agregar_a_Orden"}
+                      {isSavingItems ? "Guardando..." : "Agregar a la Orden"}
                     </button>
                   </div>
                 )}
               </>
             )}
             
-            {/* ÍTEMS GUARDADOS EN LA ORDEN */}
-            <div className="space-y-1">
+            {/* Ítems Guardados */}
+            <div className="space-y-2">
               {hasItems ? (
                 order.items!.map((it) => (
-                  <div key={it.id} className="group flex items-center justify-between p-2 bg-white/5 border border-transparent hover:border-[var(--palantir-border)] transition-all">
+                  <div key={it.id} className="group flex items-center justify-between p-3 bg-white/5 border border-white/10 hover:border-white/20 transition-all rounded-lg">
                     <div className="min-w-0 flex-1">
-                      <p className="text-[10px] font-bold truncate uppercase">{it.description}</p>
-                      <p className="text-[8px] font-mono text-[var(--palantir-muted)] italic">
-                        {it.code} // {it.qty}u × ${Number(it.unit_price).toFixed(2)}
+                      <p className="text-[11px] font-medium truncate">{it.description}</p>
+                      <p className="text-[9px] text-white/50 mt-0.5">
+                        {it.code} · {it.qty}u × ${Number(it.unit_price).toFixed(2)}
                       </p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-black font-mono">${Number(it.subtotal).toFixed(2)}</span>
+                      <span className="text-[11px] font-semibold">${Number(it.subtotal).toFixed(2)}</span>
                       {!readOnly && (
                         <button 
                           onClick={() => handleDeleteItem(it.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-500/20"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 hover:bg-red-500/20 rounded-lg"
                         >
-                          <TrashIcon className="w-3 h-3 text-red-500" />
+                          <TrashIcon className="w-4 h-4 text-red-400" />
                         </button>
                       )}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-4 text-[10px] font-mono text-[var(--palantir-muted)]">
-                  {readOnly ? "Sin items en la orden" : "Busca servicios para agregar a la orden"}
+                <div className="text-center py-6 text-[11px] text-white/50">
+                  {readOnly ? "Sin ítems en la orden" : "Busca servicios para agregar a la orden"}
                 </div>
               )}
             </div>
@@ -325,22 +314,22 @@ const ChargeOrderPanel: React.FC<ChargeOrderPanelProps> = (props) => {
         )}
       </div>
       
-      {/* 03. BOTÓN NAVEGAR A PAGOS */}
+      {/* Botón Navegar a Pagos */}
       {!readOnly && hasItems && (
         <button
           onClick={handleGoToPayments}
-          className="w-full flex items-center justify-between p-3 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 transition-all group"
+          className="w-full flex items-center justify-between p-4 border border-emerald-500/25 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400 transition-all group rounded-lg"
         >
-          <span className="text-[10px] font-black uppercase tracking-widest">
-            Gestionar_Pagos
+          <span className="text-[11px] font-semibold uppercase tracking-wider">
+            Gestionar Pagos
           </span>
           <div className="flex items-center gap-2">
             {hasBalance && (
-              <span className="text-[9px] font-mono">
+              <span className="text-[10px]">
                 ${Number(order!.balance_due).toFixed(2)} pendiente
               </span>
             )}
-            <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <ArrowRightIcon className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </div>
         </button>
       )}

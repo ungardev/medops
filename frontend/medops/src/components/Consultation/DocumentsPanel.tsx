@@ -16,12 +16,12 @@ import {
 const RAW_ROOT = import.meta.env.VITE_API_ROOT || "http://127.0.0.1/api";
 const BASE_URL = RAW_ROOT.replace(/\/api\/?$/, "");
 const CATEGORY_OPTIONS = [
-  { value: "prescription", label: "PRESC_ORDER" },
-  { value: "treatment", label: "TREATMENT_PLAN" },
-  { value: "medical_test_order", label: "LAB_REQUISITION" },
-  { value: "medical_referral", label: "REF_PROTOCOL" },
-  { value: "medical_report", label: "CLINICAL_REPORT" },
-  { value: "other", label: "MISC_DATA" },
+  { value: "prescription", label: "Prescripción" },
+  { value: "treatment", label: "Plan de Tratamiento" },
+  { value: "medical_test_order", label: "Orden de Laboratorio" },
+  { value: "medical_referral", label: "Referencia Médica" },
+  { value: "medical_report", label: "Informe Clínico" },
+  { value: "other", label: "Otro" },
 ];
 export interface DocumentsPanelProps {
   patientId: number;
@@ -33,17 +33,18 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
   const uploadDocument = useUploadDocument(patientId);
   const deleteDocument = useDeleteDocument(patientId);
   const notify = useNotify();
+  
   const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   useEffect(() => {
-    if (uploadDocument.isSuccess) notify.success("Upload complete");
-    if (deleteDocument.isSuccess) notify.success("Record deleted");
+    if (uploadDocument.isSuccess) notify.success("Documento subido exitosamente");
+    if (deleteDocument.isSuccess) notify.success("Documento eliminado");
   }, [uploadDocument.isSuccess, deleteDocument.isSuccess, notify]);
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !description.trim() || !category) {
-      notify.error("Missing required fields");
+      notify.error("Complete todos los campos requeridos");
       return;
     }
     await uploadDocument.mutateAsync({ file, description, category });
@@ -60,15 +61,15 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
   return (
     <div className="space-y-6">
       {!readOnly && (
-        <div className="bg-black/40 border border-white/10 rounded-sm overflow-hidden">
-          <div className="px-4 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
-            <span className="text-[10px] font-mono font-black text-blue-300 uppercase tracking-widest flex items-center gap-2">
-              <CloudArrowUpIcon className="w-3.5 h-3.5 text-blue-400" />
-              File Upload
+        <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+          <div className="px-5 py-3 border-b border-white/15 bg-white/5 flex items-center justify-between">
+            <span className="text-[12px] font-semibold text-blue-400 flex items-center gap-2">
+              <CloudArrowUpIcon className="w-5 h-5" />
+              Subir Documento
             </span>
           </div>
-          <form onSubmit={handleUpload} className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <form onSubmit={handleUpload} className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="relative group">
                 <input
                   type="file"
@@ -76,25 +77,25 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />
-                <div className={`h-10 flex items-center justify-center border border-dashed rounded-sm transition-all ${file ? 'border-blue-400 bg-blue-400/5' : 'border-white/10 group-hover:border-blue-400/50'}`}>
-                  <span className="text-[10px] font-mono text-white/60 truncate px-2">
-                    {file ? file.name : "SELECT FILE"}
+                <div className={`h-11 flex items-center justify-center border border-dashed rounded-lg transition-all ${file ? 'border-blue-400/50 bg-blue-500/5' : 'border-white/15 group-hover:border-blue-400/30'}`}>
+                  <span className="text-[11px] text-white/60 truncate px-3">
+                    {file ? file.name : "Seleccionar archivo"}
                   </span>
                 </div>
               </div>
               <input
                 type="text"
-                placeholder="Description"
+                placeholder="Descripción"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="bg-black/40 border border-white/10 px-3 h-10 text-[10px] font-mono text-white focus:outline-none focus:border-blue-400/50 uppercase"
+                className="bg-white/5 border border-white/15 px-4 h-11 text-[12px] text-white/80 focus:outline-none focus:border-blue-400/50 rounded-lg"
               />
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="bg-black/40 border border-white/10 px-3 h-10 text-[10px] font-mono text-white focus:outline-none focus:border-blue-400/50"
+                className="bg-white/5 border border-white/15 px-4 h-11 text-[12px] text-white/80 focus:outline-none focus:border-blue-400/50 rounded-lg"
               >
-                <option value="">CATEGORY</option>
+                <option value="">Categoría</option>
                 {CATEGORY_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
@@ -102,46 +103,46 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
               <button
                 type="submit"
                 disabled={uploadDocument.isPending}
-                className="h-10 bg-white/5 border border-white/10 text-[10px] font-mono font-black tracking-widest uppercase hover:bg-blue-400/10 hover:text-white hover:border-blue-400 transition-all disabled:opacity-50"
+                className="h-11 bg-white/5 border border-white/15 text-[11px] font-semibold text-white/80 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-400/30 transition-all disabled:opacity-50 rounded-lg"
               >
-                {uploadDocument.isPending ? "Uploading..." : "Upload"}
+                {uploadDocument.isPending ? "Subiendo..." : "Subir Documento"}
               </button>
             </div>
           </form>
         </div>
       )}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between border-b border-[var(--palantir-border)] pb-2">
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--palantir-muted)]">
-            Documents Status
+      <div className="space-y-3">
+        <div className="flex items-center justify-between border-b border-white/15 pb-3">
+          <span className="text-[12px] font-semibold text-white/60">
+            Documentos
           </span>
-          <span className="text-[9px] font-mono text-white/60">
-            {documents.length} documents registered
+          <span className="text-[10px] text-white/50">
+            {documents.length} documento{documents.length !== 1 ? 's' : ''}
           </span>
         </div>
         {isLoading ? (
-          <div className="py-8 text-center text-[10px] font-mono text-white/60 animate-pulse uppercase tracking-widest">
-            Loading...
+          <div className="py-8 text-center text-[11px] text-white/50 animate-pulse">
+            Cargando documentos...
           </div>
         ) : documents.length === 0 ? (
-          <div className="py-8 border border-dashed border-white/10 flex flex-col items-center opacity-40">
-            <DocumentIcon className="w-8 h-8 mb-2" />
-            <span className="text-[10px] font-mono uppercase tracking-widest">No documents found</span>
+          <div className="py-8 border border-dashed border-white/15 flex flex-col items-center opacity-50 rounded-lg">
+            <DocumentIcon className="w-8 h-8 mb-2 text-white/40" />
+            <span className="text-[11px] text-white/50">No hay documentos registrados</span>
           </div>
         ) : (
-          <div className="max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-[var(--palantir-border)] space-y-2 pr-1">
+          <div className="max-h-[400px] overflow-y-auto space-y-3 pr-1">
             {documents.map((d: MedicalDocument) => (
               <div 
                 key={d.id} 
-                className="group bg-black/20 border border-white/10 p-3 hover:border-blue-400/30 transition-all flex items-start gap-3"
+                className="group bg-white/5 border border-white/15 p-4 hover:border-white/25 transition-all flex items-start gap-3 rounded-lg"
               >
-                <div className="p-2 bg-white/5 border border-white/10 group-hover:text-blue-400 transition-colors">
-                  <DocumentIcon className="w-4 h-4" />
+                <div className="p-2.5 bg-white/5 border border-white/10 group-hover:text-blue-400 transition-colors rounded-lg">
+                  <DocumentIcon className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
-                    <h4 className="text-[10px] font-black text-white uppercase tracking-tight truncate">
-                      {d.description || "Untitled"}
+                    <h4 className="text-[12px] font-medium text-white truncate">
+                      {d.description || "Sin título"}
                     </h4>
                     <div className="flex gap-1 ml-2">
                       {d.file_url && (
@@ -149,29 +150,29 @@ const DocumentsPanel: React.FC<DocumentsPanelProps> = ({ patientId, appointmentI
                           href={resolveFileURL(d.file_url)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 text-white/60 hover:text-blue-400"
-                          title="ACCESS_FILE"
+                          className="p-2 text-white/50 hover:text-blue-400 rounded-lg hover:bg-white/5 transition-colors"
+                          title="Abrir archivo"
                         >
-                          <ArrowTopRightOnSquareIcon className="w-3.5 h-3.5" />
+                          <ArrowTopRightOnSquareIcon className="w-4 h-4" />
                         </a>
                       )}
                       {!readOnly && (
                         <button
-                          onClick={() => { if(confirm("Delete document?")) deleteDocument.mutate(d.id); }}
-                          className="p-1 text-white/60 hover:text-red-500"
+                          onClick={() => { if(confirm("¿Eliminar documento?")) deleteDocument.mutate(d.id); }}
+                          className="p-2 text-white/50 hover:text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
                         >
-                          <TrashIcon className="w-3.5 h-3.5" />
+                          <TrashIcon className="w-4 h-4" />
                         </button>
                       )}
                     </div>
                   </div>
-                  <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[8px] font-mono text-white/50 uppercase tracking-wider">
-                    <span className="flex items-center gap-1">
-                      <div className="w-1 h-1 bg-blue-400" />
-                      CAT: {CATEGORY_OPTIONS.find(o => o.value === d.category)?.label || "MISC"}
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-white/50">
+                    <span className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 bg-blue-400 rounded-full" />
+                      {CATEGORY_OPTIONS.find(o => o.value === d.category)?.label || "Otro"}
                     </span>
-                    <span>SRC: {d.source === "system_generated" ? "SYSTEM" : "UPLOADER"}</span>
-                    <span>DATE: {d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString("es-VE") : "---"}</span>
+                    <span>{d.source === "system_generated" ? "Generado por el sistema" : "Subido manualmente"}</span>
+                    <span>{d.uploaded_at ? new Date(d.uploaded_at).toLocaleDateString("es-VE") : "---"}</span>
                   </div>
                 </div>
               </div>
