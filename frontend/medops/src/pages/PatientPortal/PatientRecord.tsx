@@ -11,6 +11,7 @@ import PatientPendingAppointmentsTab from "@/components/Patients/PatientPendingA
 import PatientEventsTab from "@/components/Patients/PatientEventsTab";
 import VaccinationTab from "@/components/Patients/VaccinationTab";
 import SurgeriesTab from "@/components/Patients/SurgeriesTab";
+import HospitalizationsTab from "@/components/Patients/HospitalizationsTab";
 import PageHeader from "@/components/Common/PageHeader";
 import { IdentificationIcon, HeartIcon, UserIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, useMemo } from "react";
@@ -27,6 +28,7 @@ function normalizeTab(id?: string): string {
     eventos: "eventos",
     vacunación: "vacunacion",
     cirugias: "cirugias",
+    hospitalizacion: "hospitalizacion",
   };
   if (!id) return "info";
   return map[id.toLowerCase()] ?? id;
@@ -208,6 +210,9 @@ export default function PatientRecord() {
           </Tab>
           <Tab id="cirugias" label="Cirugías">
             <SurgeriesTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
+          </Tab>
+          <Tab id="hospitalizacion" label="Hospitalización">
+            <HospitalizationsTab patientId={patientId} onRefresh={() => {}} readOnly={true} />
           </Tab>
           <Tab id="citas" label="Citas">
             <PatientPendingAppointmentsTab patient={patient} />
