@@ -53,6 +53,13 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     completed: 'border-l-2 border-emerald-500/50',
     canceled: 'border-l-2 border-red-500/50',
   };
+  // Helper para formatear fecha local a YYYY-MM-DD
+  const formatDateLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -100,14 +107,14 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
     setSelectedDay(null);
   };
   
+  // FIX: Comparar fechas usando formato local para evitar timezone shift
   const getItemsForDay = (day: number) => {
+    const year = internalDate.getFullYear();
+    const month = String(internalDate.getMonth() + 1).padStart(2, '0');
+    const targetDateStr = `${year}-${month}-${String(day).padStart(2, '0')}`;
+    
     return operationalItems.filter(item => {
-      const itemDateStr = item.date; 
-      const [year, month, dateDay] = itemDateStr.split('-').map(Number);
-      
-      return dateDay === day &&
-             month - 1 === internalDate.getMonth() && 
-             year === internalDate.getFullYear();
+      return item.date === targetDateStr;
     });
   };
   
@@ -115,11 +122,11 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   const emptyDays = Array.from({ length: startingDayOfWeek }, (_, i) => i);
   
+  // FIX: Comparar fechas usando formato local para evitar timezone shift
   const selectedDayItems = selectedDay 
     ? operationalItems.filter(item => {
-        const itemDateStr = item.date;
-        const selectedDateStr = selectedDay.toISOString().split('T')[0];
-        return itemDateStr === selectedDateStr;
+        const selectedDateStr = formatDateLocal(selectedDay);
+        return item.date === selectedDateStr;
       })
     : [];
   
