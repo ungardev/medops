@@ -869,7 +869,7 @@ class MedicalReferralViewSet(viewsets.ModelViewSet):
 class SpecialtyViewSet(viewsets.ModelViewSet): queryset = Specialty.objects.all(); serializer_class = SpecialtySerializer
 class PersonalHistoryViewSet(viewsets.ModelViewSet): queryset = PersonalHistory.objects.all(); serializer_class = PersonalHistorySerializer
 class FamilyHistoryViewSet(viewsets.ModelViewSet): queryset = FamilyHistory.objects.all(); serializer_class = FamilyHistorySerializer
-class SurgeryViewSet(viewsets.ModelViewSet): queryset = Surgery.objects.all(); serializer_class = SurgerySerializer
+
 class HabitViewSet(viewsets.ModelViewSet): queryset = Habit.objects.all(); serializer_class = HabitSerializer
 class VaccineViewSet(viewsets.ModelViewSet): queryset = Vaccine.objects.all(); serializer_class = VaccineSerializer
 
@@ -7644,3 +7644,181 @@ def create_charge_order_from_service(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=500)
+
+
+class SurgeryViewSet(viewsets.ModelViewSet):
+    """
+    Sistema Quirúrgico Integral MEDOPZ
+    - GET /api/surgeries/                    # Listar todas
+    - GET /api/surgeries/{id}/               # Detalle
+    - POST /api/surgeries/                   # Crear cirugía
+    - PATCH /api/surgeries/{id}/             # Actualizar
+    - DELETE /api/surgeries/{id}/            # Eliminar
+    """
+    queryset = Surgery.objects.all()
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return SurgerySerializer
+        if self.action == 'retrieve':
+            return SurgerySerializer
+        if self.action == 'create':
+            return SurgeryCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return SurgeryUpdateSerializer
+        return SurgerySerializer
+    
+    def get_queryset(self):
+        queryset = Surgery.objects.select_related(
+            'patient', 'institution', 'surgeon',
+            'anesthesiologist', 'specialty', 'diagnosis'
+        ).prefetch_related('assistants')
+        
+        # Filtros por query params
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        patient_id = self.request.query_params.get('patient')
+        if patient_id:
+            queryset = queryset.filter(patient_id=patient_id)
+        
+        surgeon_id = self.request.query_params.get('surgeon')
+        if surgeon_id:
+            queryset = queryset.filter(surgeon_id=surgeon_id)
+        
+        institution_id = self.request.query_params.get('institution')
+        if institution_id:
+            queryset = queryset.filter(institution_id=institution_id)
+        
+        return queryset.order_by('-scheduled_date')
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Estadísticas quirúrgicas"""
+        queryset = self.get_queryset()
+        
+        total = queryset.count()
+        scheduled = queryset.filter(status='scheduled').count()
+        in_progress = queryset.filter(status='in_progress').count()
+        completed = queryset.filter(status='completed').count()
+        canceled = queryset.filter(status='canceled').count()
+        
+        return Response({
+            'total': total,
+            'scheduled': scheduled,
+            'in_progress': in_progress,
+            'completed': completed,
+            'canceled': canceled,
+        })
+
+
+class HospitalizationViewSet(viewsets.ModelViewSet):
+    """
+    Sistema de Gestión Hospitalaria MEDOPZ
+    - GET /api/hospitalizations/                    # Listar todas
+    - GET /api/hospitalizations/{id}/               # Detalle
+    - POST /api/hospitalizations/                   # Crear admisión
+    - PATCH /api/hospitalizations/{id}/             # Actualizar
+    - DELETE /api/hospitalizations/{id}/            # Eliminar
+    """
+    queryset = Hospitalization.objects.all()
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return HospitalizationSerializer
+        if self.action == 'retrieve':
+            return HospitalizationSerializer
+        if self.action == 'create':
+            return HospitalizationCreateSerializer
+        if self.action in ['update', 'partial_update']:
+            return HospitalizationUpdateSerializer
+        return HospitalizationSerializer
+    
+    def get_queryset(self):
+        queryset = Hospitalization.objects.select_related(
+            'patient', 'institution', 'attending_doctor',
+            'admission_diagnosis'
+        )
+        
+        # Filtros por query params
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        patient_id = self.request.query_params.get('patient')
+        if patient_id:
+            queryset = queryset.filter(patient_id=patient_id)
+        
+        institution_id = self.request.query_params.get('institution')
+        if institution_id:
+            queryset = queryset.filter(institution_id=institution_id)
+        
+        return queryset.order_by('-admission_date')
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Estadísticas de hospitalización"""
+        queryset = self.get_queryset()
+        
+        total = queryset.count()
+        admitted = queryset.filter(status__in=['admitted', 'stable', 'critical', 'improving']).count()
+        critical = queryset.filter(status='critical').count()
+        discharged_today = queryset.filter(
+            actual_discharge_date__date=timezone.now().date()
+        ).count()
+        
+        return Response({
+            'total': total,
+            'admitted': admitted,
+            'critical': critical,
+            'discharged_today': discharged_today,
+        })
+
+
+class BedViewSet(viewsets.ModelViewSet):
+    """
+    Gestión de Camas Hospitalarias MEDOPZ
+    """
+    queryset = Bed.objects.all()
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return BedCreateSerializer
+        return BedSerializer
+    
+    def get_queryset(self):
+        queryset = Bed.objects.select_related('institution')
+        
+        institution_id = self.request.query_params.get('institution')
+        if institution_id:
+            queryset = queryset.filter(institution_id=institution_id)
+        
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
+        
+        bed_type = self.request.query_params.get('bed_type')
+        if bed_type:
+            queryset = queryset.filter(bed_type=bed_type)
+        
+        return queryset.order_by('ward', 'room_number', 'bed_number')
+    
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Estadísticas de camas"""
+        queryset = self.get_queryset()
+        
+        total = queryset.count()
+        available = queryset.filter(status='available').count()
+        occupied = queryset.filter(status='occupied').count()
+        maintenance = queryset.filter(status='maintenance').count()
+        reserved = queryset.filter(status='reserved').count()
+        
+        return Response({
+            'total': total,
+            'available': available,
+            'occupied': occupied,
+            'maintenance': maintenance,
+            'reserved': reserved,
+        })

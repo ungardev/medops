@@ -3007,26 +3007,319 @@ class FamilyHistory(models.Model):
 
 
 class Surgery(models.Model):
+    """
+    Sistema Quirúrgico Integral MEDOPZ
+    - Pre-operatorio: Evaluación, exámenes, consentimiento informado
+    - Intra-operatorio: Registro quirúrgico, anestesia, equipo médico
+    - Post-operatorio: Seguimiento, complicaciones, evolución
+    """
+    
+    SURGERY_TYPE_CHOICES = [
+        ('elective', 'Electiva / Programada'),
+        ('emergency', 'Emergencia'),
+        ('ambulatory', 'Ambulatoria'),
+        ('minimally_invasive', 'Mínimamente Invasiva'),
+        ('open', 'Cirugía Abierta'),
+        ('robotic', 'Robótica / Asistida'),
+    ]
+    
+    SURGERY_STATUS_CHOICES = [
+        ('scheduled', 'Programada'),
+        ('pre_op', 'En Pre-operatorio'),
+        ('in_progress', 'En Curso'),
+        ('completed', 'Completada'),
+        ('canceled', 'Cancelada'),
+        ('postponed', 'Pospuesta'),
+    ]
+    
+    ASA_CHOICES = [
+        ('I', 'ASA I - Paciente sano'),
+        ('II', 'ASA II - Enfermedad sistémica leve'),
+        ('III', 'ASA III - Enfermedad sistémica severa'),
+        ('IV', 'ASA IV - Enfermedad que amenaza la vida'),
+        ('V', 'ASA V - Paciente moribundo'),
+        ('VI', 'ASA VI - Muerte cerebral declarada'),
+    ]
+    
+    ANESTHESIA_CHOICES = [
+        ('general', 'General'),
+        ('regional', 'Regional'),
+        ('local', 'Local'),
+        ('sedation', 'Sedación Consciente'),
+        ('combined', 'Combinada'),
+    ]
+    
+    RISK_LEVEL_CHOICES = [
+        ('low', 'Bajo Riesgo'),
+        ('moderate', 'Riesgo Moderado'),
+        ('high', 'Alto Riesgo'),
+        ('critical', 'Crítico'),
+    ]
+    
+    # === RELACIONES DE PODER ===
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name="surgeries"
+        Patient, on_delete=models.CASCADE, related_name="surgeries"
     )
-    name = models.CharField(max_length=255)
-    date = models.DateField()
+    appointment = models.OneToOneField(
+        Appointment, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="surgery", verbose_name="Cita asociada"
+    )
+    institution = models.ForeignKey(
+        InstitutionSettings, on_delete=models.PROTECT, related_name="surgeries"
+    )
+    surgeon = models.ForeignKey(
+        DoctorOperator, on_delete=models.PROTECT,
+        related_name="surgeries_performed", verbose_name="Cirujano principal"
+    )
+    assistants = models.ManyToManyField(
+        DoctorOperator, related_name="surgeries_assisted", blank=True,
+        verbose_name="Asistentes"
+    )
+    anesthesiologist = models.ForeignKey(
+        DoctorOperator, on_delete=models.SET_NULL, null=True,
+        related_name="surgeries_anesthetized", verbose_name="Anestesiólogo"
+    )
+    specialty = models.ForeignKey(
+        Specialty, on_delete=models.SET_NULL, null=True,
+        verbose_name="Especialidad quirúrgica"
+    )
+    diagnosis = models.ForeignKey(
+        Diagnosis, on_delete=models.SET_NULL, null=True,
+        verbose_name="Diagnóstico que motiva la cirugía"
+    )
+    
+    # === CLASIFICACIÓN ===
+    surgery_type = models.CharField(
+        max_length=30, choices=SURGERY_TYPE_CHOICES, default='elective'
+    )
+    status = models.CharField(
+        max_length=20, choices=SURGERY_STATUS_CHOICES, default='scheduled'
+    )
+    
+    # === DATOS CLÍNICOS ===
+    name = models.CharField(max_length=255, verbose_name="Nombre del procedimiento")
+    procedure_description = models.TextField(verbose_name="Descripción del procedimiento")
+    surgical_technique = models.TextField(blank=True, null=True, verbose_name="Técnica quirúrgica")
+    
+    # === CLASIFICACIÓN DE RIESGO ===
+    asa_classification = models.CharField(
+        max_length=3, choices=ASA_CHOICES, blank=True, null=True,
+        verbose_name="Clasificación ASA"
+    )
+    risk_level = models.CharField(
+        max_length=20, choices=RISK_LEVEL_CHOICES, default='moderate'
+    )
+    
+    # === CRONOLOGÍA ===
+    scheduled_date = models.DateField(verbose_name="Fecha programada")
+    scheduled_time = models.TimeField(null=True, blank=True, verbose_name="Hora programada")
+    anesthesia_start = models.DateTimeField(null=True, blank=True)
+    surgery_start = models.DateTimeField(null=True, blank=True)
+    surgery_end = models.DateTimeField(null=True, blank=True)
+    anesthesia_end = models.DateTimeField(null=True, blank=True)
+    
+    # === ANESTESIA ===
+    anesthesia_type = models.CharField(
+        max_length=30, choices=ANESTHESIA_CHOICES, null=True, blank=True,
+        verbose_name="Tipo de anestesia"
+    )
+    
+    # === RESULTADOS ===
+    findings = models.TextField(blank=True, null=True, verbose_name="Hallazgos quirúrgicos")
+    complications = models.TextField(blank=True, null=True, verbose_name="Complicaciones")
+    estimated_blood_loss = models.DecimalField(
+        max_digits=6, decimal_places=1, null=True, blank=True,
+        verbose_name="Pérdida sanguínea estimada (ml)"
+    )
+    specimens = models.TextField(blank=True, null=True, verbose_name="Muestras enviadas a patología")
+    
+    # === POST-OPERATORIO ===
+    post_op_instructions = models.TextField(blank=True, null=True, verbose_name="Instrucciones post-operatorias")
+    follow_up_date = models.DateField(null=True, blank=True, verbose_name="Fecha de seguimiento")
+    
+    # === LEGACY / INFORMACIÓN ADICIONAL ===
     hospital = models.CharField(max_length=255, blank=True, null=True)
-    complications = models.TextField(blank=True, null=True)
+    
+    # === AUDITORÍA ===
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
     class Meta:
-        verbose_name = "Surgery"
-        verbose_name_plural = "Surgeries"
+        verbose_name = "Cirugía"
+        verbose_name_plural = "Cirugías"
+        ordering = ['-scheduled_date']
+    
     def save(self, *args, **kwargs):
         self.name = normalize_title_case(self.name)
         if self.hospital:
             self.hospital = normalize_title_case(self.hospital)
         super().save(*args, **kwargs)
+    
     def __str__(self):
-        return f"{self.patient} — {self.name}"
+        return f"{self.patient} — {self.name} [{self.get_status_display()}]"
+
+
+class Hospitalization(models.Model):
+    """
+    Sistema de Gestión Hospitalaria MEDOPZ
+    - Admisión: Ingreso del paciente, asignación de cama
+    - Estancia: Seguimiento diario, evolución, signos vitales
+    - Alta: Egreso, resumen de alta, indicaciones
+    """
+    
+    ADMISSION_TYPE_CHOICES = [
+        ('emergency', 'Emergencia'),
+        ('scheduled', 'Programada'),
+        ('transfer', 'Transferencia'),
+        ('observation', 'Observación'),
+    ]
+    
+    ADMISSION_STATUS_CHOICES = [
+        ('admitted', 'Admitido'),
+        ('stable', 'Estable'),
+        ('critical', 'Crítico'),
+        ('improving', 'En Mejoría'),
+        ('awaiting_discharge', 'Esperando Alta'),
+        ('discharged', 'Dado de Alta'),
+        ('transferred', 'Transferido'),
+        ('deceased', 'Fallecido'),
+    ]
+    
+    DISCHARGE_TYPE_CHOICES = [
+        ('voluntary', 'Alta Voluntaria'),
+        ('medical', 'Alta Médica'),
+        ('transfer', 'Transferencia'),
+        ('deceased', 'Fallecimiento'),
+        ('against_advice', 'Alta contra consejo médico'),
+    ]
+    
+    # === RELACIONES DE PODER ===
+    patient = models.ForeignKey(
+        Patient, on_delete=models.CASCADE, related_name="hospitalizations"
+    )
+    institution = models.ForeignKey(
+        InstitutionSettings, on_delete=models.PROTECT, related_name="hospitalizations"
+    )
+    attending_doctor = models.ForeignKey(
+        DoctorOperator, on_delete=models.PROTECT,
+        related_name="hospitalizations_attended", verbose_name="Médico tratante"
+    )
+    admission_diagnosis = models.ForeignKey(
+        Diagnosis, on_delete=models.SET_NULL, null=True,
+        related_name="hospitalizations", verbose_name="Diagnóstico de ingreso"
+    )
+    
+    # === DATOS DE ADMISIÓN ===
+    admission_type = models.CharField(
+        max_length=20, choices=ADMISSION_TYPE_CHOICES, default='emergency'
+    )
+    status = models.CharField(
+        max_length=20, choices=ADMISSION_STATUS_CHOICES, default='admitted'
+    )
+    
+    # === ASIGNACIÓN DE CAMA ===
+    ward = models.CharField(max_length=100, verbose_name="Pabellón / Sala")
+    room_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de habitación")
+    bed_number = models.CharField(max_length=20, verbose_name="Número de cama")
+    
+    # === CRONOLOGÍA ===
+    admission_date = models.DateTimeField(verbose_name="Fecha de ingreso")
+    expected_discharge_date = models.DateField(null=True, blank=True, verbose_name="Fecha estimada de alta")
+    actual_discharge_date = models.DateTimeField(null=True, blank=True, verbose_name="Fecha real de alta")
+    
+    # === CLÍNICA ===
+    chief_complaint = models.TextField(verbose_name="Motivo principal de ingreso")
+    clinical_summary = models.TextField(blank=True, null=True, verbose_name="Resumen clínico")
+    vital_signs = models.JSONField(blank=True, null=True, verbose_name="Signos vitales (último registro)")
+    allergies_at_admission = models.TextField(blank=True, null=True, verbose_name="Alergias al ingreso")
+    
+    # === EVOLUCIÓN ===
+    daily_notes = models.TextField(blank=True, null=True, verbose_name="Notas de evolución")
+    complications = models.TextField(blank=True, null=True, verbose_name="Complicaciones durante estancia")
+    
+    # === ALTA ===
+    discharge_type = models.CharField(
+        max_length=20, choices=DISCHARGE_TYPE_CHOICES, null=True, blank=True,
+        verbose_name="Tipo de egreso"
+    )
+    discharge_summary = models.TextField(blank=True, null=True, verbose_name="Resumen de alta")
+    discharge_instructions = models.TextField(blank=True, null=True, verbose_name="Indicaciones al alta")
+    discharge_medications = models.TextField(blank=True, null=True, verbose_name="Medicamentos al alta")
+    
+    # === AUDITORÍA ===
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Hospitalización"
+        verbose_name_plural = "Hospitalizaciones"
+        ordering = ['-admission_date']
+    
+    def __str__(self):
+        return f"{self.patient} — {self.ward} Cama {self.bed_number} [{self.get_status_display()}]"
+    
+    @property
+    def length_of_stay(self):
+        """Calcula los días de estancia."""
+        end = self.actual_discharge_date or timezone.now()
+        return (end - self.admission_date).days
+    
+    def save(self, *args, **kwargs):
+        if self.ward:
+            self.ward = normalize_title_case(self.ward)
+        super().save(*args, **kwargs)
+
+
+class Bed(models.Model):
+    """
+    Gestión de camas hospitalarias MEDOPZ
+    """
+    BED_STATUS_CHOICES = [
+        ('available', 'Disponible'),
+        ('occupied', 'Ocupada'),
+        ('maintenance', 'En Mantenimiento'),
+        ('reserved', 'Reservada'),
+    ]
+    
+    BED_TYPE_CHOICES = [
+        ('general', 'Cama General'),
+        ('icu', 'UCI'),
+        ('pediatric', 'Pediátrica'),
+        ('isolation', 'Aislamiento'),
+        ('maternity', 'Maternidad'),
+    ]
+    
+    institution = models.ForeignKey(
+        InstitutionSettings, on_delete=models.CASCADE, related_name="beds"
+    )
+    ward = models.CharField(max_length=100, verbose_name="Pabellón / Sala")
+    room_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de habitación")
+    bed_number = models.CharField(max_length=20, verbose_name="Número de cama")
+    bed_type = models.CharField(
+        max_length=20, choices=BED_TYPE_CHOICES, default='general'
+    )
+    status = models.CharField(
+        max_length=20, choices=BED_STATUS_CHOICES, default='available'
+    )
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Cama"
+        verbose_name_plural = "Camas"
+        ordering = ['ward', 'room_number', 'bed_number']
+        unique_together = ['institution', 'bed_number']
+    
+    def __str__(self):
+        return f"{self.ward} - Cama {self.bed_number} [{self.get_status_display()}]"
+    
+    def save(self, *args, **kwargs):
+        if self.ward:
+            self.ward = normalize_title_case(self.ward)
+        super().save(*args, **kwargs)
 
 
 class Habit(models.Model):

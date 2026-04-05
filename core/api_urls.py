@@ -23,7 +23,6 @@ from .api_views import (
     # --- Nuevos ViewSets clínicos ---
     PersonalHistoryViewSet,
     FamilyHistoryViewSet,
-    SurgeryViewSet,
     HabitViewSet,
     VaccineViewSet,
     VaccinationScheduleViewSet,
@@ -175,7 +174,10 @@ from .api_views import (
     PurchaseServiceDirect,
     ConfirmAppointmentView,
     DoctorAppointmentsView,
-    OperationalHubView,  # NUEVO: Importar OperationalHubView
+    OperationalHubView, 
+    SurgeryViewSet,
+    HospitalizationViewSet,
+    BedViewSet,
 )
 # --- Swagger / OpenAPI ---
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -202,6 +204,8 @@ router.register(r"specialties", SpecialtyViewSet, basename="specialty")
 router.register(r"personal-history", PersonalHistoryViewSet, basename="personal-history")
 router.register(r"family-history", FamilyHistoryViewSet, basename="family-history")
 router.register(r"surgeries", SurgeryViewSet, basename="surgery")
+router.register(r"hospitalizations", HospitalizationViewSet, basename="hospitalization")
+router.register(r"beds", BedViewSet, basename="bed")
 router.register(r"habits", HabitViewSet, basename="habit")
 router.register(r"vaccines", VaccineViewSet, basename="vaccine")
 router.register(r"vaccination-schedule", VaccinationScheduleViewSet, basename="vaccination-schedule")

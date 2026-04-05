@@ -10,7 +10,7 @@ from .models import (
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, 
     WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
     PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory,
-    ServiceSchedule
+    ServiceSchedule, Hospitalization, Bed
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, BANK_CHOICES, get_bank_name
 from datetime import date
@@ -2841,21 +2841,6 @@ class FamilyHistorySerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
-class SurgerySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Surgery
-        fields = [
-            "id",
-            "patient",
-            "name",
-            "date",
-            "hospital",
-            "complications",
-            "created_at",
-        ]
-        read_only_fields = ["id", "created_at"]
-
-
 class HabitSerializer(serializers.ModelSerializer):
     # ✅ Display para mostrar etiquetas legibles
     type_display = serializers.CharField(source='get_type_display', read_only=True)
@@ -3643,3 +3628,134 @@ class ServiceCategoryWriteSerializer(serializers.ModelSerializer):
         fields = ['name', 'description', 'icon', 'is_active']
 
 
+# =====================================================
+# SURGERY (Sistema Quirúrgico Integral)
+# =====================================================
+class SurgerySerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True)
+    surgeon_name = serializers.CharField(source='surgeon.full_name', read_only=True)
+    anesthesiologist_name = serializers.CharField(source='anesthesiologist.full_name', read_only=True, allow_null=True)
+    specialty_name = serializers.CharField(source='specialty.name', read_only=True, allow_null=True)
+    diagnosis_icd = serializers.CharField(source='diagnosis.icd_code', read_only=True, allow_null=True)
+    diagnosis_title = serializers.CharField(source='diagnosis.title', read_only=True, allow_null=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    surgery_type_display = serializers.CharField(source='get_surgery_type_display', read_only=True)
+    risk_level_display = serializers.CharField(source='get_risk_level_display', read_only=True)
+    institution_name = serializers.CharField(source='institution.name', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = Surgery
+        fields = [
+            "id", "patient", "patient_name", "appointment", "institution", "institution_name",
+            "surgeon", "surgeon_name", "anesthesiologist", "anesthesiologist_name",
+            "specialty", "specialty_name", "diagnosis", "diagnosis_icd", "diagnosis_title",
+            "surgery_type", "surgery_type_display", "status", "status_display",
+            "name", "procedure_description", "surgical_technique",
+            "asa_classification", "risk_level", "risk_level_display",
+            "scheduled_date", "scheduled_time",
+            "anesthesia_start", "surgery_start", "surgery_end", "anesthesia_end",
+            "anesthesia_type",
+            "findings", "complications", "estimated_blood_loss", "specimens",
+            "post_op_instructions", "follow_up_date",
+            "hospital",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+class SurgeryCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Surgery
+        fields = [
+            "patient", "appointment", "institution", "surgeon",
+            "anesthesiologist", "specialty", "diagnosis",
+            "surgery_type", "status", "name", "procedure_description",
+            "surgical_technique", "asa_classification", "risk_level",
+            "scheduled_date", "scheduled_time", "anesthesia_type",
+            "hospital",
+        ]
+class SurgeryUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Surgery
+        fields = [
+            "status", "name", "procedure_description", "surgical_technique",
+            "asa_classification", "risk_level", "scheduled_date", "scheduled_time",
+            "anesthesia_start", "surgery_start", "surgery_end", "anesthesia_end",
+            "anesthesia_type", "findings", "complications", "estimated_blood_loss",
+            "specimens", "post_op_instructions", "follow_up_date",
+        ]
+# =====================================================
+# HOSPITALIZATION (Sistema de Gestión Hospitalaria)
+# =====================================================
+class HospitalizationSerializer(serializers.ModelSerializer):
+    patient_name = serializers.CharField(source='patient.full_name', read_only=True)
+    attending_doctor_name = serializers.CharField(source='attending_doctor.full_name', read_only=True)
+    admission_diagnosis_icd = serializers.CharField(source='admission_diagnosis.icd_code', read_only=True, allow_null=True)
+    admission_diagnosis_title = serializers.CharField(source='admission_diagnosis.title', read_only=True, allow_null=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    admission_type_display = serializers.CharField(source='get_admission_type_display', read_only=True)
+    discharge_type_display = serializers.CharField(source='get_discharge_type_display', read_only=True, allow_null=True)
+    institution_name = serializers.CharField(source='institution.name', read_only=True, allow_null=True)
+    length_of_stay = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = Hospitalization
+        fields = [
+            "id", "patient", "patient_name", "institution", "institution_name",
+            "attending_doctor", "attending_doctor_name",
+            "admission_diagnosis", "admission_diagnosis_icd", "admission_diagnosis_title",
+            "admission_type", "admission_type_display", "status", "status_display",
+            "ward", "room_number", "bed_number",
+            "admission_date", "expected_discharge_date", "actual_discharge_date",
+            "chief_complaint", "clinical_summary", "vital_signs", "allergies_at_admission",
+            "daily_notes", "complications",
+            "discharge_type", "discharge_type_display",
+            "discharge_summary", "discharge_instructions", "discharge_medications",
+            "length_of_stay",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "length_of_stay"]
+class HospitalizationCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospitalization
+        fields = [
+            "patient", "institution", "attending_doctor", "admission_diagnosis",
+            "admission_type", "status", "ward", "room_number", "bed_number",
+            "admission_date", "expected_discharge_date",
+            "chief_complaint", "clinical_summary", "allergies_at_admission",
+        ]
+class HospitalizationUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospitalization
+        fields = [
+            "status", "ward", "room_number", "bed_number",
+            "expected_discharge_date", "actual_discharge_date",
+            "clinical_summary", "vital_signs", "daily_notes", "complications",
+            "discharge_type", "discharge_summary", "discharge_instructions", "discharge_medications",
+        ]
+
+
+# =====================================================
+# BED (Gestión de Camas Hospitalarias)
+# =====================================================
+class BedSerializer(serializers.ModelSerializer):
+    institution_name = serializers.CharField(source='institution.name', read_only=True, allow_null=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    bed_type_display = serializers.CharField(source='get_bed_type_display', read_only=True)
+    
+    class Meta:
+        model = Bed
+        fields = [
+            "id", "institution", "institution_name",
+            "ward", "room_number", "bed_number",
+            "bed_type", "bed_type_display",
+            "status", "status_display",
+            "is_active", "notes",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+class BedCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bed
+        fields = [
+            "institution", "ward", "room_number", "bed_number",
+            "bed_type", "status", "notes",
+        ]
