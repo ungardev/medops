@@ -39,19 +39,7 @@ export default function PatientSidebar({
   setMobileOpen 
 }: PatientSidebarProps) {
   const location = useLocation();
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const effectiveCollapsed = mobileOpen ? false : collapsed;
-  useEffect(() => {
-    const checkTheme = () => {
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    };
-    checkTheme();
-    const observer = new MutationObserver(checkTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-  const getIconSrc = () => isDarkMode ? "/medopz_logo_blanco_solo.svg" : "/medopz_logo_negro_solo.svg";
-  const getFontSrc = () => isDarkMode ? "/medopz_fuente_blanco.svg" : "/medopz_fuente_negro.svg";
   return (
     <aside
       className={`border-r border-white/10 transition-all duration-300 ease-in-out
@@ -82,7 +70,7 @@ export default function PatientSidebar({
               } ${location.pathname === "/patient" ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
             >
                 <img
-                    src={getIconSrc()}
+                    src="/medopz_logo_blanco_solo.svg"
                     alt="Logo"
                     className={`transition-all duration-300 ${
                         mobileOpen 
@@ -93,7 +81,7 @@ export default function PatientSidebar({
                 
                 {!effectiveCollapsed && (
                     <img
-                        src={getFontSrc()}
+                        src="/medopz_fuente_blanco.svg"
                         alt="Medopz"
                         className={`object-contain transition-all duration-300 ${
                             mobileOpen 
