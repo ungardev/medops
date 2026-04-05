@@ -29,12 +29,12 @@ export default function PatientLayout() {
       
       <div className="relative flex flex-1 overflow-hidden">
         <aside
-          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-r border-white/10 bg-black overflow-hidden
+          className={`fixed top-0 left-0 h-screen z-[300] transition-all duration-300 ease-in-out border-r border-white/10 bg-[#0a0a0b] overflow-hidden
             ${mobileSidebarOpen 
               ? "translate-x-0 w-64" 
               : "-translate-x-full w-0 lg:w-auto lg:translate-x-0 lg:border-r"
             } 
-            ${!mobileSidebarOpen && !collapsed ? "lg:w-60" : ""}
+            ${!mobileSidebarOpen && !collapsed ? "lg:w-64" : ""}
             ${!mobileSidebarOpen && collapsed ? "lg:w-[72px]" : ""}
           `}
         >
@@ -48,7 +48,7 @@ export default function PatientLayout() {
         
         <div
           className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out ${
-            collapsed ? "lg:ml-[72px]" : "lg:ml-60"
+            collapsed ? "lg:ml-[72px]" : "lg:ml-64"
           }`}
         >
           <header className="h-14 border-b border-white/10 bg-black sticky top-0 z-30 flex items-center">
