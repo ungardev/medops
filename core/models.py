@@ -3065,7 +3065,8 @@ class Surgery(models.Model):
         related_name="surgery", verbose_name="Cita asociada"
     )
     institution = models.ForeignKey(
-        InstitutionSettings, on_delete=models.PROTECT, related_name="surgeries"
+        InstitutionSettings, on_delete=models.PROTECT, related_name="surgeries",
+        null=True, blank=True
     )
     surgeon = models.ForeignKey(
         DoctorOperator, on_delete=models.PROTECT,
