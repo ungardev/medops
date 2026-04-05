@@ -66,7 +66,7 @@ export default function Sidebar({
         flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-50
       `}
     >
-      <div className="flex flex-col h-full pt-4 pb-6 px-3">
+      <div className="flex flex-col h-full pt-2 pb-6 px-3">
         <div className={`flex relative ${
             mobileOpen 
             ? "flex-col items-center justify-center pt-2 pb-8" 
@@ -121,13 +121,13 @@ export default function Sidebar({
         {effectiveCollapsed && (
             <button
                 onClick={() => setCollapsed(!collapsed)}
-                className="mx-auto mt-3 p-2 text-white/30 hover:text-white transition-all hidden lg:block rounded-lg border border-white/10 bg-white/5 hover:bg-white/10"
+                className="mx-auto mt-2 p-2 text-white/30 hover:text-white transition-all hidden lg:block rounded-lg border border-white/10 bg-white/5 hover:bg-white/10"
             >
                 <ChevronRight size={16} />
             </button>
         )}
         {!effectiveCollapsed && (
-          <div className="flex items-center gap-2 mb-3 px-3 mt-1">
+          <div className="flex items-center gap-2 mb-3 px-3 mt-0">
             <div className="h-[1px] w-4 bg-white/15"></div>
             <div className="text-[9px] font-medium text-white/40 uppercase tracking-wider">
               Menú
