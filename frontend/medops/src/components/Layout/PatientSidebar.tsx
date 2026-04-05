@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Clock,
+  Scissors,
+  Bed,
   Users,
   CalendarDays, 
   CreditCard,
@@ -10,9 +12,7 @@ import {
   Settings,
   X,
   ChevronLeft,
-  ChevronRight,
-  Scissors,
-  Bed
+  ChevronRight
 } from "lucide-react";
 interface PatientSidebarProps {
   collapsed: boolean;
@@ -23,12 +23,12 @@ interface PatientSidebarProps {
 const navItems = [
   { path: "/patient", label: "Dashboard", icon: LayoutDashboard },
   { path: "/patient/queue", label: "Sala de Espera", icon: Clock },
+  { path: "/patient/surgery", label: "Cirugía", icon: Scissors },
+  { path: "/patient/hospitalization", label: "Hospitalización", icon: Bed },
   { path: "/patient/record", label: "Paciente", icon: Users },
   { path: "/patient/appointments", label: "Citas", icon: CalendarDays },
   { path: "/patient/payments", label: "Pagos", icon: CreditCard },
   { path: "/patient/services", label: "Servicios", icon: Briefcase },
-  { path: "/patient/surgery", label: "Cirugía", icon: Scissors },
-  { path: "/patient/hospitalization", label: "Hospitalización", icon: Bed },
   { path: "/patient/settings", label: "Configuración", icon: Settings },
 ];
 export default function PatientSidebar({ 

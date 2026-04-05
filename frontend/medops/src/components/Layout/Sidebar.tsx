@@ -5,6 +5,8 @@ import {
   LayoutDashboard,
   Clock,
   Stethoscope,
+  Scissors,
+  Bed,
   Users,
   CalendarDays,
   CreditCard,
@@ -14,8 +16,6 @@ import {
   ChevronRight,
   X,
   Briefcase,
-  Scissors,
-  Bed,
 } from "lucide-react";
 interface SidebarProps {
   collapsed: boolean;
@@ -27,12 +27,12 @@ const navItems = [
   { path: "/doctor", label: "Dashboard", icon: LayoutDashboard },
   { path: "/waitingroom", label: "Sala de Espera", icon: Clock },
   { path: "/consultation", label: "Consulta", icon: Stethoscope },
+  { path: "/surgery", label: "Cirugía", icon: Scissors },
+  { path: "/hospitalization", label: "Hospitalización", icon: Bed },
   { path: "/patients", label: "Pacientes", icon: Users },
   { path: "/appointments", label: "Citas", icon: CalendarDays },
   { path: "/payments", label: "Pagos", icon: CreditCard },
   { path: "/services", label: "Servicios", icon: Briefcase },
-  { path: "/surgery", label: "Cirugía", icon: Scissors },
-  { path: "/hospitalization", label: "Hospitalización", icon: Bed },
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
 ];
