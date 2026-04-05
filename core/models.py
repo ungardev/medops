@@ -3069,8 +3069,7 @@ class Surgery(models.Model):
         null=True, blank=True
     )
     surgeon = models.ForeignKey(
-        DoctorOperator, on_delete=models.PROTECT,
-        related_name="surgeries_performed", verbose_name="Cirujano principal"
+        DoctorOperator, on_delete=models.PROTECT, null=True, blank=True, related_name="surgeries_performed", verbose_name="Cirujano principal"
     )
     assistants = models.ManyToManyField(
         DoctorOperator, related_name="surgeries_assisted", blank=True,
@@ -3098,8 +3097,8 @@ class Surgery(models.Model):
     )
     
     # === DATOS CLÍNICOS ===
-    name = models.CharField(max_length=255, verbose_name="Nombre del procedimiento")
-    procedure_description = models.TextField(verbose_name="Descripción del procedimiento")
+    name = models.CharField(max_length=255, blank=True, default='', verbose_name="Nombre del procedimiento")
+    procedure_description = models.TextField(blank=True, default='', verbose_name="Descripción del procedimiento")
     surgical_technique = models.TextField(blank=True, null=True, verbose_name="Técnica quirúrgica")
     
     # === CLASIFICACIÓN DE RIESGO ===
@@ -3112,7 +3111,7 @@ class Surgery(models.Model):
     )
     
     # === CRONOLOGÍA ===
-    scheduled_date = models.DateField(verbose_name="Fecha programada")
+    scheduled_date = models.DateField(null=True, blank=True, verbose_name="Fecha programada")
     scheduled_time = models.TimeField(null=True, blank=True, verbose_name="Hora programada")
     anesthesia_start = models.DateTimeField(null=True, blank=True)
     surgery_start = models.DateTimeField(null=True, blank=True)
