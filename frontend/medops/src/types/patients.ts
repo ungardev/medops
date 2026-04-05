@@ -71,20 +71,89 @@ export interface FamilyHistory {
   notes?: string | null;
 }
 // =====================================================
-// CIRUGÍA
+// CIRUGÍA (Modelo expandido MEDOPZ)
 // =====================================================
 export interface Surgery {
   id: number;
   patient: number;
-  doctor_id: number; // ✅ Requerido para compatibilidad con SurgeriesModal
-  doctor?: string; // ✅ Agregado para compatibilidad con SurgeriesTab
-  hospital?: string;
+  patient_name?: string;
+  appointment?: number | null;
+  institution?: number;
+  institution_name?: string | null;
+  surgeon?: number;
+  surgeon_name?: string;
+  anesthesiologist?: number | null;
+  anesthesiologist_name?: string | null;
+  specialty?: number | null;
+  specialty_name?: string | null;
+  diagnosis?: number | null;
+  diagnosis_icd?: string | null;
+  diagnosis_title?: string | null;
+  surgery_type?: string;
+  surgery_type_display?: string;
+  status?: string;
+  status_display?: string;
   name: string;
-  date?: string | null; // ISO string
-  type?: string;
-  description?: string;
-  status?: "programada" | "realizada" | "cancelada";
-  notes?: string | null;
+  procedure_description?: string;
+  surgical_technique?: string | null;
+  asa_classification?: string | null;
+  risk_level?: string;
+  risk_level_display?: string;
+  scheduled_date?: string | null;
+  scheduled_time?: string | null;
+  anesthesia_start?: string | null;
+  surgery_start?: string | null;
+  surgery_end?: string | null;
+  anesthesia_end?: string | null;
+  anesthesia_type?: string | null;
+  findings?: string | null;
+  complications?: string | null;
+  estimated_blood_loss?: number | string | null;
+  specimens?: string | null;
+  post_op_instructions?: string | null;
+  follow_up_date?: string | null;
+  hospital?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+// =====================================================
+// HOSPITALIZACIÓN
+// =====================================================
+export interface Hospitalization {
+  id: number;
+  patient: number;
+  patient_name?: string;
+  institution?: number;
+  institution_name?: string | null;
+  attending_doctor?: number;
+  attending_doctor_name?: string;
+  admission_diagnosis?: number | null;
+  admission_diagnosis_icd?: string | null;
+  admission_diagnosis_title?: string | null;
+  admission_type?: string;
+  admission_type_display?: string;
+  status?: string;
+  status_display?: string;
+  ward: string;
+  room_number?: string | null;
+  bed_number: string;
+  admission_date: string;
+  expected_discharge_date?: string | null;
+  actual_discharge_date?: string | null;
+  chief_complaint?: string;
+  clinical_summary?: string | null;
+  vital_signs?: Record<string, any> | null;
+  allergies_at_admission?: string | null;
+  daily_notes?: string | null;
+  complications?: string | null;
+  discharge_type?: string | null;
+  discharge_type_display?: string | null;
+  discharge_summary?: string | null;
+  discharge_instructions?: string | null;
+  discharge_medications?: string | null;
+  length_of_stay?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 // =====================================================
 // TIPOS DE HÁBITO

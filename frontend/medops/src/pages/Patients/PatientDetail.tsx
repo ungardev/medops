@@ -11,6 +11,7 @@ import PatientPendingAppointmentsTab from "../../components/Patients/PatientPend
 import PatientEventsTab from "../../components/Patients/PatientEventsTab";
 import VaccinationTab from "../../components/Patients/VaccinationTab";
 import SurgeriesTab from "../../components/Patients/SurgeriesTab";
+import HospitalizationsTab from "../../components/Patients/HospitalizationsTab";
 import PageHeader from "../../components/Common/PageHeader";
 import InvitePatientModal from "../../components/Patients/InvitePatientModal";
 import { 
@@ -46,6 +47,7 @@ function normalizeTab(id?: string): string {
     eventos: "eventos",
     vacunación: "vacunacion",
     cirugias: "cirugias",
+    hospitalizacion: "hospitalizacion",
   };
   if (!id) return "info";
   return map[id.toLowerCase()] ?? id;
@@ -346,6 +348,9 @@ export default function PatientDetail() {
           </Tab>
           <Tab id="cirugias" label="Cirugías">
             <SurgeriesTab patientId={patientId} onRefresh={() => {}} />
+          </Tab>
+          <Tab id="hospitalizacion" label="Hospitalización">
+            <HospitalizationsTab patientId={patientId} onRefresh={() => {}} />
           </Tab>
           <Tab id="citas" label="Citas">
             <PatientPendingAppointmentsTab patient={patient} />

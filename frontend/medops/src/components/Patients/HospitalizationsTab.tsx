@@ -1,42 +1,37 @@
-// src/components/Patients/SurgeriesTab.tsx
+// src/components/Patients/HospitalizationsTab.tsx
 import { useState } from "react";
-import { useSurgeries } from "../../hooks/patients/useSurgeries";
-import { Surgery } from "../../types/patients";
-import SurgeriesModal from "./SurgeriesModal";
+import { useHospitalizations } from "../../hooks/patients/useHospitalizations";
+import { Hospitalization } from "../../types/patients";
+import HospitalizationsModal from "./HospitalizationsModal";
 import { 
-  ScissorsIcon, 
   PlusIcon, 
   PencilSquareIcon, 
   TrashIcon,
-  BuildingOfficeIcon,
   UserCircleIcon,
   CalendarIcon,
-  ShieldCheckIcon,
-  ExclamationTriangleIcon,
+  HeartIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
+import { Bed } from "lucide-react";
 interface Props {
   patientId: number;
   onRefresh?: () => void;
   readOnly?: boolean;
 }
 const statusColors: Record<string, string> = {
-  scheduled: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  pre_op: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  in_progress: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-  completed: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  canceled: "bg-red-500/10 text-red-400 border-red-500/20",
-  postponed: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  admitted: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  stable: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  critical: "bg-red-500/10 text-red-400 border-red-500/20",
+  improving: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  awaiting_discharge: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  discharged: "bg-gray-500/10 text-gray-400 border-gray-500/20",
+  transferred: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  deceased: "bg-red-900/20 text-red-500 border-red-900/30",
 };
-const riskColors: Record<string, string> = {
-  low: "text-emerald-400",
-  moderate: "text-amber-400",
-  high: "text-orange-400",
-  critical: "text-red-400",
-};
-export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }: Props) {
-  const { query, create, update, remove } = useSurgeries(patientId);
+export default function HospitalizationsTab({ patientId, onRefresh, readOnly = false }: Props) {
+  const { query, create, update, remove } = useHospitalizations(patientId);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Surgery | undefined>(undefined);
+  const [editingItem, setEditingItem] = useState<Hospitalization | undefined>(undefined);
   const [localError, setLocalError] = useState<string | null>(null);
   
   const isSaving = create.isPending || update.isPending || remove.isPending;
@@ -44,11 +39,11 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
     setEditingItem(undefined);
     setModalOpen(true);
   };
-  const handleEdit = (item: Surgery) => {
+  const handleEdit = (item: Hospitalization) => {
     setEditingItem(item);
     setModalOpen(true);
   };
-  const handleSave = (data: Partial<Surgery>) => {
+  const handleSave = (data: Partial<Hospitalization>) => {
     setLocalError(null);
     const mutation = editingItem ? update : create;
     const payload = editingItem 
@@ -60,7 +55,7 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
         onRefresh?.();
         setModalOpen(false);
       },
-      onError: () => setLocalError("Error al guardar la cirugía")
+      onError: () => setLocalError("Error al guardar la hospitalización")
     });
   };
   const handleDelete = (id: number) => {
@@ -78,15 +73,15 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
   );
   if (query.isError) return (
     <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
-      <p className="text-[11px] text-red-400">Error al cargar el historial quirúrgico</p>
+      <p className="text-[11px] text-red-400">Error al cargar el historial de hospitalizaciones</p>
     </div>
   );
-  const surgeries = query.data || [];
+  const hospitalizations = query.data || [];
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-[12px] font-semibold text-white">
-          Historial Quirúrgico
+          Historial de Hospitalización
         </h2>
         
         {!readOnly && (
@@ -96,7 +91,7 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
             className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg disabled:opacity-50 transition-all"
           >
             <PlusIcon className="w-4 h-4" />
-            Nueva Cirugía
+            Nueva Admisión
           </button>
         )}
       </div>
@@ -105,78 +100,72 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
           <p className="text-[11px] text-red-400">{localError}</p>
         </div>
       )}
-      {surgeries.length === 0 ? (
+      {hospitalizations.length === 0 ? (
         <div className="text-center py-12 border border-dashed border-white/15 rounded-lg">
-          <ScissorsIcon className="w-12 h-12 mx-auto text-white/15 mb-4" />
-          <p className="text-[11px] text-white/40">No hay registros quirúrgicos</p>
-          <p className="text-[9px] text-white/30 mt-1">Agrega la primera cirugía para comenzar el registro</p>
+          <Bed className="w-12 h-12 mx-auto text-white/15 mb-4" />
+          <p className="text-[11px] text-white/40">No hay hospitalizaciones registradas</p>
+          <p className="text-[9px] text-white/30 mt-1">Agrega la primera admisión para comenzar el registro</p>
         </div>
       ) : (
         <div className="grid gap-3">
-          {surgeries.map((surgery: Surgery) => (
+          {hospitalizations.map((hosp: Hospitalization) => (
             <div
-              key={surgery.id}
+              key={hosp.id}
               className="bg-white/5 border border-white/15 rounded-lg p-5 hover:border-white/25 transition-all"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <h3 className="text-[12px] font-medium text-white">
-                      {surgery.name || "Procedimiento sin nombre"}
+                      {hosp.ward} - Cama {hosp.bed_number}
+                      {hosp.room_number && ` / Hab. ${hosp.room_number}`}
                     </h3>
-                    {surgery.status && (
-                      <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
-                        {surgery.status_display || surgery.status}
-                      </span>
-                    )}
-                    {surgery.risk_level && (
-                      <span className={`text-[9px] font-medium flex items-center gap-1 ${riskColors[surgery.risk_level] || "text-white/40"}`}>
-                        <ExclamationTriangleIcon className="w-3 h-3" />
-                        {surgery.risk_level_display || surgery.risk_level}
+                    {hosp.status && (
+                      <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[hosp.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                        {hosp.status_display || hosp.status}
                       </span>
                     )}
                   </div>
                   <div className="space-y-1.5 text-[10px] text-white/50">
-                    {surgery.surgeon_name && (
+                    {hosp.attending_doctor_name && (
                       <div className="flex items-center gap-2">
                         <UserCircleIcon className="w-4 h-4" />
-                        <span>Dr. {surgery.surgeon_name}</span>
+                        <span>Dr. {hosp.attending_doctor_name}</span>
                       </div>
                     )}
-                    {surgery.scheduled_date && (
+                    {hosp.admission_date && (
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="w-4 h-4" />
-                        <span>{new Date(surgery.scheduled_date).toLocaleDateString("es-VE")}</span>
+                        <span>Ingreso: {new Date(hosp.admission_date).toLocaleDateString("es-VE")}</span>
                       </div>
                     )}
-                    {(surgery.institution_name || surgery.hospital) && (
+                    {hosp.length_of_stay !== undefined && (
                       <div className="flex items-center gap-2">
-                        <BuildingOfficeIcon className="w-4 h-4" />
-                        <span>{surgery.institution_name || surgery.hospital}</span>
+                        <ClockIcon className="w-4 h-4" />
+                        <span>{hosp.length_of_stay} {hosp.length_of_stay === 1 ? "día" : "días"} de estancia</span>
                       </div>
                     )}
-                    {surgery.specialty_name && (
+                    {hosp.admission_diagnosis_title && (
                       <div className="flex items-center gap-2">
-                        <ShieldCheckIcon className="w-4 h-4" />
-                        <span>{surgery.specialty_name}</span>
-                      </div>
-                    )}
-                    {surgery.asa_classification && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-white/30">ASA:</span>
-                        <span className="text-white/60">{surgery.asa_classification}</span>
+                        <HeartIcon className="w-4 h-4" />
+                        <span>Dx: {hosp.admission_diagnosis_title}</span>
                       </div>
                     )}
                   </div>
-                  {surgery.procedure_description && (
+                  {hosp.chief_complaint && (
                     <p className="text-[11px] text-white/60 mt-3 leading-relaxed">
-                      {surgery.procedure_description}
+                      <span className="text-white/40">Motivo:</span> {hosp.chief_complaint}
                     </p>
                   )}
-                  {surgery.complications && (
+                  {hosp.clinical_summary && (
+                    <p className="text-[11px] text-white/50 mt-2 leading-relaxed line-clamp-3">
+                      {hosp.clinical_summary}
+                    </p>
+                  )}
+                  {hosp.complications && (
                     <div className="mt-2 p-2 bg-red-500/5 border border-red-500/10 rounded">
                       <p className="text-[10px] text-red-400/80">
-                        <span className="font-medium">Complicaciones:</span> {surgery.complications}
+                        <span className="font-medium">Complicaciones:</span> {hosp.complications}
                       </p>
                     </div>
                   )}
@@ -185,7 +174,7 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
                 {!readOnly && (
                   <div className="flex gap-2 ml-4">
                     <button
-                      onClick={() => handleEdit(surgery)}
+                      onClick={() => handleEdit(hosp)}
                       disabled={isSaving}
                       className="p-2 text-white/50 hover:text-emerald-400 hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
                       title="Editar"
@@ -193,7 +182,7 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
                       <PencilSquareIcon className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDelete(surgery.id)}
+                      onClick={() => handleDelete(hosp.id)}
                       disabled={isSaving}
                       className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
                       title="Eliminar"
@@ -208,7 +197,7 @@ export default function SurgeriesTab({ patientId, onRefresh, readOnly = false }:
         </div>
       )}
       {!readOnly && (
-        <SurgeriesModal
+        <HospitalizationsModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           onSave={handleSave}

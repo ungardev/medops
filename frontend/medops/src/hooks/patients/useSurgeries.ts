@@ -1,11 +1,10 @@
 // src/hooks/patients/useSurgeries.ts
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiFetch } from "../../api/client";
-import { Surgery } from "../../types/patients"; // ✅ FIX: Importar Surgery desde types/patients.ts
-// 👇 definimos un tipo para la posible respuesta del backend
+import { Surgery } from "../../types/patients";
 interface SurgeriesResponse {
   results?: Surgery[];
-  [key: string]: any; // para evitar error TS en otras props
+  [key: string]: any;
 }
 export function useSurgeries(patientId: number) {
   const query = useQuery<Surgery[]>({
@@ -14,29 +13,26 @@ export function useSurgeries(patientId: number) {
       const res: SurgeriesResponse | Surgery[] = await apiFetch(
         `surgeries/?patient=${patientId}`
       );
-      // Normalizamos: si es array directo, lo devolvemos
       if (Array.isArray(res)) {
         return res;
       }
-      // Si es objeto con results, devolvemos ese array
       if (res.results && Array.isArray(res.results)) {
         return res.results;
       }
-      // Si no hay nada válido, devolvemos []
       return [];
     },
   });
   const create = useMutation({
-    mutationFn: (data: Surgery) =>
+    mutationFn: (data: Partial<Surgery>) =>
       apiFetch("surgeries/", {
         method: "POST",
         body: JSON.stringify(data),
       }),
   });
   const update = useMutation({
-    mutationFn: (data: Surgery) =>
+    mutationFn: (data: Partial<Surgery> & { id: number }) =>
       apiFetch(`surgeries/${data.id}/`, {
-        method: "PUT",
+        method: "PATCH",
         body: JSON.stringify(data),
       }),
   });
