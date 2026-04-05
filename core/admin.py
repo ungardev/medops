@@ -420,10 +420,10 @@ class FamilyHistoryAdmin(admin.ModelAdmin):
 
 @admin.register(Surgery)
 class SurgeryAdmin(admin.ModelAdmin):
-    list_display = ("id", "patient", "name", "date", "hospital", "created_at")
-    list_filter = ("date",)
-    search_fields = ("patient__first_name", "patient__last_name", "name", "hospital")
-    ordering = ("-date",)
+    list_display = ("id", "patient", "name", "scheduled_date", "status", "surgeon", "hospital", "created_at")
+    list_filter = ("status", "surgery_type", "risk_level", "hospital")
+    search_fields = ("patient__first_name", "patient__last_name", "name", "hospital", "surgeon__first_name")
+    ordering = ("-scheduled_date",)
     list_per_page = 25
 
 
