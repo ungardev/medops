@@ -28,35 +28,30 @@ export default function PatientConsultationsDetail() {
   
   const { data: appointment, isLoading, error } = useConsultationById(appointmentIdNum);
   
-  // Estado para perfil completo del paciente
   const [patientProfile, setPatientProfile] = useState<any | null>(null);
   const [successData, setSuccessData] = useState<{ docs: any[], skipped: string[] } | null>(null);
   const [errorData, setErrorData] = useState<{ category: string, error: string }[] | null>(null);
   
-  // ✅ ESTADO LOCAL PARA MODO EDICIÓN
   const [isEditMode, setIsEditMode] = useState(false);
   
-  // Lógica de solo lectura actualizada
   const isCompleted = appointment?.status === 'completed';
-  const readOnly = isCompleted || !isEditMode; // Solo editable si NO está completada Y está en modo edición
+  const readOnly = isCompleted || !isEditMode;
   
-  // Cargar perfil completo del paciente
   useEffect(() => {
     if (appointment?.patient?.id) {
       getPatient(appointment.patient.id)
         .then((full) => setPatientProfile(full))
-        .catch((e) => console.error("CRITICAL_PROFILE_LOAD_ERROR:", e));
+        .catch((e) => console.error("Error loading profile:", e));
     }
   }, [appointment?.patient?.id]);
-  // Validación de IDs
   if (!appointmentId || isNaN(appointmentIdNum)) {
     return (
       <div className="min-h-screen bg-black p-8">
-        <div className="border border-amber-500/30 bg-amber-500/5 p-4 text-amber-500 text-[10px] font-mono uppercase flex items-center gap-3">
+        <div className="border border-amber-500/20 bg-amber-500/5 p-4 text-amber-400 text-[10px] font-medium flex items-center gap-3 rounded-lg">
           <ShieldCheckIcon className="w-4 h-4" />
           <div className="flex flex-col">
-            <span>Invalid_Appointment_ID</span>
-            <span className="text-xs opacity-70">Please check the consultation link</span>
+            <span>ID de consulta inválido</span>
+            <span className="text-xs opacity-70">Por favor verifica el enlace de consulta</span>
           </div>
         </div>
       </div>
@@ -66,9 +61,9 @@ export default function PatientConsultationsDetail() {
   if (isLoading) return (
     <div className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center space-y-4">
-        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-blue-500 animate-pulse">
-          Initializing_Session_Link...
+        <div className="w-10 h-10 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mx-auto" />
+        <p className="text-[10px] text-emerald-400/60">
+          Cargando consulta...
         </p>
       </div>
     </div>
@@ -76,28 +71,26 @@ export default function PatientConsultationsDetail() {
   
   if (error || !appointment) return (
     <div className="min-h-screen bg-black p-8">
-      <div className="border border-red-500/30 bg-red-500/5 p-4 text-red-500 text-[10px] font-mono uppercase flex items-center gap-3">
+      <div className="border border-red-500/20 bg-red-500/5 p-4 text-red-400 text-[10px] font-medium flex items-center gap-3 rounded-lg">
         <ShieldCheckIcon className="w-4 h-4" />
         <div className="flex flex-col">
-          <span>Critical_Error: Data_Stream_Corrupted</span>
+          <span>Error al cargar los datos</span>
           <span className="text-xs opacity-70">
-            {error ? 'API call failed' : 'Consultation not found'} - 
-            Appointment ID: {appointmentId}
+            {error ? 'Error en la llamada API' : 'Consulta no encontrada'} - 
+            ID: {appointmentId}
           </span>
         </div>
       </div>
     </div>
   );
-  // Datos seguros
   const safePatientId = Number(appointment?.patient?.id) || Number(patientId);
   const safeAppointmentId = Number(appointment?.id) || Number(appointmentId);
   
   const patient = patientProfile ? toPatientHeaderPatient(patientProfile) : null;
   const patientFullName = patient?.full_name || 
     appointment?.patient?.full_name || 
-    `PATIENTE_${appointment?.patient?.id || 'UNKNOWN'}`;
+    `Paciente ${appointment?.patient?.id || 'Desconocido'}`;
   const statusLabel = appointment.status_display || appointment.status || "N/A";
-  // Función para navegar atrás
   const handleGoBack = () => {
     if (patientId) {
       window.location.href = `/patients/${patientId}`;
@@ -108,74 +101,68 @@ export default function PatientConsultationsDetail() {
   return (
     <div className="min-h-screen bg-black text-white p-4 space-y-4">
       
-      {/* ✅ PAGE HEADER (Estilo Consultation.tsx + Switch Estado Dinámico) */}
       <PageHeader 
         breadcrumbs={[
           { label: "MEDOPZ", path: "/" },
-          { label: "PATIENTS", path: "/patients" },
+          { label: "Pacientes", path: "/patients" },
           { label: patientFullName.length > 20 ? patientFullName.substring(0, 20) + '...' : patientFullName, path: `/patients/${patientId}` },
-          { label: "CONSULTATION_DETAIL", active: true }
+          { label: "Detalle de Consulta", active: true }
         ]}
         stats={[
           { 
-            label: "SESSION_NODE", 
+            label: "Consulta", 
             value: `#${String(appointment?.id || appointmentId).padStart(6, '0')}`,
-            color: "text-blue-500"
+            color: "text-white/60"
           },
           { 
-            label: "CORE_STATUS", 
-            value: statusLabel.toUpperCase(),
-            color: "text-emerald-400 font-bold"
+            label: "Estado", 
+            value: statusLabel,
+            color: "text-emerald-400"
           }
         ]}
         children={
           <div className="flex items-center gap-3">
-            {/* Patient Header (alineado a la derecha) */}
             {patient ? <PatientHeader patient={patient} /> : null}
             
-            {/* Switch Estado (Read Only / Edit Mode) - Dinámico */}
-            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/10">
+            <div className="flex items-center gap-3 ml-4 pl-4 border-l border-white/15">
               {isCompleted ? (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-sm">
-                  <LockClosedIcon className="w-4 h-4 text-white/40" />
-                  <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider">Completed</span>
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/15 rounded-lg">
+                  <LockClosedIcon className="w-4 h-4 text-white/30" />
+                  <span className="text-[9px] font-medium text-white/40">Completada</span>
                 </div>
               ) : (
                 <button 
                   onClick={() => setIsEditMode(!isEditMode)}
-                  className={`flex items-center gap-2 px-3 py-1.5 border rounded-sm transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-all ${
                     isEditMode 
-                      ? "bg-amber-500/10 border-amber-500/30" 
-                      : "bg-white/5 border-white/10"
+                      ? "bg-amber-500/10 border-amber-500/20" 
+                      : "bg-white/5 border-white/15"
                   }`}
                 >
-                  <LockOpenIcon className={`w-4 h-4 ${isEditMode ? "text-amber-400" : "text-white/40"}`} />
-                  <span className={`text-[9px] font-bold uppercase tracking-wider ${isEditMode ? "text-amber-400" : "text-white/40"}`}>
-                    {isEditMode ? "Edit_Mode" : "Read_Only"}
+                  <LockOpenIcon className={`w-4 h-4 ${isEditMode ? "text-amber-400" : "text-white/30"}`} />
+                  <span className={`text-[9px] font-medium uppercase ${isEditMode ? "text-amber-400" : "text-white/40"}`}>
+                    {isEditMode ? "Editar" : "Solo lectura"}
                   </span>
                 </button>
               )}
               
-              {/* Botón Back (integrado en el header) */}
               <button 
                 onClick={handleGoBack}
-                className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider text-white/40 hover:text-white border border-white/10 hover:border-white/30 transition-all rounded-sm"
+                className="flex items-center gap-2 px-3 py-1.5 text-[9px] font-medium text-white/40 hover:text-white/70 border border-white/15 hover:border-white/25 transition-all rounded-lg"
               >
                 <ChevronLeftIcon className="w-3 h-3" />
-                Back
+                Volver
               </button>
             </div>
           </div>
         }
       />
       
-      {/* ✅ Layout Principal Compacto (Estilo Consultation.tsx) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 px-4">
         
-        {/* Main (Workflow) - Izquierda (9 columnas) */}
         <main className="lg:col-span-9 space-y-4">
-          <div className="bg-black/20 border border-white/10 p-1 relative min-h-[500px] flex flex-col shadow-2xl">
-            <div className="flex-1 bg-black/10 p-4">
+          <div className="bg-white/5 border border-white/15 p-1 relative min-h-[500px] flex flex-col rounded-lg">
+            <div className="flex-1 bg-black/10 p-4 rounded-lg">
               <ConsultationWorkflow
                 diagnoses={appointment?.diagnoses || []}
                 appointmentId={appointment?.id || safeAppointmentId}
@@ -183,8 +170,7 @@ export default function PatientConsultationsDetail() {
               />
             </div>
             
-            {/* Footer con Botones de Acción */}
-            <footer className="border-t border-white/10 bg-black/40 p-3 flex flex-wrap items-center justify-between gap-2 backdrop-blur-md">
+            <footer className="border-t border-white/10 bg-black/20 p-3 flex flex-wrap items-center justify-between gap-2 rounded-b-lg">
               <div className="flex flex-wrap gap-2">
                 <ConsultationDocumentsActions 
                   consultationId={appointment?.id || safeAppointmentId} 
@@ -195,16 +181,15 @@ export default function PatientConsultationsDetail() {
           </div>
         </main>
         
-        {/* Aside (Docs/Charges) - Derecha (3 columnas) */}
         <aside className="lg:col-span-3 space-y-4">
-          <CollapsiblePanel title="Clinical_Documents">
+          <CollapsiblePanel title="Documentos Clínicos">
             <DocumentsPanel
               patientId={appointment?.patient?.id || safePatientId}
               appointmentId={appointment?.id || safeAppointmentId}
               readOnly={readOnly}
             />
           </CollapsiblePanel>
-          <CollapsiblePanel title="Financial_Records">
+          <CollapsiblePanel title="Registros Financieros">
             <ChargeOrderPanel
               appointmentId={appointment?.id || safeAppointmentId}
               readOnly={readOnly}

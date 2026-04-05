@@ -22,16 +22,15 @@ export default function ConsultationDocumentsActions({
     generateDocuments.mutate({ consultationId, patientId });
   };
   return (
-    <div className="flex flex-wrap gap-3 mt-6">
-      {/* BOTÓN: INFORME MÉDICO (ACCIÓN PRIMARIA) */}
+    <div className="flex flex-wrap gap-3">
       <button
         disabled={generateReport.isPending || !canGenerate}
         onClick={() => generateReport.mutate(consultationId)}
         className={`
-          flex items-center gap-3 px-5 py-2.5 rounded-sm text-[10px] font-black uppercase tracking-[0.15em] transition-all
+          flex items-center gap-3 px-4 py-2 rounded-lg text-[10px] font-medium transition-all
           ${generateReport.isPending 
             ? "bg-white/5 text-white/20 cursor-not-allowed" 
-            : "bg-emerald-500/20 border border-emerald-500/30 text-white hover:bg-emerald-500/30 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/20"}
+            : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/15 hover:border-emerald-500/25"}
         `}
       >
         {generateReport.isPending ? (
@@ -39,19 +38,18 @@ export default function ConsultationDocumentsActions({
         ) : (
           <DocumentDuplicateIcon className="w-4 h-4" />
         )}
-        <span className="border-l border-white/20 pl-3">
-          {generateReport.isPending ? "COMPILING_REPORT..." : "GENERATE_MEDICAL_REPORT"}
+        <span className="border-l border-white/10 pl-3">
+          {generateReport.isPending ? "Generando..." : "Informe Médico"}
         </span>
       </button>
-      {/* BOTÓN: DOCUMENTOS DE CONSULTA (RECETAS, ÓRDENES, ETC) */}
       <button
         disabled={generateDocuments.isPending || !canGenerate}
         onClick={handleGenerateDocuments}
         className={`
-          flex items-center gap-3 px-5 py-2.5 rounded-sm border text-[10px] font-black uppercase tracking-[0.15em] transition-all
+          flex items-center gap-3 px-4 py-2 rounded-lg border text-[10px] font-medium transition-all
           ${generateDocuments.isPending 
-            ? "border-white/5 bg-white/5 text-[var(--palantir-muted)]" 
-            : "border-[var(--palantir-border)] bg-white/5 text-[var(--palantir-text)] hover:bg-white/10 hover:border-[var(--palantir-text)]"}
+            ? "border-white/5 bg-white/5 text-white/20" 
+            : "border-white/15 bg-white/5 text-white/60 hover:bg-white/10 hover:border-white/25"}
         `}
       >
         {generateDocuments.isPending ? (
@@ -60,16 +58,9 @@ export default function ConsultationDocumentsActions({
           <PrinterIcon className="w-4 h-4" />
         )}
         <span className="border-l border-white/10 pl-3">
-          {generateDocuments.isPending ? "BUILDING_ASSETS..." : "PRINT_CONSULTATION_PACK"}
+          {generateDocuments.isPending ? "Generando..." : "Imprimir Documentos"}
         </span>
       </button>
-      {/* INDICADOR DE ESTADO DE SALIDA (LOG) */}
-      <div className="flex items-center ml-auto">
-        <div className="flex flex-col items-end gap-1 px-3 border-r border-white/10">
-          <span className="text-[7px] font-mono text-[var(--palantir-muted)] uppercase">Output_Channel</span>
-          <span className="text-[9px] font-mono text-[var(--palantir-active)]">PDF_ENCODER_V1</span>
-        </div>
-      </div>
     </div>
   );
 }
