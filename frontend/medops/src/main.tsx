@@ -51,6 +51,9 @@ import DoctorProfile from "./pages/PatientPortal/DoctorProfile";
 // NUEVAS IMPORTACIONES: Doctor Dashboard y Manage Services
 import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
 import ManageServicesPage from "./pages/Doctor/ManageServicesPage";
+import Surgery from "./pages/Surgery/Surgery";
+import Hospitalization from "./pages/Hospitalization/Hospitalization";
+
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
 const token = import.meta.env.VITE_DEV_TOKEN;
@@ -130,6 +133,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="documents/:id" element={<ReportsPage />} />
                   <Route path="settings/config" element={<ConfigPage />} />
                   <Route path="search" element={<SearchPage />} />
+                  <Route path="surgery" element={<Surgery />} />
+                  <Route path="hospitalization" element={<Hospitalization />} />
                 </Route>
               </Route>
             </Routes>

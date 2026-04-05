@@ -14,6 +14,8 @@ import {
   ChevronRight,
   X,
   Briefcase,
+  Scissors,
+  Bed,
 } from "lucide-react";
 interface SidebarProps {
   collapsed: boolean;
@@ -29,6 +31,8 @@ const navItems = [
   { path: "/appointments", label: "Citas", icon: CalendarDays },
   { path: "/payments", label: "Pagos", icon: CreditCard },
   { path: "/services", label: "Servicios", icon: Briefcase },
+  { path: "/surgery", label: "Cirugía", icon: Scissors },
+  { path: "/hospitalization", label: "Hospitalización", icon: Bed },
   { path: "/reports", label: "Reportes", icon: BarChart2 },
   { path: "/settings/config", label: "Configuración", icon: Settings },
 ];
@@ -137,7 +141,7 @@ export default function Sidebar({
                   <Link
                     to={path}
                     onClick={() => mobileOpen && setMobileOpen(false)}
-                    className={`group relative flex items-center px-3 py-2.5 transition-all duration-200 mb-0.5 overflow-hidden rounded-lg ${
+                    className={`group relative flex items-center px-3 py-3 transition-all duration-200 mb-0.5 overflow-hidden rounded-lg ${
                       effectiveCollapsed ? "justify-center" : ""
                     } ${
                       isActive 
@@ -146,13 +150,13 @@ export default function Sidebar({
                     }`}
                   >
                     <Icon 
-                      size={18} 
+                      size={20} 
                       className={`shrink-0 transition-all duration-200 ${isActive ? "text-white" : "group-hover:text-white/80"}`} 
                       strokeWidth={isActive ? 2 : 1.5} 
                     />
                     
                     {!effectiveCollapsed && (
-                      <span className={`ml-3 text-[12px] tracking-wide font-medium ${isActive ? "text-white" : "text-white/60 group-hover:text-white/80"}`}>
+                      <span className={`ml-3 text-[13px] tracking-wide font-medium ${isActive ? "text-white" : "text-white/60 group-hover:text-white/80"}`}>
                         {label}
                       </span>
                     )}

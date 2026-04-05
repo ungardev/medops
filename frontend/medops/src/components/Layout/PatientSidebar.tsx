@@ -10,7 +10,9 @@ import {
   Settings,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Scissors,
+  Bed
 } from "lucide-react";
 interface PatientSidebarProps {
   collapsed: boolean;
@@ -25,6 +27,8 @@ const navItems = [
   { path: "/patient/appointments", label: "Citas", icon: CalendarDays },
   { path: "/patient/payments", label: "Pagos", icon: CreditCard },
   { path: "/patient/services", label: "Servicios", icon: Briefcase },
+  { path: "/patient/surgery", label: "Cirugía", icon: Scissors },
+  { path: "/patient/hospitalization", label: "Hospitalización", icon: Bed },
   { path: "/patient/settings", label: "Configuración", icon: Settings },
 ];
 export default function PatientSidebar({ 
@@ -121,7 +125,7 @@ export default function PatientSidebar({
                 <Link
                   to={path}
                   onClick={() => mobileOpen && setMobileOpen(false)}
-                  className={`group relative flex items-center px-3 py-2.5 transition-all duration-200 mb-0.5 overflow-hidden rounded-lg ${
+                  className={`group relative flex items-center px-3 py-3 transition-all duration-200 mb-0.5 overflow-hidden rounded-lg ${
                     effectiveCollapsed ? "justify-center" : ""
                   } ${
                     isActive 
@@ -130,7 +134,7 @@ export default function PatientSidebar({
                   }`}
                 >
                   <Icon 
-                    size={18} 
+                    size={20} 
                     className={`shrink-0 transition-all duration-200 ${
                       isActive ? "text-white" : "group-hover:text-white/70"
                     }`} 
@@ -138,7 +142,7 @@ export default function PatientSidebar({
                   />
                   
                   {!effectiveCollapsed && (
-                    <span className={`ml-3 text-[12px] tracking-wide font-medium ${
+                    <span className={`ml-3 text-[13px] tracking-wide font-medium ${
                       isActive ? "text-white" : "text-white/50 group-hover:text-white/70"
                     }`}>
                       {label}
