@@ -53,6 +53,7 @@ import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
 import ManageServicesPage from "./pages/Doctor/ManageServicesPage";
 import Surgery from "./pages/Surgery/Surgery";
 import Hospitalization from "./pages/Hospitalization/Hospitalization";
+import Diagnosis from "./pages/Diagnosis/Diagnosis";
 
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
@@ -133,6 +134,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
                   <Route path="documents/:id" element={<ReportsPage />} />
                   <Route path="settings/config" element={<ConfigPage />} />
                   <Route path="search" element={<SearchPage />} />
+                  <Route path="diagnosis" element={<Diagnosis />} />
                   <Route path="surgery" element={<Surgery />} />
                   <Route path="hospitalization" element={<Hospitalization />} />
                 </Route>
