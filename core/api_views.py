@@ -1304,7 +1304,7 @@ def register_arrival(request):
                 'patient': patient,
                 'doctor': request.user.doctor_profile if hasattr(request.user, 'doctor_profile') else None,
                 'institution': institution,
-                'appointment_date': timezone.now().date(),
+                'appointment_date': timezone.localtime(timezone.now()).date(),
                 'status': 'arrived',
                 'arrival_time': timezone.now(),
                 'appointment_type': 'walkin',
