@@ -3,6 +3,8 @@ import { useState } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import type { Hospitalization } from "@/types/patients";
+import HospitalizationsModal from "@/components/Patients/HospitalizationsModal";
 import { 
   Bed, 
   Clock, 
@@ -13,24 +15,8 @@ import {
   Stethoscope,
   Heart,
   LogOut,
+  Plus,
 } from "lucide-react";
-interface Hospitalization {
-  id: number;
-  patient_name: string;
-  attending_doctor_name: string;
-  admission_diagnosis_title: string | null;
-  admission_type: string;
-  admission_type_display: string;
-  status: string;
-  status_display: string;
-  ward: string;
-  room_number: string | null;
-  bed_number: string;
-  admission_date: string;
-  expected_discharge_date: string | null;
-  length_of_stay: number;
-  institution_name: string | null;
-}
 interface HospitalizationStats {
   total: number;
   admitted: number;
@@ -49,6 +35,8 @@ const statusColors: Record<string, string> = {
 };
 export default function Hospitalization() {
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingHosp, setEditingHosp] = useState<Hospitalization | undefined>(undefined);
   const { data: stats } = useQuery<HospitalizationStats>({
     queryKey: ["hospitalization-stats"],
     queryFn: async () => {
@@ -56,7 +44,7 @@ export default function Hospitalization() {
       return data as HospitalizationStats;
     },
   });
-  const { data: hospitalizations, isLoading } = useQuery<Hospitalization[]>({
+  const { data: hospitalizations, isLoading, refetch } = useQuery<Hospitalization[]>({
     queryKey: ["hospitalizations", activeTab],
     queryFn: async () => {
       const params = activeTab !== "all" ? `?status=${activeTab}` : "";
@@ -64,6 +52,18 @@ export default function Hospitalization() {
       return data as Hospitalization[];
     },
   });
+  const handleSaveHospitalization = async (payload: any) => {
+    try {
+      if (editingHosp) {
+        await api.patch(`/api/hospitalizations/${editingHosp.id}/`, payload);
+      } else {
+        await api.post("/api/hospitalizations/", payload);
+      }
+      refetch();
+    } catch (err) {
+      console.error("Error saving hospitalization:", err);
+    }
+  };
   const statsCards = [
     { label: "Admitidos", value: stats?.admitted ?? 0, icon: Bed, color: "text-blue-400" },
     { label: "Críticos", value: stats?.critical ?? 0, icon: AlertTriangle, color: "text-red-400" },
@@ -85,6 +85,20 @@ export default function Hospitalization() {
           { label: "MEDOPZ", path: "/" },
           { label: "Hospitalización", active: true }
         ]}
+        stats={[
+          { label: "Admitidos", value: stats?.admitted ?? 0, color: "text-blue-400" },
+          { label: "Críticos", value: stats?.critical ?? 0, color: "text-red-400" },
+          { label: "Altas Hoy", value: stats?.discharged_today ?? 0, color: "text-emerald-400" },
+        ]}
+        actions={
+          <button
+            onClick={() => { setEditingHosp(undefined); setModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Admisión
+          </button>
+        }
       />
       
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -152,12 +166,16 @@ export default function Hospitalization() {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[hosp.status] || "bg-white/5 text-white/40 border-white/10"}`}>
-                        {hosp.status_display}
-                      </span>
-                      <span className="text-[9px] text-white/30">
-                        {hosp.length_of_stay} {hosp.length_of_stay === 1 ? "día" : "días"} de estancia
-                      </span>
+                      {hosp.status && (
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[hosp.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                          {hosp.status_display}
+                        </span>
+                      )}
+                      {hosp.length_of_stay !== undefined && (
+                        <span className="text-[9px] text-white/30">
+                          {hosp.length_of_stay} {hosp.length_of_stay === 1 ? "día" : "días"} de estancia
+                        </span>
+                      )}
                       {hosp.admission_diagnosis_title && (
                         <span className="text-[9px] text-white/30">Dx: {hosp.admission_diagnosis_title}</span>
                       )}
@@ -171,7 +189,10 @@ export default function Hospitalization() {
                       Evolución
                     </button>
                   )}
-                  <button className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all">
+                  <button
+                    onClick={() => { setEditingHosp(hosp); setModalOpen(true); }}
+                    className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all"
+                  >
                     Ver Detalle
                   </button>
                 </div>
@@ -180,6 +201,13 @@ export default function Hospitalization() {
           </div>
         )}
       </div>
+      <HospitalizationsModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingHosp(undefined); }}
+        onSave={handleSaveHospitalization}
+        initial={editingHosp}
+        patientId={0}
+      />
     </div>
   );
 }

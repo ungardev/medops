@@ -16,6 +16,7 @@ interface Props {
 }
 interface Form {
   id?: number;
+  hospital: string;
   ward: string;
   room_number: string;
   bed_number: string;
@@ -45,6 +46,7 @@ const HOSPITALIZATION_STATUSES = [
 export default function HospitalizationsModal({ open, onClose, onSave, initial, patientId }: Props) {
   const [form, setForm] = useState<Form>({
     id: undefined,
+    hospital: "",
     ward: "",
     room_number: "",
     bed_number: "",
@@ -62,6 +64,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
     if (open && initial) {
       setForm({
         id: initial.id,
+        hospital: (initial as any).hospital || "",
         ward: initial.ward || "",
         room_number: initial.room_number || "",
         bed_number: initial.bed_number || "",
@@ -77,6 +80,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
     } else if (open) {
       setForm({
         id: undefined,
+        hospital: "",
         ward: "",
         room_number: "",
         bed_number: "",
@@ -133,6 +137,18 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
           </button>
         </div>
         <div className="p-6 space-y-5">
+          {/* Centro médico */}
+          <div className={sectionClass}>
+            <div>
+              <label className={labelClass}>Centro médico</label>
+              <input
+                className={inputClass}
+                value={form.hospital}
+                onChange={(e) => handleChange("hospital", e.target.value)}
+                placeholder="Hospital o clínica"
+              />
+            </div>
+          </div>
           {/* Asignación de cama */}
           <div className={sectionClass}>
             <div>

@@ -3,6 +3,8 @@ import { useState } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
+import type { Surgery } from "@/types/patients";
+import SurgeriesModal from "@/components/Patients/SurgeriesModal";
 import { 
   Scissors, 
   Calendar,
@@ -12,25 +14,8 @@ import {
   CheckCircle,
   AlertTriangle,
   PlayCircle,
-  Clock,
+  Plus,
 } from "lucide-react";
-interface Surgery {
-  id: number;
-  patient_name: string;
-  surgeon_name: string;
-  name: string;
-  surgery_type: string;
-  surgery_type_display: string;
-  status: string;
-  status_display: string;
-  risk_level: string;
-  risk_level_display: string;
-  scheduled_date: string;
-  scheduled_time: string;
-  asa_classification: string | null;
-  specialty_name: string | null;
-  institution_name: string | null;
-}
 interface SurgeryStats {
   total: number;
   scheduled: number;
@@ -54,6 +39,8 @@ const riskColors: Record<string, string> = {
 };
 export default function Surgery() {
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingSurgery, setEditingSurgery] = useState<Surgery | undefined>(undefined);
   const { data: stats } = useQuery<SurgeryStats>({
     queryKey: ["surgery-stats"],
     queryFn: async () => {
@@ -61,7 +48,7 @@ export default function Surgery() {
       return data as SurgeryStats;
     },
   });
-  const { data: surgeries, isLoading } = useQuery<Surgery[]>({
+  const { data: surgeries, isLoading, refetch } = useQuery<Surgery[]>({
     queryKey: ["surgeries", activeTab],
     queryFn: async () => {
       const params = activeTab !== "all" ? `?status=${activeTab}` : "";
@@ -69,6 +56,18 @@ export default function Surgery() {
       return data as Surgery[];
     },
   });
+  const handleSaveSurgery = async (payload: any) => {
+    try {
+      if (editingSurgery) {
+        await api.patch(`/api/surgeries/${editingSurgery.id}/`, payload);
+      } else {
+        await api.post("/api/surgeries/", payload);
+      }
+      refetch();
+    } catch (err) {
+      console.error("Error saving surgery:", err);
+    }
+  };
   const statsCards = [
     { label: "Programadas", value: stats?.scheduled ?? 0, icon: Calendar, color: "text-blue-400" },
     { label: "En Curso", value: stats?.in_progress ?? 0, icon: PlayCircle, color: "text-purple-400" },
@@ -89,6 +88,20 @@ export default function Surgery() {
           { label: "MEDOPZ", path: "/" },
           { label: "Cirugía", active: true }
         ]}
+        stats={[
+          { label: "Programadas", value: stats?.scheduled ?? 0, color: "text-blue-400" },
+          { label: "En Curso", value: stats?.in_progress ?? 0, color: "text-purple-400" },
+          { label: "Completadas", value: stats?.completed ?? 0, color: "text-emerald-400" },
+        ]}
+        actions={
+          <button
+            onClick={() => { setEditingSurgery(undefined); setModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Cirugía
+          </button>
+        }
       />
       
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -149,18 +162,24 @@ export default function Surgery() {
                         <Stethoscope className="w-3.5 h-3.5" />
                         {surgery.surgeon_name}
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {new Date(surgery.scheduled_date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
-                      </span>
+                      {surgery.scheduled_date && (
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {new Date(surgery.scheduled_date).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
-                        {surgery.status_display}
-                      </span>
-                      <span className={`text-[9px] font-medium ${riskColors[surgery.risk_level] || "text-white/40"}`}>
-                        {surgery.risk_level_display}
-                      </span>
+                      {surgery.status && (
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[9px] font-medium rounded-md border ${statusColors[surgery.status] || "bg-white/5 text-white/40 border-white/10"}`}>
+                          {surgery.status_display}
+                        </span>
+                      )}
+                      {surgery.risk_level && (
+                        <span className={`text-[9px] font-medium ${riskColors[surgery.risk_level] || "text-white/40"}`}>
+                          {surgery.risk_level_display}
+                        </span>
+                      )}
                       {surgery.asa_classification && (
                         <span className="text-[9px] text-white/30">ASA: {surgery.asa_classification}</span>
                       )}
@@ -177,7 +196,10 @@ export default function Surgery() {
                       Iniciar
                     </button>
                   )}
-                  <button className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all">
+                  <button
+                    onClick={() => { setEditingSurgery(surgery); setModalOpen(true); }}
+                    className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all"
+                  >
                     Ver Detalle
                   </button>
                 </div>
@@ -186,6 +208,13 @@ export default function Surgery() {
           </div>
         )}
       </div>
+      <SurgeriesModal
+        open={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingSurgery(undefined); }}
+        onSave={handleSaveSurgery}
+        initial={editingSurgery}
+        patientId={0}
+      />
     </div>
   );
 }
