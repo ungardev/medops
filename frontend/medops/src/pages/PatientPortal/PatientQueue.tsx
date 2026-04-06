@@ -115,7 +115,7 @@ export default function PatientQueue() {
         }
       />
       
-      {/* Tu Turno - Info personal del paciente */}
+      {/* Tu Turno - Solo si el paciente tiene entrada activa */}
       {patientEntry && (
         <div className="bg-gradient-to-r from-cyan-500/5 to-blue-500/5 border border-cyan-500/20 rounded-lg p-4">
           <div className="flex items-center justify-between">
@@ -156,34 +156,35 @@ export default function PatientQueue() {
         </div>
       )}
       
-      {!patientEntry && waitingCount > 0 && (
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <BellAlertIcon className="w-5 h-5 text-amber-400/70" />
+      {/* FIX CRÍTICO: Si no tiene turno activo, NO mostrar la cola */}
+      {!patientEntry && (
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center">
+              <BellAlertIcon className="w-6 h-6 text-amber-400/70" />
+            </div>
             <div>
-              <p className="text-[10px] font-medium text-amber-400/80">No tienes turno activo</p>
-              <p className="text-[9px] text-white/40">Tienes {waitingCount} paciente{waitingCount !== 1 ? 's' : ''} en espera. Tu turno aparecerá cuando el doctor te llame.</p>
+              <p className="text-[12px] font-medium text-amber-400 mb-1">No tienes turno activo</p>
+              <p className="text-[10px] text-white/40">
+                No estás registrado en la sala de espera. Tu turno aparecerá aquí cuando el doctor registre tu llegada.
+              </p>
             </div>
           </div>
         </div>
       )}
       
-      {/* Cola de Espera - ANONIMIZADA para proteger confidencialidad */}
-      <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
-          <h3 className="text-[11px] font-medium text-white/60">
-            Cola de Espera
-          </h3>
-          <div className="flex items-center gap-1.5 text-[9px] text-white/30">
-            <EyeSlashIcon className="w-3.5 h-3.5" />
-            <span>Nombres protegidos por confidencialidad</span>
+      {/* Cola de Espera - SOLO si el paciente tiene turno activo */}
+      {patientEntry && allEntries.length > 0 && (
+        <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
+          <div className="px-5 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
+            <h3 className="text-[11px] font-medium text-white/60">
+              Cola de Espera
+            </h3>
+            <div className="flex items-center gap-1.5 text-[9px] text-white/30">
+              <EyeSlashIcon className="w-3.5 h-3.5" />
+              <span>Nombres protegidos por confidencialidad</span>
+            </div>
           </div>
-        </div>
-        {allEntries.length === 0 ? (
-          <div className="p-20 text-center">
-            <p className="text-[11px] text-white/20">No hay pacientes en espera</p>
-          </div>
-        ) : (
           <div className="divide-y divide-white/5">
             {allEntries.map((entry, index) => {
               const isCurrentPatient = entry.patient?.id === patientId;
@@ -206,7 +207,6 @@ export default function PatientQueue() {
                     </span>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
-                        {/* FIX DE SEGURIDAD: Solo mostrar nombre si es el paciente actual */}
                         <span className={`text-[13px] font-medium ${
                           isCurrentPatient ? "text-cyan-400/90" : "text-white/40"
                         }`}>
@@ -245,8 +245,8 @@ export default function PatientQueue() {
               );
             })}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
