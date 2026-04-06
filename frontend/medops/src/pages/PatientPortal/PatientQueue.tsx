@@ -11,7 +11,8 @@ import {
   BuildingOfficeIcon,
   ArrowUpIcon,
   BellAlertIcon,
-  ClipboardDocumentIcon
+  ClipboardDocumentIcon,
+  EyeSlashIcon
 } from "@heroicons/react/24/outline";
 const renderStatusBadge = (status: string, isPatient: boolean = false) => {
   const base = "inline-flex items-center justify-center px-2.5 py-1 text-[9px] rounded-md font-medium border whitespace-nowrap";
@@ -103,21 +104,9 @@ export default function PatientQueue() {
           { label: "Sala de Espera", active: true }
         ]}
         stats={[
-          { 
-            label: "En Espera", 
-            value: waitingCount, 
-            color: "text-amber-400" 
-          },
-          { 
-            label: "En Consulta", 
-            value: inConsultationCount, 
-            color: "text-white/70" 
-          },
-          { 
-            label: "Atendidos", 
-            value: completedCount, 
-            color: "text-emerald-400" 
-          }
+          { label: "En Espera", value: waitingCount, color: "text-amber-400" },
+          { label: "En Consulta", value: inConsultationCount, color: "text-white/70" },
+          { label: "Atendidos", value: completedCount, color: "text-emerald-400" }
         ]}
         actions={
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5">
@@ -126,6 +115,7 @@ export default function PatientQueue() {
         }
       />
       
+      {/* Tu Turno - Info personal del paciente */}
       {patientEntry && (
         <div className="bg-gradient-to-r from-cyan-500/5 to-blue-500/5 border border-cyan-500/20 rounded-lg p-4">
           <div className="flex items-center justify-between">
@@ -178,11 +168,16 @@ export default function PatientQueue() {
         </div>
       )}
       
+      {/* Cola de Espera - ANONIMIZADA para proteger confidencialidad */}
       <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/10 bg-white/5">
+        <div className="px-5 py-3 border-b border-white/10 bg-white/5 flex items-center justify-between">
           <h3 className="text-[11px] font-medium text-white/60">
             Cola de Espera
           </h3>
+          <div className="flex items-center gap-1.5 text-[9px] text-white/30">
+            <EyeSlashIcon className="w-3.5 h-3.5" />
+            <span>Nombres protegidos por confidencialidad</span>
+          </div>
         </div>
         {allEntries.length === 0 ? (
           <div className="p-20 text-center">
@@ -211,11 +206,14 @@ export default function PatientQueue() {
                     </span>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
+                        {/* FIX DE SEGURIDAD: Solo mostrar nombre si es el paciente actual */}
                         <span className={`text-[13px] font-medium ${
-                          isCurrentPatient ? "text-cyan-400/90" : "text-white/80"
+                          isCurrentPatient ? "text-cyan-400/90" : "text-white/40"
                         }`}>
-                          {entry.patient?.full_name || "Paciente"}
-                          {isCurrentPatient && <span className="text-cyan-400/50 text-[10px] ml-2">(TÚ)</span>}
+                          {isCurrentPatient 
+                            ? `${entry.patient?.full_name || "Tú"} (TÚ)`
+                            : `Paciente #${index + 1}`
+                          }
                         </span>
                         {renderStatusBadge(entry.status, isCurrentPatient)}
                       </div>
