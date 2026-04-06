@@ -40,6 +40,7 @@ from rest_framework.authentication import TokenAuthentication
 from django.db.models import QuerySet
 from rest_framework.views import APIView
 import calendar
+import requests
 #from datetime import date, timedelta
 
 
@@ -7822,3 +7823,59 @@ class BedViewSet(viewsets.ModelViewSet):
             'maintenance': maintenance,
             'reserved': reserved,
         })
+
+
+# =====================================================
+# SNOMED CT Search API (vía Snowstorm)
+# =====================================================
+SNOWSTORM_URL = getattr(settings, 'SNOWSTORM_URL', 'http://localhost:8080')
+@api_view(['GET'])
+def snomed_search_api(request):
+    """
+    Busca en SNOMED CT vía Snowstorm (FHIR API).
+    Fallback a DB local si Snowstorm no está disponible.
+    """
+    q = request.query_params.get('q', '').strip()
+    limit = int(request.query_params.get('limit', 20))
+    language = request.query_params.get('language', 'es')
+    
+    if not q:
+        return Response([])
+    
+    # Intentar Snowstorm primero
+    try:
+        response = requests.get(
+            f"{SNOWSTORM_URL}/fhir/ValueSet/$expand",
+            params={
+                "url": "http://snomed.info/sct?fhir_vs",
+                "filter": q,
+                "count": limit,
+                "displayLanguage": language,
+            },
+            timeout=5
+        )
+        if response.status_code == 200:
+            data = response.json()
+            results = []
+            for concept in data.get('expansion', {}).get('contains', []):
+                results.append({
+                    'concept_id': concept.get('code', ''),
+                    'term': concept.get('display', ''),
+                    'system': concept.get('system', ''),
+                })
+            return Response(results)
+    except Exception:
+        pass
+    
+    # Fallback a DB local
+    try:
+        entries = SnomedEntry.objects.filter(
+            Q(language=language) & Q(is_active=True) &
+            (Q(term__icontains=q) | Q(concept_id__icontains=q) | Q(synonyms__icontains=q))
+        ).order_by('term')[:limit]
+        
+        serializer = SnomedEntrySerializer(entries, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en snomed_search_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)

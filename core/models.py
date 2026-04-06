@@ -803,6 +803,12 @@ class Diagnosis(models.Model):
         ('ruled_out', 'Descartado / Excluido'),
         ('chronic', 'Pre-existente / Crónico'),
     ]
+    
+    # Agregar CATALOG_CHOICES antes del campo appointment:
+    CATALOG_CHOICES = [
+        ('icd11', 'CIE-11 (OMS)'),
+        ('snomed', 'SNOMED CT'),
+    ]
 
     appointment = models.ForeignKey(
         "Appointment", 
@@ -810,6 +816,12 @@ class Diagnosis(models.Model):
         related_name='diagnoses'
     )
     
+    catalog = models.CharField(
+        max_length=10, 
+        choices=CATALOG_CHOICES, 
+        default='icd11',
+        verbose_name="Catálogo de codificación"
+    )
     # --- VINCULACIÓN ICD-11 ---
     icd_code = models.CharField(max_length=20, verbose_name="Código CIE-11")
     title = models.CharField(max_length=255, verbose_name="Nombre de la afección")
@@ -2027,6 +2039,54 @@ class ICD11UpdateLog(models.Model):
 
     def __str__(self):
         return f"ICD-11 update @ {self.run_at} (+{self.added} ~{self.updated} -{self.removed})"
+
+
+class SnomedEntry(models.Model):
+    """
+    Catálogo SNOMED CT - Sistema de terminología clínica más completo del mundo.
+    ~350,000 conceptos. Se sincroniza vía Snowstorm microservice.
+    Este modelo sirve como cache local y fallback.
+    """
+    concept_id = models.CharField(max_length=20, unique=True, verbose_name="Concept ID")
+    term = models.CharField(max_length=500, verbose_name="Término preferido")
+    definition = models.TextField(blank=True, null=True, verbose_name="Definición")
+    semantic_tag = models.CharField(max_length=100, blank=True, null=True, verbose_name="Semantic Tag")
+    hierarchy = models.CharField(max_length=200, blank=True, null=True, verbose_name="Jerarquía completa")
+    parent_concept_id = models.CharField(max_length=20, blank=True, null=True, verbose_name="Concepto padre")
+    synonyms = models.JSONField(blank=True, null=True, verbose_name="Sinónimos")
+    language = models.CharField(max_length=5, default="es", verbose_name="Idioma")
+    is_active = models.BooleanField(default=True, verbose_name="Activo")
+    
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    
+    class Meta:
+        verbose_name = "SNOMED CT entry"
+        verbose_name_plural = "SNOMED CT entries"
+        indexes = [
+            models.Index(fields=["concept_id"]),
+            models.Index(fields=["term"]),
+            models.Index(fields=["semantic_tag"]),
+        ]
+    
+    def __str__(self):
+        return f"{self.concept_id} — {self.term}"
+
+
+class SnomedUpdateLog(models.Model):
+    run_at = models.DateTimeField(auto_now_add=True)
+    source = models.CharField(max_length=255, blank=True, null=True)
+    added = models.IntegerField(default=0)
+    updated = models.IntegerField(default=0)
+    removed = models.IntegerField(default=0)
+    
+    class Meta:
+        verbose_name = "SNOMED CT update log"
+        verbose_name_plural = "SNOMED CT update logs"
+    
+    def __str__(self):
+        return f"SNOMED update @ {self.run_at} (+{self.added} ~{self.updated} -{self.removed})"
+
 
 
 class MedicalTestCatalog(models.Model):

@@ -7,9 +7,10 @@ interface DiagnosisBadgeProps {
   icd_code: string;
   title: string;
   description?: string;
-  type?: DiagnosisType;
-  status?: DiagnosisStatus;
-  onEdit?: (id: number, description: string) => void;
+  type: DiagnosisType;
+  status: DiagnosisStatus;
+  catalog?: "icd11" | "snomed";
+  onEdit?: (id: number, desc: string) => void;
   onDelete?: (id: number) => void;
 }
 const TYPE_LABELS: Record<DiagnosisType, string> = {
@@ -39,6 +40,7 @@ export default function DiagnosisBadge({
   description,
   type = "presumptive",
   status = "under_investigation",
+  catalog = "icd11",
   onEdit,
   onDelete,
 }: DiagnosisBadgeProps) {
@@ -58,6 +60,11 @@ export default function DiagnosisBadge({
             <span className="text-[12px] font-medium text-white">
               {title}
             </span>
+            {catalog === "snomed" && (
+              <span className="text-[8px] font-medium px-1.5 py-0.5 rounded border bg-purple-500/10 text-purple-400 border-purple-500/20 uppercase tracking-wider">
+                SNOMED
+              </span>
+            )}
             <span className={`text-[9px] font-medium px-2 py-0.5 rounded border uppercase ${type === "definitive" ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/25" : "bg-white/10 text-white/60 border-white/15"}`}>
               {typeLabel}
             </span>

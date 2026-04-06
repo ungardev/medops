@@ -278,3 +278,10 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Caracas'
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos máximo por tarea
+
+
+# =====================================================
+# SNOMED CT Configuration
+# =====================================================
+SNOWSTORM_URL = os.environ.get('SNOWSTORM_URL', 'http://localhost:8080')
+SNOMED_ENABLED = os.environ.get('SNOMED_ENABLED', 'False').lower() == 'true'

@@ -53,6 +53,7 @@ export type MedicalReferralStatus = "issued" | "accepted" | "rejected" | "comple
 export interface Diagnosis {
   id: number;
   appointment: number;
+  catalog?: "icd11" | "snomed";
   // Metadatos ICD-11
   icd_code: string;
   title?: string;

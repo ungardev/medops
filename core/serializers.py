@@ -10,7 +10,7 @@ from .models import (
     ClinicalNote, VitalSigns, MedicalTestCatalog, MercantilP2CTransaction, MercantilP2CConfig, 
     WhatsAppMessage, PaymentGateway, DoctorPaymentConfig, PaymentTransaction, PaymentWebhook, 
     PatientSubscription, PatientInvitation, PatientPaymentMethod, DoctorService, ServiceCategory,
-    ServiceSchedule, Hospitalization, Bed
+    ServiceSchedule, Hospitalization, Bed, SnomedEntry, SnomedUpdateLog,
 )
 from .choices import UNIT_CHOICES, ROUTE_CHOICES, FREQUENCY_CHOICES, BANK_CHOICES, get_bank_name
 from datetime import date
@@ -791,7 +791,7 @@ class DiagnosisSerializer(serializers.ModelSerializer):
     class Meta:
         model = Diagnosis
         fields = [
-            "id", "appointment", "icd_code", "title", "foundation_id", 
+            "id", "appointment", "catalog", "icd_code", "title", "foundation_id", 
             "description", "type", "type_display", "status", "status_display", 
             "clinical_certainty", "treatments", "prescriptions", 
             "created_by", "doctor_name", "created_at", "updated_at",
@@ -3759,3 +3759,18 @@ class BedCreateSerializer(serializers.ModelSerializer):
             "institution", "ward", "room_number", "bed_number",
             "bed_type", "status", "notes",
         ]
+
+
+# =====================================================
+# SNOMED CT (Catálogo de Terminología Clínica)
+# =====================================================
+class SnomedEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SnomedEntry
+        fields = [
+            "id", "concept_id", "term", "definition",
+            "semantic_tag", "hierarchy", "parent_concept_id",
+            "synonyms", "language", "is_active",
+            "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]

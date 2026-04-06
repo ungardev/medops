@@ -78,6 +78,7 @@ from .api_views import (
     # 🔥 NUEVO: Sistema PDF Profesional
     generate_professional_pdf,
     icd_search_api,
+    snomed_search_api,
     treatment_choices_api,
     prescription_choices_api,
     medicaltest_choices_api,
@@ -302,6 +303,7 @@ urlpatterns = [
     
     path("documents/", documents_api, name="documents-api"),
     path("icd/search/", icd_search_api, name="icd-search-api"),
+    path("snomed/search/", snomed_search_api, name="snomed-search-api"),
     
     # --- Payments URLs (EXISTENTES + NUEVAS) ---
     path("payments/summary/", api_views.payment_summary_api, name="payment-summary-api"),
