@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Hospitalization } from "../../types/patients";
 import { 
-  BedIcon,
+  Bed,
   Save,
   Loader2,
   X,
@@ -96,9 +96,11 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
   };
   const handleSubmit = () => {
     setIsSaving(true);
+    const activeInstitutionId = localStorage.getItem("active_institution_id");
     const payload = {
       ...form,
-      patient: patientId
+      patient: patientId,
+      institution: activeInstitutionId ? parseInt(activeInstitutionId) : undefined,
     };
     onSave(payload);
     setIsSaving(false);
@@ -117,7 +119,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-lg">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-white/5 border border-white/10 rounded-lg">
-              <BedIcon className="h-4 w-4 text-white/60" />
+              <Bed className="h-4 w-4 text-white/60" />
             </div>
             <div>
               <h3 className="text-[12px] font-semibold text-white">

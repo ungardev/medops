@@ -109,9 +109,11 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
   };
   const handleSubmit = () => {
     setIsSaving(true);
+    const activeInstitutionId = localStorage.getItem("active_institution_id");
     const payload = {
       ...form,
-      patient: patientId
+      patient: patientId,
+      institution: activeInstitutionId ? parseInt(activeInstitutionId) : undefined,
     };
     onSave(payload);
     setIsSaving(false);
