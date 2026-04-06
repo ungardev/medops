@@ -370,3 +370,28 @@ export interface PatientList extends PatientRef {
   short_address?: string;
   active?: boolean;
 }
+
+// =====================================================
+// CAMA HOSPITALARIA
+// =====================================================
+export interface Bed {
+  id: number;
+  institution?: number;
+  institution_name?: string | null;
+  ward: string;
+  room_number?: string | null;
+  bed_number: string;
+  bed_type?: string;
+  bed_type_display?: string;
+  status?: string;
+  status_display?: string;
+  is_active?: boolean;
+  notes?: string | null;
+  current_patient?: {
+    id: number;
+    name: string;
+    admission_date: string;
+  } | null;
+  created_at?: string;
+  updated_at?: string;
+}

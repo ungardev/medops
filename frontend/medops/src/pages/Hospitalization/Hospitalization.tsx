@@ -10,7 +10,6 @@ import {
   AlertTriangle,
   Activity,
   Calendar,
-  User,
   Stethoscope,
   Heart,
   LogOut,
@@ -88,7 +87,6 @@ export default function Hospitalization() {
         ]}
       />
       
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statsCards.map((stat) => (
           <div key={stat.label} className="bg-white/5 border border-white/15 rounded-lg p-4">
@@ -102,7 +100,6 @@ export default function Hospitalization() {
           </div>
         ))}
       </div>
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-white/10">
         {tabs.map((tab) => (
           <button
@@ -118,7 +115,6 @@ export default function Hospitalization() {
           </button>
         ))}
       </div>
-      {/* Hospitalization List */}
       <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="p-20 text-center">
@@ -163,9 +159,7 @@ export default function Hospitalization() {
                         {hosp.length_of_stay} {hosp.length_of_stay === 1 ? "día" : "días"} de estancia
                       </span>
                       {hosp.admission_diagnosis_title && (
-                        <span className="text-[9px] text-white/30">
-                          Dx: {hosp.admission_diagnosis_title}
-                        </span>
+                        <span className="text-[9px] text-white/30">Dx: {hosp.admission_diagnosis_title}</span>
                       )}
                     </div>
                   </div>

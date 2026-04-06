@@ -7803,6 +7803,10 @@ class BedViewSet(viewsets.ModelViewSet):
         if bed_type:
             queryset = queryset.filter(bed_type=bed_type)
         
+        ward = self.request.query_params.get('ward')
+        if ward:
+            queryset = queryset.filter(ward__icontains=ward)
+        
         return queryset.order_by('ward', 'room_number', 'bed_number')
     
     @action(detail=False, methods=['get'])
@@ -7816,12 +7820,31 @@ class BedViewSet(viewsets.ModelViewSet):
         maintenance = queryset.filter(status='maintenance').count()
         reserved = queryset.filter(status='reserved').count()
         
+        occupancy_rate = (occupied / total * 100) if total > 0 else 0
+        
+        # Por tipo
+        by_type = queryset.values('bed_type').annotate(
+            total=Count('id'),
+            available=Count('id', filter=Q(status='available')),
+            occupied=Count('id', filter=Q(status='occupied')),
+        )
+        
+        # Por pabellón
+        by_ward = queryset.values('ward').annotate(
+            total=Count('id'),
+            available=Count('id', filter=Q(status='available')),
+            occupied=Count('id', filter=Q(status='occupied')),
+        )
+        
         return Response({
             'total': total,
             'available': available,
             'occupied': occupied,
             'maintenance': maintenance,
             'reserved': reserved,
+            'occupancy_rate': round(occupancy_rate, 1),
+            'by_type': list(by_type),
+            'by_ward': list(by_ward),
         })
 
 

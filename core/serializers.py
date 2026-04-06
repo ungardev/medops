@@ -3740,6 +3740,7 @@ class BedSerializer(serializers.ModelSerializer):
     institution_name = serializers.CharField(source='institution.name', read_only=True, allow_null=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     bed_type_display = serializers.CharField(source='get_bed_type_display', read_only=True)
+    current_patient = serializers.SerializerMethodField()
     
     class Meta:
         model = Bed
@@ -3748,10 +3749,24 @@ class BedSerializer(serializers.ModelSerializer):
             "ward", "room_number", "bed_number",
             "bed_type", "bed_type_display",
             "status", "status_display",
-            "is_active", "notes",
+            "is_active", "notes", "current_patient",
             "created_at", "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+    
+    def get_current_patient(self, obj):
+        if obj.status == 'occupied':
+            hosp = obj.hospitalizations.filter(
+                status__in=['admitted', 'stable', 'critical', 'improving', 'awaiting_discharge']
+            ).first()
+            if hosp:
+                return {
+                    'id': hosp.patient.id,
+                    'name': hosp.patient.full_name,
+                    'admission_date': hosp.admission_date,
+                }
+        return None
+
 class BedCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bed

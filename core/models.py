@@ -3066,6 +3066,58 @@ class FamilyHistory(models.Model):
         return f"{self.patient} — {self.get_relative_display()} — {self.condition}"
 
 
+class Bed(models.Model):
+    """
+    Gestión de camas hospitalarias MEDOPZ
+    """
+    BED_STATUS_CHOICES = [
+        ('available', 'Disponible'),
+        ('occupied', 'Ocupada'),
+        ('maintenance', 'En Mantenimiento'),
+        ('reserved', 'Reservada'),
+    ]
+    
+    BED_TYPE_CHOICES = [
+        ('general', 'Cama General'),
+        ('icu', 'UCI'),
+        ('pediatric', 'Pediátrica'),
+        ('isolation', 'Aislamiento'),
+        ('maternity', 'Maternidad'),
+    ]
+    
+    institution = models.ForeignKey(
+        InstitutionSettings, on_delete=models.CASCADE, related_name="beds"
+    )
+    ward = models.CharField(max_length=100, verbose_name="Pabellón / Sala")
+    room_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de habitación")
+    bed_number = models.CharField(max_length=20, verbose_name="Número de cama")
+    bed_type = models.CharField(
+        max_length=20, choices=BED_TYPE_CHOICES, default='general'
+    )
+    status = models.CharField(
+        max_length=20, choices=BED_STATUS_CHOICES, default='available'
+    )
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Cama"
+        verbose_name_plural = "Camas"
+        ordering = ['ward', 'room_number', 'bed_number']
+        unique_together = ['institution', 'bed_number']
+    
+    def __str__(self):
+        return f"{self.ward} - Cama {self.bed_number} [{self.get_status_display()}]"
+    
+    def save(self, *args, **kwargs):
+        if self.ward:
+            self.ward = normalize_title_case(self.ward)
+        super().save(*args, **kwargs)
+
+
 class Surgery(models.Model):
     """
     Sistema Quirúrgico Integral MEDOPZ
@@ -3123,6 +3175,10 @@ class Surgery(models.Model):
     appointment = models.OneToOneField(
         Appointment, on_delete=models.SET_NULL, null=True, blank=True,
         related_name="surgery", verbose_name="Cita asociada"
+    )
+    charge_order = models.ForeignKey(
+        ChargeOrder, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="surgeries", verbose_name="Orden de cobro asociada"
     )
     institution = models.ForeignKey(
         InstitutionSettings, on_delete=models.PROTECT, related_name="surgeries",
@@ -3281,6 +3337,10 @@ class Hospitalization(models.Model):
     ward = models.CharField(max_length=100, verbose_name="Pabellón / Sala")
     room_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de habitación")
     bed_number = models.CharField(max_length=20, verbose_name="Número de cama")
+    bed = models.ForeignKey(
+        Bed, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="hospitalizations", verbose_name="Cama asignada"
+    )
     
     # === CRONOLOGÍA ===
     admission_date = models.DateTimeField(verbose_name="Fecha de ingreso")
@@ -3325,61 +3385,36 @@ class Hospitalization(models.Model):
         return (end - self.admission_date).days
     
     def save(self, *args, **kwargs):
+        old_instance = None
+        if self.pk:
+            try:
+                old_instance = Hospitalization.objects.get(pk=self.pk)
+            except Hospitalization.DoesNotExist:
+                pass
+        
         if self.ward:
             self.ward = normalize_title_case(self.ward)
+        
         super().save(*args, **kwargs)
-
-
-class Bed(models.Model):
-    """
-    Gestión de camas hospitalarias MEDOPZ
-    """
-    BED_STATUS_CHOICES = [
-        ('available', 'Disponible'),
-        ('occupied', 'Ocupada'),
-        ('maintenance', 'En Mantenimiento'),
-        ('reserved', 'Reservada'),
-    ]
-    
-    BED_TYPE_CHOICES = [
-        ('general', 'Cama General'),
-        ('icu', 'UCI'),
-        ('pediatric', 'Pediátrica'),
-        ('isolation', 'Aislamiento'),
-        ('maternity', 'Maternidad'),
-    ]
-    
-    institution = models.ForeignKey(
-        InstitutionSettings, on_delete=models.CASCADE, related_name="beds"
-    )
-    ward = models.CharField(max_length=100, verbose_name="Pabellón / Sala")
-    room_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Número de habitación")
-    bed_number = models.CharField(max_length=20, verbose_name="Número de cama")
-    bed_type = models.CharField(
-        max_length=20, choices=BED_TYPE_CHOICES, default='general'
-    )
-    status = models.CharField(
-        max_length=20, choices=BED_STATUS_CHOICES, default='available'
-    )
-    is_active = models.BooleanField(default=True)
-    notes = models.TextField(blank=True, null=True, verbose_name="Notas")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        verbose_name = "Cama"
-        verbose_name_plural = "Camas"
-        ordering = ['ward', 'room_number', 'bed_number']
-        unique_together = ['institution', 'bed_number']
-    
-    def __str__(self):
-        return f"{self.ward} - Cama {self.bed_number} [{self.get_status_display()}]"
-    
-    def save(self, *args, **kwargs):
-        if self.ward:
-            self.ward = normalize_title_case(self.ward)
-        super().save(*args, **kwargs)
+        
+        # Actualizar estado de la cama
+        if self.bed:
+            if self.status in ['admitted', 'stable', 'critical', 'improving', 'awaiting_discharge']:
+                self.bed.status = 'occupied'
+                self.bed.save(update_fields=['status'])
+            elif self.status == 'discharged':
+                self.bed.status = 'available'
+                self.bed.save(update_fields=['status'])
+        
+        # Si se cambió de cama, liberar la anterior
+        if old_instance and old_instance.bed and self.bed != old_instance.bed:
+            try:
+                old_bed = Bed.objects.get(pk=old_instance.bed.pk)
+                if old_bed.status == 'occupied':
+                    old_bed.status = 'available'
+                    old_bed.save(update_fields=['status'])
+            except Bed.DoesNotExist:
+                pass
 
 
 class Habit(models.Model):

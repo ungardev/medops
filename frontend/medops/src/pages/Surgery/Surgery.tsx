@@ -5,14 +5,14 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import { 
   Scissors, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle,
-  PlayCircle,
   Calendar,
   User,
   Stethoscope,
   Activity,
+  CheckCircle,
+  AlertTriangle,
+  PlayCircle,
+  Clock,
 } from "lucide-react";
 interface Surgery {
   id: number;
@@ -91,7 +91,6 @@ export default function Surgery() {
         ]}
       />
       
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statsCards.map((stat) => (
           <div key={stat.label} className="bg-white/5 border border-white/15 rounded-lg p-4">
@@ -105,7 +104,6 @@ export default function Surgery() {
           </div>
         ))}
       </div>
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-white/10">
         {tabs.map((tab) => (
           <button
@@ -121,7 +119,6 @@ export default function Surgery() {
           </button>
         ))}
       </div>
-      {/* Surgery List */}
       <div className="bg-white/5 border border-white/15 rounded-lg overflow-hidden">
         {isLoading ? (
           <div className="p-20 text-center">
@@ -165,14 +162,10 @@ export default function Surgery() {
                         {surgery.risk_level_display}
                       </span>
                       {surgery.asa_classification && (
-                        <span className="text-[9px] text-white/30">
-                          ASA: {surgery.asa_classification}
-                        </span>
+                        <span className="text-[9px] text-white/30">ASA: {surgery.asa_classification}</span>
                       )}
                       {surgery.specialty_name && (
-                        <span className="text-[9px] text-white/30">
-                          {surgery.specialty_name}
-                        </span>
+                        <span className="text-[9px] text-white/30">{surgery.specialty_name}</span>
                       )}
                     </div>
                   </div>
