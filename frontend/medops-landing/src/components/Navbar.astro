@@ -1,0 +1,39 @@
+---
+const navLinks = [
+  { href: '#features', label: 'Features' },
+  { href: '#portals', label: 'Portales' },
+  { href: '#pricing', label: 'Precios' },
+  { href: '#contact', label: 'Contacto' },
+];
+---
+<nav class="fixed top-0 left-0 right-0 z-50 bg-[#050608]/80 backdrop-blur-xl border-b border-white/10">
+  <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+    <!-- Logo -->
+    <a href="/" class="flex items-center gap-3 group">
+      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-8 transition-opacity group-hover:opacity-80" />
+      <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="h-[14px] w-auto opacity-90" />
+    </a>
+    
+    <!-- Desktop Nav -->
+    <div class="hidden md:flex items-center gap-8">
+      {navLinks.map((link) => (
+        <a 
+          href={link.href}
+          class="text-[12px] font-medium text-white/50 hover:text-white transition-colors tracking-wide"
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+    
+    <!-- CTA -->
+    <div class="flex items-center gap-3">
+      <a 
+        href="#contact"
+        class="hidden sm:inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
+      >
+        Solicitar Demo
+      </a>
+    </div>
+  </div>
+</nav>

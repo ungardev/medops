@@ -1,0 +1,106 @@
+---
+const portals = [
+  {
+    icon: '👨‍⚕️',
+    label: 'DOCTOR PORTAL',
+    title: 'El Centro de Operaciones del Médico',
+    description: 'Todo lo que el médico especialista necesita en un solo lugar: consulta, diagnóstico, cirugías, recetas y más.',
+    features: [
+      'Consulta en tiempo real con CIE-11/SNOMED CT',
+      'Gestión integral de cirugías (pre/intra/post-op)',
+      'Historial clínico completo del paciente',
+      'Sala de espera inteligente con prioridades',
+      'Recetas digitales y tratamientos',
+      'Dashboard financiero personal',
+    ],
+    status: 'Disponible',
+    statusColor: 'emerald',
+  },
+  {
+    icon: '🧑‍⚕️',
+    label: 'PATIENT PORTAL',
+    title: 'El Primer Portal del Paciente en Venezuela',
+    description: 'Empodera a tus pacientes con acceso a su expediente, citas, resultados y sala de espera en tiempo real.',
+    features: [
+      'Expediente médico digital completo',
+      'Agendamiento de citas en línea',
+      'Sala de espera con posición en cola',
+      'Historial de pagos y facturas',
+      'Resultados de exámenes',
+      'Perfil personal con biometría',
+    ],
+    status: 'Disponible',
+    statusColor: 'emerald',
+  },
+  {
+    icon: '🏥',
+    label: 'INSTITUTION PORTAL',
+    title: 'Gestión Integral de Clínicas y Hospitales',
+    description: 'Administra tu institución médica con dashboards en tiempo real, gestión de camas y control multi-sede.',
+    features: [
+      'Dashboard operacional multi-sede',
+      'Gestión de camas y pabellones',
+      'Control de quirófanos y horarios',
+      'Dashboard financiero institucional',
+      'Gestión de RRHH médico',
+      'Reportes y analíticas avanzadas',
+    ],
+    status: 'Próximamente',
+    statusColor: 'amber',
+  },
+];
+---
+<section id="portals" class="py-24 px-6">
+  <div class="max-w-[1200px] mx-auto">
+    <!-- Section Header -->
+    <div class="text-center mb-16">
+      <span class="text-[10px] font-medium text-emerald-400/60 uppercase tracking-wider">Portales</span>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 tracking-tight">
+        Tres Portales.
+        <span class="block text-white/40 font-normal mt-1">Un Ecosistema.</span>
+      </h2>
+    </div>
+    
+    <!-- Portals -->
+    <div class="space-y-6">
+      {portals.map((portal) => (
+        <div class="group bg-white/5 border border-white/10 rounded-lg p-6 lg:p-8 hover:border-white/20 transition-all">
+          <div class="flex flex-col lg:flex-row lg:items-start gap-6">
+            <!-- Left: Icon + Info -->
+            <div class="lg:w-1/3">
+              <div class="flex items-center gap-3 mb-4">
+                <span class="text-2xl">{portal.icon}</span>
+                <div>
+                  <span class="text-[9px] font-medium text-white/40 uppercase tracking-wider">{portal.label}</span>
+                  <span class={`ml-2 text-[9px] font-medium px-2 py-0.5 rounded border ${
+                    portal.statusColor === 'emerald' 
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                      : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                  }`}>
+                    {portal.status}
+                  </span>
+                </div>
+              </div>
+              <h3 class="text-[15px] font-semibold text-white mb-2">{portal.title}</h3>
+              <p class="text-[11px] text-white/40 leading-relaxed">{portal.description}</p>
+            </div>
+            
+            <!-- Right: Features -->
+            <div class="lg:w-2/3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {portal.features.map((feature) => (
+                  <div class="flex items-start gap-2">
+                    <svg class="w-4 h-4 text-emerald-400/60 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <span class="text-[11px] text-white/50">{feature}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

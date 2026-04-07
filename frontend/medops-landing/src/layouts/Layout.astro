@@ -1,0 +1,71 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = "La plataforma de gestión médica más potente de Venezuela. Consulta, Cirugía, Hospitalización, Diagnóstico AI y más." } = Astro.props;
+---
+<!doctype html>
+<html lang="es" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#050608" />
+    
+    <title>{title} | MEDOPZ</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/medopz_logo_blanco_solo.svg" />
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
+    
+    <style is:global>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      html {
+        scroll-behavior: smooth;
+      }
+      
+      body {
+        font-family: 'Inter', 'Manrope', ui-sans-serif, system-ui;
+        background-color: #050608;
+        color: #e1e8ed;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+      
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+      
+      ::selection {
+        background: rgba(16, 185, 129, 0.3);
+        color: #ffffff;
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
