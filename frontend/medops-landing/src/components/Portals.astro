@@ -57,7 +57,7 @@ const portals = [
   <div class="max-w-[1200px] mx-auto">
     <!-- Section Header -->
     <div class="text-center mb-16">
-      <span class="text-[12px] font-medium text-emerald-400/80 uppercase tracking-wider">Portales</span>
+      <span class="text-[13px] font-medium text-emerald-400/80 uppercase tracking-wider">Portales</span>
       <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 tracking-tight">
         Tres Portales.
         <span class="block text-white/60 font-normal mt-1">Un Ecosistema.</span>
@@ -80,8 +80,8 @@ const portals = [
                   </svg>
                 </div>
                 <div>
-                  <span class="text-[11px] font-medium text-white/60 uppercase tracking-wider">{portal.label}</span>
-                  <span class={`ml-2 text-[10px] font-medium px-2 py-0.5 rounded border ${
+                  <span class="text-[12px] font-medium text-white/60 uppercase tracking-wider">{portal.label}</span>
+                  <span class={`ml-2 text-[11px] font-medium px-2 py-0.5 rounded border ${
                     portal.statusColor === 'emerald' 
                       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
                       : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -90,12 +90,12 @@ const portals = [
                   </span>
                 </div>
               </div>
-              <h3 class="text-[15px] font-semibold text-white mb-2">{portal.title}</h3>
-              <p class="text-[12px] text-white/60 leading-relaxed">{portal.description}</p>
+              <h3 class="text-[16px] font-semibold text-white mb-2">{portal.title}</h3>
+              <p class="text-[13px] text-white/60 leading-relaxed">{portal.description}</p>
               {portal.loginUrl !== '#' && (
                 <a 
                   href={portal.loginUrl}
-                  class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
+                  class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[12px] font-medium rounded-lg transition-all"
                 >
                   Acceder al Portal
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -111,7 +111,7 @@ const portals = [
                     <svg class="w-4 h-4 text-emerald-400/80 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span class="text-[12px] text-white/60">{feature}</span>
+                    <span class="text-[13px] text-white/60">{feature}</span>
                   </div>
                 ))}
               </div>
