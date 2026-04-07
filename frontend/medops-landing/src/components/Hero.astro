@@ -8,14 +8,14 @@ const features = [
   'Pagos Multi-Método',
 ];
 ---
-<section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
   <!-- Background Effects -->
   <div class="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-transparent"></div>
   <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px]"></div>
   
   <div class="relative z-10 max-w-[900px] mx-auto px-6 text-center">
     <!-- Badge -->
-    <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full mb-8">
+    <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full mb-10">
       <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
       <span class="text-[12px] font-medium text-white/70 uppercase tracking-wider">Plataforma Elite de Gestión Médica</span>
     </div>
@@ -36,7 +36,7 @@ const features = [
     </p>
     
     <!-- CTA Buttons -->
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
       <a 
         href="#contact"
         class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-3.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[13px] font-medium rounded-lg transition-all"
@@ -51,17 +51,17 @@ const features = [
       </a>
     </div>
     
-    <!-- Feature Pills -->
-    <div class="flex flex-wrap items-center justify-center gap-3">
+    <!-- Feature Pills (una sola línea) -->
+    <div class="flex flex-wrap items-center justify-center gap-2 mb-12">
       {features.map((feature) => (
-        <span class="px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-[12px] font-medium text-white/60">
+        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[11px] font-medium text-white/60 whitespace-nowrap">
           {feature}
         </span>
       ))}
     </div>
     
     <!-- Trust Badges -->
-    <div class="flex items-center justify-center gap-8 mt-12 text-white/50">
+    <div class="flex items-center justify-center gap-8 text-white/50">
       <div class="flex items-center gap-2">
         <span class="text-[12px] font-medium">⚡ 100% Cloud</span>
       </div>
