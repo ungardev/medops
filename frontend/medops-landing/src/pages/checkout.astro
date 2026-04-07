@@ -2,9 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import Navbar from '../components/Navbar.astro';
 import Footer from '../components/Footer.astro';
-// Obtener el plan de la URL
-const url = new URL(Astro.request.url);
-const selectedPlan = url.searchParams.get('plan') || 'doctor';
 const plans = {
   'doctor': {
     name: 'DOCTOR',
@@ -22,7 +19,6 @@ const plans = {
     period: '/mes',
   },
 };
-const plan = plans[selectedPlan as keyof typeof plans] || plans['doctor'];
 const paymentMethods = [
   {
     name: 'Pago Móvil',
@@ -63,7 +59,7 @@ const paymentMethods = [
   },
 ];
 ---
-<Layout title={`Comprar Plan ${plan.name} | MEDOPZ`}>
+<Layout title="Checkout | MEDOPZ">
   <Navbar />
   
   <main class="min-h-screen pt-24 pb-16 px-6">
@@ -84,11 +80,11 @@ const paymentMethods = [
         <div class="flex items-center justify-between">
           <div>
             <span class="text-[10px] font-medium text-white/40 uppercase tracking-wider">Plan seleccionado</span>
-            <h1 class="text-2xl font-bold text-white mt-1">{plan.name}</h1>
+            <h1 id="plan-name" class="text-2xl font-bold text-white mt-1">DOCTOR</h1>
           </div>
           <div class="text-right">
-            <span class="text-3xl font-bold text-white">{plan.price}</span>
-            <span class="text-[12px] text-white/40">{plan.period}</span>
+            <span id="plan-price" class="text-3xl font-bold text-white">$29</span>
+            <span id="plan-period" class="text-[12px] text-white/40">/mes</span>
           </div>
         </div>
       </div>
@@ -156,10 +152,11 @@ const paymentMethods = [
       <!-- CTA -->
       <div class="text-center">
         <a 
-          href={`mailto:info.medopz@gmail.com?subject=Solicitud de Compra - Plan ${plan.name}&body=Hola equipo MEDOPZ,%0A%0AMe interesa comprar el plan ${plan.name} (${plan.price}${plan.period}).%0A%0ANombre completo:%0AEspecialidad:%0ACiudad:%0ATeléfono:%0AMétodo de pago preferido:%0A%0AGracias.`}
+          id="checkout-btn"
+          href="mailto:info.medopz@gmail.com?subject=Solicitud de Compra - Plan DOCTOR&body=Hola equipo MEDOPZ,%0A%0AMe interesa comprar el plan DOCTOR ($29/mes).%0A%0ANombre completo:%0AEspecialidad:%0ACiudad:%0ATeléfono:%0AMétodo de pago preferido:%0A%0AGracias."
           class="inline-flex items-center justify-center gap-2 px-12 py-4 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[13px] font-medium rounded-lg transition-all"
         >
-          Solicitar Compra - {plan.name}
+          Solicitar Compra - <span id="checkout-plan-name">DOCTOR</span>
         </a>
         <p class="text-[11px] text-white/40 mt-4">
           Respuesta garantizada en menos de 24 horas.
@@ -169,4 +166,35 @@ const paymentMethods = [
   </main>
   
   <Footer />
+  
+  <!-- Client-side script para leer query params -->
+  <script>
+    const planData = {
+      'doctor': { name: 'DOCTOR', price: '$29', period: '/mes' },
+      'doctor-plus': { name: 'DOCTOR +', price: '$59', period: '/mes' },
+      'institution': { name: 'INSTITUTION', price: '$149', period: '/mes' },
+    };
+    const params = new URLSearchParams(window.location.search);
+    const selectedPlan = params.get('plan') || 'doctor';
+    const plan = planData[selectedPlan] || planData['doctor'];
+    // Actualizar DOM
+    const planNameEl = document.getElementById('plan-name');
+    const planPriceEl = document.getElementById('plan-price');
+    const planPeriodEl = document.getElementById('plan-period');
+    const checkoutBtn = document.getElementById('checkout-btn');
+    const checkoutPlanName = document.getElementById('checkout-plan-name');
+    if (planNameEl) planNameEl.textContent = plan.name;
+    if (planPriceEl) planPriceEl.textContent = plan.price;
+    if (planPeriodEl) planPeriodEl.textContent = plan.period;
+    if (checkoutPlanName) checkoutPlanName.textContent = plan.name;
+    
+    // Actualizar mailto link
+    if (checkoutBtn) {
+      const subject = encodeURIComponent(`Solicitud de Compra - Plan ${plan.name}`);
+      const body = encodeURIComponent(
+        `Hola equipo MEDOPZ,\n\nMe interesa comprar el plan ${plan.name} (${plan.price}${plan.period}).\n\nNombre completo:\nEspecialidad:\nCiudad:\nTeléfono:\nMétodo de pago preferido:\n\nGracias.`
+      );
+      checkoutBtn.setAttribute('href', `mailto:info.medopz@gmail.com?subject=${subject}&body=${body}`);
+    }
+  </script>
 </Layout>
