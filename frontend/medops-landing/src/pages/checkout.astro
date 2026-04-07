@@ -21,9 +21,9 @@ const plans = {
 };
 const paymentMethods = [
   {
+    icon: 'smartphone',
     name: 'Pago Móvil',
     description: 'Transferencia inmediata desde tu banco en Venezuela.',
-    icon: '📱',
     details: [
       'Teléfono: (se proporcionará al confirmar)',
       'Cédula: (se proporcionará al confirmar)',
@@ -31,33 +31,39 @@ const paymentMethods = [
     ],
   },
   {
+    icon: 'credit-card',
     name: 'Zelle',
     description: 'Ideal para pagos desde Estados Unidos.',
-    icon: '💳',
     details: [
       'Email: (se proporcionará al confirmar)',
       'Confirmación en 24-48 horas',
     ],
   },
   {
+    icon: 'wallet',
     name: 'PayPal',
     description: 'Pago seguro internacional.',
-    icon: '🅿️',
     details: [
       'Email: (se proporcionará al confirmar)',
       'Comisión incluida en el precio',
     ],
   },
   {
+    icon: 'building-2',
     name: 'Transferencia Bancaria',
     description: 'Transferencia nacional o internacional.',
-    icon: '🏦',
     details: [
       'Datos bancarios al confirmar',
       'Disponible para bancos nacionales e internacionales',
     ],
   },
 ];
+const iconPaths = {
+  'smartphone': '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+  'credit-card': '<rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/>',
+  'wallet': '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3v-4z"/><path d="M3 5h14v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>',
+  'building-2': '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+};
 ---
 <Layout title="Checkout | MEDOPZ">
   <Navbar />
@@ -96,7 +102,9 @@ const paymentMethods = [
           {paymentMethods.map((method) => (
             <div class="bg-white/5 border border-white/10 rounded-lg p-5">
               <div class="flex items-center gap-3 mb-3">
-                <span class="text-xl">{method.icon}</span>
+                <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white/60" set:html={iconPaths[method.icon as keyof typeof iconPaths]}></svg>
+                </div>
                 <div>
                   <h3 class="text-[13px] font-medium text-white">{method.name}</h3>
                   <p class="text-[10px] text-white/40">{method.description}</p>
@@ -177,7 +185,6 @@ const paymentMethods = [
     const params = new URLSearchParams(window.location.search);
     const selectedPlan = params.get('plan') || 'doctor';
     const plan = planData[selectedPlan] || planData['doctor'];
-    // Actualizar DOM
     const planNameEl = document.getElementById('plan-name');
     const planPriceEl = document.getElementById('plan-price');
     const planPeriodEl = document.getElementById('plan-period');
@@ -188,7 +195,6 @@ const paymentMethods = [
     if (planPeriodEl) planPeriodEl.textContent = plan.period;
     if (checkoutPlanName) checkoutPlanName.textContent = plan.name;
     
-    // Actualizar mailto link
     if (checkoutBtn) {
       const subject = encodeURIComponent(`Solicitud de Compra - Plan ${plan.name}`);
       const body = encodeURIComponent(
