@@ -6,6 +6,8 @@ import {
   Save,
   Loader2,
   X,
+  Heart,
+  CheckCircle,
 } from "lucide-react";
 import { patientClient } from "@/api/patient/client";
 import { useSpecialties } from "@/hooks/consultations/useSpecialties";
@@ -83,7 +85,27 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
     chief_complaint: "",
     clinical_summary: "",
     allergies_at_admission: "",
-    daily_notes: ""
+    daily_notes: "",
+    attending_doctor: null,
+    admission_diagnosis: null,
+    vital_signs: {
+      weight: null,
+      height: null,
+      temperature: null,
+      bp_systolic: null,
+      bp_diastolic: null,
+      heart_rate: null,
+      respiratory_rate: null,
+      oxygen_saturation: null
+    },
+    complications: "",
+    discharge_type: null,
+    discharge_summary: null,
+    discharge_instructions: null,
+    discharge_medications: null,
+    actual_discharge_date: null,
+    doctorSearchQuery: "",
+    diagnosisSearchQuery: ""
   });
   const [isSaving, setIsSaving] = useState(false);
   useEffect(() => {
@@ -172,7 +194,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
   const { data: specialties = [] } = useSpecialties("");
   const [diagnosisSearchQuery, setDiagnosisSearchQuery] = useState("");
   const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(diagnosisSearchQuery);
-  const [doctorSearchResults, setDoctorSearchResults] = useState([]);
+  const [doctorSearchResults, setDoctorSearchResults] = useState<any[]>([]);
   const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
   
   // Search doctors
@@ -188,6 +210,23 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
   
   // ICD-11 search effect (handled by hook automatically)
   
+  const handleVitalSignsChange = (field: string, value: string) => {
+    const numValue = value === "" ? null : parseFloat(value);
+    setForm((prev) => ({
+      ...prev,
+      vital_signs: {
+        ...prev.vital_signs,
+        [field]: numValue
+      }
+    }));
+  };
+
+  const calculateBMI = (): number | null => {
+    if (!form.vital_signs.weight || !form.vital_signs.height) return null;
+    const heightInMeters = form.vital_signs.height / 100;
+    return form.vital_signs.weight / (heightInMeters * heightInMeters);
+  };
+
   const handleChange = (field: keyof Form, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -471,44 +510,8 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
                )}
              </div>
            </div>
-                     ))}
-                     {doctorSearchResults.length === 0 && (
-                       <div className="px-4 py-2 text-white/50 text-[10px]">
-                         No se encontraron médicos
-                       </div>
-                     )}
-                   </div>
-                 )}
-                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
-                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
-                     <div className="px-4 py-2 text-white/50 text-[10px]">
-                       Buscando médicos...
-                     </div>
-                   </div>
-                 )}
-               </div>
-               {form.attending_doctor !== null && (
-                 <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
-                   <div className="flex items-center gap-2">
-                     {/* We would need to fetch doctor details to display name, but for now show ID */}
-                     <span className="text-white/70">Médico seleccionado (ID: {form.attending_doctor})</span>
-                     <button
-                       onClick={() => {
-                         handleChange("attending_doctor", null);
-                         setDoctorSearchQuery("");
-                         setDoctorSearchResults([]);
-                       }}
-                       className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
-                     >
-                       <X className="w-4 h-4" />
-                     </button>
-                   </div>
-                 </div>
-               )}
-             </div>
-           </div>
-          {/* Clínica */}
-          <div className={sectionClass}>
+           {/* Clínica */}
+           <div className={sectionClass}>
             <div>
               <label className={labelClass}>Motivo principal de ingreso</label>
               <textarea
@@ -537,18 +540,197 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
               />
             </div>
           </div>
-          {/* Notas de evolución */}
-          <div className={`${sectionClass} border-t border-white/10 pt-5`}>
-            <div>
-              <label className={labelClass}>Notas de evolución</label>
-              <textarea 
-                className={`${inputClass} min-h-[100px] resize-none`} 
-                value={form.daily_notes} 
-                onChange={(e) => handleChange("daily_notes", e.target.value)} 
-                placeholder="Notas diarias de evolución del paciente..." 
-              />
-            </div>
-          </div>
+           {/* Notas de evolución */}
+           <div className={`${sectionClass} border-t border-white/10 pt-5`}>
+             <div>
+               <label className={labelClass}>Notas de evolución</label>
+               <textarea 
+                 className={`${inputClass} min-h-[100px] resize-none`} 
+                 value={form.daily_notes} 
+                 onChange={(e) => handleChange("daily_notes", e.target.value)} 
+                 placeholder="Notas diarias de evolución del paciente..." 
+               />
+             </div>
+           </div>
+           
+           {/* Signos Vitales */}
+           <div className={sectionClass}>
+             <div className="flex items-center gap-2 mb-4">
+               <Heart className="w-4 h-4 text-red-400" />
+               <span className="text-[11px] font-medium text-red-400 uppercase">Signos Vitales</span>
+             </div>
+             <div className="grid grid-cols-3 gap-4">
+               <div>
+                 <label className={labelClass}>Peso (kg)</label>
+                 <input
+                   type="number"
+                   step="0.1"
+                   className={inputClass}
+                   value={form.vital_signs.weight ?? ""}
+                   onChange={(e) => handleVitalSignsChange("weight", e.target.value)}
+                   placeholder="0.0"
+                 />
+               </div>
+               <div>
+                 <label className={labelClass}>Altura (cm)</label>
+                 <input
+                   type="number"
+                   className={inputClass}
+                   value={form.vital_signs.height ?? ""}
+                   onChange={(e) => handleVitalSignsChange("height", e.target.value)}
+                   placeholder="0"
+                 />
+               </div>
+               <div>
+                 <label className={labelClass}>Temperatura (°C)</label>
+                 <input
+                   type="number"
+                   step="0.1"
+                   className={inputClass}
+                   value={form.vital_signs.temperature ?? ""}
+                   onChange={(e) => handleVitalSignsChange("temperature", e.target.value)}
+                   placeholder="36.5"
+                 />
+               </div>
+             </div>
+             <div className="grid grid-cols-2 gap-4 mt-4">
+               <div className="grid grid-cols-2 gap-2">
+                 <div>
+                   <label className={labelClass}>PA Sistólica</label>
+                   <input
+                     type="number"
+                     className={inputClass}
+                     value={form.vital_signs.bp_systolic ?? ""}
+                     onChange={(e) => handleVitalSignsChange("bp_systolic", e.target.value)}
+                     placeholder="120"
+                   />
+                 </div>
+                 <div>
+                   <label className={labelClass}>PA Diastólica</label>
+                   <input
+                     type="number"
+                     className={inputClass}
+                     value={form.vital_signs.bp_diastolic ?? ""}
+                     onChange={(e) => handleVitalSignsChange("bp_diastolic", e.target.value)}
+                     placeholder="80"
+                   />
+                 </div>
+               </div>
+               <div className="grid grid-cols-3 gap-2">
+                 <div>
+                   <label className={labelClass}>FC (bpm)</label>
+                   <input
+                     type="number"
+                     className={inputClass}
+                     value={form.vital_signs.heart_rate ?? ""}
+                     onChange={(e) => handleVitalSignsChange("heart_rate", e.target.value)}
+                     placeholder="72"
+                   />
+                 </div>
+                 <div>
+                   <label className={labelClass}>FR (/min)</label>
+                   <input
+                     type="number"
+                     className={inputClass}
+                     value={form.vital_signs.respiratory_rate ?? ""}
+                     onChange={(e) => handleVitalSignsChange("respiratory_rate", e.target.value)}
+                     placeholder="16"
+                   />
+                 </div>
+                 <div>
+                   <label className={labelClass}>Sat O2 (%)</label>
+                   <input
+                     type="number"
+                     className={inputClass}
+                     value={form.vital_signs.oxygen_saturation ?? ""}
+                     onChange={(e) => handleVitalSignsChange("oxygen_saturation", e.target.value)}
+                     placeholder="98"
+                   />
+                 </div>
+               </div>
+             </div>
+             {calculateBMI() && (
+               <div className="mt-4 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                 <span className="text-[10px] text-blue-400 uppercase">IMC: </span>
+                 <span className="text-[12px] text-blue-300 font-mono">{calculateBMI()?.toFixed(1)}</span>
+               </div>
+             )}
+           </div>
+           
+           {/* Complicaciones */}
+           <div className={sectionClass}>
+             <div>
+               <label className={labelClass}>Complicaciones</label>
+               <textarea
+                 className={`${inputClass} min-h-[80px] resize-none`}
+                 value={form.complications}
+                 onChange={(e) => handleChange("complications", e.target.value)}
+                 placeholder="Complicaciones durante la hospitalización..."
+               />
+             </div>
+           </div>
+           
+           {/* Planificación del Alta */}
+           <div className={sectionClass}>
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="w-4 h-4 text-emerald-400" />
+                <span className="text-[11px] font-medium text-emerald-400 uppercase">Planificación del Alta</span>
+              </div>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <label className={labelClass}>Tipo de alta</label>
+                 <select
+                   className={inputClass}
+                   value={form.discharge_type ?? ""}
+                   onChange={(e) => handleChange("discharge_type", e.target.value || null)}
+                 >
+                   <option value="">Seleccionar...</option>
+                   <option value="home">Alta a domicilio</option>
+                   <option value="transfer">Transferencia</option>
+                   <option value="voluntary">Alta voluntaria</option>
+                   <option value="medical">Alta médica</option>
+                   <option value="death">Fallecimiento</option>
+                 </select>
+               </div>
+               <div>
+                 <label className={labelClass}>Fecha real de alta</label>
+                 <input
+                   type="date"
+                   style={{colorScheme: 'dark'}}
+                   className={inputClass}
+                   value={form.actual_discharge_date ?? ""}
+                   onChange={(e) => handleChange("actual_discharge_date", e.target.value || null)}
+                 />
+               </div>
+             </div>
+             <div className="mt-4">
+               <label className={labelClass}>Resumen de alta</label>
+               <textarea
+                 className={`${inputClass} min-h-[80px] resize-none`}
+                 value={form.discharge_summary ?? ""}
+                 onChange={(e) => handleChange("discharge_summary", e.target.value || null)}
+                 placeholder="Resumen del proceso de hospitalización..."
+               />
+             </div>
+             <div className="mt-4">
+               <label className={labelClass}>Instrucciones al alta</label>
+               <textarea
+                 className={`${inputClass} min-h-[60px] resize-none`}
+                 value={form.discharge_instructions ?? ""}
+                 onChange={(e) => handleChange("discharge_instructions", e.target.value || null)}
+                 placeholder="Instrucciones para el paciente al alta..."
+               />
+             </div>
+             <div className="mt-4">
+               <label className={labelClass}>Medicamentos al alta</label>
+               <textarea
+                 className={`${inputClass} min-h-[60px] resize-none`}
+                 value={form.discharge_medications ?? ""}
+                 onChange={(e) => handleChange("discharge_medications", e.target.value || null)}
+                 placeholder="Medicamentos prescritos al alta..."
+               />
+             </div>
+           </div>
         </div>
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-white/15 bg-white/5 rounded-b-lg">
           <button 

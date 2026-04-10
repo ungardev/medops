@@ -8,7 +8,10 @@ import {
   X,
   ShieldCheckIcon,
   AlertTriangle,
+  Heart,
 } from "lucide-react";
+import { patientClient } from "@/api/patient/client";
+import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -21,6 +24,7 @@ interface Form {
   name: string;
   hospital: string;
   scheduled_date: string;
+  scheduled_time: string;
   surgery_type: string;
   status: string;
   risk_level: string;
@@ -28,6 +32,17 @@ interface Form {
   procedure_description: string;
   complications: string;
   post_op_instructions: string;
+  surgeon: number | null;
+  anesthesiologist: number | null;
+  surgical_assistants: number | null;
+  diagnosis: number | null;
+  surgical_technique: string;
+  findings: string;
+  estimated_blood_loss: number | null;
+  specimens: string;
+  follow_up_date: string;
+  doctorSearchQuery: string;
+  diagnosisSearchQuery: string;
 }
 const SURGERY_TYPES = [
   { value: "elective", label: "Electiva / Programada" },
@@ -64,15 +79,42 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
     name: "",
     hospital: "",
     scheduled_date: "",
+    scheduled_time: "",
     surgery_type: "elective",
     status: "scheduled",
     risk_level: "moderate",
     asa_classification: "",
     procedure_description: "",
     complications: "",
-    post_op_instructions: ""
+    post_op_instructions: "",
+    surgeon: null,
+    anesthesiologist: null,
+    surgical_assistants: null,
+    diagnosis: null,
+    surgical_technique: "",
+    findings: "",
+    estimated_blood_loss: null,
+    specimens: "",
+    follow_up_date: "",
+    doctorSearchQuery: "",
+    diagnosisSearchQuery: ""
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [diagnosisSearchQuery, setDiagnosisSearchQuery] = useState("");
+  const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(diagnosisSearchQuery);
+  const [doctorSearchResults, setDoctorSearchResults] = useState<any[]>([]);
+  const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
+  
+  useEffect(() => {
+    if (doctorSearchQuery.trim().length >= 2) {
+      patientClient.searchDoctors(doctorSearchQuery).then(response => {
+        setDoctorSearchResults(response.data.results || []);
+      });
+    } else if (doctorSearchQuery.trim().length === 0) {
+      setDoctorSearchResults([]);
+    }
+  }, [doctorSearchQuery]);
+  
   useEffect(() => {
     if (open && initial) {
       setForm({
@@ -80,13 +122,25 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         name: initial.name || "",
         hospital: initial.hospital || "",
         scheduled_date: initial.scheduled_date || "",
+        scheduled_time: (initial as any).scheduled_time || "",
         surgery_type: initial.surgery_type || "elective",
         status: initial.status || "scheduled",
         risk_level: initial.risk_level || "moderate",
         asa_classification: initial.asa_classification || "",
         procedure_description: initial.procedure_description || "",
         complications: initial.complications || "",
-        post_op_instructions: initial.post_op_instructions || ""
+        post_op_instructions: initial.post_op_instructions || "",
+        surgeon: (initial as any).surgeon ?? null,
+        anesthesiologist: (initial as any).anesthesiologist ?? null,
+        surgical_assistants: (initial as any).surgical_assistants ?? null,
+        diagnosis: (initial as any).diagnosis ?? null,
+        surgical_technique: (initial as any).surgical_technique || "",
+        findings: (initial as any).findings || "",
+        estimated_blood_loss: (initial as any).estimated_blood_loss ?? null,
+        specimens: (initial as any).specimens || "",
+        follow_up_date: (initial as any).follow_up_date || "",
+        doctorSearchQuery: "",
+        diagnosisSearchQuery: ""
       });
     } else if (open) {
       setForm({
@@ -94,19 +148,71 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         name: "",
         hospital: "",
         scheduled_date: "",
+        scheduled_time: "",
         surgery_type: "elective",
         status: "scheduled",
         risk_level: "moderate",
         asa_classification: "",
         procedure_description: "",
         complications: "",
-        post_op_instructions: ""
+        post_op_instructions: "",
+        surgeon: null,
+        anesthesiologist: null,
+        surgical_assistants: null,
+        diagnosis: null,
+        surgical_technique: "",
+        findings: "",
+        estimated_blood_loss: null,
+        specimens: "",
+        follow_up_date: "",
+        doctorSearchQuery: "",
+        diagnosisSearchQuery: ""
       });
     }
   }, [open, initial]);
-  const handleChange = (field: keyof Form, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  
+  const handleChange = (field: keyof Form, value: any) => {
+    if (field === "estimated_blood_loss") {
+      setForm((prev) => ({ ...prev, [field]: value === "" ? null : parseFloat(value) }));
+    } else if (field === "doctorSearchQuery" || field === "diagnosisSearchQuery") {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    } else if (field === "surgeon" || field === "anesthesiologist" || field === "surgical_assistants" || field === "diagnosis") {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    } else {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    }
   };
+  
+  const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDoctorSearchQuery(e.target.value);
+  };
+  
+  const handleDiagnosisSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDiagnosisSearchQuery(e.target.value);
+  };
+  
+  const selectDoctor = (doctorId: number, doctorFirstName: string, doctorLastName: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    handleChange(role, doctorId);
+    setDoctorSearchQuery(`${doctorFirstName} ${doctorLastName || ''}`.trim());
+    setDoctorSearchResults([]);
+  };
+  
+  const selectDiagnosis = (diagnosisId: number, diagnosisCode: string, diagnosisDescription: string) => {
+    handleChange("diagnosis", diagnosisId);
+    setDiagnosisSearchQuery(`${diagnosisCode} - ${diagnosisDescription}`);
+  };
+  
+  const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    handleChange(role, null);
+    setDoctorSearchQuery("");
+    setDoctorSearchResults([]);
+  };
+  
+  const clearDiagnosisSelection = () => {
+    handleChange("diagnosis", null);
+    setDiagnosisSearchQuery("");
+  };
+  
   const handleSubmit = () => {
     setIsSaving(true);
     const activeInstitutionId = localStorage.getItem("active_institution_id");
@@ -178,20 +284,160 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 />
               </div>
               <div>
-                <label className={labelClass}>Tipo de cirugía</label>
-                <select
+                <label className={labelClass}>Hora programada</label>
+                <input
+                  type="time"
+                  style={{colorScheme: 'dark'}}
                   className={inputClass}
-                  value={form.surgery_type}
-                  onChange={(e) => handleChange("surgery_type", e.target.value)}
-                >
-                  {SURGERY_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
+                  value={form.scheduled_time}
+                  onChange={(e) => handleChange("scheduled_time", e.target.value)}
+                />
               </div>
             </div>
+          </div>
+          
+          {/* Equipo Quirúrgico */}
+          <div className={sectionClass}>
+            <div className="flex items-center gap-2 mb-4">
+              <Heart className="w-4 h-4 text-red-400" />
+              <span className="text-[11px] font-medium text-red-400 uppercase">Equipo Quirúrgico</span>
+            </div>
+            
+            {/* Cirujano */}
+            <div className="mb-4">
+              <label className={labelClass}>Cirujano</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={doctorSearchQuery}
+                  onChange={handleDoctorSearchChange}
+                  placeholder="Buscar cirujano..."
+                />
+                {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                    {doctorSearchResults.slice(0, 5).map((doctor: any) => (
+                      <div
+                        key={doctor.id}
+                        className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                        onClick={() => selectDoctor(doctor.id, doctor.first_name, doctor.last_name || '', "surgeon")}
+                      >
+                        <div className="font-medium">{doctor.first_name} {doctor.last_name || ''}</div>
+                        <div className="text-[10px] text-white/50">{doctor.specialty || 'Sin especialidad'}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {form.surgeon !== null && (
+                <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
+                  <span className="text-white/70 text-[11px]">Cirujano seleccionado (ID: {form.surgeon})</span>
+                  <button
+                    onClick={() => clearDoctorSelection("surgeon")}
+                    className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {/* Anestesiólogo */}
+            <div className="mb-4">
+              <label className={labelClass}>Anestesiólogo</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={form.anesthesiologist ? `ID: ${form.anesthesiologist}` : ""}
+                  onChange={() => {}}
+                  placeholder="Buscar anestesia..."
+                />
+              </div>
+              {form.anesthesiologist !== null && (
+                <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
+                  <span className="text-white/70 text-[11px]">Anestesiólogo seleccionado (ID: {form.anesthesiologist})</span>
+                  <button
+                    onClick={() => clearDoctorSelection("anesthesiologist")}
+                    className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {/* Asistentes */}
+            <div>
+              <label className={labelClass}>Asistentes Quirúrgicos</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={form.surgical_assistants ? `ID: ${form.surgical_assistants}` : ""}
+                  onChange={() => {}}
+                  placeholder="Buscar asistentes..."
+                />
+              </div>
+              {form.surgical_assistants !== null && (
+                <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
+                  <span className="text-white/70 text-[11px]">Asistente seleccionado (ID: {form.surgical_assistants})</span>
+                  <button
+                    onClick={() => clearDoctorSelection("surgical_assistants")}
+                    className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Diagnóstico */}
+          <div className={sectionClass}>
+            <div className="flex items-center gap-2 mb-4">
+              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+              <span className="text-[11px] font-medium text-yellow-400 uppercase">Diagnóstico (ICD-11)</span>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                className={inputClass}
+                value={diagnosisSearchQuery}
+                onChange={handleDiagnosisSearchChange}
+                placeholder="Buscar diagnóstico por código o descripción..."
+              />
+              {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
+                <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                  {icdResults.slice(0, 5).map((diagnosis: any) => (
+                    <div
+                      key={diagnosis.id}
+                      className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                      onClick={() => selectDiagnosis(diagnosis.id, diagnosis.code, diagnosis.description)}
+                    >
+                      <div className="font-medium">{diagnosis.code}</div>
+                      <div className="text-[10px] text-white/50">{diagnosis.description}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
+                <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg p-2 z-10">
+                  <span className="text-white/50 text-[10px]">Buscando diagnósticos...</span>
+                </div>
+              )}
+            </div>
+            {form.diagnosis !== null && (
+              <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
+                <span className="text-white/70 text-[11px]">Diagnóstico seleccionado (ID: {form.diagnosis})</span>
+                <button
+                  onClick={clearDiagnosisSelection}
+                  className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
           {/* Clasificación */}
           <div className={sectionClass}>
@@ -258,7 +504,61 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 placeholder="Detalles técnicos del procedimiento..."
               />
             </div>
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className={labelClass}>Técnica quirúrgica</label>
+                <input
+                  className={inputClass}
+                  value={form.surgical_technique}
+                  onChange={(e) => handleChange("surgical_technique", e.target.value)}
+                  placeholder="Técnica utilizada..."
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Pérdida sanguínea (ml)</label>
+                <input
+                  type="number"
+                  className={inputClass}
+                  value={form.estimated_blood_loss ?? ""}
+                  onChange={(e) => handleChange("estimated_blood_loss", e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className={labelClass}>Hallazgos</label>
+              <textarea
+                className={`${inputClass} min-h-[60px] resize-none`}
+                value={form.findings}
+                onChange={(e) => handleChange("findings", e.target.value)}
+                placeholder="Hallazgos durante la cirugía..."
+              />
+            </div>
+            <div className="mt-4">
+              <label className={labelClass}>Especímenes</label>
+              <textarea
+                className={`${inputClass} min-h-[50px] resize-none`}
+                value={form.specimens}
+                onChange={(e) => handleChange("specimens", e.target.value)}
+                placeholder="Especímenes enviados a病理..."
+              />
+            </div>
           </div>
+          
+          {/* Seguimiento */}
+          <div className={sectionClass}>
+            <div>
+              <label className={labelClass}>Fecha de seguimiento</label>
+              <input
+                type="date"
+                style={{colorScheme: 'dark'}}
+                className={inputClass}
+                value={form.follow_up_date}
+                onChange={(e) => handleChange("follow_up_date", e.target.value)}
+              />
+            </div>
+          </div>
+          
           {/* Post-operatorio y complicaciones */}
           <div className={`${sectionClass} border-t border-white/10 pt-5`}>
             <div className="space-y-4">
