@@ -7,6 +7,9 @@ import {
   Loader2,
   X,
 } from "lucide-react";
+import { patientClient } from "@/api/patient/client";
+import { useSpecialties } from "@/hooks/consultations/useSpecialties";
+import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -28,6 +31,29 @@ interface Form {
   clinical_summary: string;
   allergies_at_admission: string;
   daily_notes: string;
+  // Medical Tracking Fields
+  attending_doctor: number | null;
+  admission_diagnosis: number | null;
+  vital_signs: {
+    weight: number | null;
+    height: number | null;
+    temperature: number | null;
+    bp_systolic: number | null;
+    bp_diastolic: number | null;
+    heart_rate: number | null;
+    respiratory_rate: number | null;
+    oxygen_saturation: number | null;
+  };
+  complications: string;
+  // Discharge Fields
+  discharge_type: string | null;
+  discharge_summary: string | null;
+  discharge_instructions: string | null;
+  discharge_medications: string | null;
+  actual_discharge_date: string | null;
+  // For search inputs
+  doctorSearchQuery: string;
+  diagnosisSearchQuery: string;
 }
 const ADMISSION_TYPES = [
   { value: "emergency", label: "Emergencia" },
@@ -75,7 +101,30 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         chief_complaint: initial.chief_complaint || "",
         clinical_summary: initial.clinical_summary || "",
         allergies_at_admission: initial.allergies_at_admission || "",
-        daily_notes: initial.daily_notes || ""
+        daily_notes: initial.daily_notes || "",
+        // Medical Tracking Fields
+        attending_doctor: initial.attending_doctor ?? null,
+        admission_diagnosis: initial.admission_diagnosis ?? null,
+        vital_signs: {
+          weight: initial.vital_signs?.weight ?? null,
+          height: initial.vital_signs?.height ?? null,
+          temperature: initial.vital_signs?.temperature ?? null,
+          bp_systolic: initial.vital_signs?.bp_systolic ?? null,
+          bp_diastolic: initial.vital_signs?.bp_diastolic ?? null,
+          heart_rate: initial.vital_signs?.heart_rate ?? null,
+          respiratory_rate: initial.vital_signs?.respiratory_rate ?? null,
+          oxygen_saturation: initial.vital_signs?.oxygen_saturation ?? null
+        },
+        complications: initial.complications || "",
+        // Discharge Fields
+        discharge_type: initial.discharge_type ?? null,
+        discharge_summary: initial.discharge_summary ?? null,
+        discharge_instructions: initial.discharge_instructions ?? null,
+        discharge_medications: initial.discharge_medications ?? null,
+        actual_discharge_date: initial.actual_discharge_date ?? null,
+        // For search inputs
+        doctorSearchQuery: "",
+        diagnosisSearchQuery: ""
       });
     } else if (open) {
       setForm({
@@ -91,12 +140,60 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         chief_complaint: "",
         clinical_summary: "",
         allergies_at_admission: "",
-        daily_notes: ""
+        daily_notes: "",
+        // Medical Tracking Fields
+        attending_doctor: null,
+        admission_diagnosis: null,
+        vital_signs: {
+          weight: null,
+          height: null,
+          temperature: null,
+          bp_systolic: null,
+          bp_diastolic: null,
+          heart_rate: null,
+          respiratory_rate: null,
+          oxygen_saturation: null
+        },
+        complications: "",
+        // Discharge Fields
+        discharge_type: null,
+        discharge_summary: null,
+        discharge_instructions: null,
+        discharge_medications: null,
+        actual_discharge_date: null,
+        // For search inputs
+        doctorSearchQuery: "",
+        diagnosisSearchQuery: ""
       });
     }
   }, [open, initial]);
-  const handleChange = (field: keyof Form, value: string) => {
+  
+  // Search hooks
+  const { data: specialties = [] } = useSpecialties("");
+  const [diagnosisSearchQuery, setDiagnosisSearchQuery] = useState("");
+  const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(diagnosisSearchQuery);
+  const [doctorSearchResults, setDoctorSearchResults] = useState([]);
+  const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
+  
+  // Search doctors
+  useEffect(() => {
+    if (doctorSearchQuery.trim().length >= 2) {
+      patientClient.searchDoctors(doctorSearchQuery).then(response => {
+        setDoctorSearchResults(response.data.results || []);
+      });
+    } else if (doctorSearchQuery.trim().length === 0) {
+      setDoctorSearchResults([]);
+    }
+  }, [doctorSearchQuery]);
+  
+  // ICD-11 search effect (handled by hook automatically)
+  
+  const handleChange = (field: keyof Form, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+  
+  const handleDiagnosisSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDiagnosisSearchQuery(e.target.value);
   };
   const handleSubmit = () => {
     setIsSaving(true);
@@ -211,31 +308,205 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
               </div>
             </div>
           </div>
-          {/* Cronología */}
-          <div className={sectionClass}>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelClass}>Fecha de ingreso</label>
-                <input
-                  type="datetime-local"
-                  style={{colorScheme: 'dark'}}
-                  className={inputClass}
-                  value={form.admission_date}
-                  onChange={(e) => handleChange("admission_date", e.target.value)}
-                />
-              </div>
-              <div>
-                <label className={labelClass}>Fecha estimada de alta</label>
-                <input
-                  type="date"
-                  style={{colorScheme: 'dark'}}
-                  className={inputClass}
-                  value={form.expected_discharge_date}
-                  onChange={(e) => handleChange("expected_discharge_date", e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+           {/* Cronología */}
+           <div className={sectionClass}>
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <label className={labelClass}>Fecha de ingreso</label>
+                 <input
+                   type="datetime-local"
+                   style={{colorScheme: 'dark'}}
+                   className={inputClass}
+                   value={form.admission_date}
+                   onChange={(e) => handleChange("admission_date", e.target.value)}
+                 />
+               </div>
+               <div>
+                 <label className={labelClass}>Fecha estimada de alta</label>
+                 <input
+                   type="date"
+                   style={{colorScheme: 'dark'}}
+                   className={inputClass}
+                   value={form.expected_discharge_date}
+                   onChange={(e) => handleChange("expected_discharge_date", e.target.value)}
+                 />
+               </div>
+             </div>
+           </div>
+           
+           {/* Equipo Médico */}
+           <div className={sectionClass}>
+             <div>
+               <label className={labelClass}>Médico Responsable</label>
+               <div className="relative">
+                 <input
+                   type="text"
+                   className={inputClass}
+                   value={doctorSearchQuery}
+                   onChange={(e) => {
+                     setDoctorSearchQuery(e.target.value);
+                     // Update form with null when clearing search
+                     if (e.target.value === '') {
+                       handleChange("attending_doctor", null);
+                     }
+                   }}
+                   placeholder="Buscar médico por nombre o especialidad..."
+                 />
+                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
+                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                     {doctorSearchResults.map((doctor: any) => (
+                       <div
+                         key={doctor.id}
+                         className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                         onClick={() => {
+                           handleChange("attending_doctor", doctor.id);
+                           setDoctorSearchQuery(`${doctor.first_name} ${doctor.last_name || ''}`.trim());
+                           setDoctorSearchResults([]);
+                         }}
+                       >
+                         <div className="font-medium">{doctor.first_name} {doctor.last_name || ''}</div>
+                         <div className="text-[10px] text-white/50">{doctor.specialty || 'Sin especialidad'}</div>
+                       </div>
+                     ))}
+                     {doctorSearchResults.length === 0 && (
+                       <div className="px-4 py-2 text-white/50 text-[10px]">
+                         No se encontraron médicos
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
+                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                     <div className="px-4 py-2 text-white/50 text-[10px]">
+                       Buscando médicos...
+                     </div>
+                   </div>
+                 )}
+               </div>
+               {form.attending_doctor !== null && (
+                 <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
+                   <div className="flex items-center gap-2">
+                     {/* We would need to fetch doctor details to display name, but for now show ID */}
+                     <span className="text-white/70">Médico seleccionado (ID: {form.attending_doctor})</span>
+                     <button
+                       onClick={() => {
+                         handleChange("attending_doctor", null);
+                         setDoctorSearchQuery("");
+                         setDoctorSearchResults([]);
+                       }}
+                       className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                     >
+                       <X className="w-4 h-4" />
+                     </button>
+                   </div>
+                 </div>
+               )}
+             </div>
+           </div>
+           
+           {/* Diagnóstico de Ingreso */}
+           <div className={sectionClass}>
+             <div>
+               <label className={labelClass}>Diagnóstico de Ingreso</label>
+               <div className="relative">
+                 <input
+                   type="text"
+                   className={inputClass}
+                   value={diagnosisSearchQuery}
+                   onChange={handleDiagnosisSearchChange}
+                   placeholder="Buscar diagnóstico por código o descripción (ICD-11)..."
+                 />
+                 {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
+                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                     {icdResults.map((diagnosis: any) => (
+                       <div
+                         key={diagnosis.id}
+                         className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                         onClick={() => {
+                           handleChange("admission_diagnosis", diagnosis.id);
+                           setDiagnosisSearchQuery(`${diagnosis.code} - ${diagnosis.description}`);
+                         }}
+                       >
+                         <div className="font-medium">{diagnosis.code}</div>
+                         <div className="text-[10px] text-white/50">{diagnosis.description}</div>
+                       </div>
+                     ))}
+                     {icdResults.length === 0 && (
+                       <div className="px-4 py-2 text-white/50 text-[10px]">
+                         No se encontraron diagnósticos
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
+                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                     <div className="px-4 py-2 text-white/50 text-[10px]">
+                       Buscando diagnósticos...
+                     </div>
+                   </div>
+                 )}
+                 {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && !icdLoading && (
+                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                     <div className="px-4 py-2 text-white/50 text-[10px]">
+                       No se encontraron diagnósticos
+                     </div>
+                   </div>
+                 )}
+               </div>
+               {form.admission_diagnosis !== null && (
+                 <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
+                   <div className="flex items-center gap-2">
+                     <span className="text-white/70">Diagnóstico seleccionado (ID: {form.admission_diagnosis})</span>
+                     <button
+                       onClick={() => {
+                         handleChange("admission_diagnosis", null);
+                         setDiagnosisSearchQuery("");
+                       }}
+                       className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                     >
+                       <X className="w-4 h-4" />
+                     </button>
+                   </div>
+                 </div>
+               )}
+             </div>
+           </div>
+                     ))}
+                     {doctorSearchResults.length === 0 && (
+                       <div className="px-4 py-2 text-white/50 text-[10px]">
+                         No se encontraron médicos
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
+                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                     <div className="px-4 py-2 text-white/50 text-[10px]">
+                       Buscando médicos...
+                     </div>
+                   </div>
+                 )}
+               </div>
+               {form.attending_doctor !== null && (
+                 <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
+                   <div className="flex items-center gap-2">
+                     {/* We would need to fetch doctor details to display name, but for now show ID */}
+                     <span className="text-white/70">Médico seleccionado (ID: {form.attending_doctor})</span>
+                     <button
+                       onClick={() => {
+                         handleChange("attending_doctor", null);
+                         setDoctorSearchQuery("");
+                         setDoctorSearchResults([]);
+                       }}
+                       className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                     >
+                       <X className="w-4 h-4" />
+                     </button>
+                   </div>
+                 </div>
+               )}
+             </div>
+           </div>
           {/* Clínica */}
           <div className={sectionClass}>
             <div>

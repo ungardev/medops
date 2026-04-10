@@ -10,7 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-
+    "ignoreDeprecations": "6.0",
     // 👇 Base y alias
     "baseUrl": "./src",
     "paths": {
@@ -23,7 +23,6 @@
       "hooks/*": ["hooks/*"],
       "contexts/*": ["contexts/*"]
     },
-
     // 👇 Opciones útiles en Vite
     "allowJs": true,
     "resolveJsonModule": true,
