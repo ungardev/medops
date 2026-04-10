@@ -10,7 +10,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "jsx": "react-jsx",
-    "ignoreDeprecations": "6.0",
     // 👇 Base y alias
     "baseUrl": "./src",
     "paths": {
