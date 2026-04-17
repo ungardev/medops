@@ -458,17 +458,17 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
                  {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
                    <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
                      {icdResults.map((diagnosis: any) => (
-                       <div
-                         key={diagnosis.id}
-                         className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
-                         onClick={() => {
-                           handleChange("admission_diagnosis", diagnosis.id);
-                           setDiagnosisSearchQuery(`${diagnosis.code} - ${diagnosis.description}`);
-                         }}
-                       >
-                         <div className="font-medium">{diagnosis.code}</div>
-                         <div className="text-[10px] text-white/50">{diagnosis.description}</div>
-                       </div>
+<div 
+                      key={diagnosis.id}
+                      className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                      onClick={() => {
+                        handleChange("admission_diagnosis", diagnosis.id);
+                        setDiagnosisSearchQuery(`${diagnosis.icd_code} - ${diagnosis.title}`);
+                      }}
+                    >
+                      <div className="font-medium">{diagnosis.icd_code}</div>
+                      <div className="text-[10px] text-white/50">{diagnosis.title}</div>
+                    </div>
                      ))}
                      {icdResults.length === 0 && (
                        <div className="px-4 py-2 text-white/50 text-[10px]">

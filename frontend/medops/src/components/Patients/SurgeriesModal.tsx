@@ -410,13 +410,13 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
               {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
                 <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
                   {icdResults.slice(0, 5).map((diagnosis: any) => (
-                    <div
+<div 
                       key={diagnosis.id}
                       className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
-                      onClick={() => selectDiagnosis(diagnosis.id, diagnosis.code, diagnosis.description)}
+                      onClick={() => selectDiagnosis(diagnosis.id, diagnosis.icd_code, diagnosis.title)}
                     >
-                      <div className="font-medium">{diagnosis.code}</div>
-                      <div className="text-[10px] text-white/50">{diagnosis.description}</div>
+                      <div className="font-medium">{diagnosis.icd_code}</div>
+                      <div className="text-[10px] text-white/50">{diagnosis.title}</div>
                     </div>
                   ))}
                 </div>

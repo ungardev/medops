@@ -56,11 +56,10 @@ export default function Sidebar({
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
   }, []);
-  const getIconSrc = () => isDarkMode ? "/medopz_logo_blanco_solo.svg" : "/medopz_logo_negro_solo.svg";
-  const getFontSrc = () => isDarkMode ? "/medopz_fuente_blanco.svg" : "/medopz_fuente_negro.svg";
+
   return (
     <aside
-      className={`border-r border-white/10 transition-[width] duration-200 ease-out
+      className={`border-r border-white/10 transition-all duration-300 ease-in-out
         ${effectiveCollapsed ? "w-[72px]" : "w-64"}
         h-screen bg-[#0a0a0b] text-white
         flex-shrink-0 overflow-y-auto overflow-x-hidden flex flex-col z-50
@@ -83,28 +82,28 @@ export default function Sidebar({
             )}
             <Link 
               to="/doctor" 
-              className={`flex items-center hover:opacity-100 ${
+              className={`flex items-center transition-all duration-300 hover:opacity-100 ${
                 mobileOpen ? "flex-col gap-1" : "gap-3"
               } ${location.pathname === "/doctor" ? "opacity-100" : "opacity-70 hover:opacity-100"}`}
             >
                 <img
-                    src={getIconSrc()}
+                    src="/medopz_logo_blanco_solo.svg"
                     alt="Logo"
-                    className={`h-8 w-8 ${
+                    className={`transition-all duration-300 ${
                         mobileOpen 
                         ? "h-24 w-24" 
-                        : ""
+                        : effectiveCollapsed ? "h-9 w-9" : "h-8 w-8"
                     }`}
                 />
                 
                 {!effectiveCollapsed && (
                     <img
-                        src={getFontSrc()}
+                        src="/medopz_fuente_blanco.svg"
                         alt="Medopz"
-                        className={`object-contain h-3.5 w-auto ${
+                        className={`object-contain transition-all duration-300 ${
                             mobileOpen 
                             ? "h-[20px] w-auto -mt-2 -ml-1 opacity-90"
-                            : ""
+                            : "h-3.5 w-auto"
                         }`}
                     />
                 )}
