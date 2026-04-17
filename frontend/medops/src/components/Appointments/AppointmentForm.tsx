@@ -11,7 +11,7 @@ import { useDoctorServicesSearch } from "@/hooks/services/useDoctorServices";
 import { useBCVRate, convertUSDToVES } from "@/hooks/dashboard/useBCVRate";
 import { useAllServiceSchedules } from '@/hooks/services/useAllServiceSchedules';
 import NewPatientModal from "components/Patients/NewPatientModal";
-import InteractiveCalendar from "@/components/Appointments/InteractiveCalendar";
+import SimpleCalendar from "@/components/Common/SimpleCalendar";
 import { 
   UserPlusIcon, 
   XMarkIcon, 
@@ -144,9 +144,12 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
   const availableSlots = useMemo(() => {
     if (!selectedServiceId || !selectedDate) return [];
     
-    const dayOfWeek = selectedDate.getDay();
+    // Convert JS day (0=Sun, 1=Mon...) to Python day (0=Mon, 1=Tue..., 6=Sun)
+    const jsDayOfWeek = selectedDate.getDay();
+    const pythonDayOfWeek = jsDayOfWeek === 0 ? 6 : jsDayOfWeek - 1;
+    
     const serviceSchedulesForService = serviceSchedules.filter(
-      s => s.service === selectedServiceId && s.day_of_week === dayOfWeek
+      s => s.service === selectedServiceId && s.day_of_week === pythonDayOfWeek
     );
     
     const slots: { time: string; label: string }[] = [];
@@ -506,15 +509,36 @@ export default function AppointmentForm({ date, preselectedServiceId, onClose, o
             Fecha y Hora
           </h3>
           
-          <InteractiveCalendar
+          <SimpleCalendar
             selectedDate={selectedDate}
             onDateSelect={setSelectedDate}
             serviceSchedules={serviceSchedules}
-            selectedServiceId={selectedServiceId}
-            availableSlots={availableSlots}
-            onTimeSelect={setSelectedTime}
-            selectedTime={selectedTime}
           />
+          
+          {/* Time slots */}
+          {selectedDate && selectedServiceId && availableSlots.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-[10px] font-medium text-white/50 uppercase tracking-wider mb-2">
+                Horarios disponibles
+              </h4>
+              <div className="grid grid-cols-4 gap-2">
+                {availableSlots.map((slot) => (
+                  <button
+                    key={slot.time}
+                    type="button"
+                    onClick={() => setSelectedTime(slot.time)}
+                    className={`p-2 text-[11px] rounded-lg border transition-all ${
+                      selectedTime === slot.time
+                        ? 'bg-emerald-500/15 border-emerald-500/25 text-emerald-400'
+                        : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
+                    }`}
+                  >
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           
           {errors.appointment_date && (
             <div className="mt-1 text-red-400 text-[10px]">{errors.appointment_date}</div>

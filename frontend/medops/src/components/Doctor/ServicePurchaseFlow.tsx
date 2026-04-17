@@ -196,7 +196,7 @@ const ConfirmDateView: React.FC<{
       {availableSlots.length > 0 && (
         <div className="mb-4">
           <label className="text-white/50 text-sm block mb-2">Horarios Disponibles</label>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
             {availableSlots.map((slot, index) => (
               <button
                 key={index}
