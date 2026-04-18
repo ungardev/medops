@@ -1,11 +1,13 @@
 // src/pages/Surgery/Surgery.tsx
 import { useState } from "react";
 import PageHeader from "@/components/Common/PageHeader";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
 import type { Surgery } from "@/types/patients";
 import SurgeriesModal from "@/components/Patients/SurgeriesModal";
 import PatientSearchModal from "@/components/Common/PatientSearchModal";
+import SurgeryDetailDrawer from "@/components/Patients/SurgeryDetailDrawer";
+import { toast } from "react-hot-toast";
 import { 
   Scissors, 
   Calendar,
@@ -16,6 +18,10 @@ import {
   AlertTriangle,
   PlayCircle,
   Plus,
+  Pause,
+  X,
+  Eye,
+  Pencil,
 } from "lucide-react";
 interface SurgeryStats {
   total: number;
@@ -44,6 +50,10 @@ export default function Surgery() {
   const [patientSearchOpen, setPatientSearchOpen] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState<number>(0);
   const [editingSurgery, setEditingSurgery] = useState<Surgery | undefined>(undefined);
+  
+  // Drawer de detalles
+  const [detailDrawerOpen, setDetailDrawerOpen] = useState(false);
+  const [selectedSurgery, setSelectedSurgery] = useState<Surgery | undefined>(undefined);
   const { data: stats } = useQuery<SurgeryStats>({
     queryKey: ["surgery-stats"],
     queryFn: async () => {
@@ -58,6 +68,63 @@ export default function Surgery() {
       const response = await api.get<any>(`/surgeries/${params}`);
       // Handle DRF pagination: response.data.results || response.data (fallback for non-paginated)
       return (response.data.results || response.data) as Surgery[];
+    },
+  });
+  
+  // Mutaciones para cambiar estado de cirugía
+  const startSurgeryMutation = useMutation({
+    mutationFn: async (surgeryId: number) => {
+      const { data } = await api.patch(`/surgeries/${surgeryId}/`, { status: "in_progress" });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Cirugía iniciada correctamente");
+      refetch();
+    },
+    onError: () => {
+      toast.error("Error al iniciar la cirugía");
+    },
+  });
+  
+  const completeSurgeryMutation = useMutation({
+    mutationFn: async (surgeryId: number) => {
+      const { data } = await api.patch(`/surgeries/${surgeryId}/`, { status: "completed" });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Cirugía completada correctamente");
+      refetch();
+    },
+    onError: () => {
+      toast.error("Error al completar la cirugía");
+    },
+  });
+  
+  const postponeSurgeryMutation = useMutation({
+    mutationFn: async (surgeryId: number) => {
+      const { data } = await api.patch(`/surgeries/${surgeryId}/`, { status: "postponed" });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Cirugía pospuesta correctamente");
+      refetch();
+    },
+    onError: () => {
+      toast.error("Error al posponer la cirugía");
+    },
+  });
+  
+  const cancelSurgeryMutation = useMutation({
+    mutationFn: async (surgeryId: number) => {
+      const { data } = await api.patch(`/surgeries/${surgeryId}/`, { status: "canceled" });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success("Cirugía cancelada correctamente");
+      refetch();
+    },
+    onError: () => {
+      toast.error("Error al cancelar la cirugía");
     },
   });
   const handleSaveSurgery = async (payload: any) => {
@@ -194,18 +261,85 @@ export default function Surgery() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Botones según estado de la cirugía */}
                   {surgery.status === "scheduled" && (
-                    <button className="px-3 py-1.5 text-[10px] font-medium bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/20 transition-all flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5" />
-                      Iniciar
+                    <>
+                      <button 
+                        onClick={() => startSurgeryMutation.mutate(surgery.id)}
+                        disabled={startSurgeryMutation.isPending}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Activity className="w-3.5 h-3.5" />
+                        Iniciar
+                      </button>
+                      <button 
+                        onClick={() => { setSelectedSurgery(surgery); setDetailDrawerOpen(true); }}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Ver
+                      </button>
+                      <button 
+                        onClick={() => postponeSurgeryMutation.mutate(surgery.id)}
+                        disabled={postponeSurgeryMutation.isPending}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        title="Posponer"
+                      >
+                        <Pause className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={() => cancelSurgeryMutation.mutate(surgery.id)}
+                        disabled={cancelSurgeryMutation.isPending}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        title="Cancelar"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+                  {surgery.status === "in_progress" && (
+                    <>
+                      <button 
+                        onClick={() => completeSurgeryMutation.mutate(surgery.id)}
+                        disabled={completeSurgeryMutation.isPending}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        Completar
+                      </button>
+                      <button 
+                        onClick={() => { setSelectedSurgery(surgery); setDetailDrawerOpen(true); }}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Ver
+                      </button>
+                      <button 
+                        onClick={() => { setEditingSurgery(surgery); setModalOpen(true); }}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        Editar
+                      </button>
+                      <button 
+                        onClick={() => cancelSurgeryMutation.mutate(surgery.id)}
+                        disabled={cancelSurgeryMutation.isPending}
+                        className="px-3 py-1.5 text-[10px] font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                        title="Cancelar"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+                  {(surgery.status === "completed" || surgery.status === "canceled" || surgery.status === "postponed") && (
+                    <button 
+                      onClick={() => { setSelectedSurgery(surgery); setDetailDrawerOpen(true); }}
+                      className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Ver Detalle
                     </button>
                   )}
-                  <button
-                    onClick={() => { setEditingSurgery(surgery); setModalOpen(true); }}
-                    className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all"
-                  >
-                    Ver Detalle
-                  </button>
                 </div>
               </div>
             ))}
@@ -226,6 +360,17 @@ export default function Surgery() {
           setSelectedPatientId(patientId);
           setPatientSearchOpen(false);
           setEditingSurgery(undefined);
+          setModalOpen(true);
+        }}
+      />
+      <SurgeryDetailDrawer
+        open={detailDrawerOpen}
+        onClose={() => { setDetailDrawerOpen(false); setSelectedSurgery(undefined); }}
+        surgery={selectedSurgery}
+        onEdit={(surgery) => {
+          setDetailDrawerOpen(false);
+          setEditingSurgery(surgery);
+          setSelectedPatientId((surgery as any).patient || 0);
           setModalOpen(true);
         }}
       />

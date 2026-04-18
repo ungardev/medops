@@ -40,9 +40,12 @@ interface Form {
   procedure_description: string;
   complications: string;
   post_op_instructions: string;
-  surgeon: number | null;
-  anesthesiologist: number | null;
-  surgical_assistants: number | null;
+  surgeon: number | string | null;  // ID (number) o nombre manual (string)
+  surgeon_name: string | null;       // Nombre para mostrar
+  anesthesiologist: number | string | null;
+  anesthesiologist_name: string | null;
+  surgical_assistants: number | string | null;
+  surgical_assistants_name: string | null;
   diagnoses: { id: number; icd_code: string; title: string; type: string; status: string }[];
   surgical_technique: string;
   findings: string;
@@ -111,8 +114,11 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
     complications: "",
     post_op_instructions: "",
     surgeon: null,
+    surgeon_name: null,
     anesthesiologist: null,
+    anesthesiologist_name: null,
     surgical_assistants: null,
+    surgical_assistants_name: null,
     diagnoses: [],
     surgical_technique: "",
     findings: "",
@@ -188,8 +194,11 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         complications: initial.complications || "",
         post_op_instructions: initial.post_op_instructions || "",
         surgeon: (initial as any).surgeon ?? null,
+        surgeon_name: (initial as any).surgeon_name ?? null,
         anesthesiologist: (initial as any).anesthesiologist ?? null,
+        anesthesiologist_name: (initial as any).anesthesiologist_name ?? null,
         surgical_assistants: (initial as any).surgical_assistants ?? null,
+        surgical_assistants_name: (initial as any).surgical_assistants_name ?? null,
         diagnoses: (initial as any).diagnoses || [],
         surgical_technique: (initial as any).surgical_technique || "",
         findings: (initial as any).findings || "",
@@ -214,8 +223,11 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         complications: "",
         post_op_instructions: "",
         surgeon: null,
+        surgeon_name: null,
         anesthesiologist: null,
+        anesthesiologist_name: null,
         surgical_assistants: null,
+        surgical_assistants_name: null,
         diagnoses: [],
         surgical_technique: "",
         findings: "",
@@ -228,18 +240,63 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
     }
 }, [open, initial]);
   
-  const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDoctorSearchQuery(e.target.value);
+  };
+  
+  const selectDoctor = (doctor: any, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    const doctorName = doctor.full_name || `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim();
+    const doctorId = doctor.id;
+    handleChange(role, doctorId);
+    
+    if (role === "surgeon") {
+      setForm(prev => ({ ...prev, surgeon_name: doctorName }));
+      setDoctorSearchQuery(doctorName);
+    } else if (role === "anesthesiologist") {
+      setForm(prev => ({ ...prev, anesthesiologist_name: doctorName }));
+      setAnesthesiologistSearchQuery(doctorName);
+    } else if (role === "surgical_assistants") {
+      setForm(prev => ({ ...prev, surgical_assistants_name: doctorName }));
+      setSurgicalAssistantsSearchQuery(doctorName);
+    }
+    setDoctorSearchResults([]);
+  };
+  
+  const handleManualDoctorInput = (value: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    if (role === "surgeon") {
+      setDoctorSearchQuery(value);
+      handleChange("surgeon", value);
+      setForm(prev => ({ ...prev, surgeon_name: value }));
+    } else if (role === "anesthesiologist") {
+      setAnesthesiologistSearchQuery(value);
+      handleChange("anesthesiologist", value);
+      setForm(prev => ({ ...prev, anesthesiologist_name: value }));
+    } else if (role === "surgical_assistants") {
+      setSurgicalAssistantsSearchQuery(value);
+      handleChange("surgical_assistants", value);
+      setForm(prev => ({ ...prev, surgical_assistants_name: value }));
+    }
+  };
+  
+  const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    handleChange(role, null);
+    if (role === "surgeon") {
+      setDoctorSearchQuery("");
+      setDoctorSearchResults([]);
+      setForm(prev => ({ ...prev, surgeon_name: null }));
+    } else if (role === "anesthesiologist") {
+      setAnesthesiologistSearchQuery("");
+      setAnesthesiologistSearchResults([]);
+      setForm(prev => ({ ...prev, anesthesiologist_name: null }));
+    } else if (role === "surgical_assistants") {
+      setSurgicalAssistantsSearchQuery("");
+      setSurgicalAssistantsSearchResults([]);
+      setForm(prev => ({ ...prev, surgical_assistants_name: null }));
+    }
   };
   
   const handleDiagnosisSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDiagnosisSearchQuery(e.target.value);
-  };
-  
-  const selectDoctor = (doctorId: number, doctorFirstName: string, doctorLastName: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
-    handleChange(role, doctorId);
-    setDoctorSearchQuery(`${doctorFirstName} ${doctorLastName || ''}`.trim());
-    setDoctorSearchResults([]);
   };
   
   const handleAnesthesiologistSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,30 +305,6 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
   
   const handleSurgicalAssistantsSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSurgicalAssistantsSearchQuery(e.target.value);
-  };
-  
-  const selectAnesthesiologist = (doctorId: number, doctorFirstName: string, doctorLastName: string) => {
-    handleChange("anesthesiologist", doctorId);
-    setAnesthesiologistSearchQuery(`${doctorFirstName} ${doctorLastName || ''}`.trim());
-    setAnesthesiologistSearchResults([]);
-  };
-  
-  const selectSurgicalAssistant = (doctorId: number, doctorFirstName: string, doctorLastName: string) => {
-    handleChange("surgical_assistants", doctorId);
-    setSurgicalAssistantsSearchQuery(`${doctorFirstName} ${doctorLastName || ''}`.trim());
-    setSurgicalAssistantsSearchResults([]);
-  };
-  
-  const clearAnesthesiologistSelection = () => {
-    handleChange("anesthesiologist", null);
-    setAnesthesiologistSearchQuery("");
-    setAnesthesiologistSearchResults([]);
-  };
-  
-  const clearSurgicalAssistantSelection = () => {
-    handleChange("surgical_assistants", null);
-    setSurgicalAssistantsSearchQuery("");
-    setSurgicalAssistantsSearchResults([]);
   };
   
   const selectDiagnosisResult = (diagnosis: IcdResult) => {
@@ -313,12 +346,6 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
       ...prev,
       diagnoses: prev.diagnoses.filter(d => d.id !== diagnosisId)
     }));
-  };
-  
-const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
-    handleChange(role, null);
-    setDoctorSearchQuery("");
-    setDoctorSearchResults([]);
   };
   
   const clearDiagnosisSelection = () => {
@@ -434,7 +461,7 @@ const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_a
                   type="text"
                   className={inputClass}
                   value={doctorSearchQuery}
-                  onChange={handleDoctorSearchChange}
+                  onChange={(e) => handleManualDoctorInput(e.target.value, "surgeon")}
                   placeholder="Buscar cirujano..."
                 />
                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
@@ -443,18 +470,27 @@ const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_a
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => selectDoctor(doctor.id, doctor.first_name, doctor.last_name || '', "surgeon")}
+                        onClick={() => selectDoctor(doctor, "surgeon")}
                       >
-                        <div className="font-medium">{doctor.first_name} {doctor.last_name || ''}</div>
-                        <div className="text-[10px] text-white/50">{doctor.specialty || 'Sin especialidad'}</div>
+                        <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
+                        <div className="text-[10px] text-white/50">
+                          {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
+                {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                    <span className="text-white/50 text-[11px]">
+                      No se encontraron doctores. Escriba el nombre manualmente.
+                    </span>
+                  </div>
+                )}
               </div>
-              {form.surgeon !== null && (
+              {form.surgeon_name && (
                 <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                  <span className="text-emerald-300 text-[11px]">Cirujano seleccionado (ID: {form.surgeon})</span>
+                  <span className="text-emerald-300 text-[11px]">{form.surgeon_name}</span>
                   <button
                     onClick={() => clearDoctorSelection("surgeon")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -473,7 +509,7 @@ const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_a
                   type="text"
                   className={inputClass}
                   value={anesthesiologistSearchQuery}
-                  onChange={handleAnesthesiologistSearchChange}
+                  onChange={(e) => handleManualDoctorInput(e.target.value, "anesthesiologist")}
                   placeholder="Buscar anestesia..."
                 />
                 {anesthesiologistSearchQuery.length >= 2 && anesthesiologistSearchResults.length > 0 && (
@@ -482,20 +518,29 @@ const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_a
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => selectAnesthesiologist(doctor.id, doctor.first_name, doctor.last_name || '')}
+                        onClick={() => selectDoctor(doctor, "anesthesiologist")}
                       >
-                        <div className="font-medium">{doctor.first_name} {doctor.last_name || ''}</div>
-                        <div className="text-[10px] text-white/50">{doctor.specialty || 'Sin especialidad'}</div>
+                        <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
+                        <div className="text-[10px] text-white/50">
+                          {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
+                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistSearchResults.length === 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                    <span className="text-white/50 text-[11px]">
+                      No se encontraron doctores. Escriba el nombre manualmente.
+                    </span>
+                  </div>
+                )}
               </div>
-              {form.anesthesiologist !== null && (
+              {form.anesthesiologist_name && (
                 <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <span className="text-red-300 text-[11px]">Anestesiólogo seleccionado</span>
+                  <span className="text-red-300 text-[11px]">{form.anesthesiologist_name}</span>
                   <button
-                    onClick={clearAnesthesiologistSelection}
+                    onClick={() => clearDoctorSelection("anesthesiologist")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
                   >
                     <X className="w-4 h-4" />
@@ -512,7 +557,7 @@ const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_a
                   type="text"
                   className={inputClass}
                   value={surgicalAssistantsSearchQuery}
-                  onChange={handleSurgicalAssistantsSearchChange}
+                  onChange={(e) => handleManualDoctorInput(e.target.value, "surgical_assistants")}
                   placeholder="Buscar asistentes..."
                 />
                 {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsSearchResults.length > 0 && (
@@ -521,20 +566,29 @@ const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_a
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => selectSurgicalAssistant(doctor.id, doctor.first_name, doctor.last_name || '')}
+                        onClick={() => selectDoctor(doctor, "surgical_assistants")}
                       >
-                        <div className="font-medium">{doctor.first_name} {doctor.last_name || ''}</div>
-                        <div className="text-[10px] text-white/50">{doctor.specialty || 'Sin especialidad'}</div>
+                        <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
+                        <div className="text-[10px] text-white/50">
+                          {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
+                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsSearchResults.length === 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                    <span className="text-white/50 text-[11px]">
+                      No se encontraron doctores. Escriba el nombre manualmente.
+                    </span>
+                  </div>
+                )}
               </div>
-              {form.surgical_assistants !== null && (
+              {form.surgical_assistants_name && (
                 <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                  <span className="text-blue-300 text-[11px]">Asistente seleccionado</span>
+                  <span className="text-blue-300 text-[11px]">{form.surgical_assistants_name}</span>
                   <button
-                    onClick={clearSurgicalAssistantSelection}
+                    onClick={() => clearDoctorSelection("surgical_assistants")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
                   >
                     <X className="w-4 h-4" />

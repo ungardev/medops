@@ -42,7 +42,8 @@ interface Form {
   allergies_at_admission: string;
   daily_notes: string;
   // Medical Tracking Fields
-  attending_doctor: number | null;
+  attending_doctor: number | string | null;  // ID (number) o nombre manual (string)
+  attending_doctor_name: string | null;      // Nombre para mostrar
   admission_diagnoses: { id: number; icd_code: string; title: string; type: string; status: string }[];
   vital_signs: {
     weight: number | null;
@@ -109,7 +110,9 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
     clinical_summary: "",
     allergies_at_admission: "",
     daily_notes: "",
+    // Medical Tracking Fields
     attending_doctor: null,
+    attending_doctor_name: null,
     admission_diagnoses: [],
     vital_signs: {
       weight: null,
@@ -149,6 +152,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         daily_notes: initial.daily_notes || "",
         // Medical Tracking Fields
         attending_doctor: initial.attending_doctor ?? null,
+        attending_doctor_name: (initial as any).attending_doctor_name ?? null,
         admission_diagnoses: (initial as any).admission_diagnoses || [],
         vital_signs: {
           weight: initial.vital_signs?.weight ?? null,
@@ -184,11 +188,12 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         expected_discharge_date: "",
         chief_complaint: "",
         clinical_summary: "",
-        allergies_at_admission: "",
+allergies_at_admission: "",
         daily_notes: "",
         // Medical Tracking Fields
         attending_doctor: null,
-admission_diagnoses: [],
+        attending_doctor_name: null,
+        admission_diagnoses: [],
         vital_signs: {
           weight: null,
           height: null,
@@ -258,6 +263,28 @@ admission_diagnoses: [],
 
   const handleChange = (field: keyof Form, value: any) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+  
+  const selectDoctor = (doctor: any) => {
+    const doctorName = doctor.full_name || `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim();
+    const doctorId = doctor.id;
+    handleChange("attending_doctor", doctorId);
+    setForm(prev => ({ ...prev, attending_doctor_name: doctorName }));
+    setDoctorSearchQuery(doctorName);
+    setDoctorSearchResults([]);
+  };
+  
+  const handleManualDoctorInput = (value: string) => {
+    setDoctorSearchQuery(value);
+    handleChange("attending_doctor", value);
+    setForm(prev => ({ ...prev, attending_doctor_name: value }));
+  };
+  
+  const clearDoctorSelection = () => {
+    handleChange("attending_doctor", null);
+    setDoctorSearchQuery("");
+    setDoctorSearchResults([]);
+    setForm(prev => ({ ...prev, attending_doctor_name: null }));
   };
   
   const handleDiagnosisSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -444,74 +471,57 @@ admission_diagnoses: [],
              </div>
            </div>
            
-           {/* Equipo Médico */}
-           <div className={sectionClass}>
-             <div>
-               <label className={labelClass}>Médico Responsable</label>
-               <div className="relative">
-                 <input
-                   type="text"
-                   className={inputClass}
-                   value={doctorSearchQuery}
-                   onChange={(e) => {
-                     setDoctorSearchQuery(e.target.value);
-                     // Update form with null when clearing search
-                     if (e.target.value === '') {
-                       handleChange("attending_doctor", null);
-                     }
-                   }}
-                   placeholder="Buscar médico por nombre o especialidad..."
-                 />
-{doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
+{/* Equipo Médico */}
+            <div className={sectionClass}>
+              <div>
+                <label className={labelClass}>Médico Responsable</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={doctorSearchQuery}
+                    onChange={(e) => handleManualDoctorInput(e.target.value)}
+                    placeholder="Buscar médico por nombre o especialidad..."
+                  />
+                  {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
                     <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
-                      {doctorSearchResults.map((doctor: any) => (
+                      {doctorSearchResults.slice(0, 5).map((doctor: any) => (
                         <div
                           key={doctor.id}
                           className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                         onClick={() => {
-                           handleChange("attending_doctor", doctor.id);
-                           setDoctorSearchQuery(`${doctor.first_name} ${doctor.last_name || ''}`.trim());
-                           setDoctorSearchResults([]);
-                         }}
-                       >
-                         <div className="font-medium">{doctor.first_name} {doctor.last_name || ''}</div>
-                         <div className="text-[10px] text-white/50">{doctor.specialty || 'Sin especialidad'}</div>
-                       </div>
-                     ))}
-                     {doctorSearchResults.length === 0 && (
-                       <div className="px-4 py-2 text-white/50 text-[10px]">
-                         No se encontraron médicos
-                       </div>
-                     )}
-                   </div>
-                 )}
-                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
-                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
-                     <div className="px-4 py-2 text-white/50 text-[10px]">
-                       Buscando médicos...
-                     </div>
-                   </div>
-                 )}
-               </div>
-{form.attending_doctor !== null && (
+                          onClick={() => selectDoctor(doctor)}
+                        >
+                          <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
+                          <div className="text-[10px] text-white/50">
+                            {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                      <span className="text-white/50 text-[11px]">
+                        No se encontraron médicos. Escriba el nombre manualmente.
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {form.attending_doctor_name && (
                   <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <span className="text-emerald-300 text-[11px]">Médico seleccionado (ID: {form.attending_doctor})</span>
-                     <button
-                       onClick={() => {
-                         handleChange("attending_doctor", null);
-                         setDoctorSearchQuery("");
-                         setDoctorSearchResults([]);
-                       }}
-                       className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
-                     >
-                       <X className="w-4 h-4" />
-                     </button>
-                   </div>
-                 </div>
-               )}
-             </div>
-           </div>
+                      <span className="text-emerald-300 text-[11px]">{form.attending_doctor_name}</span>
+                      <button
+                        onClick={clearDoctorSelection}
+                        className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
            
 {/* Diagnósticos de Ingreso */}
             <div className={sectionClass}>
