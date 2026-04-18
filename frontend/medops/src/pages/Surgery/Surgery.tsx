@@ -47,7 +47,7 @@ export default function Surgery() {
   const { data: stats } = useQuery<SurgeryStats>({
     queryKey: ["surgery-stats"],
     queryFn: async () => {
-      const { data } = await api.get("/api/surgeries/stats/");
+      const { data } = await api.get("/surgeries/stats/");
       return data as SurgeryStats;
     },
   });
@@ -55,16 +55,16 @@ export default function Surgery() {
     queryKey: ["surgeries", activeTab],
     queryFn: async () => {
       const params = activeTab !== "all" ? `?status=${activeTab}` : "";
-      const { data } = await api.get(`/api/surgeries/${params}`);
+      const { data } = await api.get(`/surgeries/${params}`);
       return data as Surgery[];
     },
   });
   const handleSaveSurgery = async (payload: any) => {
     try {
       if (editingSurgery) {
-        await api.patch(`/api/surgeries/${editingSurgery.id}/`, payload);
+        await api.patch(`/surgeries/${editingSurgery.id}/`, payload);
       } else {
-        await api.post("/api/surgeries/", payload);
+        await api.post("/surgeries/", payload);
       }
       refetch();
     } catch (err) {
