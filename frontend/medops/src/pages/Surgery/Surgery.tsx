@@ -18,7 +18,6 @@ import {
   AlertTriangle,
   PlayCircle,
   Plus,
-  Pause,
   X,
   Eye,
   Pencil,
@@ -97,20 +96,6 @@ export default function Surgery() {
     },
     onError: () => {
       toast.error("Error al completar la cirugía");
-    },
-  });
-  
-  const postponeSurgeryMutation = useMutation({
-    mutationFn: async (surgeryId: number) => {
-      const { data } = await api.patch(`/surgeries/${surgeryId}/`, { status: "postponed" });
-      return data;
-    },
-    onSuccess: () => {
-      toast.success("Cirugía pospuesta correctamente");
-      refetch();
-    },
-    onError: () => {
-      toast.error("Error al posponer la cirugía");
     },
   });
   
@@ -280,14 +265,6 @@ export default function Surgery() {
                         Ver
                       </button>
                       <button 
-                        onClick={() => postponeSurgeryMutation.mutate(surgery.id)}
-                        disabled={postponeSurgeryMutation.isPending}
-                        className="px-3 py-1.5 text-[10px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg hover:bg-amber-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
-                        title="Posponer"
-                      >
-                        <Pause className="w-3.5 h-3.5" />
-                      </button>
-                      <button 
                         onClick={() => cancelSurgeryMutation.mutate(surgery.id)}
                         disabled={cancelSurgeryMutation.isPending}
                         className="px-3 py-1.5 text-[10px] font-medium bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg hover:bg-red-500/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
@@ -331,7 +308,7 @@ export default function Surgery() {
                       </button>
                     </>
                   )}
-                  {(surgery.status === "completed" || surgery.status === "canceled" || surgery.status === "postponed") && (
+                  {(surgery.status === "completed" || surgery.status === "canceled") && (
                     <button 
                       onClick={() => { setSelectedSurgery(surgery); setDetailDrawerOpen(true); }}
                       className="px-3 py-1.5 text-[10px] font-medium bg-white/5 border border-white/10 text-white/60 rounded-lg hover:bg-white/10 transition-all flex items-center gap-1.5"
