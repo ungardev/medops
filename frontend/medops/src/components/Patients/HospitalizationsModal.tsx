@@ -418,7 +418,7 @@ admission_diagnoses: [],
                    placeholder="Buscar médico por nombre o especialidad..."
                  />
 {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-64 overflow-y-auto z-10 shadow-xl">
                       {doctorSearchResults.map((doctor: any) => (
                         <div
                           key={doctor.id}
@@ -505,8 +505,8 @@ admission_diagnoses: [],
                   placeholder="Buscar diagnóstico por código o descripción (ICD-11)..."
                 />
                 {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
-                    {icdResults.slice(0, 5).map((diagnosis: any) => (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-64 overflow-y-auto z-10 shadow-xl">
+                    {icdResults.slice(0, 10).map((diagnosis: any) => (
                       <div 
                         key={diagnosis.id}
                         className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
