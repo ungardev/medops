@@ -251,14 +251,15 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     
     if (role === "surgeon") {
       setForm(prev => ({ ...prev, surgeon_name: doctorName }));
-      setDoctorSearchQuery(doctorName);
+      // NO actualizar doctorSearchQuery - mantiene el valor anterior y evita re-búsqueda innecesaria
     } else if (role === "anesthesiologist") {
       setForm(prev => ({ ...prev, anesthesiologist_name: doctorName }));
-      setAnesthesiologistSearchQuery(doctorName);
+      // NO actualizar anesthesiologistSearchQuery
     } else if (role === "surgical_assistants") {
       setForm(prev => ({ ...prev, surgical_assistants_name: doctorName }));
-      setSurgicalAssistantsSearchQuery(doctorName);
+      // NO actualizar surgicalAssistantsSearchQuery
     }
+    // Solo limpiar los resultados de búsqueda
     setDoctorSearchResults([]);
   };
   

@@ -270,7 +270,6 @@ allergies_at_admission: "",
     const doctorId = doctor.id;
     handleChange("attending_doctor", doctorId);
     setForm(prev => ({ ...prev, attending_doctor_name: doctorName }));
-    setDoctorSearchQuery(doctorName);
     setDoctorSearchResults([]);
   };
   
