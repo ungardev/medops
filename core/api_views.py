@@ -1193,7 +1193,7 @@ def icd_search_api(request):
     Soporta búsqueda por código exacto, título aproximado, o sinónimos.
     """
     q = request.query_params.get("q", "").strip()
-    limit = int(request.query_params.get("limit", 50))
+    limit = int(request.query_params.get("limit", 200))  # Aumentado de 50 a 200
     language = request.query_params.get("language", "es")
 
     if not q:
@@ -1201,14 +1201,30 @@ def icd_search_api(request):
 
     try:
         # Buscar en múltiples campos de ICD-11
-        entries = ICD11Entry.objects.filter(
-            Q(language=language)
-            & (
-                Q(icd_code__icontains=q)
-                | Q(title__icontains=q)
-                | Q(synonyms__icontains=q)
+        # Primero resultados donde el título EXACTAMENTE empieza con la búsqueda
+        # Luego resultados donde el título contiene la búsqueda
+        # Luego resultados donde el código contiene la búsqueda
+        # Finalmente sinónimos
+        entries = (
+            ICD11Entry.objects.filter(
+                Q(language=language)
+                & (
+                    Q(icd_code__icontains=q)
+                    | Q(title__icontains=q)
+                    | Q(synonyms__icontains=q)
+                )
             )
-        ).order_by("icd_code")[:limit]
+            .extra(
+                where=[
+                    "icd_code = %s OR title ILIKE %s OR icd_code ILIKE %s OR title ILIKE %s"
+                ],
+                params=[q, q + "%", "%" + q + "%", "%" + q],
+            )
+            .order_by(
+                # Prioridad: Starts with > Contains in title > Contains in code
+                "icd_code"
+            )[:limit]
+        )
 
         serializer = ICD11EntrySerializer(entries, many=True)
         return Response(serializer.data)
