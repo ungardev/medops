@@ -235,10 +235,10 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#1f1f1f] sticky top-0 rounded-t-lg shadow-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/5 border border-white/10 rounded-lg">
-              <ScissorsIcon className="h-4 w-4 text-white/60" />
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <ScissorsIcon className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
               <h3 className="text-[12px] font-semibold text-white">
@@ -315,11 +315,11 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                   placeholder="Buscar cirujano..."
                 />
                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
                     {doctorSearchResults.slice(0, 5).map((doctor: any) => (
                       <div
                         key={doctor.id}
-                        className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                        className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                         onClick={() => selectDoctor(doctor.id, doctor.first_name, doctor.last_name || '', "surgeon")}
                       >
                         <div className="font-medium">{doctor.first_name} {doctor.last_name || ''}</div>
@@ -330,8 +330,8 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 )}
               </div>
               {form.surgeon !== null && (
-                <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
-                  <span className="text-white/70 text-[11px]">Cirujano seleccionado (ID: {form.surgeon})</span>
+                <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                  <span className="text-emerald-300 text-[11px]">Cirujano seleccionado (ID: {form.surgeon})</span>
                   <button
                     onClick={() => clearDoctorSelection("surgeon")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -355,8 +355,8 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 />
               </div>
               {form.anesthesiologist !== null && (
-                <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
-                  <span className="text-white/70 text-[11px]">Anestesiólogo seleccionado (ID: {form.anesthesiologist})</span>
+                <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <span className="text-red-300 text-[11px]">Anestesiólogo seleccionado (ID: {form.anesthesiologist})</span>
                   <button
                     onClick={() => clearDoctorSelection("anesthesiologist")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -380,8 +380,8 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 />
               </div>
               {form.surgical_assistants !== null && (
-                <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
-                  <span className="text-white/70 text-[11px]">Asistente seleccionado (ID: {form.surgical_assistants})</span>
+                <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <span className="text-blue-300 text-[11px]">Asistente seleccionado (ID: {form.surgical_assistants})</span>
                   <button
                     onClick={() => clearDoctorSelection("surgical_assistants")}
                     className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
@@ -408,11 +408,11 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 placeholder="Buscar diagnóstico por código o descripción..."
               />
               {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
+                <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
                   {icdResults.slice(0, 5).map((diagnosis: any) => (
 <div 
                       key={diagnosis.id}
-                      className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                      className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                       onClick={() => selectDiagnosis(diagnosis.id, diagnosis.icd_code, diagnosis.title)}
                     >
                       <div className="font-medium">{diagnosis.icd_code}</div>
@@ -422,14 +422,17 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 </div>
               )}
               {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
-                <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg p-2 z-10">
-                  <span className="text-white/50 text-[10px]">Buscando diagnósticos...</span>
+                <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-2 z-10 shadow-xl">
+                  <span className="text-white/50 text-[10px] flex items-center gap-2">
+                    <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                    Buscando diagnósticos...
+                  </span>
                 </div>
               )}
             </div>
             {form.diagnosis !== null && (
-              <div className="mt-2 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
-                <span className="text-white/70 text-[11px]">Diagnóstico seleccionado (ID: {form.diagnosis})</span>
+              <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <span className="text-yellow-300 text-[11px]">Diagnóstico seleccionado (ID: {form.diagnosis})</span>
                 <button
                   onClick={clearDiagnosisSelection}
                   className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"

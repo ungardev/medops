@@ -256,10 +256,10 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         className="bg-[#1a1a1b] border border-white/15 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl rounded-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/15 bg-white/5 sticky top-0 rounded-t-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#1f1f1f] sticky top-0 rounded-t-lg shadow-md">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/5 border border-white/10 rounded-lg">
-              <Bed className="h-4 w-4 text-white/60" />
+            <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+              <Bed className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
               <h3 className="text-[12px] font-semibold text-white">
@@ -391,12 +391,12 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
                    }}
                    placeholder="Buscar médico por nombre o especialidad..."
                  />
-                 {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
-                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
-                     {doctorSearchResults.map((doctor: any) => (
-                       <div
-                         key={doctor.id}
-                         className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+{doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
+                      {doctorSearchResults.map((doctor: any) => (
+                        <div
+                          key={doctor.id}
+                          className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                          onClick={() => {
                            handleChange("attending_doctor", doctor.id);
                            setDoctorSearchQuery(`${doctor.first_name} ${doctor.last_name || ''}`.trim());
@@ -422,11 +422,10 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
                    </div>
                  )}
                </div>
-               {form.attending_doctor !== null && (
-                 <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
-                   <div className="flex items-center gap-2">
-                     {/* We would need to fetch doctor details to display name, but for now show ID */}
-                     <span className="text-white/70">Médico seleccionado (ID: {form.attending_doctor})</span>
+{form.attending_doctor !== null && (
+                  <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-emerald-300 text-[11px]">Médico seleccionado (ID: {form.attending_doctor})</span>
                      <button
                        onClick={() => {
                          handleChange("attending_doctor", null);
@@ -455,12 +454,12 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
                    onChange={handleDiagnosisSearchChange}
                    placeholder="Buscar diagnóstico por código o descripción (ICD-11)..."
                  />
-                 {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
-                     {icdResults.map((diagnosis: any) => (
+{diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
+                      {icdResults.map((diagnosis: any) => (
 <div 
-                      key={diagnosis.id}
-                      className="px-4 py-2 text-white/70 hover:bg-white/5 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0"
+                          key={diagnosis.id}
+                          className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
                       onClick={() => {
                         handleChange("admission_diagnosis", diagnosis.id);
                         setDiagnosisSearchQuery(`${diagnosis.icd_code} - ${diagnosis.title}`);
@@ -477,25 +476,26 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
                      )}
                    </div>
                  )}
-                 {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
-                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
-                     <div className="px-4 py-2 text-white/50 text-[10px]">
-                       Buscando diagnósticos...
-                     </div>
-                   </div>
-                 )}
-                 {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && !icdLoading && (
-                   <div className="absolute left-0 right-0 mt-1 bg-white/10 border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10">
-                     <div className="px-4 py-2 text-white/50 text-[10px]">
-                       No se encontraron diagnósticos
-                     </div>
-                   </div>
-                 )}
+{diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
+                      <div className="px-4 py-3 text-white/50 text-[10px] flex items-center gap-2">
+                        <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                        Buscando diagnósticos...
+                      </div>
+                    </div>
+                  )}
+                  {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && !icdLoading && (
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
+                      <div className="px-4 py-3 text-white/40 text-[10px]">
+                        No se encontraron diagnósticos
+                      </div>
+                    </div>
+                  )}
                </div>
-               {form.admission_diagnosis !== null && (
-                 <div className="mt-3 flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/15 rounded-lg">
-                   <div className="flex items-center gap-2">
-                     <span className="text-white/70">Diagnóstico seleccionado (ID: {form.admission_diagnosis})</span>
+{form.admission_diagnosis !== null && (
+                  <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-yellow-300 text-[11px]">Diagnóstico seleccionado (ID: {form.admission_diagnosis})</span>
                      <button
                        onClick={() => {
                          handleChange("admission_diagnosis", null);
