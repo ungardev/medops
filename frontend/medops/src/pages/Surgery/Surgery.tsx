@@ -1,11 +1,11 @@
 // src/pages/Surgery/Surgery.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import PageHeader from "@/components/Common/PageHeader";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/apiClient";
-import { searchPatients } from "@/api/patients";
-import type { Surgery, PatientRef } from "@/types/patients";
+import type { Surgery } from "@/types/patients";
 import SurgeriesModal from "@/components/Patients/SurgeriesModal";
+import PatientSearchModal from "@/components/Common/PatientSearchModal";
 import { 
   Scissors, 
   Calendar,
@@ -16,7 +16,6 @@ import {
   AlertTriangle,
   PlayCircle,
   Plus,
-  X,
 } from "lucide-react";
 interface SurgeryStats {
   total: number;
@@ -42,27 +41,9 @@ const riskColors: Record<string, string> = {
 export default function Surgery() {
   const [activeTab, setActiveTab] = useState<string>("all");
   const [modalOpen, setModalOpen] = useState(false);
+  const [patientSearchOpen, setPatientSearchOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<number>(0);
   const [editingSurgery, setEditingSurgery] = useState<Surgery | undefined>(undefined);
-  const [patientQuery, setPatientQuery] = useState("");
-  const [patientResults, setPatientResults] = useState<PatientRef[]>([]);
-  const [selectedPatient, setSelectedPatient] = useState<PatientRef | null>(null);
-
-  useEffect(() => {
-    const fetchPatients = async () => {
-      if (!patientQuery || patientQuery.length < 1) {
-        setPatientResults([]);
-        return;
-      }
-      try {
-        const response = await searchPatients(patientQuery);
-        setPatientResults(response.results || []);
-      } catch (e) {
-        setPatientResults([]);
-      }
-    };
-    const timer = setTimeout(fetchPatients, 300);
-    return () => clearTimeout(timer);
-  }, [patientQuery]);
   const { data: stats } = useQuery<SurgeryStats>({
     queryKey: ["surgery-stats"],
     queryFn: async () => {
@@ -116,52 +97,13 @@ export default function Surgery() {
           { label: "Completadas", value: stats?.completed ?? 0, color: "text-emerald-400" },
         ]}
         actions={
-          selectedPatient ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-white/60">Paciente: <span className="text-white font-medium">{selectedPatient.full_name}</span></span>
-              <button
-                onClick={() => setSelectedPatient(null)}
-                className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4 text-white/40" />
-              </button>
-              <button
-                onClick={() => { setEditingSurgery(undefined); setModalOpen(true); }}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
-              >
-                <Plus className="w-4 h-4" />
-                Nueva Cirugía
-              </button>
-            </div>
-          ) : (
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Buscar paciente..."
-                value={patientQuery}
-                onChange={(e) => setPatientQuery(e.target.value)}
-                className="w-48 bg-white/5 border border-white/15 rounded-lg px-3 py-2 text-[11px] text-white/80 focus:outline-none focus:border-emerald-500/50 placeholder:text-white/30"
-              />
-              {patientResults.length > 0 && (
-                <div className="absolute top-full right-0 mt-1 w-64 bg-[#1a1a1b] border border-white/15 rounded-lg shadow-xl max-h-48 overflow-y-auto z-50">
-                  {patientResults.slice(0, 5).map((patient) => (
-                    <div
-                      key={patient.id}
-                      className="px-3 py-2 hover:bg-white/5 cursor-pointer border-b border-white/10 last:border-b-0"
-                      onClick={() => {
-                        setSelectedPatient(patient);
-                        setPatientQuery("");
-                        setPatientResults([]);
-                      }}
-                    >
-                      <div className="text-[12px] text-white/80">{patient.full_name}</div>
-                      <div className="text-[10px] text-white/40">CI: {patient.national_id}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )
+          <button
+            onClick={() => setPatientSearchOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[11px] font-medium rounded-lg transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva Cirugía
+          </button>
         }
       />
       
@@ -271,10 +213,20 @@ export default function Surgery() {
       </div>
       <SurgeriesModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditingSurgery(undefined); }}
+        onClose={() => { setModalOpen(false); setEditingSurgery(undefined); setSelectedPatientId(0); }}
         onSave={handleSaveSurgery}
         initial={editingSurgery}
-        patientId={selectedPatient?.id ?? 0}
+        patientId={selectedPatientId}
+      />
+      <PatientSearchModal
+        open={patientSearchOpen}
+        onClose={() => setPatientSearchOpen(false)}
+        onSelect={(patientId) => {
+          setSelectedPatientId(patientId);
+          setPatientSearchOpen(false);
+          setEditingSurgery(undefined);
+          setModalOpen(true);
+        }}
       />
     </div>
   );
