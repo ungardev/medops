@@ -1190,40 +1190,53 @@ def chargeorder_search_api(request):
 def icd_search_api(request):
     """
     Busca en el catálogo ICD-11 por código, título, o sinónimos.
-    Soporta búsqueda por código exacto, título aproximado, o sinónimos.
+    Ordena por relevancia: coincidencia exacta > startswith > contains en título > código > sinónimos.
     """
+    from django.db.models import Case, When, Value, IntegerField
+    
     q = request.query_params.get("q", "").strip()
-    limit = int(request.query_params.get("limit", 200))  # Aumentado de 50 a 200
+    limit = int(request.query_params.get("limit", 200))
     language = request.query_params.get("language", "es")
 
     if not q:
         return Response([])
 
     try:
-        # Buscar en múltiples campos de ICD-11
-        # Primero resultados donde el título EXACTAMENTE empieza con la búsqueda
-        # Luego resultados donde el título contiene la búsqueda
-        # Luego resultados donde el código contiene la búsqueda
-        # Finalmente sinónimos
-        entries = (
-            ICD11Entry.objects.filter(
-                Q(language=language)
-                & (
-                    Q(icd_code__icontains=q)
-                    | Q(title__icontains=q)
-                    | Q(synonyms__icontains=q)
-                )
+        # Crear expresión de prioridad para ordenar por relevancia
+        priority = Case(
+            # Prioridad 1: Coincidencia exacta en título
+            When(title__iexact=q, then=Value(1)),
+            # Prioridad 2: El código EMPIEZA con la búsqueda (ej: MD12 para "TOS")
+            When(icd_code__istartswith=q, then=Value(2)),
+            # Prioridad 3: El título EMPIEZA con la búsqueda
+            When(title__istartswith=q, then=Value(3)),
+            # Prioridad 4: El título CONTIENE la búsqueda
+            When(title__icontains=q, then=Value(4)),
+            # Prioridad 5: El código CONTIENE la búsqueda
+            When(icd_code__icontains=q, then=Value(5)),
+            # Prioridad 6: Los sinónimos contienen la búsqueda
+            When(synonyms__icontains=q, then=Value(6)),
+            default=Value(7),
+            output_field=IntegerField()
+        )
+        
+        # Aplicar filtros y ordenar por relevancia
+        entries = ICD11Entry.objects.filter(
+            Q(language=language)
+            & (
+                Q(icd_code__icontains=q)
+                | Q(title__icontains=q)
+                | Q(synonyms__icontains=q)
             )
-            .extra(
-                where=[
-                    "icd_code = %s OR title ILIKE %s OR icd_code ILIKE %s OR title ILIKE %s"
-                ],
-                params=[q, q + "%", "%" + q + "%", "%" + q],
-            )
-            .order_by(
-                # Prioridad: Starts with > Contains in title > Contains in code
-                "icd_code"
-            )[:limit]
+        ).annotate(
+            relevance=priority
+        ).order_by('relevance', 'icd_code')[:limit]
+
+        serializer = ICD11EntrySerializer(entries, many=True)
+        return Response(serializer.data)
+    except Exception as e:
+        logger.error(f"Error en icd_search_api: {str(e)}")
+        return Response({"error": str(e)}, status=500)
         )
 
         serializer = ICD11EntrySerializer(entries, many=True)
