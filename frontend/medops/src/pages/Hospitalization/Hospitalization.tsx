@@ -43,7 +43,7 @@ export default function Hospitalization() {
   const { data: stats } = useQuery<HospitalizationStats>({
     queryKey: ["hospitalization-stats"],
     queryFn: async () => {
-      const { data } = await api.get("/api/hospitalizations/stats/");
+      const { data } = await api.get("/hospitalizations/stats/");
       return data as HospitalizationStats;
     },
   });
@@ -51,16 +51,17 @@ export default function Hospitalization() {
     queryKey: ["hospitalizations", activeTab],
     queryFn: async () => {
       const params = activeTab !== "all" ? `?status=${activeTab}` : "";
-      const { data } = await api.get(`/api/hospitalizations/${params}`);
-      return data as Hospitalization[];
+      const response = await api.get<any>(`/hospitalizations/${params}`);
+      // Handle DRF pagination: response.data.results || response.data (fallback for non-paginated)
+      return (response.data.results || response.data) as Hospitalization[];
     },
   });
   const handleSaveHospitalization = async (payload: any) => {
     try {
       if (editingHosp) {
-        await api.patch(`/api/hospitalizations/${editingHosp.id}/`, payload);
+        await api.patch(`/hospitalizations/${editingHosp.id}/`, payload);
       } else {
-        await api.post("/api/hospitalizations/", payload);
+        await api.post("/hospitalizations/", payload);
       }
       refetch();
     } catch (err) {

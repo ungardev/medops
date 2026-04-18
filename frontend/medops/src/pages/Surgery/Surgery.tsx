@@ -55,8 +55,9 @@ export default function Surgery() {
     queryKey: ["surgeries", activeTab],
     queryFn: async () => {
       const params = activeTab !== "all" ? `?status=${activeTab}` : "";
-      const { data } = await api.get(`/surgeries/${params}`);
-      return data as Surgery[];
+      const response = await api.get<any>(`/surgeries/${params}`);
+      // Handle DRF pagination: response.data.results || response.data (fallback for non-paginated)
+      return (response.data.results || response.data) as Surgery[];
     },
   });
   const handleSaveSurgery = async (payload: any) => {
