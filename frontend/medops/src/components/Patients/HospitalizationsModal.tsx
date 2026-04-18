@@ -8,10 +8,13 @@ import {
   X,
   Heart,
   CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { patientClient } from "@/api/patient/client";
 import { useSpecialties } from "@/hooks/consultations/useSpecialties";
 import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
+import type { IcdResult } from "@/hooks/diagnosis/useIcdSearch";
+import DiagnosisBadge from "@/components/Consultation/DiagnosisBadge";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -35,7 +38,7 @@ interface Form {
   daily_notes: string;
   // Medical Tracking Fields
   attending_doctor: number | null;
-  admission_diagnosis: number | null;
+  admission_diagnoses: { id: number; icd_code: string; title: string; type: string; status: string }[];
   vital_signs: {
     weight: number | null;
     height: number | null;
@@ -87,7 +90,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
     allergies_at_admission: "",
     daily_notes: "",
     attending_doctor: null,
-    admission_diagnosis: null,
+    admission_diagnoses: [],
     vital_signs: {
       weight: null,
       height: null,
@@ -126,7 +129,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         daily_notes: initial.daily_notes || "",
         // Medical Tracking Fields
         attending_doctor: initial.attending_doctor ?? null,
-        admission_diagnosis: initial.admission_diagnosis ?? null,
+        admission_diagnoses: (initial as any).admission_diagnoses || [],
         vital_signs: {
           weight: initial.vital_signs?.weight ?? null,
           height: initial.vital_signs?.height ?? null,
@@ -165,7 +168,7 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
         daily_notes: "",
         // Medical Tracking Fields
         attending_doctor: null,
-        admission_diagnosis: null,
+admission_diagnoses: [],
         vital_signs: {
           weight: null,
           height: null,
@@ -234,6 +237,29 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
   const handleDiagnosisSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDiagnosisSearchQuery(e.target.value);
   };
+  
+  const addDiagnosis = (diagnosis: IcdResult) => {
+    const newDiagnosis = {
+      id: diagnosis.id,
+      icd_code: diagnosis.icd_code,
+      title: diagnosis.title || "Sin título",
+      type: "presumptive",
+      status: "under_investigation"
+    };
+    setForm((prev) => ({
+      ...prev,
+      admission_diagnoses: [...prev.admission_diagnoses, newDiagnosis]
+    }));
+    setDiagnosisSearchQuery("");
+  };
+  
+  const removeDiagnosis = (diagnosisId: number) => {
+    setForm((prev) => ({
+      ...prev,
+      admission_diagnoses: prev.admission_diagnoses.filter(d => d.id !== diagnosisId)
+    }));
+  };
+  
   const handleSubmit = () => {
     setIsSaving(true);
     const activeInstitutionId = localStorage.getItem("active_institution_id");
@@ -442,74 +468,72 @@ export default function HospitalizationsModal({ open, onClose, onSave, initial, 
              </div>
            </div>
            
-           {/* Diagnóstico de Ingreso */}
-           <div className={sectionClass}>
-             <div>
-               <label className={labelClass}>Diagnóstico de Ingreso</label>
-               <div className="relative">
-                 <input
-                   type="text"
-                   className={inputClass}
-                   value={diagnosisSearchQuery}
-                   onChange={handleDiagnosisSearchChange}
-                   placeholder="Buscar diagnóstico por código o descripción (ICD-11)..."
-                 />
-{diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
-                      {icdResults.map((diagnosis: any) => (
-<div 
-                          key={diagnosis.id}
-                          className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                      onClick={() => {
-                        handleChange("admission_diagnosis", diagnosis.id);
-                        setDiagnosisSearchQuery(`${diagnosis.icd_code} - ${diagnosis.title}`);
-                      }}
-                    >
-                      <div className="font-medium">{diagnosis.icd_code}</div>
-                      <div className="text-[10px] text-white/50">{diagnosis.title}</div>
-                    </div>
-                     ))}
-                     {icdResults.length === 0 && (
-                       <div className="px-4 py-2 text-white/50 text-[10px]">
-                         No se encontraron diagnósticos
-                       </div>
-                     )}
-                   </div>
-                 )}
-{diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
-                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
-                      <div className="px-4 py-3 text-white/50 text-[10px] flex items-center gap-2">
-                        <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
-                        Buscando diagnósticos...
+{/* Diagnósticos de Ingreso */}
+            <div className={sectionClass}>
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                  <span className="text-[11px] font-medium text-yellow-400 uppercase">Diagnósticos de Ingreso (ICD-11)</span>
+                </div>
+                <span className="text-[9px] text-white/40">{form.admission_diagnoses.length} registrado{form.admission_diagnoses.length !== 1 ? 's' : ''}</span>
+              </div>
+              
+              {/* Lista de diagnósticos */}
+              {form.admission_diagnoses.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {form.admission_diagnoses.map((diag) => (
+                    <DiagnosisBadge
+                      key={diag.id}
+                      id={diag.id}
+                      icd_code={diag.icd_code}
+                      title={diag.title}
+                      type={diag.type as any}
+                      status={diag.status as any}
+                      onDelete={removeDiagnosis}
+                    />
+                  ))}
+                </div>
+              )}
+              
+              {/* Buscador */}
+              <div className="relative">
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={diagnosisSearchQuery}
+                  onChange={handleDiagnosisSearchChange}
+                  placeholder="Buscar diagnóstico por código o descripción (ICD-11)..."
+                />
+                {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
+                    {icdResults.slice(0, 5).map((diagnosis: any) => (
+                      <div 
+                        key={diagnosis.id}
+                        className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
+                        onClick={() => addDiagnosis(diagnosis)}
+                      >
+                        <span className="text-[11px] font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
+                        <span className="text-[11px] text-white/80 leading-tight">{diagnosis.title}</span>
                       </div>
-                    </div>
-                  )}
-                  {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && !icdLoading && (
-                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
-                      <div className="px-4 py-3 text-white/40 text-[10px]">
-                        No se encontraron diagnósticos
-                      </div>
-                    </div>
-                  )}
-               </div>
-{form.admission_diagnosis !== null && (
-                  <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <span className="text-yellow-300 text-[11px]">Diagnóstico seleccionado (ID: {form.admission_diagnosis})</span>
-                     <button
-                       onClick={() => {
-                         handleChange("admission_diagnosis", null);
-                         setDiagnosisSearchQuery("");
-                       }}
-                       className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
-                     >
-                       <X className="w-4 h-4" />
-                     </button>
-                   </div>
-                 </div>
-               )}
-             </div>
-           </div>
+                    ))}
+                  </div>
+                )}
+                {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-2 z-10 shadow-xl">
+                    <span className="text-white/50 text-[10px] flex items-center gap-2">
+                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                      Buscando diagnósticos...
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {form.admission_diagnoses.length === 0 && (
+                <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-lg">
+                  <span className="text-[10px] text-white/40">No hay diagnósticos de ingreso registrados</span>
+                </div>
+              )}
+            </div>
            {/* Clínica */}
            <div className={sectionClass}>
             <div>

@@ -9,9 +9,13 @@ import {
   ShieldCheckIcon,
   AlertTriangle,
   Heart,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { patientClient } from "@/api/patient/client";
 import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
+import type { IcdResult } from "@/hooks/diagnosis/useIcdSearch";
+import DiagnosisBadge from "@/components/Consultation/DiagnosisBadge";
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -35,7 +39,7 @@ interface Form {
   surgeon: number | null;
   anesthesiologist: number | null;
   surgical_assistants: number | null;
-  diagnosis: number | null;
+  diagnoses: { id: number; icd_code: string; title: string; type: string; status: string }[];
   surgical_technique: string;
   findings: string;
   estimated_blood_loss: number | null;
@@ -90,7 +94,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
     surgeon: null,
     anesthesiologist: null,
     surgical_assistants: null,
-    diagnosis: null,
+    diagnoses: [],
     surgical_technique: "",
     findings: "",
     estimated_blood_loss: null,
@@ -133,7 +137,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         surgeon: (initial as any).surgeon ?? null,
         anesthesiologist: (initial as any).anesthesiologist ?? null,
         surgical_assistants: (initial as any).surgical_assistants ?? null,
-        diagnosis: (initial as any).diagnosis ?? null,
+        diagnoses: (initial as any).diagnoses || [],
         surgical_technique: (initial as any).surgical_technique || "",
         findings: (initial as any).findings || "",
         estimated_blood_loss: (initial as any).estimated_blood_loss ?? null,
@@ -159,7 +163,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         surgeon: null,
         anesthesiologist: null,
         surgical_assistants: null,
-        diagnosis: null,
+        diagnoses: [],
         surgical_technique: "",
         findings: "",
         estimated_blood_loss: null,
@@ -169,19 +173,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
         diagnosisSearchQuery: ""
       });
     }
-  }, [open, initial]);
-  
-  const handleChange = (field: keyof Form, value: any) => {
-    if (field === "estimated_blood_loss") {
-      setForm((prev) => ({ ...prev, [field]: value === "" ? null : parseFloat(value) }));
-    } else if (field === "doctorSearchQuery" || field === "diagnosisSearchQuery") {
-      setForm((prev) => ({ ...prev, [field]: value }));
-    } else if (field === "surgeon" || field === "anesthesiologist" || field === "surgical_assistants" || field === "diagnosis") {
-      setForm((prev) => ({ ...prev, [field]: value }));
-    } else {
-      setForm((prev) => ({ ...prev, [field]: value }));
-    }
-  };
+}, [open, initial]);
   
   const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDoctorSearchQuery(e.target.value);
@@ -197,20 +189,47 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
     setDoctorSearchResults([]);
   };
   
-  const selectDiagnosis = (diagnosisId: number, diagnosisCode: string, diagnosisDescription: string) => {
-    handleChange("diagnosis", diagnosisId);
-    setDiagnosisSearchQuery(`${diagnosisCode} - ${diagnosisDescription}`);
+  const selectDiagnosis = (diagnosis: IcdResult) => {
+    const newDiagnosis = {
+      id: diagnosis.id,
+      icd_code: diagnosis.icd_code,
+      title: diagnosis.title || "Sin título",
+      type: "presumptive",
+      status: "under_investigation"
+    };
+    setForm((prev) => ({
+      ...prev,
+      diagnoses: [...prev.diagnoses, newDiagnosis]
+    }));
+    setDiagnosisSearchQuery("");
   };
   
-  const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+  const removeDiagnosis = (diagnosisId: number) => {
+    setForm((prev) => ({
+      ...prev,
+      diagnoses: prev.diagnoses.filter(d => d.id !== diagnosisId)
+    }));
+  };
+  
+const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
     handleChange(role, null);
     setDoctorSearchQuery("");
     setDoctorSearchResults([]);
   };
   
   const clearDiagnosisSelection = () => {
-    handleChange("diagnosis", null);
-    setDiagnosisSearchQuery("");
+    setForm((prev) => ({
+      ...prev,
+      diagnoses: []
+    }));
+  };
+
+  const handleChange = (field: keyof Form, value: any) => {
+    if (field === "estimated_blood_loss") {
+      setForm((prev) => ({ ...prev, [field]: value === "" ? null : parseFloat(value) }));
+    } else {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    }
   };
   
   const handleSubmit = () => {
@@ -393,12 +412,34 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
             </div>
           </div>
           
-          {/* Diagnóstico */}
+{/* Diagnósticos */}
           <div className={sectionClass}>
-            <div className="flex items-center gap-2 mb-4">
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
-              <span className="text-[11px] font-medium text-yellow-400 uppercase">Diagnóstico (ICD-11)</span>
+            <div className="flex items-center justify-between gap-2 mb-4">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                <span className="text-[11px] font-medium text-yellow-400 uppercase">Diagnósticos (ICD-11)</span>
+              </div>
+              <span className="text-[9px] text-white/40">{form.diagnoses.length} registrado{form.diagnoses.length !== 1 ? 's' : ''}</span>
             </div>
+            
+            {/* Lista de diagnósticos */}
+            {form.diagnoses.length > 0 && (
+              <div className="space-y-2 mb-4">
+                {form.diagnoses.map((diag) => (
+                  <DiagnosisBadge
+                    key={diag.id}
+                    id={diag.id}
+                    icd_code={diag.icd_code}
+                    title={diag.title}
+                    type={diag.type as any}
+                    status={diag.status as any}
+                    onDelete={removeDiagnosis}
+                  />
+                ))}
+              </div>
+            )}
+            
+            {/* Buscador de diagnósticos */}
             <div className="relative">
               <input
                 type="text"
@@ -410,13 +451,13 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
               {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
                 <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-48 overflow-y-auto z-10 shadow-xl">
                   {icdResults.slice(0, 5).map((diagnosis: any) => (
-<div 
+                    <div 
                       key={diagnosis.id}
-                      className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                      onClick={() => selectDiagnosis(diagnosis.id, diagnosis.icd_code, diagnosis.title)}
+                      className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
+                      onClick={() => selectDiagnosis(diagnosis)}
                     >
-                      <div className="font-medium">{diagnosis.icd_code}</div>
-                      <div className="text-[10px] text-white/50">{diagnosis.title}</div>
+                      <span className="text-[11px] font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
+                      <span className="text-[11px] text-white/80 leading-tight">{diagnosis.title}</span>
                     </div>
                   ))}
                 </div>
@@ -430,15 +471,10 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
                 </div>
               )}
             </div>
-            {form.diagnosis !== null && (
-              <div className="mt-2 flex items-center gap-2 px-4 py-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                <span className="text-yellow-300 text-[11px]">Diagnóstico seleccionado (ID: {form.diagnosis})</span>
-                <button
-                  onClick={clearDiagnosisSelection}
-                  className="text-white/40 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+            
+{form.diagnoses.length === 0 && (
+              <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-lg">
+                <span className="text-[10px] text-white/40">No hay diagnósticos registrados</span>
               </div>
             )}
           </div>

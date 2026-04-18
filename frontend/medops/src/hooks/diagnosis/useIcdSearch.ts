@@ -4,6 +4,7 @@ import { apiFetch } from "../../api/client";
 
 // ✅ Interfaz exportada para tipar resultados ICD-11
 export interface IcdResult {
+  id: number;
   icd_code: string;
   title: string;
   foundation_id?: string;
