@@ -7151,6 +7151,7 @@ def patient_services_recommended(request):
 # PATIENT PORTAL - BÚSQUEDA
 # ============================================
 @api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def patient_search_doctors(request):
     """
     GET /api/patient-search/doctors/

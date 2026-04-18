@@ -15,7 +15,7 @@ import {
   ClipboardListIcon,
   CheckCircleIcon,
 } from "lucide-react";
-import { patientClient } from "@/api/patient/client";
+import { useDoctorSearch } from "@/hooks/core/useDoctorSearch";
 import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
 import type { IcdResult } from "@/hooks/diagnosis/useIcdSearch";
 import type { DiagnosisType, DiagnosisStatus } from "@/types/consultation";
@@ -131,14 +131,14 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
   const [isSaving, setIsSaving] = useState(false);
   const [diagnosisSearchQuery, setDiagnosisSearchQuery] = useState("");
   const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(diagnosisSearchQuery);
-  const [doctorSearchResults, setDoctorSearchResults] = useState<any[]>([]);
-  const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
   
-  // Separate states for each doctor role
+  const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
   const [anesthesiologistSearchQuery, setAnesthesiologistSearchQuery] = useState("");
-  const [anesthesiologistSearchResults, setAnesthesiologistSearchResults] = useState<any[]>([]);
   const [surgicalAssistantsSearchQuery, setSurgicalAssistantsSearchQuery] = useState("");
-  const [surgicalAssistantsSearchResults, setSurgicalAssistantsSearchResults] = useState<any[]>([]);
+  
+  const { results: surgeonResults, loading: surgeonLoading } = useDoctorSearch(doctorSearchQuery);
+  const { results: anesthesiologistResults, loading: anesthesiologistLoading } = useDoctorSearch(anesthesiologistSearchQuery);
+  const { results: surgicalAssistantsResults, loading: surgicalAssistantsLoading } = useDoctorSearch(surgicalAssistantsSearchQuery);
   
   // Diagnosis type/status selection
   const [selectedDiagnosisType, setSelectedDiagnosisType] = useState<DiagnosisType>("presumptive");
@@ -146,37 +146,7 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
   const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
   const [selectedDiagnosisResult, setSelectedDiagnosisResult] = useState<IcdResult | null>(null);
 
-  useEffect(() => {
-    if (doctorSearchQuery.trim().length >= 2) {
-      patientClient.searchDoctors(doctorSearchQuery).then(response => {
-        setDoctorSearchResults(response.data.results || []);
-      });
-    } else if (doctorSearchQuery.trim().length === 0) {
-      setDoctorSearchResults([]);
-    }
-  }, [doctorSearchQuery]);
   
-  // Anesthesiologist search
-  useEffect(() => {
-    if (anesthesiologistSearchQuery.trim().length >= 2) {
-      patientClient.searchDoctors(anesthesiologistSearchQuery).then(response => {
-        setAnesthesiologistSearchResults(response.data.results || []);
-      });
-    } else if (anesthesiologistSearchQuery.trim().length === 0) {
-      setAnesthesiologistSearchResults([]);
-    }
-  }, [anesthesiologistSearchQuery]);
-  
-  // Surgical assistants search
-  useEffect(() => {
-    if (surgicalAssistantsSearchQuery.trim().length >= 2) {
-      patientClient.searchDoctors(surgicalAssistantsSearchQuery).then(response => {
-        setSurgicalAssistantsSearchResults(response.data.results || []);
-      });
-    } else if (surgicalAssistantsSearchQuery.trim().length === 0) {
-      setSurgicalAssistantsSearchResults([]);
-    }
-  }, [surgicalAssistantsSearchQuery]);
   
   useEffect(() => {
     if (open && initial) {
@@ -251,29 +221,31 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     
     if (role === "surgeon") {
       setForm(prev => ({ ...prev, surgeon_name: doctorName }));
-      // NO actualizar doctorSearchQuery - mantiene el valor anterior y evita re-búsqueda innecesaria
     } else if (role === "anesthesiologist") {
       setForm(prev => ({ ...prev, anesthesiologist_name: doctorName }));
-      // NO actualizar anesthesiologistSearchQuery
     } else if (role === "surgical_assistants") {
       setForm(prev => ({ ...prev, surgical_assistants_name: doctorName }));
-      // NO actualizar surgicalAssistantsSearchQuery
     }
-    // Solo limpiar los resultados de búsqueda
-    setDoctorSearchResults([]);
   };
   
   const handleManualDoctorInput = (value: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
     if (role === "surgeon") {
       setDoctorSearchQuery(value);
+    } else if (role === "anesthesiologist") {
+      setAnesthesiologistSearchQuery(value);
+    } else if (role === "surgical_assistants") {
+      setSurgicalAssistantsSearchQuery(value);
+    }
+  };
+
+  const handleManualDoctorConfirm = (value: string, role: "surgeon" | "anesthesiologist" | "surgical_assistants") => {
+    if (role === "surgeon") {
       handleChange("surgeon", value);
       setForm(prev => ({ ...prev, surgeon_name: value }));
     } else if (role === "anesthesiologist") {
-      setAnesthesiologistSearchQuery(value);
       handleChange("anesthesiologist", value);
       setForm(prev => ({ ...prev, anesthesiologist_name: value }));
     } else if (role === "surgical_assistants") {
-      setSurgicalAssistantsSearchQuery(value);
       handleChange("surgical_assistants", value);
       setForm(prev => ({ ...prev, surgical_assistants_name: value }));
     }
@@ -283,15 +255,12 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleChange(role, null);
     if (role === "surgeon") {
       setDoctorSearchQuery("");
-      setDoctorSearchResults([]);
       setForm(prev => ({ ...prev, surgeon_name: null }));
     } else if (role === "anesthesiologist") {
       setAnesthesiologistSearchQuery("");
-      setAnesthesiologistSearchResults([]);
       setForm(prev => ({ ...prev, anesthesiologist_name: null }));
     } else if (role === "surgical_assistants") {
       setSurgicalAssistantsSearchQuery("");
-      setSurgicalAssistantsSearchResults([]);
       setForm(prev => ({ ...prev, surgical_assistants_name: null }));
     }
   };
@@ -465,9 +434,9 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   onChange={(e) => handleManualDoctorInput(e.target.value, "surgeon")}
                   placeholder="Buscar cirujano..."
                 />
-                {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
+                {doctorSearchQuery.length >= 2 && surgeonResults.length > 0 && (
                   <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
-                    {doctorSearchResults.slice(0, 5).map((doctor: any) => (
+                    {surgeonResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
@@ -475,16 +444,31 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                         <div className="text-[10px] text-white/50">
-                          {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                          {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                {doctorSearchQuery.length >= 2 && surgeonResults.length === 0 && !surgeonLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
                     <span className="text-white/50 text-[11px]">
-                      No se encontraron doctores. Escriba el nombre manualmente.
+                      No se encontraron doctores.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualDoctorConfirm(doctorSearchQuery, "surgeon")}
+                      className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
+                    >
+                      + Usar "{doctorSearchQuery}" como nombre manual
+                    </button>
+                  </div>
+                )}
+                {doctorSearchQuery.length >= 2 && surgeonLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                    <span className="text-white/50 text-[10px] flex items-center gap-2">
+                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                      Buscando...
                     </span>
                   </div>
                 )}
@@ -513,9 +497,9 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   onChange={(e) => handleManualDoctorInput(e.target.value, "anesthesiologist")}
                   placeholder="Buscar anestesia..."
                 />
-                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistSearchResults.length > 0 && (
+                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistResults.length > 0 && (
                   <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
-                    {anesthesiologistSearchResults.slice(0, 5).map((doctor: any) => (
+                    {anesthesiologistResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
@@ -523,16 +507,31 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                         <div className="text-[10px] text-white/50">
-                          {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                          {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistSearchResults.length === 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistResults.length === 0 && !anesthesiologistLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
                     <span className="text-white/50 text-[11px]">
-                      No se encontraron doctores. Escriba el nombre manualmente.
+                      No se encontraron doctores.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualDoctorConfirm(anesthesiologistSearchQuery, "anesthesiologist")}
+                      className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
+                    >
+                      + Usar "{anesthesiologistSearchQuery}" como nombre manual
+                    </button>
+                  </div>
+                )}
+                {anesthesiologistSearchQuery.length >= 2 && anesthesiologistLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                    <span className="text-white/50 text-[10px] flex items-center gap-2">
+                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                      Buscando...
                     </span>
                   </div>
                 )}
@@ -561,9 +560,9 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   onChange={(e) => handleManualDoctorInput(e.target.value, "surgical_assistants")}
                   placeholder="Buscar asistentes..."
                 />
-                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsSearchResults.length > 0 && (
+                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsResults.length > 0 && (
                   <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
-                    {surgicalAssistantsSearchResults.slice(0, 5).map((doctor: any) => (
+                    {surgicalAssistantsResults.slice(0, 5).map((doctor) => (
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
@@ -571,16 +570,31 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                         <div className="text-[10px] text-white/50">
-                          {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                          {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsSearchResults.length === 0 && (
-                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsResults.length === 0 && !surgicalAssistantsLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
                     <span className="text-white/50 text-[11px]">
-                      No se encontraron doctores. Escriba el nombre manualmente.
+                      No se encontraron doctores.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleManualDoctorConfirm(surgicalAssistantsSearchQuery, "surgical_assistants")}
+                      className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
+                    >
+                      + Usar "{surgicalAssistantsSearchQuery}" como nombre manual
+                    </button>
+                  </div>
+                )}
+                {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                    <span className="text-white/50 text-[10px] flex items-center gap-2">
+                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                      Buscando...
                     </span>
                   </div>
                 )}

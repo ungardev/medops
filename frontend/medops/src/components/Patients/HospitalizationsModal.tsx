@@ -14,7 +14,7 @@ import {
   CheckCircleIcon,
   Plus,
 } from "lucide-react";
-import { patientClient } from "@/api/patient/client";
+import { useDoctorSearch } from "@/hooks/core/useDoctorSearch";
 import { useSpecialties } from "@/hooks/consultations/useSpecialties";
 import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
 import type { IcdResult } from "@/hooks/diagnosis/useIcdSearch";
@@ -222,25 +222,14 @@ allergies_at_admission: "",
   const { data: specialties = [] } = useSpecialties("");
   const [diagnosisSearchQuery, setDiagnosisSearchQuery] = useState("");
   const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(diagnosisSearchQuery);
-  const [doctorSearchResults, setDoctorSearchResults] = useState<any[]>([]);
   const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
+  const { results: doctorSearchResults, loading: doctorSearchLoading } = useDoctorSearch(doctorSearchQuery);
   
   // Diagnosis type/status selection
   const [selectedDiagnosisType, setSelectedDiagnosisType] = useState<DiagnosisType>("presumptive");
   const [selectedDiagnosisStatus, setSelectedDiagnosisStatus] = useState<DiagnosisStatus>("under_investigation");
   const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
   const [selectedDiagnosisResult, setSelectedDiagnosisResult] = useState<IcdResult | null>(null);
-  
-  // Search doctors
-  useEffect(() => {
-    if (doctorSearchQuery.trim().length >= 2) {
-      patientClient.searchDoctors(doctorSearchQuery).then(response => {
-        setDoctorSearchResults(response.data.results || []);
-      });
-    } else if (doctorSearchQuery.trim().length === 0) {
-      setDoctorSearchResults([]);
-    }
-  }, [doctorSearchQuery]);
   
   // ICD-11 search effect (handled by hook automatically)
   
@@ -265,24 +254,27 @@ allergies_at_admission: "",
     setForm((prev) => ({ ...prev, [field]: value }));
   };
   
-  const selectDoctor = (doctor: any) => {
+const selectDoctor = (doctor: any) => {
     const doctorName = doctor.full_name || `${doctor.first_name || ''} ${doctor.last_name || ''}`.trim();
     const doctorId = doctor.id;
     handleChange("attending_doctor", doctorId);
     setForm(prev => ({ ...prev, attending_doctor_name: doctorName }));
-    setDoctorSearchResults([]);
+    setDoctorSearchQuery("");
   };
-  
+
   const handleManualDoctorInput = (value: string) => {
     setDoctorSearchQuery(value);
+  };
+
+  const handleManualDoctorConfirm = (value: string) => {
     handleChange("attending_doctor", value);
     setForm(prev => ({ ...prev, attending_doctor_name: value }));
+    setDoctorSearchQuery("");
   };
-  
+
   const clearDoctorSelection = () => {
     handleChange("attending_doctor", null);
     setDoctorSearchQuery("");
-    setDoctorSearchResults([]);
     setForm(prev => ({ ...prev, attending_doctor_name: null }));
   };
   
@@ -492,16 +484,31 @@ allergies_at_admission: "",
                         >
                           <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                           <div className="text-[10px] text-white/50">
-                            {doctor.specialties?.[0]?.name || doctor.specialty || 'Sin especialidad'}
+                            {doctor.specialties?.[0]?.name || 'Sin especialidad'}
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
-                  {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && (
-                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                  {doctorSearchQuery.length >= 2 && doctorSearchResults.length === 0 && !doctorSearchLoading && (
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl flex flex-col gap-2">
                       <span className="text-white/50 text-[11px]">
-                        No se encontraron médicos. Escriba el nombre manualmente.
+                        No se encontraron médicos.
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleManualDoctorConfirm(doctorSearchQuery)}
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
+                      >
+                        + Usar "{doctorSearchQuery}" como nombre manual
+                      </button>
+                    </div>
+                  )}
+                  {doctorSearchQuery.length >= 2 && doctorSearchLoading && (
+                    <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-3 z-10 shadow-xl">
+                      <span className="text-white/50 text-[10px] flex items-center gap-2">
+                        <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                        Buscando...
                       </span>
                     </div>
                   )}
