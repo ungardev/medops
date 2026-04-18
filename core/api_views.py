@@ -1193,7 +1193,7 @@ def icd_search_api(request):
     Ordena por relevancia: coincidencia exacta > startswith > contains en título > código > sinónimos.
     """
     from django.db.models import Case, When, Value, IntegerField
-    
+
     q = request.query_params.get("q", "").strip()
     limit = int(request.query_params.get("limit", 200))
     language = request.query_params.get("language", "es")
@@ -1217,26 +1217,21 @@ def icd_search_api(request):
             # Prioridad 6: Los sinónimos contienen la búsqueda
             When(synonyms__icontains=q, then=Value(6)),
             default=Value(7),
-            output_field=IntegerField()
+            output_field=IntegerField(),
         )
-        
-        # Aplicar filtros y ordenar por relevancia
-        entries = ICD11Entry.objects.filter(
-            Q(language=language)
-            & (
-                Q(icd_code__icontains=q)
-                | Q(title__icontains=q)
-                | Q(synonyms__icontains=q)
-            )
-        ).annotate(
-            relevance=priority
-        ).order_by('relevance', 'icd_code')[:limit]
 
-        serializer = ICD11EntrySerializer(entries, many=True)
-        return Response(serializer.data)
-    except Exception as e:
-        logger.error(f"Error en icd_search_api: {str(e)}")
-        return Response({"error": str(e)}, status=500)
+        # Aplicar filtros y ordenar por relevancia
+        entries = (
+            ICD11Entry.objects.filter(
+                Q(language=language)
+                & (
+                    Q(icd_code__icontains=q)
+                    | Q(title__icontains=q)
+                    | Q(synonyms__icontains=q)
+                )
+            )
+            .annotate(relevance=priority)
+            .order_by("relevance", "icd_code")[:limit]
         )
 
         serializer = ICD11EntrySerializer(entries, many=True)
