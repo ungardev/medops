@@ -11,10 +11,14 @@ import {
   Heart,
   Plus,
   Trash2,
+  HashIcon,
+  ClipboardListIcon,
+  CheckCircleIcon,
 } from "lucide-react";
 import { patientClient } from "@/api/patient/client";
 import { useIcdSearch } from "@/hooks/diagnosis/useIcdSearch";
 import type { IcdResult } from "@/hooks/diagnosis/useIcdSearch";
+import type { DiagnosisType, DiagnosisStatus } from "@/types/consultation";
 import DiagnosisBadge from "@/components/Consultation/DiagnosisBadge";
 interface Props {
   open: boolean;
@@ -77,6 +81,21 @@ const ASA_CLASSIFICATIONS = [
   { value: "IV", label: "ASA IV - Amenaza la vida" },
   { value: "V", label: "ASA V - Paciente moribundo" },
 ];
+
+const TYPE_OPTIONS: { value: DiagnosisType; label: string }[] = [
+  { value: "presumptive", label: "Presuntivo (Sospecha)" },
+  { value: "definitive", label: "Definitivo (Confirmado)" },
+  { value: "differential", label: "Diferencial (En estudio)" },
+  { value: "provisional", label: "Provisional" },
+];
+
+const STATUS_OPTIONS: { value: DiagnosisStatus; label: string }[] = [
+  { value: "under_investigation", label: "En Investigación" },
+  { value: "awaiting_results", label: "Esperando Resultados" },
+  { value: "confirmed", label: "Confirmado" },
+  { value: "ruled_out", label: "Descartado" },
+  { value: "chronic", label: "Crónico / Pre-existente" },
+];
 export default function SurgeriesModal({ open, onClose, onSave, initial, patientId }: Props) {
   const [form, setForm] = useState<Form>({
     id: undefined,
@@ -108,6 +127,12 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
   const { data: icdResults = [], isLoading: icdLoading } = useIcdSearch(diagnosisSearchQuery);
   const [doctorSearchResults, setDoctorSearchResults] = useState<any[]>([]);
   const [doctorSearchQuery, setDoctorSearchQuery] = useState("");
+  
+  // Diagnosis type/status selection
+  const [selectedDiagnosisType, setSelectedDiagnosisType] = useState<DiagnosisType>("presumptive");
+  const [selectedDiagnosisStatus, setSelectedDiagnosisStatus] = useState<DiagnosisStatus>("under_investigation");
+  const [showDiagnosisForm, setShowDiagnosisForm] = useState(false);
+  const [selectedDiagnosisResult, setSelectedDiagnosisResult] = useState<IcdResult | null>(null);
   
   useEffect(() => {
     if (doctorSearchQuery.trim().length >= 2) {
@@ -189,19 +214,38 @@ export default function SurgeriesModal({ open, onClose, onSave, initial, patient
     setDoctorSearchResults([]);
   };
   
-  const selectDiagnosis = (diagnosis: IcdResult) => {
+  const selectDiagnosisResult = (diagnosis: IcdResult) => {
+    setSelectedDiagnosisResult(diagnosis);
+    setSelectedDiagnosisType("presumptive");
+    setSelectedDiagnosisStatus("under_investigation");
+    setDiagnosisSearchQuery("");
+    setShowDiagnosisForm(true);
+  };
+  
+  const confirmDiagnosis = () => {
+    if (!selectedDiagnosisResult) return;
     const newDiagnosis = {
-      id: diagnosis.id,
-      icd_code: diagnosis.icd_code,
-      title: diagnosis.title || "Sin título",
-      type: "presumptive",
-      status: "under_investigation"
+      id: selectedDiagnosisResult.id,
+      icd_code: selectedDiagnosisResult.icd_code,
+      title: selectedDiagnosisResult.title || "Sin título",
+      type: selectedDiagnosisType,
+      status: selectedDiagnosisStatus
     };
     setForm((prev) => ({
       ...prev,
       diagnoses: [...prev.diagnoses, newDiagnosis]
     }));
-    setDiagnosisSearchQuery("");
+    setShowDiagnosisForm(false);
+    setSelectedDiagnosisResult(null);
+    setSelectedDiagnosisType("presumptive");
+    setSelectedDiagnosisStatus("under_investigation");
+  };
+  
+  const cancelDiagnosisSelection = () => {
+    setShowDiagnosisForm(false);
+    setSelectedDiagnosisResult(null);
+    setSelectedDiagnosisType("presumptive");
+    setSelectedDiagnosisStatus("under_investigation");
   };
   
   const removeDiagnosis = (diagnosisId: number) => {
@@ -439,40 +483,113 @@ const clearDoctorSelection = (role: "surgeon" | "anesthesiologist" | "surgical_a
               </div>
             )}
             
-            {/* Buscador de diagnósticos */}
-            <div className="relative">
-              <input
-                type="text"
-                className={inputClass}
-                value={diagnosisSearchQuery}
-                onChange={handleDiagnosisSearchChange}
-                placeholder="Buscar diagnóstico por código o descripción..."
-              />
-              {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
-                  {icdResults.map((diagnosis: any) => (
-                    <div 
-                      key={diagnosis.id}
-                      className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
-                      onClick={() => selectDiagnosis(diagnosis)}
-                    >
-                      <span className="text-[11px] font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
-                      <span className="text-[11px] text-white/80 leading-tight">{diagnosis.title}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
-                <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-2 z-10 shadow-xl">
-                  <span className="text-white/50 text-[10px] flex items-center gap-2">
-                    <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
-                    Buscando diagnósticos...
+            {/* Buscador de diagnósticos - solo mostrar si no hay diagnóstico seleccionado */}
+            {!showDiagnosisForm && (
+              <div className="relative">
+                <input
+                  type="text"
+                  className={inputClass}
+                  value={diagnosisSearchQuery}
+                  onChange={handleDiagnosisSearchChange}
+                  placeholder="Buscar diagnóstico por código o descripción..."
+                />
+                {diagnosisSearchQuery.length >= 2 && icdResults.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg max-h-96 overflow-y-auto z-10 shadow-xl">
+                    {icdResults.map((diagnosis: any) => (
+                      <div 
+                        key={diagnosis.id}
+                        className="px-4 py-2.5 hover:bg-white/15 cursor-pointer border-b border-white/10 last:border-b-0 transition-colors flex items-start gap-3"
+                        onClick={() => selectDiagnosisResult(diagnosis)}
+                      >
+                        <span className="text-[11px] font-bold text-emerald-400 shrink-0">{diagnosis.icd_code}</span>
+                        <span className="text-[11px] text-white/80 leading-tight">{diagnosis.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {diagnosisSearchQuery.length >= 2 && icdResults.length === 0 && icdLoading && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#2a2a2a] border border-white/15 rounded-lg p-2 z-10 shadow-xl">
+                    <span className="text-white/50 text-[10px] flex items-center gap-2">
+                      <div className="w-3 h-3 border border-white/20 border-t-emerald-400 rounded-full animate-spin" />
+                      Buscando diagnósticos...
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Formulario de tipo y estado del diagnóstico */}
+            {showDiagnosisForm && selectedDiagnosisResult && (
+              <div className="bg-emerald-500/10 border border-emerald-500/25 p-5 space-y-4 animate-in fade-in zoom-in-95 duration-200 rounded-lg">
+                <div className="flex items-center justify-between pb-3 border-b border-emerald-500/20">
+                  <div className="flex items-center gap-2">
+                    <HashIcon className="w-5 h-5 text-emerald-400" />
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-emerald-400">
+                      {selectedDiagnosisResult.icd_code}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-white/60">
+                    {selectedDiagnosisResult.title}
                   </span>
                 </div>
-              )}
-            </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
+                      <ClipboardListIcon className="w-4 h-4" />
+                      Tipo de Diagnóstico
+                    </label>
+                    <select
+                      value={selectedDiagnosisType}
+                      onChange={(e) => setSelectedDiagnosisType(e.target.value as DiagnosisType)}
+                      className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                    >
+                      {TYPE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-medium text-white/60 uppercase tracking-wider flex items-center gap-1">
+                      <CheckCircleIcon className="w-4 h-4" />
+                      Estado
+                    </label>
+                    <select
+                      value={selectedDiagnosisStatus}
+                      onChange={(e) => setSelectedDiagnosisStatus(e.target.value as DiagnosisStatus)}
+                      className="w-full bg-white/5 border border-white/15 p-2.5 text-[11px] focus:border-emerald-500/50 outline-none rounded-lg"
+                    >
+                      {STATUS_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={confirmDiagnosis}
+                    className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span className="text-[11px] font-medium">Confirmar</span>
+                  </button>
+                  <button
+                    onClick={cancelDiagnosisSelection}
+                    className="flex-1 bg-white/5 hover:bg-white/10 border border-white/15 text-white/60 py-2.5 flex items-center justify-center gap-2 transition-all rounded-lg"
+                  >
+                    <X className="w-4 h-4" />
+                    <span className="text-[11px] font-medium">Cancelar</span>
+                  </button>
+                </div>
+              </div>
+            )}
             
-{form.diagnoses.length === 0 && (
+            {form.diagnoses.length === 0 && !showDiagnosisForm && (
               <div className="mt-3 p-4 border border-dashed border-white/15 text-center rounded-lg">
                 <span className="text-[10px] text-white/40">No hay diagnósticos registrados</span>
               </div>
