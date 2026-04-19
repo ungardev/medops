@@ -326,11 +326,37 @@ const selectDoctor = (doctor: any) => {
   const handleSubmit = () => {
     setIsSaving(true);
     const activeInstitutionId = localStorage.getItem("active_institution_id");
-    const payload = {
-      ...form,
+    
+    const payload: any = {
       patient: patientId,
       institution: activeInstitutionId ? parseInt(activeInstitutionId) : undefined,
     };
+    
+    const formFields = [
+      'hospital', 'admission_type', 'status', 'ward', 'room_number', 'bed_number',
+      'admission_date', 'expected_discharge_date', 'chief_complaint', 'clinical_summary',
+      'allergies_at_admission', 'vital_signs', 'daily_notes', 'complications',
+      'discharge_plan', 'discharge_instructions', 'discharge_type', 'discharge_summary',
+    ];
+    
+    formFields.forEach(field => {
+      if (form[field as keyof typeof form] !== undefined) {
+        payload[field] = form[field as keyof typeof form];
+      }
+    });
+    
+    if (form.attending_doctor) {
+      if (typeof form.attending_doctor === 'number') {
+        payload.attending_doctor = form.attending_doctor;
+      } else {
+        payload.attending_doctor_name = form.attending_doctor;
+      }
+    }
+    
+    if (form.admission_diagnoses && form.admission_diagnoses.length > 0) {
+      payload.diagnoses = form.admission_diagnoses;
+    }
+    
     onSave(payload);
     setIsSaving(false);
     onClose();
@@ -472,6 +498,13 @@ const selectDoctor = (doctor: any) => {
                     className={inputClass}
                     value={doctorSearchQuery}
                     onChange={(e) => handleManualDoctorInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && doctorSearchQuery.trim()) {
+                        e.preventDefault();
+                        handleManualDoctorConfirm(doctorSearchQuery);
+                        setDoctorSearchQuery("");
+                      }
+                    }}
                     placeholder="Buscar médico por nombre o especialidad..."
                   />
                   {doctorSearchQuery.length >= 2 && doctorSearchResults.length > 0 && (
@@ -480,7 +513,10 @@ const selectDoctor = (doctor: any) => {
                         <div
                           key={doctor.id}
                           className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                          onClick={() => selectDoctor(doctor)}
+                          onClick={() => {
+                            selectDoctor(doctor);
+                            setDoctorSearchQuery("");
+                          }}
                         >
                           <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                           <div className="text-[10px] text-white/50">
@@ -497,7 +533,10 @@ const selectDoctor = (doctor: any) => {
                       </span>
                       <button
                         type="button"
-                        onClick={() => handleManualDoctorConfirm(doctorSearchQuery)}
+                        onClick={() => {
+                          handleManualDoctorConfirm(doctorSearchQuery);
+                          setDoctorSearchQuery("");
+                        }}
                         className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
                       >
                         + Usar "{doctorSearchQuery}" como nombre manual

@@ -333,14 +333,59 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     }
   };
   
-  const handleSubmit = () => {
+const handleSubmit = () => {
     setIsSaving(true);
     const activeInstitutionId = localStorage.getItem("active_institution_id");
-    const payload = {
-      ...form,
+    
+    const payload: any = {
+      name: form.name,
+      hospital: form.hospital,
+      scheduled_date: form.scheduled_date || null,
+      scheduled_time: form.scheduled_time || null,
+      surgery_type: form.surgery_type,
+      status: form.status,
+      risk_level: form.risk_level,
+      asa_classification: form.asa_classification || null,
+      procedure_description: form.procedure_description || "",
+      complications: form.complications || "",
+      post_op_instructions: form.post_op_instructions || "",
+      surgical_technique: form.surgical_technique || "",
+      findings: form.findings || "",
+      estimated_blood_loss: form.estimated_blood_loss,
+      specimens: form.specimens || "",
+      follow_up_date: form.follow_up_date || null,
       patient: patientId,
       institution: activeInstitutionId ? parseInt(activeInstitutionId) : undefined,
     };
+    
+    if (form.surgeon) {
+      if (typeof form.surgeon === 'number') {
+        payload.surgeon = form.surgeon;
+      } else {
+        payload.surgeon_name = form.surgeon;
+      }
+    }
+    
+    if (form.anesthesiologist) {
+      if (typeof form.anesthesiologist === 'number') {
+        payload.anesthesiologist = form.anesthesiologist;
+      } else {
+        payload.anesthesiologist_name = form.anesthesiologist;
+      }
+    }
+    
+    if (form.surgical_assistants) {
+      if (typeof form.surgical_assistants === 'number') {
+        payload.surgical_assistants = [form.surgical_assistants];
+      } else {
+        payload.surgical_assistants_name = form.surgical_assistants;
+      }
+    }
+    
+    if (form.diagnoses && form.diagnoses.length > 0) {
+      payload.diagnoses = form.diagnoses;
+    }
+    
     onSave(payload);
     setIsSaving(false);
     onClose();
@@ -432,6 +477,13 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   className={inputClass}
                   value={doctorSearchQuery}
                   onChange={(e) => handleManualDoctorInput(e.target.value, "surgeon")}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && doctorSearchQuery.trim()) {
+                      e.preventDefault();
+                      handleManualDoctorConfirm(doctorSearchQuery, "surgeon");
+                      setDoctorSearchQuery("");
+                    }
+                  }}
                   placeholder="Buscar cirujano..."
                 />
                 {doctorSearchQuery.length >= 2 && surgeonResults.length > 0 && (
@@ -440,7 +492,10 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => selectDoctor(doctor, "surgeon")}
+                        onClick={() => {
+                          selectDoctor(doctor, "surgeon");
+                          setDoctorSearchQuery("");
+                        }}
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                         <div className="text-[10px] text-white/50">
@@ -457,7 +512,10 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleManualDoctorConfirm(doctorSearchQuery, "surgeon")}
+                      onClick={() => {
+                        handleManualDoctorConfirm(doctorSearchQuery, "surgeon");
+                        setDoctorSearchQuery("");
+                      }}
                       className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
                     >
                       + Usar "{doctorSearchQuery}" como nombre manual
@@ -495,6 +553,13 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   className={inputClass}
                   value={anesthesiologistSearchQuery}
                   onChange={(e) => handleManualDoctorInput(e.target.value, "anesthesiologist")}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && anesthesiologistSearchQuery.trim()) {
+                      e.preventDefault();
+                      handleManualDoctorConfirm(anesthesiologistSearchQuery, "anesthesiologist");
+                      setAnesthesiologistSearchQuery("");
+                    }
+                  }}
                   placeholder="Buscar anestesia..."
                 />
                 {anesthesiologistSearchQuery.length >= 2 && anesthesiologistResults.length > 0 && (
@@ -503,7 +568,10 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => selectDoctor(doctor, "anesthesiologist")}
+                        onClick={() => {
+                          selectDoctor(doctor, "anesthesiologist");
+                          setAnesthesiologistSearchQuery("");
+                        }}
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                         <div className="text-[10px] text-white/50">
@@ -520,7 +588,10 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleManualDoctorConfirm(anesthesiologistSearchQuery, "anesthesiologist")}
+                      onClick={() => {
+                        handleManualDoctorConfirm(anesthesiologistSearchQuery, "anesthesiologist");
+                        setAnesthesiologistSearchQuery("");
+                      }}
                       className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
                     >
                       + Usar "{anesthesiologistSearchQuery}" como nombre manual
@@ -558,6 +629,13 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   className={inputClass}
                   value={surgicalAssistantsSearchQuery}
                   onChange={(e) => handleManualDoctorInput(e.target.value, "surgical_assistants")}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && surgicalAssistantsSearchQuery.trim()) {
+                      e.preventDefault();
+                      handleManualDoctorConfirm(surgicalAssistantsSearchQuery, "surgical_assistants");
+                      setSurgicalAssistantsSearchQuery("");
+                    }
+                  }}
                   placeholder="Buscar asistentes..."
                 />
                 {surgicalAssistantsSearchQuery.length >= 2 && surgicalAssistantsResults.length > 0 && (
@@ -566,7 +644,10 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                       <div
                         key={doctor.id}
                         className="px-4 py-2.5 text-white/80 hover:bg-white/15 hover:text-white cursor-pointer border-b border-white/10 last:border-b-0 transition-colors"
-                        onClick={() => selectDoctor(doctor, "surgical_assistants")}
+                        onClick={() => {
+                          selectDoctor(doctor, "surgical_assistants");
+                          setSurgicalAssistantsSearchQuery("");
+                        }}
                       >
                         <div className="font-medium">{doctor.full_name || 'Sin nombre'}</div>
                         <div className="text-[10px] text-white/50">
@@ -583,7 +664,10 @@ const handleDoctorSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleManualDoctorConfirm(surgicalAssistantsSearchQuery, "surgical_assistants")}
+                      onClick={() => {
+                        handleManualDoctorConfirm(surgicalAssistantsSearchQuery, "surgical_assistants");
+                        setSurgicalAssistantsSearchQuery("");
+                      }}
                       className="text-[10px] text-emerald-400 hover:text-emerald-300 text-left"
                     >
                       + Usar "{surgicalAssistantsSearchQuery}" como nombre manual
