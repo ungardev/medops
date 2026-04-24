@@ -8,46 +8,45 @@ const features = [
   'Multi-sede',
 ];
 ---
-<section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-32">
+<section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
   <!-- Background Effects -->
   <div class="absolute inset-0 bg-gradient-to-b from-white/[0.02] via-transparent to-transparent"></div>
   <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px]"></div>
   
   <div class="relative z-10 max-w-[900px] mx-auto px-6 text-center">
-    <!-- MEDOPZ Logo small at top like iPhone -->
-    <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[200px] mx-auto mb-4" />
-    
-    <!-- Subtitle: Workstation de salud elite de Venezuela -->
-    <h1 class="text-xl sm:text-2xl font-medium text-white tracking-wide mb-8">
-      Workstation de salud <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">elite</span> de Venezuela
-    </h1>
+    <!-- MEDOPZ Logo big like navbar -->
+    <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="w-full max-w-[280px] mx-auto mb-2" />
     
     <!-- Subtitle -->
-    <p class="text-lg text-white/60 max-w-2xl mx-auto mb-10 leading-relaxed">
-      Consulta, cirugía, hospitalización, pagos y más. 
-      Todo lo que tu consultorio necesita en una sola plataforma.
+    <h1 class="text-lg sm:text-xl font-medium text-white/80 tracking-wide mb-4">
+      Workstation de salud elite de Venezuela
+    </h1>
+    
+    <!-- Description -->
+    <p class="text-base text-white/60 max-w-xl mx-auto mb-6 leading-relaxed">
+      Consulta, cirugía, hospitalización, pagos y más. Todo lo que tu consultorio necesita.
     </p>
     
     <!-- CTA Buttons -->
-    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
       <a 
         href="#contact"
-        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-3.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[13px] font-medium rounded-lg transition-all"
+        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[12px] font-medium rounded-lg transition-all"
       >
         Solicitar Demo
       </a>
       <a 
         href="http://localhost:8080/login"
-        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-10 py-3.5 bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 text-[13px] font-medium rounded-lg transition-all"
+        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-2.5 bg-white/5 hover:bg-white/10 border border-white/15 text-white/70 text-[12px] font-medium rounded-lg transition-all"
       >
         Acceder Doctor
       </a>
     </div>
     
-    <!-- Feature Pills (una sola línea) -->
+    <!-- Feature Pills -->
     <div class="flex flex-wrap items-center justify-center gap-2">
       {features.map((feature) => (
-        <span class="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[11px] font-medium text-white/60 whitespace-nowrap">
+        <span class="px-2.5 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-medium text-white/60 whitespace-nowrap">
           {feature}
         </span>
       ))}
