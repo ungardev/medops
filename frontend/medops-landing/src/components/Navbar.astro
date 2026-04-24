@@ -8,22 +8,19 @@ const navLinks = [
 ---
 
 <nav class="fixed top-0 left-0 right-0 z-50 bg-[#050608]/80 backdrop-blur-xl border-b border-white/10">
-  <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-center relative">
-    <!-- Left Links -->
-    <div class="absolute left-0 flex items-center gap-8">
-      <a href="/" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Home</a>
-      <a href="http://localhost:8080/login" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Doctor</a>
-    </div>
-    
-    <!-- Center: Logo -->
-    <a href="/" class="flex items-center">
-      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-10 w-10" />
+  <div class="max-w-[1200px] mx-auto px-4 h-14 flex flex-col items-center justify-center">
+    <!-- Logo -->
+    <a href="/" class="flex items-center mb-1">
+      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-12 w-12" />
     </a>
     
-    <!-- Right Links -->
-    <div class="absolute right-0 flex items-center gap-8">
-      <a href="http://localhost:8080/patient/login" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Paciente</a>
-      <a href="/settings/config" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Institución</a>
+    <!-- Nav Links centered -->
+    <div class="flex items-center gap-6">
+      <a href="/" class="text-[12px] font-medium text-white/60 hover:text-white tracking-wide">Home</a>
+      <a href="http://localhost:8080/login" class="text-[12px] font-medium text-white/60 hover:text-white tracking-wide">Doctor</a>
+      <span class="text-white/30">|</span>
+      <a href="http://localhost:8080/patient/login" class="text-[12px] font-medium text-white/60 hover:text-white tracking-wide">Paciente</a>
+      <a href="/settings/config" class="text-[12px] font-medium text-white/60 hover:text-white tracking-wide">Institución</a>
     </div>
   </div>
 </nav>
