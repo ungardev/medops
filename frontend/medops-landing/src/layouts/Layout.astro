@@ -31,7 +31,7 @@ const { title, description = "La plataforma de gestión médica más potente de 
       }
       
       html {
-        scroll-behavior: smooth;
+        scroll-behavior: auto;
       }
       
       body {
@@ -67,5 +67,10 @@ const { title, description = "La plataforma de gestión médica más potente de 
   </head>
   <body>
     <slot />
+    
+    <!-- Lenis Smooth Scroll -->
+    <script>
+      import '/src/scripts/smoothScroll.js';
+    </script>
   </body>
 </html>
