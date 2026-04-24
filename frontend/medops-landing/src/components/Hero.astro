@@ -53,7 +53,7 @@ const features = [
       {features.map((feature, index) => (
         <button 
           data-index={index}
-          class="feature-tab px-5 py-2.5 bg-white/10 border border-white/15 rounded-lg text-[12px] font-normal text-white/70 whitespace-nowrap hover:bg-white/15 hover:text-white transition-all"
+          class="feature-tab px-5 py-2.5 bg-white/15 border border-white/20 rounded-lg text-[12px] font-normal text-white whitespace-nowrap hover:bg-white/25 hover:border-white/30 transition-all"
         >
           {feature.label}
         </button>
@@ -84,11 +84,11 @@ const features = [
     
     tabs.forEach((tab, i) => {
       if (i === index) {
-        tab.classList.remove('bg-white/5', 'text-white/60');
+        tab.classList.remove('bg-white/15', 'border-white/20', 'text-white');
         tab.classList.add('bg-emerald-500/20', 'border-emerald-500/30', 'text-emerald-400');
       } else {
         tab.classList.remove('bg-emerald-500/20', 'border-emerald-500/30', 'text-emerald-400');
-        tab.classList.add('bg-white/5', 'text-white/60');
+        tab.classList.add('bg-white/15', 'border-white/20', 'text-white');
       }
     });
   }
