@@ -67,5 +67,24 @@ const { title, description = "La plataforma de gestión médica más potente de 
   </head>
   <body>
     <slot />
+    
+    <!-- Lenis Smooth Scroll -->
+    <script type="module">
+      import Lenis from 'lenis';
+      
+      const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, Math.pow(2, -10 * t)),
+        orientation: 'vertical',
+        smoothWheel: true,
+      });
+
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+
+      requestAnimationFrame(raf);
+    </script>
   </body>
 </html>
