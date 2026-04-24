@@ -3,15 +3,15 @@ const portals = [
   {
     icon: 'user-check',
     label: 'DOCTOR PORTAL',
-    title: 'El Centro de Operaciones del Médico',
-    description: 'Todo lo que el médico especialista necesita en un solo lugar: consulta, diagnóstico, cirugías, recetas y más.',
+    title: 'Centro de Operaciones del Médico',
+    description: 'Consulta, diagnóstico, cirugías, recetas y más.',
     features: [
-      'Consulta en tiempo real con CIE-11/SNOMED CT',
-      'Gestión integral de cirugías (pre/intra/post-op)',
-      'Historial clínico completo del paciente',
-      'Sala de espera inteligente con prioridades',
-      'Recetas digitales y tratamientos',
-      'Dashboard financiero personal',
+      'Consulta con CIE-11',
+      'Gestión de cirugías',
+      'Historial clínico',
+      'Sala de espera live',
+      'Recetas digitales',
+      'Dashboard financiero',
     ],
     status: 'Disponible',
     statusColor: 'emerald',
@@ -20,32 +20,32 @@ const portals = [
   {
     icon: 'heart',
     label: 'PATIENT PORTAL',
-    title: 'El Primer Portal del Paciente en Venezuela',
-    description: 'Empodera a tus pacientes con acceso a su expediente, citas, resultados y sala de espera en tiempo real.',
+    title: 'Tu Paciente Te Accede',
+    description: 'Incluido en plan Especialista. Expediente, citas, resultados.',
     features: [
-      'Expediente médico digital completo',
-      'Agendamiento de citas en línea',
-      'Sala de espera con posición en cola',
-      'Historial de pagos y facturas',
-      'Resultados de exámenes',
-      'Perfil personal con biometría',
+      'Expediente digital',
+      'Citas en línea',
+      'Sala de espera',
+      'Historial de pagos',
+      'Resultados',
+      'Perfil personal',
     ],
-    status: 'Disponible',
+    status: 'Incluido',
     statusColor: 'emerald',
     loginUrl: 'http://localhost:8080/patient/login',
   },
   {
     icon: 'building',
     label: 'INSTITUTION PORTAL',
-    title: 'Gestión Integral de Clínicas y Hospitales',
-    description: 'Administra tu institución médica con dashboards en tiempo real, gestión de camas y control multi-sede.',
+    title: 'Gestión de Clínicas',
+    description: 'Multi-sede, camas, dashboard institucional.',
     features: [
-      'Dashboard operacional multi-sede',
-      'Gestión de camas y pabellones',
-      'Control de quirófanos y horarios',
-      'Dashboard financiero institucional',
-      'Gestión de RRHH médico',
-      'Reportes y analíticas avanzadas',
+      'Dashboard multi-sede',
+      'Gestión de camas',
+      'Control de quirófanos',
+      'RRHH médico',
+      'Reportes',
+      'Facturación',
     ],
     status: 'Próximamente',
     statusColor: 'amber',
@@ -59,8 +59,8 @@ const portals = [
     <div class="text-center mb-16">
       <span class="text-[13px] font-medium text-emerald-400/80 uppercase tracking-wider">Portales</span>
       <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 tracking-tight">
-        Tres Portales.
-        <span class="block text-white/60 font-normal mt-1">Un Ecosistema.</span>
+        Tres portales.
+        <span class="block text-white/60 font-normal mt-1">Un ecosistema.</span>
       </h2>
     </div>
     

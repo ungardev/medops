@@ -2,54 +2,51 @@
 const plans = [
   {
     name: 'DOCTOR',
-    price: '$29',
+    price: '$25',
     period: '/mes',
-    description: 'Para el médico independiente que quiere digitalizar su consulta.',
+    description: 'Para el médico independiente.',
     features: [
-      'Consulta con diagnóstico CIE-11',
-      'Recetas y tratamientos digitales',
-      'Historial clínico completo',
-      'Sala de espera inteligente',
-      'Dashboard financiero personal',
-      'Soporte por email',
+      'Consulta CIE-11',
+      'Recetas digitales',
+      'Historial clínico',
+      'Sala de espera',
+      'Dashboard',
     ],
-    cta: 'Comprar',
+    cta: 'Comenzar',
     ctaUrl: '/checkout/?plan=doctor',
     ctaStyle: 'secondary',
   },
   {
-    name: 'DOCTOR +',
-    price: '$59',
+    name: 'ESPECIALISTA',
+    price: '$40',
     period: '/mes',
-    description: 'Para el especialista que quiere ofrecer una experiencia premium.',
+    description: 'Con Portal Paciente incluido.',
     features: [
-      'Todo lo del plan Doctor',
-      'Portal del Paciente incluido',
-      'Gestión de cirugías completa',
-      'Hospitalización y camas',
-      'SNOMED CT (cuando esté disponible)',
+      'Todo Doctor',
+      'Portal Paciente',
+      'Cirugías',
+      'Hospitalización',
       'Soporte prioritario',
     ],
-    cta: 'Comprar',
+    cta: 'Comenzar',
     ctaUrl: '/checkout/?plan=doctor-plus',
     ctaStyle: 'primary',
     popular: true,
   },
   {
-    name: 'INSTITUTION',
-    price: '$149',
+    name: 'CLÍNICA',
+    price: '$120',
     period: '/mes',
-    description: 'Para clínicas y hospitales que buscan gestión integral.',
+    description: 'Para múltiples sedes.',
     features: [
-      'Todo lo del plan Doctor +',
-      'Multi-sede ilimitado',
-      'Gestión de camas y pabellones',
-      'Dashboard institucional',
-      'RRHH médico',
-      'Facturación y reportes',
-      'Soporte dedicado 24/7',
+      'Todo Especialista',
+      'Multi-sede',
+      'Gestión de camas',
+      'Dashboard',
+      'Facturación',
+      'Soporte 24/7',
     ],
-    cta: 'Contactar Ventas',
+    cta: 'Contactar',
     ctaUrl: '/checkout/?plan=institution',
     ctaStyle: 'secondary',
   },
@@ -61,8 +58,8 @@ const plans = [
     <div class="text-center mb-16">
       <span class="text-[13px] font-medium text-emerald-400/80 uppercase tracking-wider">Precios</span>
       <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 tracking-tight">
-        Planes que escalan
-        <span class="block text-white/60 font-normal mt-1">con tu práctica médica.</span>
+        Simple y transparente
+        <span class="block text-white/60 font-normal mt-1">Sin letras pequeñas.</span>
       </h2>
     </div>
     
