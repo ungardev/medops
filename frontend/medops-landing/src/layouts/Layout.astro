@@ -23,6 +23,9 @@ const { title, description = "La plataforma de gestión médica más potente de 
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Manrope:wght@200;300;400;500;600&display=swap" rel="stylesheet" />
     
+    <!-- Lenis CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/lenis@1.1.18/dist/lenis.css" />
+    
     <style is:global>
       * {
         margin: 0;
@@ -69,8 +72,22 @@ const { title, description = "La plataforma de gestión médica más potente de 
     <slot />
     
     <!-- Lenis Smooth Scroll -->
-    <script>
-      import '/src/scripts/smoothScroll.js';
+    <script is:inline>
+      const lenis = new Lenis({
+        duration: 1.4,
+        easing: (t) => Math.min(1 - Math.pow(2, -10 * t),
+        orientation: 'vertical',
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        touchMultiplier: 2,
+      });
+
+      function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+      }
+
+      requestAnimationFrame(raf);
     </script>
   </body>
 </html>
