@@ -8,26 +8,22 @@ const navLinks = [
 ---
 
 <nav class="fixed top-0 left-0 right-0 z-50 bg-[#050608]/80 backdrop-blur-xl border-b border-white/10">
-  <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
-    <!-- Left: Logo -->
-    <a href="/" class="flex items-center gap-3 group">
-      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-8 w-8 transition-opacity group-hover:opacity-80" />
-      <img src="/medopz_fuente_blanco.svg" alt="MEDOPZ" class="h-[14px] w-auto opacity-90" />
-    </a>
-    
-    <!-- Center: Nav Links -->
-    <div class="hidden md:flex items-center gap-8">
-      {navLinks.map((link) => (
-        <a 
-          href={link.href}
-          class="text-[13px] font-medium text-white/60 hover:text-white transition-colors tracking-wide"
-        >
-          {link.label}
-        </a>
-      ))}
+  <div class="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between relative">
+    <!-- Left Links -->
+    <div class="flex items-center gap-8">
+      <a href="/" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Home</a>
+      <a href="http://localhost:8080/login" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Doctor</a>
     </div>
     
-    <!-- Right: Empty for balance -->
-    <div class="w-[140px]"></div>
+    <!-- Center: Logo -->
+    <a href="/" class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2">
+      <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-7 w-7" />
+    </a>
+    
+    <!-- Right Links -->
+    <div class="flex items-center gap-8">
+      <a href="http://localhost:8080/patient/login" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Paciente</a>
+      <a href="/settings/config" class="text-[13px] font-medium text-white/60 hover:text-white tracking-wide">Institución</a>
+    </div>
   </div>
 </nav>
