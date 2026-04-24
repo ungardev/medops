@@ -2,12 +2,11 @@
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: 'http://localhost:8080/login', label: 'Doctor' },
-  { href: 'http://localhost:8080/patient/login', label: 'Paciente' },
-  { href: '/settings/config', label: 'Institución' },
+  { href: '#pricing', label: 'Precios' },
 ];
 ---
 
-<nav class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#050608]/90 backdrop-blur-xl border border-white/10 rounded-full" style="width: auto; min-width: 480px;">
+<nav class="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-[#050608]/90 backdrop-blur-xl border border-white/10 rounded-full" style="width: auto; min-width: 400px;">
   <div class="flex items-center justify-center gap-1 px-4 py-1.5">
     <a href="/" class="text-[13px] font-semibold text-white hover:text-emerald-400 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Home</a>
     <a href="http://localhost:8080/login" class="text-[13px] font-semibold text-white hover:text-emerald-400 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Doctor</a>
@@ -16,7 +15,6 @@ const navLinks = [
       <img src="/medopz_logo_blanco_solo.svg" alt="MEDOPZ" class="h-12 w-12" />
     </a>
     
-    <a href="http://localhost:8080/patient/login" class="text-[13px] font-semibold text-white hover:text-emerald-400 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Paciente</a>
-    <a href="/settings/config" class="text-[13px] font-semibold text-white hover:text-emerald-400 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Institución</a>
+    <a href="#pricing" class="text-[13px] font-semibold text-white hover:text-emerald-400 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all">Precios</a>
   </div>
 </nav>
