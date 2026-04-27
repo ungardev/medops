@@ -18,6 +18,22 @@ const { title, description = "La plataforma de gestión médica más potente de 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/medopz_logo_blanco_solo.svg" />
     
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://medopz.com/" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:site_name" content="MEDOPZ" />
+    <meta property="og:locale" content="es_VE" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@medopz" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="/og-image.png" />
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,6 +44,11 @@ const { title, description = "La plataforma de gestión médica más potente de 
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+      }
+      
+      html, body {
+        overflow-x: hidden;
+        max-width: 100vw;
       }
       
       html {
@@ -83,8 +104,8 @@ const { title, description = "La plataforma de gestión médica más potente de 
       console.log('[Lenis] Starting smooth scroll...');
       
       const lenis = new Lenis({
-        duration: 1.0,
-        easing: (t) => 1 - Math.pow(1 - t, 4),
+        duration: 0.7,
+        easing: (t) => 1 - Math.pow(1 - t, 5),
         smoothWheel: true,
         wheelMultiplier: 1,
       });

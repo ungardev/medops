@@ -2,8 +2,8 @@
 const portals = [
   {
     icon: 'user-check',
-    label: 'DOCTOR PORTAL',
-    title: 'Centro de Operaciones del Médico',
+    label: 'DOCTOR',
+    title: 'Centro de Operaciones',
     description: 'Consulta, diagnóstico, cirugías, recetas y más.',
     features: [
       'Consulta con CIE-11',
@@ -16,12 +16,13 @@ const portals = [
     status: 'Disponible',
     statusColor: 'emerald',
     loginUrl: 'http://localhost:8080/login',
+    size: 'large',
   },
   {
     icon: 'heart',
-    label: 'PATIENT PORTAL',
-    title: 'Tu Paciente Te Accede',
-    description: 'Incluido en plan Especialista. Expediente, citas, resultados.',
+    label: 'PATIENT',
+    title: 'Expediente en Tu Mano',
+    description: 'Incluido en plan Especialista.',
     features: [
       'Expediente digital',
       'Citas en línea',
@@ -33,12 +34,13 @@ const portals = [
     status: 'Incluido',
     statusColor: 'emerald',
     loginUrl: 'http://localhost:8080/patient/login',
+    size: 'large',
   },
   {
     icon: 'building',
-    label: 'INSTITUTION PORTAL',
-    title: 'Gestión de Clínicas',
-    description: 'Multi-sede, camas, dashboard institucional.',
+    label: 'INSTITUTION',
+    title: 'Escala. Multi-sede.',
+    description: 'Gestión de clínicas y hospitales.',
     features: [
       'Dashboard multi-sede',
       'Gestión de camas',
@@ -50,30 +52,54 @@ const portals = [
     status: 'Próximamente',
     statusColor: 'amber',
     loginUrl: '#',
+    size: 'full',
   },
 ];
 ---
-<section id="portals" class="py-24 px-6">
-  <div class="max-w-[1200px] mx-auto">
+
+<section id="portals" class="py-32 px-6 relative">
+  <!-- Background Effects -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-1/3 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[100px]"></div>
+    <div class="absolute top-1/3 right-1/4 translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[80px]"></div>
+  </div>
+  
+  <div class="max-w-[1200px] mx-auto relative">
     <!-- Section Header -->
-    <div class="text-center mb-16">
-      <span class="text-[13px] font-medium text-emerald-400/80 uppercase tracking-wider">Portales</span>
-      <h2 class="text-3xl sm:text-4xl font-bold text-white mt-3 tracking-tight">
-        Tres portales.
-        <span class="block text-white/60 font-normal mt-1">Un ecosistema.</span>
+    <div class="text-center mb-20">
+      <span class="text-[12px] font-medium text-cyan-400/80 uppercase tracking-[0.2em]">PORTALES</span>
+      <h2 class="text-4xl sm:text-5xl font-bold text-white mt-4 tracking-tight">
+        Primer Ecosistema Multi-Portal
+        <span class="block text-white/50 font-normal mt-2">de Venezuela</span>
       </h2>
     </div>
     
-    <!-- Portals -->
-    <div class="space-y-6">
-      {portals.map((portal) => (
-        <div class="group bg-white/5 border border-white/10 rounded-lg p-6 lg:p-8 hover:border-white/20 transition-all">
-          <div class="flex flex-col lg:flex-row lg:items-start gap-6">
-            <!-- Left: Icon + Info -->
-            <div class="lg:w-1/3">
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white/60">
+    <!-- Bento Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {portals.map((portal, index) => (
+        <div 
+          class={`group relative overflow-hidden rounded-2xl p-6 transition-all duration-500 ease-out ${
+            portal.size === 'full' ? 'col-span-1 lg:col-span-2' : ''
+          }`}
+          style={`animation-delay: ${index * 100}ms`}
+        >
+          <!-- Glassmorphism Background -->
+          <div class="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-white/[0.02] backdrop-blur-xl rounded-2xl border border-white/[0.08] transition-all duration-500 group-hover:border-white/[0.2] group-hover:from-white/[0.12]"></div>
+          
+          <!-- Inner Shadow -->
+          <div class="absolute inset-0 rounded-2xl shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)] transition-all duration-500 group-hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]"></div>
+          
+          <!-- Glow Effects -->
+          <div class="absolute inset-0 rounded-2xl opacity-0 transition-all duration-700 group-hover:opacity-100" style="background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.15) 0%, transparent 60%);"></div>
+          <div class="absolute -bottom-20 -right-20 w-40 h-40 bg-cyan-500/10 rounded-full blur-[40px] opacity-0 transition-all duration-700 group-hover:opacity-100"></div>
+          
+          <!-- Content -->
+          <div class="relative z-10 flex flex-col h-full">
+            <div class="flex items-start justify-between mb-auto">
+              <!-- Icon + Label -->
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center transition-all duration-300 group-hover:bg-white/[0.1] group-hover:border-cyan-500/30 group-hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-white/60 transition-all duration-300 group-hover:text-cyan-400 group-hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]">
                     {portal.icon === 'user-check' && <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></>}
                     {portal.icon === 'heart' && <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>}
                     {portal.icon === 'building' && <><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></>}
@@ -81,7 +107,7 @@ const portals = [
                 </div>
                 <div>
                   <span class="text-[12px] font-medium text-white/60 uppercase tracking-wider">{portal.label}</span>
-                  <span class={`ml-2 text-[11px] font-medium px-2 py-0.5 rounded border ${
+                  <span class={`ml-2 text-[10px] font-medium px-2 py-0.5 rounded border ${
                     portal.statusColor === 'emerald' 
                       ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
                       : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
@@ -90,35 +116,74 @@ const portals = [
                   </span>
                 </div>
               </div>
-              <h3 class="text-[16px] font-semibold text-white mb-2">{portal.title}</h3>
-              <p class="text-[13px] text-white/60 leading-relaxed">{portal.description}</p>
-              {portal.loginUrl !== '#' && (
-                <a 
-                  href={portal.loginUrl}
-                  class="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/25 text-emerald-400 text-[12px] font-medium rounded-lg transition-all"
-                >
-                  Acceder al Portal
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-                </a>
-              )}
             </div>
             
-            <!-- Right: Features -->
-            <div class="lg:w-2/3">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {portal.features.map((feature) => (
-                  <div class="flex items-start gap-2">
-                    <svg class="w-4 h-4 text-emerald-400/80 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span class="text-[13px] text-white/60">{feature}</span>
-                  </div>
-                ))}
-              </div>
+            <!-- Text -->
+            <div class="mt-6 mb-6">
+              <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-white transition-colors">{portal.title}</h3>
+              <p class="text-sm text-white/50 leading-relaxed group-hover:text-white/70 transition-colors">{portal.description}</p>
             </div>
+            
+            <!-- Features Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-auto">
+              {portal.features.slice(0, portal.size === 'full' ? 6 : 6).map((feature) => (
+                <div class="flex items-center gap-2">
+                  <svg class="w-3.5 h-3.5 text-cyan-400/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="text-[12px] text-white/50">{feature}</span>
+                </div>
+              ))}
+            </div>
+            
+            <!-- CTA -->
+            {portal.loginUrl !== '#' && (
+              <a 
+                href={portal.loginUrl}
+                class="inline-flex items-center gap-2 mt-6 px-4 py-2.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 text-cyan-400 text-[12px] font-medium rounded-lg transition-all w-fit group-hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]"
+              >
+                Acceder
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </a>
+            )}
           </div>
         </div>
       ))}
     </div>
   </div>
 </section>
+
+<style>
+  #portals > div > .grid > div {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+  
+  #portals > div > .grid > div.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  const section = document.getElementById('portals');
+  const cards = section?.querySelectorAll('#portals > div > .grid > div');
+  
+  if (cards?.length && section) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          cards.forEach((card, i) => {
+            setTimeout(() => {
+              card.classList.add('visible');
+            }, i * 100);
+          });
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.2 });
+    
+    observer.observe(section);
+  }
+</script>
