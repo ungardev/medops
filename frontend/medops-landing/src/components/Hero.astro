@@ -23,12 +23,12 @@ const features = [
     </div>
     
     <!-- Subtitle - tipografía refinada -->
-    <h1 class="text-base sm:text-lg font-light text-white tracking-wide mb-2">
+    <h1 class="text-base sm:text-lg font-light text-white tracking-wide mb-4">
       Workstation elite para médicos especialistas, pacientes e instituciones de Venezuela
     </h1>
     
     <!-- Carousel Container con glow -->
-    <div class="relative mt-6 mb-4">
+    <div class="relative mt-8 mb-4">
       <!-- Left Arrow -->
       <button id="prevBtn" class="absolute left-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.1] hover:border-emerald-500/30 rounded-full text-white/60 hover:text-emerald-400 transition-all duration-300 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)] group" aria-label="Anterior">
         <svg class="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:-translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -59,7 +59,7 @@ const features = [
     </div>
     
     <!-- Feature Pills - estilo bento -->
-    <div class="flex flex-wrap items-center justify-center gap-2 mb-6">
+    <div class="flex flex-wrap items-center justify-center gap-2 mb-8">
       {features.map((feature, index) => (
         <button 
           data-index={index}
@@ -71,7 +71,7 @@ const features = [
     </div>
     
     <!-- Dot indicators -->
-    <div class="flex items-center justify-center gap-1.5">
+    <div class="flex items-center justify-center gap-1.5 mt-4">
       {features.map((_, index) => (
         <button 
           data-dot={index}
