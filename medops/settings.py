@@ -30,47 +30,47 @@ if SECRET_KEY == "inseguro-en-dev":
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 
 # Ajuste para Docker y local
-ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(
+    ","
+)
 
 # === SITE URL (para callback URLs de webhooks y P2C) ===
 SITE_URL = os.environ.get("SITE_URL", "https://medopz.com")
 
 # === Apps ===
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     # Herramientas de Terceros
-    'rest_framework',
-    'rest_framework.authtoken',
-    'corsheaders',
-    'drf_spectacular',
-    'drf_spectacular_sidecar',
-    'django_filters',
-    'django_extensions',
-    'simple_history',
-    'rangefilter',
-    
+    "rest_framework",
+    "rest_framework.authtoken",
+    "corsheaders",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
+    "django_filters",
+    "django_extensions",
+    "simple_history",
+    "rangefilter",
     # App Principal
-    'core.apps.CoreConfig',
+    "core.apps.CoreConfig",
 ]
 
 # === Middleware ===
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # ✅ Siempre antes de CommonMiddleware
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'core.middleware.InstitutionPermissionMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'simple_history.middleware.HistoryRequestMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",  # ✅ Siempre antes de CommonMiddleware
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "core.middleware.InstitutionPermissionMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 # === Ajustes Críticos para CORS y Docker ===
@@ -87,25 +87,29 @@ REST_FRAMEWORK = {
 
 if not DEBUG:
     # ✅ EN PRODUCCIÓN (DEBUG=False): Autenticación HABILITADA
-    REST_FRAMEWORK.update({
-        "DEFAULT_AUTHENTICATION_CLASSES": [
-            "rest_framework.authentication.TokenAuthentication",
-        ],
-        "DEFAULT_PERMISSION_CLASSES": [
-            "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-        ],
-    })
+    REST_FRAMEWORK.update(
+        {
+            "DEFAULT_AUTHENTICATION_CLASSES": [
+                "rest_framework.authentication.TokenAuthentication",
+            ],
+            "DEFAULT_PERMISSION_CLASSES": [
+                "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+            ],
+        }
+    )
     print("[PRODUCCION] Autenticacion HABILITADA")
 else:
     # ✅ EN DESARROLLO (DEBUG=True): Autenticación DESHABILITADA para pruebas
-    REST_FRAMEWORK.update({
-        "DEFAULT_AUTHENTICATION_CLASSES": [
-            "rest_framework.authentication.TokenAuthentication",
-        ],
-        "DEFAULT_PERMISSION_CLASSES": [
-            "rest_framework.permissions.AllowAny",
-        ],
-    })
+    REST_FRAMEWORK.update(
+        {
+            "DEFAULT_AUTHENTICATION_CLASSES": [
+                "rest_framework.authentication.TokenAuthentication",
+            ],
+            "DEFAULT_PERMISSION_CLASSES": [
+                "rest_framework.permissions.AllowAny",
+            ],
+        }
+    )
     print("[DESARROLLO] Autenticacion DESHABILITADA")
 
 # OpenAPI Settings
@@ -134,25 +138,25 @@ SECURE_HSTS_SECONDS = 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = False
 SECURE_HSTS_PRELOAD = False
 
-ROOT_URLCONF = 'medops.urls'
+ROOT_URLCONF = "medops.urls"
 
 # === Templates ===
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "core" / "templates"],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "core" / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'medops.wsgi.application'
+WSGI_APPLICATION = "medops.wsgi.application"
 
 # === Base de Datos ===
 DATABASES = {
@@ -167,39 +171,55 @@ DATABASES = {
 }
 
 # === Internacionalización ===
-LANGUAGE_CODE = 'es-ve'
-TIME_ZONE = 'America/Caracas'
+LANGUAGE_CODE = "es-ve"
+TIME_ZONE = "America/Caracas"
 USE_I18N = True
 USE_TZ = True
 
 # === Static & Media ===
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "frontend" / "medops" / "dist" / "assets"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
-MEDIA_URL = '/media/'
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# === CORS / CSRF ===
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://127.0.0.1:5173",
-]
+# === CORS / CSRF (desde environment para producción) ===
+_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOWED_ORIGINS = (
+    [origin.strip() for origin in _cors_origins.split(",") if origin.strip()]
+    if _cors_origins
+    else [
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://127.0.0.1:5173",
+    ]
+)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
 CORS_ALLOW_HEADERS = [
-    "accept", "authorization", "content-type", "user-agent",
-    "x-csrfToken", "x-requested-with", "origin", "x-institution-id",
+    "accept",
+    "authorization",
+    "content-type",
+    "user-agent",
+    "x-csrfToken",
+    "x-requested-with",
+    "origin",
+    "x-institution-id",
     "x-doctor-id",
 ]
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-]
+_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = (
+    [origin.strip() for origin in _csrf_origins.split(",") if origin.strip()]
+    if _csrf_origins
+    else [
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+    ]
+)
 
 # === ICD API ===
 ICD_CLIENT_ID = os.environ.get("ICD_CLIENT_ID")
@@ -208,74 +228,74 @@ ICD_API_BASE_ES = os.environ.get("ICD_API_BASE_ES", "http://icdapi_es/icd")
 ICD_API_BASE_EN = os.environ.get("ICD_API_BASE_EN", "http://icdapi_en/icd")
 
 # === Email Configuration ===
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'info.medopz@gmail.com')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'dtpdobjxhlqlwage')
-DEFAULT_FROM_EMAIL = 'MEDOPZ <info.medopz@gmail.com>'
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "info.medopz@gmail.com")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "dtpdobjxhlqlwage")
+DEFAULT_FROM_EMAIL = "MEDOPZ <info.medopz@gmail.com>"
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
-            'style': '{',
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
         },
-        'simple': {
-            'format': '{levelname} {message}',
-            'style': '{',
-        },
-    },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'django_error.log',
-            'formatter': 'verbose',
+        "simple": {
+            "format": "{levelname} {message}",
+            "style": "{",
         },
     },
-    'root': {
-        'handlers': ['console', 'file'],
-        'level': 'INFO',
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+        "file": {
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "django_error.log",
+            "formatter": "verbose",
+        },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
+    "root": {
+        "handlers": ["console", "file"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
         },
-        'django.request': {
-            'handlers': ['console', 'file'],
-            'level': 'ERROR',  # Captura errores de petición (500, 404, etc.)
-            'propagate': False,
+        "django.request": {
+            "handlers": ["console", "file"],
+            "level": "ERROR",  # Captura errores de petición (500, 404, etc.)
+            "propagate": False,
         },
-        'django.security': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
+        "django.security": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
         },
-        'core': {  # Tu app principal
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': False,
+        "core": {  # Tu app principal
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }
 
 
 # === CELERY CONFIGURACIÓN (preparado para activar con Redis) ===
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://redis:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://redis:6379/0')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'America/Caracas'
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0")
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = "America/Caracas"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos máximo por tarea
 
@@ -283,5 +303,5 @@ CELERY_TASK_TIME_LIMIT = 30 * 60  # 30 minutos máximo por tarea
 # =====================================================
 # SNOMED CT Configuration
 # =====================================================
-SNOWSTORM_URL = os.environ.get('SNOWSTORM_URL', 'http://localhost:8080')
-SNOMED_ENABLED = os.environ.get('SNOMED_ENABLED', 'False').lower() == 'true'
+SNOWSTORM_URL = os.environ.get("SNOWSTORM_URL", "http://localhost:8080")
+SNOMED_ENABLED = os.environ.get("SNOMED_ENABLED", "False").lower() == "true"
