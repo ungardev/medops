@@ -2,17 +2,27 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { ReactNode } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { isPatientSubdomain, getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
+
 interface ProtectedRouteProps {
   allowedRoles?: ('doctor' | 'patient' | 'admin')[];
   children?: ReactNode;
 }
+
 export function ProtectedRoute({ allowedRoles = ['doctor', 'admin'], children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   
-  const path = window.location.pathname;
-  const isPatientRoute = path === '/patient' || path.startsWith('/patient/');
+  // PRIMARY: Detect via subdomain (not pathname)
+  const isPatientPortal = isPatientSubdomain();
+  const portal = getCurrentPortal();
   
-  const expectedRole = isPatientRoute ? 'patient' : 'doctor';
+  // Expand allowedRoles to include patient if on patient subdomain
+  const effectiveRoles = isPatientPortal
+    ? [...new Set([...allowedRoles, 'patient'])]
+    : allowedRoles;
+  
+  // For subdomain-based detection, use subdomain config
+  const portalConfig = getPortalConfig(portal);
   
   if (isLoading) {
     return (
@@ -26,18 +36,17 @@ export function ProtectedRoute({ allowedRoles = ['doctor', 'admin'], children }:
   }
   
   if (!isAuthenticated) {
-    return isPatientRoute 
-      ? <Navigate to="/patient/login" replace />
-      : <Navigate to="/login" replace />;
+    // Use subdomain config for redirect target
+    return <Navigate to={portalConfig.loginPath} replace />;
   }
   
-  if (allowedRoles.length > 0 && user) {
-    const userRole = user.is_superuser ? 'admin' : expectedRole;
-    if (!allowedRoles.includes(userRole as any)) {
-      if (userRole === 'patient') {
-        return <Navigate to="/patient" replace />;
-      }
-      return <Navigate to="/login" replace />;
+  if (effectiveRoles.length > 0 && user) {
+    const userRole = user.is_superuser ? 'admin' : (isPatientPortal ? 'patient' : 'doctor');
+    
+    if (!effectiveRoles.includes(userRole as any)) {
+      // Route to appropriate dashboard based on role
+      const redirectPath = userRole === 'patient' ? '/patient' : '/login';
+      return <Navigate to={redirectPath} replace />;
     }
   }
   

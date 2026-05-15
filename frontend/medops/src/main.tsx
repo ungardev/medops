@@ -54,6 +54,7 @@ import ManageServicesPage from "./pages/Doctor/ManageServicesPage";
 import Surgery from "./pages/Surgery/Surgery";
 import Hospitalization from "./pages/Hospitalization/Hospitalization";
 import Diagnosis from "./pages/Diagnosis/Diagnosis";
+import { getCurrentPortal, getPortalConfig } from "@/lib/subdomain";
 
 // Axios config
 axios.defaults.baseURL = import.meta.env.VITE_API_URL ?? "/api";
@@ -61,6 +62,14 @@ const token = import.meta.env.VITE_DEV_TOKEN;
 if (token) {
   axios.defaults.headers.common["Authorization"] = `Token ${token}`;
 }
+
+// Subdomain-aware root redirect component
+const SubdomainRootRedirect: React.FC = () => {
+  const portal = getCurrentPortal();
+  const config = getPortalConfig(portal);
+  return <Navigate to={config.loginPath} replace />;
+};
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -69,6 +78,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           {/* ✅ Envolver la app con AuthProvider para manejar estado de autenticación globalmente */}
           <AuthProvider>
             <Routes>
+              {/* PUBLIC ROOT: Subdomain-aware redirect - MUST BE FIRST */}
+              <Route path="/" element={<SubdomainRootRedirect />} />
+
               {/* === PUBLIC ROUTES === */}
               <Route path="/login" element={<Login />} />
               <Route path="/logout" element={<Logout />} />
@@ -103,20 +115,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               {/* === DOCTOR PORTAL - PROTECTED === */}
               <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
                 <Route element={<App />}>
-                  {/* Ruta raíz: Redirige según subdomain */}
-                  <Route index element={
-                    window.location.hostname.startsWith('patient.')
-                      ? <Navigate to="/patient/login" replace />
-                      : <Navigate to="/login" replace />
-                  } />
-                  
-                  {/* Ruta del Dashboard del Doctor (reemplaza al antiguo index) */}
+                  {/* Doctor Dashboard */}
                   <Route path="doctor" element={<DoctorDashboard />} />
-                  
-                  {/* Ruta de gestión de servicios/citas */}
                   <Route path="doctor/manage-services" element={<ManageServicesPage />} />
                   
-                  {/* Otras rutas existentes */}
+                  {/* Other existing routes */}
                   <Route path="patients" element={<Patients />} />
                   <Route path="patients/:id" element={<PatientDetail />} />
                   <Route

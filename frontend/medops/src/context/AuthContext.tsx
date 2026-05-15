@@ -1,6 +1,8 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentPortal, isPatientSubdomain, getPortalConfig } from '@/lib/subdomain';
+
 interface User {
   id: number;
   username: string;
@@ -8,6 +10,7 @@ interface User {
   is_staff: boolean;
   is_superuser: boolean;
 }
+
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -20,14 +23,19 @@ interface AuthContextType {
   logout: () => void;
   verifyToken: () => Promise<void>;
 }
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
 const STORAGE_KEYS = {
   PATIENT_TOKEN: 'patient_access_token',
   DOCTOR_TOKEN: 'authToken',
   USER: 'auth_user',
 };
+
 const authChannel = new BroadcastChannel('auth_channel');
+
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -37,51 +45,77 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     patient_access_token: localStorage.getItem(STORAGE_KEYS.PATIENT_TOKEN),
     authToken: localStorage.getItem(STORAGE_KEYS.DOCTOR_TOKEN),
   });
+
   const getPatientToken = useCallback((): string | null => {
-    return localStorage.getItem('patient_access_token') 
-      || localStorage.getItem('patient_drf_token') 
+    return localStorage.getItem('patient_access_token')
+      || localStorage.getItem('patient_drf_token')
       || null;
   }, []);
+
   const verifyToken = useCallback(async () => {
     setIsLoading(true);
     try {
       const doctorToken = localStorage.getItem(STORAGE_KEYS.DOCTOR_TOKEN);
       const patientToken = getPatientToken();
-      
-      const token = doctorToken || patientToken;
-      
+
+      // Determine which token to verify based on SUBDOMAIN
+      const currentPortal = getCurrentPortal();
+      const isPatientPortal = currentPortal === 'patient';
+
+      let token: string | null = null;
+      let endpoint: string;
+
+      if (isPatientPortal) {
+        // On patient portal, verify patient token (or none)
+        token = patientToken;
+        endpoint = `${API_URL}/patient/auth/verify/`;
+      } else {
+        // On doctor portal, verify doctor token (or fallback to patient)
+        token = doctorToken || patientToken;
+        const isFallback = !doctorToken && !!patientToken;
+        endpoint = isFallback
+          ? `${API_URL}/patient/auth/verify/`
+          : `${API_URL}/auth/verify/`;
+      }
+
       if (!token) {
         setIsAuthenticated(false);
         setIsLoading(false);
         return;
       }
-      const isPatient = !doctorToken && !!patientToken;
-      const endpoint = isPatient 
-        ? `${API_URL}/patient/auth/verify/` 
-        : `${API_URL}/auth/verify/`;
-      
+
       const response = await fetch(endpoint, {
         headers: {
           'Authorization': `Token ${token}`,
           'Content-Type': 'application/json',
+          'X-Portal': currentPortal,
         },
       });
+
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
         setIsAuthenticated(true);
-        
+
         setTokens({
           patient_access_token: patientToken,
           authToken: doctorToken,
         });
       } else {
-        localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
-        localStorage.removeItem('patient_drf_token');
-        localStorage.removeItem('patient_refresh_token');
-        localStorage.removeItem('patient_id');
-        localStorage.removeItem('patient_name');
+        // Only clear tokens for the current portal on verify failure
+        if (isPatientPortal) {
+          localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
+          localStorage.removeItem('patient_drf_token');
+          localStorage.removeItem('patient_refresh_token');
+          localStorage.removeItem('patient_id');
+          localStorage.removeItem('patient_name');
+        } else {
+          // For doctor portal, only clear doctor token if that's what we're verifying
+          if (doctorToken) {
+            localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
+          }
+          // Don't clear patient tokens - they might be valid for patient portal
+        }
         setTokens({ patient_access_token: null, authToken: null });
         setUser(null);
         setIsAuthenticated(false);
@@ -92,14 +126,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
     }
   }, [getPatientToken]);
+
   useEffect(() => {
     verifyToken();
   }, []);
+
   useEffect(() => {
     const handleAuthChange = (event: MessageEvent) => {
       if (event.data.type === 'AUTH_CHANGE') {
-        const { action, tokenType, token, user: userData } = event.data;
-        
+        const { action, tokenType, token, user: userData, redirectTo } = event.data;
+
         if (action === 'LOGIN') {
           if (tokenType === 'patient') {
             setTokens(prev => ({ ...prev, patient_access_token: token }));
@@ -114,15 +150,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
           setIsAuthenticated(true);
         } else if (action === 'LOGOUT') {
-          setTokens({ patient_access_token: null, authToken: null });
+          // Don't clear all tokens on logout broadcast - only the targeted one
+          if (event.data.tokenType === 'patient') {
+            localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
+            localStorage.removeItem('patient_drf_token');
+            localStorage.removeItem('patient_refresh_token');
+            localStorage.removeItem('patient_id');
+            localStorage.removeItem('patient_name');
+            setTokens(prev => ({ ...prev, patient_access_token: null }));
+          } else if (event.data.tokenType === 'doctor') {
+            localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
+            setTokens(prev => ({ ...prev, authToken: null }));
+          } else {
+            // Clear all if tokenType not specified (full logout)
+            localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
+            localStorage.removeItem('patient_drf_token');
+            localStorage.removeItem('patient_refresh_token');
+            localStorage.removeItem('patient_id');
+            localStorage.removeItem('patient_name');
+            setTokens({ patient_access_token: null, authToken: null });
+          }
           setUser(null);
           setIsAuthenticated(false);
         }
       }
     };
+
     authChannel.addEventListener('message', handleAuthChange);
     return () => authChannel.removeEventListener('message', handleAuthChange);
   }, []);
+
   const login = useCallback((type: 'patient' | 'doctor', token: string, userData?: User) => {
     if (type === 'patient') {
       setTokens(prev => ({ ...prev, patient_access_token: token }));
@@ -145,25 +203,39 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       user: userData,
     });
   }, []);
+
   const logout = useCallback((broadcast = true) => {
-    localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
+    const currentPortal = getCurrentPortal();
+    const isPatientPortal = currentPortal === 'patient';
+
+    // Only clear tokens for the current portal
+    if (isPatientPortal) {
+      localStorage.removeItem(STORAGE_KEYS.PATIENT_TOKEN);
+      localStorage.removeItem('patient_drf_token');
+      localStorage.removeItem('patient_refresh_token');
+      localStorage.removeItem('patient_id');
+      localStorage.removeItem('patient_name');
+      setTokens(prev => ({ ...prev, patient_access_token: null }));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.DOCTOR_TOKEN);
+      // Don't clear patient tokens - they might be needed for patient portal
+      setTokens(prev => ({ ...prev, authToken: null }));
+    }
+
     localStorage.removeItem(STORAGE_KEYS.USER);
-    localStorage.removeItem('patient_drf_token');
-    localStorage.removeItem('patient_refresh_token');
-    localStorage.removeItem('patient_id');
-    localStorage.removeItem('patient_name');
-    setTokens({ patient_access_token: null, authToken: null });
     setUser(null);
     setIsAuthenticated(false);
     setIsLoading(false);
+
     if (broadcast) {
       authChannel.postMessage({
         type: 'AUTH_CHANGE',
         action: 'LOGOUT',
+        tokenType: isPatientPortal ? 'patient' : 'doctor',
       });
     }
   }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -180,6 +252,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </AuthContext.Provider>
   );
 };
+
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -187,4 +260,5 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
 export default AuthContext;
