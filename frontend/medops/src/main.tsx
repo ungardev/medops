@@ -103,8 +103,12 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
               {/* === DOCTOR PORTAL - PROTECTED === */}
               <Route element={<ProtectedRoute allowedRoles={['doctor', 'admin']} />}>
                 <Route element={<App />}>
-                  {/* Ruta raíz: Redirige a login para el portal elite */}
-                  <Route index element={<Navigate to="/login" replace />} />
+                  {/* Ruta raíz: Redirige según subdomain */}
+                  <Route index element={
+                    window.location.hostname.startsWith('patient.')
+                      ? <Navigate to="/patient/login" replace />
+                      : <Navigate to="/login" replace />
+                  } />
                   
                   {/* Ruta del Dashboard del Doctor (reemplaza al antiguo index) */}
                   <Route path="doctor" element={<DoctorDashboard />} />
