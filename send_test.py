@@ -4,12 +4,22 @@ MEDOPZ - Script de Prueba de Envio de Email
 Uso: python send_test.py
 """
 
+# === ORDEN CRITICO: Cargar env ANTES de Django ===
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+BASE_DIR = Path(r"C:\Users\ungar\Documents\Dev\Web\project\medops")
+load_dotenv(BASE_DIR / ".env.production")  # <- CARGAR .env ANTES de django.setup()
+# =================================================
+
 import sys
-import django
+
+sys.path.insert(0, r"C:\Users\ungar\Documents\Dev\Web\project\medops")
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "medops.settings")
-sys.path.insert(0, r"C:\Users\ungar\Documents\Dev\Web\project\medops")
+import django
+
 django.setup()
 
 from django.core.mail import send_mail
