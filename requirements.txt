@@ -61,6 +61,7 @@ uritemplate==4.2.0
 urllib3==2.5.0
 weasyprint==66.0
 webencodings==0.5.1
+whitenoise==6.8.0
 zopfli==0.4.0
 django-extensions==3.2.3
 drf-nested-routers==0.93.5
