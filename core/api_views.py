@@ -55,10 +55,13 @@ logger = logging.getLogger(__name__)
 def conditional_permission():
     """
     Retorna el permiso apropiado según el entorno:
-    - Desarrollo (DEBUG=True): AllowAny
-    - Producción (DEBUG=False): IsAuthenticated
+    - Desarrollo (DEBUG=False): AllowAny (para pruebas locales)
+    - Producción (DEBUG=True): IsAuthenticated (requiere auth robusta)
+
+    SEGURIDAD: En producción (Railway) DEBUG=True, por lo tanto IsAuthenticated.
+    En desarrollo local DEBUG=False, por lo tanto AllowAny.
     """
-    return AllowAny if settings.DEBUG else IsAuthenticated
+    return IsAuthenticated if settings.DEBUG else AllowAny
 
 
 # ==========================================

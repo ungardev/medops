@@ -2019,43 +2019,6 @@ class DoctorOperator(models.Model):
         help_text="Nodos de operación donde este Practitioner ejerce.",
     )
 
-    # --- IDENTIDAD Y VERIFICACIÓN ELITE ---
-    full_name = models.CharField(max_length=255)
-
-    # Nuevo campo para trato formal automático
-    GENDER_CHOICES = [
-        ("M", "Masculino"),
-        ("F", "Femenino"),
-        ("O", "Otro"),
-    ]
-    gender = models.CharField(
-        max_length=1, choices=GENDER_CHOICES, default="M", verbose_name="Sexo/Género"
-    )
-
-    is_verified = models.BooleanField(
-        default=False,
-        help_text="Designa si el cirujano ha sido validado por el Colegio de Médicos.",
-    )
-
-    colegiado_id = models.CharField(
-        max_length=100,
-        unique=True,
-        verbose_name="Número de colegiado / ID de ejercicio",
-    )
-
-    license = models.CharField(
-        max_length=100, unique=True, verbose_name="Licencia Sanitaria / MPPS"
-    )
-
-    # --- RELACIONES DE PODER ---
-    # ManyToMany: El doctor opera en múltiples nodos (sedes)
-    institutions = models.ManyToManyField(
-        "InstitutionSettings",
-        related_name="operators",
-        blank=True,
-        help_text="Nodos de operación donde este Practitioner ejerce.",
-    )
-
     specialties = models.ManyToManyField("Specialty", related_name="doctors")
 
     # --- INSTITUCIÓN ACTIVA (PREDETERMINADA) ---

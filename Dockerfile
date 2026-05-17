@@ -37,7 +37,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir playwright==1.45.0 && \
     playwright install chromium
 COPY . /app/
-ENV DJANGO_SECRET_KEY=medopz-super-secret-production-key-2025
 RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
