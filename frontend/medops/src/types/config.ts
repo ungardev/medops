@@ -97,13 +97,14 @@ export interface DoctorConfig {
   bio?: string;
   photo_url?: string;
   photo?: string | File | null;
-  // =====================================================
-  // 🔹 WhatsApp Business Integration
-  // =====================================================
+// =====================================================
+// 🔹 WhatsApp Business Integration
+// =====================================================
   whatsapp_enabled?: boolean;
   whatsapp_business_number?: string;
   whatsapp_business_id?: string;
   whatsapp_access_token?: string;
+  whatsapp_webhook_verify_token?: string;
   reminder_hours_before?: number;
 // =====================================================
 // 🔹 Datos Bancarios (DoctorPaymentConfig)

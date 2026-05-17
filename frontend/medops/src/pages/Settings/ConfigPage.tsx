@@ -330,7 +330,9 @@ const handleSaveDoctor = async () => {
                 whatsappBusinessNumber={whatsAppConfig.whatsapp_business_number}
                 whatsappBusinessId={whatsAppConfig.whatsapp_business_id}
                 whatsappAccessToken={whatsAppConfig.whatsapp_access_token}
+                whatsappWebhookVerifyToken={(doc as any)?.whatsapp_webhook_verify_token || ''}
                 reminderHoursBefore={whatsAppConfig.reminder_hours_before}
+                doctorId={doc?.id}
                 onUpdate={handleSaveWhatsApp}
               />
             </div>

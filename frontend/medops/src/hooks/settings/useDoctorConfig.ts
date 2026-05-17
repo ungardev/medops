@@ -42,7 +42,7 @@ export function useDoctorConfig() {
         'binance_crypto_wallet_address', 'binance_network',
         'payment_mobile_enabled', 'bank_transfer_enabled', 'crypto_enabled',
         'whatsapp_enabled', 'whatsapp_business_number', 'whatsapp_business_id',
-        'whatsapp_access_token', 'reminder_hours_before',
+        'whatsapp_access_token', 'whatsapp_webhook_verify_token', 'reminder_hours_before',
       ];
       fields.forEach(field => {
         const val = newSettings[field as keyof DoctorConfig];
