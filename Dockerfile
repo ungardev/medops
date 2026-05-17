@@ -1,6 +1,11 @@
 FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
+
+# ARG para build - se sobrescribe por ENV en Railway
+ARG DJANGO_SECRET_KEY_BUILD=medopz-build-temp-key-2025
+ENV DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY_BUILD}
+
 # Instalar dependencias de sistema necesarias para Django + PostgreSQL + WeasyPrint + Playwright
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -40,4 +45,5 @@ COPY . /app/
 RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
+# En Railway, el ENV DJANGO_SECRET_KEY se sobrescribirá con el valor real
 CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn --bind 0.0.0.0:8000 --workers 2 --timeout 120 medops.wsgi:application"]
